@@ -906,6 +906,10 @@ section h3 {
     overflow: auto;
 }
 
+.modal.show {
+    display: block;
+}
+
 .modal-content {
     background-color: var(--white);
     margin: 10vh auto;
