@@ -1,0 +1,1095 @@
+/* Base Styles */
+:root {
+    --primary-color: #0066cc;
+    --secondary-color: #004999;
+    --text-color: #333333;
+    --light-gray: #f5f5f5;
+    --white: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+}
+
+/* Header Styles */
+.main-header {
+    background: var(--white);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 1rem;
+}
+
+.logo-img {
+    height: 40px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0B1F4D; /* Dark blue from the image */
+    text-transform: uppercase;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--primary-color);
+}
+
+/* Add these styles for active navigation state */
+.nav-links .active {
+    color: var(--primary-color);
+    position: relative;
+}
+
+.nav-links .active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                url('/assets/images/hero-cleanroom.jpg') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--white);
+    padding: 0 20px;
+    margin-top: 60px;
+}
+
+.hero-content {
+    max-width: 800px;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+/* Button base styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 1rem;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary {
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    border-color: #ddd;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+/* Section Styles */
+section {
+    padding: 5rem 0;
+}
+
+section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #666;
+}
+
+/* Product Grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.product-card {
+    background: var(--white);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    padding: 1rem;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-card img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+}
+
+.product-card h4 {
+    padding: 0.5rem 0;
+    font-size: 1.25rem;
+}
+
+.product-card p {
+    padding: 0.5rem 0;
+    color: #666;
+}
+
+/* Footer Styles */
+.main-footer {
+    background: #333;
+    color: var(--white);
+    padding: 3rem 0 1rem;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.footer-section h4 {
+    margin-bottom: 1rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-link {
+    color: var(--white);
+    text-decoration: none;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none; /* Add hamburger menu for mobile */
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .cta-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .btn-secondary {
+        margin-left: 0;
+    }
+}
+
+/* Core Technologies Section */
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 3rem;
+    margin: 3rem 0;
+    text-align: center;
+}
+
+.tech-card {
+    padding: 2rem;
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.tech-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+}
+
+.tech-card h4 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+/* Research Section */
+.research {
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+                url('/assets/images/research-facility.jpg') center/cover;
+    color: var(--white);
+    padding: 6rem 0;
+}
+
+.research-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.research-content p {
+    margin-bottom: 1.5rem;
+    color: var(--white);
+}
+
+.research h2 {
+    color: var(--white);
+}
+
+/* Testimonials Section */
+.partner-logos {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+    margin: 3rem 0;
+    flex-wrap: wrap;
+}
+
+.partner-logo {
+    max-width: 200px;
+    height: auto;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.partner-logo:hover {
+    opacity: 1;
+}
+
+.testimonial-carousel {
+    max-width: 800px;
+    margin: 3rem auto;
+}
+
+.testimonial-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.testimonial-card p {
+    font-style: italic;
+    margin-bottom: 1.5rem;
+}
+
+.testimonial-author {
+    margin-top: 1rem;
+}
+
+.testimonial-author h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.testimonial-author p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .partner-logos {
+        gap: 2rem;
+    }
+    
+    .partner-logo {
+        max-width: 150px;
+    }
+    
+    .tech-grid {
+        gap: 2rem;
+    }
+}
+
+/* Update existing logo styles */
+.logo a:hover {
+    opacity: 0.9;
+}
+
+/* About Hero Section */
+.about-hero {
+    height: 50vh;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('/assets/images/hero-cleanroom.jpg') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--white);
+    margin-top: 60px;
+    width: 100%;
+}
+
+.about-hero .container {
+    max-width: 800px;
+}
+
+.about-hero h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    color: var(--white);
+}
+
+.about-hero p {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    color: var(--white);
+}
+
+/* Story Section */
+.story {
+    padding: 6rem 0;
+    background: var(--white);
+}
+
+.story-content {
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.8;
+    padding: 0 20px;
+}
+
+.story-content p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.story-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Values Section */
+.values {
+    padding: 6rem 0;
+    background: var(--light-gray);
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.value-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.value-card:hover {
+    transform: translateY(-5px);
+}
+
+.value-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.value-card p {
+    color: #666;
+    line-height: 1.6;
+    text-align: left;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .about-hero {
+        height: 40vh;
+        padding: 2rem 0;
+    }
+
+    .about-hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .about-hero p {
+        font-size: 1.2rem;
+    }
+
+    .story, .values {
+        padding: 4rem 0;
+    }
+
+    .values-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .story-content {
+        padding: 0 1.5rem;
+    }
+}
+
+/* Products Hero Section */
+.products-hero {
+    height: 50vh;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('/assets/images/hero-cleanroom.jpg') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--white);
+    margin-top: 60px;
+    width: 100%;
+}
+
+.products-hero .container {
+    max-width: 800px;
+}
+
+.products-hero h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.products-hero p {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* Product Categories */
+.product-categories {
+    padding: 6rem 0;
+    background: var(--white);
+}
+
+.section-intro {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.category-card {
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    height: 100%;
+    display: flex;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+}
+
+.category-card a {
+    text-decoration: none;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.category-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    background-color: var(--light-gray);
+    padding: 1rem;
+}
+
+.category-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.category-card p {
+    margin-bottom: 1.5rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+.product-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.product-features li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+    color: #555;
+}
+
+.product-features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+/* Equipment Solutions */
+.equipment-solutions {
+    padding: 6rem 0;
+    background: var(--light-gray);
+}
+
+.solutions-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.solutions-content p {
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.solutions-list {
+    list-style: none;
+    padding: 0;
+}
+
+.solutions-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.solutions-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+/* Product Contact Section */
+.product-contact {
+    padding: 6rem 0;
+    text-align: center;
+    background: var(--white);
+}
+
+.product-contact p {
+    max-width: 600px;
+    margin: 1.5rem auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.contact-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .category-card img {
+        height: 200px;
+    }
+}
+
+/* Product Detail Pages */
+.product-detail-hero {
+    height: 40vh;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('../images/products/rie-hero-bg.jpg') center/cover;
+    display: flex;
+    align-items: center;
+    color: var(--white);
+    margin-top: 60px;
+}
+
+.product-header {
+    text-align: center;
+}
+
+.product-header h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.product-header p {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* Product Overview */
+.product-overview {
+    padding: 4rem 0;
+    background: var(--white);
+}
+
+.product-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.product-images {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.main-product-image {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.image-gallery img {
+    width: 100%;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.image-gallery img:hover {
+    transform: scale(1.05);
+}
+
+.product-info h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.product-info h3 {
+    margin: 2rem 0 1rem;
+    color: var(--text-color);
+}
+
+.feature-list, .application-list {
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+.feature-list li, .application-list li {
+    position: relative;
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+}
+
+.feature-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+/* Detailed Specifications */
+.detailed-specs {
+    padding: 4rem 0;
+    background: var(--light-gray);
+}
+
+.detailed-specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.detailed-specs-table th {
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 1rem;
+    text-align: left;
+}
+
+.detailed-specs-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+/* Process Capabilities */
+.process-capabilities {
+    padding: 4rem 0;
+    background: var(--white);
+}
+
+.capability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.capability-card {
+    background: var(--light-gray);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.capability-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.capability-card ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.capability-card li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.2rem;
+    position: relative;
+}
+
+.capability-card li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+.contact-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .product-content {
+        grid-template-columns: 1fr;
+    }
+
+    .product-header h1 {
+        font-size: 2.5rem;
+    }
+
+    .contact-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 10vh auto;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close-button {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #aaa;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover {
+    color: var(--text-color);
+}
+
+.modal-subtitle {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.form-success {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.success-icon {
+    display: block;
+    font-size: 3rem;
+    color: #4CAF50;
+    margin-bottom: 1rem;
+}
+
+.success-content h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.success-details {
+    text-align: left;
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: var(--light-gray);
+    border-radius: 8px;
+}
+
+.success-details p {
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.success-details ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.success-details li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+    color: var(--text-color);
+}
+
+.success-details li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+.success-actions {
+    margin-top: 2rem;
+}
+
+.success-actions p {
+    margin-bottom: 1rem;
+    color: #666;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Icon styles */
+.icon-download::before {
+    content: "⭳";
+    font-size: 1.2em;
+}
+
+.icon-browse::before {
+    content: "🔍";
+    font-size: 1.2em;
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Required field indicator */
+.form-group label[for="name"]::after,
+.form-group label[for="email"]::after,
+.form-group label[for="message"]::after {
+    content: "*";
+    color: #ff4444;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-control-readonly {
+    background-color: var(--light-gray);
+    cursor: not-allowed;
+}
+
+.success-content {
+    position: relative;
+}
+
+/* Fix main content area */
+main {
+    min-height: calc(100vh - 60px - 300px); /* viewport height - header - footer */
+    margin-top: 60px;
+}
+
+/* Ensure sections have proper spacing */
+section:first-of-type {
+    margin-top: 0;
+} 

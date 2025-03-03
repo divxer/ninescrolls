@@ -1,0 +1,40 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Outer precision rings -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="#0066cc" stroke-width="1.5"/>
+    <circle cx="50" cy="50" r="42" fill="none" stroke="#0066cc" stroke-width="0.5"/>
+    <circle cx="50" cy="50" r="35" fill="none" stroke="#0066cc" stroke-width="1.5"/>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#0066cc" stroke-width="0.5"/>
+    
+    <!-- Measurement marks -->
+    <g stroke="#0066cc" stroke-width="1">
+        <!-- Vertical marks -->
+        <line x1="50" y1="5" x2="50" y2="15"/>
+        <line x1="50" y1="85" x2="50" y2="95"/>
+        <!-- Horizontal marks -->
+        <line x1="5" y1="50" x2="15" y2="50"/>
+        <line x1="85" y1="50" x2="95" y2="50"/>
+        <!-- Diagonal marks -->
+        <line x1="20" y1="20" x2="27" y2="27"/>
+        <line x1="80" y1="20" x2="73" y2="27"/>
+        <line x1="20" y1="80" x2="27" y2="73"/>
+        <line x1="80" y1="80" x2="73" y2="73"/>
+    </g>
+    
+    <!-- Precision crosshair -->
+    <g stroke="#0066cc" stroke-width="0.5">
+        <line x1="50" y1="25" x2="50" y2="75"/>
+        <line x1="25" y1="50" x2="75" y2="50"/>
+    </g>
+    
+    <!-- Center elements -->
+    <circle cx="50" cy="50" r="15" fill="none" stroke="#0066cc" stroke-width="1.5"/>
+    <circle cx="50" cy="50" r="3" fill="#0066cc"/>
+    
+    <!-- Measurement numbers -->
+    <g fill="#0066cc" font-family="Arial" font-size="6">
+        <text x="45" y="12" text-anchor="end">0</text>
+        <text x="88" y="52">90</text>
+        <text x="45" y="92" text-anchor="end">180</text>
+        <text x="12" y="52">270</text>
+    </g>
+</svg>

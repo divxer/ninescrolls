@@ -1,0 +1,20 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <!-- Simplified version of your logo for favicon -->
+    <g transform="translate(16 16)">
+        <!-- Orbital paths -->
+        <path d="M0,-8 A8,8 0 1,1 0,8 A8,8 0 1,1 0,-8" 
+              fill="none" stroke="#0066cc" stroke-width="1"/>
+        <path d="M-7,4 A8,8 0 1,1 7,4 A8,8 0 1,1 -7,4" 
+              fill="none" stroke="#0066cc" stroke-width="1"/>
+        <path d="M-7,-4 A8,8 0 1,1 7,-4 A8,8 0 1,1 -7,-4" 
+              fill="none" stroke="#0066cc" stroke-width="1"/>
+        
+        <!-- Center particle -->
+        <circle cx="0" cy="0" r="2" fill="#0066cc"/>
+        
+        <!-- Smaller particles -->
+        <circle cx="2" cy="-4" r="1" fill="#0066cc"/>
+        <circle cx="-4" cy="0" r="1" fill="#0066cc"/>
+        <circle cx="3" cy="5" r="1" fill="#0066cc"/>
+    </g>
+</svg> 
