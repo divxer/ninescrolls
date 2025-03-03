@@ -309,11 +309,15 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Form submitted:', formData);  // Log the form data
       setIsSuccess(true);
+      setIsSubmitting(false);
+      setTimeout(() => {
+        onClose();
+        setIsSuccess(false);
+      }, 2000);
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred. Please try again later.');
-    } finally {
+      console.error('Error submitting form:', error);
       setIsSubmitting(false);
     }
   };
