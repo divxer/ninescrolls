@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -18,8 +18,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <li><Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Home</Link></li>
             <li><Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>About Us</Link></li>
             <li><Link to="/products" className={`nav-link ${location.pathname === '/products' ? 'active' : ''}`}>Products</Link></li>
-            <li><a href="#research" className="nav-link">Research & Development</a></li>
-            <li><a href="#contact" className="nav-link">Contact Us</a></li>
+            <li><Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>Contact Us</Link></li>
           </ul>
         </nav>
       </header>
@@ -32,7 +31,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <div className="footer-section">
               <h4>Contact Us</h4>
               <p>Email: info@ninescrolls.com</p>
-              <p>Phone: +1 (858) 537-7743</p>
+              <p>For urgent inquiries: +1 (858) 537-7743</p>
             </div>
             <div className="footer-section">
               <h4>Follow Us</h4>
@@ -194,6 +193,18 @@ function AboutPage() {
 }
 
 function ProductsPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
   return (
     <>
       <section className="products-hero">
@@ -273,11 +284,17 @@ function ProductsPage() {
           <h2>Need Equipment Consultation?</h2>
           <p>Our team of experts is ready to help you find the perfect research equipment solution.</p>
           <div className="contact-buttons">
-            <a href="#contact" className="btn btn-primary">Contact Our Team</a>
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Our Team</button>
             <a href="#" className="btn btn-secondary">Download Equipment Guide</a>
           </div>
         </div>
       </section>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="General Inquiry"
+      />
     </>
   )
 }
@@ -461,6 +478,17 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
 
 function RIEEtcherPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const openContactForm = () => {
     setIsModalOpen(true);
@@ -604,6 +632,12 @@ function RIEEtcherPage() {
         </div>
       </section>
 
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
       <ContactFormModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
@@ -615,6 +649,17 @@ function RIEEtcherPage() {
 
 function ICPEtcherPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const openContactForm = () => {
     setIsModalOpen(true);
@@ -757,6 +802,12 @@ function ICPEtcherPage() {
         </div>
       </section>
 
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
       <ContactFormModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
@@ -764,6 +815,84 @@ function ICPEtcherPage() {
       />
     </>
   )
+}
+
+function ContactUsPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  return (
+    <>
+      <section className="contact-hero">
+        <div className="container">
+          <h1>Contact Us</h1>
+          <p>Get in touch with our team for expert guidance on your research equipment needs</p>
+        </div>
+      </section>
+
+      <section className="contact-info">
+        <div className="container">
+          <div className="contact-grid">
+            <div className="contact-card">
+              <h3>Office Location</h3>
+              <p>12546 Cabezon PL</p>
+              <p>San Diego, CA 92129</p>
+              <p>United States</p>
+              <div className="contact-hours">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 5:00 PM PST</p>
+              </div>
+            </div>
+            <div className="contact-card">
+              <h3>Contact Information</h3>
+              <p>Primary Contact: <a href="mailto:info@ninescrolls.com">info@ninescrolls.com</a></p>
+              <p>Sales Inquiries: <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a></p>
+              <p className="note">For urgent matters only: +1 (858) 537-7743</p>
+              <div className="social-links">
+                <a href="https://linkedin.com/company/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <a href="https://twitter.com/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer">Twitter</a>
+              </div>
+            </div>
+            <div className="contact-card">
+              <h3>Technical Support</h3>
+              <p>For equipment maintenance and technical assistance:</p>
+              <p><a href="mailto:support@ninescrolls.com">support@ninescrolls.com</a></p>
+              <div className="support-hours">
+                <h4>Support Hours</h4>
+                <p>Monday - Friday: 8:00 AM - 6:00 PM PST</p>
+                <p className="note">24/7 emergency support available for critical issues</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="contact-form-section">
+        <div className="container">
+          <h2>Send Us a Message</h2>
+          <p>Have questions about our products or services? Fill out the form below and we'll get back to you shortly.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Us</button>
+          </div>
+        </div>
+      </section>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="General Inquiry"
+      />
+    </>
+  );
 }
 
 function App() {
@@ -776,6 +905,7 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/rie-etcher" element={<RIEEtcherPage />} />
           <Route path="/products/icp-etcher" element={<ICPEtcherPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
         </Routes>
       </Layout>
     </Router>
