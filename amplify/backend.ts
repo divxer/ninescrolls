@@ -24,7 +24,7 @@ const restApi = new RestApi(apiStack, 'RestApi', {
         stageName: STAGE_NAME,
     },
     defaultCorsPreflightOptions: {
-        allowOrigins: ['http://localhost:5173', 'https://ninescrolls.com'],
+        allowOrigins: ['http://localhost:5173', 'https://ninescrolls.com', 'https://ninescrolls.us'],
         allowMethods: ['POST'],
         allowHeaders: ['Content-Type'],
         maxAge: Duration.seconds(300),
