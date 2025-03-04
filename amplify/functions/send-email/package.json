@@ -12,7 +12,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
-    "@types/sendgrid": "^2.0.31",
     "typescript": "^5.3.3"
   }
-}
+} 
