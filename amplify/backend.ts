@@ -36,12 +36,14 @@ const sendEmailResource = restApi.root.addResource('sendEmail');
 
 // Add POST method to /sendEmail with CORS enabled
 sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: true,
+    proxy: false,
     integrationResponses: [{
         statusCode: '200',
         responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': "'*'",
-            'method.response.header.Vary': "'Origin'"
+            'method.response.header.Access-Control-Allow-Origin': "'*'",  // Correct way to allow all origins
+            'method.response.header.Access-Control-Allow-Methods': "'POST'",
+            'method.response.header.Access-Control-Allow-Headers': "'Content-Type'",
+            'method.response.header.Access-Control-Max-Age': "'300'"
         }
     }]
 }), {
@@ -49,7 +51,9 @@ sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.reso
         statusCode: '200',
         responseParameters: {
             'method.response.header.Access-Control-Allow-Origin': true,
-            'method.response.header.Vary': true
+            'method.response.header.Access-Control-Allow-Methods': true,
+            'method.response.header.Access-Control-Allow-Headers': true,
+            'method.response.header.Access-Control-Max-Age': true
         }
     }]
 });
