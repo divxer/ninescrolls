@@ -63,3 +63,11 @@ backend.addOutput({
     },
   },
 });
+
+// Add outputs for frontend environment variables
+backend.addOutput({
+  API_URL: backend.api.url,
+  FROM_EMAIL: 'noreply@ninescrolls.com',
+  TO_EMAIL: 'info@ninescrolls.com',
+  REPLY_TO_EMAIL: 'info@ninescrolls.com'
+});
