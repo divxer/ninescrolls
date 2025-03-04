@@ -34,8 +34,25 @@ const restApi = new RestApi(apiStack, 'RestApi', {
 // Create the /sendEmail resource
 const sendEmailResource = restApi.root.addResource('sendEmail');
 
-// Add POST method to /sendEmail
-sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda));
+// Add POST method to /sendEmail with CORS enabled
+sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda, {
+    proxy: true,
+    integrationResponses: [{
+        statusCode: '200',
+        responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': "'*'",
+            'method.response.header.Vary': "'Origin'"
+        }
+    }]
+}), {
+    methodResponses: [{
+        statusCode: '200',
+        responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': true,
+            'method.response.header.Vary': true
+        }
+    }]
+});
 
 // Create IAM policy for API Gateway
 const apiPolicy = new PolicyStatement({
