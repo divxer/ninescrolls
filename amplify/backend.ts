@@ -1,6 +1,8 @@
 import { defineBackend } from '@aws-amplify/backend';
-import { sendEmail } from './functions/send-email/resource';
+import { auth } from './auth/resource';
+import { data } from './data/resource';
 
-export const backend = defineBackend({
-  sendEmail
+defineBackend({
+  auth,
+  data,
 });

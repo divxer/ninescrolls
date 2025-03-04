@@ -1,28 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import { generateClient } from 'aws-amplify/api'
-import { post } from 'aws-amplify/api'
-
-interface SendEmailInput {
-  body: {
-    productName: string;
-    name: string;
-    email: string;
-    phone?: string;
-    organization?: string;
-    message: string;
-  }
-}
-
-interface SendEmailOutput {
-  success: boolean;
-  message: string;
-}
-
-// Create a client
-const client = generateClient<{
-  sendEmail: (input: SendEmailInput) => Promise<SendEmailOutput>;
-}>();
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -330,15 +307,9 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
     };
 
     try {
-      const response = await post({
-        apiName: 'backend',
-        path: '/sendEmail',
-        options: {
-          body: formData
-        }
-      });
-      
-      console.log('Email sent:', response);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Form submitted:', formData);  // Log the form data
       setIsSuccess(true);
       setIsSubmitting(false);
       setTimeout(() => {
@@ -359,7 +330,7 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
   if (!isOpen) return null;
 
   return (
-    <div className={`modal ${isOpen ? 'show' : ''}`} onClick={handleClose}>
+    <div className="modal" onClick={handleClose}>
       <div className="modal-content" role="dialog" aria-labelledby="modalTitle" onClick={e => e.stopPropagation()}>
         <span className="close-button" aria-label="Close" onClick={handleClose}>&times;</span>
         {!isSuccess ? (
