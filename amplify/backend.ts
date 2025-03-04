@@ -1,6 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { sendEmail } from './functions/send-email/resource';
-import { RestApi, RestApiProps } from 'aws-cdk-lib/aws-apigateway';
+import {Cors, RestApi, RestApiProps} from 'aws-cdk-lib/aws-apigateway';
 import { Duration } from 'aws-cdk-lib';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
@@ -24,8 +24,8 @@ const restApi = new RestApi(apiStack, 'RestApi', {
         stageName: STAGE_NAME,
     },
     defaultCorsPreflightOptions: {
-        allowOrigins: ['http://localhost:5173', 'https://ninescrolls.com', 'https://ninescrolls.us'],
-        allowMethods: ['POST'],
+        allowOrigins: Cors.ALL_ORIGINS,
+        allowMethods: ['POST', 'OPTIONS'],
         allowHeaders: ['Content-Type'],
         maxAge: Duration.seconds(300),
     },

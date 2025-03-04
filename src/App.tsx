@@ -340,12 +340,8 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
       const response = await fetch('https://66xcnuo6d9.execute-api.us-east-2.amazonaws.com/dev/sendEmail', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': window.location.origin
+          'Content-Type': 'application/json'
         },
-        mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify(formData)
       });
 
