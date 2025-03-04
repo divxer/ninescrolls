@@ -291,10 +291,12 @@ interface ContactFormModalProps {
 function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     const form = event.target as HTMLFormElement;
     const formData = {
@@ -303,13 +305,57 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       organization: (form.elements.namedItem('organization') as HTMLInputElement).value || 'Not specified',
-      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value
+      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value || ''
     };
 
+    // Validate required fields before sending
+    if (!formData.message.trim()) {
+      console.log('Validation failed: Message is empty');
+      setError('Please provide a message');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Form submitted:', formData);  // Log the form data
+      console.log('Starting form submission...');
+      console.log('Form data:', JSON.stringify(formData, null, 2));
+      
+      const response = await fetch('https://j0v4p1wxm0.execute-api.us-east-2.amazonaws.com/dev/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      const responseText = await response.text();
+      console.log('Response body:', responseText);
+
+      if (!response.ok) {
+        console.error('Request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: responseText
+        });
+        throw new Error(`Failed to submit form: ${response.status} ${responseText}`);
+      }
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log('Parsed response:', result);
+      } catch (e) {
+        console.warn('Failed to parse response as JSON:', responseText);
+        result = { message: 'Form submitted successfully' };
+      }
+
+      console.log('Form submission successful');
       setIsSuccess(true);
       setIsSubmitting(false);
       setTimeout(() => {
@@ -317,7 +363,15 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
         setIsSuccess(false);
       }, 2000);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error in form submission:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+      }
+      setError(error instanceof Error ? error.message : 'Failed to submit form. Please try again later.');
       setIsSubmitting(false);
     }
   };
@@ -330,13 +384,14 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="modal" onClick={handleClose}>
+    <div className="modal" data-open={isOpen} onClick={handleClose}>
       <div className="modal-content" role="dialog" aria-labelledby="modalTitle" onClick={e => e.stopPropagation()}>
         <span className="close-button" aria-label="Close" onClick={handleClose}>&times;</span>
         {!isSuccess ? (
           <>
             <h2 id="modalTitle">Request Product Information</h2>
             <p className="modal-subtitle">Please fill out the form below and we'll get back to you shortly.</p>
+            {error && <div className="error-message">{error}</div>}
             <form id="contactForm" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="productName">Product:</label>
@@ -371,7 +426,7 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
             </form>
           </>
         ) : (
-          <div className="form-success">
+          <div className="form-success" data-success={isSuccess}>
             <div className="success-content">
               <button type="button" className="close-button" onClick={handleClose}>&times;</button>
               <span className="success-icon">✓</span>
