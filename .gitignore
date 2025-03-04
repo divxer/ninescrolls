@@ -32,3 +32,5 @@ amplifyconfiguration*
 .env.local
 .env.*.local
 /.env
+.npm
+/.npmrc
