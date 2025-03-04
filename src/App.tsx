@@ -194,6 +194,13 @@ function AboutPage() {
 
 function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
 
   const openContactForm = () => {
     setIsModalOpen(true);
@@ -203,6 +210,10 @@ function ProductsPage() {
   const closeContactForm = () => {
     setIsModalOpen(false);
     document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
   };
 
   return (
@@ -294,39 +305,60 @@ function ProductsPage() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="General Inquiry"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
       />
     </>
   )
+}
+
+interface ContactFormData {
+  name: string;
+  email: string;
+  phone: string;
+  organization: string;
+  message: string;
 }
 
 interface ContactFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
+  formData: ContactFormData;
+  onFormDataChange: (data: ContactFormData) => void;
+  onSuccess?: () => void;
 }
 
-function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProps) {
+function ContactFormModal({ isOpen, onClose, productName, formData, onFormDataChange, onSuccess }: ContactFormModalProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset success state when modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSuccess(false);
+    }
+  }, [isOpen]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    onFormDataChange({ ...formData, [name]: value });
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    const form = event.target as HTMLFormElement;
-    const formData = {
+    const formDataToSubmit = {
       productName,
-      name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      email: (form.elements.namedItem('email') as HTMLInputElement).value,
-      phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
-      organization: (form.elements.namedItem('organization') as HTMLInputElement).value || 'Not specified',
-      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value || ''
+      ...formData
     };
 
     // Validate required fields before sending
-    if (!formData.message.trim()) {
+    if (!formDataToSubmit.message.trim()) {
       console.log('Validation failed: Message is empty');
       setError('Please provide a message');
       setIsSubmitting(false);
@@ -335,14 +367,14 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
 
     try {
       console.log('Starting form submission...');
-      console.log('Form data:', JSON.stringify(formData, null, 2));
+      console.log('Form data:', JSON.stringify(formDataToSubmit, null, 2));
       
       const response = await fetch('https://api.ninescrolls.us/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formDataToSubmit)
       });
 
       console.log('Response received:', {
@@ -375,10 +407,16 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
       console.log('Form submission successful');
       setIsSuccess(true);
       setIsSubmitting(false);
-      setTimeout(() => {
-        onClose();
-        setIsSuccess(false);
-      }, 2000);
+      // Reset form data after successful submission
+      onFormDataChange({
+        name: '',
+        email: '',
+        phone: '',
+        organization: '',
+        message: ''
+      });
+      // Notify parent component of success
+      onSuccess?.();
     } catch (error) {
       console.error('Error in form submission:', error);
       if (error instanceof Error) {
@@ -393,19 +431,14 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
     }
   };
 
-  const handleClose = () => {
-    setIsSuccess(false);
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="modal" data-open={isOpen} onClick={handleClose}>
-      <div className="modal-content" role="dialog" aria-labelledby="modalTitle" onClick={e => e.stopPropagation()}>
-        <span className="close-button" aria-label="Close" onClick={handleClose}>&times;</span>
+    <div className="modal" data-open={isOpen}>
+      <div className="modal-content" role="dialog" aria-labelledby="modalTitle">
         {!isSuccess ? (
           <>
+            <span className="close-button" aria-label="Close" onClick={onClose}>&times;</span>
             <h2 id="modalTitle">Request Product Information</h2>
             <p className="modal-subtitle">Please fill out the form below and we'll get back to you shortly.</p>
             {error && <div className="error-message">{error}</div>}
@@ -416,26 +449,68 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
               </div>
               <div className="form-group">
                 <label htmlFor="name">Name</label>
-                <input type="text" id="name" name="name" required placeholder="Enter your full name" autoComplete="name" />
+                <input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required 
+                  placeholder="Enter your full name" 
+                  autoComplete="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="email">Email</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email address" autoComplete="email" />
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  required 
+                  placeholder="Enter your email address" 
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="phone">Phone:</label>
-                <input type="tel" id="phone" name="phone" pattern="[0-9+\-\s()]*" placeholder="Optional: Enter your phone number" autoComplete="tel" />
+                <input 
+                  type="tel" 
+                  id="phone" 
+                  name="phone" 
+                  pattern="[0-9+\-\s()]*" 
+                  placeholder="Optional: Enter your phone number" 
+                  autoComplete="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="organization">Organization:</label>
-                <input type="text" id="organization" name="organization" placeholder="Optional: Enter your organization name" autoComplete="organization" />
+                <input 
+                  type="text" 
+                  id="organization" 
+                  name="organization" 
+                  placeholder="Optional: Enter your organization name" 
+                  autoComplete="organization"
+                  value={formData.organization}
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="message">Message</label>
-                <textarea id="message" name="message" rows={4} required placeholder="Please let us know your specific requirements or questions"></textarea>
+                <textarea 
+                  id="message" 
+                  name="message" 
+                  rows={4} 
+                  required 
+                  placeholder="Please let us know your specific requirements or questions"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                ></textarea>
               </div>
               <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
@@ -444,8 +519,8 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
           </>
         ) : (
           <div className="form-success" data-success={isSuccess}>
+            <span className="close-button" aria-label="Close" onClick={onClose}>&times;</span>
             <div className="success-content">
-              <button type="button" className="close-button" onClick={handleClose}>&times;</button>
               <span className="success-icon">✓</span>
               <h3>Thank You for Your Interest!</h3>
               <p>Your request about the {productName} has been submitted successfully.</p>
@@ -479,6 +554,13 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
 function RIEEtcherPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -498,6 +580,10 @@ function RIEEtcherPage() {
   const closeContactForm = () => {
     setIsModalOpen(false);
     document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
   };
 
   return (
@@ -642,6 +728,9 @@ function RIEEtcherPage() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="RIE Etcher Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
       />
     </>
   )
@@ -650,6 +739,13 @@ function RIEEtcherPage() {
 function ICPEtcherPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -669,6 +765,10 @@ function ICPEtcherPage() {
   const closeContactForm = () => {
     setIsModalOpen(false);
     document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
   };
 
   return (
@@ -812,6 +912,9 @@ function ICPEtcherPage() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="ICP Etcher Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
       />
     </>
   )
@@ -819,6 +922,13 @@ function ICPEtcherPage() {
 
 function ContactUsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
 
   const openContactForm = () => {
     setIsModalOpen(true);
@@ -828,6 +938,10 @@ function ContactUsPage() {
   const closeContactForm = () => {
     setIsModalOpen(false);
     document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
   };
 
   return (
@@ -890,6 +1004,9 @@ function ContactUsPage() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="General Inquiry"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
       />
     </>
   );
