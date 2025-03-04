@@ -1,65 +1,58 @@
 import { defineBackend } from '@aws-amplify/backend';
-import { Stack, Duration } from 'aws-cdk-lib';
-import {
-  Cors,
-  LambdaIntegration,
-  RestApi,
-} from 'aws-cdk-lib/aws-apigateway';
-import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { sendEmail } from './functions/send-email/resource';
+import { RestApi, RestApiProps } from 'aws-cdk-lib/aws-apigateway';
+import { Duration } from 'aws-cdk-lib';
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
+import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import { Stack } from 'aws-cdk-lib';
 
 const backend = defineBackend({
-  sendEmail,
+    sendEmail,
 });
 
-// create a new API stack
+// Create a fixed stage name
+const STAGE_NAME = 'prod';
+
+// Create the API stack
 const apiStack = backend.createStack('api-stack');
 
-// create a new REST API
+// Create the REST API with a fixed stage
 const restApi = new RestApi(apiStack, 'RestApi', {
-  restApiName: 'ninescrolls-api',
-  deploy: true,
-  deployOptions: {
-    stageName: 'dev',
-  },
-  defaultCorsPreflightOptions: {
-    allowOrigins: ['http://localhost:5173', 'https://ninescrolls.com'],
-    allowMethods: ['POST'],
-    allowHeaders: ['Content-Type'],
-    maxAge: Duration.seconds(300),
-  },
-});
-
-// create a new Lambda integration
-const lambdaIntegration = new LambdaIntegration(
-  backend.sendEmail.resources.lambda
-);
-
-// create a new resource path for sending emails
-const emailPath = restApi.root.addResource('sendEmail');
-emailPath.addMethod('POST', lambdaIntegration);
-
-// create a new IAM policy to allow Invoke access to the API
-const apiRestPolicy = new Policy(apiStack, 'RestApiPolicy', {
-  statements: [
-    new PolicyStatement({
-      actions: ['execute-api:Invoke'],
-      resources: [
-        `${restApi.arnForExecuteApi('POST', '/sendEmail', 'dev')}`,
-      ],
-    }),
-  ],
-});
-
-// add outputs to the configuration file
-backend.addOutput({
-  custom: {
-    API: {
-      [restApi.restApiName]: {
-        endpoint: restApi.url,
-        region: Stack.of(restApi).region,
-        apiName: restApi.restApiName,
-      },
+    restApiName: 'ninescrolls-api',
+    deploy: true,
+    deployOptions: {
+        stageName: STAGE_NAME,
     },
-  },
+    defaultCorsPreflightOptions: {
+        allowOrigins: ['http://localhost:5173', 'https://ninescrolls.com'],
+        allowMethods: ['POST'],
+        allowHeaders: ['Content-Type'],
+        maxAge: Duration.seconds(300),
+    },
+});
+
+// Create the /sendEmail resource
+const sendEmailResource = restApi.root.addResource('sendEmail');
+
+// Add POST method to /sendEmail
+sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda));
+
+// Create IAM policy for API Gateway
+const apiPolicy = new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['execute-api:Invoke'],
+    resources: [`${restApi.arnForExecuteApi('POST', '/sendEmail', STAGE_NAME)}`],
+});
+
+// Add outputs
+backend.addOutput({
+    custom: {
+        API: {
+            [restApi.restApiName]: {
+                endpoint: restApi.url,
+                region: Stack.of(restApi).region,
+                apiName: restApi.restApiName,
+            },
+        },
+    },
 });
