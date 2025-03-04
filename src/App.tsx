@@ -320,7 +320,7 @@ function ContactFormModal({ isOpen, onClose, productName }: ContactFormModalProp
       console.log('Starting form submission...');
       console.log('Form data:', JSON.stringify(formData, null, 2));
       
-      const response = await fetch('https://j0v4p1wxm0.execute-api.us-east-2.amazonaws.com/dev/sendEmail', {
+      const response = await fetch('https://66xcnuo6d9.execute-api.us-east-2.amazonaws.com/dev/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
