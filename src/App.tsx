@@ -113,11 +113,10 @@ function HomePage() {
 
       <section className="research" id="research">
         <div className="container">
-          <h2>Driving Innovation Through R&D</h2>
           <div className="research-content">
-            <p>At NineScrolls, our commitment to research and development drives everything we do. We continuously push the boundaries of what's possible in semiconductor processing technology, investing heavily in innovative solutions that address the most challenging requirements in the industry.</p>
-            <p>Our dedicated R&D team works closely with leading research institutions to develop next-generation equipment that sets new standards in precision, reliability, and performance.</p>
-            <a href="#research" className="btn btn-primary">Discover Our R&D</a>
+            <h2>Driving Innovation Through R&D</h2>
+            <p>Our commitment to research and development drives continuous improvement in our equipment solutions. We work closely with leading research institutions to push the boundaries of what's possible in semiconductor manufacturing.</p>
+            <Link to="/about" className="btn btn-primary">Discover Our R&D</Link>
           </div>
         </div>
       </section>
@@ -126,9 +125,18 @@ function HomePage() {
         <div className="container">
           <h2>Trusted by Leading Institutions</h2>
           <div className="partner-logos">
-            <img src="/assets/images/partners/university.svg" alt="University Partner" className="partner-logo" />
-            <img src="/assets/images/partners/research-lab.svg" alt="Research Lab Partner" className="partner-logo" />
-            <img src="/assets/images/partners/institute.svg" alt="Institute Partner" className="partner-logo" />
+            <div className="partner-logo">
+              <span className="emoji-icon">🏛️</span>
+              <span>Research Universities</span>
+            </div>
+            <div className="partner-logo">
+              <span className="emoji-icon">🔬</span>
+              <span>Research Institutes</span>
+            </div>
+            <div className="partner-logo">
+              <span className="emoji-icon">🏢</span>
+              <span>Corporate R&D</span>
+            </div>
           </div>
           <div className="testimonial-carousel">
             <div className="testimonial-card">
