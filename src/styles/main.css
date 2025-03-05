@@ -329,37 +329,33 @@ section h3 {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 3rem;
+    gap: 4rem;
     margin: 3rem 0;
     flex-wrap: wrap;
 }
 
 .partner-logo {
-    max-width: 200px;
-    height: auto;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-}
-
-.partner-logo img {
-    width: 100%;
-    height: auto;
-}
-
-.partner-logo span {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--text-color);
-    text-align: center;
-    margin-top: 0.5rem;
+    transition: transform 0.3s ease;
 }
 
 .partner-logo:hover {
-    opacity: 1;
+    transform: translateY(-5px);
+}
+
+.emoji-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.partner-logo span:not(.emoji-icon) {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    text-align: center;
 }
 
 .testimonial-carousel {
@@ -397,11 +393,15 @@ section h3 {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .partner-logos {
-        gap: 2rem;
+        gap: 2.5rem;
     }
     
-    .partner-logo {
-        max-width: 150px;
+    .emoji-icon {
+        font-size: 3rem;
+    }
+    
+    .partner-logo span:not(.emoji-icon) {
+        font-size: 1.1rem;
     }
     
     .tech-grid {
