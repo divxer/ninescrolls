@@ -221,14 +221,15 @@ function ProductsPage() {
       <section className="products-hero">
         <div className="container">
           <h1>Our Products</h1>
-          <p>Connecting You with Advanced Research Equipment Solutions</p>
+          <p>Advanced Semiconductor Manufacturing Equipment</p>
         </div>
       </section>
 
       <section className="product-categories">
         <div className="container">
-          <h2>Featured Equipment</h2>
-          <p className="section-intro">We partner with leading manufacturers to provide cutting-edge research equipment for your specific needs.</p>
+          <div className="section-intro">
+            <p>Explore our comprehensive range of semiconductor manufacturing equipment, designed to meet the highest industry standards and deliver exceptional performance.</p>
+          </div>
           <div className="category-grid">
             <div className="category-card">
               <Link to="/products/rie-etcher">
@@ -330,14 +331,14 @@ function ProductsPage() {
 
             <div className="category-card">
               <Link to="/products/pecvd">
-                <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD Systems" />
-                <h3>PECVD Systems</h3>
-                <p>Plasma-enhanced chemical vapor deposition systems for high-quality thin film deposition.</p>
+                <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD Series" />
+                <h3>PECVD Series</h3>
+                <p>Advanced Plasma Enhanced Chemical Vapor Deposition Systems with Superior Process Control</p>
                 <ul className="product-features">
-                  <li>Uniform film deposition</li>
-                  <li>Multi-layer capability</li>
-                  <li>Temperature control</li>
-                  <li>Process automation</li>
+                  <li>Advanced RF power control</li>
+                  <li>Precise temperature management</li>
+                  <li>Multiple gas line configuration</li>
+                  <li>Flexible chamber design</li>
                 </ul>
               </Link>
             </div>
@@ -2263,6 +2264,191 @@ function CoaterDeveloperPage() {
   );
 }
 
+function PECVDPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>PECVD Series</h1>
+            <p>Advanced Plasma Enhanced Chemical Vapor Deposition Systems</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img 
+                src="/assets/images/products/pecvd/main.jpg" 
+                alt="PECVD System" 
+                className="main-product-image"
+              />
+              <div className="image-gallery">
+                <img src="/assets/images/products/pecvd/detail1.jpg" alt="PECVD Chamber" />
+                <img src="/assets/images/products/pecvd/detail2.jpg" alt="PECVD Control Panel" />
+                <img src="/assets/images/products/pecvd/detail3.jpg" alt="PECVD Process" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Advanced PECVD Technology</h2>
+              <p>Our PECVD Series offers state-of-the-art plasma enhanced chemical vapor deposition systems with superior process control and reliability.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Advanced RF power control system</li>
+                <li>Precise temperature management</li>
+                <li>Multiple gas line configuration</li>
+                <li>Flexible chamber design</li>
+                <li>Advanced process monitoring</li>
+                <li>User-friendly interface</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Silicon nitride deposition</li>
+                <li>Silicon oxide deposition</li>
+                <li>Low-k dielectric films</li>
+                <li>Passivation layers</li>
+                <li>Barrier layers</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <table className="detailed-specs-table">
+            <tbody>
+              <tr>
+                <th>Wafer Size Range</th>
+                <td>4, 6, 8, 12 inches</td>
+              </tr>
+              <tr>
+                <th>RF Power</th>
+                <td>1000-3000W</td>
+              </tr>
+              <tr>
+                <th>Chamber Pressure</th>
+                <td>0.1-10 Torr</td>
+              </tr>
+              <tr>
+                <th>Substrate Temperature</th>
+                <td>20°C to 400°C</td>
+              </tr>
+              <tr>
+                <th>Gas Lines</th>
+                <td>6 lines (customizable)</td>
+              </tr>
+              <tr>
+                <th>Non-uniformity</th>
+                <td>Less than ±5%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Material Compatibility</h3>
+              <ul>
+                <li>Silicon nitride (SiNx)</li>
+                <li>Silicon oxide (SiO2)</li>
+                <li>Silicon oxynitride (SiON)</li>
+                <li>Low-k dielectrics</li>
+                <li>Barrier layers</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>High deposition rates</li>
+                <li>Excellent step coverage</li>
+                <li>Low stress films</li>
+                <li>High film quality</li>
+                <li>Process repeatability</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Interested in PECVD Series?</h2>
+          <p>Contact our sales team for detailed information and specifications</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>
+              Contact Sales
+            </button>
+            <button className="btn btn-secondary">
+              Download Datasheet
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {showFloatingContact && (
+        <div className="floating-contact visible">
+          <button className="btn btn-primary" onClick={openContactForm}>
+            Contact Sales
+          </button>
+        </div>
+      )}
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="PECVD Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
 function App() {
   return (
     <Router>
@@ -2271,6 +2457,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
           <Route path="/products/rie-etcher" element={<RIEEtcherPage />} />
           <Route path="/products/icp-etcher" element={<ICPEtcherPage />} />
           <Route path="/products/ibe-ribe" element={<IBERIBEPage />} />
@@ -2279,11 +2466,11 @@ function App() {
           <Route path="/products/hdp-cvd" element={<HDPCVDPage />} />
           <Route path="/products/sputter" element={<SputterPage />} />
           <Route path="/products/coater-developer" element={<CoaterDeveloperPage />} />
-          <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/products/pecvd" element={<PECVDPage />} />
         </Routes>
       </Layout>
     </Router>
-  )
+  );
 }
 
 export default App
