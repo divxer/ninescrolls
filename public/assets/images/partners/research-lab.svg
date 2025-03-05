@@ -1,6 +1,0 @@
-<svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-    <path d="M70,20 L90,20 L100,80 L60,80 Z" fill="none" stroke="#666" stroke-width="2"/>
-    <path d="M110,20 L130,20 L140,80 L100,80 Z" fill="none" stroke="#666" stroke-width="2"/>
-    <rect x="60" y="80" width="80" height="5" fill="#666"/>
-    <text x="100" y="95" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">RESEARCH LAB</text>
-</svg>

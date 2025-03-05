@@ -88,22 +88,22 @@ function HomePage() {
         </div>
       </section>
 
-      <section className="technologies" id="technologies">
+      <section className="tech-grid">
         <div className="container">
           <h2>Cutting-Edge Technologies</h2>
           <div className="tech-grid">
             <div className="tech-card">
-              <img src="/assets/images/icons/precision.svg" alt="Precision Engineering" className="tech-icon" />
+              <div className="emoji-icon">⚙️</div>
               <h4>Precision Engineering</h4>
               <p>Advanced manufacturing techniques ensuring nanometer-scale accuracy</p>
             </div>
             <div className="tech-card">
-              <img src="/assets/images/icons/automation.svg" alt="Automation Systems" className="tech-icon" />
+              <div className="emoji-icon">🤖</div>
               <h4>Automation Systems</h4>
               <p>Intelligent control systems for reproducible results</p>
             </div>
             <div className="tech-card">
-              <img src="/assets/images/icons/plasma.svg" alt="Plasma Technology" className="tech-icon" />
+              <div className="emoji-icon">⚡</div>
               <h4>Plasma Technology</h4>
               <p>State-of-the-art plasma processing solutions</p>
             </div>

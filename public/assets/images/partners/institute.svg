@@ -1,7 +1,0 @@
-<svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-    <rect x="40" y="30" width="120" height="50" fill="none" stroke="#666" stroke-width="2"/>
-    <path d="M30,30 L170,30 L100,10 Z" fill="none" stroke="#666" stroke-width="2"/>
-    <rect x="60" y="40" width="20" height="40" fill="none" stroke="#666" stroke-width="2"/>
-    <rect x="120" y="40" width="20" height="40" fill="none" stroke="#666" stroke-width="2"/>
-    <text x="100" y="95" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">INSTITUTE</text>
-</svg>
