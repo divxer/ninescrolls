@@ -259,6 +259,76 @@ function ProductsPage() {
             </div>
 
             <div className="category-card">
+              <Link to="/products/ibe-ribe">
+                <img src="/assets/images/products/ibe-ribe/main.jpg" alt="IBE/RIBE Series" />
+                <h3>IBE/RIBE Series</h3>
+                <p>Advanced ion beam etching systems with flexible configuration options and easy-to-use sample handling.</p>
+                <ul className="product-features">
+                  <li>Compact 1.0m × 0.8m footprint</li>
+                  <li>Multiple ion source options</li>
+                  <li>Flexible sample handling</li>
+                  <li>Customizable configurations</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
+              <Link to="/products/ald">
+                <img src="/assets/images/products/ald/main.jpg" alt="ALD Series" />
+                <h3>ALD Series</h3>
+                <p>Advanced atomic layer deposition systems with box-in-box process chamber and excellent step coverage.</p>
+                <ul className="product-features">
+                  <li>Compact 0.8m × 1.0m footprint</li>
+                  <li>Box-in-box process chamber</li>
+                  <li>Multiple precursor lines</li>
+                  <li>High-aspect-ratio capability</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
+              <Link to="/products/striper">
+                <img src="/assets/images/products/striper/main.jpg" alt="Striper Series" />
+                <h3>Striper Series</h3>
+                <p>Advanced plasma stripping systems with uniform chamber design and configurable process parameters.</p>
+                <ul className="product-features">
+                  <li>Compact 0.8m × 0.8m footprint</li>
+                  <li>Uniform chamber design</li>
+                  <li>Configurable gas feed-in</li>
+                  <li>Adjustable plasma gap</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
+              <Link to="/products/hdp-cvd">
+                <img src="/assets/images/products/hdp-cvd/main.jpg" alt="HDP-CVD Series" />
+                <h3>HDP-CVD Series</h3>
+                <p>High-density plasma chemical vapor deposition systems with excellent step coverage and process flexibility.</p>
+                <ul className="product-features">
+                  <li>Compact 1.0m × 1.5m footprint</li>
+                  <li>Chamber liner temperature control</li>
+                  <li>Multiple gas lines</li>
+                  <li>Flexible process design kits</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
+              <Link to="/products/sputter">
+                <img src="/assets/images/products/sputter/main.jpg" alt="Sputter Series" />
+                <h3>Sputter Series</h3>
+                <p>Advanced magnetron sputtering systems with flexible target configurations and temperature control.</p>
+                <ul className="product-features">
+                  <li>Compact 1.0m × 1.7m footprint</li>
+                  <li>Flexible target orientation</li>
+                  <li>Temperature-controlled electrode</li>
+                  <li>RF bias capability</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
               <Link to="/products/pecvd">
                 <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD Systems" />
                 <h3>PECVD Systems</h3>
@@ -268,6 +338,20 @@ function ProductsPage() {
                   <li>Multi-layer capability</li>
                   <li>Temperature control</li>
                   <li>Process automation</li>
+                </ul>
+              </Link>
+            </div>
+
+            <div className="category-card">
+              <Link to="/products/coater-developer">
+                <img src="/assets/images/products/coater-developer/main.jpg" alt="Coater/Developer & Hotplate Series" />
+                <h3>Coater/Developer & Hotplate Series</h3>
+                <p>Advanced photoresist processing systems with flexible configuration options and precise control.</p>
+                <ul className="product-features">
+                  <li>Compact 1.0m × 0.8m footprint</li>
+                  <li>Flexible module configuration</li>
+                  <li>High-speed spin coating</li>
+                  <li>Temperature-controlled hotplates</li>
                 </ul>
               </Link>
             </div>
@@ -920,6 +1004,956 @@ function ICPEtcherPage() {
   )
 }
 
+function IBERIBEPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>IBE/RIBE Series</h1>
+            <p>Advanced Ion Beam Etching System with Flexible Configuration Options</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/ibe-ribe/large.jpg" alt="IBE/RIBE System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/ibe-ribe/detail-1.jpg" alt="Chamber View" />
+                <img src="/assets/images/products/ibe-ribe/detail-2.jpg" alt="Ion Source" />
+                <img src="/assets/images/products/ibe-ribe/detail-3.jpg" alt="Control Interface" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The IBE/RIBE Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 0.8m). The system's flexible configuration options and easy-to-use sample handling make it ideal for various ion beam etching applications.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Maintenance and sample-handling friendly design</li>
+                <li>Easy-to-swap ion source options</li>
+                <li>Cost or performance orientation options</li>
+                <li>Flexible sample handling: Open-Load or Load-Lock</li>
+                <li>Customizable ion source, pump, and valve specifications</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Magnetic Materials Processing</li>
+                <li>Optical Components Fabrication</li>
+                <li>MEMS Device Manufacturing</li>
+                <li>Thin Film Deposition</li>
+                <li>Surface Modification</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>System Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>Up to 6 inch (Kaufman) / Up to 12 inch (RF)</td>
+                </tr>
+                <tr>
+                  <td>Gas System</td>
+                  <td>1 line (Standard) or customized (Kaufman) / 3 line (Standard) or customized (RF)</td>
+                </tr>
+                <tr>
+                  <td>Wafer Stage Motion</td>
+                  <td>Tilt from 0° to 90°, Rotation from 1-10 rpm/min</td>
+                </tr>
+                <tr>
+                  <td>Wafer Stage Cooling</td>
+                  <td>From 5 to 20°C, Water cooling; He backside cooling optional</td>
+                </tr>
+                <tr>
+                  <td>Vacuum System</td>
+                  <td>TMP & Mechanical Pump</td>
+                </tr>
+                <tr>
+                  <td>Base Vacuum</td>
+                  <td>Better than 7E-7 Torr</td>
+                </tr>
+                <tr>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±5% (Edge Exclusion)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Ion Source Options</h3>
+              <ul>
+                <li>Kaufman Ion Source</li>
+                <li>RF Ion Source</li>
+                <li>Customizable configurations</li>
+                <li>Easy source swapping capability</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Parameters</h3>
+              <ul>
+                <li>Adjustable beam energy</li>
+                <li>Variable beam current</li>
+                <li>Controlled etch rate</li>
+                <li>High uniformity</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/ibe-ribe-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="IBE/RIBE Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
+function ALDPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>ALD Series</h1>
+            <p>Advanced Atomic Layer Deposition System with Box-in-Box Process Chamber</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/ald/large.jpg" alt="ALD System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/ald/detail-1.jpg" alt="Process Chamber" />
+                <img src="/assets/images/products/ald/detail-2.jpg" alt="Showerhead System" />
+                <img src="/assets/images/products/ald/detail-3.jpg" alt="Control Interface" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The ALD Series features an innovative uni-body design with outstanding footprint efficiency (0.8m × 1.0m). The system's box-in-box process chamber design ensures superior process performance, while the configurable showerhead gas feed-in system allows for precise parameter tuning.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Box-in-box process chamber for better performance</li>
+                <li>Configurable showerhead gas feed-in system</li>
+                <li>Excellent high-aspect-ratio step coverage</li>
+                <li>Multiple gas inlets and vertical precursor flow</li>
+                <li>Flexible cost/performance configurations</li>
+                <li>Optional sample handling: Open-Load or Load-Lock</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Oxides (Al2O3, HfO2, SiO2, TiO2, Ga2O3, ZnO)</li>
+                <li>Nitrides (TiN, TaN, SiNx, AlN, GaN)</li>
+                <li>Metals (Pt, Pd, W)</li>
+                <li>High-k Dielectrics</li>
+                <li>Barrier Layers</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>System Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12" or Supersize optional</td>
+                </tr>
+                <tr>
+                  <td>Growth Materials</td>
+                  <td>Oxides, Nitrides, Metals, etc.</td>
+                </tr>
+                <tr>
+                  <td>Vacuum System</td>
+                  <td>TMP & Mechanical Pump</td>
+                </tr>
+                <tr>
+                  <td>Base Vacuum</td>
+                  <td>Better than 5E-5 Torr</td>
+                </tr>
+                <tr>
+                  <td>RF Power</td>
+                  <td>Remote Plasma 300-1000W, optional</td>
+                </tr>
+                <tr>
+                  <td>Number of Precursor</td>
+                  <td>2-6 lines or customized</td>
+                </tr>
+                <tr>
+                  <td>Temperature of Source</td>
+                  <td>From 20℃ to 150℃ (Standard), 200℃ optional</td>
+                </tr>
+                <tr>
+                  <td>Wafer Temperature Range</td>
+                  <td>From 20℃ to 400℃, higher temperature optional</td>
+                </tr>
+                <tr>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±1% (Al2O3)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Material Compatibility</h3>
+              <ul>
+                <li>High-k Dielectrics</li>
+                <li>Metal Oxides</li>
+                <li>Nitride Films</li>
+                <li>Metal Films</li>
+                <li>Barrier Layers</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>Excellent Step Coverage</li>
+                <li>High Aspect Ratio Capability</li>
+                <li>Precise Thickness Control</li>
+                <li>Low Temperature Processing</li>
+                <li>Multiple Precursor Support</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/ald-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="ALD Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
+function StriperPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>Striper Series</h1>
+            <p>Advanced Plasma Stripping System with Uniform Chamber Design</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/striper/large.jpg" alt="Striper System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/striper/detail-1.jpg" alt="Process Chamber" />
+                <img src="/assets/images/products/striper/detail-2.jpg" alt="Gas Feed System" />
+                <img src="/assets/images/products/striper/detail-3.jpg" alt="Control Interface" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The Striper Series features an innovative uni-body design with outstanding footprint efficiency (0.8m × 0.8m). The system's uniform chamber center pump-down ensures superior process performance, while the configurable gas feed-in and plasma discharge gap allow for precise parameter tuning.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Uniform chamber center pump-down design</li>
+                <li>Configurable uniform gas feed-in system</li>
+                <li>Adjustable plasma discharge gap</li>
+                <li>Flexible cost/performance configurations</li>
+                <li>Optional sample handling: Open-Load</li>
+                <li>Customizable RF, pump, and valve specifications</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Organic Materials (PR, PMMA, PS nanosphere)</li>
+                <li>2D Materials (MoS2, BN, Graphene)</li>
+                <li>Failure Analysis</li>
+                <li>Resist Stripping</li>
+                <li>Surface Cleaning</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>System Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12" or multi-wafers optional</td>
+                </tr>
+                <tr>
+                  <td>Etching Materials</td>
+                  <td>Organics, 2D Materials, Failure Analysis, etc.</td>
+                </tr>
+                <tr>
+                  <td>Vacuum System</td>
+                  <td>Mechanical pump</td>
+                </tr>
+                <tr>
+                  <td>RF Power</td>
+                  <td>Full range 300-1000W, optional</td>
+                </tr>
+                <tr>
+                  <td>Gas System</td>
+                  <td>2 lines (Standard) or customized</td>
+                </tr>
+                <tr>
+                  <td>Wafer Cooling</td>
+                  <td>Water cooling</td>
+                </tr>
+                <tr>
+                  <td>Wafer Stage Temperature Range</td>
+                  <td>From 5℃ to 200℃, optional</td>
+                </tr>
+                <tr>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±5% (Edge Exclusion)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Material Compatibility</h3>
+              <ul>
+                <li>Photoresist</li>
+                <li>PMMA</li>
+                <li>PS Nanospheres</li>
+                <li>2D Materials</li>
+                <li>Organic Films</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>Uniform Gas Distribution</li>
+                <li>Adjustable Plasma Gap</li>
+                <li>Temperature Control</li>
+                <li>Flexible Configuration</li>
+                <li>High Process Stability</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/striper-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="Striper Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
+function HDPCVDPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>HDP-CVD Series</h1>
+            <p>High-Density Plasma Chemical Vapor Deposition System with Excellent Step Coverage</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/hdp-cvd/large.jpg" alt="HDP-CVD System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/hdp-cvd/detail-1.jpg" alt="Process Chamber" />
+                <img src="/assets/images/products/hdp-cvd/detail-2.jpg" alt="Gas Distribution System" />
+                <img src="/assets/images/products/hdp-cvd/detail-3.jpg" alt="Control Interface" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The HDP-CVD Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 1.5m). The system's chamber liner and electrode temperature control ensure superior process performance, while the flexible process design kits allow for customization based on specific requirements.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Process design kits for different requirements</li>
+                <li>Chamber liner and electrode temperature control</li>
+                <li>Excellent step coverage capability</li>
+                <li>Parameter-dependent tuning</li>
+                <li>Flexible cost/performance configurations</li>
+                <li>Optional sample handling: Open-Load or Load-Lock</li>
+                <li>Customizable RF, pump, and valve specifications</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Silicon-based Materials (Si, SiO2, SiNx, SiON, SiC)</li>
+                <li>High-Aspect-Ratio Gap Fill</li>
+                <li>Interlayer Dielectrics</li>
+                <li>Passivation Layers</li>
+                <li>Barrier Films</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>System Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12" or multi-wafers optional</td>
+                </tr>
+                <tr>
+                  <td>Deposition Materials</td>
+                  <td>Si/SiO2/SiNx/SiON/SiC, etc.</td>
+                </tr>
+                <tr>
+                  <td>Vacuum System</td>
+                  <td>TMP & Mechanical Pump</td>
+                </tr>
+                <tr>
+                  <td>RF Power</td>
+                  <td>Source: 1000-3000W, Bias: 300-1000W, optional</td>
+                </tr>
+                <tr>
+                  <td>Gas System</td>
+                  <td>6 lines (Standard) or customized</td>
+                </tr>
+                <tr>
+                  <td>Wafer Stage Temperature Range</td>
+                  <td>From 20℃ to 200℃</td>
+                </tr>
+                <tr>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±5% (Edge Exclusion)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Material Compatibility</h3>
+              <ul>
+                <li>Silicon-based Materials</li>
+                <li>Dielectrics</li>
+                <li>Nitrides</li>
+                <li>Oxides</li>
+                <li>Carbides</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>High-Density Plasma</li>
+                <li>Temperature Control</li>
+                <li>Multiple Gas Lines</li>
+                <li>Flexible Process Kits</li>
+                <li>Excellent Step Coverage</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/hdp-cvd-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="HDP-CVD Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
+function SputterPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>Sputter Series</h1>
+            <p>Advanced Magnetron Sputtering System with Flexible Target Configurations</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/sputter/large.jpg" alt="Sputter System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/sputter/detail-1.jpg" alt="Process Chamber" />
+                <img src="/assets/images/products/sputter/detail-2.jpg" alt="Magnetron Target" />
+                <img src="/assets/images/products/sputter/detail-3.jpg" alt="Control Interface" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The Sputter Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 1.7m). The system's creatively designed magnetron target structure and flexible configuration options make it ideal for various sputtering applications.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Creatively designed magnetron target structure</li>
+                <li>Flexible target orientation (face-down or face-up)</li>
+                <li>Angle tiltable and deposition distance tunable</li>
+                <li>Rotational electrode with temperature control</li>
+                <li>RF bias capability for in-situ cleaning</li>
+                <li>Flexible cost/performance configurations</li>
+                <li>Optional sample handling: Open-Load or Load-Lock</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Metal Film Deposition</li>
+                <li>Dielectric Layer Formation</li>
+                <li>Magnetic Material Processing</li>
+                <li>Optical Coating</li>
+                <li>Barrier Layer Deposition</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>System Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12" or multi-wafers optional</td>
+                </tr>
+                <tr>
+                  <td>Magnetron Sputtering Source</td>
+                  <td>2-6 optional</td>
+                </tr>
+                <tr>
+                  <td>Substrate Temperature</td>
+                  <td>Water-cooling, 400℃, 800℃, 1200℃, optional</td>
+                </tr>
+                <tr>
+                  <td>Gas System</td>
+                  <td>2 lines (Standard), numbers of line customized</td>
+                </tr>
+                <tr>
+                  <td>Power</td>
+                  <td>DC or RF customized, automatic switcher</td>
+                </tr>
+                <tr>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±5%</td>
+                </tr>
+                <tr>
+                  <td>Pre-Cleaning</td>
+                  <td>Independent chamber or in-situ, RF plasma, optional</td>
+                </tr>
+                <tr>
+                  <td>Base Pressure</td>
+                  <td>Better than 5E-7 Torr, higher vacuum customized</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Target Configurations</h3>
+              <ul>
+                <li>Face-down or Face-up Orientation</li>
+                <li>Adjustable Tilt Angle</li>
+                <li>Variable Deposition Distance</li>
+                <li>Multiple Target Options</li>
+                <li>Custom Target Designs</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>Temperature Control</li>
+                <li>RF Bias Capability</li>
+                <li>In-situ Cleaning</li>
+                <li>Flexible Power Options</li>
+                <li>High Vacuum Operation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/sputter-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="Sputter Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
 function ContactUsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>({
@@ -1012,6 +2046,223 @@ function ContactUsPage() {
   );
 }
 
+function CoaterDeveloperPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    organization: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowFloatingContact(scrollPosition > 500);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openContactForm = () => {
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeContactForm = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleFormSuccess = () => {
+    // Additional success handling if needed
+  };
+
+  return (
+    <>
+      <section className="product-detail-hero">
+        <div className="container">
+          <div className="product-header">
+            <h1>Coater/Developer & Hotplate Series</h1>
+            <p>Advanced Photoresist Processing System with Flexible Configuration Options</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-images">
+              <img src="/assets/images/products/coater-developer/large.jpg" alt="Coater/Developer System" className="main-product-image" />
+              <div className="image-gallery">
+                <img src="/assets/images/products/coater-developer/detail-1.jpg" alt="Coater Module" />
+                <img src="/assets/images/products/coater-developer/detail-2.jpg" alt="Developer Module" />
+                <img src="/assets/images/products/coater-developer/detail-3.jpg" alt="Hotplate Module" />
+              </div>
+            </div>
+            <div className="product-info">
+              <h2>Product Description</h2>
+              <p>The Coater/Developer & Hotplate Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 0.8m). The system offers flexible configuration options with customizable numbers of coater, developer, and hotplate modules to meet specific processing requirements.</p>
+              
+              <h3>Key Features</h3>
+              <ul className="feature-list">
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Flexible module configuration options</li>
+                <li>Wide range of customization at module level</li>
+                <li>Cost or performance orientation options</li>
+                <li>Optional sample handling: Open-Load</li>
+                <li>Customizable dispense systems and temperature control</li>
+                <li>Flexible pump and valve specifications</li>
+              </ul>
+
+              <h3>Applications</h3>
+              <ul className="application-list">
+                <li>Photoresist Coating</li>
+                <li>Resist Development</li>
+                <li>Post-Apply Baking</li>
+                <li>Post-Exposure Baking</li>
+                <li>Surface Preparation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="detailed-specs">
+        <div className="container">
+          <h2>Technical Specifications</h2>
+          <div className="specs-table-container">
+            <table className="detailed-specs-table">
+              <tbody>
+                <tr>
+                  <th colSpan={2}>Coater Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>Small-piece, 2", 4", 6", 8", 12" or Square optional</td>
+                </tr>
+                <tr>
+                  <td>Max. Spin Speed</td>
+                  <td>8000 rpm ±1rpm</td>
+                </tr>
+                <tr>
+                  <td>Max. Acceleration</td>
+                  <td>8000 rpm/s</td>
+                </tr>
+                <tr>
+                  <td>Dispense Arm</td>
+                  <td>Up to 2 photoresist lines</td>
+                </tr>
+                <tr>
+                  <td>Interlock</td>
+                  <td>Vacuum pressure, uncover etc.</td>
+                </tr>
+                <tr>
+                  <th colSpan={2}>Developer Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>Small-piece, 2", 4", 6", 8", 12" or Square optional</td>
+                </tr>
+                <tr>
+                  <td>Max. Spin Speed</td>
+                  <td>5000 rpm ±1rpm</td>
+                </tr>
+                <tr>
+                  <td>Max. Acceleration</td>
+                  <td>5000 rpm/s</td>
+                </tr>
+                <tr>
+                  <td>Dispense Arm</td>
+                  <td>Up to 2 developer lines and deionized water line</td>
+                </tr>
+                <tr>
+                  <td>Interlock</td>
+                  <td>Vacuum pressure, uncover etc.</td>
+                </tr>
+                <tr>
+                  <th colSpan={2}>Hotplate Specifications</th>
+                </tr>
+                <tr>
+                  <td>Wafer Size Range</td>
+                  <td>Small-piece, 2", 4", 6", 8", 12" or Square optional</td>
+                </tr>
+                <tr>
+                  <td>Max. Temperature</td>
+                  <td>Up to 200℃, Higher Temperature optional</td>
+                </tr>
+                <tr>
+                  <td>Lift-Pins</td>
+                  <td>3 lift-Pins, minimum compatible 2 inch</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Module Configurations</h3>
+              <ul>
+                <li>Flexible Coater Modules</li>
+                <li>Customizable Developer Units</li>
+                <li>Temperature-Controlled Hotplates</li>
+                <li>Integrated Process Control</li>
+                <li>Safety Interlocks</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Process Features</h3>
+              <ul>
+                <li>High-Speed Spin Coating</li>
+                <li>Precise Temperature Control</li>
+                <li>Multiple Dispense Options</li>
+                <li>Flexible Configuration</li>
+                <li>Process Automation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-contact">
+        <div className="container">
+          <h2>Request Information</h2>
+          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="contact-buttons">
+            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <a href="/docs/coater-developer-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <span className="icon-download"></span> Download Product Datasheet
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
+        <button className="btn btn-primary" onClick={openContactForm}>
+          Contact Sales Team
+        </button>
+      </div>
+
+      <ContactFormModal
+        isOpen={isModalOpen}
+        onClose={closeContactForm}
+        productName="Coater/Developer & Hotplate Series"
+        formData={formData}
+        onFormDataChange={setFormData}
+        onSuccess={handleFormSuccess}
+      />
+    </>
+  );
+}
+
 function App() {
   return (
     <Router>
@@ -1022,6 +2273,12 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/rie-etcher" element={<RIEEtcherPage />} />
           <Route path="/products/icp-etcher" element={<ICPEtcherPage />} />
+          <Route path="/products/ibe-ribe" element={<IBERIBEPage />} />
+          <Route path="/products/ald" element={<ALDPage />} />
+          <Route path="/products/striper" element={<StriperPage />} />
+          <Route path="/products/hdp-cvd" element={<HDPCVDPage />} />
+          <Route path="/products/sputter" element={<SputterPage />} />
+          <Route path="/products/coater-developer" element={<CoaterDeveloperPage />} />
           <Route path="/contact" element={<ContactUsPage />} />
         </Routes>
       </Layout>
