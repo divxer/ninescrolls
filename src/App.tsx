@@ -233,6 +233,41 @@ function ProductsPage() {
         </div>
       </section>
 
+      <section className="manufacturer-intro">
+        <div className="container">
+          <div className="manufacturer-content">
+            <h2>Our Trusted Manufacturer Partner</h2>
+            <div className="manufacturer-info">
+              <div className="manufacturer-text">
+                <p>We are proud to partner with Tylon, a leading manufacturer of semiconductor processing equipment with over 30 years of experience in the industry. Their commitment to innovation and quality aligns perfectly with our mission to provide cutting-edge research equipment solutions.</p>
+                <p>Key strengths of our manufacturer partner:</p>
+                <ul className="manufacturer-strengths">
+                  <li>Industry-leading R&D capabilities</li>
+                  <li>Global technical support network</li>
+                  <li>Proven track record in semiconductor manufacturing</li>
+                  <li>Comprehensive training and documentation</li>
+                  <li>Customizable solutions for specific research needs</li>
+                </ul>
+              </div>
+              <div className="manufacturer-stats">
+                <div className="stat-item">
+                  <span className="stat-number">30+</span>
+                  <span className="stat-label">Years of Experience</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-number">1000+</span>
+                  <span className="stat-label">Global Installations</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-number">300+</span>
+                  <span className="stat-label">Research Institutions Served</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="product-categories">
         <div className="container">
           <div className="section-intro">
