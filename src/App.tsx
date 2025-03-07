@@ -663,7 +663,7 @@ function ContactFormModal({ isOpen, onClose, productName, formData, onFormDataCh
               <div className="success-actions">
                 <p>Meanwhile, you might be interested in:</p>
                 <div className="action-buttons">
-                  <a href="/docs/rie-2000-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                  <a href="/docs/rie-etcher-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
                     <span className="icon-download"></span> Download Product Datasheet
                   </a>
                   <Link to="/products" className="btn btn-secondary">
@@ -729,7 +729,7 @@ function RIEEtcherPage() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/rie-etcher/large.jpg" alt="RIE-2000 System" className="main-product-image" />
+              <img src="/assets/images/products/rie-etcher/large.jpg" alt="RIE Etcher System" className="main-product-image" />
               <div className="image-gallery">
                 <img src="/assets/images/products/rie-etcher/detail-1.jpg" alt="Chamber View" />
                 <img src="/assets/images/products/rie-etcher/detail-2.jpg" alt="Control Interface" />
@@ -738,7 +738,7 @@ function RIEEtcherPage() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The RIE-2000 Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 1.0m). The system's uniform chamber center pump-down ensures superior process performance, while the configurable showerhead gas feed-in and plasma discharge gap allow for precise parameter tuning.</p>
+              <p>The RIE Etcher Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 1.0m). The system's uniform chamber center pump-down ensures superior process performance, while the configurable showerhead gas feed-in and plasma discharge gap allow for precise parameter tuning.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
@@ -839,7 +839,7 @@ function RIEEtcherPage() {
           <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a href="/docs/rie-2000-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <a href="/docs/rie-etcher-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
