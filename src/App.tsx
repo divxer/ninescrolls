@@ -811,22 +811,27 @@ function RIEEtcherPage() {
           <h2>Process Capabilities</h2>
           <div className="capability-grid">
             <div className="capability-card">
-              <h3>Etch Materials</h3>
+              <h3>Process Performance</h3>
               <ul>
-                <li>Silicon</li>
-                <li>Silicon Dioxide</li>
-                <li>Silicon Nitride</li>
-                <li>III-V Compounds</li>
-                <li>Metals</li>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
               </ul>
             </div>
             <div className="capability-card">
-              <h3>Process Parameters</h3>
+              <h3>Technical Advantages</h3>
               <ul>
-                <li>Etch Rate: 1-1000 nm/min</li>
-                <li>Uniformity: ±3%</li>
-                <li>Selectivity: Up to 50:1</li>
-                <li>Anisotropy: &gt; 0.95</li>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
               </ul>
             </div>
           </div>
@@ -905,7 +910,7 @@ function ICPEtcherPage() {
         <div className="container">
           <div className="product-header">
             <h1>ICP Etcher Series</h1>
-            <p>High-Density Plasma Etching System with Advanced Process Control</p>
+            <p>Advanced Inductively Coupled Plasma Etching System with Uni-body Design</p>
           </div>
         </div>
       </section>
@@ -923,25 +928,28 @@ function ICPEtcherPage() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The ICP Etcher Series represents the pinnacle of inductively coupled plasma etching technology. With its high-density plasma source and advanced process control system, it delivers superior etch performance for demanding applications in semiconductor and advanced materials processing.</p>
+              <p>The ICP Etcher Series features an innovative uni-body design with outstanding footprint efficiency (1.0m × 1.5m). The system's process design kits and chamber liner temperature control ensure superior process performance for various applications.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>High-density ICP source (1000-3000W)</li>
-                <li>Independent bias power control</li>
-                <li>Advanced temperature control system</li>
-                <li>Multi-zone gas distribution</li>
-                <li>Real-time process monitoring</li>
-                <li>Automated pressure control</li>
+                <li>Uni-body design concept with compact footprint</li>
+                <li>Process design kits depending on requirements</li>
+                <li>Chamber liner and electrode temperature control</li>
+                <li>Plasma discharge gap tunable</li>
+                <li>Cost or performance orientation optional</li>
+                <li>RF, pump, and valve specifications customizable</li>
+                <li>Low power plasma technology, ion damage-free optional</li>
+                <li>Sample handling: Open-Load or Load-Lock optional</li>
               </ul>
 
               <h3>Applications</h3>
               <ul className="application-list">
-                <li>Deep Silicon Etching</li>
-                <li>High-Aspect-Ratio Features</li>
-                <li>III-V Compound Processing</li>
-                <li>Advanced Packaging</li>
-                <li>MEMS Device Fabrication</li>
+                <li>Si-Based Materials (Si, SiO2, SiNx, SiC, Quartz)</li>
+                <li>Compound Semiconductors (InP, GaN, GaAs, Ga2O3)</li>
+                <li>2D Materials (MoS2, BN, Graphene)</li>
+                <li>Metals (W, Ta, Mo)</li>
+                <li>Diamond Processing</li>
+                <li>Failure Analysis</li>
               </ul>
             </div>
           </div>
@@ -958,32 +966,28 @@ function ICPEtcherPage() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>ICP Power</td>
-                  <td>1000-3000W, 13.56 MHz</td>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12" or multi-wafers optional</td>
                 </tr>
                 <tr>
-                  <td>Bias Power</td>
-                  <td>10-500W, 13.56 MHz</td>
+                  <td>RF Power</td>
+                  <td>Source: 1000-3000W, Bias: 300-1000W, optional</td>
                 </tr>
                 <tr>
-                  <td>Process Chamber</td>
-                  <td>Cylindrical, Al alloy with ceramic coating</td>
+                  <td>Gas System</td>
+                  <td>5 lines (Standard) and He backside cooling, or customized</td>
                 </tr>
                 <tr>
-                  <td>Temperature Range</td>
-                  <td>-20°C to 80°C</td>
+                  <td>Wafer Stage Temperature Range</td>
+                  <td>From -70℃ to 200℃, optional</td>
                 </tr>
                 <tr>
-                  <td>Gas Lines</td>
-                  <td>Up to 8 process gas lines</td>
+                  <td>Non-Uniformity</td>
+                  <td>Less than ±5% (Edge Exclusion)</td>
                 </tr>
                 <tr>
-                  <td>Base Pressure</td>
-                  <td>&lt; 5×10⁻⁶ Torr</td>
-                </tr>
-                <tr>
-                  <td>Process Pressure</td>
-                  <td>0.5-100 mTorr</td>
+                  <td>Vacuum System</td>
+                  <td>TMP & Mechanical Pump</td>
                 </tr>
               </tbody>
             </table>
@@ -996,21 +1000,27 @@ function ICPEtcherPage() {
           <h2>Process Capabilities</h2>
           <div className="capability-grid">
             <div className="capability-card">
-              <h3>Process Performance</h3>
+              <h3>System Features</h3>
               <ul>
-                <li>Etch Rate: Up to 10 μm/min</li>
-                <li>Uniformity: ±2%</li>
-                <li>Selectivity: Up to 150:1</li>
-                <li>Aspect Ratio: Up to 30:1</li>
+                <li>Uni-body design concept with compact footprint (1.0m × 1.5m)</li>
+                <li>Process design kits for different requirements</li>
+                <li>Chamber liner and electrode temperature control</li>
+                <li>Plasma discharge gap tunable</li>
+                <li>Cost or performance orientation optional</li>
+                <li>RF, pump, and valve specifications customizable</li>
+                <li>Low power plasma technology, ion damage-free optional</li>
+                <li>Sample handling: Open-Load or Load-Lock optional</li>
               </ul>
             </div>
             <div className="capability-card">
               <h3>Material Compatibility</h3>
               <ul>
-                <li>Silicon and Silicon Compounds</li>
-                <li>III-V Materials</li>
-                <li>Dielectrics</li>
-                <li>Metals and Metal Oxides</li>
+                <li>Si-Based Materials (Si, SiO2, SiNx, SiC, Quartz)</li>
+                <li>Compound Semiconductors (InP, GaN, GaAs, Ga2O3)</li>
+                <li>2D Materials (MoS2, BN, Graphene)</li>
+                <li>Metals (W, Ta, Mo)</li>
+                <li>Diamond Processing</li>
+                <li>Failure Analysis Applications</li>
               </ul>
             </div>
           </div>
@@ -1195,6 +1205,38 @@ function IBERIBEPage() {
                 <li>Variable beam current</li>
                 <li>Controlled etch rate</li>
                 <li>High uniformity</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
               </ul>
             </div>
           </div>
@@ -1396,6 +1438,38 @@ function ALDPage() {
         </div>
       </section>
 
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
@@ -1581,6 +1655,38 @@ function StriperPage() {
                 <li>Temperature Control</li>
                 <li>Flexible Configuration</li>
                 <li>High Process Stability</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
               </ul>
             </div>
           </div>
@@ -1775,6 +1881,38 @@ function HDPCVDPage() {
         </div>
       </section>
 
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
@@ -1961,6 +2099,38 @@ function SputterPage() {
                 <li>In-situ Cleaning</li>
                 <li>Flexible Power Options</li>
                 <li>High Vacuum Operation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
               </ul>
             </div>
           </div>
@@ -2276,6 +2446,38 @@ function CoaterDeveloperPage() {
         </div>
       </section>
 
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
@@ -2451,6 +2653,38 @@ function PECVDPage() {
                 <li>Low stress films</li>
                 <li>High film quality</li>
                 <li>Process repeatability</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="process-capabilities">
+        <div className="container">
+          <h2>Process Capabilities</h2>
+          <div className="capability-grid">
+            <div className="capability-card">
+              <h3>Process Performance</h3>
+              <ul>
+                <li>High etch rates with excellent uniformity</li>
+                <li>Superior aspect ratio control</li>
+                <li>Precise temperature control (-70°C to 200°C)</li>
+                <li>Advanced plasma source (1000-3000W)</li>
+                <li>Flexible bias control (300-1000W)</li>
+                <li>Multiple gas line configuration</li>
+                <li>He backside cooling for thermal management</li>
+              </ul>
+            </div>
+            <div className="capability-card">
+              <h3>Technical Advantages</h3>
+              <ul>
+                <li>Low power plasma technology</li>
+                <li>Ion damage-free processing option</li>
+                <li>Parameter-dependent tuning capability</li>
+                <li>Customizable process design kits</li>
+                <li>Flexible sample handling options</li>
+                <li>Advanced vacuum system (TMP & Mechanical)</li>
+                <li>Non-uniformity &lt; ±5% (Edge Exclusion)</li>
               </ul>
             </div>
           </div>
