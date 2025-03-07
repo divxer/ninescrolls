@@ -914,7 +914,7 @@ function ICPEtcherPage() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/icp-etcher/large.jpg" alt="ICP-3000 System" className="main-product-image" />
+              <img src="/assets/images/products/icp-etcher/large.jpg" alt="ICP Etcher System" className="main-product-image" />
               <div className="image-gallery">
                 <img src="/assets/images/products/icp-etcher/detail-1.jpg" alt="ICP Source View" />
                 <img src="/assets/images/products/icp-etcher/detail-2.jpg" alt="Process Chamber" />
@@ -923,7 +923,7 @@ function ICPEtcherPage() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The ICP-3000 Series represents the pinnacle of inductively coupled plasma etching technology. With its high-density plasma source and advanced process control system, it delivers superior etch performance for demanding applications in semiconductor and advanced materials processing.</p>
+              <p>The ICP Etcher Series represents the pinnacle of inductively coupled plasma etching technology. With its high-density plasma source and advanced process control system, it delivers superior etch performance for demanding applications in semiconductor and advanced materials processing.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
@@ -1023,7 +1023,7 @@ function ICPEtcherPage() {
           <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a href="/docs/icp-3000-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <a href="/docs/icp-etcher-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
