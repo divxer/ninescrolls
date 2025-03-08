@@ -43,7 +43,7 @@ export function IBERIBESystem() {
         <div className="container">
           <div className="product-header">
             <h1>IBE/RIBE System Series</h1>
-            <p>Advanced Ion Beam Etching and Reactive Ion Beam Etching System</p>
+            <p>Advanced Ion Beam Etching System for High-Precision Material Processing</p>
           </div>
         </div>
       </section>
@@ -54,35 +54,38 @@ export function IBERIBESystem() {
             <div className="product-images">
               <img src="/assets/images/products/ibe-ribe/large.jpg" alt="IBE/RIBE System" className="main-product-image" />
               <div className="image-gallery">
-                <img src="/assets/images/products/ibe-ribe/detail-1.jpg" alt="Ion Source View" />
-                <img src="/assets/images/products/ibe-ribe/detail-2.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/ibe-ribe/detail-3.jpg" alt="Control System" />
+                <img src="/assets/images/products/ibe-ribe/detail-1.jpg" alt="Ion Source" />
+                <img src="/assets/images/products/ibe-ribe/detail-2.jpg" alt="Sample Stage" />
+                <img src="/assets/images/products/ibe-ribe/detail-3.jpg" alt="Control Interface" />
               </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The IBE/RIBE System Series combines ion beam etching and reactive ion beam etching capabilities in a versatile platform. Designed for precision material processing, it offers exceptional control over beam parameters and process conditions.</p>
+              <p>The IBE/RIBE Series combines Ion Beam Etching (IBE) and Reactive Ion Beam Etching (RIBE) capabilities within a compact, uni-body design (footprint approx. 1.0m x 0.8m). Engineered for precision material processing, the system provides exceptional control over ion beam parameters, flexible configuration, and ease of maintenance, making it highly adaptable for diverse research and production applications.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>Dual mode operation: IBE and RIBE</li>
-                <li>Advanced ion source technology</li>
-                <li>Precise beam current control</li>
-                <li>Variable incident angle (0-90°)</li>
-                <li>In-situ process monitoring</li>
-                <li>Automated sample handling</li>
-                <li>Multiple gas injection options</li>
-                <li>Real-time endpoint detection</li>
+                <li>Compact uni-body design with minimal footprint (1.0m x 0.8m)</li>
+                <li>Easy-to-maintain sample holder and ion source configuration</li>
+                <li>Quick-swap ion source system (Kaufman/RF ion sources), configurable according to user requirements</li>
+                <li>Dual-mode operation: IBE and RIBE modes available</li>
+                <li>Variable incident angle (0-90°) with programmable rotation (1-10 rpm)</li>
+                <li>Flexible wafer stage cooling (standard water cooling from 5°C to 20°C; optional backside He cooling)</li>
+                <li>Configurable gas injection system (standard 1-3 lines, customizable)</li>
+                <li>Optional RF-biased substrate stage for enhanced in-situ cleaning and control</li>
+                <li>Automated sample handling options (Open-Load or Load-Lock)</li>
+                <li>Real-time process monitoring and endpoint detection</li>
+                <li>Cost-performance oriented customization (ion source, pumps, valves, etc.)</li>
               </ul>
 
               <h3>Applications</h3>
               <ul className="application-list">
-                <li>Magnetic Materials Processing</li>
-                <li>Optical Device Fabrication</li>
-                <li>MEMS/NEMS Development</li>
-                <li>Multilayer Film Etching</li>
-                <li>Surface Planarization</li>
-                <li>Pattern Transfer</li>
+                <li>Magnetic materials processing</li>
+                <li>Optical device fabrication</li>
+                <li>MEMS/NEMS device development</li>
+                <li>Multilayer film etching</li>
+                <li>Surface planarization</li>
+                <li>Precise pattern transfer</li>
               </ul>
             </div>
           </div>
@@ -99,28 +102,37 @@ export function IBERIBESystem() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>Ion Source</td>
-                  <td>RF/DC, 100-1200 eV energy range</td>
+                  <td>Ion Source Options</td>
+                  <td>
+                    <ul>
+                      <li>Kaufman-type ion source (up to 6" wafers)</li>
+                      <li>RF ion source (up to 12" wafers)</li>
+                    </ul>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Beam Current</td>
-                  <td>10-200 mA, continuously adjustable</td>
+                  <td>Wafer Size</td>
+                  <td>Supports up to 12-inch wafers or multi-wafer configurations</td>
                 </tr>
                 <tr>
-                  <td>Sample Size</td>
-                  <td>Up to 8" wafers or 200mm substrates</td>
+                  <td>Wafer Stage Motion</td>
+                  <td>Tilt angle adjustable from 0° to 90°, rotation speed programmable from 1-10 rpm</td>
                 </tr>
                 <tr>
-                  <td>Rotation Speed</td>
-                  <td>1-30 rpm, programmable</td>
+                  <td>Substrate Cooling</td>
+                  <td>Water cooling (5°C-20°C standard); optional backside helium cooling</td>
                 </tr>
                 <tr>
                   <td>Base Pressure</td>
-                  <td>≤ 5×10⁻⁷ Torr</td>
+                  <td>Less than 7x10^-7 Torr (standard); higher vacuum available upon request</td>
                 </tr>
                 <tr>
-                  <td>Process Gases</td>
-                  <td>Ar, O₂, CF₄, SF₆, Cl₂ (optional)</td>
+                  <td>Gas Injection System</td>
+                  <td>Standard 1-3 lines, additional lines customizable</td>
+                </tr>
+                <tr>
+                  <td>Film Non-Uniformity</td>
+                  <td>Less than 5% (edge exclusion)</td>
                 </tr>
               </tbody>
             </table>
@@ -135,25 +147,25 @@ export function IBERIBESystem() {
             <div className="capability-card">
               <h3>Performance Features</h3>
               <ul>
-                <li>High-precision angle control</li>
-                <li>Uniform beam profile</li>
-                <li>Low surface damage</li>
-                <li>Excellent reproducibility</li>
-                <li>Wide process window</li>
-                <li>Multi-layer processing</li>
-                <li>Automated recipe control</li>
-                <li>Advanced process monitoring</li>
+                <li>High-precision ion beam angle and current control</li>
+                <li>Excellent uniformity of etched surfaces</li>
+                <li>Low surface damage and contamination levels</li>
+                <li>Wide and flexible process window</li>
+                <li>Excellent process reproducibility</li>
+                <li>Multi-layer and advanced materials processing</li>
+                <li>Real-time process monitoring and automated control</li>
+                <li>Optional in-situ RF-biased substrate cleaning</li>
               </ul>
             </div>
             <div className="capability-card">
               <h3>Material Compatibility</h3>
               <ul>
-                <li>Magnetic Materials (NiFe, CoFe)</li>
-                <li>Optical Materials (Glass, Quartz)</li>
-                <li>Semiconductors (Si, GaAs, InP)</li>
-                <li>Metals (Au, Pt, Cu)</li>
-                <li>Dielectrics (SiO₂, Si₃N₄)</li>
-                <li>Advanced Materials (2D, Quantum)</li>
+                <li>Magnetic Materials: NiFe, CoFe, etc.</li>
+                <li>Optical Materials: Glass, Quartz</li>
+                <li>Semiconductors: Si, GaAs, InP</li>
+                <li>Metals: Au, Pt, Cu</li>
+                <li>Dielectrics: SiO₂, Si₃N₄</li>
+                <li>Advanced Materials: 2D and Quantum materials</li>
               </ul>
             </div>
           </div>
@@ -166,7 +178,7 @@ export function IBERIBESystem() {
           <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a href="/docs/ibe-ribe-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <a href="/docs/ibe-ribe-system-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
