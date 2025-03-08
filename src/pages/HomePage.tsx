@@ -1,115 +1,99 @@
 import { Link } from 'react-router-dom';
+import '../styles/HomePage.css';
 
 export function HomePage() {
   return (
     <>
       <section className="hero">
         <div className="container">
-          <div className="hero-content">
-            <h1>Advanced Semiconductor Processing Equipment</h1>
-            <p className="hero-subtitle">
-              Cutting-edge solutions for research and manufacturing in semiconductor and nanotechnology
-            </p>
-            <div className="hero-actions">
-              <Link to="/products" className="btn btn-primary">Explore Our Products</Link>
-              <Link to="/contact" className="btn btn-secondary">Contact Us</Link>
+          <h1>Innovating the Future of Scientific Research</h1>
+          <p>Advanced scientific equipment for the next generation of discovery</p>
+          <div className="hero-buttons">
+            <Link to="/products" className="btn btn-primary">Explore Our Products</Link>
+            <Link to="/about" className="btn btn-secondary">Learn More About Us</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="products">
+        <div className="container">
+          <h2>Our Products</h2>
+          <p className="section-subtitle">Precision Instruments for Every Research Need</p>
+          
+          <div className="product-showcase">
+            <div className="product-card">
+              <img src="/assets/images/products/rie-etcher/main.jpg" alt="RIE Etcher Series" />
+              <h3>RIE Etcher Series</h3>
+              <p>High-precision etching with advanced plasma etching capabilities for semiconductor processing</p>
+            </div>
+            
+            <div className="product-card">
+              <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP Etcher Series" />
+              <h3>ICP Etcher Series</h3>
+              <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching</p>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <Link to="/products" className="btn btn-primary">View All Products</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="technologies">
+        <div className="container">
+          <h2>Cutting-Edge Technologies</h2>
+          <div className="tech-grid">
+            <div className="tech-card">
+              <span className="tech-icon">⚙️</span>
+              <h3>Precision Engineering</h3>
+              <p>Advanced manufacturing techniques ensuring nanometer-scale accuracy</p>
+            </div>
+            
+            <div className="tech-card">
+              <span className="tech-icon">🔧</span>
+              <h3>Automation Systems</h3>
+              <p>Intelligent control systems for reproducible results</p>
+            </div>
+            
+            <div className="tech-card">
+              <span className="tech-icon">⚡</span>
+              <h3>Plasma Technology</h3>
+              <p>State-of-the-art plasma processing solutions</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="features">
+      <section className="rd-section">
         <div className="container">
-          <h2>Why Choose NineScrolls</h2>
-          <div className="feature-grid">
-            <div className="feature-card">
-              <div className="feature-icon">🔬</div>
-              <h3>Cutting-Edge Technology</h3>
-              <p>State-of-the-art equipment designed for advanced research and production</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">⚡</div>
-              <h3>High Performance</h3>
-              <p>Superior process control and reliability for consistent results</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🛠️</div>
-              <h3>Customizable Solutions</h3>
-              <p>Flexible configurations to meet your specific requirements</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🤝</div>
-              <h3>Expert Support</h3>
-              <p>Comprehensive technical support and training</p>
-            </div>
-          </div>
+          <h2>Driving Innovation Through R&D</h2>
+          <p>Our commitment to research and development drives continuous improvements in our equipment solutions. We work closely with leading research labs to push the boundaries of what's possible in semiconductor processing.</p>
+          <Link to="/about" className="btn btn-primary">Discover Our R&D</Link>
         </div>
       </section>
 
-      <section className="product-categories">
+      <section className="partners">
         <div className="container">
-          <h2>Featured Equipment</h2>
-          <div className="category-grid">
-            <div className="category-card">
-              <Link to="/products/icp-etcher">
-                <h3>ICP Etcher Series</h3>
-                <p>Advanced plasma etching systems with superior process control</p>
-              </Link>
+          <h2>Trusted by Leading Institutions</h2>
+          <div className="partner-grid">
+            <div className="partner-category">
+              <span className="partner-icon">🏛️</span>
+              <h3>Research Universities</h3>
             </div>
-            <div className="category-card">
-              <Link to="/products/hdp-cvd">
-                <h3>HDP-CVD Systems</h3>
-                <p>High-density plasma chemical vapor deposition for superior film quality</p>
-              </Link>
+            <div className="partner-category">
+              <span className="partner-icon">🔬</span>
+              <h3>Research Institutes</h3>
             </div>
-            <div className="category-card">
-              <Link to="/products/ald">
-                <h3>ALD Systems</h3>
-                <p>Atomic layer deposition for precise thin film growth</p>
-              </Link>
+            <div className="partner-category">
+              <span className="partner-icon">🏢</span>
+              <h3>Corporate R&D</h3>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="applications">
-        <div className="container">
-          <h2>Applications</h2>
-          <div className="application-grid">
-            <div className="application-card">
-              <h3>Semiconductor Processing</h3>
-              <ul>
-                <li>Advanced Node Development</li>
-                <li>Power Devices</li>
-                <li>MEMS/NEMS</li>
-              </ul>
-            </div>
-            <div className="application-card">
-              <h3>Research & Development</h3>
-              <ul>
-                <li>Materials Research</li>
-                <li>Device Development</li>
-                <li>Process Innovation</li>
-              </ul>
-            </div>
-            <div className="application-card">
-              <h3>Specialty Manufacturing</h3>
-              <ul>
-                <li>Optical Devices</li>
-                <li>Sensors</li>
-                <li>Advanced Packaging</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="cta">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Advance Your Research?</h2>
-            <p>Contact us to discuss your equipment needs and discover how we can help achieve your goals.</p>
-            <Link to="/contact" className="btn btn-primary">Get in Touch</Link>
+          <div className="testimonial">
+            <p>"NineScrolls' cutting-edge systems have significantly advanced our research capabilities in semiconductor device fabrication."</p>
+            <p className="testimonial-author">Dr. Sarah Chen</p>
+            <p className="testimonial-title">Principal Investigator, Advanced Materials Research</p>
           </div>
         </div>
       </section>
