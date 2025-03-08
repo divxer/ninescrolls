@@ -28,7 +28,7 @@ export function ContactFormContent({
   return (
     <form onSubmit={onSubmit} className="contact-form-content">
       <div className="form-group">
-        <label htmlFor="name">Name *</label>
+        <label htmlFor="name">Name</label>
         <input
           type="text"
           id="name"
@@ -39,7 +39,7 @@ export function ContactFormContent({
       </div>
       
       <div className="form-group">
-        <label htmlFor="email">Email *</label>
+        <label htmlFor="email">Email</label>
         <input
           type="email"
           id="email"
@@ -70,7 +70,7 @@ export function ContactFormContent({
       </div>
       
       <div className="form-group">
-        <label htmlFor="message">Message *</label>
+        <label htmlFor="message">Message</label>
         <textarea
           id="message"
           value={formData.message}
