@@ -15,7 +15,6 @@ export function ContactForm({ onClose }: ContactFormProps) {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission logic
     console.log('Form submitted:', formData);
     onClose();
   };
