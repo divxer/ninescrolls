@@ -16,7 +16,7 @@ export function ContactPage() {
           <div className="contact-grid">
             <div className="contact-card">
               <h3>Office Location</h3>
-              <p><span className="location-icon">📍</span> 12546 Cabezon Pl</p>
+              <p><span className="location-icon"></span> 12546 Cabezon Pl</p>
               <p>San Diego, CA 92129</p>
               <p>United States</p>
               
