@@ -43,7 +43,7 @@ export function SputterSystem() {
         <div className="container">
           <div className="product-header">
             <h1>Sputter System Series</h1>
-            <p>Advanced Physical Vapor Deposition System for High-Quality Thin Film Coating</p>
+            <p>Advanced Physical Vapor Deposition System for High-Performance Thin Film Growth</p>
           </div>
         </div>
       </section>
@@ -55,34 +55,36 @@ export function SputterSystem() {
               <img src="/assets/images/products/sputter/large.jpg" alt="Sputter System" className="main-product-image" />
               <div className="image-gallery">
                 <img src="/assets/images/products/sputter/detail-1.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/sputter/detail-2.jpg" alt="Target Assembly" />
+                <img src="/assets/images/products/sputter/detail-2.jpg" alt="Target Configuration" />
                 <img src="/assets/images/products/sputter/detail-3.jpg" alt="Control Interface" />
               </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The Sputter System Series provides advanced physical vapor deposition capabilities through DC, RF, and magnetron sputtering. Designed for versatile thin film deposition, it offers exceptional control over film properties and composition.</p>
+              <p>The Sputter Series provides advanced thin-film deposition through DC, RF, and magnetron sputtering within a compact uni-body design (footprint approximately 1.0m x 1.7m). With an innovative, customer-oriented magnetron target configuration, precise substrate temperature control, and flexible modular options, the system is tailored for versatile research and production applications, ensuring excellent deposition uniformity and process reliability.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>Multiple sputtering modes (DC/RF/Magnetron)</li>
-                <li>Up to 4 target positions</li>
-                <li>Advanced power delivery system</li>
-                <li>Precise substrate temperature control</li>
-                <li>Automated process control</li>
-                <li>Real-time deposition monitoring</li>
-                <li>Load-lock system available</li>
-                <li>Co-sputtering capability</li>
+                <li>Compact uni-body design with optimized footprint (approx. 1.0m x 1.7m)</li>
+                <li>Creatively designed magnetron target structure, customizable per customer requirements</li>
+                <li>Multiple magnetron sputtering sources (2 to 6 sources available)</li>
+                <li>Flexible substrate temperature management (water-cooled, 400°C, 800°C, up to 1200°C optional)</li>
+                <li>RF-biased substrate capability for improved in-situ cleaning and film quality</li>
+                <li>Advanced RF/DC power delivery system (customizable power range)</li>
+                <li>Configurable sample handling options (Open-load or Load-lock system)</li>
+                <li>Automated process control with real-time deposition monitoring</li>
+                <li>Flexible selection of vacuum pumps, valves, and gas systems based on cost-performance orientation</li>
               </ul>
 
               <h3>Applications</h3>
               <ul className="application-list">
-                <li>Metallic Films</li>
-                <li>Magnetic Materials</li>
-                <li>Transparent Conductors</li>
-                <li>Dielectric Layers</li>
-                <li>Barrier Coatings</li>
-                <li>Decorative Coatings</li>
+                <li>Metallic thin films</li>
+                <li>Magnetic materials and coatings</li>
+                <li>Compound semiconductors</li>
+                <li>Magnetic films and devices</li>
+                <li>Optical and protective coatings</li>
+                <li>Compound semiconductor devices</li>
+                <li>Advanced materials research</li>
               </ul>
             </div>
           </div>
@@ -99,28 +101,32 @@ export function SputterSystem() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>Target Size</td>
-                  <td>2" to 6" diameter targets</td>
+                  <td>Wafer Size</td>
+                  <td>4", 6", 8", 12", or multi-wafer/supersize substrates (optional)</td>
                 </tr>
                 <tr>
-                  <td>Power Supply</td>
-                  <td>DC: up to 1kW, RF: up to 600W per target</td>
+                  <td>Magnetron Sputtering Sources</td>
+                  <td>2 to 6 independently configurable targets</td>
                 </tr>
                 <tr>
-                  <td>Substrate Size</td>
-                  <td>Up to 8" wafers or 200mm substrates</td>
+                  <td>Substrate Temperature</td>
+                  <td>Water-cooled up to 1200°C (optional configurations available)</td>
                 </tr>
                 <tr>
                   <td>Base Pressure</td>
-                  <td>≤ 5×10⁻⁸ Torr</td>
+                  <td>Less than 5x10^-7 Torr (standard), higher vacuum options available upon request</td>
                 </tr>
                 <tr>
-                  <td>Process Gases</td>
-                  <td>Ar, N₂, O₂, optional reactive gases</td>
+                  <td>Process Gas Lines</td>
+                  <td>Standard 2 lines, additional lines customizable</td>
                 </tr>
                 <tr>
-                  <td>Temperature Range</td>
-                  <td>Room temperature to 800°C</td>
+                  <td>Power System</td>
+                  <td>DC/RF sputtering modes (customizable power range, RF: 300-1000W, DC optional)</td>
+                </tr>
+                <tr>
+                  <td>Film Uniformity</td>
+                  <td>Less than 1% (typical), less than 5% edge exclusion guaranteed</td>
                 </tr>
               </tbody>
             </table>
@@ -135,25 +141,25 @@ export function SputterSystem() {
             <div className="capability-card">
               <h3>Performance Features</h3>
               <ul>
-                <li>High deposition rate</li>
-                <li>Excellent uniformity</li>
-                <li>Multi-layer deposition</li>
-                <li>Precise thickness control</li>
-                <li>Good step coverage</li>
-                <li>Low contamination levels</li>
-                <li>Process repeatability</li>
-                <li>In-situ monitoring</li>
+                <li>High deposition rates</li>
+                <li>Excellent film uniformity and thickness control</li>
+                <li>Outstanding high-aspect-ratio step coverage</li>
+                <li>Precise temperature and power control</li>
+                <li>Low particle contamination and impurity levels</li>
+                <li>Multi-layer and co-sputtering capabilities</li>
+                <li>Real-time deposition monitoring and repeatability</li>
+                <li>In-situ RF substrate cleaning capability (optional)</li>
               </ul>
             </div>
             <div className="capability-card">
               <h3>Material Systems</h3>
               <ul>
-                <li>Pure Metals (Au, Ag, Cu, Al)</li>
-                <li>Alloys (NiFe, CuNi)</li>
-                <li>Oxides (ITO, AZO)</li>
-                <li>Nitrides (TiN, AlN)</li>
-                <li>Magnetic Materials</li>
-                <li>Compound Semiconductors</li>
+                <li>Pure Metals (Pt, Pd, W, Ru, etc.)</li>
+                <li>Oxides (SiO₂, Al₂O₃, TiO₂, Ga₂O₃, ZnO, etc.)</li>
+                <li>Nitrides (TiN, TaN, AlN, SiNx, GaN, etc.)</li>
+                <li>Magnetic Materials (Fe-based, Co-based, Ni-based alloys, etc.)</li>
+                <li>Metallic films and compound semiconductors</li>
+                <li>Magnetic materials and complex thin-film structures</li>
               </ul>
             </div>
           </div>
