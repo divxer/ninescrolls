@@ -1,80 +1,110 @@
 import { useState, FormEvent } from 'react';
+import { ContactFormContent } from './common/ContactFormContent';
 import '../styles/ContactForm.css';
 
-interface ContactFormProps {
-  onClose: () => void;
+interface Product {
+  id: string;
+  name: string;
 }
 
-export function ContactForm({ onClose }: ContactFormProps) {
+interface ContactFormProps {
+  onClose?: () => void;
+  product?: Product;
+  className?: string;
+  isModal?: boolean;
+}
+
+export function ContactForm({ onClose, product, className = '', isModal = false }: ContactFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subject: '',
+    phone: '',
+    organization: '',
     message: ''
   });
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    onClose();
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch('https://api.ninescrolls.us/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...formData,
+          productName: product?.name
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      setIsSuccess(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        organization: '',
+        message: ''
+      });
+      onClose?.();
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again or contact us directly at info@ninescrolls.com');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <div className="contact-form-overlay">
-      <div className="contact-form-container">
-        <button className="close-button" onClick={onClose}>×</button>
-        <h2>Contact Us</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="name">Name</label>
-            <input
-              type="text"
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="subject">Subject</label>
-            <input
-              type="text"
-              id="subject"
-              value={formData.subject}
-              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="message">Message</label>
-            <textarea
-              id="message"
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              required
-              rows={5}
-            />
-          </div>
-          
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">Send Message</button>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          </div>
-        </form>
+  const content = (
+    <>
+      {isSuccess && !isModal ? (
+        <div className="success-message">
+          <h3>Thank You for Your Message!</h3>
+          <p>We have received your inquiry and will get back to you shortly.</p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => setIsSuccess(false)}
+          >
+            Send Another Message
+          </button>
+        </div>
+      ) : (
+        <ContactFormContent
+          formData={formData}
+          onFormDataChange={setFormData}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          error={error}
+          productName={product?.name}
+        />
+      )}
+    </>
+  );
+
+  if (isModal) {
+    return (
+      <div className="contact-form-overlay">
+        <div className="contact-form-container">
+          {onClose && <button className="close-button" onClick={onClose}>×</button>}
+          <h2>{product ? `Request Information: ${product.name}` : 'Contact Us'}</h2>
+          {content}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={`contact-form ${className}`}>
+      {content}
     </div>
   );
 } 
