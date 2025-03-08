@@ -43,7 +43,7 @@ export function PECVDSystem() {
         <div className="container">
           <div className="product-header">
             <h1>PECVD System Series</h1>
-            <p>Advanced Plasma-Enhanced Chemical Vapor Deposition System for High-Quality Film Growth</p>
+            <p>Advanced Plasma-Enhanced Chemical Vapor Deposition System for Versatile Film Growth</p>
           </div>
         </div>
       </section>
@@ -61,18 +61,18 @@ export function PECVDSystem() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The PECVD System Series delivers superior thin film deposition through plasma-enhanced chemical vapor deposition. Designed for versatile applications in research and production environments, it offers excellent film quality and process control.</p>
+              <p>The PECVD Series utilizes plasma-enhanced chemical vapor deposition (PECVD) technology within a compact uni-body design featuring a small footprint (approx. 1.0m x 1.0m). Engineered for versatile applications in research and production environments, it delivers excellent film quality, superior process flexibility, and precise control with configurable options to optimize performance or cost-efficiency.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>State-of-the-art plasma technology</li>
-                <li>Advanced thermal management</li>
-                <li>Integrated gas delivery system</li>
-                <li>Comprehensive control interface</li>
-                <li>Automated process sequences</li>
-                <li>Safety interlock system</li>
-                <li>Data logging capabilities</li>
-                <li>Modular design architecture</li>
+                <li>Uni-body compact design (footprint: ~1.0m x 1.0m)</li>
+                <li>Variable plasma discharge gap for optimized process performance</li>
+                <li>Electrode RF-driven configuration (13.56 MHz and/or 400 KHz) for low-stress films and precise tuning</li>
+                <li>Chamber liner and electrode temperature control suitable for various deposition processes</li>
+                <li>Integrated gas delivery system (standard: 6 lines, customizable)</li>
+                <li>Optional sample handling system (Open-load or Load-lock)</li>
+                <li>Automated and modular process design kits tailored to specific requirements</li>
+                <li>Cost-performance customization options (RF system, pumps, valves, etc.)</li>
               </ul>
 
               <h3>Target Applications</h3>
@@ -80,7 +80,7 @@ export function PECVDSystem() {
                 <li>Advanced semiconductor devices</li>
                 <li>Optoelectronic components</li>
                 <li>Protective coatings</li>
-                <li>Research and development</li>
+                <li>Research & development</li>
                 <li>Novel materials synthesis</li>
                 <li>Device optimization</li>
               </ul>
@@ -99,28 +99,28 @@ export function PECVDSystem() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>Substrate Size</td>
-                  <td>Up to 8" wafers or 200mm substrates</td>
+                  <td>Wafer Size</td>
+                  <td>4", 6", 8", 12" wafers or multi-wafer configurations (optional)</td>
                 </tr>
                 <tr>
                   <td>RF System</td>
-                  <td>13.56 MHz, up to 1000W</td>
+                  <td>13.56 MHz and/or 400 KHz, power range 500-2000 W (optional)</td>
                 </tr>
                 <tr>
                   <td>Temperature Range</td>
-                  <td>Room temperature to 400°C</td>
+                  <td>20°C to 400°C (higher temperature optional)</td>
                 </tr>
                 <tr>
-                  <td>Base Pressure</td>
-                  <td>≤ 1×10⁻⁶ Torr</td>
+                  <td>Vacuum System</td>
+                  <td>Roots pump & mechanical pump</td>
                 </tr>
                 <tr>
                   <td>Gas Distribution</td>
-                  <td>Up to 6 process gases with MFCs</td>
+                  <td>Up to 6 gas lines (standard), customizable</td>
                 </tr>
                 <tr>
                   <td>Film Uniformity</td>
-                  <td>≤ ±3% (3σ) across wafer</td>
+                  <td>Less than 5% (edge exclusion)</td>
                 </tr>
               </tbody>
             </table>
@@ -135,25 +135,24 @@ export function PECVDSystem() {
             <div className="capability-card">
               <h3>Performance Features</h3>
               <ul>
-                <li>Low temperature processing ({'>'}200°C)</li>
+                <li>Excellent step coverage (gap parameter adjustable)</li>
                 <li>High deposition rates</li>
-                <li>Excellent step coverage</li>
-                <li>Superior film adhesion</li>
-                <li>Precise thickness control</li>
+                <li>Superior film adhesion and density</li>
+                <li>Precise thickness and stress control</li>
                 <li>Low particle contamination</li>
-                <li>Process repeatability</li>
-                <li>Multi-layer capability</li>
+                <li>Low-temperature processing capability</li>
+                <li>Process repeatability and multi-layer deposition capability</li>
               </ul>
             </div>
             <div className="capability-card">
               <h3>Material Systems</h3>
               <ul>
-                <li>Silicon Nitride (SiNx)</li>
+                <li>Amorphous Silicon (α-Si:H)</li>
                 <li>Silicon Dioxide (SiO₂)</li>
-                <li>Silicon Oxynitride (SiON)</li>
-                <li>Amorphous Silicon (a-Si)</li>
+                <li>Silicon Nitride (SiNx)</li>
                 <li>Silicon Carbide (SiC)</li>
-                <li>Diamond-like Carbon (DLC)</li>
+                <li>Silicon Oxynitride (SiON)</li>
+                <li>Diamond-like Carbon (DLC, optional)</li>
               </ul>
             </div>
           </div>
