@@ -7,7 +7,3 @@ export { HDPCVDSystem } from './HDPCVDSystem';
 export { SputterSystem } from './SputterSystem';
 export { CoaterDeveloper } from './CoaterDeveloper';
 export { PECVDSystem } from './PECVDSystem';
-// TODO: Export other product components as they are created
-// export { SputterSystem } from './SputterSystem';
-// export { CoaterDeveloper } from './CoaterDeveloper';
-// export { PECVDSystem } from './PECVDSystem'; 
