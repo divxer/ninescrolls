@@ -1,3 +1,4 @@
+import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
 export function ContactPage() {
@@ -15,7 +16,7 @@ export function ContactPage() {
           <div className="contact-grid">
             <div className="contact-card">
               <h3>Office Location</h3>
-              <p>12546 Cabezon Pl</p>
+              <p><span className="location-icon">📍</span> 12546 Cabezon Pl</p>
               <p>San Diego, CA 92129</p>
               <p>United States</p>
               
@@ -61,12 +62,7 @@ export function ContactPage() {
         <div className="container">
           <h2>Send Us a Message</h2>
           <p>Have questions about our products or services? Fill out the form below and we'll get back to you shortly.</p>
-          
-          <div className="contact-buttons">
-            <button className="btn btn-primary">
-              <span className="icon"></span>CONTACT US
-            </button>
-          </div>
+          <ContactFormInline />
         </div>
       </section>
     </>
