@@ -43,7 +43,7 @@ export function ALDSystem() {
         <div className="container">
           <div className="product-header">
             <h1>ALD System Series</h1>
-            <p>Advanced Atomic Layer Deposition System for Precise Thin Film Growth</p>
+            <p>Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>
           </div>
         </div>
       </section>
@@ -61,18 +61,20 @@ export function ALDSystem() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The ALD System Series delivers atomic-level precision in thin film deposition through sequential, self-limiting surface reactions. Designed for research and production environments, it offers exceptional film quality and conformality.</p>
+              <p>The ALD Series offers atomic-level precision in thin film deposition through sequential, self-limiting surface reactions within a compact uni-body design (footprint approx. 0.8m x 1.0m). Engineered for both research and production environments, it delivers exceptional film quality, outstanding high-aspect-ratio (AR) step coverage, and configurable options for performance and cost optimization.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>Advanced ALD reactor design</li>
-                <li>Multiple precursor delivery system</li>
-                <li>Precise temperature management</li>
-                <li>Automated process control</li>
-                <li>Comprehensive monitoring suite</li>
-                <li>Recipe management system</li>
-                <li>Safety monitoring system</li>
-                <li>User-friendly interface</li>
+                <li>Compact uni-body design (0.8m x 1.0m footprint)</li>
+                <li>Box-in-box process chamber for enhanced process stability</li>
+                <li>Showerhead gas feed-in system with independently configurable parameters</li>
+                <li>Excellent high-aspect-ratio (AR) step coverage</li>
+                <li>Multiple gas inlets and vertical precursor flow configuration</li>
+                <li>Optional remote plasma (RF) capability (300-1000W)</li>
+                <li>Precise electrode temperature and chamber liner control for diverse processes</li>
+                <li>Flexible cost-performance customization (RF system, vacuum pumps, valves, etc.)</li>
+                <li>Optional sample handling: Open-load or Load-lock systems</li>
+                <li>User-friendly interface and automated process control</li>
               </ul>
 
               <h3>Target Applications</h3>
@@ -99,28 +101,32 @@ export function ALDSystem() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>Substrate Size</td>
-                  <td>Up to 8" wafers or 200mm substrates</td>
+                  <td>Wafer Size</td>
+                  <td>4", 6", 8", 12", or supersize configurations (optional)</td>
                 </tr>
                 <tr>
-                  <td>Temperature Range</td>
-                  <td>Room temperature to 400°C</td>
+                  <td>Wafer Temperature Range</td>
+                  <td>20°C to 400°C (higher temperature optional)</td>
                 </tr>
                 <tr>
-                  <td>Precursor Lines</td>
-                  <td>4-8 independent lines with heating</td>
+                  <td>Source Temperature</td>
+                  <td>Standard 20°C-150°C, optional up to 200°C</td>
                 </tr>
                 <tr>
                   <td>Base Pressure</td>
-                  <td>≤ 1×10⁻⁶ Torr</td>
+                  <td>Less than 5x10^-5 Torr (TMP and mechanical pump)</td>
                 </tr>
                 <tr>
                   <td>Growth Rate</td>
-                  <td>0.5-2 Å/cycle typical</td>
+                  <td>Typical 0.5-2 Å per cycle</td>
                 </tr>
                 <tr>
-                  <td>Uniformity</td>
-                  <td>≤ ±2% across wafer</td>
+                  <td>Film Uniformity</td>
+                  <td>Less than 1% (Al₂O₃, edge exclusion)</td>
+                </tr>
+                <tr>
+                  <td>Number of Precursor Lines</td>
+                  <td>2-6 lines (customizable)</td>
                 </tr>
               </tbody>
             </table>
@@ -136,24 +142,22 @@ export function ALDSystem() {
               <h3>Performance Features</h3>
               <ul>
                 <li>Sub-nanometer thickness control</li>
-                <li>Excellent step coverage ({'>'}98%)</li>
-                <li>High film conformality</li>
-                <li>Precise composition control</li>
-                <li>Low impurity content</li>
-                <li>Multi-layer capability</li>
-                <li>Process repeatability</li>
-                <li>In-situ monitoring</li>
+                <li>Outstanding high-AR step coverage ({'>'}98%)</li>
+                <li>Exceptional film conformality</li>
+                <li>Precise control of film composition</li>
+                <li>Low impurity and defect content</li>
+                <li>Multi-layer film deposition capability</li>
+                <li>Excellent process repeatability</li>
+                <li>In-situ monitoring capability (optional)</li>
               </ul>
             </div>
             <div className="capability-card">
               <h3>Material Systems</h3>
               <ul>
-                <li>Metal Oxides (Al₂O₃, HfO₂, ZrO₂)</li>
-                <li>Nitrides (TiN, AlN, Si₃N₄)</li>
-                <li>Pure Metals (Pt, Ru, W)</li>
-                <li>Sulfides (ZnS, WS₂)</li>
-                <li>Complex Oxides</li>
-                <li>2D Materials</li>
+                <li>Oxides: Al₂O₃, HfO₂, SiO₂, TiO₂, Ga₂O₃, ZnO, etc.</li>
+                <li>Nitrides: TiN, TaN, SiNx, AlN, GaN, etc.</li>
+                <li>Metals: Pt, Pd, W, Ru, etc.</li>
+                <li>Complex oxides and 2D materials (optional)</li>
               </ul>
             </div>
           </div>
