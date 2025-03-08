@@ -61,28 +61,28 @@ export function HDPCVDSystem() {
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The HDP-CVD System Series delivers exceptional film quality through high-density plasma chemical vapor deposition. Designed for advanced semiconductor manufacturing and research applications, it offers superior gap-fill performance and precise control over film properties.</p>
+              <p>The HDP-CVD Series features a uni-body design that delivers exceptional film quality and superior gap-fill capability. Designed for semiconductor manufacturing, advanced packaging, and research applications, it balances high performance with space efficiency (footprint: approximately 1.0m x 1.5m). The system supports modular configuration, allowing for optimized cost and performance according to specific process requirements.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>High-density plasma source (≥ 10¹¹ cm⁻³)</li>
-                <li>Advanced temperature control system</li>
-                <li>Multi-zone gas distribution</li>
-                <li>Real-time process monitoring</li>
-                <li>Automated recipe management</li>
-                <li>Dual RF power delivery system</li>
-                <li>In-situ plasma diagnostics</li>
-                <li>Integrated endpoint detection</li>
+                <li>Compact uni-body design with outstanding space efficiency</li>
+                <li>Compatible with various deposition materials (Si, SiO₂, SiNx, SiON, SiC, etc.)</li>
+                <li>Optional RF system (Source: 1000-3000W / Bias: 300-1000W)</li>
+                <li>Chamber liner & electrode temperature control for optimized process applications</li>
+                <li>Configurable sample handling options (Open-Load or Load-Lock)</li>
+                <li>Multi-zone gas system (Standard: 6 lines, customizable)</li>
+                <li>Excellent step coverage with tunable parameters</li>
+                <li>Non-uniformity: less than 5% (edge exclusion)</li>
               </ul>
 
               <h3>Applications</h3>
               <ul className="application-list">
-                <li>High-Quality Dielectric Films</li>
-                <li>Gap-Fill Applications</li>
-                <li>Inter-Metal Dielectric (IMD)</li>
-                <li>Shallow Trench Isolation (STI)</li>
-                <li>Pre-Metal Dielectric (PMD)</li>
-                <li>Advanced Packaging</li>
+                <li>High-quality dielectric film deposition</li>
+                <li>Gap-fill applications</li>
+                <li>Inter-metal dielectric (IMD)</li>
+                <li>Shallow trench isolation (STI)</li>
+                <li>Pre-metal dielectric (PMD)</li>
+                <li>Advanced packaging</li>
               </ul>
             </div>
           </div>
@@ -100,27 +100,27 @@ export function HDPCVDSystem() {
                 </tr>
                 <tr>
                   <td>Wafer Size</td>
-                  <td>Up to 300mm (12") compatibility</td>
+                  <td>Supports 4", 6", 8", 12", or multi-wafer processing</td>
                 </tr>
                 <tr>
-                  <td>RF System</td>
-                  <td>Source: 2-3 kW, 13.56 MHz / Bias: 1-2 kW, 13.56 MHz</td>
+                  <td>RF Power System</td>
+                  <td>Source power: 1000-3000W (13.56 MHz)<br />Bias power: 300-1000W (13.56 MHz, optional)</td>
                 </tr>
                 <tr>
                   <td>Process Temperature</td>
-                  <td>Room temperature to 700°C</td>
+                  <td>20°C to 200°C</td>
                 </tr>
                 <tr>
                   <td>Base Pressure</td>
-                  <td>≤ 1×10⁻⁷ Torr</td>
+                  <td>Supports high vacuum operation with TMP & mechanical pump</td>
                 </tr>
                 <tr>
                   <td>Gas Distribution</td>
-                  <td>Multi-zone with up to 8 process gases</td>
+                  <td>Standard 6-line system, customizable upon request</td>
                 </tr>
                 <tr>
                   <td>Film Uniformity</td>
-                  <td>≤ ±2% (3σ) across wafer</td>
+                  <td>Less than 5% (edge exclusion)</td>
                 </tr>
               </tbody>
             </table>
@@ -136,12 +136,10 @@ export function HDPCVDSystem() {
               <h3>Performance Features</h3>
               <ul>
                 <li>Excellent gap-fill capability</li>
-                <li>High deposition rates</li>
-                <li>Superior film density</li>
-                <li>Low particle contamination</li>
+                <li>Superior film density and deposition uniformity</li>
                 <li>Precise thickness control</li>
-                <li>High aspect ratio filling</li>
-                <li>Excellent step coverage</li>
+                <li>Excellent step coverage (parameter-tunable)</li>
+                <li>Low particle contamination</li>
                 <li>Low thermal budget processing</li>
               </ul>
             </div>
@@ -151,8 +149,7 @@ export function HDPCVDSystem() {
                 <li>Silicon Dioxide (SiO₂)</li>
                 <li>Silicon Nitride (Si₃N₄)</li>
                 <li>Silicon Oxynitride (SiON)</li>
-                <li>Phosphosilicate Glass (PSG)</li>
-                <li>Borophosphosilicate Glass (BPSG)</li>
+                <li>Silicon Carbide (SiC)</li>
                 <li>Low-k Dielectrics</li>
               </ul>
             </div>
