@@ -1,26 +1,68 @@
 import { Link } from 'react-router-dom';
+import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
   return (
     <>
       <section className="products-hero">
         <div className="container">
-          <div className="products-header">
-            <h1>Our Products</h1>
-            <p className="subtitle">Advanced Semiconductor Processing Equipment for Research and Manufacturing</p>
+          <h1>Our Products</h1>
+          <p>Advanced Semiconductor Processing Equipment for Research and Manufacturing</p>
+        </div>
+      </section>
+
+      <section className="manufacturer-intro">
+        <div className="container">
+          <div className="manufacturer-content">
+            <h2>Our Trusted Manufacturer Partner</h2>
+            <div className="manufacturer-info">
+              <div className="manufacturer-text">
+                <p>
+                  We are proud to partner with Tylon, a leading manufacturer 
+                  of semiconductor processing equipment with over 30 years 
+                  of experience in the industry. Their commitment to 
+                  innovation and quality aligns perfectly with our mission to 
+                  provide cutting-edge research equipment solutions.
+                </p>
+                <ul className="manufacturer-strengths">
+                  <li>Industry-leading R&D capabilities</li>
+                  <li>Global technical support network</li>
+                  <li>Proven track record in semiconductor manufacturing</li>
+                  <li>Comprehensive training and documentation</li>
+                  <li>Customizable solutions for specific research needs</li>
+                </ul>
+              </div>
+              <div className="manufacturer-stats">
+                <div className="stat-item">
+                  <span className="stat-number">30+</span>
+                  <span className="stat-label">Years of<br />Experience</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-number">1000+</span>
+                  <span className="stat-label">Global<br />Installations</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-number">300+</span>
+                  <span className="stat-label">Research<br />Institutions Served</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="product-categories">
         <div className="container">
+          <p className="section-intro">
+            Our comprehensive range of semiconductor processing equipment is designed to meet the diverse needs of research institutions and manufacturers. Each system is built with precision, reliability, and innovation in mind.
+          </p>
           <div className="category-grid">
             <div className="category-card">
               <Link to="/products/icp-etcher">
                 <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP Etcher" />
                 <h3>ICP Etcher Series</h3>
                 <p>Advanced plasma etching system with superior process control and high etch rates.</p>
-                <ul className="feature-list">
+                <ul className="product-features">
                   <li>High-density plasma source</li>
                   <li>Multi-gas capability</li>
                   <li>Advanced temperature control</li>
@@ -135,58 +177,30 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="manufacturer-partner">
+      <section className="equipment-solutions">
         <div className="container">
-          <h2>Our Trusted Manufacturer Partner</h2>
-          
-          <div className="partner-content">
-            <div className="partner-info">
-              <p className="partner-description">
-                We are proud to partner with Tylon, a leading manufacturer 
-                of semiconductor processing equipment with over 30 years 
-                of experience in the industry. Their commitment to 
-                innovation and quality aligns perfectly with our mission to 
-                provide cutting-edge research equipment solutions.
-              </p>
-
-              <div className="key-strengths">
-                <h3>Key strengths of our manufacturer partner:</h3>
-                <ul>
-                  <li>✓ Industry-leading R&D capabilities</li>
-                  <li>✓ Global technical support network</li>
-                  <li>✓ Proven track record in semiconductor manufacturing</li>
-                  <li>✓ Comprehensive training and documentation</li>
-                  <li>✓ Customizable solutions for specific research needs</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="partner-stats">
-              <div className="stat-card">
-                <div className="stat-number">30+</div>
-                <div className="stat-label">Years of Experience</div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-number">1000+</div>
-                <div className="stat-label">Global Installations</div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-number">300+</div>
-                <div className="stat-label">Research Institutions Served</div>
-              </div>
-            </div>
+          <div className="solutions-content">
+            <h2>Equipment Solutions</h2>
+            <p>
+              Our equipment solutions are tailored to meet the specific needs of research institutions and manufacturers. We offer:
+            </p>
+            <ul className="solutions-list">
+              <li>Customizable system configurations</li>
+              <li>Integration with existing facilities</li>
+              <li>Comprehensive training and support</li>
+              <li>Ongoing maintenance and upgrades</li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <section className="products-cta">
+      <section className="product-contact">
         <div className="container">
-          <div className="cta-content">
-            <h2>Need Help Choosing?</h2>
-            <p>Our technical team is ready to help you select the right equipment for your application.</p>
-            <Link to="/contact" className="btn btn-primary">Contact Our Experts</Link>
+          <h2>Need Equipment Consultation?</h2>
+          <p>Our technical team is ready to help you choose the right equipment for your application.</p>
+          <div className="contact-buttons">
+            <Link to="/contact" className="btn btn-primary">Contact Our Team</Link>
+            <a href="/equipment-guide.pdf" className="btn btn-secondary">Download Equipment Guide</a>
           </div>
         </div>
       </section>
