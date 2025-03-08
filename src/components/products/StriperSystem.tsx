@@ -55,34 +55,35 @@ export function StriperSystem() {
               <img src="/assets/images/products/striper/large.jpg" alt="Striper System" className="main-product-image" />
               <div className="image-gallery">
                 <img src="/assets/images/products/striper/detail-1.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/striper/detail-2.jpg" alt="Control Interface" />
-                <img src="/assets/images/products/striper/detail-3.jpg" alt="Loading System" />
+                <img src="/assets/images/products/striper/detail-2.jpg" alt="Control System" />
+                <img src="/assets/images/products/striper/detail-3.jpg" alt="Sample Stage" />
               </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The Striper System Series provides efficient photoresist removal and surface cleaning capabilities with advanced process control. Designed for both research and production environments, it ensures complete removal of organic materials while protecting underlying layers.</p>
+              <p>The Striper Series provides efficient photoresist removal and surface cleaning capabilities within a compact uni-body design (footprint approx. 0.8m x 0.8m). Engineered for flexibility and ease of use in both research and production environments, this system ensures complete removal of organic materials, precise process control, and minimal impact on underlying layers.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
-                <li>Advanced plasma source technology</li>
-                <li>Multiple process modes available</li>
-                <li>Precise temperature control</li>
-                <li>Automated endpoint detection</li>
-                <li>High throughput capability</li>
-                <li>Process recipe management</li>
-                <li>Real-time monitoring system</li>
-                <li>Safety interlocking system</li>
+                <li>Compact uni-body design with minimal footprint (0.8m x 0.8m)</li>
+                <li>Uniform chamber center pump-down design for enhanced process uniformity</li>
+                <li>Configurable gas delivery system with independently adjustable parameters</li>
+                <li>Adjustable plasma discharge gap, configurable for optimal process tuning</li>
+                <li>Flexible cost-performance orientation, customizable RF power, vacuum pumps, and valves</li>
+                <li>Automated open-load sample handling</li>
+                <li>Real-time process monitoring and automated endpoint detection</li>
+                <li>Water-cooled wafer stage with precise temperature control (5°C to 200°C, optional)</li>
               </ul>
 
               <h3>Applications</h3>
               <ul className="application-list">
-                <li>Photoresist Stripping</li>
-                <li>Post-etch Cleaning</li>
+                <li>Photoresist Stripping (positive and negative)</li>
+                <li>Post-etch Residue Cleaning</li>
                 <li>Organic Contamination Removal</li>
-                <li>Surface Activation</li>
-                <li>Descum Processing</li>
-                <li>Pre-diffusion Cleaning</li>
+                <li>Surface Activation and Descum</li>
+                <li>Surface Preparation and Pre-metal Cleaning</li>
+                <li>2D Materials Etching (e.g., MoS₂, BN, Graphene)</li>
+                <li>Failure Analysis Sample Cleaning</li>
               </ul>
             </div>
           </div>
@@ -99,28 +100,32 @@ export function StriperSystem() {
                   <th colSpan={2}>System Specifications</th>
                 </tr>
                 <tr>
-                  <td>Substrate Size</td>
-                  <td>Up to 8" wafers or 200mm substrates</td>
+                  <td>Wafer Size Range</td>
+                  <td>4", 6", 8", 12", or multi-wafer configurations available</td>
                 </tr>
                 <tr>
                   <td>Process Modes</td>
-                  <td>Plasma, UV-Ozone, Combined</td>
+                  <td>Plasma processing (standard), optional customized configurations</td>
                 </tr>
                 <tr>
-                  <td>Temperature Range</td>
-                  <td>20°C to 350°C</td>
+                  <td>RF Power</td>
+                  <td>Customizable from 300W to 1000W (optional)</td>
                 </tr>
                 <tr>
-                  <td>Process Gases</td>
-                  <td>O₂, N₂, CF₄, H₂ (optional)</td>
+                  <td>Wafer Stage Temperature</td>
+                  <td>5°C to 200°C (water cooling), optional configurations</td>
                 </tr>
                 <tr>
-                  <td>Base Pressure</td>
-                  <td>≤ 1×10⁻⁵ Torr</td>
+                  <td>Gas System</td>
+                  <td>2 lines standard, additional gas lines customizable</td>
                 </tr>
                 <tr>
-                  <td>Process Control</td>
-                  <td>Automated with endpoint detection</td>
+                  <td>Vacuum System</td>
+                  <td>Mechanical pump, customizable vacuum levels</td>
+                </tr>
+                <tr>
+                  <td>Film Non-Uniformity</td>
+                  <td>Less than 5% (edge exclusion)</td>
                 </tr>
               </tbody>
             </table>
@@ -135,25 +140,21 @@ export function StriperSystem() {
             <div className="capability-card">
               <h3>Performance Features</h3>
               <ul>
-                <li>High stripping rate</li>
-                <li>Excellent uniformity</li>
-                <li>Low damage processing</li>
-                <li>Multiple process recipes</li>
-                <li>Endpoint detection</li>
-                <li>Process monitoring</li>
-                <li>Temperature uniformity</li>
-                <li>Automated control</li>
+                <li>High stripping rates with minimal surface damage</li>
+                <li>Excellent process uniformity and repeatability</li>
+                <li>Multiple configurable process recipes</li>
+                <li>Adjustable plasma gap and uniform gas distribution for optimized results</li>
+                <li>Automated endpoint detection for precise control</li>
+                <li>Real-time monitoring and automated process management</li>
               </ul>
             </div>
             <div className="capability-card">
-              <h3>Process Applications</h3>
+              <h3>Materials and Processes</h3>
               <ul>
-                <li>Positive Photoresist Removal</li>
-                <li>Negative Photoresist Stripping</li>
-                <li>Post-etch Residue Cleaning</li>
-                <li>Organic Contamination Removal</li>
-                <li>Surface Treatment</li>
-                <li>Pre-metal Clean</li>
+                <li>Organic materials (Photoresist, PMMA, PS nanospheres, etc.)</li>
+                <li>Two-dimensional (2D) materials (MoS₂, BN, Graphene, etc.)</li>
+                <li>Surface cleaning for failure analysis</li>
+                <li>General organic contamination removal and activation processes</li>
               </ul>
             </div>
           </div>
