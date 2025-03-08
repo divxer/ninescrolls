@@ -3,18 +3,15 @@ backend:
   phases:
     build:
       commands:
-        - nvm install 18.19.0
-        - nvm use 18.19.0
         - rm -rf node_modules package-lock.json
         - npm install --no-ignore-optional
-        - npm run build
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - nvm install 18.19.0
-        - nvm use 18.19.0
-        - npm ci
+        - rm -rf node_modules package-lock.json
+        - npm install --no-ignore-optional
     build:
       commands:
         - npm run build
