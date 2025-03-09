@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
+import { OptimizedImage } from '../components/common/OptimizedImage';
 import '../styles/HomePage.css';
 
 export function HomePage() {
@@ -61,17 +62,33 @@ export function HomePage() {
           <p className="section-subtitle">Precision Instruments for Every Research Need</p>
           
           <div className="product-showcase">
-            <div className="product-card">
-              <img src="/assets/images/products/rie-etcher/main.jpg" alt="RIE Etcher Series" />
-              <h3>RIE Etcher Series</h3>
-              <p>High-precision etching with advanced plasma etching capabilities for semiconductor processing</p>
-            </div>
+            <Link to="/products/rie-etcher" className="product-card">
+              <OptimizedImage
+                src="/assets/images/products/rie-etcher/main.jpg"
+                alt="RIE Etcher Series"
+                width={400}
+                height={300}
+              />
+              <div className="product-card-content">
+                <h3>RIE Etcher Series</h3>
+                <p>High-precision etching with advanced plasma etching capabilities for semiconductor processing</p>
+                <span className="learn-more">Learn More →</span>
+              </div>
+            </Link>
             
-            <div className="product-card">
-              <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP Etcher Series" />
-              <h3>ICP Etcher Series</h3>
-              <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching</p>
-            </div>
+            <Link to="/products/icp-etcher" className="product-card">
+              <OptimizedImage
+                src="/assets/images/products/icp-etcher/main.jpg"
+                alt="ICP Etcher Series"
+                width={400}
+                height={300}
+              />
+              <div className="product-card-content">
+                <h3>ICP Etcher Series</h3>
+                <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching</p>
+                <span className="learn-more">Learn More →</span>
+              </div>
+            </Link>
           </div>
           
           <div className="text-center">
