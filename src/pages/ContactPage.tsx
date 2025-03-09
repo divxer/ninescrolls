@@ -1,8 +1,45 @@
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
 export function ContactPage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact Nine Scrolls Technology",
+    "description": "Get in touch with Nine Scrolls Technology for inquiries about our semiconductor manufacturing equipment and solutions.",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "Nine Scrolls Technology",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "12546 Cabezon Pl",
+        "addressLocality": "San Diego",
+        "addressRegion": "CA",
+        "postalCode": "92129",
+        "addressCountry": "US"
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "sales",
+          "email": "sales@ninescrolls.com",
+          "telephone": "+1-858-537-7743",
+          "availableLanguage": ["English", "Chinese"],
+          "hoursAvailable": "Mo-Fr 09:00-17:00 PST"
+        },
+        {
+          "@type": "ContactPoint",
+          "contactType": "technical support",
+          "email": "support@ninescrolls.com",
+          "availableLanguage": ["English", "Chinese"],
+          "hoursAvailable": "Mo-Fr 08:00-18:00 PST"
+        }
+      ]
+    }
+  };
+
   return (
     <>
       <SEO 
@@ -11,6 +48,11 @@ export function ContactPage() {
         keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service"
         url="/contact"
       />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
       <section className="contact-hero">
         <div className="container">
           <h1>Contact Us</h1>

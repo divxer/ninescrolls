@@ -1,8 +1,36 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
 import '../styles/HomePage.css';
 
 export function HomePage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "url": "https://ninescrolls.us",
+    "name": "Nine Scrolls Technology",
+    "description": "Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions.",
+    "logo": "https://ninescrolls.us/assets/images/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "12546 Cabezon Pl",
+      "addressLocality": "San Diego",
+      "addressRegion": "CA",
+      "postalCode": "92129",
+      "addressCountry": "US"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+1-858-537-7743",
+      "contactType": "sales",
+      "email": "sales@ninescrolls.com",
+      "availableLanguage": ["English", "Chinese"]
+    },
+    "sameAs": [
+      "https://www.linkedin.com/company/nine-scrolls-technology"
+    ]
+  };
+
   return (
     <>
       <SEO 
@@ -11,6 +39,11 @@ export function HomePage() {
         keywords="semiconductor equipment, thin film deposition, etching system, coating system, semiconductor manufacturing, RIE etcher, ICP etcher"
         url="/"
       />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
       <section className="hero">
         <div className="container">
           <h1>Innovating the Future of Scientific Research</h1>

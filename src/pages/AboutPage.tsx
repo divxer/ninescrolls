@@ -1,7 +1,39 @@
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
 import '../styles/AboutPage.css';
 
 export function AboutPage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About Nine Scrolls Technology",
+    "description": "Learn about Nine Scrolls Technology's commitment to innovation in semiconductor manufacturing equipment.",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "Nine Scrolls Technology",
+      "description": "NineScrolls LLC is a dynamic start-up company dedicated to advancing innovation and integration in the scientific research equipment industry.",
+      "foundingDate": "2023",
+      "url": "https://ninescrolls.us",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "San Diego",
+        "addressRegion": "CA",
+        "addressCountry": "US"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "United States"
+      },
+      "knowsAbout": [
+        "Semiconductor Manufacturing Equipment",
+        "Thin Film Deposition",
+        "Plasma Etching",
+        "Surface Treatment",
+        "Scientific Research Equipment"
+      ]
+    }
+  };
+
   return (
     <>
       <SEO 
@@ -10,6 +42,11 @@ export function AboutPage() {
         keywords="semiconductor technology, manufacturing equipment, company history, semiconductor innovation, about Nine Scrolls, research and development"
         url="/about"
       />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
       <section className="about-hero">
         <div className="container">
           <h1>About NineScrolls LLC</h1>
