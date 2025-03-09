@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '../components/common/SEO';
 import '../styles/HomePage.css';
 
 export function HomePage() {
   return (
     <>
+      <SEO 
+        title="Home"
+        description="Nine Scrolls Technology - Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions."
+        keywords="semiconductor equipment, thin film deposition, etching system, coating system, semiconductor manufacturing, RIE etcher, ICP etcher"
+        url="/"
+      />
       <section className="hero">
         <div className="container">
           <h1>Innovating the Future of Scientific Research</h1>

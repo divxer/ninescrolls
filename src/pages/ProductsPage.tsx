@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '../components/common/SEO';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
   return (
     <>
+      <SEO 
+        title="Products"
+        description="Explore our comprehensive range of semiconductor manufacturing equipment including CVD, PVD, ALD systems, etchers, and more. Advanced solutions for thin film deposition and surface treatment."
+        keywords="semiconductor equipment, CVD system, PVD system, ALD system, thin film deposition, etching system, coating system, RIE etcher, ICP etcher"
+        url="/products"
+      />
       <section className="products-hero">
         <div className="container">
           <h1>Our Products</h1>

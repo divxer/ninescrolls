@@ -1,8 +1,15 @@
+import { SEO } from '../components/common/SEO';
 import '../styles/AboutPage.css';
 
 export function AboutPage() {
   return (
     <>
+      <SEO 
+        title="About Us"
+        description="Learn about Nine Scrolls Technology's commitment to innovation in semiconductor manufacturing equipment. Discover our history, mission, and dedication to advancing semiconductor technology."
+        keywords="semiconductor technology, manufacturing equipment, company history, semiconductor innovation, about Nine Scrolls, research and development"
+        url="/about"
+      />
       <section className="about-hero">
         <div className="container">
           <h1>About NineScrolls LLC</h1>
