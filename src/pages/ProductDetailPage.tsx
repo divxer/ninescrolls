@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
 import { ContactFormModal } from '../components/common/ContactFormModal';
+import { OptimizedImage } from '../components/common/OptimizedImage';
 import { getProductComponent } from '../components/products';
 import '../styles/ProductDetailPage.css';
 
@@ -152,6 +154,65 @@ export function ProductDetailPage() {
     return <div className="container">Product not found</div>;
   }
 
+  const structuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description,
+    "image": product.images.map(img => `https://ninescrolls.us${img}`),
+    "brand": {
+      "@type": "Brand",
+      "name": "Nine Scrolls Technology"
+    },
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "Nine Scrolls Technology",
+      "url": "https://ninescrolls.us"
+    },
+    "category": "Semiconductor Manufacturing Equipment",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "priceCurrency": "USD",
+      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "seller": {
+        "@type": "Organization",
+        "name": "Nine Scrolls Technology",
+        "url": "https://ninescrolls.us"
+      }
+    },
+    "additionalProperty": [
+      ...product.features.map(feature => ({
+        "@type": "PropertyValue",
+        "name": "Feature",
+        "value": feature
+      })),
+      ...product.specifications.map(spec => ({
+        "@type": "PropertyValue",
+        "name": "Specification",
+        "value": spec
+      }))
+    ]
+  };
+
+  const getImageSizes = (imagePath: string) => {
+    const parts = imagePath.split('.');
+    const ext = parts.pop();
+    const base = parts.join('.');
+    return {
+      sm: `${base}-sm.${ext}`,
+      md: `${base}-md.${ext}`,
+      lg: `${base}-lg.${ext}`,
+      xl: `${base}-xl.${ext}`,
+      webp: {
+        sm: `${base}-sm.webp`,
+        md: `${base}-md.webp`,
+        lg: `${base}-lg.webp`,
+        xl: `${base}-xl.webp`
+      }
+    };
+  };
+
   return (
     <>
       <SEO 
@@ -161,6 +222,11 @@ export function ProductDetailPage() {
         url={`/products/${productId}`}
         image={`/assets/images/products/${productId}/large.jpg`}
       />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
       <section className="product-hero">
         <div className="container">
           <h1>{product.name}</h1>
@@ -173,11 +239,29 @@ export function ProductDetailPage() {
           <div className="product-grid">
             <div className="product-images">
               <div className="main-image">
-                <img src={product.images[0]} alt={product.name} />
+                <OptimizedImage
+                  src={product.images[0]}
+                  alt={`${product.name} - Main View`}
+                  sizes={getImageSizes(product.images[0])}
+                  width={800}
+                  height={600}
+                  loading="eager"
+                />
               </div>
               <div className="image-gallery">
                 {product.images.slice(1).map((image, index) => (
-                  <img key={index} src={image} alt={`${product.name} detail ${index + 1}`} />
+                  <OptimizedImage
+                    key={index}
+                    src={image}
+                    alt={`${product.name} - Detailed view of ${
+                      index === 0 ? 'control system' :
+                      index === 1 ? 'process chamber' :
+                      'additional features'
+                    }`}
+                    sizes={getImageSizes(image)}
+                    width={400}
+                    height={300}
+                  />
                 ))}
               </div>
             </div>

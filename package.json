@@ -7,17 +7,21 @@
     "dev": "vite",
     "build": "npm install --no-ignore-optional && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "optimize-images": "node scripts/optimize-images.js"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.1.5",
     "@sendgrid/mail": "^8.1.0",
+    "@types/react-lazy-load-image-component": "^1.6.4",
     "aws-amplify": "^6.0.17",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.5",
+    "react-lazy-load-image-component": "^1.6.3",
     "react-router": "^6.22.1",
-    "react-router-dom": "^6.22.1"
+    "react-router-dom": "^6.22.1",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.5.0",
