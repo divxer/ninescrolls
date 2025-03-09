@@ -1,9 +1,16 @@
+import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
 export function ContactPage() {
   return (
     <>
+      <SEO 
+        title="Contact Us"
+        description="Get in touch with Nine Scrolls Technology. Contact our team for inquiries about our semiconductor manufacturing equipment and solutions."
+        keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service"
+        url="/contact"
+      />
       <section className="contact-hero">
         <div className="container">
           <h1>Contact Us</h1>
