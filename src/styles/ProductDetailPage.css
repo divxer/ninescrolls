@@ -73,4 +73,20 @@
   to {
     opacity: 1;
   }
+}
+
+/* Contact button positioning */
+.contact-button-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+  margin-bottom: 0;
+}
+
+/* Ensure the button doesn't overlap with chat on mobile */
+@media (max-width: 767px) {
+  .contact-button-container {
+    bottom: 30px;
+  }
 } 

@@ -1,0 +1,17 @@
+/* Adjust Tawk.to widget position */
+:root {
+  --tawk-to-bottom-offset: 120px; /* Increased bottom margin */
+}
+
+/* Override Tawk.to iframe position */
+iframe[id^="tawk-to-"] {
+  bottom: var(--tawk-to-bottom-offset) !important;
+  margin: 0 !important;
+}
+
+/* Adjust for mobile screens */
+@media (max-width: 767px) {
+  :root {
+    --tawk-to-bottom-offset: 140px; /* Even more space on mobile */
+  }
+} 

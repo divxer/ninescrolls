@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Chat } from '../common/Chat';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ export function Layout({ children }: LayoutProps) {
   
   return (
     <>
+      <Chat />
       <header className="main-header">
         <nav className="nav-container">
           <div className="logo">
