@@ -7,11 +7,4 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
-}
-
-declare global {
-  interface Window {
-    Tawk_API?: any;
-    Tawk_LoadStart?: Date;
-  }
 } 

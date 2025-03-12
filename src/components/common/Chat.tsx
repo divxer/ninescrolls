@@ -1,6 +1,24 @@
 import { useEffect } from 'react';
 import '../../styles/Chat.css';
 
+declare global {
+  interface Window {
+    Tawk_API?: {
+      onLoad: (callback: () => void) => void;
+      setAttributes: (attributes: Record<string, string>, callback?: (error: any) => void) => void;
+      addEvent: (name: string, value: string, callback?: (error: any) => void) => void;
+      customize: (config: {
+        position?: string;
+        offsetVertical?: string;
+        offsetHorizontal?: string;
+        height?: string;
+        zIndex?: number;
+      }) => void;
+    };
+    Tawk_LoadStart?: Date;
+  }
+}
+
 export function Chat() {
   useEffect(() => {
     const propertyId = import.meta.env.VITE_TAWK_PROPERTY_ID;
@@ -13,8 +31,9 @@ export function Chat() {
     }
 
     // Initialize Tawk.to
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
+    const w = window as any;
+    w.Tawk_API = w.Tawk_API || {};
+    w.Tawk_LoadStart = new Date();
 
     // Load Tawk.to script
     const script = document.createElement('script');
@@ -24,9 +43,9 @@ export function Chat() {
     document.head.appendChild(script);
 
     // Configure Tawk.to
-    window.Tawk_API.onLoad = function() {
+    w.Tawk_API.onLoad = function() {
       // Set visitor information
-      window.Tawk_API.setAttributes({
+      w.Tawk_API.setAttributes({
         'name': 'Visitor',
         'email': '',  // We'll let visitors provide their own email
         'hash': ''  // Add hash if you want to use secure mode
@@ -37,19 +56,19 @@ export function Chat() {
       });
 
       // Set custom variables
-      window.Tawk_API.addEvent('website', 'ninescrolls.us', function(error: any) {
+      w.Tawk_API.addEvent('website', 'ninescrolls.us', function(error: any) {
         if (error) {
           console.error('Error setting Tawk.to custom variable:', error);
         }
       });
 
       // Position the widget to avoid overlap
-      window.Tawk_API.customize({
+      w.Tawk_API.customize({
         position: 'right',
         offsetVertical: '120px',
         offsetHorizontal: '20px',
-        height: '500px', // Adjust chat window height
-        zIndex: 1000 // Ensure proper stacking
+        height: '500px',
+        zIndex: 1000
       });
     };
 
@@ -59,8 +78,8 @@ export function Chat() {
       if (tawkScript) {
         tawkScript.remove();
       }
-      delete window.Tawk_API;
-      delete window.Tawk_LoadStart;
+      delete w.Tawk_API;
+      delete w.Tawk_LoadStart;
     };
   }, []);
 
