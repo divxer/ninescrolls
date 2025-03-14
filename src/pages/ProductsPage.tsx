@@ -25,7 +25,7 @@ export function ProductsPage() {
             <div className="manufacturer-info">
               <div className="manufacturer-text">
                 <p>
-                  We are proud to partner with Tylon, a leading manufacturer 
+                  We are proud to partner with Tyloong, a leading manufacturer
                   of semiconductor processing equipment with over 30 years 
                   of experience in the industry. Their commitment to 
                   innovation and quality aligns perfectly with our mission to 
