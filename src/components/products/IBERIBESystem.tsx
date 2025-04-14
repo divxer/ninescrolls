@@ -52,12 +52,11 @@ export function IBERIBESystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/ibe-ribe/large.jpg" alt="IBE/RIBE System" className="main-product-image" />
-              <div className="image-gallery">
-                <img src="/assets/images/products/ibe-ribe/detail-1.jpg" alt="Ion Source" />
-                <img src="/assets/images/products/ibe-ribe/detail-2.jpg" alt="Sample Stage" />
-                <img src="/assets/images/products/ibe-ribe/detail-3.jpg" alt="Control Interface" />
-              </div>
+              <img 
+                src="/assets/images/products/ibe-ribe/main.jpg" 
+                alt="IBE/RIBE System" 
+                className="main-product-image" 
+              />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>

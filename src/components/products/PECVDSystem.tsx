@@ -57,11 +57,6 @@ export function PECVDSystem() {
                 alt="PECVD System" 
                 className="main-product-image" 
               />
-              <div className="image-gallery">
-                <img src="/assets/images/products/pecvd/detail-1.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/pecvd/detail-2.jpg" alt="Plasma Source" />
-                <img src="/assets/images/products/pecvd/detail-3.jpg" alt="Control Interface" />
-              </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
