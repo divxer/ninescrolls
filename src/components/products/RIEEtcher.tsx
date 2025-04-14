@@ -52,12 +52,11 @@ export function RIEEtcher() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/rie-etcher/large.jpg" alt="RIE Etcher System" className="main-product-image" />
-              <div className="image-gallery">
-                <img src="/assets/images/products/rie-etcher/detail-1.jpg" alt="Process Chamber View" />
-                <img src="/assets/images/products/rie-etcher/detail-2.jpg" alt="Control Interface" />
-                <img src="/assets/images/products/rie-etcher/detail-3.jpg" alt="Loading System" />
-              </div>
+              <img 
+                src="/assets/images/products/rie-etcher/main.jpg" 
+                alt="RIE Etcher System" 
+                className="main-product-image" 
+              />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>

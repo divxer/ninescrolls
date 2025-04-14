@@ -52,12 +52,11 @@ export function ICPEtcher() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/icp-etcher/large.jpg" alt="ICP Etcher System" className="main-product-image" />
-              <div className="image-gallery">
-                <img src="/assets/images/products/icp-etcher/detail-1.jpg" alt="ICP Source View" />
-                <img src="/assets/images/products/icp-etcher/detail-2.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/icp-etcher/detail-3.jpg" alt="Control System" />
-              </div>
+              <img 
+                src="/assets/images/products/icp-etcher/main.jpg" 
+                alt="ICP Etcher System" 
+                className="main-product-image" 
+              />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>

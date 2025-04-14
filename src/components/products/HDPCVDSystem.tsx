@@ -52,7 +52,11 @@ export function HDPCVDSystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/hdp-cvd/large.jpg" alt="HDP-CVD System" className="main-product-image" />
+              <img 
+                src="/assets/images/products/hdp-cvd/main.jpg" 
+                alt="HDP-CVD System" 
+                className="main-product-image" 
+              />
               <div className="image-gallery">
                 <img src="/assets/images/products/hdp-cvd/detail-1.jpg" alt="Process Chamber" />
                 <img src="/assets/images/products/hdp-cvd/detail-2.jpg" alt="Plasma Source" />
