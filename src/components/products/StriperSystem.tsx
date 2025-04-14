@@ -52,7 +52,11 @@ export function StriperSystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/striper/large.jpg" alt="Striper System" className="main-product-image" />
+              <img 
+                src="/assets/images/products/striper/main.jpg" 
+                alt="Striper System" 
+                className="main-product-image" 
+              />
               <div className="image-gallery">
                 <img src="/assets/images/products/striper/detail-1.jpg" alt="Process Chamber" />
                 <img src="/assets/images/products/striper/detail-2.jpg" alt="Control System" />

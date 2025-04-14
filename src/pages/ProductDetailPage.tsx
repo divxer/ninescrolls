@@ -238,32 +238,15 @@ export function ProductDetailPage() {
         <div className="container">
           <div className="product-grid">
             <div className="product-images">
-              <div className="main-image">
-                <OptimizedImage
-                  src={product.images[0]}
-                  alt={`${product.name} - Main View`}
-                  sizes={getImageSizes(product.images[0])}
-                  width={800}
-                  height={600}
-                  loading="eager"
-                />
-              </div>
-              <div className="image-gallery">
-                {product.images.slice(1).map((image, index) => (
-                  <OptimizedImage
-                    key={index}
-                    src={image}
-                    alt={`${product.name} - Detailed view of ${
-                      index === 0 ? 'control system' :
-                      index === 1 ? 'process chamber' :
-                      'additional features'
-                    }`}
-                    sizes={getImageSizes(image)}
-                    width={400}
-                    height={300}
-                  />
-                ))}
-              </div>
+              <OptimizedImage
+                src={product.images[0]}
+                alt={`${product.name} - Main View`}
+                sizes={getImageSizes(product.images[0])}
+                width={800}
+                height={600}
+                loading="eager"
+                className="main-product-image"
+              />
             </div>
 
             <div className="product-info">

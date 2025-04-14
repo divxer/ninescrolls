@@ -52,12 +52,11 @@ export function SputterSystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/sputter/large.jpg" alt="Sputter System" className="main-product-image" />
-              <div className="image-gallery">
-                <img src="/assets/images/products/sputter/detail-1.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/sputter/detail-2.jpg" alt="Target Configuration" />
-                <img src="/assets/images/products/sputter/detail-3.jpg" alt="Control Interface" />
-              </div>
+              <img 
+                src="/assets/images/products/sputter/main.jpg" 
+                alt="Sputter System" 
+                className="main-product-image" 
+              />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>

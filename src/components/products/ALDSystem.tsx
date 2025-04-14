@@ -52,12 +52,11 @@ export function ALDSystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img src="/assets/images/products/ald/large.jpg" alt="ALD System" className="main-product-image" />
-              <div className="image-gallery">
-                <img src="/assets/images/products/ald/detail-1.jpg" alt="Reaction Chamber" />
-                <img src="/assets/images/products/ald/detail-2.jpg" alt="Precursor Delivery" />
-                <img src="/assets/images/products/ald/detail-3.jpg" alt="Control Interface" />
-              </div>
+              <img 
+                src="/assets/images/products/ald/main.jpg" 
+                alt="ALD System" 
+                className="main-product-image" 
+              />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
