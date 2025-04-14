@@ -57,11 +57,6 @@ export function StriperSystem() {
                 alt="Striper System" 
                 className="main-product-image" 
               />
-              <div className="image-gallery">
-                <img src="/assets/images/products/striper/detail-1.jpg" alt="Process Chamber" />
-                <img src="/assets/images/products/striper/detail-2.jpg" alt="Control System" />
-                <img src="/assets/images/products/striper/detail-3.jpg" alt="Sample Stage" />
-              </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>

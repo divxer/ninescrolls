@@ -57,11 +57,6 @@ export function CoaterDeveloper() {
                 alt="Coater/Developer System" 
                 className="main-product-image" 
               />
-              <div className="image-gallery">
-                <img src="/assets/images/products/coater-developer/detail-1.jpg" alt="Spin Module" />
-                <img src="/assets/images/products/coater-developer/detail-2.jpg" alt="Dispense System" />
-                <img src="/assets/images/products/coater-developer/detail-3.jpg" alt="Control Interface" />
-              </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
