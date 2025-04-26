@@ -210,7 +210,7 @@ export function ContactFormModal({
               <div className="success-actions">
                 <p>Meanwhile, you might be interested in:</p>
                 <div className="action-buttons">
-                  <a href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/-series$/, '').replace(/--+/g, '-').trim()}-datasheet.pdf`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                  <a href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '').replace(/--+/g, '-').trim()}-datasheet.pdf`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
                     <span className="icon-download"></span> Download Product Datasheet
                   </a>
                   <Link to="/products" className="btn btn-secondary">
