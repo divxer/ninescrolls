@@ -63,12 +63,14 @@ export function HomePage() {
           
           <div className="product-showcase">
             <Link to="/products/rie-etcher" className="product-card">
-              <OptimizedImage
-                src="/assets/images/products/rie-etcher/main.jpg"
-                alt="RIE Etcher Series"
-                width={400}
-                height={300}
-              />
+              <div className="product-image-wrapper">
+                <OptimizedImage
+                  src="/assets/images/products/rie-etcher/main.jpg"
+                  alt="RIE Etcher Series"
+                  width={400}
+                  height={300}
+                />
+              </div>
               <div className="product-card-content">
                 <h3>RIE Etcher Series</h3>
                 <p>High-precision etching with advanced plasma etching capabilities for semiconductor processing</p>
@@ -77,12 +79,14 @@ export function HomePage() {
             </Link>
             
             <Link to="/products/icp-etcher" className="product-card">
-              <OptimizedImage
-                src="/assets/images/products/icp-etcher/main.jpg"
-                alt="ICP Etcher Series"
-                width={400}
-                height={300}
-              />
+              <div className="product-image-wrapper">
+                <OptimizedImage
+                  src="/assets/images/products/icp-etcher/main.jpg"
+                  alt="ICP Etcher Series"
+                  width={400}
+                  height={300}
+                />
+              </div>
               <div className="product-card-content">
                 <h3>ICP Etcher Series</h3>
                 <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching</p>
