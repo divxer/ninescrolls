@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
+import { analytics } from '../../services/analytics';
 
 export function ContactFormModal({ 
   isOpen, 
@@ -92,6 +93,10 @@ export function ContactFormModal({
         message: ''
       });
       onSuccess?.();
+
+      if (productName) {
+        analytics.trackContactFormSubmit(productName, productName);
+      }
     } catch (error) {
       console.error('Error in form submission:', error);
       if (error instanceof Error) {
@@ -103,6 +108,12 @@ export function ContactFormModal({
       }
       setError(error instanceof Error ? error.message : 'Failed to submit form. Please try again later.');
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDatasheetDownload = () => {
+    if (productName) {
+      analytics.trackDatasheetDownload(productName, productName);
     }
   };
 
@@ -210,7 +221,13 @@ export function ContactFormModal({
               <div className="success-actions">
                 <p>Meanwhile, you might be interested in:</p>
                 <div className="action-buttons">
-                  <a href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '').replace(/--+/g, '-').trim()}-datasheet.pdf`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                  <a 
+                    href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '').replace(/--+/g, '-')}-datasheet.pdf`}
+                    className="btn btn-secondary"
+                    onClick={handleDatasheetDownload}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <span className="icon-download"></span> Download Product Datasheet
                   </a>
                   <Link to="/products" className="btn btn-secondary">

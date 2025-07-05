@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
@@ -6,6 +6,7 @@ import { ContactFormModal } from '../components/common/ContactFormModal';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { getProductComponent } from '../components/products';
 import '../styles/ProductDetailPage.css';
+import { analytics } from '../services/analytics';
 
 // This would typically come from an API or database
 const PRODUCTS = {
@@ -122,6 +123,8 @@ export function ProductDetailPage() {
     keywords: 'semiconductor equipment, manufacturing equipment, semiconductor technology',
   };
 
+  const product = PRODUCTS[productId as keyof typeof PRODUCTS];
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -142,14 +145,23 @@ export function ProductDetailPage() {
   };
 
   const handleFormSuccess = () => {
-    // Additional success handling if needed
+    if (product) {
+      // Track contact form submission
+      analytics.trackContactFormSubmit(product.id, product.name);
+    }
   };
+
+  useEffect(() => {
+    if (product) {
+      // Track product view
+      analytics.trackProductView(product.id, product.name);
+    }
+  }, [product]);
 
   if (!ProductComponent) {
     return <div className="container">Product not found</div>;
   }
 
-  const product = PRODUCTS[productId as keyof typeof PRODUCTS];
   if (!product) {
     return <div className="container">Product not found</div>;
   }
