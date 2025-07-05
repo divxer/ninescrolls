@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useAnalytics } from '../components/analytics/GoogleAnalytics';
-import { analytics } from '../services/analytics';
 
 export const AnalyticsTestPage: React.FC = () => {
   const analyticsHook = useAnalytics();
