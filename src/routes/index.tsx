@@ -3,7 +3,7 @@ import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ContactPage } from '../pages/ContactPage';
-// import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
+import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -23,7 +23,9 @@ export function AppRoutes() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/contact" element={<ContactPage />} />
-      {/* <Route path="/analytics-test" element={<AnalyticsTestPage />} /> */}
+      {import.meta.env.MODE !== 'production' && (
+        <Route path="/analytics-test" element={<AnalyticsTestPage />} />
+      )}
       <Route path="/products/rie-etcher" element={<RIEEtcher />} />
       <Route path="/products/icp-etcher" element={<ICPEtcher />} />
       <Route path="/products/ibe-ribe" element={<IBERIBESystem />} />
