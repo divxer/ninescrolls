@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
-import { analytics } from '../../services/analytics';
+import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
 export function ContactFormModal({ 
   isOpen, 
@@ -11,6 +11,7 @@ export function ContactFormModal({
   onFormDataChange, 
   onSuccess 
 }: ContactFormModalProps) {
+  const analytics = useCombinedAnalytics();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +97,8 @@ export function ContactFormModal({
 
       if (productName) {
         analytics.trackContactFormSubmit(productName, productName);
+        // 同时发送带IP分析的事件到Segment
+        analytics.segment.trackContactFormSubmitWithAnalysis(productName, productName);
       }
     } catch (error) {
       console.error('Error in form submission:', error);
@@ -114,6 +117,12 @@ export function ContactFormModal({
   const handleDatasheetDownload = () => {
     if (productName) {
       analytics.trackDatasheetDownload(productName, productName);
+      // 同时发送带IP分析的事件到Segment
+      analytics.segment.trackWithIPAnalysis('Datasheet Downloaded', {
+        productId: productName,
+        productName,
+        fileType: 'datasheet'
+      });
     }
   };
 

@@ -1,51 +1,66 @@
 import React, { useEffect } from 'react';
-import { useAnalytics } from '../components/analytics/GoogleAnalytics';
+import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 
 export const AnalyticsTestPage: React.FC = () => {
-  const analyticsHook = useAnalytics();
+  const analytics = useCombinedAnalytics();
 
   useEffect(() => {
     // 测试页面加载时的事件
     console.log('Analytics Test Page loaded');
-    analyticsHook.trackCustomEvent('page_view', {
+    analytics.trackCustomEvent('page_view', {
       page_name: 'analytics_test',
       page_title: 'Analytics Test Page'
     });
-  }, [analyticsHook]);
+  }, [analytics]);
 
   const testEvents = () => {
-    // 测试各种事件
-    analyticsHook.trackProductView('test-product-123', 'Test Product');
-    analyticsHook.trackProductDownload('test-product-123', 'Test Product');
-    analyticsHook.trackContactFormSubmit('test-product-123', 'Test Product');
-    analyticsHook.trackSearch('test search term');
+    // 测试各种事件 (发送到 GA 和 Segment)
+    analytics.trackProductView('test-product-123', 'Test Product');
+    analytics.trackProductDownload('test-product-123', 'Test Product');
+    analytics.trackContactFormSubmit('test-product-123', 'Test Product');
+    analytics.trackSearch('test search term');
     
-    console.log('Test events sent to GA4');
+    console.log('Test events sent to both GA4 and Segment');
   };
 
   const testCustomEvent = () => {
-    analyticsHook.trackCustomEvent('button_click', {
+    analytics.trackCustomEvent('button_click', {
       button_name: 'test_button',
       page_location: 'analytics_test_page',
       timestamp: new Date().toISOString()
     });
     
-    console.log('Custom event sent to GA4');
+    console.log('Custom event sent to both GA4 and Segment');
   };
 
   const testUserIdentification = () => {
-    analyticsHook.identifyUser('test-user-123', {
+    analytics.identifyUser('test-user-123', {
       email: 'test@example.com',
       name: 'Test User',
       user_type: 'tester'
     });
     
-    console.log('User identification sent to GA4');
+    console.log('User identification sent to both GA4 and Segment');
+  };
+
+  const testSegmentSpecific = () => {
+    analytics.segment.track('Segment Specific Event', {
+      customProperty: 'value',
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log('Segment-specific event sent');
+  };
+
+  const testGoogleAnalyticsSpecific = () => {
+    analytics.googleAnalytics.trackEvent('Test', 'Click', 'GA Specific');
+    
+    console.log('Google Analytics-specific event sent');
   };
 
   return (
     <div className="container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Google Analytics 4 测试页面</h1>
+      <h1>Analytics 测试页面 (GA4 + Segment)</h1>
       
       <div style={{ 
         background: '#f5f5f5', 
@@ -55,13 +70,14 @@ export const AnalyticsTestPage: React.FC = () => {
       }}>
         <h3>配置信息</h3>
         <p><strong>GA4 测量 ID:</strong> {import.meta.env.VITE_GA_MEASUREMENT_ID || '未配置'}</p>
+        <p><strong>Segment Write Key:</strong> {import.meta.env.VITE_SEGMENT_WRITE_KEY || 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU'}</p>
         <p><strong>环境:</strong> {import.meta.env.MODE}</p>
         <p><strong>页面 URL:</strong> {window.location.href}</p>
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
         <h3>测试事件</h3>
-        <p>点击下面的按钮来测试各种 GA4 事件。打开浏览器开发者工具查看控制台输出。</p>
+        <p>点击下面的按钮来测试各种分析事件。事件将发送到 Google Analytics 和 Segment。打开浏览器开发者工具查看控制台输出。</p>
         
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
           <button 
@@ -75,7 +91,7 @@ export const AnalyticsTestPage: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            测试所有事件
+            测试所有事件 (GA + Segment)
           </button>
           
           <button 
@@ -89,7 +105,7 @@ export const AnalyticsTestPage: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            测试自定义事件
+            测试自定义事件 (GA + Segment)
           </button>
           
           <button 
@@ -103,7 +119,35 @@ export const AnalyticsTestPage: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            测试用户识别
+            测试用户识别 (GA + Segment)
+          </button>
+
+          <button 
+            onClick={testSegmentSpecific}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#6f42c1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            测试 Segment 专用事件
+          </button>
+
+          <button 
+            onClick={testGoogleAnalyticsSpecific}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            测试 GA 专用事件
           </button>
         </div>
       </div>
@@ -117,10 +161,10 @@ export const AnalyticsTestPage: React.FC = () => {
         <h3>验证步骤</h3>
         <ol>
           <li>打开浏览器开发者工具 (F12)</li>
-          <li>查看控制台是否显示 "Google Analytics 4 initialized"</li>
-          <li>在 Network 标签中搜索 "googletagmanager.com" 的请求</li>
+          <li>查看控制台是否显示 "Google Analytics 4 initialized" 和 "Segment Analytics already initialized"</li>
+          <li>在 Network 标签中搜索 "googletagmanager.com" 和 "segment.com" 的请求</li>
           <li>点击上面的测试按钮</li>
-          <li>在 GA4 的 DebugView 中查看实时事件</li>
+          <li>在 GA4 的 DebugView 和 Segment 的 Debugger 中查看实时事件</li>
         </ol>
       </div>
 
@@ -140,6 +184,24 @@ export const AnalyticsTestPage: React.FC = () => {
           <li>在"数据流"中选择你的网站</li>
           <li>点击"调试视图"</li>
           <li>在调试模式下刷新此页面</li>
+        </ol>
+      </div>
+
+      <div style={{ 
+        background: '#f8d7da', 
+        padding: '1rem', 
+        borderRadius: '8px',
+        border: '1px solid #f5c6cb',
+        marginTop: '2rem'
+      }}>
+        <h3>Segment Debugger 设置</h3>
+        <p>要在 Segment 中实时查看事件：</p>
+        <ol>
+          <li>登录 <a href="https://app.segment.com/" target="_blank" rel="noopener">Segment</a></li>
+          <li>进入你的工作空间</li>
+          <li>点击左侧菜单的 "Debugger"</li>
+          <li>选择你的数据源</li>
+          <li>实时查看事件流</li>
         </ol>
       </div>
     </div>

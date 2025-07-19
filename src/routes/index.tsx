@@ -4,6 +4,7 @@ import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ContactPage } from '../pages/ContactPage';
 import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
+import { IPAnalysisPage } from '../pages/IPAnalysisPage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -24,7 +25,10 @@ export function AppRoutes() {
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       {import.meta.env.MODE !== 'production' && (
-        <Route path="/analytics-test" element={<AnalyticsTestPage />} />
+        <>
+          <Route path="/analytics-test" element={<AnalyticsTestPage />} />
+          <Route path="/ip-analysis" element={<IPAnalysisPage />} />
+        </>
       )}
       <Route path="/products/rie-etcher" element={<RIEEtcher />} />
       <Route path="/products/icp-etcher" element={<ICPEtcher />} />
