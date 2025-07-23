@@ -2,6 +2,7 @@
 // This service provides a unified interface for tracking events with Segment
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
+import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 
 declare global {
   interface Window {
@@ -239,6 +240,72 @@ class SegmentAnalyticsService {
   // 获取目标客户分析结果
   async getTargetCustomerAnalysis(): Promise<TargetCustomerAnalysis | null> {
     return await ipAnalytics.analyzeTargetCustomer();
+  }
+
+  // 使用简化的IP分析服务
+  async trackWithSimpleIPAnalysis(event: string, properties?: Record<string, any>) {
+    try {
+      // 获取简化的IP信息和分析结果
+      const ipInfo = await simpleIPAnalytics.getIPInfo();
+      const analysis = await simpleIPAnalytics.analyzeTargetCustomer();
+
+      // 合并事件属性
+      const enhancedProperties = {
+        ...properties,
+        simpleIPInfo: ipInfo ? {
+          ip: ipInfo.ip,
+          country: ipInfo.country,
+          region: ipInfo.region,
+          city: ipInfo.city,
+          org: ipInfo.org,
+          isp: ipInfo.isp
+        } : null,
+        simpleTargetCustomerAnalysis: analysis ? {
+          isTargetCustomer: analysis.isTargetCustomer,
+          organizationType: analysis.organizationType,
+          confidence: analysis.confidence,
+          orgName: analysis.details.orgName,
+          orgType: analysis.details.orgType,
+          location: analysis.details.location,
+          keywords: analysis.details.keywords
+        } : null
+      };
+
+      // 发送到Segment
+      this.track(event, enhancedProperties);
+
+      // 如果是目标客户，发送特殊事件
+      if (analysis && analysis.isTargetCustomer) {
+        this.track('Simple Target Customer Detected', {
+          originalEvent: event,
+          organizationType: analysis.organizationType,
+          confidence: analysis.confidence,
+          orgName: analysis.details.orgName,
+          location: analysis.details.location
+        });
+      }
+
+      console.log('Event tracked with simple IP analysis:', {
+        event,
+        ipInfo,
+        analysis
+      });
+
+    } catch (error) {
+      console.error('Error tracking with simple IP analysis:', error);
+      // 如果IP分析失败，仍然发送原始事件
+      this.track(event, properties);
+    }
+  }
+
+  // 获取简化的IP信息
+  async getSimpleIPInfo(): Promise<SimpleIPInfo | null> {
+    return await simpleIPAnalytics.getIPInfo();
+  }
+
+  // 获取简化的目标客户分析结果
+  async getSimpleTargetCustomerAnalysis(): Promise<SimpleTargetCustomerAnalysis | null> {
+    return await simpleIPAnalytics.analyzeTargetCustomer();
   }
 }
 

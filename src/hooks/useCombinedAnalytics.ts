@@ -97,7 +97,11 @@ export const useCombinedAnalytics = () => {
       trackProductViewWithAnalysis: segmentAnalyticsHook.trackProductViewWithAnalysis,
       trackContactFormSubmitWithAnalysis: segmentAnalyticsHook.trackContactFormSubmitWithAnalysis,
       getCurrentIPInfo: segmentAnalyticsHook.getCurrentIPInfo,
-      getTargetCustomerAnalysis: segmentAnalyticsHook.getTargetCustomerAnalysis
+      getTargetCustomerAnalysis: segmentAnalyticsHook.getTargetCustomerAnalysis,
+      // Simple IP Analysis methods
+      trackWithSimpleIPAnalysis: segmentAnalyticsHook.trackWithSimpleIPAnalysis,
+      getSimpleIPInfo: segmentAnalyticsHook.getSimpleIPInfo,
+      getSimpleTargetCustomerAnalysis: segmentAnalyticsHook.getSimpleTargetCustomerAnalysis
     },
 
     // Google Analytics-specific methods

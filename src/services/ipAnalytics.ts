@@ -46,11 +46,15 @@ class IPAnalyticsService {
     }
 
     try {
-      // 使用多个IP查询服务以提高准确性
+      // 使用多个IP查询服务以提高准确性，添加超时控制
+      const timeout = 5000; // 5秒超时
+      
       const responses = await Promise.allSettled([
-        this.fetchFromIPAPI(),
-        this.fetchFromIPInfo(),
-        this.fetchFromIPGeolocation()
+        this.fetchWithTimeout(this.fetchFromIPAPI(), timeout),
+        this.fetchWithTimeout(this.fetchFromIPInfo(), timeout),
+        this.fetchWithTimeout(this.fetchFromIPGeolocation(), timeout),
+        this.fetchWithTimeout(this.fetchFromIPify(), timeout),
+        this.fetchWithTimeout(this.fetchFromIPAPI2(), timeout)
       ]);
 
       // 选择最可靠的响应
@@ -60,16 +64,28 @@ class IPAnalyticsService {
         )
         .map(response => response.value);
 
+      console.log(`IP查询结果: ${successfulResponses.length}/${responses.length} 个服务成功`);
+
       if (successfulResponses.length > 0) {
         this.ipInfo = this.mergeIPInfo(successfulResponses);
         return this.ipInfo;
       }
 
+      console.warn('所有IP查询服务都失败了');
       return null;
     } catch (error) {
       console.error('Error fetching IP info:', error);
       return null;
     }
+  }
+
+  // 添加超时控制的fetch包装器
+  private async fetchWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), timeout);
+    });
+    
+    return Promise.race([promise, timeoutPromise]);
   }
 
   // 从 ip-api.com 获取信息
@@ -116,23 +132,98 @@ class IPAnalyticsService {
 
   // 从 ipgeolocation.io 获取信息
   private async fetchFromIPGeolocation(): Promise<any> {
-    const response = await fetch('https://api.ipgeolocation.io/ipgeo?apiKey=free');
-    const data = await response.json();
-    
-    if (data.ip) {
-      return {
-        ip: data.ip,
-        country: data.country_name,
-        region: data.state_prov,
-        city: data.city,
-        org: data.organization,
-        isp: data.isp,
-        timezone: data.time_zone?.name,
-        latitude: data.latitude,
-        longitude: data.longitude
-      };
+    try {
+      // 使用免费的IP地理位置服务，不需要API key
+      const response = await fetch('https://api.ipgeolocation.io/ipgeo');
+      if (!response.ok) {
+        console.warn('ipgeolocation.io request failed:', response.status);
+        return null;
+      }
+      const data = await response.json();
+      
+      if (data.ip) {
+        return {
+          ip: data.ip,
+          country: data.country_name,
+          region: data.state_prov,
+          city: data.city,
+          org: data.organization,
+          isp: data.isp,
+          timezone: data.time_zone?.name,
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn('ipgeolocation.io fetch error:', error);
+      return null;
     }
-    return null;
+  }
+
+  // 从 ipify.org 获取信息
+  private async fetchFromIPify(): Promise<any> {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      if (!response.ok) {
+        console.warn('ipify.org request failed:', response.status);
+        return null;
+      }
+      const data = await response.json();
+      
+      if (data.ip) {
+        // ipify只提供IP，需要额外获取地理位置信息
+        const geoResponse = await fetch(`https://ipapi.co/${data.ip}/json/`);
+        if (geoResponse.ok) {
+          const geoData = await geoResponse.json();
+          return {
+            ip: data.ip,
+            country: geoData.country_name,
+            region: geoData.region,
+            city: geoData.city,
+            org: geoData.org,
+            isp: geoData.org,
+            timezone: geoData.timezone,
+            latitude: geoData.latitude,
+            longitude: geoData.longitude
+          };
+        }
+      }
+      return null;
+    } catch (error) {
+      console.warn('ipify.org fetch error:', error);
+      return null;
+    }
+  }
+
+  // 从 ip-api.com 的备用端点获取信息
+  private async fetchFromIPAPI2(): Promise<any> {
+    try {
+      const response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query&lang=en');
+      if (!response.ok) {
+        console.warn('ip-api.com backup request failed:', response.status);
+        return null;
+      }
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        return {
+          ip: data.query,
+          country: data.country,
+          region: data.regionName,
+          city: data.city,
+          org: data.org,
+          isp: data.isp,
+          timezone: data.timezone,
+          latitude: data.lat,
+          longitude: data.lon
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn('ip-api.com backup fetch error:', error);
+      return null;
+    }
   }
 
   // 合并多个IP信息源的数据

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from '../services/ipAnalytics';
+import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from '../services/simpleIPAnalytics';
 
 export const IPAnalysisPage: React.FC = () => {
   const analytics = useCombinedAnalytics();
   const [ipInfo, setIpInfo] = useState<IPInfo | null>(null);
   const [analysis, setAnalysis] = useState<TargetCustomerAnalysis | null>(null);
+  const [simpleIpInfo, setSimpleIpInfo] = useState<SimpleIPInfo | null>(null);
+  const [simpleAnalysis, setSimpleAnalysis] = useState<SimpleTargetCustomerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,14 +21,18 @@ export const IPAnalysisPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // 获取IP信息和目标客户分析
-      const [ipData, analysisData] = await Promise.all([
+      // 获取IP信息和目标客户分析（完整版和简化版）
+      const [ipData, analysisData, simpleIpData, simpleAnalysisData] = await Promise.all([
         ipAnalytics.getIPInfo(),
-        ipAnalytics.analyzeTargetCustomer()
+        ipAnalytics.analyzeTargetCustomer(),
+        simpleIPAnalytics.getIPInfo(),
+        simpleIPAnalytics.analyzeTargetCustomer()
       ]);
 
       setIpInfo(ipData);
       setAnalysis(analysisData);
+      setSimpleIpInfo(simpleIpData);
+      setSimpleAnalysis(simpleAnalysisData);
 
       // 发送分析事件到Segment
       if (analysisData) {
@@ -33,6 +40,15 @@ export const IPAnalysisPage: React.FC = () => {
           isTargetCustomer: analysisData.isTargetCustomer,
           organizationType: analysisData.organizationType,
           confidence: analysisData.confidence
+        });
+      }
+
+      // 发送简化版分析事件到Segment
+      if (simpleAnalysisData) {
+        analytics.segment.trackWithSimpleIPAnalysis('Simple IP Analysis Completed', {
+          isTargetCustomer: simpleAnalysisData.isTargetCustomer,
+          organizationType: simpleAnalysisData.organizationType,
+          confidence: simpleAnalysisData.confidence
         });
       }
 
@@ -172,7 +188,7 @@ export const IPAnalysisPage: React.FC = () => {
           border: '1px solid #b3d9ff',
           marginBottom: '2rem'
         }}>
-          <h3>IP地址详细信息</h3>
+          <h3>IP地址详细信息 (完整版)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
             <div><strong>IP地址:</strong> {ipInfo.ip}</div>
             <div><strong>国家:</strong> {ipInfo.country}</div>
@@ -184,6 +200,97 @@ export const IPAnalysisPage: React.FC = () => {
             {ipInfo.latitude && ipInfo.longitude && (
               <div>
                 <strong>坐标:</strong> {ipInfo.latitude.toFixed(4)}, {ipInfo.longitude.toFixed(4)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {simpleIpInfo && (
+        <div style={{ 
+          background: '#f0f8ff', 
+          padding: '1.5rem', 
+          borderRadius: '8px',
+          border: '1px solid #87ceeb',
+          marginBottom: '2rem'
+        }}>
+          <h3>IP地址详细信息 (简化版)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <div><strong>IP地址:</strong> {simpleIpInfo.ip}</div>
+            <div><strong>国家:</strong> {simpleIpInfo.country || 'Unknown'}</div>
+            <div><strong>地区:</strong> {simpleIpInfo.region || 'Unknown'}</div>
+            <div><strong>城市:</strong> {simpleIpInfo.city || 'Unknown'}</div>
+            <div><strong>组织:</strong> {simpleIpInfo.org || 'Unknown'}</div>
+            <div><strong>ISP:</strong> {simpleIpInfo.isp || 'Unknown'}</div>
+          </div>
+        </div>
+      )}
+
+      {simpleAnalysis && (
+        <div style={{ 
+          background: '#f0fff0', 
+          padding: '1.5rem', 
+          borderRadius: '8px',
+          border: '1px solid #90ee90',
+          marginBottom: '2rem'
+        }}>
+          <h3>目标客户分析结果 (简化版)</h3>
+          <div style={{ marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>客户状态:</span>
+              {simpleAnalysis.isTargetCustomer ? (
+                <div style={{ color: '#28a745', fontWeight: 'bold' }}>
+                  ✓ 目标客户 (简化版)
+                </div>
+              ) : (
+                <div style={{ color: '#dc3545', fontWeight: 'bold' }}>
+                  ✗ 非目标客户 (简化版)
+                </div>
+              )}
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <strong>组织类型:</strong> {simpleAnalysis.details.orgType}
+              </div>
+              <div>
+                <strong>组织名称:</strong> {simpleAnalysis.details.orgName}
+              </div>
+              <div>
+                <strong>位置:</strong> {simpleAnalysis.details.location}
+              </div>
+              <div>
+                <strong>置信度:</strong> 
+                <span style={{ 
+                  color: getConfidenceColor(simpleAnalysis.confidence),
+                  fontWeight: 'bold',
+                  marginLeft: '0.5rem'
+                }}>
+                  {(simpleAnalysis.confidence * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
+            {simpleAnalysis.details.keywords.length > 0 && (
+              <div>
+                <strong>匹配关键词:</strong>
+                <div style={{ marginTop: '0.5rem' }}>
+                  {simpleAnalysis.details.keywords.map((keyword, index) => (
+                    <span 
+                      key={index}
+                      style={{
+                        background: '#20b2aa',
+                        color: 'white',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '4px',
+                        marginRight: '0.5rem',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
