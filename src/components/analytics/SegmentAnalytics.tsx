@@ -96,6 +96,16 @@ export const useSegmentAnalytics = () => {
     },
     getTargetCustomerAnalysis: async () => {
       return await segmentAnalytics.getTargetCustomerAnalysis();
+    },
+    // Simple IP Analysis methods
+    trackWithSimpleIPAnalysis: async (event: string, properties?: Record<string, any>) => {
+      await segmentAnalytics.trackWithSimpleIPAnalysis(event, properties);
+    },
+    getSimpleIPInfo: async () => {
+      return await segmentAnalytics.getSimpleIPInfo();
+    },
+    getSimpleTargetCustomerAnalysis: async () => {
+      return await segmentAnalytics.getSimpleTargetCustomerAnalysis();
     }
   };
 }; 
