@@ -7,7 +7,9 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
-    host: true
+    host: true,
+    // 添加重定向规则，处理尾部斜杠问题
+    proxy: {}
   },
   build: {
     outDir: 'dist',
