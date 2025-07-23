@@ -22,3 +22,20 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: 'Cache-Control'
+          value: 'max-age=0, no-cache, no-store, must-revalidate'
+        - key: 'Pragma'
+          value: 'no-cache'
+        - key: 'Expires'
+          value: '0'
+    - pattern: '*.html'
+      headers:
+        - key: 'Cache-Control'
+          value: 'max-age=0, no-cache, no-store, must-revalidate'
+    - pattern: 'assets/**/*'
+      headers:
+        - key: 'Cache-Control'
+          value: 'max-age=31536000, immutable'

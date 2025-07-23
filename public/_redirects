@@ -1,0 +1,24 @@
+# SPA路由重写规则 - 所有非文件请求都重写到index.html
+/*    /index.html   200
+
+# 处理尾部斜杠重定向 - 301永久重定向
+/products/*/    /products/:splat    301
+/about/         /about              301
+/contact/       /contact            301
+/analytics-test/ /analytics-test    301
+/ip-analysis/   /ip-analysis        301
+
+# 确保静态资源不被重写
+/assets/*       /assets/:splat      200
+*.js           /:splat             200
+*.css          /:splat             200
+*.png          /:splat             200
+*.jpg          /:splat             200
+*.jpeg         /:splat             200
+*.gif          /:splat             200
+*.svg          /:splat             200
+*.ico          /:splat             200
+*.woff         /:splat             200
+*.woff2        /:splat             200
+*.ttf          /:splat             200
+*.eot          /:splat             200 
