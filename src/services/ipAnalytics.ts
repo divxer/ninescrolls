@@ -1,5 +1,5 @@
 // IP Analytics Service
-// 用于收集用户IP地址和地理位置信息，分析目标客户
+// Used to collect user IP address and geolocation information, analyze target customers
 
 interface IPInfo {
   ip: string;
@@ -39,15 +39,15 @@ class IPAnalyticsService {
     return IPAnalyticsService.instance;
   }
 
-  // 获取用户IP地址和地理位置信息
+  // Get user IP address and geolocation information
   async getIPInfo(): Promise<IPInfo | null> {
     if (this.ipInfo) {
       return this.ipInfo;
     }
 
     try {
-      // 使用多个IP查询服务以提高准确性，添加超时控制
-      const timeout = 5000; // 5秒超时
+          // Use multiple IP query services for better accuracy, add timeout control
+    const timeout = 5000; // 5 second timeout
       
       const responses = await Promise.allSettled([
         this.fetchWithTimeout(this.fetchFromIPAPI(), timeout),
@@ -57,21 +57,21 @@ class IPAnalyticsService {
         this.fetchWithTimeout(this.fetchFromIPAPI2(), timeout)
       ]);
 
-      // 选择最可靠的响应
+      // Select the most reliable response
       const successfulResponses = responses
         .filter((response): response is PromiseFulfilledResult<any> => 
           response.status === 'fulfilled' && response.value
         )
         .map(response => response.value);
 
-      console.log(`IP查询结果: ${successfulResponses.length}/${responses.length} 个服务成功`);
+      console.log(`IP query result: ${successfulResponses.length}/${responses.length} services successful`);
 
       if (successfulResponses.length > 0) {
         this.ipInfo = this.mergeIPInfo(successfulResponses);
         return this.ipInfo;
       }
 
-      console.warn('所有IP查询服务都失败了');
+      console.warn('All IP query services failed');
       return null;
     } catch (error) {
       console.error('Error fetching IP info:', error);
@@ -79,7 +79,7 @@ class IPAnalyticsService {
     }
   }
 
-  // 添加超时控制的fetch包装器
+  // Add timeout-controlled fetch wrapper
   private async fetchWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), timeout);
@@ -88,7 +88,7 @@ class IPAnalyticsService {
     return Promise.race([promise, timeoutPromise]);
   }
 
-  // 从 ip-api.com 获取信息
+  // Get information from ip-api.com
   private async fetchFromIPAPI(): Promise<any> {
     const response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query');
     const data = await response.json();
@@ -109,7 +109,7 @@ class IPAnalyticsService {
     return null;
   }
 
-  // 从 ipinfo.io 获取信息
+  // Get information from ipinfo.io
   private async fetchFromIPInfo(): Promise<any> {
     const response = await fetch('https://ipinfo.io/json');
     const data = await response.json();
@@ -130,10 +130,10 @@ class IPAnalyticsService {
     return null;
   }
 
-  // 从 ipgeolocation.io 获取信息
+  // Get information from ipgeolocation.io
   private async fetchFromIPGeolocation(): Promise<any> {
     try {
-      // 使用免费的IP地理位置服务，不需要API key
+              // Use free IP geolocation service, no API key required
       const response = await fetch('https://api.ipgeolocation.io/ipgeo');
       if (!response.ok) {
         console.warn('ipgeolocation.io request failed:', response.status);
@@ -161,7 +161,7 @@ class IPAnalyticsService {
     }
   }
 
-  // 从 ipify.org 获取信息
+  // Get information from ipify.org
   private async fetchFromIPify(): Promise<any> {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
@@ -172,7 +172,7 @@ class IPAnalyticsService {
       const data = await response.json();
       
       if (data.ip) {
-        // ipify只提供IP，需要额外获取地理位置信息
+        // ipify only provides IP, need to get geolocation information separately
         const geoResponse = await fetch(`https://ipapi.co/${data.ip}/json/`);
         if (geoResponse.ok) {
           const geoData = await geoResponse.json();
@@ -196,7 +196,7 @@ class IPAnalyticsService {
     }
   }
 
-  // 从 ip-api.com 的备用端点获取信息
+  // Get information from ip-api.com backup endpoint
   private async fetchFromIPAPI2(): Promise<any> {
     try {
       const response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query&lang=en');
@@ -226,11 +226,11 @@ class IPAnalyticsService {
     }
   }
 
-  // 合并多个IP信息源的数据
+  // Merge data from multiple IP information sources
   private mergeIPInfo(responses: any[]): IPInfo {
     const merged: any = {};
     
-    // 选择最完整的数据
+    // Select the most complete data
     responses.forEach(response => {
       Object.keys(response).forEach(key => {
         if (response[key] && !merged[key]) {
@@ -242,7 +242,7 @@ class IPAnalyticsService {
     return merged as IPInfo;
   }
 
-  // 分析是否为目标客户
+  // Analyze if it's a target customer
   async analyzeTargetCustomer(): Promise<TargetCustomerAnalysis> {
     if (this.analysis) {
       return this.analysis;
@@ -269,34 +269,34 @@ class IPAnalyticsService {
     return analysis;
   }
 
-  // 执行目标客户分析
+  // Perform target customer analysis
   private performAnalysis(ipInfo: IPInfo): TargetCustomerAnalysis {
     const orgName = ipInfo.org || ipInfo.isp || 'Unknown';
     const orgLower = orgName.toLowerCase();
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
 
-    // 定义目标客户关键词
+    // Define target customer keywords
     const universityKeywords = [
       'university', 'college', 'school', 'academy', 'institute', 'campus',
-      '大学', '学院', '学校', '研究所', '研究院', '实验室'
+      // Chinese: '大学', '学院', '学校', '研究所', '研究院', '实验室'
     ];
 
     const researchKeywords = [
       'research', 'laboratory', 'lab', 'institute', 'foundation', 'center',
-      '研究', '实验室', '研究所', '研究院', '中心', '基金会'
+      // Chinese: '研究', '实验室', '研究所', '研究院', '中心', '基金会'
     ];
 
     const enterpriseKeywords = [
       'corporation', 'company', 'inc', 'ltd', 'llc', 'enterprise', 'business',
-      '公司', '企业', '集团', '股份', '有限', '科技'
+      // Chinese: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
-    // 分析组织类型
+    // Analyze organization type
     let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
     let confidence = 0;
     let keywords: string[] = [];
 
-    // 检查大学关键词
+    // Check university keywords
     const universityMatches = universityKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -306,7 +306,7 @@ class IPAnalyticsService {
       keywords = universityMatches;
     }
 
-    // 检查研究机构关键词
+    // Check research institution keywords
     const researchMatches = researchKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -316,7 +316,7 @@ class IPAnalyticsService {
       keywords = researchMatches;
     }
 
-    // 检查企业关键词
+    // Check enterprise keywords
     const enterpriseMatches = enterpriseKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -326,7 +326,7 @@ class IPAnalyticsService {
       keywords = enterpriseMatches;
     }
 
-    // 地理位置加分
+    // Geographic location bonus
     if (this.isTargetLocation(ipInfo.country, ipInfo.region)) {
       confidence = Math.min(0.95, confidence + 0.1);
     }
@@ -344,12 +344,12 @@ class IPAnalyticsService {
     };
   }
 
-  // 检查是否为目标地理位置
+  // Check if it's a target geographic location
   private isTargetLocation(country: string, region: string): boolean {
     const targetCountries = [
       'United States', 'China', 'Japan', 'Germany', 'United Kingdom', 
       'France', 'Canada', 'Australia', 'South Korea', 'Netherlands',
-      '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
+      // Chinese: '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
     ];
 
     const targetRegions = [
@@ -360,23 +360,23 @@ class IPAnalyticsService {
     return targetCountries.includes(country) || targetRegions.includes(region);
   }
 
-  // 获取组织类型名称
+  // Get organization type name
   private getOrgTypeName(type: string): string {
     const typeNames = {
-      university: '大学/教育机构',
-      research_institute: '研究机构',
-      enterprise: '企业',
-      unknown: '未知'
+      university: 'University/Educational Institution',
+      research_institute: 'Research Institution',
+      enterprise: 'Enterprise',
+      unknown: 'Unknown'
     };
-    return typeNames[type as keyof typeof typeNames] || '未知';
+    return typeNames[type as keyof typeof typeNames] || 'Unknown';
   }
 
-  // 获取分析结果
+  // Get analysis result
   getAnalysis(): TargetCustomerAnalysis | null {
     return this.analysis;
   }
 
-  // 重置分析结果
+  // Reset analysis result
   reset(): void {
     this.ipInfo = null;
     this.analysis = null;

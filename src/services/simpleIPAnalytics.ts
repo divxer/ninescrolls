@@ -1,5 +1,5 @@
-// 简化的IP分析服务
-// 使用更可靠的IP查询方法
+// Simplified IP analytics service
+// Uses more reliable IP query methods
 
 interface SimpleIPInfo {
   ip: string;
@@ -36,21 +36,21 @@ class SimpleIPAnalyticsService {
     return SimpleIPAnalyticsService.instance;
   }
 
-  // 获取IP信息 - 使用最可靠的方法
+  // Get IP information - using the most reliable method
   async getIPInfo(): Promise<SimpleIPInfo | null> {
     if (this.ipInfo) {
       return this.ipInfo;
     }
 
     try {
-      // 首先尝试获取IP地址
+      // First try to get IP address
       const ip = await this.getIPAddress();
       if (!ip) {
-        console.warn('无法获取IP地址');
+        console.warn('Unable to get IP address');
         return null;
       }
 
-      // 然后获取地理位置信息
+      // Then get geolocation information
       const geoInfo = await this.getGeoInfo(ip);
       
       this.ipInfo = {
@@ -58,19 +58,19 @@ class SimpleIPAnalyticsService {
         ...geoInfo
       };
 
-      console.log('IP信息获取成功:', this.ipInfo);
+      console.log('IP information retrieved successfully:', this.ipInfo);
       return this.ipInfo;
 
     } catch (error) {
-      console.error('获取IP信息失败:', error);
+      console.error('Failed to get IP information:', error);
       return null;
     }
   }
 
-  // 获取IP地址
+  // Get IP address
   private async getIPAddress(): Promise<string | null> {
     try {
-      // 尝试多个IP查询服务
+      // Try multiple IP query services
       const services = [
         'https://api.ipify.org?format=json',
         'https://api.myip.com',
@@ -88,27 +88,27 @@ class SimpleIPAnalyticsService {
             const data = await response.json();
             const ip = data.ip || data.origin;
             if (ip && this.isValidIP(ip)) {
-              console.log(`IP地址获取成功 (${service}):`, ip);
+              console.log(`IP address retrieved successfully (${service}):`, ip);
               return ip;
             }
           }
         } catch (error) {
-          console.warn(`IP服务 ${service} 失败:`, error);
+          console.warn(`IP service ${service} failed:`, error);
           continue;
         }
       }
 
       return null;
     } catch (error) {
-      console.error('获取IP地址失败:', error);
+      console.error('Failed to get IP address:', error);
       return null;
     }
   }
 
-  // 获取地理位置信息
+  // Get geolocation information
   private async getGeoInfo(ip: string): Promise<Partial<SimpleIPInfo>> {
     try {
-      // 使用ip-api.com (免费且可靠)
+      // Use ip-api.com (free and reliable)
       const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,org,isp,query`);
       
       if (response.ok) {
@@ -125,7 +125,7 @@ class SimpleIPAnalyticsService {
         }
       }
 
-      // 备用方案：使用ipinfo.io
+      // Fallback: use ipinfo.io
       const backupResponse = await fetch(`https://ipinfo.io/${ip}/json`);
       if (backupResponse.ok) {
         const data = await backupResponse.json();
@@ -140,12 +140,12 @@ class SimpleIPAnalyticsService {
 
       return {};
     } catch (error) {
-      console.warn('获取地理位置信息失败:', error);
+      console.warn('Failed to get geolocation information:', error);
       return {};
     }
   }
 
-  // 验证IP地址格式
+  // Validate IP address format
   private isValidIP(ip: string): boolean {
     const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
@@ -153,7 +153,7 @@ class SimpleIPAnalyticsService {
     return ipv4Regex.test(ip) || ipv6Regex.test(ip);
   }
 
-  // 分析目标客户
+  // Analyze target customers
   async analyzeTargetCustomer(): Promise<SimpleTargetCustomerAnalysis> {
     if (this.analysis) {
       return this.analysis;
@@ -170,34 +170,34 @@ class SimpleIPAnalyticsService {
     return analysis;
   }
 
-  // 执行分析
+      // Perform analysis
   private performAnalysis(ipInfo: SimpleIPInfo): SimpleTargetCustomerAnalysis {
     const orgName = ipInfo.org || ipInfo.isp || 'Unknown';
     const orgLower = orgName.toLowerCase();
     const location = [ipInfo.city, ipInfo.region, ipInfo.country].filter(Boolean).join(', ') || 'Unknown';
 
-    // 定义关键词
+    // Define keywords
     const universityKeywords = [
       'university', 'college', 'school', 'academy', 'institute', 'campus',
-      '大学', '学院', '学校', '研究所', '研究院', '实验室'
+      // Chinese: '大学', '学院', '学校', '研究所', '研究院', '实验室'
     ];
 
     const researchKeywords = [
       'research', 'laboratory', 'lab', 'institute', 'foundation', 'center',
-      '研究', '实验室', '研究所', '研究院', '中心', '基金会'
+      // Chinese: '研究', '实验室', '研究所', '研究院', '中心', '基金会'
     ];
 
     const enterpriseKeywords = [
       'corporation', 'company', 'inc', 'ltd', 'llc', 'enterprise', 'business',
-      '公司', '企业', '集团', '股份', '有限', '科技'
+      // Chinese: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
-    // 分析组织类型
+    // Analyze organization type
     let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
     let confidence = 0;
     let keywords: string[] = [];
 
-    // 检查大学关键词
+    // Check university keywords
     const universityMatches = universityKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -207,7 +207,7 @@ class SimpleIPAnalyticsService {
       keywords = universityMatches;
     }
 
-    // 检查研究机构关键词
+    // Check research institution keywords
     const researchMatches = researchKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -217,7 +217,7 @@ class SimpleIPAnalyticsService {
       keywords = researchMatches;
     }
 
-    // 检查企业关键词
+    // Check enterprise keywords
     const enterpriseMatches = enterpriseKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
@@ -227,7 +227,7 @@ class SimpleIPAnalyticsService {
       keywords = enterpriseMatches;
     }
 
-    // 地理位置加分
+    // Geographic location bonus
     if (this.isTargetLocation(ipInfo.country, ipInfo.region)) {
       confidence = Math.min(0.95, confidence + 0.1);
     }
@@ -245,14 +245,14 @@ class SimpleIPAnalyticsService {
     };
   }
 
-  // 检查是否为目标地理位置
+  // Check if it's a target geographic location
   private isTargetLocation(country?: string, region?: string): boolean {
     if (!country) return false;
 
     const targetCountries = [
       'United States', 'China', 'Japan', 'Germany', 'United Kingdom', 
       'France', 'Canada', 'Australia', 'South Korea', 'Netherlands',
-      '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
+      // Chinese: '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
     ];
 
     const targetRegions = [
@@ -262,18 +262,18 @@ class SimpleIPAnalyticsService {
     return targetCountries.includes(country) || (region ? targetRegions.includes(region) : false);
   }
 
-  // 获取组织类型名称
+  // Get organization type name
   private getOrgTypeName(type: string): string {
     const typeNames = {
-      university: '大学/教育机构',
-      research_institute: '研究机构',
-      enterprise: '企业',
-      unknown: '未知'
+      university: 'University/Educational Institution',
+      research_institute: 'Research Institution',
+      enterprise: 'Enterprise',
+      unknown: 'Unknown'
     };
-    return typeNames[type as keyof typeof typeNames] || '未知';
+    return typeNames[type as keyof typeof typeNames] || 'Unknown';
   }
 
-  // 创建默认分析结果
+  // Create default analysis result
   private createDefaultAnalysis(): SimpleTargetCustomerAnalysis {
     return {
       isTargetCustomer: false,
@@ -281,14 +281,14 @@ class SimpleIPAnalyticsService {
       confidence: 0,
       details: {
         orgName: 'Unknown',
-        orgType: '未知',
+        orgType: 'Unknown',
         location: 'Unknown',
         keywords: []
       }
     };
   }
 
-  // 重置
+  // Reset
   reset(): void {
     this.ipInfo = null;
     this.analysis = null;
