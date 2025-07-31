@@ -148,11 +148,11 @@ class SegmentAnalyticsService {
   // IP Analytics and Target Customer Analysis
   async trackWithIPAnalysis(event: string, properties?: Record<string, any>) {
     try {
-      // 获取IP信息和分析结果
+      // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
 
-      // 合并事件属性
+      // Merge event properties
       const enhancedProperties = {
         ...properties,
         ipInfo: ipInfo ? {
@@ -177,10 +177,10 @@ class SegmentAnalyticsService {
         } : null
       };
 
-      // 发送到Segment
+      // Send to Segment
       this.track(event, enhancedProperties);
 
-      // 如果是目标客户，发送特殊事件
+      // If it's a target customer, send special event
       if (analysis && analysis.isTargetCustomer) {
         this.track('Target Customer Detected', {
           originalEvent: event,
@@ -199,12 +199,12 @@ class SegmentAnalyticsService {
 
     } catch (error) {
       console.error('Error tracking with IP analysis:', error);
-      // 如果IP分析失败，仍然发送原始事件
+      // If IP analysis fails, still send the original event
       this.track(event, properties);
     }
   }
 
-  // 页面浏览时进行IP分析
+  // Perform IP analysis on page view
   async trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, any>) {
     await this.trackWithIPAnalysis('Page Viewed', {
       pageName,
@@ -214,7 +214,7 @@ class SegmentAnalyticsService {
     });
   }
 
-  // 产品浏览时进行IP分析
+  // Perform IP analysis on product view
   async trackProductViewWithAnalysis(productId: string, productName: string) {
     await this.trackWithIPAnalysis('Product Viewed', {
       productId,
@@ -223,7 +223,7 @@ class SegmentAnalyticsService {
     });
   }
 
-  // 联系表单提交时进行IP分析
+  // Perform IP analysis on contact form submission
   async trackContactFormSubmitWithAnalysis(productId?: string, productName?: string) {
     await this.trackWithIPAnalysis('Contact Form Submitted', {
       productId,
@@ -232,24 +232,24 @@ class SegmentAnalyticsService {
     });
   }
 
-  // 获取当前IP信息
+  // Get current IP information
   async getCurrentIPInfo(): Promise<IPInfo | null> {
     return await ipAnalytics.getIPInfo();
   }
 
-  // 获取目标客户分析结果
+  // Get target customer analysis results
   async getTargetCustomerAnalysis(): Promise<TargetCustomerAnalysis | null> {
     return await ipAnalytics.analyzeTargetCustomer();
   }
 
-  // 使用简化的IP分析服务
+  // Use simplified IP analysis service
   async trackWithSimpleIPAnalysis(event: string, properties?: Record<string, any>) {
     try {
-      // 获取简化的IP信息和分析结果
+      // Get simplified IP information and analysis results
       const ipInfo = await simpleIPAnalytics.getIPInfo();
       const analysis = await simpleIPAnalytics.analyzeTargetCustomer();
 
-      // 合并事件属性
+      // Merge event properties
       const enhancedProperties = {
         ...properties,
         simpleIPInfo: ipInfo ? {
@@ -271,10 +271,10 @@ class SegmentAnalyticsService {
         } : null
       };
 
-      // 发送到Segment
+      // Send to Segment
       this.track(event, enhancedProperties);
 
-      // 如果是目标客户，发送特殊事件
+      // If it's a target customer, send special event
       if (analysis && analysis.isTargetCustomer) {
         this.track('Simple Target Customer Detected', {
           originalEvent: event,
@@ -293,17 +293,17 @@ class SegmentAnalyticsService {
 
     } catch (error) {
       console.error('Error tracking with simple IP analysis:', error);
-      // 如果IP分析失败，仍然发送原始事件
+      // If IP analysis fails, still send the original event
       this.track(event, properties);
     }
   }
 
-  // 获取简化的IP信息
+  // Get simplified IP information
   async getSimpleIPInfo(): Promise<SimpleIPInfo | null> {
     return await simpleIPAnalytics.getIPInfo();
   }
 
-  // 获取简化的目标客户分析结果
+  // Get simplified target customer analysis results
   async getSimpleTargetCustomerAnalysis(): Promise<SimpleTargetCustomerAnalysis | null> {
     return await simpleIPAnalytics.analyzeTargetCustomer();
   }
