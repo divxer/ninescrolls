@@ -26,7 +26,7 @@ export function Chat() {
 
     // Validate Tawk.to configuration
     if (!propertyId || !widgetId) {
-      console.error('Tawk.to Property ID or Widget ID is not configured. Please check your environment variables.');
+      console.warn('Tawk.to Property ID or Widget ID is not configured. Chat widget will not load.');
       return;
     }
 
@@ -44,32 +44,35 @@ export function Chat() {
 
     // Configure Tawk.to
     w.Tawk_API.onLoad = function() {
-      // Set visitor information
-      w.Tawk_API.setAttributes({
-        'name': 'Visitor',
-        'email': '',  // We'll let visitors provide their own email
-        'hash': ''  // Add hash if you want to use secure mode
-      }, function(error: any) {
-        if (error) {
-          console.error('Error setting Tawk.to attributes:', error);
-        }
-      });
+      try {
+        // Set visitor information - only set name, skip email to avoid INVALID_EMAIL error
+        w.Tawk_API.setAttributes({
+          'name': 'Visitor'
+          // Skip email and hash to avoid validation errors
+        }, function(error: any) {
+          if (error) {
+            console.warn('Tawk.to attributes setting failed:', error);
+          }
+        });
 
-      // Set custom variables
-      w.Tawk_API.addEvent('website', 'ninescrolls.us', function(error: any) {
-        if (error) {
-          console.error('Error setting Tawk.to custom variable:', error);
-        }
-      });
+        // Set custom variables - use proper event tracking
+        w.Tawk_API.addEvent('page_view', 'ninescrolls.us', function(error: any) {
+          if (error) {
+            console.warn('Tawk.to custom variable setting failed:', error);
+          }
+        });
 
-      // Position the widget to avoid overlap
-      w.Tawk_API.customize({
-        position: 'right',
-        offsetVertical: '120px',
-        offsetHorizontal: '20px',
-        height: '500px',
-        zIndex: 1000
-      });
+        // Position the widget to avoid overlap
+        w.Tawk_API.customize({
+          position: 'right',
+          offsetVertical: '120px',
+          offsetHorizontal: '20px',
+          height: '500px',
+          zIndex: 1000
+        });
+      } catch (error) {
+        console.warn('Tawk.to configuration failed:', error);
+      }
     };
 
     // Cleanup function
