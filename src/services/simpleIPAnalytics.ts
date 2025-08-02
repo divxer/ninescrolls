@@ -58,7 +58,7 @@ class SimpleIPAnalyticsService {
         ...geoInfo
       };
 
-      console.log('IP information retrieved successfully:', this.ipInfo);
+      console.log('IP information retrieved successfully');
       return this.ipInfo;
 
     } catch (error) {
@@ -88,7 +88,7 @@ class SimpleIPAnalyticsService {
             const data = await response.json();
             const ip = data.ip || data.origin;
             if (ip && this.isValidIP(ip)) {
-              console.log(`IP address retrieved successfully (${service}):`, ip);
+              console.log(`IP address retrieved successfully from ${service.split('/')[2]}`);
               return ip;
             }
           }
@@ -108,8 +108,8 @@ class SimpleIPAnalyticsService {
   // Get geolocation information
   private async getGeoInfo(ip: string): Promise<Partial<SimpleIPInfo>> {
     try {
-      // Use ip-api.com (free and reliable)
-      const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,org,isp,query`);
+      // Use ip-api.com (free and reliable) - use HTTPS to avoid mixed content errors
+      const response = await fetch(`https://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,org,isp,query`);
       
       if (response.ok) {
         const data = await response.json();

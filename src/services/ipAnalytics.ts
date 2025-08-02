@@ -90,7 +90,7 @@ class IPAnalyticsService {
 
   // Get information from ip-api.com
   private async fetchFromIPAPI(): Promise<any> {
-    const response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query');
+          const response = await fetch('https://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query');
     const data = await response.json();
     
     if (data.status === 'success') {
@@ -130,13 +130,13 @@ class IPAnalyticsService {
     return null;
   }
 
-  // Get information from ipgeolocation.io
+  // Get information from ipapi.co (free alternative to ipgeolocation.io)
   private async fetchFromIPGeolocation(): Promise<any> {
     try {
-              // Use free IP geolocation service, no API key required
-      const response = await fetch('https://api.ipgeolocation.io/ipgeo');
+      // Use ipapi.co as a free alternative to ipgeolocation.io
+      const response = await fetch('https://ipapi.co/json/');
       if (!response.ok) {
-        console.warn('ipgeolocation.io request failed:', response.status);
+        console.warn('ipapi.co request failed:', response.status);
         return null;
       }
       const data = await response.json();
@@ -145,18 +145,18 @@ class IPAnalyticsService {
         return {
           ip: data.ip,
           country: data.country_name,
-          region: data.state_prov,
+          region: data.region,
           city: data.city,
-          org: data.organization,
-          isp: data.isp,
-          timezone: data.time_zone?.name,
+          org: data.org,
+          isp: data.org,
+          timezone: data.timezone,
           latitude: data.latitude,
           longitude: data.longitude
         };
       }
       return null;
     } catch (error) {
-      console.warn('ipgeolocation.io fetch error:', error);
+      console.warn('ipapi.co fetch error:', error);
       return null;
     }
   }
@@ -199,7 +199,7 @@ class IPAnalyticsService {
   // Get information from ip-api.com backup endpoint
   private async fetchFromIPAPI2(): Promise<any> {
     try {
-      const response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query&lang=en');
+      const response = await fetch('https://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query&lang=en');
       if (!response.ok) {
         console.warn('ip-api.com backup request failed:', response.status);
         return null;
