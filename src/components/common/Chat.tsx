@@ -7,7 +7,8 @@ declare global {
       onLoad: (callback: () => void) => void;
       setAttributes: (attributes: Record<string, string>, callback?: (error: any) => void) => void;
       addEvent: (name: string, value: string, callback?: (error: any) => void) => void;
-      customize: (config: {
+      // customize method may not be available in all Tawk.to versions
+      customize?: (config: {
         position?: string;
         offsetVertical?: string;
         offsetHorizontal?: string;
@@ -55,21 +56,27 @@ export function Chat() {
           }
         });
 
-        // Set custom variables - use proper event tracking
-        w.Tawk_API.addEvent('page_view', 'ninescrolls.us', function(error: any) {
+        // Set custom variables - use a simple event name
+        w.Tawk_API.addEvent('website_visit', 'ninescrolls.us', function(error: any) {
           if (error) {
             console.warn('Tawk.to custom variable setting failed:', error);
           }
         });
 
-        // Position the widget to avoid overlap
-        w.Tawk_API.customize({
-          position: 'right',
-          offsetVertical: '120px',
-          offsetHorizontal: '20px',
-          height: '500px',
-          zIndex: 1000
-        });
+        // Position the widget to avoid overlap - only if customize method exists
+        if (w.Tawk_API.customize) {
+          try {
+            w.Tawk_API.customize({
+              position: 'right',
+              offsetVertical: '120px',
+              offsetHorizontal: '20px',
+              height: '500px',
+              zIndex: 1000
+            });
+          } catch (customizeError) {
+            console.warn('Tawk.to customize failed:', customizeError);
+          }
+        }
       } catch (error) {
         console.warn('Tawk.to configuration failed:', error);
       }
