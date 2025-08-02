@@ -90,22 +90,22 @@ class IPAnalyticsService {
 
   // Get information from ip-api.com
   private async fetchFromIPAPI(): Promise<any> {
-          const response = await fetch('https://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query');
+          const response = await fetch('https://ipapi.co/json/');
     const data = await response.json();
     
-    if (data.status === 'success') {
-      return {
-        ip: data.query,
-        country: data.country,
-        region: data.regionName,
-        city: data.city,
-        org: data.org,
-        isp: data.isp,
-        timezone: data.timezone,
-        latitude: data.lat,
-        longitude: data.lon
-      };
-    }
+          if (data.ip) {
+        return {
+          ip: data.ip,
+          country: data.country_name,
+          region: data.region,
+          city: data.city,
+          org: data.org,
+          isp: data.org,
+          timezone: data.timezone,
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+      }
     return null;
   }
 
@@ -199,29 +199,29 @@ class IPAnalyticsService {
   // Get information from ip-api.com backup endpoint
   private async fetchFromIPAPI2(): Promise<any> {
     try {
-      const response = await fetch('https://ip-api.com/json/?fields=status,message,country,regionName,city,org,isp,timezone,lat,lon,query&lang=en');
+      const response = await fetch('https://ipapi.co/json/');
       if (!response.ok) {
-        console.warn('ip-api.com backup request failed:', response.status);
+        console.warn('ipapi.co backup request failed:', response.status);
         return null;
       }
       const data = await response.json();
       
-      if (data.status === 'success') {
+      if (data.ip) {
         return {
-          ip: data.query,
-          country: data.country,
-          region: data.regionName,
+          ip: data.ip,
+          country: data.country_name,
+          region: data.region,
           city: data.city,
           org: data.org,
-          isp: data.isp,
+          isp: data.org,
           timezone: data.timezone,
-          latitude: data.lat,
-          longitude: data.lon
+          latitude: data.latitude,
+          longitude: data.longitude
         };
       }
       return null;
     } catch (error) {
-      console.warn('ip-api.com backup fetch error:', error);
+      console.warn('ipapi.co backup fetch error:', error);
       return null;
     }
   }
