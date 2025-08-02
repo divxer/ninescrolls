@@ -56,8 +56,8 @@ export function Chat() {
           }
         });
 
-        // Set custom variables - use a simple event name
-        w.Tawk_API.addEvent('website_visit', 'ninescrolls.us', function(error: any) {
+        // Set custom variables - use a very simple event name
+        w.Tawk_API.addEvent('visit', 'ninescrolls', function(error: any) {
           if (error) {
             console.warn('Tawk.to custom variable setting failed:', error);
           }

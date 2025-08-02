@@ -108,19 +108,19 @@ class SimpleIPAnalyticsService {
   // Get geolocation information
   private async getGeoInfo(ip: string): Promise<Partial<SimpleIPInfo>> {
     try {
-      // Use ip-api.com (free and reliable) - use HTTPS to avoid mixed content errors
-      const response = await fetch(`https://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,org,isp,query`);
+      // Use ipapi.co as a more reliable free alternative to ip-api.com
+      const response = await fetch(`https://ipapi.co/${ip}/json/`);
       
       if (response.ok) {
         const data = await response.json();
         
-        if (data.status === 'success') {
+        if (data.ip) {
           return {
-            country: data.country,
-            region: data.regionName,
+            country: data.country_name,
+            region: data.region,
             city: data.city,
             org: data.org,
-            isp: data.isp
+            isp: data.org
           };
         }
       }
