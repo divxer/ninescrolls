@@ -18,6 +18,123 @@ interface BlogPost {
 
 const samplePosts: BlogPost[] = [
   {
+    id: '11',
+    title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
+    content: `
+      <p>Plasma etching is a cornerstone process in semiconductor manufacturing, MEMS, and advanced materials research. This insight article, based on industry expertise and technical literature, provides a clear comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) — enabling engineers and researchers to choose the right solution for their needs.</p>
+      
+      <h2>1. Plasma Etching (PE)</h2>
+      <ul>
+        <li><strong>Plasma Density:</strong> ~10¹⁰ cm⁻³</li>
+        <li><strong>Operating Pressure:</strong> 15–1000 mTorr</li>
+        <li><strong>Mechanism:</strong> Primarily chemical etching; isotropic profiles</li>
+        <li><strong>Advantages:</strong> Simple, cost-effective, minimal thermal management</li>
+        <li><strong>Limitations:</strong> Low plasma density, no independent control of ions and radicals, slower etch rates</li>
+      </ul>
+      
+      <h2>2. Reactive Ion Etching (RIE)</h2>
+      <ul>
+        <li><strong>Plasma Density:</strong> ~10¹⁰ cm⁻³</li>
+        <li><strong>Operating Pressure:</strong> 10–100 mTorr</li>
+        <li><strong>Mechanism:</strong> Combination of chemical reactions (radicals) and physical sputtering (ions) — anisotropic capability</li>
+        <li><strong>Advantages:</strong> Directional etching possible; more control than PE</li>
+        <li><strong>Limitations:</strong> Single RF power source — plasma density and ion energy are coupled; limited selectivity</li>
+      </ul>
+      
+      <h2>3. Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE)</h2>
+      <ul>
+        <li><strong>Plasma Density:</strong> 10¹¹–10¹³ cm⁻³</li>
+        <li><strong>Operating Pressure:</strong> 2–40 mTorr</li>
+        <li><strong>Mechanism:</strong> Two RF sources — one for plasma density (ICP coil) and one for ion energy (bias)</li>
+        <li><strong>Advantages:</strong></li>
+        <ul>
+          <li>Independent control of plasma density and ion energy</li>
+          <li>High etch rates with excellent anisotropy</li>
+          <li>Better selectivity and profile control</li>
+          <li>Capable of etching high-aspect-ratio structures</li>
+        </ul>
+        <li><strong>Applications:</strong> Advanced device fabrication, MEMS, photonics, compound semiconductors, dielectric etching</li>
+      </ul>
+      
+      <h2>Visual Comparison of Plasma Etching Techniques</h2>
+      <p>The diagram below illustrates the key differences between the three plasma etching techniques:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" 
+             alt="Comparison of PE, RIE, and ICP-RIE plasma etching techniques showing chamber configurations, process gas flow, plasma generation, and ion bombardment mechanisms" 
+             style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
+             loading="lazy" />
+        <p style="font-style: italic; color: #666; margin-top: 10px; font-size: 14px;">
+          Visual comparison of Parallel Plate PE, Parallel Plate RIE, and ICP-RIE chamber configurations and process flows
+        </p>
+      </div>
+      
+      <h2>Comparison Table</h2>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Feature</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">PE</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">RIE</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ICP-RIE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Density</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">~10¹⁰ cm⁻³</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">~10¹⁰ cm⁻³</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">10¹¹–10¹³ cm⁻³</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Operating Pressure</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">15–1000 mTorr</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">10–100 mTorr</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">2–40 mTorr</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Profiles</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic/Anisotropic</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic/Anisotropic</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Selectivity</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Good</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Poor</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Very Good</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Thermal Management</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Minimal</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Minimal</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Required (ESC/He)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Control Range</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Narrow</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Wide</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h2>Why Choose ICP-RIE?</h2>
+      <p>For applications demanding high precision, vertical profiles, and process flexibility, ICP-RIE stands out. Its dual-RF design supports processes from purely chemical to heavily ion-assisted etching, delivering unmatched flexibility and repeatability.</p>
+      
+      <p>At NineScrolls, we provide cutting-edge ICP-RIE systems tailored to research and production needs. Our solutions combine high-density plasma generation, precise bias control, and advanced thermal management to meet the most demanding fabrication challenges.</p>
+      
+      <p><strong>Contact us to learn more about our plasma etching equipment and how it can advance your research or manufacturing process.</strong></p>
+    `,
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-25',
+    category: 'Materials Science',
+    readTime: 15,
+    imageUrl: '/assets/images/insights/plasma-etching-cover-optimized.png',
+    slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
+    tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'MEMS', 'Materials Science']
+  },
+  {
     id: '1',
     title: 'Advanced Materials Processing: From Nanotechnology to Energy Applications',
     content: `
@@ -531,10 +648,10 @@ export const InsightsPostPage: React.FC = () => {
               <div className="related-products">
                 <h3>Related Products</h3>
                 <ul>
-                  <li><a href="/products/ald">ALD Systems</a></li>
-                  <li><a href="/products/pecvd">PECVD Systems</a></li>
-                  <li><a href="/products/sputter">Sputter Systems</a></li>
-                  <li><a href="/products/etcher">Etching Systems</a></li>
+                  <li><a href="/products/icp-etcher">ICP-RIE Etching Systems</a></li>
+                  <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                  <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                  <li><a href="/products/striper">Striper Systems</a></li>
                 </ul>
               </div>
             </div>
