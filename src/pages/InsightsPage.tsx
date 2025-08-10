@@ -17,6 +17,17 @@ interface BlogPost {
 
 const samplePosts: BlogPost[] = [
   {
+    id: '11',
+    title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
+    excerpt: 'A comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies...',
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-25',
+    category: 'Materials Science',
+    readTime: 15,
+    imageUrl: '/assets/images/insights/plasma-etching-cover-optimized.png',
+    slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching'
+  },
+  {
     id: '1',
     title: 'Advanced Materials Processing: From Nanotechnology to Energy Applications',
     excerpt: 'Explore how NineScrolls equipment enables breakthroughs across materials science, nanotechnology, and energy technologies...',
@@ -125,7 +136,8 @@ const samplePosts: BlogPost[] = [
     readTime: 8,
     imageUrl: '/assets/images/insights/solar-cells.jpg',
     slug: 'solar-cell-manufacturing-renewable-energy'
-  }
+  },
+
 ];
 
 const categories = [
