@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { SEO } from '../components/common/SEO';
 import '../styles/BlogPage.css';
 
 interface BlogPost {
@@ -171,7 +172,16 @@ export const InsightsPage: React.FC = () => {
   });
 
   return (
-    <div className="insights-page">
+    <>
+      <SEO 
+        title="Insights"
+        description="NineScrolls Insights - Expert analysis and breakthrough technologies in advanced manufacturing and materials science. Explore articles on plasma etching, semiconductor manufacturing, MEMS, nanotechnology, and more."
+        keywords="semiconductor insights, plasma etching, advanced manufacturing, materials science, MEMS, nanotechnology, semiconductor equipment, thin film processing"
+        image="/assets/images/insights/plasma-etching-cover-optimized.png"
+        url="/insights"
+        type="website"
+      />
+      <div className="insights-page">
       {/* Hero Section */}
       <section className="insights-hero">
         <div className="container">
@@ -234,7 +244,8 @@ export const InsightsPage: React.FC = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 

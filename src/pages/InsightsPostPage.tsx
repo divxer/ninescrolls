@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { SEO } from '../components/common/SEO';
 import '../styles/BlogPostPage.css';
 
 interface BlogPost {
@@ -592,7 +593,16 @@ export const InsightsPostPage: React.FC = () => {
   }
 
   return (
-    <div className="insights-post-page">
+    <>
+      <SEO 
+        title={post.title}
+        description={`${post.title} - Comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies. Learn about plasma density, operating pressure, selectivity, and applications in semiconductor manufacturing and MEMS.`}
+        keywords={`${post.tags.join(', ')}, plasma etching, semiconductor manufacturing, MEMS, thin film processing, etching technology, ICP-RIE, RIE, PE etching`}
+        image={post.imageUrl}
+        url={`/insights/${post.slug}`}
+        type="article"
+      />
+      <div className="insights-post-page">
       {/* Hero Section */}
       <section className="insights-post-hero">
         <div className="container">
@@ -658,7 +668,8 @@ export const InsightsPostPage: React.FC = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 
