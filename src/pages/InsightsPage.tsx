@@ -18,6 +18,28 @@ interface BlogPost {
 
 const samplePosts: BlogPost[] = [
   {
+    id: '13',
+    title: 'Plasma Cleaning: Precision Surface Preparation for Next-Level Performance',
+    excerpt: 'Discover how plasma cleaning technology provides eco-friendly, chemical-free surface preparation for semiconductors, medical devices, optics, and advanced manufacturing...',
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-27',
+    category: 'Materials Science',
+    readTime: 10,
+    imageUrl: '/assets/images/insights/plasma-cleaning-cover-optimized.png',
+    slug: 'plasma-cleaning-precision-surface-preparation'
+  },
+  {
+    id: '12',
+    title: 'Plasma Etching Explained: From Fundamentals to Applications',
+    excerpt: 'A comprehensive guide to plasma etching fundamentals, covering ion etching, chemical plasma etching, and reactive ion etching (RIE) with applications in semiconductor manufacturing...',
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-26',
+    category: 'Materials Science',
+    readTime: 12,
+    imageUrl: '/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png',
+    slug: 'plasma-etching-explained-fundamentals-applications'
+  },
+  {
     id: '11',
     title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
     excerpt: 'A comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies...',
