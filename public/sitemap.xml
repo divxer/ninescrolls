@@ -80,9 +80,21 @@
   </url>
   <url>
     <loc>https://ninescrolls.us/insights</loc>
-    <lastmod>2025-01-25</lastmod>
+    <lastmod>2025-01-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.us/insights/plasma-cleaning-precision-surface-preparation</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.us/insights/plasma-etching-explained-fundamentals-applications</loc>
+    <lastmod>2025-01-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.us/insights/understanding-differences-pe-rie-icp-rie-plasma-etching</loc>

@@ -19,6 +19,221 @@ interface BlogPost {
 
 const samplePosts: BlogPost[] = [
   {
+    id: '13',
+    title: 'Plasma Cleaning: Precision Surface Preparation for Next-Level Performance',
+    content: `
+      <p>In today's high-tech manufacturing landscape—spanning semiconductors, medical devices, optics, and beyond—surface cleanliness is mission-critical. Even invisible, nano-scale contaminants like oil, dust, or oxidation can undermine adhesion, compromise performance, or cause defects in downstream processes. Plasma cleaning has emerged as an eco-friendly, highly effective solution, delivering chemical-free, residue-free, and ultra-precise surface preparation.</p>
+      
+      <h2>What Is Plasma Cleaning?</h2>
+      <p>Plasma cleaning uses an ionized gas—plasma—to remove surface contamination and activate materials. Process involves energizing gases like oxygen, air, or inert species (e.g. argon, hydrogen) to create reactive radicals or ions that either chemically react with contaminants or physically dislodge them with micro-abrasion. The vaporized residues are then evacuated by vacuum or airflow.</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <img 
+          src="/assets/images/insights/plasma-cleaning-diagram-optimized.png" 
+          alt="Plasma Cleaning Process Diagram - Visual representation of plasma cleaning technology showing ionized gas treatment, surface activation, and contaminant removal process" 
+          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
+          loading="lazy"
+        />
+        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Visualize with diagrams: Plasma cleaning process showing surface treatment and contaminant removal</p>
+      </div>
+      
+      <h2>Advantages Over Traditional Cleaning</h2>
+      <ul>
+        <li><strong>No harsh chemicals or solvents</strong> — eco-friendly and safe, eliminating hazardous waste.</li>
+        <li><strong>Non-contact, gentle yet thorough</strong> — effectively cleans delicate microstructures or optics without mechanical damage.</li>
+        <li><strong>Surface activation</strong> — increases surface energy and adhesion, critical for bonding, coating, printing, and sealing processes.</li>
+      </ul>
+      
+      <h2>Key Applications Across Industries</h2>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Industry</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Applications & Benefits</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Electronics & Semiconductors</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Essential for PCB prep, leadframe cleaning, oxidation removal, and ensuring reliable soldering and coating.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Optics & Glass</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Cleans lenses and mirrors without abrasive damage or solvent residue.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Automotive & Aerospace</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Prepares surfaces for adhesives, sealants, and paints, enhancing durability and finish quality.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Medical Devices & Life Sciences</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Removes proteins, sterilizes surfaces, and improves biocompatibility—ideal for implants and culture substrates.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Cultural Heritage & Restoration</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Gently removes corrosion and encrustation from artifacts without damaging underlying materials.</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Textiles & Polymers</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Improves wetting and adhesion on fabrics and plastics while retaining bulk properties.</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h2>Specialized Modes of Plasma Cleaning</h2>
+      <ul>
+        <li><strong>Atmospheric Plasma</strong> (e.g., Openair‑Plasma®) — integrates seamlessly into production lines, offers real-time, dry cleaning for metals, polymers, glass, and ceramics.</li>
+        <li><strong>HydroPlasma®</strong> — adds ionized water molecules to selectively clean stubborn organic and inorganic residues without solvents.</li>
+        <li><strong>Oxygen- or Air-Based Plasma</strong> — excels at removing organic films, improving wettability for printing or coating applications.</li>
+        <li><strong>Hydrogen or Inert-Gas Plasma</strong> — ideal for removing oxide layers and enhancing conductivity in sensitive electronic components.</li>
+      </ul>
+      
+      <h2>Why It Matters</h2>
+      <ul>
+        <li><strong>Reliability:</strong> Cleaner surfaces reduce defects and rework across critical manufacturing steps.</li>
+        <li><strong>Speed:</strong> Dry, inline-ready process eliminates wait times inherent to wet cleaning and drying.</li>
+        <li><strong>Environmental and Safety Leadership:</strong> Chemical-free cleaning aligns with sustainability goals and regulatory compliance.</li>
+      </ul>
+      
+      <h2>NineScrolls: Advancing Plasma Technology for Surface Processing</h2>
+      <p>At NineScrolls, we specialize in advanced plasma processing equipment and technologies that support surface preparation and thin film deposition applications. While we focus on plasma-enhanced deposition and etching systems, our expertise in plasma technology enables us to provide valuable insights and solutions for surface processing challenges.</p>
+      <ul>
+        <li>Advanced plasma processing systems for thin film deposition and etching</li>
+        <li>Expert consultation on surface preparation and plasma technology integration</li>
+        <li>Comprehensive support for plasma-enhanced manufacturing processes</li>
+      </ul>
+      
+      <p><strong>Interested in learning more about our plasma processing solutions? <a href="/contact" style="color: #007bff; text-decoration: none; font-weight: bold;">Contact NineScrolls</a> to discuss how our plasma technology expertise can support your manufacturing needs.</strong></p>
+    `,
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-27',
+    category: 'Materials Science',
+    readTime: 10,
+    imageUrl: '/assets/images/insights/plasma-cleaning-cover-optimized.png',
+    slug: 'plasma-cleaning-precision-surface-preparation',
+    tags: ['Plasma Cleaning', 'Surface Preparation', 'Semiconductor Manufacturing', 'Medical Devices', 'Optics', 'Environmental Technology', 'Manufacturing']
+  },
+  {
+    id: '12',
+    title: 'Plasma Etching Explained: From Fundamentals to Applications',
+    content: `
+      <p>In modern microelectronics, materials science, and surface engineering, plasma etching has become an essential fabrication process. Compared to traditional wet etching, plasma-based methods offer no liquid chemicals, higher precision, less contamination, and superior process control, making them widely used in semiconductor manufacturing, optoelectronics, medical devices, and research laboratories.</p>
+      
+      <h2>Three Main Types of Plasma Etching</h2>
+      <p>Plasma etching works by ionizing process gases into high-energy plasma, which interacts with the surface material to remove it through physical or chemical means. Depending on the mechanism, plasma etching is typically classified into three categories:</p>
+      
+      <h3>1. Ion Etching (Physical Etching / Sputtering)</h3>
+      <ul>
+        <li><strong>Principle:</strong> Uses inert gases such as argon. Ions are accelerated toward the substrate, physically dislodging atoms from the surface.</li>
+        <li><strong>Key Features:</strong></li>
+        <ul>
+          <li>Low selectivity (works on most materials)</li>
+          <li>Highly anisotropic (etching occurs primarily in the ion acceleration direction)</li>
+        </ul>
+        <li><strong>Applications:</strong> Surface micro-structuring, improving adhesion before coating or bonding.</li>
+      </ul>
+      
+      <h3>2. Chemical Plasma Etching</h3>
+      <ul>
+        <li><strong>Principle:</strong> Uses reactive gases (e.g., oxygen, fluorine) that form radicals in the plasma. These radicals chemically react with the substrate to form volatile compounds, which are then removed by the vacuum system.</li>
+        <li><strong>Key Features:</strong></li>
+        <ul>
+          <li>High selectivity (optimized for specific materials)</li>
+          <li>Isotropic (etching occurs equally in all directions)</li>
+        </ul>
+        <li><strong>Applications:</strong></li>
+        <ul>
+          <li>Oxide layer removal</li>
+          <li>Photoresist stripping</li>
+          <li>PTFE surface modification</li>
+          <li>Microstructuring in semiconductor processes</li>
+        </ul>
+      </ul>
+      
+      <h3>3. Reactive Ion Etching (RIE)</h3>
+      <ul>
+        <li><strong>Principle:</strong> Combines the physical bombardment of ion etching with the chemical activity of radicals, offering both directionality and enhanced etch rates.</li>
+        <li><strong>Key Features:</strong></li>
+        <ul>
+          <li>Moderate to high selectivity</li>
+          <li>Moderately anisotropic (balances speed and precision)</li>
+        </ul>
+        <li><strong>Applications:</strong> Precision semiconductor etching, MEMS microfabrication, and fine pattern transfer.</li>
+      </ul>
+      
+      <h2>Visual Comparison of Plasma Etching Principles</h2>
+      <p>The infographic below illustrates the key differences between the three plasma etching mechanisms:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <img src="/assets/images/insights/plasma-etching-principles-optimized.png" 
+             alt="Digital infographic comparing three plasma etching mechanisms: Ion Etching, Chemical Plasma Etching, and Reactive Ion Etching (RIE)" 
+             style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
+             loading="lazy" />
+        <p style="font-style: italic; color: #666; margin-top: 10px; font-size: 14px;">
+          Visual comparison of Ion Etching, Chemical Plasma Etching, and Reactive Ion Etching (RIE) mechanisms and processes
+        </p>
+      </div>
+      
+      <h2>Comparison Table</h2>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Etching Type</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Mechanism</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Selectivity</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Directionality</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Typical Applications</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Ion Etching</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Physical ion bombardment</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Highly anisotropic</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Surface texturing, adhesion enhancement</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Chemical Etching</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Radical-driven chemical reaction</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Oxide removal, photoresist stripping, PTFE etching</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Reactive Ion Etching</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Physical + chemical combination</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Medium–High</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Moderately anisotropic</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Semiconductor precision etching, MEMS</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h2>Why Plasma Etching Matters</h2>
+      <h3>1. High Precision</h3>
+      <p>Enables micro- and nano-scale patterning for advanced electronics and photonics.</p>
+      
+      <h3>2. Material Versatility</h3>
+      <p>Suitable for metals, semiconductors, and polymers with proper gas chemistry selection.</p>
+      
+      <h3>3. Environmental & Safety Benefits</h3>
+      <p>Avoids large volumes of toxic wet chemicals, reducing waste disposal costs and safety risks.</p>
+      
+      <h2>NineScrolls Solutions</h2>
+      <p>At NineScrolls, we offer more than just plasma etching equipment — we provide customized process development and optimization services. Whether you are a research institute, semiconductor fab, or materials processing facility, our portfolio includes ICP systems, RIE tools, and specialized plasma etching solutions tailored to your needs.</p>
+      
+      <p><strong>📩 <a href="/contact" style="color: #007bff; text-decoration: none; font-weight: bold;">Contact us today</a> to discuss the best plasma etching system for your application.</strong></p>
+    `,
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-26',
+    category: 'Materials Science',
+    readTime: 12,
+    imageUrl: '/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png',
+    slug: 'plasma-etching-explained-fundamentals-applications',
+    tags: ['Plasma Etching', 'Ion Etching', 'Chemical Etching', 'RIE', 'Semiconductor Manufacturing', 'MEMS', 'Surface Engineering']
+  },
+  {
     id: '11',
     title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
     content: `
@@ -658,10 +873,10 @@ export const InsightsPostPage: React.FC = () => {
               <div className="related-products">
                 <h3>Related Products</h3>
                 <ul>
-                  <li><a href="/products/icp-etcher">ICP-RIE Etching Systems</a></li>
-                  <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
-                  <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
                   <li><a href="/products/striper">Striper Systems</a></li>
+                  <li><a href="/products/pecvd">PECVD Systems</a></li>
+                  <li><a href="/products/ald">ALD Systems</a></li>
+                  <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
                 </ul>
               </div>
             </div>
