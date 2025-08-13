@@ -77,6 +77,7 @@ export const handler: Handler<SendEmailEvent> = async (event) => {
         const companyEmail = {
             to: 'info@ninescrolls.com',
             from: 'noreply@ninescrolls.com',
+            replyTo: email,
             subject: `New Product Inquiry: ${productName}`,
             html: `
                 <h2>New Product Inquiry</h2>
