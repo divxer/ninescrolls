@@ -8,16 +8,16 @@ export const RedirectHandler: React.FC = () => {
   useEffect(() => {
     const pathname = location.pathname;
     
-    // 检查是否是产品页面且以斜杠结尾
+    // Check if it's a product page ending with slash
     if (pathname.startsWith('/products/') && pathname.endsWith('/')) {
-      // 移除尾部斜杠并重定向
+              // Remove trailing slash and redirect
       const cleanPath = pathname.slice(0, -1);
       console.log(`RedirectHandler: Redirecting from ${pathname} to ${cleanPath}`);
       navigate(cleanPath, { replace: true });
       return;
     }
 
-    // 检查是否是其他页面且以斜杠结尾（除了根路径）
+    // Check if it's another page ending with slash (except root path)
     if (pathname !== '/' && pathname.endsWith('/')) {
       const cleanPath = pathname.slice(0, -1);
       console.log(`RedirectHandler: Redirecting from ${pathname} to ${cleanPath}`);
@@ -25,5 +25,5 @@ export const RedirectHandler: React.FC = () => {
     }
   }, [location.pathname, navigate]);
 
-  return null; // 这个组件不渲染任何内容
+  return null; // This component doesn't render anything
 }; 

@@ -13,6 +13,8 @@ declare global {
 class SegmentAnalyticsService {
   private static instance: SegmentAnalyticsService;
   private isInitialized: boolean = false;
+  private lastTrackedEvents: Map<string, number> = new Map(); // Prevent duplicate sending
+  private readonly DEBOUNCE_TIME = 1000; // 1 second debounce
 
   private constructor() {}
 
@@ -37,11 +39,37 @@ class SegmentAnalyticsService {
     this.isInitialized = true;
   }
 
-  // Track custom events
+  // Track custom events with debouncing to prevent duplicates
   track(event: string, properties?: Record<string, any>) {
+    if (!this.isInitialized) {
+      console.warn('Segment Analytics not initialized');
+      return;
+    }
+
+    // Create a unique key for this event
+    const eventKey = `${event}_${JSON.stringify(properties || {})}`;
+    const now = Date.now();
+    const lastTracked = this.lastTrackedEvents.get(eventKey);
+
+    // Check if this event was recently tracked
+    if (lastTracked && (now - lastTracked) < this.DEBOUNCE_TIME) {
+      console.log('Segment event debounced (duplicate):', event);
+      return;
+    }
+
+    // Track the event
     if (typeof window !== 'undefined' && window.analytics && window.analytics.track) {
       window.analytics.track(event, properties);
+      this.lastTrackedEvents.set(eventKey, now);
       console.log('Segment Track Event:', event, properties);
+    }
+
+    // Clean up old entries (older than 5 minutes)
+    const fiveMinutesAgo = now - (5 * 60 * 1000);
+    for (const [key, timestamp] of this.lastTrackedEvents.entries()) {
+      if (timestamp < fiveMinutesAgo) {
+        this.lastTrackedEvents.delete(key);
+      }
     }
   }
 
@@ -177,10 +205,10 @@ class SegmentAnalyticsService {
         } : null
       };
 
-      // Send to Segment
+      // Send to Segment with enhanced properties
       this.track(event, enhancedProperties);
 
-      // If it's a target customer, send special event
+      // If it's a target customer, send additional event (not duplicate)
       if (analysis && analysis.isTargetCustomer) {
         this.track('Target Customer Detected', {
           originalEvent: event,
@@ -199,8 +227,12 @@ class SegmentAnalyticsService {
 
     } catch (error) {
       console.error('Error tracking with IP analysis:', error);
-      // If IP analysis fails, still send the original event
-      this.track(event, properties);
+      // If IP analysis fails, send the original event without IP data
+      if (properties) {
+        this.track(event, properties);
+      } else {
+        this.track(event);
+      }
     }
   }
 
@@ -271,10 +303,10 @@ class SegmentAnalyticsService {
         } : null
       };
 
-      // Send to Segment
+      // Send to Segment with enhanced properties
       this.track(event, enhancedProperties);
 
-      // If it's a target customer, send special event
+      // If it's a target customer, send additional event (not duplicate)
       if (analysis && analysis.isTargetCustomer) {
         this.track('Simple Target Customer Detected', {
           originalEvent: event,
@@ -293,8 +325,12 @@ class SegmentAnalyticsService {
 
     } catch (error) {
       console.error('Error tracking with simple IP analysis:', error);
-      // If IP analysis fails, still send the original event
-      this.track(event, properties);
+      // If IP analysis fails, send the original event without IP data
+      if (properties) {
+        this.track(event, properties);
+      } else {
+        this.track(event);
+      }
     }
   }
 

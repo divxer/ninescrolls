@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     open: true,
     host: true,
-    // 添加重定向规则，处理尾部斜杠问题
+    // Add redirect rules to handle trailing slash issues
     proxy: {}
   },
   build: {

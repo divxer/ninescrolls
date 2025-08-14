@@ -97,7 +97,7 @@ export function ContactFormModal({
 
       if (productName) {
         analytics.trackContactFormSubmit(productName, productName);
-        // 同时发送带IP分析的事件到Segment
+        // Send event with IP analysis to Segment
         analytics.segment.trackContactFormSubmitWithAnalysis(productName, productName);
       }
     } catch (error) {
@@ -117,7 +117,7 @@ export function ContactFormModal({
   const handleDatasheetDownload = () => {
     if (productName) {
       analytics.trackDatasheetDownload(productName, productName);
-      // 同时发送带IP分析的事件到Segment
+      // Send event with IP analysis to Segment
       analytics.segment.trackWithIPAnalysis('Datasheet Downloaded', {
         productId: productName,
         productName,
