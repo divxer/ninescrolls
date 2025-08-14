@@ -21,7 +21,7 @@ export const IPAnalysisPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // 获取IP信息和目标客户分析（完整版和简化版）
+      // Get IP information and target customer analysis (full and simplified versions)
       const [ipData, analysisData, simpleIpData, simpleAnalysisData] = await Promise.all([
         ipAnalytics.getIPInfo(),
         ipAnalytics.analyzeTargetCustomer(),
@@ -34,7 +34,7 @@ export const IPAnalysisPage: React.FC = () => {
       setSimpleIpInfo(simpleIpData);
       setSimpleAnalysis(simpleAnalysisData);
 
-      // 发送分析事件到Segment
+      // Send analysis events to Segment
       if (analysisData) {
         analytics.segment.trackWithIPAnalysis('IP Analysis Completed', {
           isTargetCustomer: analysisData.isTargetCustomer,
@@ -43,7 +43,7 @@ export const IPAnalysisPage: React.FC = () => {
         });
       }
 
-      // 发送简化版分析事件到Segment
+      // Send simplified analysis events to Segment
       if (simpleAnalysisData) {
         analytics.segment.trackWithSimpleIPAnalysis('Simple IP Analysis Completed', {
           isTargetCustomer: simpleAnalysisData.isTargetCustomer,

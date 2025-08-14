@@ -278,17 +278,17 @@ class IPAnalyticsService {
     // Define target customer keywords
     const universityKeywords = [
       'university', 'college', 'school', 'academy', 'institute', 'campus',
-      // Chinese: '大学', '学院', '学校', '研究所', '研究院', '实验室'
+      // Chinese keywords: '大学', '学院', '学校', '研究所', '研究院', '实验室'
     ];
 
     const researchKeywords = [
       'research', 'laboratory', 'lab', 'institute', 'foundation', 'center',
-      // Chinese: '研究', '实验室', '研究所', '研究院', '中心', '基金会'
+      // Chinese keywords: '研究', '实验室', '研究所', '研究院', '中心', '基金会'
     ];
 
     const enterpriseKeywords = [
       'corporation', 'company', 'inc', 'ltd', 'llc', 'enterprise', 'business',
-      // Chinese: '公司', '企业', '集团', '股份', '有限', '科技'
+      // Chinese keywords: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
     // Analyze organization type
@@ -349,7 +349,7 @@ class IPAnalyticsService {
     const targetCountries = [
       'United States', 'China', 'Japan', 'Germany', 'United Kingdom', 
       'France', 'Canada', 'Australia', 'South Korea', 'Netherlands',
-      // Chinese: '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
+      // Chinese keywords: '美国', '中国', '日本', '德国', '英国', '法国', '加拿大', '澳大利亚', '韩国', '荷兰'
     ];
 
     const targetRegions = [

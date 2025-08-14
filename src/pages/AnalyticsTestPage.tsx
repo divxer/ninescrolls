@@ -5,7 +5,7 @@ export const AnalyticsTestPage: React.FC = () => {
   const analytics = useCombinedAnalytics();
 
   useEffect(() => {
-    // 测试页面加载时的事件
+    // Test events on page load
     console.log('Analytics Test Page loaded');
     analytics.trackCustomEvent('page_view', {
       page_name: 'analytics_test',
@@ -14,7 +14,7 @@ export const AnalyticsTestPage: React.FC = () => {
   }, [analytics]);
 
   const testEvents = () => {
-    // 测试各种事件 (发送到 GA 和 Segment)
+    // Test various events (sent to GA and Segment)
     analytics.trackProductView('test-product-123', 'Test Product');
     analytics.trackProductDownload('test-product-123', 'Test Product');
     analytics.trackContactFormSubmit('test-product-123', 'Test Product');
