@@ -5,6 +5,7 @@ import { ProductsPage } from '../pages/ProductsPage';
 import { ContactPage } from '../pages/ContactPage';
 import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
 import { IPAnalysisPage } from '../pages/IPAnalysisPage';
+import { IPAnalysisTestPage } from '../pages/IPAnalysisTestPage';
 import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
 import { 
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <>
           <Route path="/analytics-test" element={<AnalyticsTestPage />} />
           <Route path="/ip-analysis" element={<IPAnalysisPage />} />
+          <Route path="/ip-analysis-test" element={<IPAnalysisTestPage />} />
         </>
       )}
       <Route path="/products/rie-etcher" element={<RIEEtcher />} />

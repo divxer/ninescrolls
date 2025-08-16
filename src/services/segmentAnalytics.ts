@@ -21,6 +21,7 @@ class SegmentAnalyticsService {
   static getInstance(): SegmentAnalyticsService {
     if (!SegmentAnalyticsService.instance) {
       SegmentAnalyticsService.instance = new SegmentAnalyticsService();
+      SegmentAnalyticsService.instance.initialize();
     }
     return SegmentAnalyticsService.instance;
   }
