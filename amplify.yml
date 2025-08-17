@@ -39,3 +39,22 @@ frontend:
       headers:
         - key: 'Cache-Control'
           value: 'max-age=31536000, immutable'
+  redirects:
+    # Redirect ninescrolls.us to ninescrolls.com
+    - source: '/<*>'
+      target: 'https://ninescrolls.com/<*>'
+      status: '301'
+      condition: 'host'
+      host: 'ninescrolls.us'
+    # Redirect www.ninescrolls.us to ninescrolls.com
+    - source: '/<*>'
+      target: 'https://ninescrolls.com/<*>'
+      status: '301'
+      condition: 'host'
+      host: 'www.ninescrolls.us'
+    # Redirect www.ninescrolls.com to ninescrolls.com (remove www)
+    - source: '/<*>'
+      target: 'https://ninescrolls.com/<*>'
+      status: '301'
+      condition: 'host'
+      host: 'www.ninescrolls.com'
