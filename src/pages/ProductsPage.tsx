@@ -207,7 +207,25 @@ export function ProductsPage() {
           <p>Our technical team is ready to help you choose the right equipment for your application.</p>
           <div className="contact-buttons">
             <Link to="/contact" className="btn btn-primary">Contact Our Team</Link>
-            <a href="/equipment-guide.pdf" className="btn btn-secondary">Download Equipment Guide</a>
+            <a 
+              href="/equipment-guide.pdf" 
+              className="btn btn-secondary"
+              download="NineScrolls-Equipment-Guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                // Track download event
+                if (typeof window !== 'undefined' && window.gtag) {
+                  window.gtag('event', 'download', {
+                    event_category: 'Equipment Guide',
+                    event_label: 'Products Page',
+                    value: 1
+                  });
+                }
+              }}
+            >
+              Download Equipment Guide
+            </a>
           </div>
         </div>
       </section>

@@ -233,6 +233,7 @@ export function ContactFormModal({
                   <a 
                     href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '').replace(/--+/g, '-')}-datasheet.pdf`}
                     className="btn btn-secondary"
+                    download={`NineScrolls-${productName.replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '')}-Datasheet.pdf`}
                     onClick={handleDatasheetDownload}
                     target="_blank"
                     rel="noopener noreferrer"
