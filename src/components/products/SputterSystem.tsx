@@ -171,7 +171,23 @@ export function SputterSystem() {
           <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a href="/docs/sputter-system-datasheet.pdf" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <a 
+              href="/docs/sputter-system-datasheet.pdf" 
+              className="btn btn-secondary" 
+              download="NineScrolls-Sputter-Datasheet.pdf"
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => {
+                // Track download event
+                if (typeof window !== 'undefined' && window.gtag) {
+                  window.gtag('event', 'download', {
+                    event_category: 'Product Datasheet',
+                    event_label: 'Sputter System',
+                    value: 1
+                  });
+                }
+              }}
+            >
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
