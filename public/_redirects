@@ -21,4 +21,5 @@
 *.woff         /:splat             200
 *.woff2        /:splat             200
 *.ttf          /:splat             200
-*.eot          /:splat             200 
+*.eot          /:splat             200
+*.pdf          /:splat             200 
