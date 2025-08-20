@@ -211,9 +211,14 @@ export function ProductsPage() {
               href="/equipment-guide.pdf" 
               className="btn btn-secondary"
               download="NineScrolls-Equipment-Guide.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
+              style={{ 
+                position: 'relative', 
+                zIndex: 1000,
+                pointerEvents: 'auto',
+                cursor: 'pointer'
+              }}
+              onClick={(e) => {
+                console.log('Equipment Guide clicked!', e);
                 // Track download event
                 if (typeof window !== 'undefined' && window.gtag) {
                   window.gtag('event', 'download', {
@@ -222,6 +227,14 @@ export function ProductsPage() {
                     value: 1
                   });
                 }
+                // Force download by creating a temporary link
+                const link = document.createElement('a');
+                link.href = '/equipment-guide.pdf';
+                link.download = 'NineScrolls-Equipment-Guide.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                e.preventDefault();
               }}
             >
               Download Equipment Guide
