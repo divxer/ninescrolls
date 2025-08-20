@@ -8,6 +8,7 @@ import { IPAnalysisPage } from '../pages/IPAnalysisPage';
 import { IPAnalysisTestPage } from '../pages/IPAnalysisTestPage';
 import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -45,6 +46,7 @@ export function AppRoutes() {
       <Route path="/products/sputter" element={<SputterSystem />} />
       <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
       <Route path="/products/pecvd" element={<PECVDSystem />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 } 

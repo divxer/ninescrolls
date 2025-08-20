@@ -22,4 +22,33 @@
 *.woff2        /:splat             200
 *.ttf          /:splat             200
 *.eot          /:splat             200
-*.pdf          /:splat             200 
+*.pdf          /:splat             200
+
+# Common 404 redirects for SEO
+/product       /products           301
+/product/      /products           301
+/products/ald-system    /products/ald    301
+/products/icp-etching   /products/icp-etcher    301
+/products/rie-etching   /products/rie-etcher    301
+/products/sputtering    /products/sputter    301
+/products/pecvd-system  /products/pecvd    301
+/products/hdp-cvd-system /products/hdp-cvd    301
+/products/ibe-ribe-system /products/ibe-ribe    301
+/products/coater-developer-system /products/coater-developer    301
+/products/striper-system /products/striper    301
+/blog          /insights           301
+/blog/         /insights           301
+/news          /insights           301
+/about-us      /about              301
+/contact-us    /contact            301
+/enquiry       /contact            301
+/quote         /contact            301
+/support       /contact            301
+/datasheet     /products           301
+/datasheets    /products           301
+/catalog       /products           301
+/equipment     /products           301
+/systems       /products           301
+/technology    /insights           301
+/research      /insights           301
+/applications  /insights           301 
