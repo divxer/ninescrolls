@@ -19,8 +19,8 @@ export function SEO({
 }: SEOProps) {
   const siteTitle = 'Nine Scrolls Technology';
   const fullTitle = `${title} | ${siteTitle}`;
-  const fullUrl = url.startsWith('http') ? url : `https://ninescrolls.us${url}`;
-  const fullImage = image.startsWith('http') ? image : `https://ninescrolls.us${image}`;
+  const fullUrl = url.startsWith('http') ? url : `https://ninescrolls.com${url}`;
+  const fullImage = image.startsWith('http') ? image : `https://ninescrolls.com${image}`;
 
   return (
     <Helmet>
