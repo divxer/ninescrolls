@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
 
+# Disallow PDF files from being indexed to prevent duplicate content issues
+Disallow: /docs/*.pdf
+
+# Allow specific PDF files that should be indexed
+Allow: /equipment-guide.pdf
+
 # Sitemap location
 Sitemap: https://ninescrolls.com/sitemap.xml 
