@@ -3,6 +3,19 @@ import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
+// Product name to PDF filename mapping to ensure consistency
+const productToPdfMap: Record<string, string> = {
+  'ALD System': 'ald-system-datasheet.pdf',
+  'Coater/Developer System': 'coater-developer-system-datasheet.pdf',
+  'HDP-CVD System': 'hdp-cvd-system-datasheet.pdf',
+  'IBE/RIBE System': 'ibe-ribe-system-datasheet.pdf',
+  'ICP Etcher': 'icp-etcher-datasheet.pdf',
+  'PECVD System': 'pecvd-system-datasheet.pdf',
+  'RIE Etcher': 'rie-etcher-datasheet.pdf',
+  'Sputter System': 'sputter-system-datasheet.pdf',
+  'Striper System': 'striper-system-datasheet.pdf'
+};
+
 export function ContactFormModal({ 
   isOpen, 
   onClose, 
@@ -231,7 +244,7 @@ export function ContactFormModal({
                 <p>Meanwhile, you might be interested in:</p>
                 <div className="action-buttons">
                   <a 
-                    href={`/docs/${productName.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '').replace(/--+/g, '-')}-datasheet.pdf`}
+                    href={`/docs/${productToPdfMap[productName] || 'equipment-guide.pdf'}`}
                     className="btn btn-secondary"
                     download={`NineScrolls-${productName.replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '')}-Datasheet.pdf`}
                     onClick={handleDatasheetDownload}

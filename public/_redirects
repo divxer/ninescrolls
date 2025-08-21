@@ -22,6 +22,7 @@
 *.woff2        /:splat             200
 *.ttf          /:splat             200
 *.eot          /:splat             200
+# PDF files - serve directly but prevent indexing
 *.pdf          /:splat             200
 
 # Common 404 redirects for SEO
