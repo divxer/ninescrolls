@@ -39,9 +39,9 @@ export function HomePage() {
   return (
     <>
       <SEO 
-        title="Home"
-        description="Nine Scrolls Technology - Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions."
-        keywords="semiconductor equipment, thin film deposition, etching system, coating system, semiconductor manufacturing, RIE etcher, ICP etcher"
+        title="NineScrolls - Advanced Plasma Etching & ALD Systems for Semiconductor Manufacturing"
+        description="Leading provider of plasma etching systems, ALD equipment, and semiconductor manufacturing solutions. Expert RIE etching, ICP etching, and thin film deposition technology for research and production."
+        keywords="plasma etching, ALD systems, RIE etching, ICP etching, semiconductor manufacturing, thin film deposition, plasma etching systems, ALD equipment, semiconductor equipment"
         url="/"
       />
       <Helmet>
@@ -76,8 +76,8 @@ export function HomePage() {
                 />
               </div>
               <div className="product-card-content">
-                <h3>RIE Etcher Series</h3>
-                <p>High-precision etching with advanced plasma etching capabilities for semiconductor processing</p>
+                <h3>RIE Etcher Series - Plasma Etching Systems</h3>
+                <p>High-precision RIE etching with advanced plasma etching capabilities for semiconductor processing and MEMS fabrication</p>
                 <span className="learn-more">Learn More →</span>
               </div>
             </Link>
@@ -92,8 +92,8 @@ export function HomePage() {
                 />
               </div>
               <div className="product-card-content">
-                <h3>ICP Etcher Series</h3>
-                <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching</p>
+                <h3>ICP Etcher Series - Advanced Plasma Etching</h3>
+                <p>Advanced inductively coupled plasma etching system for high-aspect-ratio etching and deep reactive ion etching (DRIE)</p>
                 <span className="learn-more">Learn More →</span>
               </div>
             </Link>
