@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { ipAnalytics } from '../services/ipAnalytics';
 import { simpleIPAnalytics } from '../services/simpleIPAnalytics';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
@@ -11,6 +12,9 @@ export const IPAnalysisTestPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const analytics = useCombinedAnalytics();
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   const testIPAnalysis = async () => {
     setLoading(true);

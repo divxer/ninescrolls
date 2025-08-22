@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { insightsPosts, categories, InsightsPost } from '../types';
 import '../styles/InsightsPage.css';
@@ -10,6 +11,9 @@ export const InsightsPage: React.FC = () => {
   const [posts] = useState<InsightsPost[]>(insightsPosts);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     analytics.segment.trackWithSimpleIPAnalysis('Insights Page Viewed', {

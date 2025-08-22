@@ -1,10 +1,14 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import '../styles/NotFoundPage.css';
 
 export const NotFoundPage: React.FC = () => {
   const location = useLocation();
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     // Track 404 error for analytics

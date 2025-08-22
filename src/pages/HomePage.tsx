@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import '../styles/HomePage.css';
 
 export function HomePage() {
+  // Scroll to top when component mounts
+  useScrollToTop();
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",

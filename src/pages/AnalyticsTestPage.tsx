@@ -1,8 +1,12 @@
 import React, { useEffect } from 'react';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
 export const AnalyticsTestPage: React.FC = () => {
   const analytics = useCombinedAnalytics();
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     // Test events on page load

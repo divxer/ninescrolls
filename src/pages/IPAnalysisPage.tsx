@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from '../services/ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from '../services/simpleIPAnalytics';
 
@@ -11,6 +12,9 @@ export const IPAnalysisPage: React.FC = () => {
   const [simpleAnalysis, setSimpleAnalysis] = useState<SimpleTargetCustomerAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     loadIPAnalysis();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormModal } from '../components/common/ContactFormModal';
 import { OptimizedImage } from '../components/common/OptimizedImage';
@@ -157,6 +158,9 @@ export function ProductDetailPage() {
       analytics.trackProductView(product.id, product.name);
     }
   }, [product]);
+
+  // Scroll to top when component mounts or productId changes
+  useScrollToTop([productId]);
 
   if (!ProductComponent) {
     return <div className="container">Product not found</div>;

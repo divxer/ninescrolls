@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { ContactFormModal } from '../common/ContactFormModal';
 import { ContactFormData } from '../../types';
 
@@ -12,6 +13,9 @@ export function IBERIBESystem() {
     organization: '',
     message: ''
   });
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   useEffect(() => {
     const handleScroll = () => {
