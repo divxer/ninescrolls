@@ -55,12 +55,51 @@ export const InsightsPostPage: React.FC = () => {
     <>
       <SEO 
         title={post.title}
-        description={`${post.title} - Comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies. Learn about plasma density, operating pressure, selectivity, and applications in semiconductor manufacturing and MEMS.`}
-        keywords={`${post.tags.join(', ')}, plasma etching, semiconductor manufacturing, MEMS, thin film processing, etching technology, ICP-RIE, RIE, PE etching`}
+        description={post.slug === 'plasma-etching' 
+          ? `What is plasma etching? Learn how plasma etching works, its applications in semiconductor manufacturing, and the differences between RIE, ICP, and other etching techniques. Expert guide with 12 min read.`
+          : `${post.title} - Comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies. Learn about plasma density, operating pressure, selectivity, and applications in semiconductor manufacturing and MEMS.`
+        }
+        keywords={post.slug === 'plasma-etching'
+          ? `plasma etching, what is plasma etching, how does plasma etching work, RIE etching, ICP etching, semiconductor manufacturing, dry etching, plasma etching machine, plasma etcher, etching technology`
+          : `${post.tags.join(', ')}, plasma etching, semiconductor manufacturing, MEMS, thin film processing, etching technology, ICP-RIE, RIE, PE etching`
+        }
         image={post.imageUrl}
         url={`/insights/${post.slug}`}
         type="article"
       />
+      {post.slug === 'plasma-etching' && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": post.title,
+            "description": "What is plasma etching? Learn how plasma etching works, its applications in semiconductor manufacturing, and the differences between RIE, ICP, and other etching techniques.",
+            "image": `https://ninescrolls.com${post.imageUrl}`,
+            "author": {
+              "@type": "Organization",
+              "name": "NineScrolls Team"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "NineScrolls",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://ninescrolls.com/assets/images/logo.png"
+              }
+            },
+            "datePublished": post.publishDate,
+            "dateModified": post.publishDate,
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://ninescrolls.com/insights/${post.slug}`
+            },
+            "keywords": "plasma etching, what is plasma etching, how does plasma etching work, RIE etching, ICP etching, semiconductor manufacturing",
+            "articleSection": "Materials Science",
+            "wordCount": "2500+",
+            "timeRequired": `PT${post.readTime}M`
+          })}
+        </script>
+      )}
       <div className="insights-post-page">
         {/* Hero Section */}
         <section className="insights-post-hero">
