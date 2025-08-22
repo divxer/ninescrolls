@@ -147,6 +147,13 @@ export const InsightsPostPage: React.FC = () => {
                         <li><a href="/products/striper">Striper Systems</a></li>
                         <li><a href="/products/pecvd">PECVD Systems</a></li>
                       </>
+                    ) : post.slug === 'plasma-etching' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                      </>
                     ) : (
                       <>
                         <li><a href="/products/striper">Striper Systems</a></li>
