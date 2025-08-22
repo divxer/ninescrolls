@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
+  // Scroll to top when component mounts
+  useScrollToTop();
+
   return (
     <>
       <SEO 

@@ -1,9 +1,13 @@
 import { Helmet } from 'react-helmet-async';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
 export function ContactPage() {
+  // Scroll to top when component mounts
+  useScrollToTop();
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ContactPage",

@@ -1,8 +1,12 @@
 import { Helmet } from 'react-helmet-async';
+import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import '../styles/AboutPage.css';
 
 export function AboutPage() {
+  // Scroll to top when component mounts
+  useScrollToTop();
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
