@@ -115,10 +115,42 @@ export const InsightsPostPage: React.FC = () => {
                 <div className="related-products">
                   <h3>Related Products</h3>
                   <ul>
-                    <li><a href="/products/striper">Striper Systems</a></li>
-                    <li><a href="/products/pecvd">PECVD Systems</a></li>
-                    <li><a href="/products/ald">ALD Systems</a></li>
-                    <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                    {post.slug === 'hdp-cvd-in-depth-guide-practical-handbook' ? (
+                      <>
+                        <li><a href="/products/hdp-cvd">HDP-CVD Systems</a></li>
+                        <li><a href="/products/pecvd">PECVD Systems</a></li>
+                        <li><a href="/products/ald">ALD Systems</a></li>
+                        <li><a href="/products/sputter">Sputter Systems</a></li>
+                      </>
+                    ) : post.slug === 'plasma-cleaning-precision-surface-preparation' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/pecvd">PECVD Systems</a></li>
+                        <li><a href="/products/ald">ALD Systems</a></li>
+                      </>
+                    ) : post.slug === 'plasma-etching-explained-fundamentals-applications' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                        <li><a href="/products/pecvd">PECVD Systems</a></li>
+                      </>
+                    ) : post.slug === 'understanding-differences-pe-rie-icp-rie-plasma-etching' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                        <li><a href="/products/pecvd">PECVD Systems</a></li>
+                      </>
+                    ) : (
+                      <>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                        <li><a href="/products/pecvd">PECVD Systems</a></li>
+                        <li><a href="/products/ald">ALD Systems</a></li>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
