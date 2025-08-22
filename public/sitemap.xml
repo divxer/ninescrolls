@@ -80,9 +80,15 @@
   </url>
   <url>
     <loc>https://ninescrolls.com/insights</loc>
-    <lastmod>2025-01-27</lastmod>
+    <lastmod>2025-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook</loc>
+    <lastmod>2025-01-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/plasma-cleaning-precision-surface-preparation</loc>
