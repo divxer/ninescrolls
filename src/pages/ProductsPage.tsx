@@ -10,15 +10,15 @@ export function ProductsPage() {
   return (
     <>
       <SEO 
-        title="Products"
-        description="Explore our comprehensive range of semiconductor manufacturing equipment including CVD, PVD, ALD systems, etchers, and more. Advanced solutions for thin film deposition and surface treatment."
-        keywords="semiconductor equipment, CVD system, PVD system, ALD system, thin film deposition, etching system, coating system, RIE etcher, ICP etcher"
+        title="Plasma Etching Equipment & Systems | NineScrolls - Advanced Semiconductor Manufacturing Solutions"
+        description="Expert plasma etching equipment and systems for semiconductor manufacturing. Discover our wide range of plasma etching processes including reactive ion etching (RIE), inductively coupled plasma etching, and wet etching solutions. Leading provider of etch rates optimization and plasma treatment technology."
+        keywords="plasma etching, plasma etching equipment, plasma etching systems, reactive ion etching, etch rates, plasma treatment, plasma etching process, plasma processing, wet etching, etching processes, semiconductor manufacturing"
         url="/products"
       />
       <section className="products-hero">
         <div className="container">
-          <h1>Our Products</h1>
-          <p>Advanced Semiconductor Processing Equipment for Research and Manufacturing</p>
+          <h1>Plasma Etching Equipment & Systems</h1>
+          <p>Advanced plasma etching equipment and systems for semiconductor manufacturing, MEMS fabrication, and research applications. Our wide range of plasma etching processes delivers optimized etch rates and superior plasma treatment capabilities.</p>
         </div>
       </section>
 
@@ -30,10 +30,10 @@ export function ProductsPage() {
               <div className="manufacturer-text">
                 <p>
                   We are proud to partner with Tyloong, a leading manufacturer
-                  of semiconductor processing equipment with over 30 years 
-                  of experience in the industry. Their commitment to 
-                  innovation and quality aligns perfectly with our mission to 
-                  provide cutting-edge research equipment solutions.
+                  of plasma etching equipment and semiconductor processing systems with over 30 years 
+                  of experience in the industry. Their expertise in plasma etching processes, 
+                  reactive ion etching technology, and plasma treatment solutions aligns perfectly with our mission to 
+                  provide cutting-edge plasma etching equipment for research and manufacturing applications.
                 </p>
                 <ul className="manufacturer-strengths">
                   <li>Industry-leading R&D capabilities</li>
@@ -65,14 +65,14 @@ export function ProductsPage() {
       <section className="product-categories">
         <div className="container">
           <p className="section-intro">
-            Our comprehensive range of semiconductor processing equipment is designed to meet the diverse needs of research institutions and manufacturers. Each system is built with precision, reliability, and innovation in mind.
+            Our comprehensive range of plasma etching equipment and semiconductor processing systems is designed to meet the diverse needs of research institutions and manufacturers. From reactive ion etching (RIE) to inductively coupled plasma etching, our plasma etching processes deliver optimized etch rates and superior plasma treatment capabilities. Each system is built with precision, reliability, and innovation in mind.
           </p>
           <div className="category-grid">
             <div className="category-card">
               <Link to="/products/icp-etcher">
                 <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP Etcher" />
-                <h3>ICP Etcher Series</h3>
-                <p>Advanced plasma etching system with superior process control and high etch rates.</p>
+                <h3>ICP Etcher Series - Inductively Coupled Plasma Etching</h3>
+                <p>Advanced inductively coupled plasma etching system with superior process control and optimized etch rates for high-aspect-ratio etching applications.</p>
                 <ul className="product-features">
                   <li>High-density plasma source</li>
                   <li>Multi-gas capability</li>
@@ -84,8 +84,8 @@ export function ProductsPage() {
             <div className="category-card">
               <Link to="/products/rie-etcher">
                 <img src="/assets/images/products/rie-etcher/main.jpg" alt="RIE Etcher" />
-                <h3>RIE Etcher Series</h3>
-                <p>Versatile reactive ion etching system for precise material processing.</p>
+                <h3>RIE Etcher Series - Reactive Ion Etching</h3>
+                <p>Versatile reactive ion etching system for precise material processing with excellent plasma treatment capabilities and controlled etch rates.</p>
                 <ul className="feature-list">
                   <li>Flexible process control</li>
                   <li>Multiple gas options</li>
@@ -191,16 +191,37 @@ export function ProductsPage() {
       <section className="equipment-solutions">
         <div className="container">
           <div className="solutions-content">
-            <h2>Equipment Solutions</h2>
+            <h2>Plasma Etching Equipment Solutions</h2>
             <p>
-              Our equipment solutions are tailored to meet the specific needs of research institutions and manufacturers. We offer:
+              Our plasma etching equipment solutions are tailored to meet the specific needs of research institutions and manufacturers. From reactive ion etching to inductively coupled plasma etching, we provide a wide range of plasma processing capabilities with optimized etch rates and superior plasma treatment technology.
             </p>
             <ul className="solutions-list">
-              <li>Customizable system configurations</li>
-              <li>Integration with existing facilities</li>
-              <li>Comprehensive training and support</li>
-              <li>Ongoing maintenance and upgrades</li>
+              <li>Customizable plasma etching system configurations</li>
+              <li>Integration with existing semiconductor manufacturing facilities</li>
+              <li>Comprehensive training and support for plasma etching processes</li>
+              <li>Ongoing maintenance and upgrades for plasma processing equipment</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* New Semantic Content Section for SEO */}
+      <section className="plasma-etching-processes">
+        <div className="container">
+          <h2>Plasma Etching Processes & Technologies</h2>
+          <div className="processes-grid">
+            <div className="process-card">
+              <h3>Reactive Ion Etching (RIE)</h3>
+              <p>Our reactive ion etching systems combine chemical and physical etching mechanisms to achieve precise control over etch rates and profile anisotropy. Ideal for semiconductor manufacturing and MEMS fabrication applications.</p>
+            </div>
+            <div className="process-card">
+              <h3>Inductively Coupled Plasma Etching</h3>
+              <p>Advanced inductively coupled plasma etching technology delivers high-density plasma for superior etch rates and deep reactive ion etching (DRIE) capabilities. Perfect for high-aspect-ratio etching applications.</p>
+            </div>
+            <div className="process-card">
+              <h3>Plasma Treatment Solutions</h3>
+              <p>Comprehensive plasma treatment solutions for surface modification, cleaning, and activation. Our plasma processing equipment supports both wet etching and dry etching processes for maximum flexibility.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -243,6 +264,27 @@ export function ProductsPage() {
             >
               Download Equipment Guide
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section for Featured Snippets */}
+      <section className="faq-section">
+        <div className="container">
+          <h2>Frequently Asked Questions About Plasma Etching Equipment</h2>
+          <div className="faq-grid">
+            <div className="faq-item">
+              <h3>What is plasma etching equipment?</h3>
+              <p>Plasma etching equipment uses ionized gas (plasma) to remove material from substrates with precise control. Our plasma etching systems include reactive ion etching (RIE) and inductively coupled plasma etching technologies for semiconductor manufacturing and research applications.</p>
+            </div>
+            <div className="faq-item">
+              <h3>How do plasma etching processes work?</h3>
+              <p>Plasma etching processes work by creating a plasma from process gases using RF power. The plasma contains reactive species that chemically react with the substrate material, while ions provide physical bombardment for directional etching, achieving optimized etch rates and superior material selectivity.</p>
+            </div>
+            <div className="faq-item">
+              <h3>What are the advantages of plasma etching over wet etching?</h3>
+              <p>Plasma etching offers superior anisotropy (directional control), better etch rate control, reduced chemical waste, and compatibility with photoresist masks. Our plasma treatment solutions provide both wet etching and dry etching capabilities for maximum process flexibility.</p>
+            </div>
           </div>
         </div>
       </section>
