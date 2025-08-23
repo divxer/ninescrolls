@@ -204,6 +204,100 @@
     background: var(--light-gray);
 }
 
+/* Plasma Etching Processes Section */
+.plasma-etching-processes {
+    padding: 6rem 0;
+    background: var(--white);
+}
+
+.plasma-etching-processes h2 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 3rem;
+    font-size: 2rem;
+}
+
+.processes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.process-card {
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    padding: 2rem;
+    transition: transform 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.process-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.process-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.process-card p {
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* FAQ Section */
+.faq-section {
+    padding: 6rem 0;
+    background: var(--light-gray);
+}
+
+.faq-section h2 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 3rem;
+    font-size: 2rem;
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.faq-item {
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    padding: 2rem;
+    transition: transform 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.faq-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.faq-item h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.faq-item p {
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
 .solutions-content {
     max-width: 800px;
     margin: 0 auto;
@@ -337,5 +431,22 @@
     .contact-buttons .btn {
         width: 100%;
         max-width: 300px;
+    }
+
+    .processes-grid,
+    .faq-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .process-card,
+    .faq-item {
+        padding: 1.5rem;
+    }
+
+    .plasma-etching-processes h2,
+    .faq-section h2 {
+        font-size: 1.8rem;
+        margin-bottom: 2rem;
     }
 } 
