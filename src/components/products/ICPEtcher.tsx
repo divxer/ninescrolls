@@ -79,28 +79,58 @@ export function ICPEtcher() {
                 }}>
                   ICP System Schematic Diagram
                 </h3>
-                <img 
-                  src="/assets/images/products/icp-etcher/icp-system-schematic.png" 
-                  alt="Inductively Coupled Plasma (ICP) Etching System Schematic - Showing plasma generation coil, etching stations, RF power connections, and gas flow paths" 
-                  style={{
-                    width: '100%',
-                    maxWidth: '100%',
-                    height: 'auto',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    marginBottom: '1rem',
-                    background: '#f8f9fa',
-                    padding: '1rem',
-                    display: 'block',
-                    objectFit: 'contain'
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    console.log('Image failed to load:', target.src);
-                    // Fallback to WebP if PNG fails
-                    target.src = '/assets/images/products/icp-etcher/icp-system-schematic.webp';
-                  }}
-                />
+                <picture>
+                  <source 
+                    media="(max-width: 768px)"
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-sm.webp" 
+                    type="image/webp" 
+                  />
+                  <source 
+                    media="(max-width: 768px)"
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-sm.png" 
+                    type="image/png" 
+                  />
+                  <source 
+                    media="(max-width: 1200px)"
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-md.webp" 
+                    type="image/webp" 
+                  />
+                  <source 
+                    media="(max-width: 1200px)"
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-md.png" 
+                    type="image/png" 
+                  />
+                  <source 
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic.webp" 
+                    type="image/webp" 
+                  />
+                  <source 
+                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic.png" 
+                    type="image/png" 
+                  />
+                  <img 
+                    src="/assets/images/products/icp-etcher/icp-system-schematic.webp" 
+                    alt="Inductively Coupled Plasma (ICP) Etching System Schematic - Showing plasma generation coil, etching stations, RF power connections, and gas flow paths" 
+                    style={{
+                      width: '100%',
+                      maxWidth: '100%',
+                      height: 'auto',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                      marginBottom: '1rem',
+                      background: '#f8f9fa',
+                      padding: '1rem',
+                      display: 'block',
+                      objectFit: 'contain'
+                    }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      console.log('Image failed to load:', target.src);
+                      // Fallback to PNG if WebP fails
+                      target.src = '/assets/images/products/icp-etcher/icp-system-schematic.png';
+                    }}
+                  />
+                </picture>
                 <p style={{ 
                   fontSize: '0.95rem', 
                   color: '#666', 
