@@ -61,6 +61,59 @@ export function ICPEtcher() {
                 alt="ICP Etcher System" 
                 className="main-product-image" 
               />
+              <div className="technical-diagram" style={{ 
+                background: 'white', 
+                borderRadius: '12px', 
+                padding: '2rem', 
+                boxShadow: '0 4px 15px rgba(0,0,0,0.1)', 
+                border: '1px solid #e0e0e0', 
+                marginTop: '2rem',
+                marginBottom: '2rem'
+              }}>
+                <h3 style={{ 
+                  color: '#0066cc', 
+                  marginBottom: '1.5rem', 
+                  fontSize: '1.4rem', 
+                  fontWeight: '600', 
+                  textAlign: 'center' 
+                }}>
+                  ICP System Schematic Diagram
+                </h3>
+                <img 
+                  src="/assets/images/products/icp-etcher/icp-system-schematic.png" 
+                  alt="Inductively Coupled Plasma (ICP) Etching System Schematic - Showing plasma generation coil, etching stations, RF power connections, and gas flow paths" 
+                  style={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    height: 'auto',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    marginBottom: '1rem',
+                    background: '#f8f9fa',
+                    padding: '1rem',
+                    display: 'block',
+                    objectFit: 'contain'
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    console.log('Image failed to load:', target.src);
+                    // Fallback to WebP if PNG fails
+                    target.src = '/assets/images/products/icp-etcher/icp-system-schematic.webp';
+                  }}
+                />
+                <p style={{ 
+                  fontSize: '0.95rem', 
+                  color: '#666', 
+                  lineHeight: '1.5', 
+                  textAlign: 'center', 
+                  margin: '0', 
+                  fontStyle: 'italic',
+                  padding: '0 1rem'
+                }}>
+                  <strong>System Components:</strong> Etching gas inlet, ICP coupling coil, etching stations, RF power connection, 
+                  helium piping for wafer cooling, and vacuum channel for gas evacuation.
+                </p>
+              </div>
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
