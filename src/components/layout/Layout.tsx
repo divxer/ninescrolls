@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Chat } from '../common/Chat';
 import { CookieBanner } from '../common/CookieBanner';
 
@@ -8,6 +9,30 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Close menu when location changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isMenuOpen && !target.closest('.nav-container')) {
+        setIsMenuOpen(false);
+      }
+    };
+    
+    if (isMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isMenuOpen]);
   
   return (
     <>
@@ -21,12 +46,24 @@ export function Layout({ children }: LayoutProps) {
               <span className="logo-text">NineScrolls LLC</span>
             </Link>
           </div>
-          <ul className="nav-links">
-            <li><Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Home</Link></li>
-            <li><Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>About Us</Link></li>
-            <li><Link to="/products" className={`nav-link ${location.pathname === '/products' ? 'active' : ''}`}>Products</Link></li>
-            <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`}>Insights</Link></li>
-            <li><Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>Contact Us</Link></li>
+          
+          {/* Hamburger Menu Button */}
+          <button 
+            className={`hamburger-menu ${isMenuOpen ? 'active' : ''}`}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          
+          <ul className={`nav-links ${isMenuOpen ? 'nav-open' : ''}`}>
+            <li><Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Home</Link></li>
+            <li><Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>About Us</Link></li>
+            <li><Link to="/products" className={`nav-link ${location.pathname === '/products' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Products</Link></li>
+            <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Insights</Link></li>
+            <li><Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Contact Us</Link></li>
           </ul>
         </nav>
       </header>
