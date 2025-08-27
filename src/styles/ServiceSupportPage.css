@@ -1,0 +1,979 @@
+/* Service Support Page Styles */
+.service-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: var(--white);
+    padding: 6rem 0;
+    text-align: center;
+}
+
+.service-hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.service-hero p {
+    font-size: 1.3rem;
+    max-width: 600px;
+    margin: 0 auto;
+    opacity: 0.9;
+}
+
+/* Warranty Overview Section */
+.warranty-overview {
+    padding: 2.5rem 0;
+    background: var(--light-gray);
+    margin-block: 42px;
+}
+
+.warranty-overview h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.warranty-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.warranty-blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.warranty-block {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.warranty-block:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Warranty cards: small icon + strong title --- */
+.block-header {
+    background: #0d5ed8;
+    color: #fff;
+    padding: 16px 18px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+
+.block-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    display: grid;
+    place-items: center;
+    flex: 0 0 40px;
+}
+
+.block-icon-wrap svg {
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
+    opacity: 0.95;
+}
+
+.block-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0.1px;
+    color: #fff;
+}
+
+/* 移动端再缩一点，保证密度 */
+@media (max-width: 480px) {
+    .block-icon-wrap {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .block-icon-wrap svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .block-header h3 {
+        font-size: 16px;
+    }
+}
+
+/* 强制让蓝色卡片头的标题可读 */
+.warranty-block .block-header {
+    background: #0d5ed8;          /* 够深的蓝 */
+    color: #fff;                   /* 默认文字白色 */
+}
+
+.warranty-block .block-header h3 {
+    color: #fff !important;        /* 提升优先级，压过全局 h3 颜色 */
+    opacity: 1 !important;         /* 防止被降低透明度 */
+    mix-blend-mode: normal;        /* 避免被父级混合模式影响 */
+    text-shadow: 0 1px 0 rgba(0,0,0,.08); /* 轻微提对比，可去掉 */
+}
+
+.block-content {
+    padding: 20px 18px 18px;
+    background: #fff;
+    border-radius: 0 0 16px 16px;
+}
+
+.block-content h4 {
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.warranty-note {
+    font-size: 0.9rem;
+    color: #475569;
+    font-style: italic;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #eef5ff;
+    border-radius: 4px;
+    border-left: 3px solid #93c5fd;
+}
+
+.warranty-features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.warranty-features li {
+    padding: 0.5rem 0;
+    color: #334155;
+    position: relative;
+    padding-left: 1.5rem;
+    line-height: 1.5;
+}
+
+.warranty-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #16a34a;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* Comparison Section */
+.comparison-section {
+    padding: 2.5rem 0;
+    margin-block: 42px;
+    text-align: center;
+}
+
+.comparison-section .comparison-table {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    margin: 0 auto 2rem;
+    max-width: 1200px;
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.comparison-section h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.comparison-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 24px 20px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+    line-height: 1.6;
+    vertical-align: middle;
+    word-wrap: break-word;
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: #1e293b;
+    font-weight: 700;
+    border-bottom: 2px solid #cbd5e1;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 24px 20px;
+}
+
+/* 列宽设置 - 使用固定宽度而非百分比 */
+.comparison-table th:nth-child(1),
+.comparison-table td:nth-child(1) {
+    min-width: 200px;
+    max-width: 250px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.comparison-table th:nth-child(2),
+.comparison-table td:nth-child(2) {
+    min-width: 280px;
+    max-width: 350px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.comparison-table th:nth-child(3),
+.comparison-table td:nth-child(3) {
+    min-width: 320px;
+    background: #f8faff;
+    border-left: 4px solid #2563eb;
+    color: #1e40af;
+    font-weight: 600;
+}
+
+/* 确保斑马纹效果覆盖高亮列 */
+.comparison-section .comparison-table tbody tr:nth-child(even) td:nth-child(3) {
+    background: #e6f3ff !important;
+}
+
+.comparison-section .comparison-table tbody tr:nth-child(odd) td:nth-child(3) {
+    background: #f0f9ff !important;
+}
+
+/* 悬停时的高亮列背景 */
+.comparison-section .comparison-table tbody tr:hover td:nth-child(3) {
+    background: #dbeafe !important;
+}
+
+.comparison-table .highlight {
+    background: #f0f9ff;
+    color: #1e40af;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-left: 4px solid #2563eb;
+    padding: 24px 20px;
+}
+
+.check-mark {
+    color: #16a34a;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+}
+
+.advantage-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* Zebra striping for better visual hierarchy */
+.comparison-section .comparison-table tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+}
+
+.comparison-section .comparison-table tbody tr:nth-child(even) .highlight {
+    background: #e6f3ff !important;
+}
+
+.comparison-section .comparison-table tbody tr:nth-child(odd) {
+    background: #ffffff !important;
+}
+
+.comparison-section .comparison-table tbody tr:nth-child(odd) .highlight {
+    background: #f0f9ff !important;
+}
+
+.comparison-section .comparison-table tbody tr {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.comparison-section .comparison-table tbody tr:hover {
+    background: #f1f5f9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.comparison-section .comparison-table tbody tr:hover .highlight {
+    background: #dbeafe !important;
+    border-left-color: #2563eb;
+}
+
+.comparison-section .comparison-table tbody tr:hover td {
+    color: #1e293b;
+}
+
+.comparison-cta {
+    text-align: center;
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.comparison-cta .btn {
+    min-width: 240px;
+    margin: 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 28px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none;
+    color: white;
+    text-decoration: none;
+}
+
+.comparison-cta .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.comparison-cta .btn:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+/* TCO Section */
+.tco-section {
+    padding: 2.5rem 0;
+    background: var(--light-gray);
+    margin-block: 42px;
+}
+
+.tco-section h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.tco-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.tco-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.tco-chart {
+    display: flex;
+    justify-content: center;
+}
+
+.donut-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+}
+
+.donut-chart {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.donut-segment {
+    transition: stroke-dasharray 0.8s ease;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+}
+
+.donut-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.donut-value {
+    font: 800 28px/1 ui-sans-serif;
+    color: var(--primary-color);
+}
+
+.tco-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.legend-text {
+    color: #555;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.tco-cta {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tco-cta .btn {
+    min-width: 150px;
+}
+
+/* AMC Section */
+.amc-section {
+    padding: 2.5rem 0;
+    margin-block: 42px;
+}
+
+.amc-section h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.amc-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.amc-plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.amc-plan {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.amc-plan::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.amc-plan.featured {
+    border-color: var(--primary-color);
+    transform: scale(1.02);
+}
+
+.amc-plan.featured::before {
+    opacity: 1;
+}
+
+.amc-plan:hover {
+    transform: translateY(-3px);
+}
+
+.amc-plan.featured:hover {
+    transform: scale(1.02) translateY(-3px);
+}
+
+.plan-badge {
+    display: inline-block;
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 102, 204, 0.2);
+}
+
+.plan-price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.price-unit {
+    font-size: 1rem;
+    color: #666;
+    font-weight: 400;
+}
+
+.plan-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.plan-features li {
+    padding: 0.5rem 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.feature-check {
+    color: #22c55e;
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.plan-cta {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.plan-cta:hover {
+    background: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.plan-cta.featured {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.plan-cta.secondary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.plan-cta.secondary:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Popular Badge */
+.popular-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    z-index: 10;
+}
+
+/* AMC CTA */
+.amc-cta {
+    text-align: center;
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.amc-cta .btn {
+    min-width: 200px;
+}
+
+/* Process CTA */
+.process-cta {
+    text-align: center;
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.process-cta .btn {
+    min-width: 200px;
+}
+
+/* Service Process */
+.service-process {
+    padding: 2.5rem 0;
+    background: var(--light-gray);
+    margin-block: 42px;
+}
+
+.service-process h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.process-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.process-flow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.process-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.step-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 3px solid var(--primary-color);
+    transition: transform 0.3s ease;
+}
+
+.process-step:hover .step-icon {
+    transform: scale(1.1);
+}
+
+.step-content h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.step-content p {
+    color: #666;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.step-arrow {
+    position: absolute;
+    right: -1rem;
+    top: 40px;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.process-step:last-child .step-arrow {
+    display: none;
+}
+
+/* CTA Section */
+.service-cta-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: var(--white);
+    text-align: center;
+}
+
+.service-cta-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.service-cta-section p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cta-buttons .btn {
+    min-width: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .service-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .service-hero p {
+        font-size: 1.1rem;
+    }
+    
+    .warranty-overview h2,
+    .comparison-section h2,
+    .tco-section h2,
+    .amc-section h2,
+    .service-process h2,
+    .service-cta-section h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .warranty-intro,
+    .comparison-intro,
+    .tco-intro,
+    .amc-intro,
+    .process-intro {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .tco-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+    
+    .donut-container {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .warranty-blocks,
+    .amc-plans {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .warranty-block,
+    .amc-plan {
+        padding: 1.5rem;
+    }
+    
+    .block-header {
+        padding: 1rem;
+    }
+    
+    .block-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .block-content {
+        padding: 1rem;
+    }
+    
+    .block-content h4 {
+        font-size: 1.1rem;
+    }
+    
+    .process-flow {
+        flex-direction: column;
+        gap: 2rem;
+    }
+    
+    .process-step {
+        width: 100%;
+    }
+    
+    .step-arrow {
+        display: none;
+    }
+    
+    .tco-cta {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .tco-cta .btn {
+        min-width: auto;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .amc-cta,
+    .process-cta {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .amc-cta .btn,
+    .process-cta .btn {
+        min-width: auto;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .amc-plan.featured {
+        transform: none;
+    }
+    
+    .amc-plan.featured:hover {
+        transform: translateY(-5px);
+    }
+    
+    .popular-badge {
+        top: -5px;
+        right: -5px;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.8rem;
+    }
+    
+    /* 移动端响应式优化 */
+    @media (max-width: 768px) {
+        .comparison-table {
+            font-size: 0.9rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .comparison-table table {
+            min-width: 600px;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 16px 14px;
+            white-space: nowrap;
+        }
+        
+        .comparison-table th:nth-child(1),
+        .comparison-table td:nth-child(1) {
+            min-width: 150px;
+            max-width: 180px;
+        }
+        
+        .comparison-table th:nth-child(2),
+        .comparison-table td:nth-child(2) {
+            min-width: 200px;
+            max-width: 250px;
+        }
+        
+        .comparison-table th:nth-child(3),
+        .comparison-table td:nth-child(3) {
+            min-width: 220px;
+        }
+        
+        .check-mark {
+            font-size: 1rem;
+        }
+        
+        .advantage-text {
+            white-space: normal;
+        }
+    }
+    }
+    
+
+    
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .cta-buttons .btn {
+        min-width: auto;
+        width: 100%;
+        max-width: 300px;
+    }
+}

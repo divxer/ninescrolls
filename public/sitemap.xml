@@ -74,9 +74,15 @@
   </url>
   <url>
     <loc>https://ninescrolls.com/contact</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2025-08-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/service-support</loc>
+    <lastmod>2025-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights</loc>

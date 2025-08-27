@@ -3,6 +3,7 @@ import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ContactPage } from '../pages/ContactPage';
+import { ServiceSupportPage } from '../pages/ServiceSupportPage';
 import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
 import { IPAnalysisPage } from '../pages/IPAnalysisPage';
 import { IPAnalysisTestPage } from '../pages/IPAnalysisTestPage';
@@ -28,6 +29,7 @@ export function AppRoutes() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/service-support" element={<ServiceSupportPage />} />
       <Route path="/insights" element={<InsightsPage />} />
       <Route path="/insights/:slug" element={<InsightsPostPage />} />
       {import.meta.env.MODE !== 'production' && (

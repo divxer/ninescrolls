@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
@@ -7,6 +8,10 @@ import '../styles/ContactPage.css';
 export function ContactPage() {
   // Scroll to top when component mounts
   useScrollToTop();
+
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const topic = params.get('topic') || undefined;
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -115,7 +120,7 @@ export function ContactPage() {
         <div className="container">
           <h2>Send Us a Message</h2>
           <p>Have questions about our products or services? Fill out the form below and we'll get back to you shortly.</p>
-          <ContactFormInline />
+          <ContactFormInline topic={topic} />
         </div>
       </section>
     </>
