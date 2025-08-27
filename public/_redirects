@@ -1,14 +1,14 @@
-# SPA路由重写规则 - 所有非文件请求都重写到index.html
+# SPA routing rewrite rule – all non-file requests are rewritten to index.html
 /*    /index.html   200
 
-# 处理尾部斜杠重定向 - 301永久重定向
+# Trailing slash normalization - 301 permanent redirects
 /products/*/    /products/:splat    301
 /about/         /about              301
 /contact/       /contact            301
 /analytics-test/ /analytics-test    301
 /ip-analysis/   /ip-analysis        301
 
-# 确保静态资源不被重写
+# Ensure static assets are served directly
 /assets/*       /assets/:splat      200
 *.js           /:splat             200
 *.css          /:splat             200
@@ -25,7 +25,7 @@
 # PDF files - serve directly but prevent indexing
 *.pdf          /:splat             200
 
-# Common 404 redirects for SEO
+# Common legacy route redirects for SEO
 /product       /products           301
 /product/      /products           301
 /products/ald-system    /products/ald    301
@@ -53,3 +53,6 @@
 /technology    /insights           301
 /research      /insights           301
 /applications  /insights           301 
+
+# All other unknown paths return 404 (requires public/404.html)
+/*                /404.html         404

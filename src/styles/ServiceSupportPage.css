@@ -99,7 +99,7 @@
     color: #fff;
 }
 
-/* 移动端再缩一点，保证密度 */
+/* Mobile: slightly smaller to keep density */
 @media (max-width: 480px) {
     .block-icon-wrap {
         width: 36px;
@@ -116,7 +116,7 @@
     }
 }
 
-/* 强制让蓝色卡片头的标题可读 */
+/* Force readable white title on blue header */
 .warranty-block .block-header {
     background: #0d5ed8;          /* 够深的蓝 */
     color: #fff;                   /* 默认文字白色 */
@@ -237,7 +237,7 @@
     padding: 24px 20px;
 }
 
-/* 列宽设置 - 使用固定宽度而非百分比 */
+/* Column widths - use fixed min/max instead of percent */
 .comparison-table th:nth-child(1),
 .comparison-table td:nth-child(1) {
     min-width: 200px;
@@ -263,7 +263,7 @@
     font-weight: 600;
 }
 
-/* 确保斑马纹效果覆盖高亮列 */
+/* Ensure zebra striping also applies to highlighted column */
 .comparison-section .comparison-table tbody tr:nth-child(even) td:nth-child(3) {
     background: #e6f3ff !important;
 }
@@ -272,7 +272,7 @@
     background: #f0f9ff !important;
 }
 
-/* 悬停时的高亮列背景 */
+/* Highlighted column background on hover */
 .comparison-section .comparison-table tbody tr:hover td:nth-child(3) {
     background: #dbeafe !important;
 }
@@ -919,47 +919,89 @@
         padding: 0.3rem 0.8rem;
     }
     
-    /* 移动端响应式优化 */
-    @media (max-width: 768px) {
+    /* Mobile: transform table into stacked cards to avoid horizontal scroll */
+    @media (max-width: 640px) {
         .comparison-table {
-            font-size: 0.9rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            font-size: 0.95rem;
         }
-        
+
         .comparison-table table {
-            min-width: 600px;
+            width: 100%;
+            min-width: 0;
+            border-collapse: separate;
+            border-spacing: 0;
         }
-        
-        .comparison-table th,
-        .comparison-table td {
-            padding: 16px 14px;
-            white-space: nowrap;
+
+        .comparison-table thead {
+            display: none;
         }
-        
-        .comparison-table th:nth-child(1),
-        .comparison-table td:nth-child(1) {
-            min-width: 150px;
-            max-width: 180px;
+
+        .comparison-section .comparison-table tbody tr {
+            display: block;
+            margin: 0 0 12px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transform: none;
         }
-        
-        .comparison-table th:nth-child(2),
-        .comparison-table td:nth-child(2) {
-            min-width: 200px;
-            max-width: 250px;
+
+        .comparison-section .comparison-table tbody tr:nth-child(even),
+        .comparison-section .comparison-table tbody tr:nth-child(odd) {
+            background: #ffffff !important;
         }
-        
-        .comparison-table th:nth-child(3),
-        .comparison-table td:nth-child(3) {
-            min-width: 220px;
+
+        .comparison-section .comparison-table tbody tr:hover,
+        .comparison-section .comparison-table tbody tr:hover .highlight {
+            background: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        
-        .check-mark {
-            font-size: 1rem;
-        }
-        
-        .advantage-text {
+
+        .comparison-table tbody td {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
             white-space: normal;
+        }
+
+        .comparison-table tbody td:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-table tbody td:nth-child(1)::before {
+            content: "Feature";
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .comparison-table tbody td:nth-child(2)::before {
+            content: "Major Manufacturers";
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .comparison-table tbody td:nth-child(3)::before {
+            content: "NineScrolls";
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        /* In card mode, do not use left border for highlight */
+        .comparison-table tbody td:nth-child(3) {
+            background: #f0f7ff;
+            border-left: none;
+        }
+
+        .comparison-table .highlight {
+            border-left: none;
+            background: #eef6ff;
+            padding: 12px 14px;
+        }
+
+        .comparison-table .check-mark {
+            font-size: 1rem;
         }
     }
     }
