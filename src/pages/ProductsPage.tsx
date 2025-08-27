@@ -226,6 +226,95 @@ export function ProductsPage() {
         </div>
       </section>
 
+      {/* Warranty & Service Section */}
+      <section className="warranty-service">
+        <div className="container">
+          <h2>Warranty & Service</h2>
+          <p className="warranty-intro">Comprehensive service solutions designed to maximize your equipment performance and minimize downtime.</p>
+          
+          <div className="warranty-blocks">
+            <div className="warranty-block">
+              <div className="block-header" aria-labelledby="hdr-warranty">
+                <span className="block-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="1.8"
+                       strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M12 8v6M9 11h6"/>
+                  </svg>
+                </span>
+                <h3 id="hdr-warranty">Standard Warranty</h3>
+              </div>
+              <div className="block-content">
+                <h4>2-Year Full Warranty</h4>
+                <p className="warranty-note">(Most major manufacturers only provide 1-year coverage. NineScrolls offers 2 years as standard.)</p>
+                <ul className="warranty-features">
+                  <li>Parts & labor coverage</li>
+                  <li>Manufacturing defects</li>
+                  <li>Component failures</li>
+                  <li>Technical support included</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="warranty-block">
+              <div className="block-header" aria-labelledby="hdr-pm">
+                <span className="block-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="1.8"
+                       strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2l-6 6"/>
+                    <path d="M3 22l7.5-7.5"/>
+                    <path d="M16 8a4 4 0 1 0-5.66-5.66L7 5.68 9.32 8l3.34-3.34"/>
+                  </svg>
+                </span>
+                <h3 id="hdr-pm">Preventive Maintenance</h3>
+              </div>
+              <div className="block-content">
+                <h4>One free PM service included</h4>
+                <ul className="warranty-features">
+                  <li>System optimization</li>
+                  <li>Performance calibration</li>
+                  <li>Preventive recommendations</li>
+                  <li>Expert technician service</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="warranty-block">
+              <div className="block-header" aria-labelledby="hdr-ext">
+                <span className="block-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="1.8"
+                       strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                    <path d="M16 13H8M16 17H8M10 9H8"/>
+                  </svg>
+                </span>
+                <h3 id="hdr-ext">Extended Options</h3>
+              </div>
+              <div className="block-content">
+                <h4>Flexible service plans</h4>
+                <ul className="warranty-features">
+                  <li>Extended warranty plans</li>
+                  <li>Annual Maintenance Contracts (AMC)</li>
+                  <li>Custom service agreements</li>
+                  <li>Priority support access</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="warranty-cta">
+            <p className="cta-text">👉 Want full details? Contact us for warranty terms and AMC pricing.</p>
+            <div className="cta-buttons">
+              <Link to="/contact" className="btn btn-primary">Contact Service Team</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Need Equipment Consultation?</h2>

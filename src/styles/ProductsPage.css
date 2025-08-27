@@ -386,6 +386,188 @@
     margin-top: 3rem;
 }
 
+/* Warranty & Service Section Styles */
+.warranty-service {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 3rem 0;
+}
+
+.warranty-service h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 2.5rem;
+}
+
+.warranty-intro {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.warranty-blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.warranty-block {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.warranty-block:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Warranty cards: small icon + strong title --- */
+.block-header {
+    background: #0d5ed8;
+    color: #fff;
+    padding: 16px 18px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+
+.block-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    display: grid;
+    place-items: center;
+    flex: 0 0 40px;
+}
+
+.block-icon-wrap svg {
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
+    opacity: 0.95;
+}
+
+.block-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0.1px;
+    color: #fff;
+}
+
+/* 移动端再缩一点，保证密度 */
+@media (max-width: 480px) {
+    .block-icon-wrap {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .block-icon-wrap svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .block-header h3 {
+        font-size: 16px;
+    }
+}
+
+/* 强制让蓝色卡片头的标题可读 */
+.warranty-block .block-header {
+    background: #0d5ed8;          /* 够深的蓝 */
+    color: #fff;                   /* 默认文字白色 */
+}
+
+.warranty-block .block-header h3 {
+    color: #fff !important;        /* 提升优先级，压过全局 h3 颜色 */
+    opacity: 1 !important;         /* 防止被降低透明度 */
+    mix-blend-mode: normal;        /* 避免被父级混合模式影响 */
+    text-shadow: 0 1px 0 rgba(0,0,0,.08); /* 轻微提对比，可去掉 */
+}
+
+.block-content {
+    padding: 1.5rem;
+}
+
+.block-content h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.warranty-note {
+    font-size: 0.9rem;
+    color: #475569;
+    font-style: italic;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #eef5ff;
+    border-radius: 4px;
+    border-left: 3px solid #93c5fd;
+}
+
+.warranty-features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.warranty-features li {
+    padding: 0.5rem 0;
+    color: #555;
+    position: relative;
+    padding-left: 1.5rem;
+    line-height: 1.5;
+}
+
+.warranty-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #16a34a;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.warranty-cta {
+    text-align: center;
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.cta-text {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cta-buttons .btn {
+    min-width: 200px;
+    text-align: center;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .products-hero {
@@ -448,5 +630,52 @@
     .faq-section h2 {
         font-size: 1.8rem;
         margin-bottom: 2rem;
+    }
+
+    /* Warranty Service Mobile Styles */
+    .warranty-blocks {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .warranty-service h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .warranty-intro {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .block-header {
+        padding: 1rem;
+    }
+
+    .block-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .block-content {
+        padding: 1rem;
+    }
+
+    .block-content h4 {
+        font-size: 1.1rem;
+    }
+
+    .warranty-cta {
+        padding: 1.5rem;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .cta-buttons .btn {
+        min-width: auto;
+        width: 100%;
+        max-width: 300px;
     }
 } 

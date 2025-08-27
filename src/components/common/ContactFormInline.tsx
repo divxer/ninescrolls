@@ -3,9 +3,27 @@ import { ContactFormContent } from './ContactFormContent';
 
 interface ContactFormInlineProps {
   className?: string;
+  topic?: string;
 }
 
-export function ContactFormInline({ className = '' }: ContactFormInlineProps) {
+function getPrefillMessage(topic?: string): string {
+  switch (topic) {
+    case 'service':
+      return 'I would like to start service planning for my equipment.';
+    case 'amc':
+      return 'Please provide AMC pricing and available service options.';
+    case 'tco':
+      return 'Please send a 5-year TCO report and assumptions.';
+    case 'expert':
+      return 'I would like to talk to an expert about my application.';
+    case 'compare':
+      return 'Please send the detailed comparison versus major manufacturers.';
+    default:
+      return '';
+  }
+}
+
+export function ContactFormInline({ className = '', topic }: ContactFormInlineProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -13,7 +31,7 @@ export function ContactFormInline({ className = '' }: ContactFormInlineProps) {
     email: '',
     phone: '',
     organization: '',
-    message: ''
+    message: getPrefillMessage(topic)
   });
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -30,7 +48,8 @@ export function ContactFormInline({ className = '' }: ContactFormInlineProps) {
         },
         body: JSON.stringify({
           ...formData,
-          productName: 'General Inquiry'
+          productName: 'General Inquiry',
+          topic: topic || 'general'
         })
       });
 
