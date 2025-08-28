@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | NineScrolls LLC</title>
+    <meta name="description" content="The page you're looking for doesn't exist. Browse our plasma etching systems, technical insights, and research equipment.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .error-code {
+            font-size: 8rem;
+            font-weight: 900;
+            color: #ef4444;
+            line-height: 1;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .error-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+        
+        .helpful-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 900px;
+            margin-top: 2rem;
+        }
+        
+        .link-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .link-section h3 {
+            color: #60a5fa;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .link-list {
+            list-style: none;
+        }
+        
+        .link-list li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .link-list a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: block;
+            padding: 0.5rem 0;
+        }
+        
+        .link-list a:hover {
+            color: #60a5fa;
+        }
+        
+        .home-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 2rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 6rem;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .helpful-links {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-code">404</div>
+        <h1 class="error-title">Page Not Found</h1>
+        <p class="error-message">
+            Sorry, the page you're looking for doesn't exist or has been moved.
+        </p>
+        
+        <div class="helpful-links">
+            <div class="link-section">
+                <h3>Products</h3>
+                <ul class="link-list">
+                    <li><a href="/products/ald">ALD Systems</a></li>
+                    <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                    <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                    <li><a href="/products/sputter">Sputter Systems</a></li>
+                    <li><a href="/products/pecvd">PECVD Systems</a></li>
+                </ul>
+            </div>
+            
+            <div class="link-section">
+                <h3>Resources</h3>
+                <ul class="link-list">
+                    <li><a href="/insights">Technical Insights</a></li>
+                    <li><a href="/equipment-guide.pdf">Equipment Guide</a></li>
+                    <li><a href="/about">About NineScrolls</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            
+            <div class="link-section">
+                <h3>Popular Pages</h3>
+                <ul class="link-list">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/products">All Products</a></li>
+                    <li><a href="/insights">Latest Insights</a></li>
+                    <li><a href="/contact">Get Quote</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <a href="/" class="home-button">Return to Homepage</a>
+    </div>
+</body>
+</html>
