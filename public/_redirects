@@ -65,6 +65,3 @@ https://ninescrolls.us/*   https://ninescrolls.com/:splat   301
 
 # All other unknown paths return 404 (requires public/404.html)
 /*                /404.html         404
-
-# All other unknown paths return 404 (requires public/404.html)
-/*                /404.html         404
