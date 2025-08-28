@@ -1,5 +1,14 @@
-# SPA routing rewrite rule – all non-file requests are rewritten to index.html
-/*    /index.html   200
+# SPA history fallback for known routes only
+/products/*         /index.html   200
+/insights/*         /index.html   200
+/about              /index.html   200
+/contact            /index.html   200
+/service-support    /index.html   200
+/analytics-test     /index.html   200
+/ip-analysis        /index.html   200
+
+# Force canonical host: redirect .us -> .com (path preserved)
+https://ninescrolls.us/*   https://ninescrolls.com/:splat   301
 
 # Trailing slash normalization - 301 permanent redirects
 /products/*/    /products/:splat    301
@@ -53,6 +62,9 @@
 /technology    /insights           301
 /research      /insights           301
 /applications  /insights           301 
+
+# All other unknown paths return 404 (requires public/404.html)
+/*                /404.html         404
 
 # All other unknown paths return 404 (requires public/404.html)
 /*                /404.html         404
