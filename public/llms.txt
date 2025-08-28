@@ -1,6 +1,3 @@
-# llms.txt — Guidance for AI search and LLM crawlers
-# More info: https://llmstxt.org
-
 site: https://ninescrolls.com/
 canonical-host: ninescrolls.com
 sitemap: https://ninescrolls.com/sitemap.xml
@@ -9,27 +6,29 @@ contact: mailto:info@ninescrolls.com
 publisher: NineScrolls LLC
 last-updated: 2025-08-28
 
-summary: |
-  NineScrolls provides research‑grade semiconductor equipment — plasma etching (RIE/ICP),
-  ALD and CVD deposition systems — with technical insights and service information for
-  universities, institutes and corporate R&D labs.
+summary:
+NineScrolls provides research-grade semiconductor equipment — plasma etching (RIE/ICP), ALD and CVD systems — with technical insights and service information.
 
-primary-topics: plasma etching; RIE; ICP etcher; ALD; CVD; PECVD; HDP‑CVD; thin film deposition; semiconductor equipment
+topics:
+plasma etching; RIE; ICP etcher; ALD; CVD; PECVD; HDP-CVD; thin film deposition; semiconductor equipment
 
-content-structure: |
-  /                      Home and value proposition
-  /products/             Product catalogue landing
-  /products/*            Product detail categories (RIE, ICP, ALD, CVD, etc.)
-  /insights/             Technical articles and application notes
-  /service-support       Warranty, AMC and service information
-  /about                 Company information
-  /contact               Contact and quote requests
+structure:
+/                      Home and value proposition
+/products/             Product catalogue landing
+/products/*            Product detail categories (RIE, ICP, ALD, CVD, etc.)
+/insights/             Technical articles and application notes
+/service-support       Warranty, AMC and service information
+/about                 Company information
+/contact               Contact and quote requests
 
-preferred-citation: "NineScrolls LLC — https://ninescrolls.com/"
+usage:
+Do not use full pages for model training without prior written permission.
+Short factual snippets (<=120 characters) may be quoted with attribution and link.
+Crawl politely (<=1 request/second, <=5 concurrent) and cache responses.
+Respect robots.txt.
 
-usage-policy: |
-  • Do not use full pages for model training without prior written permission.
-  • Short factual snippets (<=120 characters) may be quoted with attribution and link.
-  • Respect robots.txt, polite crawling (≤1 request/sec, ≤5 concurrent), and cache responses.
+citation:
+NineScrolls LLC — https://ninescrolls.com/
 
-third-party-licenses: All website assets are copyright © NineScrolls LLC unless noted otherwise.
+licenses:
+All website assets are copyright © NineScrolls LLC unless noted otherwise.
