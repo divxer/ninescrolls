@@ -13,7 +13,7 @@ export function ProductsPage() {
         title="Plasma Etching Equipment & Systems | NineScrolls - Advanced Semiconductor Manufacturing Solutions"
         description="Expert plasma etching equipment and systems for semiconductor manufacturing. Discover our wide range of plasma etching processes including reactive ion etching (RIE), inductively coupled plasma etching, and wet etching solutions. Leading provider of etch rates optimization and plasma treatment technology."
         keywords="plasma etching, plasma etching equipment, plasma etching systems, reactive ion etching, etch rates, plasma treatment, plasma etching process, plasma processing, wet etching, etching processes, semiconductor manufacturing"
-        url="/products"
+        url="/products/"
       />
       <section className="products-hero">
         <div className="container">
