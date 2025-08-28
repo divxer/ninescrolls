@@ -1,34 +1,39 @@
-site: https://ninescrolls.com/
-canonical-host: ninescrolls.com
-sitemap: https://ninescrolls.com/sitemap.xml
-robots: https://ninescrolls.com/robots.txt
-contact: mailto:info@ninescrolls.com
-publisher: NineScrolls LLC
-last-updated: 2025-08-28
+# NineScrolls
 
-summary:
-NineScrolls provides research-grade semiconductor equipment — plasma etching (RIE/ICP), ALD and CVD systems — with technical insights and service information.
+> Research‑grade semiconductor equipment provider. We build plasma etching systems (RIE/ICP) and thin‑film deposition systems (ALD, PECVD, HDP‑CVD), with documentation, service & warranty information. This file gives LLMs a concise, linkable map of high‑value resources.
 
-topics:
-plasma etching; RIE; ICP etcher; ALD; CVD; PECVD; HDP-CVD; thin film deposition; semiconductor equipment
+NineScrolls serves universities, institutes, and corporate R&D labs. For questions or corrections, contact info@ninescrolls.com. Canonical host is https://ninescrolls.com/.
 
-structure:
-/                      Home and value proposition
-/products/             Product catalogue landing
-/products/*            Product detail categories (RIE, ICP, ALD, CVD, etc.)
-/insights/             Technical articles and application notes
-/service-support       Warranty, AMC and service information
-/about                 Company information
-/contact               Contact and quote requests
+## Docs
 
-usage:
-Do not use full pages for model training without prior written permission.
-Short factual snippets (<=120 characters) may be quoted with attribution and link.
-Crawl politely (<=1 request/second, <=5 concurrent) and cache responses.
-Respect robots.txt.
+- [Sitemap](https://ninescrolls.com/sitemap.xml): Index of public pages
+- [Robots](https://ninescrolls.com/robots.txt): Crawl rules
+- [Service Process Guide (PDF)](https://ninescrolls.com/docs/NineScrolls_Service_Process_Guide.pdf): Warranty / service overview
 
-citation:
-NineScrolls LLC — https://ninescrolls.com/
+## Products
 
-licenses:
-All website assets are copyright © NineScrolls LLC unless noted otherwise.
+- [Products overview](https://ninescrolls.com/products/): Equipment categories and links
+- [RIE Etcher](https://ninescrolls.com/products/rie-etcher): Reactive ion etching systems
+- [ICP Etcher](https://ninescrolls.com/products/icp-etcher): Inductively coupled plasma etching
+- [ALD Systems](https://ninescrolls.com/products/ald): Atomic layer deposition
+- [PECVD Systems](https://ninescrolls.com/products/pecvd): Plasma‑enhanced CVD
+- [HDP‑CVD Systems](https://ninescrolls.com/products/hdp-cvd): High‑density plasma CVD
+- [IBE/RIBE Systems](https://ninescrolls.com/products/ibe-ribe): Ion/Reactive ion beam etching
+- [Sputter Systems](https://ninescrolls.com/products/sputter): PVD sputtering
+- [Striper Systems](https://ninescrolls.com/products/striper): Photoresist removal
+- [Coater/Developer](https://ninescrolls.com/products/coater-developer): Photolithography track
+
+## Insights
+
+- [Plasma etching fundamentals](https://ninescrolls.com/insights/plasma-etching): Overview & key terms
+- [Plasma cleaning](https://ninescrolls.com/insights/plasma-cleaning-precision-surface-preparation): Surface preparation
+
+## Service & Company
+
+- [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, process
+- [Contact](https://ninescrolls.com/contact): Quotes and technical questions
+- [About](https://ninescrolls.com/about): Company information
+
+## Optional
+
+- [Equipment Guide (PDF)](https://ninescrolls.com/equipment-guide.pdf): Downloadable brochure
