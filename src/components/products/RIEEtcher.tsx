@@ -163,10 +163,28 @@ export function RIEEtcher() {
         </div>
       </section>
 
+      {/* Related equipment & articles */}
+      <section className="related-reading">
+        <div className="container">
+          <h2>Related Equipment & Articles</h2>
+          <ul>
+            <li>
+              <a href="/products/icp-etcher">ICP Etcher Series</a> – high-density plasma etching alternative.
+            </li>
+            <li>
+              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – key concepts, terms, and control knobs.
+            </li>
+            <li>
+              <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – practical guidance and applications.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
-          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
             <a 

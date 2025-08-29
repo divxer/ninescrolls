@@ -246,10 +246,28 @@ export function ICPEtcher() {
         </div>
       </section>
 
+      {/* Related equipment & articles */}
+      <section className="related-reading">
+        <div className="container">
+          <h2>Related Equipment & Articles</h2>
+          <ul>
+            <li>
+              <a href="/products/rie-etcher">RIE Etcher Series</a> – compact RIE platform for research labs.
+            </li>
+            <li>
+              <a href="/insights/plasma-cleaning-precision-surface-preparation">Plasma Cleaning for Precision Surface Preparation</a> – improves adhesion and yield.
+            </li>
+            <li>
+              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – overview and terminology.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
-          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
             <a 

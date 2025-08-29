@@ -226,6 +226,28 @@ export function ProductsPage() {
         </div>
       </section>
 
+      {/* Related reading – internal links to key plasma etching articles */}
+      <section className="related-reading">
+        <div className="container">
+          <h2>Related Technical Articles</h2>
+          <p className="section-intro">Further reading on plasma etching processes and best practices.</p>
+          <ul>
+            <li>
+              <Link to="/insights/plasma-etching">Plasma Etching Fundamentals</Link>
+              <span> – overview of processes, terminology, and etch rate control.</span>
+            </li>
+            <li>
+              <Link to="/insights/plasma-cleaning-precision-surface-preparation">Plasma Cleaning for Precision Surface Preparation</Link>
+              <span> – how plasma cleaning improves adhesion and device performance.</span>
+            </li>
+            <li>
+              <Link to="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained: Fundamentals & Applications</Link>
+              <span> – practical tips applicable to RIE and ICP processes.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
       {/* Warranty & Service Section */}
       <section className="warranty-service">
         <div className="container">

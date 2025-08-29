@@ -160,10 +160,28 @@ export function HDPCVDSystem() {
         </div>
       </section>
 
+      {/* Related equipment & articles */}
+      <section className="related-reading">
+        <div className="container">
+          <h2>Related Equipment & Articles</h2>
+          <ul>
+            <li>
+              <a href="/products/pecvd">PECVD System Series</a> – versatile plasma‑enhanced CVD platform.
+            </li>
+            <li>
+              <a href="/products/ald">ALD System Series</a> – atomic‑level conformal deposition.
+            </li>
+            <li>
+              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – etch/deposition integration.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
-          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
             <a 
