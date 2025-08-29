@@ -162,10 +162,28 @@ export function PECVDSystem() {
         </div>
       </section>
 
+      {/* Related equipment & articles */}
+      <section className="related-reading">
+        <div className="container">
+          <h2>Related Equipment & Articles</h2>
+          <ul>
+            <li>
+              <a href="/products/ald">ALD System Series</a> – atomic layer precision for conformal films.
+            </li>
+            <li>
+              <a href="/products/hdp-cvd">HDP‑CVD System Series</a> – gap‑fill and dense dielectric films.
+            </li>
+            <li>
+              <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – downstream steps and integration notes.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="product-contact">
         <div className="container">
           <h2>Request Information</h2>
-          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
             <a 
