@@ -4,6 +4,7 @@ import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { insightsPosts, categories, InsightsPost } from '../types';
+import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
 export const InsightsPage: React.FC = () => {
@@ -11,6 +12,7 @@ export const InsightsPage: React.FC = () => {
   const [posts] = useState<InsightsPost[]>(insightsPosts);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [recommended, setRecommended] = useState<InsightsPost[]>([]);
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -22,6 +24,40 @@ export const InsightsPage: React.FC = () => {
       searchTerm: searchTerm
     });
   }, [analytics, selectedCategory, searchTerm]);
+
+  useEffect(() => {
+    // Build a pseudo base post from current selection to compute recommendations
+    const base: InsightsPost | null = (() => {
+      if (selectedCategory !== 'All') {
+        // choose a representative post in the selected category; prefer newest
+        const inCat = posts.filter(p => p.category === selectedCategory)
+          .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+        return inCat[0] || null;
+      }
+      // For All, pick the newest overall as base
+      const newest = [...posts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+      return newest[0] || null;
+    })();
+
+    // Exclude posts currently visible in the main grid (no duplication)
+    const visibleSet = new Set(
+      posts
+        .filter(p => {
+          const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+          const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.excerpt && p.excerpt.toLowerCase().includes(searchTerm.toLowerCase()));
+          return matchesCategory && matchesSearch;
+        })
+        .map(p => p.slug)
+    );
+
+    if (base) {
+      const candidates = posts.filter(p => !visibleSet.has(p.slug));
+      setRecommended(rankRelatedInsights(candidates, base, 6));
+    } else {
+      setRecommended([]);
+    }
+  }, [posts, selectedCategory, searchTerm]);
 
   const filteredPosts = posts.filter(post => {
     const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
@@ -82,7 +118,7 @@ export const InsightsPage: React.FC = () => {
             {filteredPosts.map(post => (
               <article key={post.id} className="insights-card">
                 <div className="insights-card-image">
-                  <img src={post.imageUrl} alt={post.title} />
+                  <img src={post.imageUrl} alt={post.title} loading="lazy" decoding="async" />
                 </div>
                 <div className="insights-card-content">
                   <div className="insights-card-meta">
@@ -103,6 +139,38 @@ export const InsightsPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* More Recommendations */}
+      {recommended.length > 0 && (
+        <section className="insights-recommendations">
+          <div className="container">
+            <h2>More Recommendations</h2>
+            <div className="posts-grid">
+              {recommended.map(post => (
+                <article key={post.id} className="insights-card">
+                  <div className="insights-card-image">
+                    <img src={post.imageUrl} alt={post.title} />
+                  </div>
+                  <div className="insights-card-content">
+                    <div className="insights-card-meta">
+                      <span className="category">{post.category}</span>
+                      <span className="read-time">{post.readTime} min read</span>
+                    </div>
+                    <h3 className="insights-card-title">
+                      <Link to={`/insights/${post.slug}`}>{post.title}</Link>
+                    </h3>
+                    <p className="insights-card-excerpt">{post.excerpt}</p>
+                    <div className="insights-card-footer">
+                      <span className="author">{post.author}</span>
+                      <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       </div>
     </>
   );

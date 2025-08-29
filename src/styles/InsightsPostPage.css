@@ -59,6 +59,12 @@
   border-radius: 12px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
+.hero-image picture, .hero-image picture img {
+  display: block;
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+}
 
 .insights-post-title {
   font-size: 2.5rem;
@@ -254,6 +260,38 @@
 }
 
 .related-products a:hover {
+  color: #5a6fd8;
+}
+
+/* Related Articles */
+.related-articles {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.related-articles h3 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.related-articles ul {
+  list-style: none;
+  padding: 0;
+}
+
+.related-articles li {
+  margin-bottom: 12px;
+}
+
+.related-articles a {
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.related-articles a:hover {
   color: #5a6fd8;
 }
 

@@ -13,10 +13,12 @@ const sizes = {
   xl: 1280
 };
 
-async function optimizeImage(inputPath) {
+export async function optimizeImage(inputPath) {
   const dir = path.dirname(inputPath);
   const ext = path.extname(inputPath);
   const basename = path.basename(inputPath, ext);
+  const transparentPad = process.argv.includes('--transparent');
+  const padBackground = transparentPad ? { r: 0, g: 0, b: 0, alpha: 0 } : undefined;
 
   try {
     // Verify the image can be processed
@@ -34,7 +36,8 @@ async function optimizeImage(inputPath) {
         await sharp(inputPath)
           .resize(width, null, { 
             fit: 'contain',
-            withoutEnlargement: true
+            withoutEnlargement: true,
+            background: padBackground
           })
           .toFile(outputPath);
         
@@ -51,7 +54,8 @@ async function optimizeImage(inputPath) {
         await sharp(inputPath)
           .resize(width, null, {
             fit: 'contain',
-            withoutEnlargement: true
+            withoutEnlargement: true,
+            background: padBackground
           })
           .webp({ quality: 80 })
           .toFile(outputPath);
@@ -66,7 +70,7 @@ async function optimizeImage(inputPath) {
   }
 }
 
-async function processDirectory(directory) {
+export async function processDirectory(directory) {
   try {
     const files = fs.readdirSync(directory);
     
@@ -85,13 +89,22 @@ async function processDirectory(directory) {
   }
 }
 
-// Process all product images
+// Process insights images only
 console.log('🔄 Starting image optimization...');
-console.log('📁 Target directory:', path.relative(process.cwd(), path.join(__dirname, '../public/assets/images/products')));
+console.log('📁 Target directory:', path.relative(process.cwd(), path.join(__dirname, '../public/assets/images/insights')));
 console.log('📐 Generating sizes:', Object.entries(sizes).map(([size, width]) => `${size}: ${width}px`).join(', '));
 console.log('');
 
-const productsDir = path.join(__dirname, '../public/assets/images/products');
-processDirectory(productsDir)
-  .then(() => console.log('\n✨ Image optimization complete!'))
-  .catch(err => console.error('\n❌ Fatal error:', err.message)); 
+const insightsDir = path.join(__dirname, '../public/assets/images/insights');
+// If a single file arg is provided, optimize only that file; else process directory
+const singleArg = process.argv[2];
+if (singleArg) {
+  const abs = path.isAbsolute(singleArg) ? singleArg : path.join(process.cwd(), singleArg);
+  optimizeImage(abs)
+    .then(() => console.log('\n✨ Single image optimization complete!'))
+    .catch(err => console.error('\n❌ Fatal error:', err.message));
+} else {
+  processDirectory(insightsDir)
+    .then(() => console.log('\n✨ Image optimization complete!'))
+    .catch(err => console.error('\n❌ Fatal error:', err.message));
+}
