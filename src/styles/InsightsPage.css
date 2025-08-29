@@ -169,6 +169,17 @@
   color: #6c757d;
 }
 
+/* Recommendations Section */
+.insights-recommendations {
+  padding: 20px 0 80px;
+}
+
+.insights-recommendations h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .insights-hero h1 {

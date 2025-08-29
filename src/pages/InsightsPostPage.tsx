@@ -4,6 +4,7 @@ import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { insightsPosts, InsightsPost } from '../types';
+import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPostPage.css';
 
 export const InsightsPostPage: React.FC = () => {
@@ -55,25 +56,35 @@ export const InsightsPostPage: React.FC = () => {
     <>
       <SEO 
         title={post.title}
-        description={post.slug === 'plasma-etching' 
-          ? `What is plasma etching? Learn how plasma etching works, its applications in semiconductor manufacturing, and the differences between RIE, ICP, and other etching techniques. Expert guide with 12 min read.`
-          : `${post.title} - Comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies. Learn about plasma density, operating pressure, selectivity, and applications in semiconductor manufacturing and MEMS.`
+        description={
+          post.slug === 'reactive-ion-etching-guide'
+            ? 'Reactive Ion Etching (RIE) guide: principles, process control, system types (CCP/ICP/DRIE), applications, and equipment selection.'
+            : post.slug === 'deep-reactive-ion-etching-bosch-process'
+            ? 'Deep Reactive Ion Etching (DRIE) and the Bosch process: cycles, applications, defects and mitigations, ICP‑DRIE notes.'
+            : post.slug === 'icp-rie-technology-advanced-etching'
+            ? 'ICP‑RIE technology: high‑density plasma etching, independent control of plasma density and ion energy, applications and benefits.'
+            : post.slug === 'reactive-ion-etching-vs-ion-milling'
+            ? 'Reactive Ion Etching vs Ion Milling: principle comparison, precision/throughput trade‑offs, and selection guide.'
+            : post.slug === 'semiconductor-etchers-overview'
+            ? 'Semiconductor etchers overview: RIE/ICP/DRIE categories, research vs production considerations, and equipment comparison.'
+            : post.slug === 'plasma-etching'
+            ? 'What is plasma etching? Principles, techniques and applications; differences between RIE, ICP and other methods.'
+            : `${post.title}`
         }
-        keywords={post.slug === 'plasma-etching'
-          ? `plasma etching, what is plasma etching, how does plasma etching work, RIE etching, ICP etching, semiconductor manufacturing, dry etching, plasma etching machine, plasma etcher, etching technology`
-          : `${post.tags.join(', ')}, plasma etching, semiconductor manufacturing, MEMS, thin film processing, etching technology, ICP-RIE, RIE, PE etching`
-        }
+        keywords={`${post.tags.join(', ')}`}
         image={post.imageUrl}
         url={`/insights/${post.slug}`}
         type="article"
       />
-      {post.slug === 'plasma-etching' && (
+      {(post.slug === 'plasma-etching' || post.slug === 'reactive-ion-etching-guide') && (
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Article",
             "headline": post.title,
-            "description": "What is plasma etching? Learn how plasma etching works, its applications in semiconductor manufacturing, and the differences between RIE, ICP, and other etching techniques.",
+            "description": post.slug === 'plasma-etching' ?
+              'What is plasma etching? Learn how plasma etching works, its applications in semiconductor manufacturing, and the differences between RIE, ICP, and other etching techniques.' :
+              'Reactive Ion Etching (RIE) guide: principles, system types and selection, process control, and applications.',
             "image": `https://ninescrolls.com${post.imageUrl}`,
             "author": {
               "@type": "Organization",
@@ -115,7 +126,41 @@ export const InsightsPostPage: React.FC = () => {
                 </div>
               </div>
               <div className="hero-image">
-                <img src={post.imageUrl} alt={post.title} />
+                {post.slug === 'deep-reactive-ion-etching-bosch-process' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/drie-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/drie-cover-lg.png" alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : post.slug === 'icp-rie-technology-advanced-etching' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/icp-rie-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/icp-rie-cover-lg.png" alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : post.slug === 'reactive-ion-etching-vs-ion-milling' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/rie-vs-milling-cover-lg.png" alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : post.slug === 'semiconductor-etchers-overview' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/etchers-overview-cover-lg.png" alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : (
+                  <img src={post.imageUrl} alt={post.title} loading="eager" fetchPriority="high" />
+                )}
               </div>
             </div>
           </div>
@@ -165,6 +210,41 @@ export const InsightsPostPage: React.FC = () => {
                         <li><a href="/products/ald">ALD Systems</a></li>
                         <li><a href="/products/sputter">Sputter Systems</a></li>
                       </>
+                    ) : post.slug === 'reactive-ion-etching-guide' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                      </>
+                    ) : post.slug === 'deep-reactive-ion-etching-bosch-process' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                      </>
+                    ) : post.slug === 'icp-rie-technology-advanced-etching' ? (
+                      <>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                      </>
+                    ) : post.slug === 'reactive-ion-etching-vs-ion-milling' ? (
+                      <>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/sputter">Sputter Systems</a></li>
+                      </>
+                    ) : post.slug === 'semiconductor-etchers-overview' ? (
+                      <>
+                        <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                        <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                        <li><a href="/products/striper">Striper Systems</a></li>
+                      </>
                     ) : post.slug === 'plasma-cleaning-precision-surface-preparation' ? (
                       <>
                         <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
@@ -208,6 +288,14 @@ export const InsightsPostPage: React.FC = () => {
                         <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
                       </>
                     )}
+                  </ul>
+                </div>
+                <div className="related-articles">
+                  <h3>Related Articles</h3>
+                  <ul>
+                    {rankRelatedInsights(insightsPosts, post, 4).map(rp => (
+                      <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
+                    ))}
                   </ul>
                 </div>
               </div>
