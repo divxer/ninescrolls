@@ -280,7 +280,7 @@ export function ServiceSupportPage() {
           <div className="amc-plans">
             <div className="amc-plan">
               <div className="plan-badge">Basic AMC</div>
-              <div className="plan-price">$15,000<span className="price-unit"> / year</span></div>
+              <div className="plan-price">$12,000<span className="price-unit"> / year</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>2 preventive maintenance visits</li>
                 <li><span className="feature-check">✓</span>Priority technical support</li>
@@ -323,6 +323,7 @@ export function ServiceSupportPage() {
           </div>
           <div className="amc-cta">
             <Link to="/contact?topic=amc" className="btn btn-primary">Get AMC Pricing</Link>
+            <p className="amc-note">Special discounts available for universities and research institutes — contact us for details.</p>
           </div>
         </div>
       </section>
