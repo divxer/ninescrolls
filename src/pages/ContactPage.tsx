@@ -77,6 +77,7 @@ export function ContactPage() {
               <p><span className="location-icon"></span> 12546 Cabezon Pl</p>
               <p>San Diego, CA 92129</p>
               <p>United States</p>
+              <p className="note">UEI: C4BFCTH5L5D1</p>
               
               <div className="contact-hours">
                 <h4>Business Hours</h4>
