@@ -55,6 +55,7 @@ export function AboutPage() {
         <div className="container">
           <h1>About NineScrolls LLC</h1>
           <p>Leading Innovation in Scientific Research Equipment</p>
+          <p style={{marginTop: '10px', opacity: 0.9}}>UEI: C4BFCTH5L5D1</p>
         </div>
       </section>
 
