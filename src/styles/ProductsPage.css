@@ -135,6 +135,56 @@
     color: #fff;
 }
 
+.etching-processes {
+    padding: 4rem 0 2rem;
+    background: #f8fafc;
+}
+.etching-processes .process-modules { display: grid; gap: 14px; }
+.etching-processes .process-module {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 20px 16px 20px;
+    position: relative;
+}
+.etching-processes .process-module:nth-child(2n) { background: #f9fbff; }
+.etching-processes .process-header { display:flex; align-items:center; gap:10px; margin-bottom: 6px; }
+.etching-processes .process-icon { color:#2563eb; display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; }
+.etching-processes .process-text h3 {
+    margin: 0 0 8px 0;
+}
+.process-cta { margin-top: 10px; }
+.btn.btn-cta {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(37,99,235,0.25);
+}
+.process-secondary-links { margin-top: 6px; display:flex; gap:14px; flex-wrap:wrap; }
+.process-secondary-links .text-link { color:#2563eb; text-decoration: underline; }
+.etching-processes ul { margin-top: 6px; }
+.etching-processes ul li { margin: 4px 0; }
+
+.applications-section {
+    padding: 2rem 0 3rem;
+    background: #fff;
+}
+.applications-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+}
+.app-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    background: #ffffff;
+}
+.applications-cta { margin-top: 16px; text-align: center; }
+
 .section-intro {
     text-align: center;
     max-width: 800px;
