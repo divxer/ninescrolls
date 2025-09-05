@@ -114,6 +114,27 @@
     background: var(--white);
 }
 
+.product-tabs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+.tab-btn {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #334155;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.tab-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: #fff;
+}
+
 .section-intro {
     text-align: center;
     max-width: 800px;
