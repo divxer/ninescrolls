@@ -244,6 +244,122 @@ export function ProductsPage() {
         </div>
       </section>
 
+      {/* Etching Processes – modular sections like ICP‑RIE / RIE / DRIE */}
+      <section className="etching-processes">
+        <div className="container">
+          <h2>Etching Processes</h2>
+
+          <div className="process-modules">
+            <div className="process-module">
+              <div className="process-text">
+                <div className="process-header">
+                  <span className="process-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4 12h4"/><path d="M16 12h4"/><circle cx="12" cy="12" r="5"/></svg>
+                  </span>
+                  <h3>ICP‑RIE — High‑Density Plasma for Advanced Etching</h3>
+                </div>
+                <p>
+                  ICP‑RIE systems provide high‑density plasma with independent ion energy control, enabling vertical profiles and high
+                  aspect‑ratio features. Ideal for compound semiconductors and hard dielectrics that require fast etch rates with excellent selectivity.
+                </p>
+                <ul>
+                  <li><strong>Independent control</strong> of ion density and ion energy</li>
+                  <li><strong>High aspect‑ratio</strong> pattern transfer</li>
+                  <li><strong>Excellent uniformity</strong> on 4–8 inch wafers</li>
+                </ul>
+                <div className="process-cta">
+                  <Link className="btn btn-cta" to="/products/icp-etcher">Explore ICP‑RIE Systems</Link>
+                </div>
+                <div className="process-secondary-links">
+                  <Link className="text-link" to="/insights/icp-rie-technology-advanced-etching">Read: ICP‑RIE Technology</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="process-module">
+              <div className="process-text">
+                <div className="process-header">
+                  <span className="process-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>
+                  </span>
+                  <h3>RIE — Directional Plasma Etching for Research</h3>
+                </div>
+                <p>
+                  RIE plasma etching offers anisotropic, directional profiles by combining chemical reactions with physical ion bombardment —
+                  a versatile choice for materials research and general microfabrication.
+                </p>
+                <ul>
+                  <li><strong>Ideal for development</strong> and materials exploration</li>
+                  <li><strong>Diverse chemistries</strong> and multi‑gas recipes</li>
+                  <li><strong>Compact footprint</strong> with robust control</li>
+                </ul>
+                <div className="process-cta">
+                  <Link className="btn btn-cta" to="/products/rie-etcher">Explore RIE Systems</Link>
+                </div>
+                <div className="process-secondary-links">
+                  <Link className="text-link" to="/insights/reactive-ion-etching-guide">Read: RIE Principles & Guide</Link>
+                  <Link className="text-link" to="/insights/reactive-ion-etching-vs-ion-milling">RIE vs Ion Milling</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="process-module">
+              <div className="process-text">
+                <div className="process-header">
+                  <span className="process-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20v-6a8 8 0 0 1 16 0v6"/><path d="M2 20h20"/></svg>
+                  </span>
+                  <h3>DRIE (Bosch Process) — Deep Silicon Etching for MEMS & TSV</h3>
+                </div>
+                <p>
+                  DRIE Bosch process systems enable deep silicon etching by alternating passivation and etch steps, producing vertical trenches for MEMS,
+                  TSV, and microfluidics with excellent sidewall control.
+                </p>
+                <ul>
+                  <li><strong>High aspect‑ratio</strong> deep silicon etching</li>
+                  <li><strong>Optimized scalloping</strong> and sidewall quality</li>
+                  <li><strong>Stable long cycles</strong> for extended processes</li>
+                </ul>
+                <div className="process-cta">
+                  <Link className="btn btn-cta" to="/products/rie-etcher#drie">See DRIE Configurations</Link>
+                </div>
+                <div className="process-secondary-links">
+                  <Link className="text-link" to="/insights/deep-reactive-ion-etching-bosch-process">Read: DRIE — Bosch Process</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Applications */}
+      <section className="applications-section">
+        <div className="container">
+          <h2>Applications</h2>
+          <div className="applications-grid">
+            <div className="app-card">
+              <h3>MEMS Deep Silicon</h3>
+              <p>Accelerometers, pressure sensors, micro‑mirrors. DRIE enables high aspect‑ratio silicon structures.</p>
+            </div>
+            <div className="app-card">
+              <h3>3D IC / TSV</h3>
+              <p>Through‑silicon vias and wafer‑level packaging where vertical vias with high selectivity are required.</p>
+            </div>
+            <div className="app-card">
+              <h3>Photonics</h3>
+              <p>Waveguides and gratings on Si/SiN/III–V materials using ICP‑RIE for smooth sidewalls and uniformity.</p>
+            </div>
+            <div className="app-card">
+              <h3>Materials Research</h3>
+              <p>Flexible RIE platforms for etching dielectrics, polymers, and novel materials in academic labs.</p>
+            </div>
+          </div>
+          <div className="applications-cta">
+            <Link to="/contact?topic=application" className="btn btn-primary">Discuss Your Application</Link>
+          </div>
+        </div>
+      </section>
+
       <section className="equipment-solutions">
         <div className="container">
           <div className="solutions-content">
