@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { useState, useMemo } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import '../styles/ProductsPage.css';
@@ -6,19 +8,45 @@ import '../styles/ProductsPage.css';
 export function ProductsPage() {
   // Scroll to top when component mounts
   useScrollToTop();
+  const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
+
+  const tabs = ['All','Etching','Deposition','Coating/Developing','Cleaning/Stripping'] as const;
+
+  const schema = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Plasma Etching Systems",
+    "itemListElement": [
+      { "@type": "Product", "name": "ICP‑RIE Etcher", "url": "https://ninescrolls.com/products/icp-etcher" },
+      { "@type": "Product", "name": "RIE Etcher", "url": "https://ninescrolls.com/products/rie-etcher" },
+      { "@type": "Product", "name": "DRIE Etcher (Bosch)", "url": "https://ninescrolls.com/products/rie-etcher#drie" },
+      { "@type": "Product", "name": "HDP‑CVD System", "url": "https://ninescrolls.com/products/hdp-cvd" },
+      { "@type": "Product", "name": "PECVD System", "url": "https://ninescrolls.com/products/pecvd" },
+      { "@type": "Product", "name": "ALD System", "url": "https://ninescrolls.com/products/ald" },
+      { "@type": "Product", "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
+      { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
+      { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
+      { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
+    ]
+  }), []);
 
   return (
     <>
       <SEO 
-        title="Plasma Etching Equipment & Systems | NineScrolls - Advanced Semiconductor Manufacturing Solutions"
-        description="Expert plasma etching equipment and systems for semiconductor manufacturing. Discover our wide range of plasma etching processes including reactive ion etching (RIE), inductively coupled plasma etching, and wet etching solutions. Leading provider of etch rates optimization and plasma treatment technology."
-        keywords="plasma etching, plasma etching equipment, plasma etching systems, reactive ion etching, etch rates, plasma treatment, plasma etching process, plasma processing, wet etching, etching processes, semiconductor manufacturing"
+        title="Plasma Etching Systems | RIE, ICP‑RIE & DRIE Equipment – NineScrolls"
+        description="Advanced plasma etching equipment for semiconductor research & MEMS fabrication. Explore RIE, ICP‑RIE & DRIE systems with optimized etch rates. Request a quote today."
+        keywords="plasma etching systems, ICP-RIE equipment, RIE vs DRIE comparison, semiconductor plasma etching tools, RIE etcher, DRIE Bosch"
         url="/products/"
       />
       <section className="products-hero">
         <div className="container">
-          <h1>Plasma Etching Equipment & Systems</h1>
-          <p>Advanced plasma etching equipment and systems for semiconductor manufacturing, MEMS fabrication, and research applications. Our wide range of plasma etching processes delivers optimized etch rates and superior plasma treatment capabilities.</p>
+          <h1>Plasma Etching Systems</h1>
+          <p><strong>Reactive Ion Etching (RIE), ICP‑RIE, and DRIE</strong> systems for semiconductor research and manufacturing. Optimized etch rates, process stability, and comprehensive service support.</p>
+          <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
+            <Link to="/contact?topic=quote" className="btn btn-primary">Request a Quote</Link>
+            <a href="/equipment-guide.pdf" className="btn btn-secondary" download>Download Brochure</a>
+            <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
+          </div>
         </div>
       </section>
 
@@ -64,13 +92,24 @@ export function ProductsPage() {
 
       <section className="product-categories">
         <div className="container">
+          {/* Category Tabs */}
+          <div className="product-tabs">
+            {tabs.map((t) => (
+              <button
+                key={t}
+                className={`tab-btn ${selected === t ? 'active' : ''}`}
+                onClick={() => setSelected(t as typeof selected)}
+              >{t}</button>
+            ))}
+          </div>
           <p className="section-intro">
             Our comprehensive range of plasma etching equipment and semiconductor processing systems is designed to meet the diverse needs of research institutions and manufacturers. From reactive ion etching (RIE) to inductively coupled plasma etching, our plasma etching processes deliver optimized etch rates and superior plasma treatment capabilities. Each system is built with precision, reliability, and innovation in mind.
           </p>
           <div className="category-grid">
+            {(selected === 'All' || selected === 'Etching') && (
             <div className="category-card">
               <Link to="/products/icp-etcher">
-                <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP Etcher" />
+                <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP‑RIE plasma etching system in cleanroom" loading="lazy" decoding="async" />
                 <h3>ICP Etcher Series - Inductively Coupled Plasma Etching</h3>
                 <p>Advanced inductively coupled plasma etching system with superior process control and optimized etch rates for high-aspect-ratio etching applications.</p>
                 <ul className="product-features">
@@ -80,10 +119,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Etching') && (
             <div className="category-card">
               <Link to="/products/rie-etcher">
-                <img src="/assets/images/products/rie-etcher/main.jpg" alt="RIE Etcher" />
+                <img src="/assets/images/products/rie-etcher/main.jpg" alt="Reactive Ion Etching system (RIE) for anisotropic etch" loading="lazy" decoding="async" />
                 <h3>RIE Etcher Series - Reactive Ion Etching</h3>
                 <p>Versatile reactive ion etching system for precise material processing with excellent plasma treatment capabilities and controlled etch rates.</p>
                 <ul className="feature-list">
@@ -93,10 +134,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Deposition') && (
             <div className="category-card">
               <Link to="/products/hdp-cvd">
-                <img src="/assets/images/products/hdp-cvd/main.jpg" alt="HDP-CVD System" />
+                <img src="/assets/images/products/hdp-cvd/main.jpg" alt="HDP‑CVD system for high‑density plasma chemical vapor deposition" loading="lazy" decoding="async" />
                 <h3>HDP-CVD System Series</h3>
                 <p>High-density plasma CVD for superior film quality and gap-fill performance.</p>
                 <ul className="feature-list">
@@ -106,10 +149,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Deposition') && (
             <div className="category-card">
               <Link to="/products/pecvd">
-                <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD System" />
+                <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD thin film deposition system" loading="lazy" decoding="async" />
                 <h3>PECVD System Series</h3>
                 <p>Plasma-enhanced CVD system for high-quality thin film deposition.</p>
                 <ul className="feature-list">
@@ -119,10 +164,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Deposition') && (
             <div className="category-card">
               <Link to="/products/ald">
-                <img src="/assets/images/products/ald/main.jpg" alt="ALD System" />
+                <img src="/assets/images/products/ald/main.jpg" alt="Atomic Layer Deposition (ALD) system" loading="lazy" decoding="async" />
                 <h3>ALD System Series</h3>
                 <p>Atomic layer deposition system for precise thin film growth.</p>
                 <ul className="feature-list">
@@ -132,10 +179,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Deposition') && (
             <div className="category-card">
               <Link to="/products/sputter">
-                <img src="/assets/images/products/sputter/main.jpg" alt="Sputter System" />
+                <img src="/assets/images/products/sputter/main.jpg" alt="Sputter deposition system for high‑quality PVD coatings" loading="lazy" decoding="async" />
                 <h3>Sputter System Series</h3>
                 <p>Advanced PVD system for high-quality thin film coating.</p>
                 <ul className="feature-list">
@@ -145,10 +194,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Etching') && (
             <div className="category-card">
               <Link to="/products/ibe-ribe">
-                <img src="/assets/images/products/ibe-ribe/main.jpg" alt="IBE/RIBE System" />
+                <img src="/assets/images/products/ibe-ribe/main.jpg" alt="Ion Beam Etching (IBE/RIBE) system for directional etch" loading="lazy" decoding="async" />
                 <h3>IBE/RIBE System Series</h3>
                 <p>Ion beam etching system for precise material processing.</p>
                 <ul className="feature-list">
@@ -158,10 +209,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
             <div className="category-card">
               <Link to="/products/striper">
-                <img src="/assets/images/products/striper/main.jpg" alt="Striper System" />
+                <img src="/assets/images/products/striper/main.jpg" alt="Plasma photoresist stripper system" loading="lazy" decoding="async" />
                 <h3>Striper System Series</h3>
                 <p>Advanced photoresist removal and surface cleaning system.</p>
                 <ul className="feature-list">
@@ -171,10 +224,12 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
 
+            {(selected === 'All' || selected === 'Coating/Developing') && (
             <div className="category-card">
               <Link to="/products/coater-developer">
-                <img src="/assets/images/products/coater-developer/main.jpg" alt="Coater/Developer System" />
+                <img src="/assets/images/products/coater-developer/main.jpg" alt="Coater/Developer system for photolithography" loading="lazy" decoding="async" />
                 <h3>Coater/Developer System Series</h3>
                 <p>Precision coating and developing system for photolithography.</p>
                 <ul className="feature-list">
@@ -184,6 +239,7 @@ export function ProductsPage() {
                 </ul>
               </Link>
             </div>
+            )}
           </div>
         </div>
       </section>
@@ -399,6 +455,11 @@ export function ProductsPage() {
           </div>
         </div>
       </section>
+
+      {/* JSON‑LD Schema */}
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(schema)}</script>
+      </Helmet>
     </>
   );
 } 
