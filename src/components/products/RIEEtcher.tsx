@@ -140,7 +140,7 @@ export function RIEEtcher() {
               <ul>
                 <li>High etch rate control</li>
                 <li>Excellent process uniformity</li>
-                <li>Advanced endpoint detection</li>
+                <li>Advanced endpoint detection (OES/IV/impedance ready)</li>
                 <li>Stable plasma generation</li>
                 <li>Precise pressure control</li>
                 <li>Multiple process recipes storage</li>
@@ -176,6 +176,9 @@ export function RIEEtcher() {
             </li>
             <li>
               <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – practical guidance and applications.
+            </li>
+            <li>
+              <a href="/insights/future-of-plasma-etching-microelectronics">Future of Plasma Etching</a> – trends: ALE, pulsed plasma, low‑damage etch.
             </li>
           </ul>
         </div>

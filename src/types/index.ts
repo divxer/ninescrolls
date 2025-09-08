@@ -1993,7 +1993,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-01-25',
     category: 'Materials Science',
     readTime: 15,
-    imageUrl: '/assets/images/insights/plasma-etching-cover-optimized.png',
+    imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
     tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology']
   },
@@ -5237,6 +5237,50 @@ export const insightsPosts: InsightsPost[] = [
     imageUrl: '/assets/images/insights/solar-cells.jpg',
     slug: 'solar-cell-manufacturing-renewable-energy',
     tags: ['Solar Cells', 'Renewable Energy', 'Photovoltaics', 'Clean Energy']
+  },
+  {
+    id: '26',
+    title: 'Future of Plasma Etching for Microelectronics — Key Trends and Roadmap',
+    excerpt: 'What’s next in plasma etching: ALE, pulsed plasmas, low‑damage etch, EUV resist removal, cryogenic/variable‑temperature processes, and AI‑assisted control.',
+    content: `
+      <h2>1) Why the Future of Plasma Etching Matters</h2>
+      <p>Scaling, heterogeneous integration, and fragile materials push plasma etching to deliver <strong>higher selectivity</strong>, <strong>lower damage</strong>, and <strong>tighter control</strong> at ever smaller dimensions and higher aspect ratios.</p>
+
+      <h2>2) Key Technology Directions</h2>
+      <ul>
+        <li><strong>Atomic Layer Etching (ALE)</strong> — self‑limited remove/passivate cycles for sub‑nm precision and reduced damage.</li>
+        <li><strong>Pulsed Plasma / Pulsed Bias</strong> — temporal control of radical and ion flux to decouple chemistry from bombardment.</li>
+        <li><strong>High Aspect Ratio (HAR) Etch</strong> — transport‑aware recipes and chamber designs to minimize ARDE and bowing.</li>
+        <li><strong>Low‑Damage Etch</strong> — reduced bias, multi‑frequency RF, gentle chemistries for sensitive films (III‑V, 2D, low‑k).</li>
+        <li><strong>EUV Resist Removal & Post‑Litho Clean</strong> — efficient strip with minimal LWR/LER impact and residue control.</li>
+        <li><strong>Cryogenic / Variable‑Temperature</strong> — profile smoothing, sidewall control, and polymer management.</li>
+        <li><strong>AI‑Assisted Endpoint & Control</strong> — OES/IV/impedance + ML for adaptive recipes and yield stability.</li>
+      </ul>
+
+      <h2>3) Equipment Implications</h2>
+      <ul>
+        <li>ICP‑RIE platforms with <strong>independent source/bias control</strong> and fast pulsing capability.</li>
+        <li>Enhanced <strong>temperature management</strong> (back‑He cooling, cryogenic options) and <strong>clean chamber materials</strong>.</li>
+        <li>Integrated <strong>endpoint sensing</strong> and <strong>recipe analytics</strong> ready for AI/ML.</li>
+      </ul>
+
+      <h2>4) Practical Takeaways</h2>
+      <ul>
+        <li>Plan for <strong>ALE‑ready</strong> modes even if you start with continuous etch.</li>
+        <li>Adopt <strong>pulsed plasma/bias</strong> to tune damage vs anisotropy without major hardware changes.</li>
+        <li>For EUV workflows, pair <strong>low‑damage strip</strong> with meticulous residue control and metrology.</li>
+      </ul>
+
+      <h2>5) Related Equipment & Reading</h2>
+      <p><a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a></p>
+    `,
+    author: 'NineScrolls Team',
+    publishDate: '2025-09-08',
+    category: 'Nanotechnology',
+    readTime: 12,
+    imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
+    slug: 'future-of-plasma-etching-microelectronics',
+    tags: ['plasma etching','ALE','pulsed plasma','low-damage etch','EUV','HAR','microelectronics']
   }
 ];
 
