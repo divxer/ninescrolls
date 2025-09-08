@@ -214,9 +214,9 @@ export function ProductsPage() {
             {(selected === 'All' || selected === 'Cleaning/Stripping') && (
             <div className="category-card">
               <Link to="/products/striper">
-                <img src="/assets/images/products/striper/main.jpg" alt="Plasma photoresist stripper system" loading="lazy" decoding="async" />
-                <h3>Striper System Series</h3>
-                <p>Advanced photoresist removal and surface cleaning system.</p>
+                <img src="/assets/images/products/striper/main.jpg" alt="Plasma photoresist stripping system" loading="lazy" decoding="async" />
+                <h3>Stripping System Series</h3>
+                <p>Advanced photoresist stripping and surface cleaning system.</p>
                 <ul className="feature-list">
                   <li>Multiple process modes</li>
                   <li>High throughput</li>
