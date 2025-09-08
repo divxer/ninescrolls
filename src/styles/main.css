@@ -81,6 +81,48 @@ body {
     color: var(--primary-color);
 }
 
+/* Products Dropdown */
+.has-dropdown { position: relative; }
+.dropdown-trigger { background:none; border:none; cursor:pointer; font: inherit; color: var(--text-color); }
+.has-dropdown.open .dropdown-panel { display:block; }
+.has-dropdown:hover .dropdown-panel { display:block; }
+.dropdown-panel {
+    display:none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 12px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+    padding: 24px;
+    min-width: 760px;
+    z-index: 1002;
+}
+.dropdown-grid { display:grid; grid-template-columns: repeat(3, minmax(220px,1fr)) 260px; gap: 16px; }
+.dropdown-col h4 { margin: 2px 0 10px; color:#111827; font-size: 0.98rem; font-weight: 600; }
+.dropdown-col a { display:block; padding:7px 0; color:#1f2937; text-decoration:none; font-weight: 500; line-height: 1.55; }
+.dropdown-col a:hover { color:#2563eb; }
+.dropdown-cta { display:flex; flex-direction: column; gap:12px; align-items:flex-end; justify-content: flex-end; border-left: 1px solid #e5e7eb; padding-left: 16px; }
+.dropdown-cta .btn { height: 42px; border-radius: 9999px; font-weight: 600; }
+.dropdown-cta .btn-secondary { background: #fff; color: #111; border: 1px solid #d1d5db; }
+.dropdown-cta .btn-primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+
+/* Focus styles for accessibility */
+.dropdown-panel a:focus-visible, .dropdown-trigger:focus-visible, .dropdown-cta .btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .has-dropdown { width: 100%; }
+  .dropdown-panel { position: static; transform: none; margin-top: 8px; min-width: auto; box-shadow: none; border: none; padding: 0; display: block; }
+  .dropdown-grid { grid-template-columns: 1fr; gap: 12px; }
+  .dropdown-cta { align-items: stretch; border: 0; padding-left: 0; }
+}
+
 /* Add these styles for active navigation state */
 .nav-links .active {
     color: var(--primary-color);

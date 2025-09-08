@@ -46,8 +46,8 @@ export function StriperSystem() {
       <section className="product-detail-hero">
         <div className="container">
           <div className="product-header">
-            <h1>Striper System Series</h1>
-            <p>Advanced Photoresist Removal and Surface Cleaning System</p>
+            <h1>Stripping System Series</h1>
+            <p>Advanced photoresist stripping and precision surface cleaning system</p>
           </div>
         </div>
       </section>
@@ -58,13 +58,13 @@ export function StriperSystem() {
             <div className="product-images">
               <img 
                 src="/assets/images/products/striper/main.jpg" 
-                alt="Striper System" 
+                alt="Plasma photoresist stripping system" 
                 className="main-product-image" 
               />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
-              <p>The Striper Series provides efficient photoresist removal and surface cleaning capabilities within a compact uni-body design (footprint approx. 0.8m x 0.8m). Engineered for flexibility and ease of use in both research and production environments, this system ensures complete removal of organic materials, precise process control, and minimal impact on underlying layers.</p>
+              <p>The Stripping System Series provides efficient photoresist stripping and surface cleaning capabilities within a compact uni-body design (footprint approx. 0.8m x 0.8m). Engineered for flexibility and ease of use in both research and production environments, this system ensures complete removal of organic materials, precise process control, and minimal impact on underlying layers.</p>
               
               <h3>Key Features</h3>
               <ul className="feature-list">
@@ -173,7 +173,7 @@ export function StriperSystem() {
             <a 
               href="/docs/striper-system-datasheet.pdf" 
               className="btn btn-secondary" 
-              download="NineScrolls-Striper-Datasheet.pdf"
+              download="NineScrolls-Stripping-System-Datasheet.pdf"
               target="_blank" 
               rel="noopener noreferrer"
               onClick={() => {
@@ -181,7 +181,7 @@ export function StriperSystem() {
                 if (typeof window !== 'undefined' && window.gtag) {
                   window.gtag('event', 'download', {
                     event_category: 'Product Datasheet',
-                    event_label: 'Striper System',
+                    event_label: 'Stripping System',
                     value: 1
                   });
                 }
@@ -202,7 +202,7 @@ export function StriperSystem() {
       <ContactFormModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
-        productName="Striper System Series"
+        productName="Stripping System Series"
         formData={formData}
         onFormDataChange={setFormData}
         onSuccess={handleFormSuccess}
