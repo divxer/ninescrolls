@@ -225,8 +225,8 @@ export function ICPEtcher() {
                 <li>Tunable plasma discharge gap</li>
                 <li>Cost or performance orientation options</li>
                 <li>Customizable RF configurations</li>
-                <li>Low power plasma technology</li>
-                <li>Ion damage-free processing options</li>
+                <li>Low-power / pulsed plasma options for <strong>low‑damage etch</strong></li>
+                <li>ALE‑ready control modes and multi‑frequency bias</li>
                 <li>Open-Load or Load-Lock configurations</li>
                 <li>Advanced process monitoring</li>
               </ul>
@@ -259,6 +259,9 @@ export function ICPEtcher() {
             </li>
             <li>
               <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – overview and terminology.
+            </li>
+            <li>
+              <a href="/insights/future-of-plasma-etching-microelectronics">Future of Plasma Etching</a> – ALE, pulsed plasma, EUV resist removal.
             </li>
           </ul>
         </div>

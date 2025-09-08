@@ -9,7 +9,9 @@ import '../styles/InsightsPage.css';
 
 export const InsightsPage: React.FC = () => {
   const analytics = useCombinedAnalytics();
-  const [posts] = useState<InsightsPost[]>(insightsPosts);
+  const [posts] = useState<InsightsPost[]>(
+    [...insightsPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+  );
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [recommended, setRecommended] = useState<InsightsPost[]>([]);

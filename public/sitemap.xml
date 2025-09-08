@@ -86,9 +86,15 @@
   </url>
   <url>
     <loc>https://ninescrolls.com/insights</loc>
-    <lastmod>2025-01-28</lastmod>
+    <lastmod>2025-09-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics</loc>
+    <lastmod>2025-09-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/reactive-ion-etching-guide</loc>
