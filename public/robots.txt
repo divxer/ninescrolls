@@ -5,7 +5,9 @@ Allow: /
 Disallow: /docs/*.pdf
 
 # Allow specific PDF files that should be indexed
+# Allow both new and legacy brochure URLs
 Allow: /NineScrolls-Equipment-Guide.pdf
+Allow: /equipment-guide.pdf
 Allow: /docs/NineScrolls_Service_Process_Guide.pdf
 
 # Sitemap location

@@ -31,10 +31,10 @@ https://ninescrolls.us/*   https://ninescrolls.com/:splat   301
 *.woff2        /:splat             200
 *.ttf          /:splat             200
 *.eot          /:splat             200
+# Keep legacy brochure URL working (must be above *.pdf catch-all)
+/equipment-guide.pdf   /NineScrolls-Equipment-Guide.pdf   301
 # PDF files - serve directly but prevent indexing
 *.pdf          /:splat             200
-# Keep legacy brochure URL working
-/equipment-guide.pdf   /NineScrolls-Equipment-Guide.pdf   301
 
 # Common legacy route redirects for SEO
 /product       /products           301
