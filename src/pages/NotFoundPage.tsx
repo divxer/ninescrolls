@@ -106,7 +106,7 @@ export const NotFoundPage: React.FC = () => {
                   <h3>Resources</h3>
                   <ul>
                     <li><Link to="/insights">Technical Insights</Link></li>
-                    <li><a href="/equipment-guide.pdf" download="NineScrolls-Equipment-Guide.pdf">Equipment Guide</a></li>
+                    <li><a href="/NineScrolls-Equipment-Guide.pdf" download="NineScrolls-Equipment-Guide.pdf">Equipment Guide</a></li>
                     <li><Link to="/about">About NineScrolls</Link></li>
                     <li><Link to="/contact">Contact Us</Link></li>
                   </ul>
