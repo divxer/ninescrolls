@@ -44,7 +44,7 @@ export function ProductsPage() {
           <p><strong>Reactive Ion Etching (RIE), ICP‑RIE, and DRIE</strong> systems for semiconductor research and manufacturing. Optimized etch rates, process stability, and comprehensive service support.</p>
           <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
             <Link to="/contact?topic=quote" className="btn btn-primary">Request a Quote</Link>
-            <a href="/equipment-guide.pdf" className="btn btn-secondary" download>Download Brochure</a>
+            <a href="/NineScrolls-Equipment-Guide.pdf" className="btn btn-secondary" download>Download Brochure</a>
             <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
           </div>
         </div>
@@ -516,7 +516,7 @@ export function ProductsPage() {
           <div className="contact-buttons">
             <Link to="/contact" className="btn btn-primary">Contact Our Team</Link>
             <a 
-              href="/equipment-guide.pdf" 
+              href="/NineScrolls-Equipment-Guide.pdf" 
               className="btn btn-secondary"
               download="NineScrolls-Equipment-Guide.pdf"
               style={{ 
@@ -537,7 +537,7 @@ export function ProductsPage() {
                 }
                 // Force download by creating a temporary link
                 const link = document.createElement('a');
-                link.href = '/equipment-guide.pdf';
+                link.href = '/NineScrolls-Equipment-Guide.pdf';
                 link.download = 'NineScrolls-Equipment-Guide.pdf';
                 document.body.appendChild(link);
                 link.click();
