@@ -2,17 +2,13 @@ import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { ContactFormModal } from '../common/ContactFormModal';
 import { ContactFormData } from '../../types';
+import { DownloadGateModal } from '../common/DownloadGateModal';
 
 export function SputterSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    message: ''
-  });
+  const [gateOpen, setGateOpen] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({ name:'', email:'', phone:'', organization:'', message:'' });
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -193,23 +189,7 @@ export function SputterSystem() {
           <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a 
-              href="/docs/sputter-system-datasheet.pdf" 
-              className="btn btn-secondary" 
-              download="NineScrolls-Sputter-Datasheet.pdf"
-              target="_blank" 
-              rel="noopener noreferrer"
-              onClick={() => {
-                // Track download event
-                if (typeof window !== 'undefined' && window.gtag) {
-                  window.gtag('event', 'download', {
-                    event_category: 'Product Datasheet',
-                    event_label: 'Sputter System',
-                    value: 1
-                  });
-                }
-              }}
-            >
+            <a href="#" className="btn btn-secondary" onClick={(e)=>{e.preventDefault(); setGateOpen(true);}}>
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
@@ -230,6 +210,8 @@ export function SputterSystem() {
         onFormDataChange={setFormData}
         onSuccess={handleFormSuccess}
       />
+
+      <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/sputter-system-datasheet.pdf'} fileName={'NineScrolls-Sputter-Datasheet.pdf'} title={'Download Sputter System Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
     </>
   );
 } 

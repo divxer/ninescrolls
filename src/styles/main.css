@@ -1293,6 +1293,26 @@ section h3 {
     position: relative;
     animation: modalSlideIn 0.3s ease-out;
 }
+/* Download gate form enhancements */
+.modal-content .label-strong { color:#333; font-weight: 600; }
+.modal-content .req { color:#2563eb; margin-left:4px; }
+.modal-content input, .modal-content select { border:1px solid #e5e7eb; padding:10px; border-radius:8px; width:100%; }
+.modal-content input::placeholder { color:#aaa; }
+.modal-content input:focus, .modal-content select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+.modal-content .form-group { margin-bottom: 12px; }
+.modal-content .checkbox-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:8px 12px; margin-top:6px; }
+.modal-content .checkbox-item { font-size: 0.95rem; color:#334155; }
+.modal-content label.checkbox-item { display:inline-flex; align-items:flex-start; gap:8px; cursor:pointer; }
+.modal-content label.checkbox-item input[type="checkbox"] { margin-top: 2px; }
+.modal-content .input-hint { font-size: 0.85rem; color:#64748b; margin-top:4px; }
+.modal-content .btn-full { width:100%; }
+.optin-row { margin: 8px 0 16px; }
+.optin { display:flex; align-items:flex-start; gap:10px; cursor:pointer; max-width:520px; }
+.optin input { width:18px; height:18px; margin:2px 0 0; }
+.optin span { line-height:1.45; }
+.download-actions { text-align:center; margin-top: 20px; }
+.download-actions .btn-full { width:100%; max-width:320px; margin: 0 auto 8px; display:block; }
+.privacy { font-size:12px; color:#6b7280; margin:0 auto; max-width:320px; line-height:1.4; }
 
 @keyframes modalSlideIn {
     from {

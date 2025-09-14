@@ -3,12 +3,14 @@ import { Helmet } from 'react-helmet-async';
 import { useState, useMemo } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
+import { DownloadGateModal } from '../components/common/DownloadGateModal';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
   // Scroll to top when component mounts
   useScrollToTop();
   const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
+  const [gateOpen, setGateOpen] = useState(false);
 
   const tabs = ['All','Etching','Deposition','Coating/Developing','Cleaning/Stripping'] as const;
 
@@ -44,7 +46,7 @@ export function ProductsPage() {
           <p><strong>Reactive Ion Etching (RIE), ICP‑RIE, and DRIE</strong> systems for semiconductor research and manufacturing. Optimized etch rates, process stability, and comprehensive service support.</p>
           <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
             <Link to="/contact?topic=quote" className="btn btn-primary">Request a Quote</Link>
-            <a href="/NineScrolls-Equipment-Guide.pdf" className="btn btn-secondary" download>Download Brochure</a>
+            <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>Download Brochure</a>
             <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
           </div>
         </div>
@@ -516,9 +518,8 @@ export function ProductsPage() {
           <div className="contact-buttons">
             <Link to="/contact" className="btn btn-primary">Contact Our Team</Link>
             <a 
-              href="/NineScrolls-Equipment-Guide.pdf" 
+              href="#" 
               className="btn btn-secondary"
-              download="NineScrolls-Equipment-Guide.pdf"
               style={{ 
                 position: 'relative', 
                 zIndex: 1000,
@@ -526,23 +527,8 @@ export function ProductsPage() {
                 cursor: 'pointer'
               }}
               onClick={(e) => {
-                console.log('Equipment Guide clicked!', e);
-                // Track download event
-                if (typeof window !== 'undefined' && window.gtag) {
-                  window.gtag('event', 'download', {
-                    event_category: 'Equipment Guide',
-                    event_label: 'Products Page',
-                    value: 1
-                  });
-                }
-                // Force download by creating a temporary link
-                const link = document.createElement('a');
-                link.href = '/NineScrolls-Equipment-Guide.pdf';
-                link.download = 'NineScrolls-Equipment-Guide.pdf';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
                 e.preventDefault();
+                setGateOpen(true);
               }}
             >
               Download Equipment Guide
@@ -576,6 +562,15 @@ export function ProductsPage() {
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
       </Helmet>
+
+      <DownloadGateModal 
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        fileUrl={'/NineScrolls-Equipment-Guide.pdf'}
+        fileName={'NineScrolls-Equipment-Guide.pdf'}
+        title={'Download Equipment Guide'}
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+      />
     </>
   );
 } 
