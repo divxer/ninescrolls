@@ -2,17 +2,13 @@ import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { ContactFormModal } from '../common/ContactFormModal';
 import { ContactFormData } from '../../types';
+import { DownloadGateModal } from '../common/DownloadGateModal';
 
 export function ALDSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    message: ''
-  });
+  const [gateOpen, setGateOpen] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({ name:'', email:'', phone:'', organization:'', message:'' });
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -191,23 +187,7 @@ export function ALDSystem() {
           <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
             <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
-            <a 
-              href="/docs/ald-system-datasheet.pdf" 
-              className="btn btn-secondary" 
-              download="NineScrolls-ALD-System-Datasheet.pdf"
-              target="_blank" 
-              rel="noopener noreferrer"
-              onClick={() => {
-                // Track download event
-                if (typeof window !== 'undefined' && window.gtag) {
-                  window.gtag('event', 'download', {
-                    event_category: 'Product Datasheet',
-                    event_label: 'ALD System',
-                    value: 1
-                  });
-                }
-              }}
-            >
+            <a href="#" className="btn btn-secondary" onClick={(e)=>{e.preventDefault(); setGateOpen(true);}}>
               <span className="icon-download"></span> Download Product Datasheet
             </a>
           </div>
@@ -228,6 +208,8 @@ export function ALDSystem() {
         onFormDataChange={setFormData}
         onSuccess={handleFormSuccess}
       />
+
+      <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/ald-system-datasheet.pdf'} fileName={'NineScrolls-ALD-Datasheet.pdf'} title={'Download ALD Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
     </>
   );
 } 

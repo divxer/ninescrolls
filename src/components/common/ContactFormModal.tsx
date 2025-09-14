@@ -2,18 +2,28 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
+import { DownloadGateModal } from './DownloadGateModal';
 
-// Product name to PDF filename mapping to ensure consistency
+// Product name to PDF filename mapping
 const productToPdfMap: Record<string, string> = {
   'ALD System': 'ald-system-datasheet.pdf',
+  'ALD System Series': 'ald-system-datasheet.pdf',
   'Coater/Developer System': 'coater-developer-system-datasheet.pdf',
+  'Coater/Developer System Series': 'coater-developer-system-datasheet.pdf',
   'HDP-CVD System': 'hdp-cvd-system-datasheet.pdf',
+  'HDP-CVD System Series': 'hdp-cvd-system-datasheet.pdf',
   'IBE/RIBE System': 'ibe-ribe-system-datasheet.pdf',
+  'IBE/RIBE System Series': 'ibe-ribe-system-datasheet.pdf',
   'ICP Etcher': 'icp-etcher-datasheet.pdf',
+  'ICP Etcher Series': 'icp-etcher-datasheet.pdf',
   'PECVD System': 'pecvd-system-datasheet.pdf',
+  'PECVD System Series': 'pecvd-system-datasheet.pdf',
   'RIE Etcher': 'rie-etcher-datasheet.pdf',
+  'RIE Etcher Series': 'rie-etcher-datasheet.pdf',
   'Sputter System': 'sputter-system-datasheet.pdf',
-  'Striper System': 'striper-system-datasheet.pdf'
+  'Sputter System Series': 'sputter-system-datasheet.pdf',
+  'Striper System': 'striper-system-datasheet.pdf',
+  'Stripping System Series': 'striper-system-datasheet.pdf'
 };
 
 export function ContactFormModal({ 
@@ -28,6 +38,7 @@ export function ContactFormModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gateOpen, setGateOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -142,6 +153,7 @@ export function ContactFormModal({
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="modal" data-open={isOpen}>
       <div className="modal-content" role="dialog" aria-labelledby="modalTitle">
         {!isSuccess ? (
@@ -244,12 +256,9 @@ export function ContactFormModal({
                 <p>Meanwhile, you might be interested in:</p>
                 <div className="action-buttons">
                   <a 
-                    href={`/docs/${productToPdfMap[productName] || 'equipment-guide.pdf'}`}
+                    href="#"
                     className="btn btn-secondary"
-                    download={`NineScrolls-${productName.replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/, '')}-Datasheet.pdf`}
-                    onClick={handleDatasheetDownload}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={(e) => { e.preventDefault(); handleDatasheetDownload(); setGateOpen(true); }}
                   >
                     <span className="icon-download"></span> Download Product Datasheet
                   </a>
@@ -263,5 +272,15 @@ export function ContactFormModal({
         )}
       </div>
     </div>
+
+    <DownloadGateModal 
+      isOpen={gateOpen}
+      onClose={() => setGateOpen(false)}
+      fileUrl={`/docs/${productToPdfMap[productName] || 'equipment-guide.pdf'}`}
+      fileName={`NineScrolls-${productName.replace(/\s+/g, '-').replace(/\//g, '-').replace(/-series$/i, '')}-Datasheet.pdf`}
+      title={`Download ${productName} Datasheet`}
+      turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+    />
+    </>
   );
 } 

@@ -10,6 +10,7 @@ import { IPAnalysisTestPage } from '../pages/IPAnalysisTestPage';
 import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { PrivacyPage } from '../pages/PrivacyPage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -32,6 +33,7 @@ export function AppRoutes() {
       <Route path="/service-support" element={<ServiceSupportPage />} />
       <Route path="/insights" element={<InsightsPage />} />
       <Route path="/insights/:slug" element={<InsightsPostPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       {import.meta.env.MODE !== 'production' && (
         <>
           <Route path="/analytics-test" element={<AnalyticsTestPage />} />
