@@ -190,6 +190,7 @@ export function CoaterDeveloper() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="Coater/Developer System Series"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={()=>{ const a=document.createElement('a'); a.href='/docs/coater-developer-system-datasheet.pdf'; a.download='NineScrolls-Coater-Developer-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
         downloadLabel="Download Datasheet"
       />

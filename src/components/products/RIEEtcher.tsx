@@ -201,6 +201,7 @@ export function RIEEtcher() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="RIE Etcher Series"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={()=>{
           const a=document.createElement('a'); a.href='/docs/rie-etcher-datasheet.pdf'; a.download='NineScrolls-RIE-Etcher-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }}

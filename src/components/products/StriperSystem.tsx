@@ -181,6 +181,7 @@ export function StriperSystem() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="Stripping System Series"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={()=>{
           const a=document.createElement('a'); a.href='/docs/striper-system-datasheet.pdf'; a.download='NineScrolls-Stripping-System-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }}

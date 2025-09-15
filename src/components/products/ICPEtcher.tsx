@@ -284,6 +284,7 @@ export function ICPEtcher() {
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="ICP Etcher Series"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={()=>{
           const a=document.createElement('a'); a.href='/docs/icp-etcher-datasheet.pdf'; a.download='NineScrolls-ICP-Etcher-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }}
