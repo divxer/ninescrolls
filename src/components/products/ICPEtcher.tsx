@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-import { ContactFormModal } from '../common/ContactFormModal';
-import { ContactFormData } from '../../types';
+// import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
+import { QuoteModal } from '../common/QuoteModal';
 
 export function ICPEtcher() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    message: ''
-  });
+  // using QuoteModal; no local form state is necessary for this component
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -39,9 +33,7 @@ export function ICPEtcher() {
     document.body.style.overflow = 'auto';
   };
 
-  const handleFormSuccess = () => {
-    // Additional success handling if needed
-  };
+  // no-op
 
   return (
     <>
@@ -288,13 +280,14 @@ export function ICPEtcher() {
         </button>
       </div>
 
-      <ContactFormModal
+      <QuoteModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="ICP Etcher Series"
-        formData={formData}
-        onFormDataChange={setFormData}
-        onSuccess={handleFormSuccess}
+        onDownloadBrochure={()=>{
+          const a=document.createElement('a'); a.href='/docs/icp-etcher-datasheet.pdf'; a.download='NineScrolls-ICP-Etcher-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }}
+        downloadLabel="Download Datasheet"
       />
 
       <DownloadGateModal

@@ -1297,6 +1297,16 @@ section h3 {
 .modal-content .label-strong { color:#333; font-weight: 600; }
 .modal-content .req { color:#2563eb; margin-left:4px; }
 .modal-content input, .modal-content select { border:1px solid #e5e7eb; padding:10px; border-radius:8px; width:100%; }
+.modal-content input[aria-readonly="true"], .modal-content input[readonly] {
+    background: #f8fafc;
+    color: #6b7280;
+    cursor: default;
+}
+.modal-content input[aria-readonly="true"]:focus, .modal-content input[readonly]:focus {
+    outline: none;
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
 .modal-content input::placeholder { color:#aaa; }
 .modal-content input:focus, .modal-content select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
 .modal-content .form-group { margin-bottom: 12px; }
