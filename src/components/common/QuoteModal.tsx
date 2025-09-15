@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
 interface QuoteModalProps {
@@ -7,9 +7,12 @@ interface QuoteModalProps {
   onDownloadBrochure: () => void;
   productName?: string;
   downloadLabel?: string;
+  turnstileSiteKey?: string;
 }
 
-export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, downloadLabel = 'Download Brochure' }: QuoteModalProps) {
+declare global { interface Window { turnstile?: any } }
+
+export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, downloadLabel = 'Download Brochure', turnstileSiteKey }: QuoteModalProps) {
   const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -22,8 +25,32 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     organization: '',
     message: ''
   });
+  const [token, setToken] = useState<string>('');
+  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { if (!isOpen) { setIsSuccess(false); setError(null); } }, [isOpen]);
+
+  // Load Cloudflare Turnstile if a site key is provided
+  useEffect(() => {
+    if (!isOpen || !turnstileSiteKey || !widgetRef.current) return;
+    const ensureScript = () => new Promise<void>((resolve) => {
+      if (window.turnstile) return resolve();
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      document.head.appendChild(script);
+    });
+    ensureScript().then(() => {
+      try {
+        window.turnstile.render(widgetRef.current, {
+          sitekey: turnstileSiteKey,
+          callback: (t: string) => setToken(t)
+        });
+      } catch {}
+    });
+  }, [isOpen, turnstileSiteKey]);
 
   if (!isOpen) return null;
 
@@ -37,9 +64,13 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
       setError('Please complete required fields.');
       return;
     }
+    if (turnstileSiteKey && !token) {
+      setError('Please complete the verification.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const payload = { productName: form.product || 'Products Inquiry', ...form };
+      const payload = { productName: form.product || 'Products Inquiry', ...form, turnstileToken: token };
       const res = await fetch('https://api.ninescrolls.us/sendEmail', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
@@ -73,6 +104,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
               <div className="form-group"><label>Phone:</label><input name="phone" placeholder="Optional: Enter your phone number" value={form.phone} onChange={update} /></div>
               <div className="form-group"><label>Organization:</label><input name="organization" placeholder="Optional: Enter your organization name" value={form.organization} onChange={update} /></div>
               <div className="form-group"><label>Message</label><textarea name="message" rows={4} placeholder="Please let us know your specific requirements or questions" value={form.message} onChange={update} required /></div>
+              {turnstileSiteKey && (<div className="form-group"><div ref={widgetRef} /></div>)}
               <div className="form-actions">
                 <button className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Submit Request'}</button>
               </div>
