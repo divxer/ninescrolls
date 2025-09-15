@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
+import { QuoteModal } from '../components/common/QuoteModal';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
@@ -11,6 +12,7 @@ export function ProductsPage() {
   useScrollToTop();
   const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
   const [gateOpen, setGateOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
 
   const tabs = ['All','Etching','Deposition','Coating/Developing','Cleaning/Stripping'] as const;
 
@@ -45,7 +47,7 @@ export function ProductsPage() {
           <h1>Plasma Etching & Thin-Film Systems</h1>
           <p><strong>NineScrolls provides ICP‑RIE, RIE, PECVD and ALD systems</strong> for research labs, delivering low‑damage processing, ±3% uniformity, and wide temperature control for 150–200 mm wafers.</p>
           <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
-            <Link to="/contact?topic=quote" className="btn btn-primary">Request a Quote</Link>
+            <a href="#" className="btn btn-primary" onClick={(e)=>{e.preventDefault(); setQuoteOpen(true);}}>Request a Quote</a>
             <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>Download Brochure</a>
             <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
           </div>
@@ -516,7 +518,7 @@ export function ProductsPage() {
           <h2>Need Equipment Consultation?</h2>
           <p>Our technical team is ready to help you choose the right equipment for your application.</p>
           <div className="contact-buttons">
-            <Link to="/contact" className="btn btn-primary">Contact Our Team</Link>
+            <a href="#" className="btn btn-primary" onClick={(e)=>{e.preventDefault(); setQuoteOpen(true);}}>Contact Our Team</a>
             <a 
               href="#" 
               className="btn btn-secondary"
@@ -570,6 +572,20 @@ export function ProductsPage() {
         fileName={'NineScrolls-Equipment-Guide.pdf'}
         title={'Download Equipment Guide'}
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+      />
+
+      <QuoteModal
+        isOpen={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        onDownloadBrochure={() => {
+          setQuoteOpen(false);
+          const link = document.createElement('a');
+          link.href = '/NineScrolls-Equipment-Guide.pdf';
+          link.download = 'NineScrolls-Equipment-Guide.pdf';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }}
       />
     </>
   );

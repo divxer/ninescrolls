@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-import { ContactFormModal } from '../common/ContactFormModal';
-import { ContactFormData } from '../../types';
+// import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
+import { QuoteModal } from '../common/QuoteModal';
 
 export function SputterSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>({ name:'', email:'', phone:'', organization:'', message:'' });
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -33,9 +32,7 @@ export function SputterSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  const handleFormSuccess = () => {
-    // Additional success handling if needed
-  };
+  // no-op
 
   return (
     <>
@@ -202,13 +199,12 @@ export function SputterSystem() {
         </button>
       </div>
 
-      <ContactFormModal
+      <QuoteModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
         productName="Sputter System Series"
-        formData={formData}
-        onFormDataChange={setFormData}
-        onSuccess={handleFormSuccess}
+        onDownloadBrochure={()=>{ const a=document.createElement('a'); a.href='/docs/sputter-system-datasheet.pdf'; a.download='NineScrolls-Sputter-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
+        downloadLabel="Download Datasheet"
       />
 
       <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/sputter-system-datasheet.pdf'} fileName={'NineScrolls-Sputter-Datasheet.pdf'} title={'Download Sputter System Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
