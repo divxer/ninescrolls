@@ -137,7 +137,7 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
           </div>
           {error && <div className="error-message">{error}</div>}
           <div className="download-actions">
-            <button className="btn btn-primary btn-full" disabled={submitting}>{submitting ? 'Submitting...' : 'Get My Guide Now'}</button>
+            <button className="btn btn-primary btn-full" disabled={submitting || (!!turnstileSiteKey && !token)}>{submitting ? 'Submitting...' : 'Get My Guide Now'}</button>
             <div className="privacy">By submitting this form, you agree to our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. We respect your privacy. No spam, ever.</div>
           </div>
         </form>

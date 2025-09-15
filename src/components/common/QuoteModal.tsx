@@ -106,7 +106,9 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
               <div className="form-group"><label>Message</label><textarea name="message" rows={4} placeholder="Please let us know your specific requirements or questions" value={form.message} onChange={update} required /></div>
               {turnstileSiteKey && (<div className="form-group"><div ref={widgetRef} /></div>)}
               <div className="form-actions">
-                <button className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Submit Request'}</button>
+                <button className="btn btn-primary" disabled={isSubmitting || (!!turnstileSiteKey && !token)}>
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                </button>
               </div>
             </form>
           </>

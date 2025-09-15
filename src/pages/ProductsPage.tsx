@@ -577,6 +577,7 @@ export function ProductsPage() {
       <QuoteModal
         isOpen={quoteOpen}
         onClose={() => setQuoteOpen(false)}
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={() => {
           setQuoteOpen(false);
           const link = document.createElement('a');
