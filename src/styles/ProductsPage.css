@@ -135,6 +135,14 @@
     color: #fff;
 }
 
+.compare-section { padding: 2rem 0 1rem; background:#fff; }
+.compare-table { display:grid; gap:6px; }
+.compare-table .row { display:grid; grid-template-columns: 1.2fr 1.6fr 1fr 1.6fr; gap:8px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:#fafbff; }
+.compare-table .row.header { background:#eef2ff; font-weight:600; }
+.card-links { margin-top: 8px; font-size: 0.95rem; color:#334155; }
+.card-links a { color:#2563eb; text-decoration: none; }
+.card-links a:hover { text-decoration: underline; }
+
 .etching-processes {
     padding: 4rem 0 2rem;
     background: #f8fafc;
