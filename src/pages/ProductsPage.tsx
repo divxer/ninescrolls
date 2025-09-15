@@ -35,15 +35,15 @@ export function ProductsPage() {
   return (
     <>
       <SEO 
-        title="Plasma Etching Systems | RIE, ICP‑RIE & DRIE Equipment – NineScrolls"
-        description="Advanced plasma etching equipment for semiconductor research & MEMS fabrication. Explore RIE, ICP‑RIE & DRIE systems with optimized etch rates. Request a quote today."
+        title="Plasma Etching & Thin-Film Systems | ICP‑RIE, RIE, PECVD & ALD | NineScrolls"
+        description="Advanced plasma etching and low‑temperature thin‑film tools for labs: ICP‑RIE, RIE, PECVD, ALD. ±3% uniformity, low‑damage processes, 150–200 mm wafers."
         keywords="plasma etching systems, ICP-RIE equipment, RIE vs DRIE comparison, semiconductor plasma etching tools, RIE etcher, DRIE Bosch"
         url="/products/"
       />
       <section className="products-hero">
         <div className="container">
-          <h1>Plasma Etching Systems</h1>
-          <p><strong>Reactive Ion Etching (RIE), ICP‑RIE, and DRIE</strong> systems for semiconductor research and manufacturing. Optimized etch rates, process stability, and comprehensive service support.</p>
+          <h1>Plasma Etching & Thin-Film Systems</h1>
+          <p><strong>NineScrolls provides ICP‑RIE, RIE, PECVD and ALD systems</strong> for research labs, delivering low‑damage processing, ±3% uniformity, and wide temperature control for 150–200 mm wafers.</p>
           <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
             <Link to="/contact?topic=quote" className="btn btn-primary">Request a Quote</Link>
             <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>Download Brochure</a>
