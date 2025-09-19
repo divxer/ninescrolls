@@ -61,7 +61,7 @@ export function ProductsPage() {
             <div className="manufacturer-info">
               <div className="manufacturer-text">
                 <p>
-                  We are proud to partner with Tyloong, a leading manufacturer
+                  We are proud to partner with <a href="http://en.beijingtailong.com/" target="_blank" rel="noopener noreferrer">Beijing Tailong Electronic Technology</a> (Tyloong), a leading manufacturer
                   of plasma etching equipment and semiconductor processing systems with over 30 years 
                   of experience in the industry. Their expertise in plasma etching processes, 
                   reactive ion etching technology, and plasma treatment solutions aligns perfectly with our mission to 

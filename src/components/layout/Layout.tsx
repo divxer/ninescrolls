@@ -177,6 +177,12 @@ export function Layout({ children }: LayoutProps) {
                 <a href="https://twitter.com/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer">Twitter</a>
               </div>
             </div>
+            <div className="footer-section">
+              <h4>Partners</h4>
+              <div className="social-links">
+                <a href="http://en.beijingtailong.com/" className="social-link" target="_blank" rel="noopener noreferrer">Beijing Tailong Electronic Technology</a>
+              </div>
+            </div>
           </div>
           <div className="footer-bottom">
             <p>&copy; 2025 NineScrolls LLC. All rights reserved.</p>
