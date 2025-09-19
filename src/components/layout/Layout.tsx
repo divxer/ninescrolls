@@ -175,6 +175,7 @@ export function Layout({ children }: LayoutProps) {
               <div className="social-links">
                 <a href="https://linkedin.com/company/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 <a href="https://twitter.com/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer">Twitter</a>
+                <a href="https://www.youtube.com/@NineScrollsLLC" className="social-link" target="_blank" rel="noopener noreferrer">YouTube</a>
               </div>
             </div>
             <div className="footer-section">
