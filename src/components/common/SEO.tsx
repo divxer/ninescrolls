@@ -5,6 +5,8 @@ interface SEOProps {
   description: string;
   keywords?: string;
   image?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   url?: string;
   type?: string;
 }
@@ -14,6 +16,8 @@ export function SEO({
   description, 
   keywords = 'semiconductor equipment, thin film deposition, etching system, coating system',
   image = '/assets/images/og-image.jpg',
+  imageWidth = 1200,
+  imageHeight = 630,
   url = '/',
   type = 'website'
 }: SEOProps) {
@@ -33,6 +37,8 @@ export function SEO({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImage} />
+      <meta property="og:image:width" content={String(imageWidth)} />
+      <meta property="og:image:height" content={String(imageHeight)} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteTitle} />
