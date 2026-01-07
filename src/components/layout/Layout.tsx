@@ -186,7 +186,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2025 NineScrolls LLC. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} NineScrolls LLC. All rights reserved.</p>
           </div>
         </div>
       </footer>
