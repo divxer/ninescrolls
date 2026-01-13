@@ -131,6 +131,7 @@ export function Layout({ children }: LayoutProps) {
                     <h4>Etching</h4>
                     <Link to="/products/icp-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('ICP‑RIE','Etching'); }}>ICP‑RIE</Link>
                     <Link to="/products/rie-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('RIE','Etching'); }}>RIE</Link>
+                    <Link to="/products/compact-rie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Compact RIE','Etching'); }}>Compact RIE</Link>
                     <Link to="/products/rie-etcher#drie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('DRIE','Etching'); }}>DRIE (Bosch)</Link>
                   </div>
                   <div className="dropdown-col">

@@ -155,6 +155,27 @@ const PRODUCTS = {
     ],
     images: ['/assets/images/products/rie-etcher/main.jpg']
   },
+  'compact-rie': {
+    id: 'compact-rie',
+    name: 'Compact RIE Etcher (SV-RIE)',
+    description: 'Compact reactive ion etching system with ultra-small footprint, ideal for research labs, pilot-scale processes, and failure analysis applications.',
+    features: [
+      'Ultra-compact footprint: 630mm × 600mm (one-piece design)',
+      'Touchscreen control with fully automated operation system',
+      'Modular design for easy maintenance and convenient transport',
+      'Stable performance with excellent cost-effectiveness',
+      'Supports 4", 6", 8", 12" wafers (customizable for smaller sizes)'
+    ],
+    specifications: [
+      'Wafer Size: 4", 6", 8", 12" (customizable for smaller sizes)',
+      'RF Power: 300W / 500W / 1000W (customizable)',
+      'Process Gases: Up to 5 gas lines simultaneously',
+      'Flow Control: 0 ~ 1000 sccm range (selectable)',
+      'Pump: Mechanical pump / optional turbo pump',
+      'Optional: Removable contamination-resistant liner'
+    ],
+    images: ['/assets/images/products/compact-rie/main.jpg']
+  },
   'icp-etcher': {
     id: 'icp-etcher',
     name: 'ICP Etcher Series',
@@ -228,6 +249,11 @@ const productSEOData: ProductSEOData = {
     title: 'ICP Etcher Series',
     description: 'Inductively Coupled Plasma etcher for high-aspect-ratio etching. High-density plasma with independent ion energy control.',
     keywords: 'ICP etcher, plasma etching, semiconductor equipment, inductively coupled plasma, etching system',
+  },
+  'compact-rie': {
+    title: 'Compact RIE Etcher (SV-RIE) - Ultra-Compact Reactive Ion Etching | NineScrolls',
+    description: 'Compact RIE etching system with 630mm×600mm footprint. Ideal for research labs, pilot-scale processes, and failure analysis. Touchscreen control, modular design.',
+    keywords: 'compact RIE, SV-RIE, small footprint RIE, compact reactive ion etching, research RIE system, failure analysis equipment',
   },
 };
 

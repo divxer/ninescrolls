@@ -7,6 +7,7 @@ import { StriperSystem } from './StriperSystem';
 import { CoaterDeveloper } from './CoaterDeveloper';
 import { RIEEtcher } from './RIEEtcher';
 import { ICPEtcher } from './ICPEtcher';
+import { CompactRIE } from './CompactRIE';
 
 const productComponents = {
   'hdp-cvd': HDPCVDSystem,
@@ -18,6 +19,7 @@ const productComponents = {
   'coater-developer': CoaterDeveloper,
   'rie-etcher': RIEEtcher,
   'icp-etcher': ICPEtcher,
+  'compact-rie': CompactRIE,
 };
 
 export function getProductComponent(productId: string) {
@@ -34,4 +36,5 @@ export {
   CoaterDeveloper,
   RIEEtcher,
   ICPEtcher,
+  CompactRIE,
 };

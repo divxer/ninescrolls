@@ -23,6 +23,7 @@ export function ProductsPage() {
     "itemListElement": [
       { "@type": "Product", "name": "ICP‑RIE Etcher", "url": "https://ninescrolls.com/products/icp-etcher" },
       { "@type": "Product", "name": "RIE Etcher", "url": "https://ninescrolls.com/products/rie-etcher" },
+      { "@type": "Product", "name": "Compact RIE Etcher (SV-RIE)", "url": "https://ninescrolls.com/products/compact-rie" },
       { "@type": "Product", "name": "DRIE Etcher (Bosch)", "url": "https://ninescrolls.com/products/rie-etcher#drie" },
       { "@type": "Product", "name": "HDP‑CVD System", "url": "https://ninescrolls.com/products/hdp-cvd" },
       { "@type": "Product", "name": "PECVD System", "url": "https://ninescrolls.com/products/pecvd" },
@@ -135,6 +136,21 @@ export function ProductsPage() {
                   <li>Flexible process control</li>
                   <li>Multiple gas options</li>
                   <li>Compact design</li>
+                </ul>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Etching') && (
+            <div className="category-card">
+              <Link to="/products/compact-rie">
+                <img src="/assets/images/products/compact-rie/main.jpg" alt="Compact RIE Etcher (SV-RIE) - compact reactive ion etching system" loading="lazy" decoding="async" />
+                <h3>Compact RIE Etcher (SV-RIE)</h3>
+                <p>Compact reactive ion etching system with ultra-small footprint (630mm×600mm), ideal for research labs and pilot-scale processes.</p>
+                <ul className="feature-list">
+                  <li>Ultra-compact footprint: 630mm × 600mm</li>
+                  <li>Touchscreen control with fully automated operation</li>
+                  <li>Modular design for easy maintenance and transport</li>
                 </ul>
               </Link>
             </div>
