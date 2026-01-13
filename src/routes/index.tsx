@@ -15,6 +15,7 @@ import { StartupPackagePage } from '../pages/StartupPackagePage';
 import { 
   ICPEtcher,
   RIEEtcher,
+  CompactRIE,
   IBERIBESystem,
   ALDSystem,
   StriperSystem,
@@ -44,6 +45,7 @@ export function AppRoutes() {
         </>
       )}
       <Route path="/products/rie-etcher" element={<RIEEtcher />} />
+      <Route path="/products/compact-rie" element={<CompactRIE />} />
       <Route path="/products/icp-etcher" element={<ICPEtcher />} />
       <Route path="/products/ibe-ribe" element={<IBERIBESystem />} />
       <Route path="/products/ald" element={<ALDSystem />} />
