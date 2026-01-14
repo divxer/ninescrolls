@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
