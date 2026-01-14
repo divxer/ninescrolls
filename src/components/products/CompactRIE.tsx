@@ -9,20 +9,9 @@ import '../../styles/ProcessResults.css';
 
 export function CompactRIE() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
 
   useScrollToTop();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      setShowFloatingContact(scrollPosition > 500);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const openContactForm = () => {
     setIsModalOpen(true);
