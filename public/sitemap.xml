@@ -2,67 +2,79 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ninescrolls.com/</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/hdp-cvd</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/pecvd</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/ald</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/sputter</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/ibe-ribe</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/striper</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/coater-developer</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/rie-etcher</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/products/icp-etcher</loc>
-    <lastmod>2024-03-20</lastmod>
+    <lastmod>2026-01-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/products/compact-rie</loc>
+    <lastmod>2026-01-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/products/plasma-cleaner</loc>
+    <lastmod>2026-01-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

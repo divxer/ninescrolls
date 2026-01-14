@@ -31,6 +31,7 @@ export function ProductsPage() {
       { "@type": "Product", "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
       { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
       { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
+      { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
       { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
@@ -241,6 +242,21 @@ export function ProductsPage() {
                   <li>Multiple process modes</li>
                   <li>High throughput</li>
                   <li>Process monitoring</li>
+                </ul>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/plasma-cleaner">
+                <img src="/assets/images/products/plasma-cleaner/main.jpg" alt="Plasma Treatment/Cleaner System - compact plasma cleaning system" loading="lazy" decoding="async" />
+                <h3>Plasma Treatment/Cleaner System</h3>
+                <p>Compact plasma cleaning and surface treatment system with ultra-small footprint (630mm×600mm).</p>
+                <ul className="feature-list">
+                  <li>Ultra-compact footprint: 630mm × 600mm</li>
+                  <li>Touchscreen control with fully automated operation</li>
+                  <li>Surface cleaning and modification capabilities</li>
                 </ul>
               </Link>
             </div>
