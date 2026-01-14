@@ -145,6 +145,7 @@ export function Layout({ children }: LayoutProps) {
                     <Link to="/products/coater-developer" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Coater / Developer','Coating / Developing'); }}>Coater / Developer</Link>
                     <h4 style={{marginTop:'12px'}}>Cleaning / Stripping</h4>
                     <Link to="/products/striper" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
+                    <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
                   </div>
                   <div className="dropdown-cta">
                     <Link to="/products" className="btn btn-primary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
