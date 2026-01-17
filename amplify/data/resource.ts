@@ -1,10 +1,5 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-const DownloadType = a.customType({
-  name: a.string().required(),
-  url: a.string().required(),
-});
-
 const schema = a.schema({
   Product: a
     .model({
@@ -21,7 +16,7 @@ const schema = a.schema({
       specifications: a.string().array(),
       options: a.string().array(),
       deliveryAndService: a.string(),
-      downloads: DownloadType.array(),
+      downloads: a.json(), // Store as JSON array: [{name: string, url: string}]
       partnerNote: a.string(),
       manufacturerId: a.id(),
       manufacturer: a.belongsTo('Manufacturer', 'manufacturerId'),
