@@ -11,6 +11,7 @@ import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PrivacyPage } from '../pages/PrivacyPage';
+import { ReturnPolicyPage } from '../pages/ReturnPolicyPage';
 import { StartupPackagePage } from '../pages/StartupPackagePage';
 import { 
   ICPEtcher,
@@ -37,6 +38,7 @@ export function AppRoutes() {
       <Route path="/insights" element={<InsightsPage />} />
       <Route path="/insights/:slug" element={<InsightsPostPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/return-policy" element={<ReturnPolicyPage />} />
       <Route path="/startup-package" element={<StartupPackagePage />} />
       {import.meta.env.MODE !== 'production' && (
         <>

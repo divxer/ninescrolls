@@ -189,6 +189,11 @@ export function Layout({ children }: LayoutProps) {
           </div>
           <div className="footer-bottom">
             <p>&copy; {new Date().getFullYear()} NineScrolls LLC. All rights reserved.</p>
+            <div className="footer-links">
+              <Link to="/privacy">Privacy Policy</Link>
+              <span className="footer-link-separator">|</span>
+              <Link to="/return-policy">Return Policy</Link>
+            </div>
           </div>
         </div>
       </footer>

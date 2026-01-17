@@ -1,0 +1,83 @@
+/* Return Policy Page Specific Styles */
+
+.section-divider {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 3rem 0;
+  width: 100%;
+}
+
+.story-content ul,
+.story-content ol {
+  margin: 1.5rem 0;
+  padding-left: 2rem;
+  line-height: 1.8;
+}
+
+.story-content ul li,
+.story-content ol li {
+  margin-bottom: 0.75rem;
+  color: #444;
+  font-size: 1.1rem;
+}
+
+.story-content ul li::marker {
+  color: var(--primary-color);
+}
+
+.story-content ol li {
+  counter-increment: list-counter;
+}
+
+.story-content a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.story-content a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.story-content strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.support-note {
+  background: #f8fafc;
+  border-left: 4px solid var(--primary-color);
+  padding: 1.5rem 2rem;
+  margin-top: 3rem;
+  border-radius: 4px;
+}
+
+.support-note p {
+  margin-bottom: 1rem;
+}
+
+.support-note p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .story-content {
+    padding: 0 1rem;
+  }
+
+  .story-content ul,
+  .story-content ol {
+    padding-left: 1.5rem;
+  }
+
+  .support-note {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .section-divider {
+    margin: 2rem 0;
+  }
+}
