@@ -1,4 +1,5 @@
 import { defineBackend } from '@aws-amplify/backend';
+import { data } from './data/resource';
 import { sendEmail } from './functions/send-email/resource';
 import {Cors, RestApi, RestApiProps} from 'aws-cdk-lib/aws-apigateway';
 import { Duration } from 'aws-cdk-lib';
@@ -7,6 +8,7 @@ import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 
 const backend = defineBackend({
+    data,
     sendEmail,
 });
 
