@@ -23,7 +23,10 @@ export function ReturnPolicyPage() {
           <h2>1. Overview</h2>
           <p>
             NineScrolls LLC provides advanced scientific research and semiconductor processing equipment, many of which are custom-configured or built-to-order.
-            Due to the specialized nature of our products, returns are accepted only under limited and clearly defined circumstances.
+          </p>
+          <p>
+            NineScrolls LLC accepts returns and exchanges for defective products only.
+            Returns or exchanges are not accepted for customer preference, ordering errors, or non-defective products.
           </p>
           <p>
             All systems are inspected and tested prior to shipment to ensure compliance with agreed specifications.
@@ -31,22 +34,22 @@ export function ReturnPolicyPage() {
 
           <hr className="section-divider" />
 
-          <h2>2. Eligible Returns</h2>
-          <p>Returns may be considered only if one of the following conditions is met:</p>
+          <h2>2. Eligible Returns and Exchanges</h2>
+          <p>Returns and exchanges are accepted only if one of the following conditions is met:</p>
           <ul>
             <li>The product is dead on arrival (DOA)</li>
             <li>The product was damaged during shipping (with documented carrier evidence)</li>
             <li>The delivered product materially differs from the confirmed quotation or purchase order</li>
-            <li>A verified manufacturing defect is confirmed by NineScrolls technical support.</li>
+            <li>A verified manufacturing defect is confirmed by NineScrolls technical support</li>
           </ul>
           <p><strong>All issues must be reported within 7 days of delivery.</strong></p>
 
           <hr className="section-divider" />
 
           <h2>3. Non-Returnable Items</h2>
-          <p>The following items are not eligible for return or refund:</p>
+          <p>The following items are not eligible for return or exchange:</p>
           <ul>
-            <li>Custom-built or made-to-order equipment</li>
+            <li>Custom-built or made-to-order equipment (unless a confirmed defect is identified)</li>
             <li>Equipment that has been installed, powered on, or used</li>
             <li>Consumables, spare parts, or accessories</li>
             <li>Software licenses or digital products</li>
@@ -56,22 +59,22 @@ export function ReturnPolicyPage() {
           <hr className="section-divider" />
 
           <h2>4. Return Authorization Process</h2>
-          <p>Before any return is accepted, customers must:</p>
+          <p>Before any return or exchange is accepted, customers must:</p>
           <ol>
             <li>Contact NineScrolls Support at <a href="mailto:support@ninescrolls.com">support@ninescrolls.com</a></li>
             <li>Provide order details, serial numbers, and a detailed description of the issue</li>
             <li>Obtain a written Return Material Authorization (RMA)</li>
           </ol>
-          <p><strong>Unauthorized returns will not be accepted.</strong></p>
+          <p><strong>Unauthorized returns or exchanges will not be accepted.</strong></p>
 
           <hr className="section-divider" />
 
           <h2>5. Resolution Options</h2>
-          <p>At NineScrolls' discretion, eligible cases may be resolved by:</p>
+          <p>At NineScrolls' discretion, eligible cases may be resolved through one or more of the following:</p>
           <ul>
             <li>Remote technical support</li>
-            <li>Repair or replacement of defective components</li>
-            <li>Replacement of the system</li>
+            <li>Repair of defective components</li>
+            <li>Replacement or exchange of the defective product</li>
             <li>Refund (only if repair or replacement is not feasible)</li>
           </ul>
           <p>
@@ -96,15 +99,14 @@ export function ReturnPolicyPage() {
 
           <hr className="section-divider" />
 
-          <div className="support-note">
-            <p>
-              <strong>For technical concerns,</strong> NineScrolls strongly encourages customers to contact our support team first. 
-              Most issues can be resolved efficiently through remote diagnostics, process optimization, or component-level support.
-            </p>
-            <p>
-              Contact us at <a href="mailto:support@ninescrolls.com">support@ninescrolls.com</a> for assistance.
-            </p>
-          </div>
+          <h2>8. Technical Support First</h2>
+          <p>
+            For technical concerns, NineScrolls strongly encourages customers to contact our support team first.
+            Most issues can be resolved efficiently through remote diagnostics, process optimization, or component-level support.
+          </p>
+          <p>
+            For assistance, please contact <a href="mailto:support@ninescrolls.com">support@ninescrolls.com</a>.
+          </p>
         </div>
       </section>
     </>
