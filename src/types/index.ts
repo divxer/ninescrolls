@@ -32,6 +32,72 @@ export interface InsightsPost {
 // Centralized insights posts data to avoid duplication
 export const insightsPosts: InsightsPost[] = [
   {
+    id: '22',
+    title: 'Introducing the Compact Plasma Treatment/Cleaner System: Revolutionizing Surface Treatment for Research and Manufacturing',
+    excerpt: 'Discover the Plasma Treatment/Cleaner System, a compact and powerful solution for surface cleaning, modification, and activation. Ideal for research laboratories and manufacturing applications with a footprint of just 630mm x 600mm.',
+    content: `
+      <p><strong>Target Readers:</strong> Research scientists, process engineers, laboratory managers, and technical decision-makers in surface treatment, cleaning, and material modification applications.</p>
+      
+      <p>At NineScrolls LLC, we're always striving to bring the most advanced and efficient equipment to the scientific community. Today, we're excited to introduce our Plasma Treatment/Cleaner System, a compact and powerful system designed to meet the diverse needs of research laboratories and manufacturing applications.</p>
+
+      <h2>Why Choose the Plasma Treatment/Cleaner System?</h2>
+      <p>The Plasma Treatment/Cleaner System offers a sleek, ultra-compact design with a footprint of just 630mm x 600mm, making it an ideal choice for labs and facilities where space is at a premium. Despite its small size, this system packs a punch when it comes to surface cleaning, modification, and activation.</p>
+
+      <h2>Key Features</h2>
+      <ul>
+        <li><strong>Compact Footprint:</strong> With a footprint of just 630mm x 600mm, the system's design optimizes valuable workspace while maintaining full functionality.</li>
+        <li><strong>Touchscreen Control:</strong> Enjoy fully automated operation with a simple interface that streamlines your workflows.</li>
+        <li><strong>Modular Design:</strong> Easy to maintain and transport, with customizable configurations to suit specific research or production needs.</li>
+        <li><strong>Flexible Processing:</strong> Supports wafers up to 6" in diameter, including multi-wafer batch processing.</li>
+      </ul>
+
+      <h2>Main Functions</h2>
+      <ul>
+        <li><strong>Surface Cleaning:</strong> Effectively removes organic contaminants and residues from substrates, including photoresist (PR), PMMA, PDMS, and more.</li>
+        <li><strong>Surface Modification:</strong> Whether you're looking to create hydrophilic or hydrophobic surfaces, or you need to modify functional groups (-OH, -COOH), this system provides precise control.</li>
+        <li><strong>Chemical Activation:</strong> Ideal for preparing surfaces for bonding and coating, enhancing adhesion and improving material performance.</li>
+      </ul>
+
+      <h2>Ideal for a Range of Materials</h2>
+      <ul>
+        <li>Semiconductor materials</li>
+        <li>Organic films and polymers</li>
+        <li>Biomedical materials</li>
+        <li>Optical materials</li>
+      </ul>
+
+      <h2>Versatile Applications Across Industries</h2>
+      <ul>
+        <li><strong>Chemical and Biological Laboratories:</strong> Clean and treat semiconductor components, microelectronic parts, and optical components.</li>
+        <li><strong>Failure Analysis:</strong> Perfect for cleaning biochips and microfluidic devices, as well as modifying polymer material surfaces.</li>
+        <li><strong>Medical Devices:</strong> Sterilization and surface modification for medical devices to improve adhesion and hydrophilicity.</li>
+        <li><strong>Optical Components:</strong> Enhancing wettability and adhesion for optical elements used in various high-tech applications.</li>
+      </ul>
+
+      <h2>Advanced Process Results</h2>
+      <p>The Plasma Treatment/Cleaner System demonstrates real-world results in surface modification, such as enhancing hydrophobicity on silicon surfaces or etching organic films like PR, PMMA, and PDMS. These results are consistent and reliable, offering superior surface treatment without altering the bulk properties of the material.</p>
+
+      <h2>Applications for Research and Manufacturing</h2>
+      <p>From ultra-cleaning optical devices to surface pretreatment of biomaterials, this system is a versatile tool for laboratories and manufacturing environments alike. It's especially beneficial for industries that require high precision in surface treatment, such as the semiconductor, biomedical, and materials science sectors.</p>
+
+      <h2>Want to Learn More?</h2>
+      <p>If you're interested in discovering how the Plasma Treatment/Cleaner System can elevate your research or manufacturing process, don't hesitate to reach out to our team. We offer detailed specifications, pricing, and configuration options to help you find the right solution for your needs.</p>
+
+      <p>For more information, feel free to <a href="/contact?topic=Plasma%20Treatment%20Inquiry" style="color: #007bff; text-decoration: none;">contact us</a>, or <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">explore the product page</a> for detailed specifications.</p>
+
+      <p><strong>Contact:</strong><br>
+      Product Page: <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">Plasma Treatment/Cleaner System</a><br>
+      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+    `,
+    author: 'NineScrolls Team',
+    publishDate: '2026-01-17',
+    category: 'Product Introduction',
+    readTime: 5,
+    imageUrl: '/assets/images/products/plasma-cleaner/main.jpg',
+    slug: 'introducing-compact-plasma-treatment-cleaner-system',
+    tags: ['Plasma Treatment', 'Surface Cleaning', 'Surface Modification', 'Plasma Cleaner', 'Research Equipment', 'Manufacturing']
+  },
+  {
     id: '20',
     title: 'Reactive Ion Etching (RIE) – Principles, Applications, and Equipment Guide',
     excerpt: 'A complete guide to reactive ion etching (RIE): working principles, process control, system types (CCP/ICP/DRIE), applications, and equipment selection. Includes FAQs and links to ICP/RIE products.',
@@ -5460,5 +5526,6 @@ export const categories = [
   'Photonics',
   'Nanotechnology',
   'Energy',
-  'Biotechnology'
+  'Biotechnology',
+  'Product Introduction'
 ]; 
