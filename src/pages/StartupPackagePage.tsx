@@ -18,7 +18,7 @@ export function StartupPackagePage() {
     <>
       <SEO
         title="NineScrolls Startup Package – Supporting New Labs from Day One"
-        description="Special discounts, extended warranty, and complimentary accessories for new faculty establishing their labs. ICP-RIE/RIE, PECVD/ALD."
+        description="Special discounts, standard warranty included, and complimentary accessories for new faculty establishing their labs. ICP-RIE/RIE, PECVD/ALD."
         keywords="startup lab package, startup package etching, startup package PECVD, startup package ALD, startup package ICP-RIE, startup package RIE, new faculty startup package, new PI equipment package, university lab startup package, semiconductor lab startup, cleanroom equipment startup, plasma etching startup, MEMS lab startup, photonics lab startup"
         url="/startup-package"
       />
@@ -68,7 +68,7 @@ export function StartupPackagePage() {
       <section className="hero">
         <div className="container">
           <h1>NineScrolls Startup Package – Supporting New Labs from Day One</h1>
-          <p>Special discounts, extended warranty, and complimentary accessories for new faculty establishing their labs.</p>
+          <p>Special discounts, standard warranty included, and complimentary accessories for new faculty establishing their labs.</p>
           <div className="hero-buttons">
             <button className="btn btn-primary" onClick={() => setQuoteOpen(true)}>Request Your Startup Package Quote</button>
             <button className="btn btn-secondary" onClick={() => setGateOpen(true)}>Download Equipment Guide (PDF)</button>

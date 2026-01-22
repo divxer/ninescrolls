@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Chat } from '../common/Chat';
 import { CookieBanner } from '../common/CookieBanner';
+import { CartIcon } from '../common/CartIcon';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -161,6 +162,7 @@ export function Layout({ children }: LayoutProps) {
             <li><Link to="/service-support" className={`nav-link ${location.pathname === '/service-support' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Service & Support</Link></li>
             <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Insights</Link></li>
             <li><Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Contact Us</Link></li>
+            <li className="cart-icon-nav"><CartIcon /></li>
           </ul>
         </nav>
       </header>

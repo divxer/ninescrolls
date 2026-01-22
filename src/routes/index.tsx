@@ -15,6 +15,10 @@ import { ReturnPolicyPage } from '../pages/ReturnPolicyPage';
 import { StartupPackagePage } from '../pages/StartupPackagePage';
 import { PlasmaSystemsPage } from '../pages/PlasmaSystemsPage';
 import { PlasmaSystemsComparePage } from '../pages/PlasmaSystemsComparePage';
+import { CartPage } from '../pages/CartPage';
+import { CheckoutPage } from '../pages/CheckoutPage';
+import { CheckoutSuccessPage } from '../pages/CheckoutSuccessPage';
+import { CheckoutCancelPage } from '../pages/CheckoutCancelPage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -44,6 +48,10 @@ export function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/return-policy" element={<ReturnPolicyPage />} />
       <Route path="/startup-package" element={<StartupPackagePage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+      <Route path="/checkout/cancel" element={<CheckoutCancelPage />} />
       {import.meta.env.MODE !== 'production' && (
         <>
           <Route path="/analytics-test" element={<AnalyticsTestPage />} />

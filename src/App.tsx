@@ -5,17 +5,20 @@ import { AppRoutes } from './routes';
 import { GoogleAnalytics } from './components/analytics/GoogleAnalytics';
 import { SegmentAnalytics } from './components/analytics/SegmentAnalytics';
 import { RedirectHandler } from './components/common/RedirectHandler';
+import { CartProvider } from './contexts/CartContext';
 
 function App() {
   return (
     <HelmetProvider>
       <Router>
-        <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
-        <SegmentAnalytics writeKey={import.meta.env.VITE_SEGMENT_WRITE_KEY} />
-        <RedirectHandler />
-        <Layout>
-          <AppRoutes />
-        </Layout>
+        <CartProvider>
+          <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
+          <SegmentAnalytics writeKey={import.meta.env.VITE_SEGMENT_WRITE_KEY} />
+          <RedirectHandler />
+          <Layout>
+            <AppRoutes />
+          </Layout>
+        </CartProvider>
       </Router>
     </HelmetProvider>
   );

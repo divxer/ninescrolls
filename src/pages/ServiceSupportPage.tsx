@@ -10,7 +10,7 @@ export function ServiceSupportPage() {
     <>
       <SEO 
         title="Warranty & Service Support | NineScrolls - Comprehensive Equipment Maintenance"
-        description="Comprehensive warranty and service support for semiconductor equipment. 2-year full warranty, preventive maintenance, and competitive AMC options. Expert technical support and cost-effective solutions."
+        description="Comprehensive warranty and service support for semiconductor equipment. Standard warranty included with purchase, preventive maintenance, and optional annual service contracts. Expert technical support and cost-effective solutions."
         keywords="warranty, service support, equipment maintenance, AMC, preventive maintenance, technical support, semiconductor equipment"
         url="/service-support"
       />
@@ -42,8 +42,8 @@ export function ServiceSupportPage() {
                 <h3 id="hdr-warranty">Standard Warranty</h3>
               </div>
               <div className="block-content">
-                <h4>2-Year Full Warranty</h4>
-                <p className="warranty-note">(Most major manufacturers only provide 1-year coverage. NineScrolls offers 2 years as standard.)</p>
+                <h4>Standard Warranty Included</h4>
+                <p className="warranty-note">(Most major manufacturers only provide 1-year coverage. NineScrolls includes 2 years standard warranty with equipment purchase. This is bundled with the sale, not a separately sold extended warranty product.)</p>
                 <ul className="warranty-features">
                   <li>Parts and labor coverage</li>
                   <li>Manufacturing defects</li>
@@ -91,10 +91,10 @@ export function ServiceSupportPage() {
                 <h3 id="hdr-ext">Extended Options</h3>
               </div>
               <div className="block-content">
-                <h4>Flexible service plans</h4>
+                <h4>Optional Service Contracts</h4>
                 <ul className="warranty-features">
-                  <li>Extended warranty plans</li>
-                  <li>Annual Maintenance Contracts</li>
+                  <li>Optional service contracts (billed annually, not prepaid)</li>
+                  <li>Annual Maintenance Contracts (AMC) - billed annually</li>
                   <li>Custom service agreements</li>
                   <li>Priority support access</li>
                 </ul>
@@ -108,7 +108,7 @@ export function ServiceSupportPage() {
       <section className="comparison-section">
         <div className="container">
           <h2>Warranty Coverage – Quick Compare</h2>
-          <p className="comparison-intro">Most major manufacturers provide only 1-year standard coverage. NineScrolls offers 2 years as standard.</p>
+          <p className="comparison-intro">Most major manufacturers provide only 1-year standard coverage. NineScrolls includes 2 years standard warranty with equipment purchase.</p>
           <div className="comparison-table">
             <table role="table" aria-label="Warranty Coverage Comparison">
               <thead>
@@ -124,7 +124,7 @@ export function ServiceSupportPage() {
                   <td>1 year (parts & labor)</td>
                   <td className="highlight">
                     <span className="check-mark" aria-label="Advantage">✔</span>
-                    <span className="advantage-text">2 years (parts & labor)</span>
+                    <span className="advantage-text">2 years standard warranty included (parts & labor)</span>
                   </td>
                 </tr>
                 <tr>
@@ -276,11 +276,11 @@ export function ServiceSupportPage() {
       <section className="amc-section">
         <div className="container">
           <h2>AMC Packages</h2>
-          <p className="amc-intro">Transparent service options designed for research institutions and manufacturing facilities.</p>
+          <p className="amc-intro">Transparent service options designed for research institutions and manufacturing facilities. All service contracts are billed annually and not collected for multiple years in advance.</p>
           <div className="amc-plans">
             <div className="amc-plan">
               <div className="plan-badge">Basic AMC</div>
-              <div className="plan-price">$12,000<span className="price-unit"> / year</span></div>
+              <div className="plan-price">$12,000<span className="price-unit"> / year (billed annually)</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>2 preventive maintenance visits</li>
                 <li><span className="feature-check">✓</span>Priority technical support</li>
@@ -294,7 +294,7 @@ export function ServiceSupportPage() {
             <div className="amc-plan featured">
               <div className="popular-badge">Most Popular</div>
               <div className="plan-badge">Premium AMC</div>
-              <div className="plan-price">$25,000<span className="price-unit"> / year</span></div>
+              <div className="plan-price">$25,000<span className="price-unit"> / year (billed annually)</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>4 preventive maintenance visits</li>
                 <li><span className="feature-check">✓</span>48-hour on-site response</li>

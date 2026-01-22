@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/CartContext';
 
 export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -23,14 +27,52 @@ export function NSPlasma4R() {
     document.body.style.overflow = 'auto';
   };
 
+  const handleAddToCart = () => {
+    // Add item to cart
+    addItem({
+      id: 'ns-plasma-4r',
+      name: 'NS-Plasma 4R - Standard RF Plasma Cleaner',
+      price: 7999,
+      quantity: 1,
+      image: '/assets/images/products/ns-plasma-4r/main.jpg',
+      sku: 'ns-plasma-4r',
+    });
+
+    // Track add to cart event for Google Analytics and Google Merchants
+    if (typeof window !== 'undefined') {
+      // Google Analytics 4 e-commerce event
+      if ((window as any).gtag) {
+        (window as any).gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: 7999,
+          items: [{
+            item_id: 'ns-plasma-4r',
+            item_name: 'NS-Plasma 4R - Standard RF Plasma Cleaner',
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: 7999,
+            quantity: 1
+          }]
+        });
+      }
+
+      // Analytics service tracking
+      analytics.trackAddToCart('ns-plasma-4r', 'NS-Plasma 4R - Standard RF Plasma Cleaner', 7999);
+    }
+
+    // Navigate to cart page
+    navigate('/cart');
+  };
+
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/ns-plasma-4r#product",
-    "name": "NS-Plasma 4R - Compact RF Plasma System",
+    "name": "NS-Plasma 4R - Standard RF Plasma Cleaner",
     "description": "Compact RF plasma system for research and sample preparation. 4L chamber volume, 13.56 MHz RF power, ideal for teaching labs and low-volume processing.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-4r/main.jpg"],
     "sku": "ns-plasma-4r",
+    "mpn": "NS-Plasma-4R-Standard",
     "brand": {
       "@type": "Brand",
       "name": "Nine Scrolls Technology"
@@ -42,10 +84,40 @@ export function NSPlasma4R() {
       "priceCurrency": "USD",
       "price": "7999",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": "https://ninescrolls.com/products/ns-plasma-4r",
+      "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
         "name": "Nine Scrolls Technology",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -53,9 +125,9 @@ export function NSPlasma4R() {
   return (
     <>
       <SEO
-        title="NS-Plasma 4R - Compact RF Plasma System for Research | NineScrolls"
-        description="Compact RF plasma system for research and sample preparation. 4L chamber volume, 13.56 MHz RF power, ideal for teaching labs and low-volume processing."
-        keywords="NS-Plasma 4R, compact plasma system, research plasma, sample preparation, teaching lab equipment, plasma cleaning"
+        title="NS-Plasma 4R - Standard RF Plasma Cleaner | $7,999 USD | NineScrolls"
+        description="NS-Plasma 4R Standard RF Plasma Cleaner. Compact 4L chamber, 13.56 MHz RF power. In stock. Free shipping. Ships in 3–4 weeks."
+        keywords="NS-Plasma 4R, standard RF plasma cleaner, plasma cleaning system, research plasma equipment, $7999"
         url="/products/ns-plasma-4r"
         image="/assets/images/products/ns-plasma-4r/main.jpg"
         imageWidth={800}
@@ -73,10 +145,10 @@ export function NSPlasma4R() {
         <div className="container">
           <div className="product-header-enhanced">
             <h1>NS-Plasma 4R</h1>
-            <p className="product-subtitle">Compact RF Plasma System for Research & Teaching Labs</p>
+            <p className="product-subtitle">Standard RF Plasma Cleaner</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
-                Designed for exploratory plasma processing and small-volume sample preparation
+                Compact RF plasma system for research and sample preparation applications
               </p>
             </div>
             <div className="hero-bullets">
@@ -104,14 +176,17 @@ export function NSPlasma4R() {
             </div>
             <div className="hero-pricing">
               <div className="pricing-main">
-                <span className="pricing-label">price:</span>
-                <span className="pricing-amount">7,999 USD</span>
+                <span className="pricing-label">Price:</span>
+                <span className="pricing-amount">$7,999 USD</span>
               </div>
-              <p className="pricing-note">availability: in stock</p>
+              <p className="pricing-note">Availability: In Stock • Ships in 3–4 weeks</p>
             </div>
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={openContactForm}>
-                Request Information
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={openContactForm}>
+                Contact Sales
               </button>
             </div>
           </div>
@@ -189,7 +264,7 @@ export function NSPlasma4R() {
             <div className="feature-card">
               <div className="feature-icon">💨</div>
               <h3>Flexible Gas Configuration</h3>
-              <p>Standard single or dual gas configuration (configurable), compatible with common process gases for versatile lab integration.</p>
+              <p>Standard single or dual gas configuration, compatible with common process gases for versatile lab integration.</p>
             </div>
           </div>
         </div>
@@ -333,7 +408,7 @@ export function NSPlasma4R() {
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Configuration</td>
-                  <td className="spec-value">Standard single / dual gas (configurable)</td>
+                  <td className="spec-value">Standard single / dual gas</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
@@ -379,8 +454,8 @@ export function NSPlasma4R() {
               <p>Upgrade consultation toward larger plasma systems when your research needs grow beyond the 4R's capabilities.</p>
             </div>
             <div className="function-card">
-              <h3>Custom Configurations</h3>
-              <p>Custom configurations are available upon request to meet your specific research or teaching requirements.</p>
+              <h3>Additional Options</h3>
+              <p>Additional options and accessories are available to enhance system capabilities for specific research or teaching requirements.</p>
             </div>
           </div>
         </div>
@@ -390,18 +465,18 @@ export function NSPlasma4R() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this system?</h2>
-            <p>Contact NineScrolls for configuration options and availability.</p>
+            <h2>Ready to order?</h2>
+            <p>Add to cart to proceed with checkout, or contact our sales team for assistance.</p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={openContactForm}>
-                Request Information
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <a 
-                href="mailto:sales@ninescrolls.com" 
-                className="btn btn-secondary"
-              >
+              <button className="btn btn-secondary btn-large" onClick={openContactForm}>
                 Contact Sales
-              </a>
+              </button>
+            </div>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3–4 weeks after order confirmation.</p>
             </div>
           </div>
         </div>
