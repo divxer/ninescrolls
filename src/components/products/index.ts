@@ -9,6 +9,7 @@ import { RIEEtcher } from './RIEEtcher';
 import { ICPEtcher } from './ICPEtcher';
 import { CompactRIE } from './CompactRIE';
 import { PlasmaCleaner } from './PlasmaCleaner';
+import { NSPlasma20R } from './NSPlasma20R';
 
 const productComponents = {
   'hdp-cvd': HDPCVDSystem,
@@ -22,6 +23,7 @@ const productComponents = {
   'icp-etcher': ICPEtcher,
   'compact-rie': CompactRIE,
   'plasma-cleaner': PlasmaCleaner,
+  'ns-plasma-20r': NSPlasma20R,
 };
 
 export function getProductComponent(productId: string) {
@@ -40,4 +42,5 @@ export {
   ICPEtcher,
   CompactRIE,
   PlasmaCleaner,
+  NSPlasma20R,
 };

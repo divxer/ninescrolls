@@ -24,7 +24,8 @@ import {
   SputterSystem,
   CoaterDeveloper,
   PECVDSystem,
-  PlasmaCleaner
+  PlasmaCleaner,
+  NSPlasma20R
 } from '../components/products';
 
 export function AppRoutes() {
@@ -56,9 +57,10 @@ export function AppRoutes() {
       <Route path="/products/hdp-cvd" element={<HDPCVDSystem />} />
       <Route path="/products/sputter" element={<SputterSystem />} />
       <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
-      <Route path="/products/pecvd" element={<PECVDSystem />} />
-      <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
-      <Route path="*" element={<NotFoundPage />} />
+          <Route path="/products/pecvd" element={<PECVDSystem />} />
+          <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
+          <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
+          <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 } 

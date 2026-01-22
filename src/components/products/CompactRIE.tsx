@@ -10,6 +10,7 @@ import '../../styles/ProcessResults.css';
 export function CompactRIE() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<'main' | 'main2'>('main');
 
   useScrollToTop();
 
@@ -68,131 +69,331 @@ export function CompactRIE() {
         </script>
       </Helmet>
 
-      <section className="product-detail-hero">
+      {/* Hero Section - Strong Information Hero with Positioning */}
+      <section className="product-detail-hero product-hero-enhanced">
         <div className="container">
-          <div className="product-header">
+          <div className="product-header-enhanced">
             <h1>Compact RIE Etcher (SV-RIE)</h1>
-            <p>Ultra-Compact Reactive Ion Etching System with Small Footprint</p>
+            <p className="product-subtitle">Ultra-Compact Reactive Ion Etching System</p>
+            <div className="hero-positioning">
+              <p className="hero-tagline">
+                Ultra-small footprint RIE system for research labs. Full reactive ion etching capability in a 630mm × 600mm space.
+              </p>
+            </div>
+            <div className="hero-bullets">
+              <div className="hero-bullet-item hero-bullet-primary">
+                <span className="bullet-icon">📐</span>
+                <div className="bullet-content">
+                  <span className="bullet-text-strong">630mm × 600mm Footprint</span>
+                  <span className="bullet-text-sub">vs. standard RIE: 50% smaller footprint</span>
+                </div>
+              </div>
+              <div className="hero-bullet-item hero-bullet-primary">
+                <span className="bullet-icon">⚡</span>
+                <div className="bullet-content">
+                  <span className="bullet-text-strong">300W / 500W / 1000W RF Power</span>
+                  <span className="bullet-text-sub">research-grade etching performance</span>
+                </div>
+              </div>
+              <div className="hero-bullet-item hero-bullet-primary">
+                <span className="bullet-icon">🖥️</span>
+                <div className="bullet-content">
+                  <span className="bullet-text-strong">Touchscreen Control</span>
+                  <span className="bullet-text-sub">fully automated operation system</span>
+                </div>
+              </div>
+            </div>
+            <div className="hero-cta">
+              <button className="btn btn-primary btn-large" onClick={openContactForm}>
+                Request Information
+              </button>
+              <a 
+                href="#" 
+                className="btn btn-secondary btn-large"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setGateOpen(true);
+                }}
+              >
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="product-overview">
+      {/* System Overview - Left Image, Right Text Layout */}
+      <section className="product-overview product-overview-narrative">
         <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <div className="main-image">
-                <OptimizedImage
-                  src="/assets/images/products/compact-rie/main.jpg"
-                  alt="Compact RIE Etcher (SV-RIE) - ultra-compact reactive ion etching system"
-                  width={800}
-                  height={600}
-                  className="main-product-image"
-                />
-              </div>
-              <div className="image-gallery">
-                <OptimizedImage
-                  src="/assets/images/products/compact-rie/main-2.jpg"
-                  alt="Compact RIE Etcher (SV-RIE) - additional view"
-                  width={400}
-                  height={300}
-                  className="gallery-image"
-                />
-              </div>
-            </div>
-
-            <div className="product-info">
-              <div className="info-section">
-                <h2>Overview</h2>
-                <p>
-                  The Compact RIE Etcher (SV-RIE) is a compact reactive ion etching system designed for research laboratories, 
-                  pilot-scale processes, and failure analysis applications. With an ultra-small footprint of 630mm × 600mm, 
-                  this one-piece system offers excellent space efficiency while maintaining high performance and reliability.
-                </p>
-              </div>
-
-              <div className="info-section">
-                <h2>Key Features</h2>
-                <ul>
-                  <li><strong>Ultra-compact footprint:</strong> 630mm × 600mm one-piece design</li>
-                  <li><strong>Touchscreen control:</strong> Fully automated operation system with simple interface</li>
-                  <li><strong>Modular design:</strong> Easy maintenance and convenient transport</li>
-                  <li><strong>Stable performance:</strong> Excellent cost-effectiveness for research applications</li>
-                  <li><strong>Flexible wafer support:</strong> 4", 6", 8", 12" wafers (customizable for smaller sizes)</li>
-                  <li><strong>Multi-gas capability:</strong> Up to 5 process gas lines simultaneously</li>
-                  <li><strong>Optional features:</strong> Removable contamination-resistant liner, turbo pump option</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Specifications</h2>
-                <ul>
-                  <li><strong>Wafer Size:</strong> 4", 6", 8", 12" (customizable for smaller sizes)</li>
-                  <li><strong>RF Power:</strong> 300W / 500W / 1000W (customizable)</li>
-                  <li><strong>Process Gases:</strong> Up to 5 gas lines simultaneously</li>
-                  <li><strong>Flow Control:</strong> 0 ~ 1000 sccm range (selectable based on application)</li>
-                  <li><strong>Pump System:</strong> Mechanical pump standard / optional turbo pump</li>
-                  <li><strong>Footprint:</strong> 630mm × 600mm</li>
-                  <li><strong>Operation:</strong> Touchscreen control, fully automated system</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Compatible Materials</h2>
-                <h3>Inorganic Materials</h3>
-                <ul>
-                  <li>Silicon (Si)</li>
-                  <li>Silicon Dioxide (SiO₂)</li>
-                  <li>Silicon Nitride (SiNx)</li>
-                  <li>Silicon Carbide (SiC)</li>
-                </ul>
-                <h3>Organic Materials</h3>
-                <ul>
-                  <li>Photoresist (PR)</li>
-                  <li>Organic Polymers (PMMA / HDMS)</li>
-                  <li>Organic Films</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Applications</h2>
-                <ul>
-                  <li><strong>Organic material etching:</strong> Photoresist (PR), PMMA, HDMS, polymer etching, and descumming</li>
-                  <li><strong>Inorganic material rapid etching:</strong> Fast etching of inorganic materials</li>
-                  <li><strong>Passivation etching:</strong> Passivation layer removal</li>
-                  <li><strong>Package decapsulation:</strong> Opening packages for analysis</li>
-                  <li><strong>Failure Analysis (FA):</strong> Chip failure analysis decapsulation etching</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Available Models</h2>
-                <ul>
-                  <li>SHL100SV-RIE</li>
-                  <li>SHL150SV-RIE</li>
-                  <li>SHL200SV-RIE</li>
-                </ul>
-              </div>
-
-              <div className="product-inquiry">
-                <h2>Interested in this product?</h2>
-                <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
-                <div className="inquiry-buttons">
-                  <button className="btn btn-primary" onClick={openContactForm}>
-                    Request Information
-                  </button>
-                  <a 
-                    href="#" 
-                    className="btn btn-secondary"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setGateOpen(true);
-                    }}
-                  >
-                    Download Brochure
-                  </a>
+          <div className="product-hero-layout">
+            <div className="product-hero-image product-image-single">
+              <div className="product-image-main-wrapper">
+                <div className="product-image-main">
+                  {selectedImage === 'main' ? (
+                    <OptimizedImage
+                      src="/assets/images/products/compact-rie/main.jpg"
+                      alt="Compact RIE Etcher (SV-RIE) - ultra-compact reactive ion etching system"
+                      width={800}
+                      height={600}
+                      className="main-product-image"
+                    />
+                  ) : (
+                    <OptimizedImage
+                      src="/assets/images/products/compact-rie/main-2.jpg"
+                      alt="Compact RIE Etcher (SV-RIE) - additional view"
+                      width={800}
+                      height={600}
+                      className="main-product-image"
+                    />
+                  )}
                 </div>
               </div>
+              <div className="product-image-thumbnails-wrapper">
+                <div className="product-image-thumbnails">
+                  <button 
+                    className={`thumbnail-btn ${selectedImage === 'main' ? 'active' : ''}`}
+                    onClick={() => setSelectedImage('main')}
+                    type="button"
+                  >
+                    <OptimizedImage
+                      src="/assets/images/products/compact-rie/main.jpg"
+                      alt="Main View"
+                      width={150}
+                      height={112}
+                      className="thumbnail-image"
+                    />
+                  </button>
+                  <button 
+                    className={`thumbnail-btn ${selectedImage === 'main2' ? 'active' : ''}`}
+                    onClick={() => setSelectedImage('main2')}
+                    type="button"
+                  >
+                    <OptimizedImage
+                      src="/assets/images/products/compact-rie/main-2.jpg"
+                      alt="Additional View"
+                      width={150}
+                      height={112}
+                      className="thumbnail-image"
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="product-hero-content">
+              <h2>System Overview</h2>
+              <p className="narrative-text">
+                The Compact RIE Etcher (SV-RIE) is a compact reactive ion etching system designed for research laboratories, 
+                pilot-scale processes, and failure analysis applications.
+              </p>
+              <p className="narrative-text">
+                With an ultra-small footprint of 630mm × 600mm, this one-piece system offers excellent space efficiency 
+                while maintaining high performance and reliability—ideal for labs where space is at a premium.
+              </p>
+              
+              <div className="comparison-block">
+                <h3>Compared to:</h3>
+                <div className="comparison-items">
+                  <div className="comparison-item">
+                    <div className="comparison-label">Standard RIE systems</div>
+                    <div className="comparison-arrow">→</div>
+                    <div className="comparison-value">50% smaller footprint, same performance</div>
+                  </div>
+                  <div className="comparison-item">
+                    <div className="comparison-label">Desktop plasma cleaners</div>
+                    <div className="comparison-arrow">→</div>
+                    <div className="comparison-value">True RIE capability, anisotropic etching</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Key Features - Primary and Secondary */}
+      <section className="product-features-section">
+        <div className="container">
+          <h2 className="section-title">Key Features</h2>
+          
+          {/* Primary Features */}
+          <div className="features-primary">
+            <h3 className="features-subtitle">Core Capabilities</h3>
+            <div className="features-grid features-grid-primary">
+              <div className="feature-card feature-card-primary feature-card-top">
+                <div className="feature-icon">📐</div>
+                <h3>Ultra-Compact Footprint</h3>
+                <p className="feature-highlight">630mm × 600mm—50% smaller than standard RIE systems</p>
+                <p>One-piece design optimizes valuable lab space while maintaining full RIE functionality. Ideal for research environments where space efficiency is critical.</p>
+              </div>
+              <div className="feature-card feature-card-primary feature-card-top">
+                <div className="feature-icon">⚡</div>
+                <h3>Research-Grade RF Power</h3>
+                <p className="feature-highlight">300W / 500W / 1000W customizable RF power</p>
+                <p>Standard 13.56 MHz RF power source with adjustable output. Stable plasma generation suitable for precise anisotropic etching of silicon, dielectrics, and compound semiconductors.</p>
+              </div>
+              <div className="feature-card feature-card-primary feature-card-top">
+                <div className="feature-icon">🖥️</div>
+                <h3>Touchscreen Automation</h3>
+                <p className="feature-highlight">Fully automated operation with simple interface</p>
+                <p>Touchscreen control system streamlines workflows. Automatic and manual operation modes with reproducible process parameters for research documentation.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Features */}
+          <div className="features-secondary">
+            <h3 className="features-subtitle">Additional Features</h3>
+            <div className="features-grid features-grid-secondary">
+              <div className="feature-card feature-card-secondary">
+                <div className="feature-icon">🔄</div>
+                <h3>Modular Design</h3>
+                <p>Easy maintenance and convenient transport. Removable contamination-resistant liner option available.</p>
+              </div>
+              <div className="feature-card feature-card-secondary">
+                <div className="feature-icon">💨</div>
+                <h3>Multi-Gas Capability</h3>
+                <p>Up to 5 process gas lines simultaneously. Flow control range: 0 ~ 1000 sccm (selectable based on application).</p>
+              </div>
+              <div className="feature-card feature-card-secondary">
+                <div className="feature-icon">📦</div>
+                <h3>Flexible Wafer Support</h3>
+                <p>4", 6", 8", 12" wafers (customizable for smaller sizes). Supports various substrate sizes for research flexibility.</p>
+              </div>
+              <div className="feature-card feature-card-secondary">
+                <div className="feature-icon">🔧</div>
+                <h3>Optional Turbo Pump</h3>
+                <p>Mechanical pump standard / optional turbo pump for enhanced vacuum performance and process control.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Applications - With Real Use Cases */}
+      <section className="product-applications-section">
+        <div className="container">
+          <h2 className="section-title">Typical Applications</h2>
+          <p className="section-intro">
+            <strong>Commonly installed in:</strong> Research laboratories, failure analysis facilities, and pilot-scale processing environments requiring compact RIE capabilities.
+          </p>
+          <div className="applications-grid">
+            <div className="application-card">
+              <div className="application-icon">🔬</div>
+              <h3>Organic Material Etching</h3>
+              <p className="application-use-case">Used for PR removal, PMMA etching, and polymer descumming</p>
+              <p>Photoresist (PR), PMMA, HDMS, and organic polymer etching with precise control. Essential for lithography processes and polymer device fabrication.</p>
+            </div>
+            <div className="application-card">
+              <div className="application-icon">⚡</div>
+              <h3>Inorganic Material Rapid Etching</h3>
+              <p className="application-use-case">Fast etching of silicon, SiO₂, SiNx, and compound semiconductors</p>
+              <p>High-rate etching of inorganic materials with excellent selectivity. Typical applications: MEMS fabrication, optoelectronic devices, and compound semiconductor processing.</p>
+            </div>
+            <div className="application-card">
+              <div className="application-icon">🔍</div>
+              <h3>Failure Analysis (FA)</h3>
+              <p className="application-use-case">Chip decapsulation and package opening for analysis</p>
+              <p>Precise package decapsulation etching for failure analysis workflows. Commonly used in semiconductor testing and quality control laboratories.</p>
+            </div>
+            <div className="application-card">
+              <div className="application-icon">🎯</div>
+              <h3>Passivation Layer Removal</h3>
+              <p className="application-use-case">Selective removal of passivation layers for device access</p>
+              <p>Controlled etching of passivation layers to expose underlying device structures. Critical for device characterization and reverse engineering applications.</p>
+            </div>
+            <div className="application-card">
+              <div className="application-icon">📊</div>
+              <h3>Research & Development</h3>
+              <p className="application-use-case">Process development and material characterization</p>
+              <p>Ideal for R&D environments requiring flexible etching capabilities. Supports process development for new materials and device structures.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Specifications - Full Width Table */}
+      <section className="product-specs-section">
+        <div className="container">
+          <h2 className="section-title">System Specifications</h2>
+          <div className="specs-table-wrapper">
+            <table className="specs-table">
+              <tbody>
+                <tr>
+                  <td className="spec-label">Wafer Size</td>
+                  <td className="spec-value">4", 6", 8", 12" (customizable for smaller sizes)</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Power</td>
+                  <td className="spec-value">300W / 500W / 1000W (customizable)</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Frequency</td>
+                  <td className="spec-value">13.56 MHz</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Process Gases</td>
+                  <td className="spec-value">Up to 5 gas lines simultaneously</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Flow Control Range</td>
+                  <td className="spec-value">0 ~ 1000 sccm (selectable based on application)</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Pump System</td>
+                  <td className="spec-value">Mechanical pump standard / optional turbo pump</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Footprint</td>
+                  <td className="spec-value">630mm × 600mm</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Operation</td>
+                  <td className="spec-value">Touchscreen control, fully automated system</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Optional Features</td>
+                  <td className="spec-value">Removable contamination-resistant liner, turbo pump option</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Compatible Materials - Full Width */}
+      <section className="product-materials-section">
+        <div className="container">
+          <h2 className="section-title">Compatible Materials</h2>
+          <div className="materials-list">
+            <div className="material-tag">Silicon (Si)</div>
+            <div className="material-tag">Silicon Dioxide (SiO₂)</div>
+            <div className="material-tag">Silicon Nitride (SiNx)</div>
+            <div className="material-tag">Silicon Carbide (SiC)</div>
+            <div className="material-tag">Photoresist (PR)</div>
+            <div className="material-tag">PMMA</div>
+            <div className="material-tag">HDMS</div>
+            <div className="material-tag">Organic Polymers</div>
+            <div className="material-tag">Compound Semiconductors</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Available Models - Full Width */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Available Models</h2>
+          <div className="functions-grid">
+            <div className="function-card">
+              <h3>SHL100SV-RIE</h3>
+              <p>Base model with 300W RF power, ideal for standard research applications.</p>
+            </div>
+            <div className="function-card">
+              <h3>SHL150SV-RIE</h3>
+              <p>Mid-range model with 500W RF power, suitable for enhanced etching performance.</p>
+            </div>
+            <div className="function-card">
+              <h3>SHL200SV-RIE</h3>
+              <p>High-power model with 1000W RF power, designed for demanding etching applications.</p>
             </div>
           </div>
         </div>
@@ -201,7 +402,7 @@ export function CompactRIE() {
       {/* Process Results Section */}
       <section className="process-results-section">
         <div className="container">
-          <h2>Process Results</h2>
+          <h2 className="section-title">Process Results</h2>
           <p className="section-intro">
             Real-world etching results demonstrating the capabilities of the Compact RIE Etcher (SV-RIE) system across various materials and applications.
           </p>
@@ -337,6 +538,31 @@ export function CompactRIE() {
                 />
                 <p className="image-caption">Silicon Nanopillar Etching</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="product-inquiry-section">
+        <div className="container">
+          <div className="product-inquiry">
+            <h2>Interested in this product?</h2>
+            <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
+            <div className="inquiry-buttons">
+              <button className="btn btn-primary" onClick={openContactForm}>
+                Request Information
+              </button>
+              <a 
+                href="#" 
+                className="btn btn-secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setGateOpen(true);
+                }}
+              >
+                Download Brochure
+              </a>
             </div>
           </div>
         </div>

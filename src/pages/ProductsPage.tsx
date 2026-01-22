@@ -32,6 +32,7 @@ export function ProductsPage() {
       { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
       { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
       { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
+      { "@type": "Product", "name": "NS-Plasma 20R", "url": "https://ninescrolls.com/products/ns-plasma-20r" },
       { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
@@ -257,6 +258,21 @@ export function ProductsPage() {
                   <li>Ultra-compact footprint: 630mm × 600mm</li>
                   <li>Touchscreen control with fully automated operation</li>
                   <li>Surface cleaning and modification capabilities</li>
+                </ul>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/ns-plasma-20r">
+                <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="NS-Plasma 20R - Compact RF Plasma Processing System" loading="lazy" decoding="async" />
+                <h3>NS-Plasma 20R</h3>
+                <p>Compact, research-grade RF plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation.</p>
+                <ul className="feature-list">
+                  <li>20-liter batch processing chamber</li>
+                  <li>13.56 MHz RF power up to 300W</li>
+                  <li>PLC-controlled with touch screen interface</li>
                 </ul>
               </Link>
             </div>
