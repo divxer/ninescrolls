@@ -68,6 +68,7 @@ export function PlasmaCleaner() {
         </script>
       </Helmet>
 
+      {/* Hero Section */}
       <section className="product-detail-hero">
         <div className="container">
           <div className="product-header">
@@ -77,119 +78,46 @@ export function PlasmaCleaner() {
         </div>
       </section>
 
-      <section className="product-overview">
+      {/* System Overview - Z-Pattern: Image + Overview */}
+      <section className="product-overview product-overview-hero">
         <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <div className="main-image">
-                <OptimizedImage
-                  src="/assets/images/products/plasma-cleaner/main.jpg"
-                  alt="Plasma Treatment/Cleaner System - compact plasma cleaning system"
-                  width={800}
-                  height={600}
-                  className="main-product-image"
-                />
-              </div>
+          <div className="product-hero-layout">
+            <div className="product-hero-image">
+              <OptimizedImage
+                src="/assets/images/products/plasma-cleaner/main.jpg"
+                alt="Plasma Treatment/Cleaner System - compact plasma cleaning system"
+                width={800}
+                height={600}
+                className="main-product-image"
+              />
             </div>
-
-            <div className="product-info">
-              <div className="info-section">
-                <h2>Overview</h2>
-                <p>
-                  The Plasma Treatment/Cleaner System is a compact plasma cleaning and surface treatment system 
-                  designed for research laboratories and manufacturing applications. With an ultra-small footprint 
-                  of 630mm × 600mm, this one-piece system offers excellent space efficiency while providing 
-                  powerful plasma treatment capabilities for surface cleaning, modification, and activation.
-                </p>
-              </div>
-
-              <div className="info-section">
-                <h2>Key Features</h2>
-                <ul>
-                  <li><strong>Ultra-compact footprint:</strong> 630mm × 600mm one-piece design</li>
-                  <li><strong>Touchscreen control:</strong> Fully automated operation system with simple interface</li>
-                  <li><strong>Tabletop design:</strong> Can be used for single or multiple wafer processing</li>
-                  <li><strong>Modular design:</strong> Easy maintenance and convenient transport</li>
-                  <li><strong>Stable performance:</strong> Excellent cost-effectiveness for research applications</li>
-                  <li><strong>Flexible processing:</strong> Supports 6" and smaller wafers, multi-wafer batch processing</li>
-                  <li><strong>Multiple gas options:</strong> O₂, N₂, Ar process gases</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Specifications</h2>
-                <ul>
-                  <li><strong>Wafer Size:</strong> 6" and smaller specifications, multi-wafer batch processing</li>
-                  <li><strong>RF Power:</strong> 0 ~ 300W / 500W, automatic matching</li>
-                  <li><strong>Pump System:</strong> Mechanical pump / optional molecular pump</li>
-                  <li><strong>Process Gases:</strong> 2 ~ 3 gas lines</li>
-                  <li><strong>Gas Types:</strong> O₂, N₂, Ar</li>
-                  <li><strong>Flow Control Range:</strong> 0 ~ 300 sccm</li>
-                  <li><strong>Flow Control:</strong> MFC / manual control</li>
-                  <li><strong>Footprint:</strong> 630mm × 600mm</li>
-                  <li><strong>Operation:</strong> Touchscreen control, fully automated system</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Compatible Materials</h2>
-                <ul>
-                  <li>Photoresist (PR)</li>
-                  <li>PMMA (Polymethyl methacrylate)</li>
-                  <li>PDMS (Polydimethylsiloxane)</li>
-                  <li>HDMS (Hexamethyldisilazane)</li>
-                  <li>Organic films and polymers</li>
-                  <li>Semiconductor materials</li>
-                  <li>Optical materials</li>
-                  <li>Biomedical materials</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Main Functions</h2>
-                <h3>Surface Cleaning</h3>
-                <ul>
-                  <li>Removal of organic contaminants and residues</li>
-                  <li>Cleaning of PR, PMMA, PDMS, and other organic films</li>
-                  <li>Surface preparation for bonding and coating</li>
-                </ul>
-                <h3>Surface Modification</h3>
-                <ul>
-                  <li>Hydrophilic/hydrophobic surface treatment</li>
-                  <li>Surface activation for improved adhesion</li>
-                  <li>Chemical functional group modification (-OH/-H/-COOH)</li>
-                  <li>Contact-free surface treatment without changing material properties</li>
-                </ul>
-              </div>
-
-              <div className="info-section">
-                <h2>Applications</h2>
-                <ul>
-                  <li><strong>Chemical and biological laboratories:</strong> Surface cleaning of semiconductor components, microelectronic components, optical components, and thin film sheets</li>
-                  <li><strong>Failure analysis:</strong> Cleaning of microelectronic chips, biochips, and glass chips, as well as surface modification of polymer materials</li>
-                  <li><strong>Optical components:</strong> Improving hydrophilicity, adhesion, and wettability of optical elements, biomedical materials, and aerospace materials</li>
-                  <li><strong>Biomedical applications:</strong> Surface pretreatment of plant and animal tissues, silicone mold materials to enhance hydrophilicity, adhesion, and wettability</li>
-                  <li><strong>Medical devices:</strong> Surface sterilization and disinfection</li>
-                </ul>
-              </div>
-
-              <div className="product-inquiry">
-                <h2>Interested in this product?</h2>
-                <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
-                <div className="inquiry-buttons">
-                  <button className="btn btn-primary" onClick={openContactForm}>
-                    Request Information
-                  </button>
-                  <a 
-                    href="#" 
-                    className="btn btn-secondary"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setGateOpen(true);
-                    }}
-                  >
-                    Download Brochure
-                  </a>
+            <div className="product-hero-content">
+              <h2>System Overview</h2>
+              <p className="lead-text">
+                The Plasma Treatment/Cleaner System is a compact plasma cleaning and surface treatment system 
+                designed for research laboratories and manufacturing applications.
+              </p>
+              <p>
+                With an ultra-small footprint of 630mm × 600mm, this one-piece system offers excellent space 
+                efficiency while providing powerful plasma treatment capabilities for surface cleaning, modification, 
+                and activation.
+              </p>
+              <div className="key-highlights">
+                <div className="highlight-item">
+                  <span className="highlight-icon">📐</span>
+                  <span className="highlight-text">630mm × 600mm footprint</span>
+                </div>
+                <div className="highlight-item">
+                  <span className="highlight-icon">⚡</span>
+                  <span className="highlight-text">Up to 300W/500W RF power</span>
+                </div>
+                <div className="highlight-item">
+                  <span className="highlight-icon">🖥️</span>
+                  <span className="highlight-text">Touchscreen control</span>
+                </div>
+                <div className="highlight-item">
+                  <span className="highlight-icon">🔬</span>
+                  <span className="highlight-text">Multi-wafer batch processing</span>
                 </div>
               </div>
             </div>
@@ -197,10 +125,165 @@ export function PlasmaCleaner() {
         </div>
       </section>
 
-      {/* Process Results Section */}
+      {/* Key Features - Full Width Cards */}
+      <section className="product-features-section">
+        <div className="container">
+          <h2 className="section-title">Key Features</h2>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">📦</div>
+              <h3>Ultra-Compact Design</h3>
+              <p>630mm × 600mm one-piece design optimizes valuable workspace while maintaining full functionality.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">🖥️</div>
+              <h3>Touchscreen Control</h3>
+              <p>Fully automated operation system with simple interface that streamlines your workflows.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">🔄</div>
+              <h3>Flexible Processing</h3>
+              <p>Supports 6" and smaller wafers, multi-wafer batch processing for various research needs.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">⚙️</div>
+              <h3>Modular Design</h3>
+              <p>Easy maintenance and convenient transport with customizable configurations.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Applications - Z-Pattern: Text + Image */}
+      <section className="product-applications-section">
+        <div className="container">
+          <div className="applications-layout">
+            <div className="applications-content">
+              <h2>Applications</h2>
+              <div className="application-categories">
+                <div className="application-category">
+                  <h3>Chemical & Biological Laboratories</h3>
+                  <p>Surface cleaning of semiconductor components, microelectronic parts, and optical components.</p>
+                </div>
+                <div className="application-category">
+                  <h3>Failure Analysis</h3>
+                  <p>Cleaning of biochips and microfluidic devices, as well as surface modification of polymer materials.</p>
+                </div>
+                <div className="application-category">
+                  <h3>Medical Devices</h3>
+                  <p>Sterilization and surface modification to improve adhesion and hydrophilicity.</p>
+                </div>
+                <div className="application-category">
+                  <h3>Optical Components</h3>
+                  <p>Enhancing wettability and adhesion for optical elements used in various high-tech applications.</p>
+                </div>
+              </div>
+            </div>
+            <div className="applications-image">
+              <OptimizedImage
+                src="/assets/images/products/plasma-cleaner/main.jpg"
+                alt="Plasma Treatment System Applications"
+                width={600}
+                height={450}
+                className="application-image"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Functions - Full Width */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Main Functions</h2>
+          <div className="functions-grid">
+            <div className="function-card">
+              <h3>Surface Cleaning</h3>
+              <ul>
+                <li>Removal of organic contaminants and residues</li>
+                <li>Cleaning of PR, PMMA, PDMS, and other organic films</li>
+                <li>Surface preparation for bonding and coating</li>
+              </ul>
+            </div>
+            <div className="function-card">
+              <h3>Surface Modification</h3>
+              <ul>
+                <li>Hydrophilic/hydrophobic surface treatment</li>
+                <li>Surface activation for improved adhesion</li>
+                <li>Chemical functional group modification (-OH/-H/-COOH)</li>
+                <li>Contact-free surface treatment without changing material properties</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Specifications - Full Width Table */}
+      <section className="product-specs-section">
+        <div className="container">
+          <h2 className="section-title">Specifications</h2>
+          <div className="specs-table-wrapper">
+            <table className="specs-table">
+              <tbody>
+                <tr>
+                  <td className="spec-label">Wafer Size</td>
+                  <td className="spec-value">6" and smaller specifications, multi-wafer batch processing</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Power</td>
+                  <td className="spec-value">0 ~ 300W / 500W, automatic matching</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Pump System</td>
+                  <td className="spec-value">Mechanical pump / optional molecular pump</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Process Gases</td>
+                  <td className="spec-value">2 ~ 3 gas lines (O₂, N₂, Ar)</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Flow Control Range</td>
+                  <td className="spec-value">0 ~ 300 sccm</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Flow Control</td>
+                  <td className="spec-value">MFC / manual control</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Footprint</td>
+                  <td className="spec-value">630mm × 600mm</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Operation</td>
+                  <td className="spec-value">Touchscreen control, fully automated system</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Compatible Materials - Full Width */}
+      <section className="product-materials-section">
+        <div className="container">
+          <h2 className="section-title">Compatible Materials</h2>
+          <div className="materials-list">
+            <div className="material-tag">Photoresist (PR)</div>
+            <div className="material-tag">PMMA</div>
+            <div className="material-tag">PDMS</div>
+            <div className="material-tag">HDMS</div>
+            <div className="material-tag">Organic films and polymers</div>
+            <div className="material-tag">Semiconductor materials</div>
+            <div className="material-tag">Optical materials</div>
+            <div className="material-tag">Biomedical materials</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Process Results - Z-Pattern: Image + Results */}
       <section className="process-results-section">
         <div className="container">
-          <h2>Process Results</h2>
+          <h2 className="section-title">Process Results</h2>
           <p className="section-intro">
             Real-world results demonstrating the capabilities of the Plasma Treatment/Cleaner System for surface modification, cleaning, and treatment applications.
           </p>
@@ -260,17 +343,30 @@ export function PlasmaCleaner() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Other Application Areas */}
-          <div className="process-result-category">
-            <h3>Other Application Areas</h3>
-            <ul>
-              <li><strong>Ultra-cleaning:</strong> Optical devices, electronic components, semiconductor components, laser devices, and coated substrates</li>
-              <li><strong>Biochip and microfluidic cleaning:</strong> Cleaning of biochips, microfluidic chips, and substrates with deposited gels, as well as modification of polymer material surfaces</li>
-              <li><strong>Adhesion improvement:</strong> Improving the adhesion of glues used for optical components, optical fibers, biomedical materials, and aerospace materials</li>
-              <li><strong>Biomaterial pretreatment:</strong> Pre-treatment of implants, biomaterial surfaces, and silicone mold materials to enhance their wettability, adhesion, and compatibility</li>
-              <li><strong>Medical device sterilization:</strong> Disinfection and sterilization of medical devices</li>
-            </ul>
+      {/* Contact Section */}
+      <section className="product-inquiry-section">
+        <div className="container">
+          <div className="product-inquiry">
+            <h2>Interested in this product?</h2>
+            <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
+            <div className="inquiry-buttons">
+              <button className="btn btn-primary" onClick={openContactForm}>
+                Request Information
+              </button>
+              <a 
+                href="#" 
+                className="btn btn-secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setGateOpen(true);
+                }}
+              >
+                Download Brochure
+              </a>
+            </div>
           </div>
         </div>
       </section>
