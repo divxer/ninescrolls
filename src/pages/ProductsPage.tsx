@@ -508,8 +508,8 @@ export function ProductsPage() {
                 <h3 id="hdr-warranty">Standard Warranty</h3>
               </div>
               <div className="block-content">
-                <h4>2-Year Full Warranty</h4>
-                <p className="warranty-note">(Most major manufacturers only provide 1-year coverage. NineScrolls offers 2 years as standard.)</p>
+                <h4>Standard Warranty Included</h4>
+                <p className="warranty-note">(Most major manufacturers only provide 1-year coverage. NineScrolls includes 2 years standard warranty with equipment purchase.)</p>
                 <ul className="warranty-features">
                   <li>Parts & labor coverage</li>
                   <li>Manufacturing defects</li>
@@ -557,10 +557,10 @@ export function ProductsPage() {
                 <h3 id="hdr-ext">Extended Options</h3>
               </div>
               <div className="block-content">
-                <h4>Flexible service plans</h4>
+                <h4>Optional Service Contracts</h4>
                 <ul className="warranty-features">
-                  <li>Extended warranty plans</li>
-                  <li>Annual Maintenance Contracts (AMC)</li>
+                  <li>Optional service contracts (billed annually)</li>
+                  <li>Annual Maintenance Contracts (AMC) - billed annually</li>
                   <li>Custom service agreements</li>
                   <li>Priority support access</li>
                 </ul>
