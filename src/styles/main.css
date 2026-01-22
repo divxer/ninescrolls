@@ -985,6 +985,71 @@ section h3 {
     color: var(--primary-color);
 }
 
+/* Upgrade Path Card */
+.upgrade-path-section {
+    padding: 60px 0;
+    background: var(--bg-light);
+}
+
+.upgrade-path-card {
+    max-width: 900px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.upgrade-path-content {
+    flex: 1;
+}
+
+.upgrade-path-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.upgrade-path-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin: 0;
+}
+
+.upgrade-path-cta {
+    flex-shrink: 0;
+}
+
+.upgrade-path-cta .btn {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .upgrade-path-card {
+        flex-direction: column;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .upgrade-path-content h3 {
+        font-size: 1.3rem;
+    }
+    
+    .upgrade-path-content p {
+        font-size: 1rem;
+    }
+    
+    .upgrade-path-cta .btn {
+        width: 100%;
+    }
+}
+
 /* Product Contact Section */
 .product-contact {
     padding: 6rem 0;
@@ -1243,6 +1308,39 @@ section h3 {
     color: rgba(255, 255, 255, 0.85);
     font-weight: 400;
     text-align: left;
+    font-style: italic;
+}
+
+.hero-pricing {
+    margin: 2.5rem 0 1.5rem;
+    text-align: center;
+}
+
+.pricing-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.pricing-label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.pricing-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.pricing-note {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
     font-style: italic;
 }
 
@@ -2176,15 +2274,73 @@ section h3 {
     font-weight: 700;
 }
 
-.positioning-lead {
-    font-size: 1.4rem;
-    line-height: 1.8;
-    color: #333;
+.positioning-block-strategic {
     text-align: center;
-    margin-bottom: 3rem;
-    font-weight: 600;
-    padding-bottom: 2rem;
-    border-bottom: 2px solid var(--primary-color);
+}
+
+.positioning-block-strategic .positioning-lead {
+    font-size: 1.5rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.positioning-note {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 1.5rem;
+}
+
+/* Product Comparison Section - Reverse Comparison */
+.product-comparison-section {
+    padding: 60px 0;
+    background: var(--bg-light);
+}
+
+.comparison-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto 0;
+}
+
+.choice-item {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.choice-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.choice-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.choice-item h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.choice-item p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
 }
 
 .positioning-comparison {
@@ -2350,6 +2506,18 @@ section h3 {
     .feature-card-top {
         transform: scale(1);
         padding: 2.5rem 2rem;
+    }
+    
+    .hero-pricing {
+        margin: 2rem 0 1rem;
+    }
+    
+    .pricing-amount {
+        font-size: 1.75rem;
+    }
+    
+    .pricing-note {
+        font-size: 0.85rem;
     }
     
     .hero-cta {

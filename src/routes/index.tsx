@@ -13,6 +13,8 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { PrivacyPage } from '../pages/PrivacyPage';
 import { ReturnPolicyPage } from '../pages/ReturnPolicyPage';
 import { StartupPackagePage } from '../pages/StartupPackagePage';
+import { PlasmaSystemsPage } from '../pages/PlasmaSystemsPage';
+import { PlasmaSystemsComparePage } from '../pages/PlasmaSystemsComparePage';
 import { 
   ICPEtcher,
   RIEEtcher,
@@ -25,7 +27,8 @@ import {
   CoaterDeveloper,
   PECVDSystem,
   PlasmaCleaner,
-  NSPlasma20R
+  NSPlasma20R,
+  NSPlasma4R
 } from '../components/products';
 
 export function AppRoutes() {
@@ -60,6 +63,9 @@ export function AppRoutes() {
           <Route path="/products/pecvd" element={<PECVDSystem />} />
           <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
           <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
+          <Route path="/products/ns-plasma-4r" element={<NSPlasma4R />} />
+          <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
+          <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
           <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

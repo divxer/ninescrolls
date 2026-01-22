@@ -33,6 +33,7 @@ export function ProductsPage() {
       { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
       { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
       { "@type": "Product", "name": "NS-Plasma 20R", "url": "https://ninescrolls.com/products/ns-plasma-20r" },
+      { "@type": "Product", "name": "NS-Plasma 4R", "url": "https://ninescrolls.com/products/ns-plasma-4r" },
       { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
@@ -273,6 +274,21 @@ export function ProductsPage() {
                   <li>20-liter batch processing chamber</li>
                   <li>13.56 MHz RF power up to 300W</li>
                   <li>PLC-controlled with touch screen interface</li>
+                </ul>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/ns-plasma-4r">
+                <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="NS-Plasma 4R - Compact RF Plasma System" loading="lazy" decoding="async" />
+                <h3>NS-Plasma 4R</h3>
+                <p>Compact RF plasma system for research and sample preparation. 4L chamber volume, ideal for teaching labs and low-volume processing.</p>
+                <ul className="feature-list">
+                  <li>~4 L processing chamber</li>
+                  <li>13.56 MHz RF plasma capability</li>
+                  <li>Simplified operation for new users</li>
                 </ul>
               </Link>
             </div>

@@ -1,0 +1,351 @@
+.compare-hero {
+    background: #f8f9fa;
+    color: var(--text-primary);
+    padding: 50px 0;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.compare-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.compare-subtitle-guide {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 700px;
+    margin: 0 auto 1rem;
+    line-height: 1.4;
+}
+
+.compare-description {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.compare-table-section {
+    padding: 80px 0;
+    background: var(--bg-light);
+}
+
+.compare-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 3rem;
+}
+
+/* CSS Grid 布局 - 分隔线作为 grid 的一列 */
+.compare-grid {
+    display: grid;
+    grid-template-columns: 
+        220px              /* Feature */
+        minmax(0, 1fr)     /* 4R */
+        2px                /* Divider - 这就是分隔线列 */
+        minmax(0, 1fr);    /* 20R */
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+}
+
+/* Grid Header Cells */
+.grid-header {
+    padding: 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.grid-header.grid-feature {
+    font-weight: 700;
+}
+
+.grid-header.grid-product-4r {
+    background: #f8f9fa;
+}
+
+.grid-header.grid-product-20r {
+    background: white;
+}
+
+/* Grid Divider - 分隔线列 */
+.grid-divider {
+    background: var(--primary-color);
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Grid Content Cells */
+.grid-cell {
+    padding: 1.5rem;
+    text-align: left;
+    color: var(--text-secondary);
+    border-bottom: 1px solid #e9ecef;
+}
+
+.grid-cell.grid-feature {
+    font-weight: 600;
+    background: #f8f9fa;
+    color: var(--text-primary);
+}
+
+.grid-cell.grid-product-4r {
+    background: #f8f9fa;
+}
+
+.grid-cell.grid-product-20r {
+    background: white;
+}
+
+/* 最后一行不需要底部边框 */
+.compare-grid > .grid-cell:last-child,
+.compare-grid > .grid-cell:nth-last-child(2),
+.compare-grid > .grid-cell:nth-last-child(3),
+.compare-grid > .grid-cell:nth-last-child(4) {
+    border-bottom: none;
+}
+
+.compare-grid > .grid-divider:last-child {
+    border-bottom: none;
+}
+
+.product-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.product-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* 4R: 深灰标题 */
+.grid-product-4r .product-header h3 {
+    color: #495057;
+}
+
+/* 20R: 品牌蓝标题 */
+.grid-product-20r .product-header h3 {
+    color: var(--primary-color);
+}
+
+.product-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.product-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.product-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* 20R的关键优势用蓝色强调 */
+.feature-value-highlight {
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+}
+
+.checkmark {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.upgrade-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.upgrade-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.compare-upgrade-note {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    max-width: 800px;
+    margin: 0 auto 3rem;
+}
+
+.compare-upgrade-note p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Split Path CTAs */
+.compare-split-cta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.split-cta-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-top: 4px solid;
+}
+
+.split-cta-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.split-cta-4r {
+    border-top-color: #6c757d;
+    background: #f8f9fa;
+}
+
+.split-cta-20r {
+    border-top-color: var(--primary-color);
+    background: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+}
+
+.split-cta-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.split-cta-4r h3 {
+    color: #495057;
+}
+
+.split-cta-20r h3 {
+    color: var(--primary-color);
+}
+
+.split-cta-card p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.split-cta-card .btn {
+    width: 100%;
+}
+
+.compare-cta-section {
+    padding: 60px 0;
+    text-align: center;
+    background: white;
+}
+
+.compare-cta-section h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.compare-cta-section > p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .compare-hero {
+        padding: 40px 0;
+    }
+    
+    .compare-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .compare-subtitle-guide {
+        font-size: 1.2rem;
+    }
+    
+    .compare-description {
+        font-size: 1rem;
+    }
+    
+    .compare-split-cta {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .split-cta-card {
+        padding: 2rem;
+    }
+    
+    .compare-grid {
+        grid-template-columns: 
+            120px
+            minmax(0, 1fr)
+            2px
+            minmax(0, 1fr);
+    }
+    
+    .grid-header,
+    .grid-cell {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .product-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .compare-upgrade-note {
+        padding: 1.5rem;
+    }
+    
+    .compare-upgrade-note p {
+        font-size: 1rem;
+    }
+    
+    .cta-buttons {
+        flex-direction: column;
+    }
+    
+    .cta-buttons .btn {
+        width: 100%;
+    }
+}

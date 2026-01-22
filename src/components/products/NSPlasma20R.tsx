@@ -40,7 +40,7 @@ export function NSPlasma20R() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "0",
+      "price": "14999",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
@@ -73,10 +73,10 @@ export function NSPlasma20R() {
         <div className="container">
           <div className="product-header-enhanced">
             <h1>NS-Plasma 20R</h1>
-            <p className="product-subtitle">Research-Grade RF Plasma Processing System (20 L)</p>
+            <p className="product-subtitle">Compact RF Plasma Processing System (20 L)</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
-                Beyond desktop plasma cleaners. Full batch processing capacity for research labs and pilot-scale applications.
+                Designed for research laboratories requiring batch processing and process reproducibility
               </p>
             </div>
             <div className="hero-bullets">
@@ -102,19 +102,22 @@ export function NSPlasma20R() {
                 </div>
               </div>
             </div>
+            <div className="hero-pricing">
+              <div className="pricing-main">
+                <span className="pricing-label">price:</span>
+                <span className="pricing-amount">14,999 USD</span>
+              </div>
+              <p className="pricing-note">availability: in stock</p>
+            </div>
             <div className="hero-cta">
               <button className="btn btn-primary btn-large" onClick={openContactForm}>
-                Request Information
+                Request Configuration
               </button>
               <a 
-                href="#" 
+                href="/products/plasma-systems/compare" 
                 className="btn btn-secondary btn-large"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setGateOpen(true);
-                }}
               >
-                Download Datasheet
+                Compare Models
               </a>
             </div>
           </div>
@@ -301,37 +304,41 @@ export function NSPlasma20R() {
         </div>
       </section>
 
-      {/* Positioning Statement - Heavy Visual Section */}
+      {/* Positioning Block - Strategic Statement */}
       <section className="product-positioning-section">
         <div className="container">
-          <div className="positioning-statement">
+          <div className="positioning-statement positioning-block-strategic">
             <h2 className="positioning-title">System Positioning</h2>
-            <div className="positioning-content">
-              <div className="positioning-main">
-                <p className="positioning-lead">
-                  NS-Plasma 20R bridges the gap between desktop plasma cleaners and full-scale industrial systems.
-                </p>
-                <div className="positioning-comparison">
-                  <div className="positioning-item positioning-item-for">
-                    <h3>Designed For</h3>
-                    <ul>
-                      <li>Plasma cleaning of organic contaminants</li>
-                      <li>Photoresist (PR) removal and ashing</li>
-                      <li>Surface activation prior to bonding/coating</li>
-                      <li>Surface energy modification</li>
-                      <li>Batch sample preparation for materials research</li>
-                    </ul>
-                  </div>
-                  <div className="positioning-item positioning-item-not">
-                    <h3>Not Intended For</h3>
-                    <ul>
-                      <li>Anisotropic dry etching</li>
-                      <li>Ion-biased RIE processes</li>
-                      <li>High-aspect-ratio etching</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+            <p className="positioning-lead">
+              NS-Plasma 20R bridges the gap between desktop plasma cleaners and full industrial plasma platforms, 
+              offering controlled batch processing without excessive system complexity.
+            </p>
+            <p className="positioning-note">
+              This is NineScrolls' strategic positioning statement for research-grade plasma processing.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Reverse Comparison - 20R vs 4R */}
+      <section className="product-comparison-section">
+        <div className="container">
+          <h2 className="section-title">Choose NS-Plasma 20R if you:</h2>
+          <div className="comparison-choice-grid">
+            <div className="choice-item">
+              <div className="choice-icon">📦</div>
+              <h3>Process multiple samples per run</h3>
+              <p>20-liter chamber enables efficient batch processing of 10–20 substrates simultaneously, essential for research productivity.</p>
+            </div>
+            <div className="choice-item">
+              <div className="choice-icon">🔄</div>
+              <h3>Require repeatable plasma conditions</h3>
+              <p>Full PLC control with documented process parameters ensures consistent results across runs, critical for scale-up studies.</p>
+            </div>
+            <div className="choice-item">
+              <div className="choice-icon">📈</div>
+              <h3>Plan to scale from validation to routine use</h3>
+              <p>Automated operation and process reproducibility make NS-Plasma 20R ideal for transitioning from exploratory research to routine processing.</p>
             </div>
           </div>
         </div>
@@ -393,6 +400,10 @@ export function NSPlasma20R() {
                   <td className="spec-value">250 × 250 × 320 mm (internal)</td>
                 </tr>
                 <tr>
+                  <td className="spec-label">Sample Tray Dimensions</td>
+                  <td className="spec-value">242 × 250 × 45 mm</td>
+                </tr>
+                <tr>
                   <td className="spec-label">Gas Channels</td>
                   <td className="spec-value">2</td>
                 </tr>
@@ -410,7 +421,7 @@ export function NSPlasma20R() {
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">220 V</td>
+                  <td className="spec-value">110 V</td>
                 </tr>
                 <tr>
                   <td className="spec-label">System Dimensions</td>
