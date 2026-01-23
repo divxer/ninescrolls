@@ -68,6 +68,7 @@ sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.reso
 const checkoutResource = restApi.root.addResource('checkout');
 const checkoutSessionResource = checkoutResource.addResource('session');
 
+// Add POST method - CORS is handled by defaultCorsPreflightOptions
 checkoutSessionResource.addMethod('POST', new LambdaIntegration(backend.createCheckoutSession.resources.lambda, {
     proxy: false,
     integrationResponses: [{
@@ -89,17 +90,7 @@ checkoutSessionResource.addMethod('POST', new LambdaIntegration(backend.createCh
     }]
 });
 
-// Add OPTIONS method for CORS preflight
-checkoutSessionResource.addMethod('OPTIONS', new LambdaIntegration(backend.createCheckoutSession.resources.lambda), {
-    methodResponses: [{
-        statusCode: '200',
-        responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': true,
-            'method.response.header.Access-Control-Allow-Methods': true,
-            'method.response.header.Access-Control-Allow-Headers': true,
-        }
-    }]
-});
+// Note: OPTIONS method is automatically created by defaultCorsPreflightOptions
 
 // Create /stripe/webhook resource for Stripe Webhook
 // Note: Webhook endpoint should NOT have wide CORS - security is handled by signature verification
