@@ -73,6 +73,8 @@ export async function createCheckoutSession(
           // priceId: item.priceId,
         })),
         customerEmail: params.customerEmail,
+        successUrl: params.successUrl,
+        cancelUrl: params.cancelUrl,
       }),
     });
 

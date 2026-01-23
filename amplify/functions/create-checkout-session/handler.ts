@@ -82,7 +82,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? JSON.parse(event.body) : {};
-    const { items, customerEmail } = body;
+    const { items, customerEmail, successUrl, cancelUrl } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return {
@@ -116,11 +116,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       }
     });
 
+    // Use successUrl and cancelUrl from request, or fallback to env.APP_URL
+    const finalSuccessUrl = successUrl || `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: lineItems,
-      success_url: `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${env.APP_URL}/checkout/cancel`,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       customer_email: customerEmail,
       metadata: {
         items: JSON.stringify(items.map((i: any) => ({ id: i.id, name: i.name }))),
