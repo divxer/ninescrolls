@@ -148,14 +148,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       }
     }
 
-    // Always collect shipping address in Stripe Checkout
-    // This ensures shipping address appears in Stripe Dashboard
-    sessionParams.shipping_address_collection = {
-      allowed_countries: ['US', 'CA'],
-    };
-
-    // Store shipping address in metadata if provided
-    // This allows us to use it in webhook even if user changes it in Stripe Checkout
+    // Store shipping address in metadata (user already provided it in the form)
+    // We don't use shipping_address_collection to avoid asking user to enter it again
     if (shippingAddress) {
       sessionParams.metadata.shippingAddress = JSON.stringify(shippingAddress);
       // Also store individual fields for easier access
