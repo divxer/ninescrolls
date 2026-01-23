@@ -120,35 +120,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const finalSuccessUrl = successUrl || `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
 
-    // Prepare customer details
-    // Note: customer_details can be set to pre-fill customer information in Stripe Checkout
-    const customerDetails: any = {};
-    if (customerName) {
-      customerDetails.name = customerName;
-    }
-    if (customerEmail) {
-      customerDetails.email = customerEmail;
-    }
-
     // Prepare session parameters
+    // Note: customer_details is not supported when creating Checkout Session
+    // Use customer_email to pre-fill email, and store customer name in metadata
     const sessionParams: any = {
       mode: 'payment',
       line_items: lineItems,
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
-      customer_email: customerEmail,
+      customer_email: customerEmail, // Pre-fill email in Stripe Checkout
       metadata: {
         items: JSON.stringify(items.map((i: any) => ({ id: i.id, name: i.name }))),
         notes: notes || '',
-        customerName: customerName || '',
+        customerName: customerName || '', // Store customer name in metadata
       },
     };
-
-    // Add customer details if provided
-    // This will pre-fill customer information in Stripe Checkout
-    if (customerName || customerEmail) {
-      sessionParams.customer_details = customerDetails;
-    }
 
     // Always collect shipping address in Stripe Checkout
     // This ensures shipping address appears in Stripe Dashboard
