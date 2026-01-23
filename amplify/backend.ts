@@ -68,27 +68,11 @@ sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.reso
 const checkoutResource = restApi.root.addResource('checkout');
 const checkoutSessionResource = checkoutResource.addResource('session');
 
-// Add POST method - CORS is handled by defaultCorsPreflightOptions
+// Add POST method - Use Lambda Proxy Integration (proxy: true)
+// This ensures event.requestContext.http is available in the handler
 checkoutSessionResource.addMethod('POST', new LambdaIntegration(backend.createCheckoutSession.resources.lambda, {
-    proxy: false,
-    integrationResponses: [{
-        statusCode: '200',
-        responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': "'*'",
-            'method.response.header.Access-Control-Allow-Methods': "'POST, OPTIONS'",
-            'method.response.header.Access-Control-Allow-Headers': "'Content-Type'",
-        }
-    }]
-}), {
-    methodResponses: [{
-        statusCode: '200',
-        responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': true,
-            'method.response.header.Access-Control-Allow-Methods': true,
-            'method.response.header.Access-Control-Allow-Headers': true,
-        }
-    }]
-});
+    proxy: true,
+}));
 
 // Note: OPTIONS method is automatically created by defaultCorsPreflightOptions
 
@@ -97,7 +81,10 @@ checkoutSessionResource.addMethod('POST', new LambdaIntegration(backend.createCh
 const stripeResource = restApi.root.addResource('stripe');
 const stripeWebhookResource = stripeResource.addResource('webhook');
 
-stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebhook.resources.lambda));
+// Use Lambda Proxy Integration for webhook handler
+stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebhook.resources.lambda, {
+    proxy: true,
+}));
 
 // Create IAM policy for API Gateway
 const apiPolicy = new PolicyStatement({
