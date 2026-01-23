@@ -1,0 +1,8 @@
+{
+  "name": "create-checkout-session",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "stripe": "^14.21.0"
+  }
+}

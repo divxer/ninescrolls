@@ -4,12 +4,17 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/CartContext';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
+import { loadStripe } from '@stripe/stripe-js';
+import { createCheckoutSession } from '../services/stripeService';
 import '../styles/CheckoutPage.css';
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export function CheckoutPage() {
   useScrollToTop();
   const navigate = useNavigate();
-  const { items, getTotalPrice, clearCart } = useCart();
+  const { items, getTotalPrice } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,16 +48,21 @@ export function CheckoutPage() {
     setIsSubmitting(true);
     setError(null);
 
+    // Validate form before proceeding to Stripe Checkout
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      setError('Please fill in all required fields.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Track purchase event
       const total = getTotalPrice();
-      const orderId = `ORDER-${Date.now()}`;
-      
+
+      // Track begin_checkout event
       if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'purchase', {
-          transaction_id: orderId,
-          value: total,
+        (window as any).gtag('event', 'begin_checkout', {
           currency: 'USD',
+          value: total,
           items: items.map((item) => ({
             item_id: item.id,
             item_name: item.name,
@@ -63,33 +73,42 @@ export function CheckoutPage() {
         });
       }
 
-      // Send order to backend
-      const response = await fetch('https://api.ninescrolls.us/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productName: `Order: ${items.map((i) => i.name).join(', ')}`,
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          phone: formData.phone,
-          organization: formData.organization,
-          message: `Order ID: ${orderId}\n\nShipping Address:\n${formData.address}\n${formData.city}, ${formData.state} ${formData.zipCode}\n${formData.country}\n\nItems:\n${items.map((i) => `- ${i.name} x${i.quantity} - $${i.price * i.quantity}`).join('\n')}\n\nTotal: $${total}\n\nNotes: ${formData.notes || 'None'}`,
-        }),
+      // Prepare items for Stripe (include full image URLs)
+      const stripeItems = items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image ? `${window.location.origin}${item.image}` : undefined,
+      }));
+
+      // Create Stripe Checkout Session
+      const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${window.location.origin}/checkout/cancel`;
+
+      const session = await createCheckoutSession({
+        items: stripeItems,
+        successUrl,
+        cancelUrl,
+        customerEmail: formData.email,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit order');
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize');
       }
 
-      // Clear cart and redirect to success page
-      clearCart();
-      navigate('/checkout/success', { state: { orderId } });
-    } catch (err) {
-      setError('Failed to submit order. Please try again or contact us directly.');
-      console.error('Order submission error:', err);
-    } finally {
+      const { error: redirectError } = await stripe.redirectToCheckout({
+        sessionId: session.sessionId,
+      });
+
+      if (redirectError) {
+        throw new Error(redirectError.message || 'Failed to redirect to checkout');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to initialize checkout. Please try again or contact us directly.');
+      console.error('Checkout initialization error:', err);
       setIsSubmitting(false);
     }
   };

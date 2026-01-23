@@ -23,47 +23,40 @@ export interface CreateCheckoutSessionParams {
 /**
  * Create a Stripe Checkout Session
  * 
- * This calls your backend API which should:
- * 1. Create a Stripe Checkout Session
- * 2. Return the session URL
- * 3. Handle webhooks for payment confirmation
+ * This calls your Amplify backend API which:
+ * 1. Creates a Stripe Checkout Session using Stripe Secret Key
+ * 2. Returns the session ID and URL
+ * 3. Webhook handles payment confirmation
  */
 export async function createCheckoutSession(
   params: CreateCheckoutSessionParams
 ): Promise<{ sessionId: string; url: string }> {
   try {
-    // Call your backend API to create Stripe Checkout Session
-    // Replace this URL with your actual backend endpoint
-    const response = await fetch('/api/create-checkout-session', {
+    // Get API endpoint from environment or use default
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.ninescrolls.us';
+    
+    const response = await fetch(`${apiUrl}/checkout/session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         items: params.items.map((item) => ({
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: item.name,
-              images: item.image ? [item.image] : undefined,
-            },
-            unit_amount: item.price * 100, // Convert to cents
-          },
+          id: item.id,
+          name: item.name,
+          price: item.price,
           quantity: item.quantity,
+          image: item.image,
+          // If you have priceId configured in Stripe Dashboard, use it instead:
+          // priceId: item.priceId,
         })),
-        success_url: params.successUrl,
-        cancel_url: params.cancelUrl,
-        customer_email: params.customerEmail,
-        mode: 'payment',
-        metadata: {
-          items: JSON.stringify(params.items.map((i) => ({ id: i.id, name: i.name }))),
-        },
+        customerEmail: params.customerEmail,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create checkout session');
+      const error = await response.json().catch(() => ({ error: 'Failed to create checkout session' }));
+      throw new Error(error.error || error.message || 'Failed to create checkout session');
     }
 
     const data = await response.json();
