@@ -93,18 +93,12 @@ export function CheckoutPage() {
         customerEmail: formData.email,
       });
 
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to initialize');
-      }
-
-      const { error: redirectError } = await stripe.redirectToCheckout({
-        sessionId: session.sessionId,
-      });
-
-      if (redirectError) {
-        throw new Error(redirectError.message || 'Failed to redirect to checkout');
+      // Redirect to Stripe Checkout using session URL
+      // Stripe Checkout Session provides a URL that we can redirect to directly
+      if (session.url) {
+        window.location.href = session.url;
+      } else {
+        throw new Error('Failed to get checkout URL from session');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to initialize checkout. Please try again or contact us directly.');
