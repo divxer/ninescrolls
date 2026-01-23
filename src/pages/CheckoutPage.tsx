@@ -4,8 +4,6 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/CartContext';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
-import { analytics } from '../services/analytics';
-import { createCheckoutSession, createMockCheckoutSession } from '../services/stripeService';
 import '../styles/CheckoutPage.css';
 
 export function CheckoutPage() {

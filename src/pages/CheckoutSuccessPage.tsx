@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { useCart } from '../contexts/CartContext';
-import { analytics } from '../services/analytics';
 import '../styles/CheckoutSuccessPage.css';
 
 export function CheckoutSuccessPage() {

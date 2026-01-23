@@ -8,7 +8,7 @@ import '../styles/CartPage.css';
 export function CartPage() {
   useScrollToTop();
   const navigate = useNavigate();
-  const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
 
   const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity < 1) {
