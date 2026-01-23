@@ -7,13 +7,14 @@ export const RedirectHandler: React.FC = () => {
 
   useEffect(() => {
     const pathname = location.pathname;
+    const search = location.search;
     
     // Check if it's a product page ending with slash
     if (pathname.startsWith('/products/') && pathname.endsWith('/')) {
-              // Remove trailing slash and redirect
+      // Remove trailing slash and redirect, preserving query parameters
       const cleanPath = pathname.slice(0, -1);
       console.log(`RedirectHandler: Redirecting from ${pathname} to ${cleanPath}`);
-      navigate(cleanPath, { replace: true });
+      navigate(`${cleanPath}${search}`, { replace: true });
       return;
     }
 
@@ -21,9 +22,10 @@ export const RedirectHandler: React.FC = () => {
     if (pathname !== '/' && pathname.endsWith('/')) {
       const cleanPath = pathname.slice(0, -1);
       console.log(`RedirectHandler: Redirecting from ${pathname} to ${cleanPath}`);
-      navigate(cleanPath, { replace: true });
+      // Preserve query parameters when redirecting
+      navigate(`${cleanPath}${search}`, { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, location.search, navigate]);
 
   return null; // This component doesn't render anything
 }; 

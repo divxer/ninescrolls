@@ -10,8 +10,10 @@ export function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
   // Get session_id from URL parameters
   // Stripe replaces {CHECKOUT_SESSION_ID} with the actual session ID in the success_url
+  // Handle various possible parameter names (session_id, sessionId, session id)
   const sessionId = searchParams.get('session_id') || 
                     searchParams.get('sessionId') || 
+                    searchParams.get('session id') || // Handle space in parameter name (Stripe bug)
                     'N/A';
   const { clearCart, items, getTotalPrice } = useCart();
 
