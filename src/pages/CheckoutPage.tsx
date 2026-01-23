@@ -4,12 +4,8 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/CartContext';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
-import { loadStripe } from '@stripe/stripe-js';
 import { createCheckoutSession } from '../services/stripeService';
 import '../styles/CheckoutPage.css';
-
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export function CheckoutPage() {
   useScrollToTop();
