@@ -3,35 +3,54 @@ import Stripe from 'stripe';
 import { env } from '$amplify/env/create-checkout-session';
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
+  // CORS headers for all responses
+  // Note: When using Lambda Proxy Integration, these headers must be returned by the Lambda function
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400', // 24 hours
+  } as Record<string, string>;
+
+  // Log event for debugging (remove sensitive data in production)
+  console.log('Event received:', {
+    method: event.requestContext?.http?.method,
+    path: event.requestContext?.http?.path,
+    hasBody: !!event.body,
+  });
+
   // Handle CORS preflight
-  if (event.requestContext.http.method === 'OPTIONS') {
+  const method = event.requestContext?.http?.method || event.requestContext?.httpMethod;
+  if (method === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      } as Record<string, string>,
+      headers: corsHeaders,
       body: '',
     };
   }
 
   try {
+    // Validate environment variables
+    if (!env.STRIPE_SECRET_KEY) {
+      console.error('STRIPE_SECRET_KEY is not configured');
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Server configuration error' }),
+      };
+    }
+
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? JSON.parse(event.body) : {};
     const { items, customerEmail } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-    return {
-      statusCode: 400,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      } as Record<string, string>,
-      body: JSON.stringify({ error: 'Items are required' }),
-    };
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Items are required' }),
+      };
     }
 
     // Convert items to Stripe line items format
@@ -71,11 +90,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      } as Record<string, string>,
+      headers: corsHeaders,
       body: JSON.stringify({ 
         sessionId: session.id, 
         url: session.url 
@@ -83,14 +98,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   } catch (e: any) {
     console.error('Error creating checkout session:', e);
+    console.error('Error stack:', e?.stack);
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      } as Record<string, string>,
-      body: JSON.stringify({ error: e?.message ?? 'Internal server error' }),
+      headers: corsHeaders,
+      body: JSON.stringify({ 
+        error: e?.message ?? 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? e?.stack : undefined,
+      }),
     };
   }
 };

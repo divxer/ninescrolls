@@ -23,17 +23,13 @@ const STAGE_NAME = 'prod';
 const apiStack = backend.createStack('api-stack');
 
 // Create the REST API with a fixed stage
+// Note: We don't use defaultCorsPreflightOptions because we're using Lambda Proxy Integration
+// CORS headers are handled directly in the Lambda functions
 const restApi = new RestApi(apiStack, 'RestApi', {
     restApiName: 'ninescrolls-api',
     deploy: true,
     deployOptions: {
         stageName: STAGE_NAME,
-    },
-    defaultCorsPreflightOptions: {
-        allowOrigins: Cors.ALL_ORIGINS,
-        allowMethods: ['POST', 'OPTIONS'],
-        allowHeaders: ['Content-Type'],
-        maxAge: Duration.seconds(300),
     },
 });
 
@@ -74,7 +70,10 @@ checkoutSessionResource.addMethod('POST', new LambdaIntegration(backend.createCh
     proxy: true,
 }));
 
-// Note: OPTIONS method is automatically created by defaultCorsPreflightOptions
+// Add OPTIONS method for CORS preflight - handled by Lambda function
+checkoutSessionResource.addMethod('OPTIONS', new LambdaIntegration(backend.createCheckoutSession.resources.lambda, {
+    proxy: true,
+}));
 
 // Create /stripe/webhook resource for Stripe Webhook
 // Note: Webhook endpoint should NOT have wide CORS - security is handled by signature verification
