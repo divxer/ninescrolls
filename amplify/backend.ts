@@ -5,7 +5,6 @@ import { createCheckoutSession } from './functions/create-checkout-session/resou
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import {Cors, RestApi, RestApiProps} from 'aws-cdk-lib/aws-apigateway';
 import { Duration } from 'aws-cdk-lib';
-import { PolicyStatement, Effect, AnyPrincipal } from 'aws-cdk-lib/aws-iam';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 
@@ -81,29 +80,13 @@ const stripeResource = restApi.root.addResource('stripe');
 const stripeWebhookResource = stripeResource.addResource('webhook');
 
 // Use Lambda Proxy Integration for webhook handler
+// Note: API Gateway methods are public by default unless IAM authorization is enabled
+// For webhook endpoint, we rely on Stripe signature verification for security
 stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebhook.resources.lambda, {
     proxy: true,
-}));
-
-// Add resource policy to allow public access to Stripe webhook endpoint
-// This is necessary because Stripe needs to call this endpoint from the internet
-// Security is handled by signature verification in the Lambda function
-restApi.addToResourcePolicy(
-    new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals: [new AnyPrincipal()],
-        actions: ['execute-api:Invoke'],
-        resources: [
-            `arn:aws:execute-api:${Stack.of(apiStack).region}:${Stack.of(apiStack).account}:${restApi.restApiId}/${STAGE_NAME}/POST/stripe/webhook`,
-        ],
-    })
-);
-
-// Create IAM policy for API Gateway
-const apiPolicy = new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ['execute-api:Invoke'],
-    resources: [`${restApi.arnForExecuteApi('POST', '/sendEmail', STAGE_NAME)}`],
+}), {
+    // Explicitly set authorization type to NONE to ensure public access
+    authorizationType: undefined, // This makes it public
 });
 
 // Add outputs
