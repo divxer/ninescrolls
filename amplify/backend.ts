@@ -3,11 +3,10 @@ import { data } from './data/resource';
 import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
-import {Cors, RestApi, RestApiProps, AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
-import { Duration, Fn } from 'aws-cdk-lib';
+import {Cors, RestApi, RestApiProps} from 'aws-cdk-lib/aws-apigateway';
+import { Duration } from 'aws-cdk-lib';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
-import { PolicyStatement, Effect, AnyPrincipal } from 'aws-cdk-lib/aws-iam';
 
 const backend = defineBackend({
     data,
@@ -81,38 +80,14 @@ const stripeResource = restApi.root.addResource('stripe');
 const stripeWebhookResource = stripeResource.addResource('webhook');
 
 // Use Lambda Proxy Integration for webhook handler
-// Explicitly set authorization type to NONE to ensure public access
-// Security is handled by Stripe signature verification in the Lambda function
+// Note: API Gateway methods are public by default unless IAM authorization is enabled
+// For webhook endpoint, we rely on Stripe signature verification for security
 stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebhook.resources.lambda, {
     proxy: true,
 }), {
-    authorizationType: AuthorizationType.NONE, // Explicitly make it public
+    // Explicitly set authorization type to NONE to ensure public access
+    authorizationType: undefined, // This makes it public
 });
-
-// Add resource policy to allow public access to webhook endpoint
-// This is required for Stripe to call the endpoint from the internet
-// We add it after all resources are created to avoid circular dependencies
-// Use Fn::Join to manually construct ARN to avoid circular dependency
-const webhookArn = Fn.join('', [
-    'arn:aws:execute-api:',
-    Stack.of(apiStack).region,
-    ':',
-    Stack.of(apiStack).account,
-    ':',
-    restApi.restApiId,
-    '/',
-    STAGE_NAME,
-    '/POST/stripe/webhook',
-]);
-
-restApi.addToResourcePolicy(
-    new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals: [new AnyPrincipal()],
-        actions: ['execute-api:Invoke'],
-        resources: [webhookArn],
-    })
-);
 
 // Add outputs
 backend.addOutput({
