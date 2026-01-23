@@ -87,6 +87,15 @@ export function CheckoutPage() {
         successUrl,
         cancelUrl,
         customerEmail: formData.email,
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        shippingAddress: {
+          line1: formData.address,
+          city: formData.city,
+          state: formData.state,
+          postal_code: formData.zipCode,
+          country: formData.country === 'United States' ? 'US' : formData.country === 'Canada' ? 'CA' : 'US',
+        },
+        notes: formData.notes,
       });
 
       // Redirect to Stripe Checkout using session URL

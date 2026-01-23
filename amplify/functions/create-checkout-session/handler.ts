@@ -82,7 +82,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? JSON.parse(event.body) : {};
-    const { items, customerEmail, successUrl, cancelUrl } = body;
+    const { items, customerEmail, customerName, shippingAddress, notes, successUrl, cancelUrl } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return {
@@ -120,7 +120,18 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const finalSuccessUrl = successUrl || `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
 
-    const session = await stripe.checkout.sessions.create({
+    // Prepare customer details
+    // Note: customer_details can be set to pre-fill customer information in Stripe Checkout
+    const customerDetails: any = {};
+    if (customerName) {
+      customerDetails.name = customerName;
+    }
+    if (customerEmail) {
+      customerDetails.email = customerEmail;
+    }
+
+    // Prepare session parameters
+    const sessionParams: any = {
       mode: 'payment',
       line_items: lineItems,
       success_url: finalSuccessUrl,
@@ -128,8 +139,36 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       customer_email: customerEmail,
       metadata: {
         items: JSON.stringify(items.map((i: any) => ({ id: i.id, name: i.name }))),
+        notes: notes || '',
+        customerName: customerName || '',
       },
-    });
+    };
+
+    // Add customer details if provided
+    // This will pre-fill customer information in Stripe Checkout
+    if (customerName || customerEmail) {
+      sessionParams.customer_details = customerDetails;
+    }
+
+    // Always collect shipping address in Stripe Checkout
+    // This ensures shipping address appears in Stripe Dashboard
+    sessionParams.shipping_address_collection = {
+      allowed_countries: ['US', 'CA'],
+    };
+
+    // Store shipping address in metadata if provided
+    // This allows us to use it in webhook even if user changes it in Stripe Checkout
+    if (shippingAddress) {
+      sessionParams.metadata.shippingAddress = JSON.stringify(shippingAddress);
+      // Also store individual fields for easier access
+      sessionParams.metadata.shippingLine1 = shippingAddress.line1;
+      sessionParams.metadata.shippingCity = shippingAddress.city;
+      sessionParams.metadata.shippingState = shippingAddress.state;
+      sessionParams.metadata.shippingPostalCode = shippingAddress.postal_code;
+      sessionParams.metadata.shippingCountry = shippingAddress.country;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return {
       statusCode: 200,

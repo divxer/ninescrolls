@@ -15,11 +15,22 @@ export interface StripeCheckoutItem {
   image?: string;
 }
 
+export interface ShippingAddress {
+  line1: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+}
+
 export interface CreateCheckoutSessionParams {
   items: StripeCheckoutItem[];
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string;
+  customerName?: string;
+  shippingAddress?: ShippingAddress;
+  notes?: string;
 }
 
 /**
@@ -73,6 +84,9 @@ export async function createCheckoutSession(
           // priceId: item.priceId,
         })),
         customerEmail: params.customerEmail,
+        customerName: params.customerName,
+        shippingAddress: params.shippingAddress,
+        notes: params.notes,
         successUrl: params.successUrl,
         cancelUrl: params.cancelUrl,
       }),
