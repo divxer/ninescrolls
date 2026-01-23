@@ -111,9 +111,11 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       return;
     }
     
+    // Get customer name - use type assertion for first_name/last_name as they may not be in the type definition
+    const customerDetails = session.customer_details as any;
     const customerName = session.customer_details?.name || 
-                         (session.customer_details?.first_name 
-                           ? `${session.customer_details.first_name} ${(session.customer_details as any).last_name || ''}`.trim()
+                         (customerDetails?.first_name 
+                           ? `${customerDetails.first_name} ${customerDetails.last_name || ''}`.trim()
                            : '') ||
                          'Valued Customer';
     
