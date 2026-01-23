@@ -106,8 +106,15 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
 
     // Extract order information
     const customerEmail = session.customer_details?.email;
+    if (!customerEmail) {
+      console.error('Customer email not found in session');
+      return;
+    }
+    
     const customerName = session.customer_details?.name || 
-                         `${session.customer_details?.first_name || ''} ${session.customer_details?.last_name || ''}`.trim() ||
+                         (session.customer_details?.first_name 
+                           ? `${session.customer_details.first_name} ${(session.customer_details as any).last_name || ''}`.trim()
+                           : '') ||
                          'Valued Customer';
     
     // Generate order number from session ID (use last 12 characters)
@@ -126,7 +133,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     });
 
     // Format shipping address
-    const shippingAddress = session.shipping_details?.address;
+    // Note: shipping_details might be in session.shipping or session.shipping_details
+    const shippingDetails = (session as any).shipping_details || (session as any).shipping;
+    const shippingAddress = shippingDetails?.address;
     const shippingAddressText = shippingAddress
       ? `${shippingAddress.line1 || ''}\n${shippingAddress.line2 || ''}\n${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postal_code || ''}\n${shippingAddress.country || ''}`
           .split('\n')
@@ -243,8 +252,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     `;
 
     // Send email to customer
+    // Ensure customerEmail is not null/undefined (already checked above)
     const email = {
-      to: customerEmail,
+      to: customerEmail as string, // Type assertion since we checked above
       from: 'noreply@ninescrolls.com',
       replyTo: 'sales@ninescrolls.com',
       subject: `Order Confirmation – ${lineItems[0]?.productName || 'Product'} (${orderNumber})`,
