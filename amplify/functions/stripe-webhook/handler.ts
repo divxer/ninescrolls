@@ -275,8 +275,8 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
         For your security, all online payments are processed through Stripe.
       </p>
       <p style="margin-bottom: 0; color: #666; font-size: 12px;">
-        <a href="https://www.ninescrolls.com/return-policy" style="color: #2563eb; text-decoration: none;">Return Policy</a> | 
-        <a href="https://www.ninescrolls.com/service-support" style="color: #2563eb; text-decoration: none;">Warranty & Service</a>
+        <a href="https://www.ninescrolls.com/return-policy" style="color: #2563eb; text-decoration: underline;">Return Policy</a> | 
+        <a href="https://www.ninescrolls.com/service-support" style="color: #2563eb; text-decoration: underline;">Warranty & Service</a>
       </p>
     </div>
     
@@ -297,6 +297,15 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       replyTo: 'sales@ninescrolls.com',
       subject: `Order Confirmation – ${lineItems[0]?.productName || 'Product'} (${orderNumber})`,
       html: emailHtml,
+      // Disable link tracking to preserve original URLs
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+        },
+        openTracking: {
+          enable: false, // Also disable open tracking for privacy
+        },
+      },
     };
 
     await sgMail.send(email);
@@ -308,6 +317,15 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       from: 'noreply@ninescrolls.com',
       replyTo: customerEmail || 'noreply@ninescrolls.com',
       subject: `New Order: ${orderNumber} - ${lineItems[0]?.productName || 'Product'}`,
+      // Disable link tracking for internal emails
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+        },
+        openTracking: {
+          enable: false,
+        },
+      },
       html: `
         <h2>New Order Received</h2>
         <h3>Order Information</h3>
