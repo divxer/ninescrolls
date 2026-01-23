@@ -3,13 +3,30 @@ import Stripe from 'stripe';
 import { env } from '$amplify/env/create-checkout-session';
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
+  // Allowed origins for CORS (production domains)
+  // Only allow requests from your official website domains
+  const allowedOrigins = [
+    'https://ninescrolls.com',
+    'https://www.ninescrolls.com',
+    'https://ninescrolls.us', // Legacy domain
+    'https://www.ninescrolls.us', // Legacy domain
+  ];
+
+  // Get the origin from the request
+  const requestOrigin = event.headers?.origin || event.headers?.Origin || '';
+
+  // Determine if the origin is allowed
+  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
+
   // CORS headers for all responses
   // Note: When using Lambda Proxy Integration, these headers must be returned by the Lambda function
+  // Security: Only allow specific origins, not wildcard '*'
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Origin': isAllowedOrigin ? requestOrigin : allowedOrigins[0], // Default to primary domain if origin not allowed
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400', // 24 hours
+    'Access-Control-Allow-Credentials': 'false', // Don't allow credentials for security
   } as Record<string, string>;
 
   // Log event for debugging (remove sensitive data in production)
