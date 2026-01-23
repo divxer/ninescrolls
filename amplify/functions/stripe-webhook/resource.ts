@@ -7,5 +7,7 @@ export const stripeWebhook = defineFunction({
   environment: {
     STRIPE_SECRET_KEY: secret('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: secret('STRIPE_WEBHOOK_SECRET'),
+    SENDGRID_API_KEY: secret('SENDGRID_API_KEY'),
+    APP_URL: process.env.APP_URL || 'https://ninescrolls.com',
   },
 });
