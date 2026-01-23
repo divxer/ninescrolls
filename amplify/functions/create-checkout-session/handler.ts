@@ -11,26 +11,27 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      } as Record<string, string>,
       body: '',
     };
   }
 
   try {
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? JSON.parse(event.body) : {};
     const { items, customerEmail } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-        body: JSON.stringify({ error: 'Items are required' }),
-      };
+    return {
+      statusCode: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      } as Record<string, string>,
+      body: JSON.stringify({ error: 'Items are required' }),
+    };
     }
 
     // Convert items to Stripe line items format
@@ -72,8 +73,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      } as Record<string, string>,
       body: JSON.stringify({ 
         sessionId: session.id, 
         url: session.url 
@@ -85,8 +87,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       statusCode: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      } as Record<string, string>,
       body: JSON.stringify({ error: e?.message ?? 'Internal server error' }),
     };
   }
