@@ -23,12 +23,21 @@ export interface ShippingAddress {
   country: string;
 }
 
+export interface ContactInformation {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  organization?: string;
+}
+
 export interface CreateCheckoutSessionParams {
   items: StripeCheckoutItem[];
   successUrl: string;
   cancelUrl: string;
-  customerEmail?: string;
-  customerName?: string;
+  customerEmail?: string; // Email for Stripe Checkout (may differ from contact email)
+  customerName?: string; // Name for Stripe Checkout (may differ from contact name)
+  contactInformation?: ContactInformation; // Contact person information (may differ from payment person)
   shippingAddress?: ShippingAddress;
   notes?: string;
 }
@@ -85,6 +94,7 @@ export async function createCheckoutSession(
         })),
         customerEmail: params.customerEmail,
         customerName: params.customerName,
+        contactInformation: params.contactInformation,
         shippingAddress: params.shippingAddress,
         notes: params.notes,
         successUrl: params.successUrl,
