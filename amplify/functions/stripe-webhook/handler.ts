@@ -145,15 +145,31 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     });
 
     // Format shipping address
-    // Note: shipping_details might be in session.shipping or session.shipping_details
-    const shippingDetails = (session as any).shipping_details || (session as any).shipping;
-    const shippingAddress = shippingDetails?.address;
-    const shippingAddressText = shippingAddress
-      ? `${shippingAddress.line1 || ''}\n${shippingAddress.line2 || ''}\n${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postal_code || ''}\n${shippingAddress.country || ''}`
+    // Priority: metadata (from form) > Stripe collected address
+    let shippingAddressText = 'To be confirmed';
+    
+    // First, try to get address from metadata (user provided in form)
+    if (session.metadata?.shippingLine1) {
+      const addressParts = [
+        session.metadata.shippingLine1,
+        session.metadata.shippingCity,
+        session.metadata.shippingState,
+        session.metadata.shippingPostalCode,
+        session.metadata.shippingCountry,
+      ].filter(part => part && part.trim());
+      shippingAddressText = addressParts.join('\n');
+    }
+    // Fallback to Stripe collected address (if user entered it in Checkout)
+    else {
+      const shippingDetails = (session as any).shipping_details || (session as any).shipping;
+      const shippingAddress = shippingDetails?.address;
+      if (shippingAddress) {
+        shippingAddressText = `${shippingAddress.line1 || ''}\n${shippingAddress.line2 || ''}\n${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postal_code || ''}\n${shippingAddress.country || ''}`
           .split('\n')
           .filter(line => line.trim())
-          .join('\n')
-      : 'To be confirmed';
+          .join('\n');
+      }
+    }
 
     // Build order summary HTML
     const orderSummaryHtml = lineItems.map(item => `
