@@ -86,8 +86,15 @@ export function CheckoutPage() {
         items: stripeItems,
         successUrl,
         cancelUrl,
-        customerEmail: formData.email,
-        customerName: `${formData.firstName} ${formData.lastName}`,
+        customerEmail: formData.email, // Email for Stripe Checkout
+        customerName: `${formData.firstName} ${formData.lastName}`, // Name for Stripe Checkout
+        contactInformation: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          organization: formData.organization || undefined,
+        },
         shippingAddress: {
           line1: formData.address,
           city: formData.city,

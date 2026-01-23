@@ -82,7 +82,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? JSON.parse(event.body) : {};
-    const { items, customerEmail, customerName, shippingAddress, notes, successUrl, cancelUrl } = body;
+    const { items, customerEmail, customerName, contactInformation, shippingAddress, notes, successUrl, cancelUrl } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return {
@@ -122,7 +122,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     // Prepare session parameters
     // Note: customer_details is not supported when creating Checkout Session
-    // Use customer_email to pre-fill email, and store customer name in metadata
+    // Use customer_email to pre-fill email, and store all contact information in metadata
     const sessionParams: any = {
       mode: 'payment',
       line_items: lineItems,
@@ -135,6 +135,18 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         customerName: customerName || '', // Store customer name in metadata
       },
     };
+
+    // Store complete contact information in metadata
+    // This is important because the contact person may differ from the payment person
+    if (contactInformation) {
+      sessionParams.metadata.contactFirstName = contactInformation.firstName || '';
+      sessionParams.metadata.contactLastName = contactInformation.lastName || '';
+      sessionParams.metadata.contactEmail = contactInformation.email || '';
+      sessionParams.metadata.contactPhone = contactInformation.phone || '';
+      if (contactInformation.organization) {
+        sessionParams.metadata.contactOrganization = contactInformation.organization;
+      }
+    }
 
     // Always collect shipping address in Stripe Checkout
     // This ensures shipping address appears in Stripe Dashboard

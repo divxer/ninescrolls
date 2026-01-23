@@ -104,20 +104,30 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     }
     sgMail.setApiKey(env.SENDGRID_API_KEY);
 
-    // Extract order information
-    const customerEmail = session.customer_details?.email;
+    // Extract contact information from metadata (contact person may differ from payment person)
+    const contactFirstName = session.metadata?.contactFirstName || '';
+    const contactLastName = session.metadata?.contactLastName || '';
+    const contactEmail = session.metadata?.contactEmail || '';
+    const contactPhone = session.metadata?.contactPhone || '';
+    const contactOrganization = session.metadata?.contactOrganization || '';
+
+    // Determine which email to use: contact email (from form) or payment email (from Stripe)
+    // Contact email takes priority as it's the person we should communicate with
+    const customerEmail = contactEmail || session.customer_details?.email;
     if (!customerEmail) {
-      console.error('Customer email not found in session');
+      console.error('Customer email not found in session or metadata');
       return;
     }
     
-    // Get customer name - use type assertion for first_name/last_name as they may not be in the type definition
+    // Determine customer name: use contact name from form if available, otherwise use Stripe customer details
     const customerDetails = session.customer_details as any;
-    const customerName = session.customer_details?.name || 
-                         (customerDetails?.first_name 
-                           ? `${customerDetails.first_name} ${customerDetails.last_name || ''}`.trim()
-                           : '') ||
-                         'Valued Customer';
+    const customerName = (contactFirstName && contactLastName)
+      ? `${contactFirstName} ${contactLastName}`
+      : session.customer_details?.name || 
+        (customerDetails?.first_name 
+          ? `${customerDetails.first_name} ${customerDetails.last_name || ''}`.trim()
+          : '') ||
+        'Valued Customer';
     
     // Generate order number from session ID (use last 12 characters)
     const orderNumber = `ORDER-${session.id.replace('cs_', '').substring(0, 12)}`;
@@ -216,6 +226,16 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       </div>
       
       <div style="margin-top: 20px;">
+        <h3 style="color: #1a1a1a; font-size: 16px; margin-top: 0; margin-bottom: 10px;">Contact Information</h3>
+        <p style="margin: 0; color: #666;">
+          ${contactFirstName || contactLastName ? `<strong>Name:</strong> ${contactFirstName} ${contactLastName}<br>` : ''}
+          ${contactEmail ? `<strong>Email:</strong> ${contactEmail}<br>` : ''}
+          ${contactPhone ? `<strong>Phone:</strong> ${contactPhone}<br>` : ''}
+          ${contactOrganization ? `<strong>Organization:</strong> ${contactOrganization}` : ''}
+        </p>
+      </div>
+      
+      <div style="margin-top: 20px;">
         <h3 style="color: #1a1a1a; font-size: 16px; margin-top: 0; margin-bottom: 10px;">Notes</h3>
         <p style="margin: 0; color: #666;">${session.metadata?.notes || 'None'}</p>
       </div>
@@ -266,7 +286,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     await sgMail.send(email);
     console.log('Order confirmation email sent successfully to:', customerEmail);
 
-    // Also send notification to sales team
+    // Also send notification to sales team with complete contact information
     const salesTeamEmail = {
       to: 'info@ninescrolls.com',
       from: 'noreply@ninescrolls.com',
@@ -274,15 +294,28 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       subject: `New Order: ${orderNumber} - ${lineItems[0]?.productName || 'Product'}`,
       html: `
         <h2>New Order Received</h2>
+        <h3>Order Information</h3>
         <p><strong>Order Number:</strong> ${orderNumber}</p>
-        <p><strong>Customer:</strong> ${customerName}</p>
-        <p><strong>Email:</strong> ${customerEmail}</p>
         <p><strong>Product:</strong> ${lineItems[0]?.productName || 'N/A'}</p>
         <p><strong>Quantity:</strong> ${lineItems[0]?.quantity || 1}</p>
         <p><strong>Total:</strong> $${amountTotal} ${currency}</p>
         <p><strong>Stripe Session ID:</strong> ${session.id}</p>
-        <p><strong>Shipping Address:</strong></p>
+        
+        <h3>Contact Information</h3>
+        <p><strong>Name:</strong> ${contactFirstName || customerName.split(' ')[0]} ${contactLastName || customerName.split(' ').slice(1).join(' ') || ''}</p>
+        <p><strong>Email:</strong> ${contactEmail || customerEmail}</p>
+        <p><strong>Phone:</strong> ${contactPhone || 'Not provided'}</p>
+        ${contactOrganization ? `<p><strong>Organization:</strong> ${contactOrganization}</p>` : ''}
+        
+        <h3>Payment Information</h3>
+        <p><strong>Payment Name:</strong> ${session.customer_details?.name || customerName}</p>
+        <p><strong>Payment Email:</strong> ${session.customer_details?.email || customerEmail}</p>
+        
+        <h3>Shipping Address</h3>
         <pre style="white-space: pre-line;">${shippingAddressText}</pre>
+        
+        ${session.metadata?.notes ? `<h3>Order Notes</h3><p>${session.metadata.notes}</p>` : ''}
+        
         <p><a href="https://dashboard.stripe.com/payments/${session.payment_intent}">View in Stripe Dashboard</a></p>
       `,
     };
