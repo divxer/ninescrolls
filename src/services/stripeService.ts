@@ -5,6 +5,8 @@
  * For production, you'll need a backend API endpoint to create the session securely.
  */
 
+import outputs from '../../amplify_outputs.json';
+
 export interface StripeCheckoutItem {
   id: string;
   name: string;
@@ -21,6 +23,26 @@ export interface CreateCheckoutSessionParams {
 }
 
 /**
+ * Get API Gateway endpoint from Amplify outputs
+ */
+function getApiEndpoint(): string {
+  // Try to get from amplify_outputs.json first
+  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
+    // Remove trailing slash if present
+    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
+  }
+  
+  // Fallback to environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Last resort: use the hardcoded URL (should not happen in production)
+  console.warn('Using fallback API URL. Please configure VITE_API_URL or ensure amplify_outputs.json is available.');
+  return 'https://api.ninescrolls.us';
+}
+
+/**
  * Create a Stripe Checkout Session
  * 
  * This calls your Amplify backend API which:
@@ -32,8 +54,8 @@ export async function createCheckoutSession(
   params: CreateCheckoutSessionParams
 ): Promise<{ sessionId: string; url: string }> {
   try {
-    // Get API endpoint from environment or use default
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.ninescrolls.us';
+    // Get API endpoint from Amplify outputs or environment
+    const apiUrl = getApiEndpoint();
     
     const response = await fetch(`${apiUrl}/checkout/session`, {
       method: 'POST',
