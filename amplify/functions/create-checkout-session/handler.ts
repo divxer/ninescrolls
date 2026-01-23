@@ -12,39 +12,42 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     'https://www.ninescrolls.us', // Legacy domain
   ];
 
+  // Helper function to get CORS headers
+  const getCorsHeaders = (origin: string): Record<string, string> => {
+    const isAllowedOrigin = allowedOrigins.includes(origin);
+    return {
+      'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0],
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400', // 24 hours
+      'Access-Control-Allow-Credentials': 'false',
+    };
+  };
+
   // Get the origin from the request
   const requestOrigin = event.headers?.origin || event.headers?.Origin || '';
-
-  // Determine if the origin is allowed
-  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
-
-  // CORS headers for all responses
-  // Note: When using Lambda Proxy Integration, these headers must be returned by the Lambda function
-  // Security: Only allow specific origins, not wildcard '*'
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? requestOrigin : allowedOrigins[0], // Default to primary domain if origin not allowed
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400', // 24 hours
-    'Access-Control-Allow-Credentials': 'false', // Don't allow credentials for security
-  } as Record<string, string>;
+  const corsHeaders = getCorsHeaders(requestOrigin);
 
   // Log event for debugging (remove sensitive data in production)
+  const method = event.requestContext?.http?.method;
+  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
   console.log('Event received:', {
-    method: event.requestContext?.http?.method,
+    method: method,
     path: event.requestContext?.http?.path,
     hasBody: !!event.body,
+    origin: requestOrigin,
+    isAllowedOrigin: isAllowedOrigin,
   });
 
-  // Handle CORS preflight
   // Handle CORS preflight (OPTIONS request)
-  // API Gateway v2 uses event.requestContext.http.method (not httpMethod)
-  const method = event.requestContext?.http?.method;
-  if (method === 'OPTIONS') {
+  // API Gateway v2 uses event.requestContext.http.method
+  // Also check if it's an OPTIONS request by checking the method directly
+  if (method === 'OPTIONS' || event.requestContext?.http?.method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: '',
+      body: JSON.stringify({ message: 'CORS preflight successful' }),
     };
   }
 
