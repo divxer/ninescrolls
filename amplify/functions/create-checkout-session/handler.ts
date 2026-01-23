@@ -28,21 +28,38 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   const requestOrigin = event.headers?.origin || event.headers?.Origin || '';
   const corsHeaders = getCorsHeaders(requestOrigin);
 
-  // Log event for debugging (remove sensitive data in production)
-  const method = event.requestContext?.http?.method;
+  // Get HTTP method - try multiple ways
+  const method = event.requestContext?.http?.method || 
+                 (event as any).httpMethod || 
+                 (event.requestContext as any)?.httpMethod;
+  
   const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
+  
+  // Check if this is an OPTIONS preflight request
+  // OPTIONS requests have access-control-request-method header
+  const hasAccessControlRequestMethod = 
+    event.headers?.['access-control-request-method'] !== undefined ||
+    event.headers?.['Access-Control-Request-Method'] !== undefined;
+  
+  // Detect OPTIONS request: method is OPTIONS OR has access-control-request-method header
+  const isOptionsRequest = 
+    method === 'OPTIONS' || 
+    hasAccessControlRequestMethod ||
+    (!event.body && !method && requestOrigin); // Fallback: no body, no method, but has origin = likely OPTIONS
+
   console.log('Event received:', {
     method: method,
     path: event.requestContext?.http?.path,
     hasBody: !!event.body,
     origin: requestOrigin,
     isAllowedOrigin: isAllowedOrigin,
+    isOptionsRequest: isOptionsRequest,
+    hasAccessControlRequestMethod: hasAccessControlRequestMethod,
+    requestContextKeys: Object.keys(event.requestContext || {}),
   });
 
-  // Handle CORS preflight (OPTIONS request)
-  // API Gateway v2 uses event.requestContext.http.method
-  // Also check if it's an OPTIONS request by checking the method directly
-  if (method === 'OPTIONS' || event.requestContext?.http?.method === 'OPTIONS') {
+  // Handle CORS preflight (OPTIONS request) - MUST return 200
+  if (isOptionsRequest) {
     console.log('Handling OPTIONS preflight request');
     return {
       statusCode: 200,
