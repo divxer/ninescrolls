@@ -37,7 +37,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   });
 
   // Handle CORS preflight
-  const method = event.requestContext?.http?.method || event.requestContext?.httpMethod;
+  // Handle CORS preflight (OPTIONS request)
+  // API Gateway v2 uses event.requestContext.http.method (not httpMethod)
+  const method = event.requestContext?.http?.method;
   if (method === 'OPTIONS') {
     return {
       statusCode: 200,
