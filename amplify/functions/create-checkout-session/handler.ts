@@ -168,24 +168,17 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       sessionParams.metadata.shippingCountry = shippingAddress.country;
     }
 
-    // Enable address collection for Stripe Tax calculation
-    // Use 'auto' mode: Stripe will pre-fill address if customer has saved address,
-    // otherwise will collect it. This reduces duplicate input when possible.
-    // Note: Stripe cannot pre-fill address from our form data directly,
-    // but if customer has a Stripe account with saved address, it will be used.
-    sessionParams.billing_address_collection = 'auto'; // 'auto' instead of 'required' - will pre-fill if available
-    sessionParams.shipping_address_collection = {
-      allowed_countries: ['US', 'CA'],
-    };
+    // Address collection removed - user already provided address in website checkout form
+    // Address is stored in metadata and will be used for order processing
+    // Note: Stripe Tax automatic_tax will use the address from metadata if available,
+    // but Stripe may still need to collect address for tax compliance verification
+    // We set billing_address_collection to 'auto' to minimize duplicate input
+    // (Stripe will only collect if customer doesn't have saved address)
+    sessionParams.billing_address_collection = 'auto';
     
-    // If we have shipping address, try to use it for customer details
-    // Note: Stripe doesn't support pre-filling address in Checkout Session creation,
-    // but we can add it to metadata and Stripe may use it for tax calculation
-    if (shippingAddress && customerName) {
-      // Store address in a way that Stripe might use for pre-filling
-      // This is not guaranteed to work, but worth trying
-      sessionParams.metadata.preferredShippingAddress = JSON.stringify(shippingAddress);
-    }
+    // Remove shipping_address_collection to avoid duplicate input
+    // Address is already in metadata and will be used for order processing
+    // Stripe Tax will calculate based on billing address if provided
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 

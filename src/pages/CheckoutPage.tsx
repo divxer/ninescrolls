@@ -335,8 +335,8 @@ export function CheckoutPage() {
                   <strong>Payment:</strong> You will be redirected to Stripe Checkout to complete your payment securely.
                 </p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  <strong>Note:</strong> You may be asked to confirm your shipping address in Stripe Checkout for tax calculation purposes. 
-                  Your address information has been saved and will be used for order processing.
+                  Your shipping address has been saved and will be used for order processing. 
+                  You will not need to enter it again in Stripe Checkout.
                 </p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                   Formal invoice available upon request. All sales final. No returns for capital equipment.
