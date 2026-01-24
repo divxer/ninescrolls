@@ -94,11 +94,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     // Convert items to Stripe line items format
     // If items have priceId, use it; otherwise create price_data
+    // Add tax_code for Stripe Tax calculation (txcd_99999999 = General Tangible Goods)
     const lineItems = items.map((item: any) => {
       if (item.priceId) {
         return {
           price: item.priceId,
           quantity: item.quantity || 1,
+          tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods tax code
         };
       } else {
         // Create price_data for one-time payment
@@ -108,6 +110,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             product_data: {
               name: item.name,
               images: item.image ? [item.image] : undefined,
+              tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods tax code
             },
             unit_amount: Math.round(item.price * 100), // Convert to cents
           },
@@ -129,6 +132,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
       customer_email: customerEmail, // Pre-fill email in Stripe Checkout
+      // Enable Stripe Tax automatic calculation
+      automatic_tax: {
+        enabled: true,
+      },
       metadata: {
         items: JSON.stringify(items.map((i: any) => ({ id: i.id, name: i.name }))),
         notes: notes || '',
@@ -149,7 +156,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     // Store shipping address in metadata (user already provided it in the form)
-    // We don't use shipping_address_collection to avoid asking user to enter it again
+    // For Stripe Tax, we need to collect billing/shipping address
+    // Stripe will use this to calculate taxes automatically
     if (shippingAddress) {
       sessionParams.metadata.shippingAddress = JSON.stringify(shippingAddress);
       // Also store individual fields for easier access
@@ -159,6 +167,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       sessionParams.metadata.shippingPostalCode = shippingAddress.postal_code;
       sessionParams.metadata.shippingCountry = shippingAddress.country;
     }
+
+    // Enable address collection for Stripe Tax calculation
+    // Stripe Tax needs billing/shipping address to calculate taxes correctly
+    // Note: Even though user provided address in form, Stripe needs to collect it
+    // in Checkout for tax calculation and compliance purposes
+    sessionParams.billing_address_collection = 'required';
+    sessionParams.shipping_address_collection = {
+      allowed_countries: ['US', 'CA'],
+    };
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
