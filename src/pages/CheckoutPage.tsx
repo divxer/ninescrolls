@@ -7,6 +7,44 @@ import { SEO } from '../components/common/SEO';
 import { createCheckoutSession, calculateTax } from '../services/stripeService';
 import '../styles/CheckoutPage.css';
 
+/**
+ * Convert country name to ISO 3166-1 alpha-2 country code
+ */
+function getCountryCode(countryName: string): string {
+  const countryMap: Record<string, string> = {
+    'United States': 'US',
+    'Canada': 'CA',
+    'United Kingdom': 'GB',
+    'Australia': 'AU',
+    'Germany': 'DE',
+    'France': 'FR',
+    'Japan': 'JP',
+    'South Korea': 'KR',
+    'Singapore': 'SG',
+    'Netherlands': 'NL',
+    'Switzerland': 'CH',
+    'Sweden': 'SE',
+    'Norway': 'NO',
+    'Denmark': 'DK',
+    'Finland': 'FI',
+    'Belgium': 'BE',
+    'Austria': 'AT',
+    'Italy': 'IT',
+    'Spain': 'ES',
+    'Ireland': 'IE',
+    'New Zealand': 'NZ',
+    'Israel': 'IL',
+    'Taiwan': 'TW',
+    'Hong Kong': 'HK',
+    'China': 'CN',
+    'India': 'IN',
+    'Brazil': 'BR',
+    'Mexico': 'MX',
+  };
+  
+  return countryMap[countryName] || 'US'; // Default to US if not found
+}
+
 export function CheckoutPage() {
   useScrollToTop();
   const navigate = useNavigate();
@@ -57,7 +95,7 @@ export function CheckoutPage() {
           city: formData.city,
           state: formData.state,
           postal_code: formData.zipCode,
-          country: formData.country === 'United States' ? 'US' : formData.country === 'Canada' ? 'CA' : 'US',
+          country: getCountryCode(formData.country),
         };
 
         const stripeItems = items.map((item) => ({
@@ -154,7 +192,7 @@ export function CheckoutPage() {
           city: formData.city,
           state: formData.state,
           postal_code: formData.zipCode,
-          country: formData.country === 'United States' ? 'US' : formData.country === 'Canada' ? 'CA' : 'US',
+          country: getCountryCode(formData.country),
         },
         notes: formData.notes,
       });
@@ -308,6 +346,32 @@ export function CheckoutPage() {
                   >
                     <option value="United States">United States</option>
                     <option value="Canada">Canada</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="France">France</option>
+                    <option value="Japan">Japan</option>
+                    <option value="South Korea">South Korea</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="Netherlands">Netherlands</option>
+                    <option value="Switzerland">Switzerland</option>
+                    <option value="Sweden">Sweden</option>
+                    <option value="Norway">Norway</option>
+                    <option value="Denmark">Denmark</option>
+                    <option value="Finland">Finland</option>
+                    <option value="Belgium">Belgium</option>
+                    <option value="Austria">Austria</option>
+                    <option value="Italy">Italy</option>
+                    <option value="Spain">Spain</option>
+                    <option value="Ireland">Ireland</option>
+                    <option value="New Zealand">New Zealand</option>
+                    <option value="Israel">Israel</option>
+                    <option value="Taiwan">Taiwan</option>
+                    <option value="Hong Kong">Hong Kong</option>
+                    <option value="China">China</option>
+                    <option value="India">India</option>
+                    <option value="Brazil">Brazil</option>
+                    <option value="Mexico">Mexico</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
