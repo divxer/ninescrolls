@@ -42,6 +42,17 @@ export interface CreateCheckoutSessionParams {
   notes?: string;
 }
 
+export interface TaxCalculationResult {
+  taxAmount: number;
+  subtotal: number;
+  total: number;
+  taxBreakdown: Array<{
+    amount: number;
+    jurisdiction: string;
+    taxRateDetails?: any;
+  }>;
+}
+
 /**
  * Get API Gateway endpoint from Amplify outputs
  */
@@ -114,6 +125,46 @@ export async function createCheckoutSession(
     };
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Calculate tax using Stripe Tax Calculations API
+ * This is used to display tax information on the checkout page before payment
+ */
+export async function calculateTax(
+  items: StripeCheckoutItem[],
+  shippingAddress: ShippingAddress
+): Promise<TaxCalculationResult> {
+  try {
+    const apiUrl = getApiEndpoint();
+    
+    const response = await fetch(`${apiUrl}/calculate-tax`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        items: items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        shippingAddress,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to calculate tax' }));
+      throw new Error(error.error || error.message || 'Failed to calculate tax');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error calculating tax:', error);
     throw error;
   }
 }
