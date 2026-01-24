@@ -394,18 +394,22 @@ export function CheckoutPage() {
 
               {error && <div className="error-message">{error}</div>}
 
-              <div className="checkout-note">
-                <p>
-                  <strong>Payment:</strong> You will be redirected to Stripe Checkout to complete your payment securely.
-                </p>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  Your address has been saved and will be used for automatic tax calculation. 
-                  You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
-                </p>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  Formal invoice available upon request. All sales final. No returns for capital equipment.
-                </p>
-              </div>
+                     <div className="checkout-note">
+                       <p>
+                         <strong>Payment:</strong> You will be redirected to Stripe Checkout to complete your payment securely.
+                       </p>
+                       <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                         Your address has been saved and will be used for automatic tax calculation. 
+                         You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
+                       </p>
+                       <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                         <strong>System Branding:</strong> NS-Plasma™ systems are integrated and branded by NineScrolls LLC. 
+                         Configuration details and support are managed directly by us.
+                       </p>
+                       <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                         Formal invoice available upon request. All sales final. No returns for capital equipment.
+                       </p>
+                     </div>
 
               <button
                 type="submit"
