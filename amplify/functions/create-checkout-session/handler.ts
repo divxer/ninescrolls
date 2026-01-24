@@ -123,6 +123,97 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const finalSuccessUrl = successUrl || `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
 
+    // Create or update Stripe Customer with address information
+    // This allows Stripe Tax to use the address for automatic tax calculation
+    // without requiring the customer to enter it again in Checkout
+    let customerId: string | undefined;
+    
+    if (customerEmail) {
+      try {
+        // Search for existing customer by email
+        const existingCustomers = await stripe.customers.list({
+          email: customerEmail,
+          limit: 1,
+        });
+
+        if (existingCustomers.data.length > 0) {
+          // Update existing customer with address
+          const customer = existingCustomers.data[0];
+          const updateData: any = {
+            email: customerEmail,
+            name: customerName || undefined,
+            phone: contactInformation?.phone || undefined,
+          };
+
+          // Add billing address if shipping address is provided
+          if (shippingAddress) {
+            updateData.address = {
+              line1: shippingAddress.line1,
+              line2: shippingAddress.line2 || undefined,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              postal_code: shippingAddress.postal_code,
+              country: shippingAddress.country,
+            };
+            // Also set shipping address
+            updateData.shipping = {
+              address: {
+                line1: shippingAddress.line1,
+                line2: shippingAddress.line2 || undefined,
+                city: shippingAddress.city,
+                state: shippingAddress.state,
+                postal_code: shippingAddress.postal_code,
+                country: shippingAddress.country,
+              },
+              name: customerName || undefined,
+              phone: contactInformation?.phone || undefined,
+            };
+          }
+
+          const updatedCustomer = await stripe.customers.update(customer.id, updateData);
+          customerId = updatedCustomer.id;
+        } else {
+          // Create new customer with address
+          const createData: any = {
+            email: customerEmail,
+            name: customerName || undefined,
+            phone: contactInformation?.phone || undefined,
+          };
+
+          // Add billing address if shipping address is provided
+          if (shippingAddress) {
+            createData.address = {
+              line1: shippingAddress.line1,
+              line2: shippingAddress.line2 || undefined,
+              city: shippingAddress.city,
+              state: shippingAddress.state,
+              postal_code: shippingAddress.postal_code,
+              country: shippingAddress.country,
+            };
+            // Also set shipping address
+            createData.shipping = {
+              address: {
+                line1: shippingAddress.line1,
+                line2: shippingAddress.line2 || undefined,
+                city: shippingAddress.city,
+                state: shippingAddress.state,
+                postal_code: shippingAddress.postal_code,
+                country: shippingAddress.country,
+              },
+              name: customerName || undefined,
+              phone: contactInformation?.phone || undefined,
+            };
+          }
+
+          const newCustomer = await stripe.customers.create(createData);
+          customerId = newCustomer.id;
+        }
+      } catch (customerError: any) {
+        console.error('Error creating/updating customer:', customerError);
+        // Continue without customer - Checkout will still work, just won't pre-fill address
+      }
+    }
+
     // Prepare session parameters
     const sessionParams: any = {
       mode: 'payment',
@@ -140,12 +231,17 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       },
     };
 
-    // Pre-fill email in Stripe Checkout
-    // Note: Stripe Checkout Session API does not support pre-filling address, name, or phone
-    // These can only be pre-filled if customer has saved them in their Stripe account
-    // We use billing_address_collection: 'auto' to allow Stripe to auto-fill if available
-    if (customerEmail) {
+    // Use customer ID if available, otherwise use customer_email
+    if (customerId) {
+      // Use customer ID - Stripe will use customer's saved address for tax calculation
+      sessionParams.customer = customerId;
+      // Use 'auto' mode - Stripe will use customer's saved address if available
+      sessionParams.billing_address_collection = 'auto';
+    } else if (customerEmail) {
+      // Fallback to customer_email if customer creation failed
       sessionParams.customer_email = customerEmail;
+      // Still require address collection for tax calculation
+      sessionParams.billing_address_collection = 'required';
     }
 
     // Store complete contact information in metadata
@@ -160,9 +256,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       }
     }
 
-    // Store shipping address in metadata (user already provided it in the form)
-    // For Stripe Tax, we need to collect billing/shipping address
-    // Stripe will use this to calculate taxes automatically
+    // Store shipping address in metadata for order processing
+    // Note: Address is also saved in Stripe Customer for tax calculation
     if (shippingAddress) {
       sessionParams.metadata.shippingAddress = JSON.stringify(shippingAddress);
       // Also store individual fields for easier access
@@ -173,15 +268,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       sessionParams.metadata.shippingCountry = shippingAddress.country;
     }
 
-    // Stripe Tax requires address collection to calculate taxes
-    // Use 'auto' mode: Stripe will auto-fill address if customer has saved address in their Stripe account
-    // Otherwise, customer will need to enter billing address (required for tax calculation)
-    // Note: Stripe Checkout Session API does not support pre-filling address from our form data
-    // Address information is saved in metadata for order processing
-    sessionParams.billing_address_collection = 'auto';
-    
-    // Don't collect shipping address - it's already in metadata
-    // Stripe Tax will use billing address for tax calculation
+    // Don't collect shipping address - it's already in Customer and metadata
+    // Stripe Tax will use billing address from Customer for tax calculation
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
