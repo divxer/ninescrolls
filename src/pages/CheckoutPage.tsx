@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/CartContext';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
-import { createCheckoutSession } from '../services/stripeService';
+import { createCheckoutSession, calculateTax } from '../services/stripeService';
 import '../styles/CheckoutPage.css';
 
 export function CheckoutPage() {
@@ -13,6 +13,13 @@ export function CheckoutPage() {
   const { items, getTotalPrice } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [taxInfo, setTaxInfo] = useState<{
+    taxAmount: number;
+    subtotal: number;
+    total: number;
+    taxBreakdown: Array<{ amount: number; jurisdiction: string }>;
+  } | null>(null);
+  const [isCalculatingTax, setIsCalculatingTax] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -34,6 +41,52 @@ export function CheckoutPage() {
     return null;
   }
 
+  // Calculate tax when address fields are complete
+  useEffect(() => {
+    const performTaxCalculation = async () => {
+      // Check if we have enough address information
+      if (!formData.address || !formData.city || !formData.state || !formData.zipCode || !formData.country) {
+        setTaxInfo(null);
+        return;
+      }
+
+      setIsCalculatingTax(true);
+      try {
+        const shippingAddress = {
+          line1: formData.address,
+          city: formData.city,
+          state: formData.state,
+          postal_code: formData.zipCode,
+          country: formData.country === 'United States' ? 'US' : formData.country === 'Canada' ? 'CA' : 'US',
+        };
+
+        const stripeItems = items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image ? `${window.location.origin}${item.image}` : undefined,
+        }));
+
+        const taxResult = await calculateTax(stripeItems, shippingAddress);
+        setTaxInfo(taxResult);
+      } catch (err: any) {
+        console.error('Error calculating tax:', err);
+        // Don't show error to user, just don't display tax
+        setTaxInfo(null);
+      } finally {
+        setIsCalculatingTax(false);
+      }
+    };
+
+    // Debounce tax calculation to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      performTaxCalculation();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.address, formData.city, formData.state, formData.zipCode, formData.country, items]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -52,7 +105,8 @@ export function CheckoutPage() {
     }
 
     try {
-      const total = getTotalPrice();
+      // Use tax-inclusive total if available, otherwise use subtotal
+      const total = taxInfo && !isCalculatingTax ? taxInfo.total : getTotalPrice();
 
       // Track begin_checkout event
       if (typeof window !== 'undefined' && (window as any).gtag) {
@@ -281,6 +335,10 @@ export function CheckoutPage() {
                   <strong>Payment:</strong> You will be redirected to Stripe Checkout to complete your payment securely.
                 </p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <strong>Note:</strong> You may be asked to confirm your shipping address in Stripe Checkout for tax calculation purposes. 
+                  Your address information has been saved and will be used for order processing.
+                </p>
+                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                   Formal invoice available upon request. All sales final. No returns for capital equipment.
                 </p>
               </div>
@@ -323,15 +381,53 @@ export function CheckoutPage() {
               <div className="order-totals">
                 <div className="total-row">
                   <span>Subtotal:</span>
-                  <span>${total.toLocaleString()} USD</span>
+                  <span>
+                    {taxInfo && !isCalculatingTax
+                      ? `$${taxInfo.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+                      : `$${total.toLocaleString()} USD`}
+                  </span>
                 </div>
                 <div className="total-row">
                   <span>Shipping:</span>
                   <span>Free</span>
                 </div>
+                {isCalculatingTax && (
+                  <div className="total-row">
+                    <span>Tax:</span>
+                    <span>Calculating...</span>
+                  </div>
+                )}
+                {taxInfo && !isCalculatingTax && taxInfo.taxAmount > 0 && (
+                  <>
+                    <div className="total-row">
+                      <span>Tax:</span>
+                      <span>${taxInfo.taxAmount.toFixed(2)} USD</span>
+                    </div>
+                    {taxInfo.taxBreakdown && taxInfo.taxBreakdown.length > 0 && (
+                      <div className="tax-breakdown">
+                        {taxInfo.taxBreakdown.map((breakdown, index) => (
+                          <div key={index} className="tax-breakdown-item">
+                            <span>{breakdown.jurisdiction || 'Tax'}:</span>
+                            <span>${breakdown.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+                {taxInfo && !isCalculatingTax && taxInfo.taxAmount === 0 && (
+                  <div className="total-row">
+                    <span>Tax:</span>
+                    <span>No tax applicable</span>
+                  </div>
+                )}
                 <div className="total-row total-final">
                   <span>Total:</span>
-                  <span>${total.toLocaleString()} USD</span>
+                  <span>
+                    {taxInfo && !isCalculatingTax
+                      ? `$${taxInfo.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+                      : `$${total.toLocaleString()} USD`}
+                  </span>
                 </div>
               </div>
             </div>

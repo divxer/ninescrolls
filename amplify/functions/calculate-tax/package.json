@@ -1,0 +1,8 @@
+{
+  "name": "calculate-tax",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "stripe": "^14.21.0"
+  }
+}

@@ -169,13 +169,23 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     // Enable address collection for Stripe Tax calculation
-    // Stripe Tax needs billing/shipping address to calculate taxes correctly
-    // Note: Even though user provided address in form, Stripe needs to collect it
-    // in Checkout for tax calculation and compliance purposes
-    sessionParams.billing_address_collection = 'required';
+    // Use 'auto' mode: Stripe will pre-fill address if customer has saved address,
+    // otherwise will collect it. This reduces duplicate input when possible.
+    // Note: Stripe cannot pre-fill address from our form data directly,
+    // but if customer has a Stripe account with saved address, it will be used.
+    sessionParams.billing_address_collection = 'auto'; // 'auto' instead of 'required' - will pre-fill if available
     sessionParams.shipping_address_collection = {
       allowed_countries: ['US', 'CA'],
     };
+    
+    // If we have shipping address, try to use it for customer details
+    // Note: Stripe doesn't support pre-filling address in Checkout Session creation,
+    // but we can add it to metadata and Stripe may use it for tax calculation
+    if (shippingAddress && customerName) {
+      // Store address in a way that Stripe might use for pre-filling
+      // This is not guaranteed to work, but worth trying
+      sessionParams.metadata.preferredShippingAddress = JSON.stringify(shippingAddress);
+    }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 

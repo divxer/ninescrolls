@@ -3,7 +3,8 @@ import { data } from './data/resource';
 import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
-import {Cors, RestApi, RestApiProps} from 'aws-cdk-lib/aws-apigateway';
+import { calculateTax } from './functions/calculate-tax/resource';
+import {Cors, RestApi, RestApiProps, AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
 import { Duration } from 'aws-cdk-lib';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -13,6 +14,7 @@ const backend = defineBackend({
     sendEmail,
     createCheckoutSession,
     stripeWebhook,
+    calculateTax,
 });
 
 // Create a fixed stage name
@@ -74,6 +76,19 @@ checkoutSessionResource.addMethod('OPTIONS', new LambdaIntegration(backend.creat
     proxy: true,
 }));
 
+// Create /calculate-tax resource for tax calculation
+const calculateTaxResource = restApi.root.addResource('calculate-tax');
+
+// Add POST method for tax calculation
+calculateTaxResource.addMethod('POST', new LambdaIntegration(backend.calculateTax.resources.lambda, {
+    proxy: true,
+}));
+
+// Add OPTIONS method for CORS preflight
+calculateTaxResource.addMethod('OPTIONS', new LambdaIntegration(backend.calculateTax.resources.lambda, {
+    proxy: true,
+}));
+
 // Create /stripe/webhook resource for Stripe Webhook
 // Note: Webhook endpoint should NOT have wide CORS - security is handled by signature verification
 const stripeResource = restApi.root.addResource('stripe');
@@ -85,8 +100,7 @@ const stripeWebhookResource = stripeResource.addResource('webhook');
 stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebhook.resources.lambda, {
     proxy: true,
 }), {
-    // Explicitly set authorization type to NONE to ensure public access
-    authorizationType: undefined, // This makes it public
+    authorizationType: AuthorizationType.NONE, // Explicitly make it public
 });
 
 // Add outputs
