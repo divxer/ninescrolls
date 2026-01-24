@@ -335,8 +335,8 @@ export function CheckoutPage() {
                   <strong>Payment:</strong> You will be redirected to Stripe Checkout to complete your payment securely.
                 </p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  Your shipping address will be pre-filled as the billing address for tax calculation. 
-                  You can modify it in Stripe Checkout if your billing address is different.
+                  Your address has been saved and will be used for automatic tax calculation. 
+                  You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
                 </p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                   Formal invoice available upon request. All sales final. No returns for capital equipment.
