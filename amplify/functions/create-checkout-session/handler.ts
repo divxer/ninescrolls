@@ -124,14 +124,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
 
     // Prepare session parameters
-    // Note: customer_details is not supported when creating Checkout Session
-    // Use customer_email to pre-fill email, and store all contact information in metadata
     const sessionParams: any = {
       mode: 'payment',
       line_items: lineItems,
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
-      customer_email: customerEmail, // Pre-fill email in Stripe Checkout
       // Enable Stripe Tax automatic calculation
       automatic_tax: {
         enabled: true,
@@ -142,6 +139,39 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         customerName: customerName || '', // Store customer name in metadata
       },
     };
+
+    // Pre-fill billing address, email, name, and phone from form data
+    // This allows customer to use shipping address as default billing address
+    // Customer can still modify it in Stripe Checkout if needed
+    const contactPhone = contactInformation?.phone;
+    
+    if (shippingAddress && customerEmail) {
+      // Use customer_details to pre-fill address, email, name, and phone
+      // This will default billing address to shipping address
+      sessionParams.customer_details = {
+        address: {
+          line1: shippingAddress.line1,
+          line2: shippingAddress.line2 || undefined,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postal_code: shippingAddress.postal_code,
+          country: shippingAddress.country,
+        },
+        email: customerEmail,
+        name: customerName || undefined,
+        phone: contactPhone || undefined,
+      };
+    } else if (customerEmail) {
+      // If no shipping address, at least pre-fill email, name, and phone
+      sessionParams.customer_email = customerEmail;
+      if (customerName || contactPhone) {
+        sessionParams.customer_details = {
+          email: customerEmail,
+          name: customerName || undefined,
+          phone: contactPhone || undefined,
+        };
+      }
+    }
 
     // Store complete contact information in metadata
     // This is important because the contact person may differ from the payment person
@@ -168,17 +198,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       sessionParams.metadata.shippingCountry = shippingAddress.country;
     }
 
-    // Address collection removed - user already provided address in website checkout form
-    // Address is stored in metadata and will be used for order processing
-    // Note: Stripe Tax automatic_tax will use the address from metadata if available,
-    // but Stripe may still need to collect address for tax compliance verification
-    // We set billing_address_collection to 'auto' to minimize duplicate input
-    // (Stripe will only collect if customer doesn't have saved address)
+    // Stripe Tax requires address collection to calculate taxes
+    // Use 'auto' mode: if customer_details.address is provided, it will be pre-filled
+    // Customer can still modify the address in Stripe Checkout if needed
+    // This provides the best user experience: default to shipping address, but allow modification
     sessionParams.billing_address_collection = 'auto';
     
-    // Remove shipping_address_collection to avoid duplicate input
-    // Address is already in metadata and will be used for order processing
-    // Stripe Tax will calculate based on billing address if provided
+    // Don't collect shipping address - it's already in metadata
+    // Billing address is pre-filled from shipping address via customer_details
+    // Stripe Tax will use billing address for tax calculation
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
