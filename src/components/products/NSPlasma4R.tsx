@@ -12,6 +12,7 @@ import { useCart } from '../../contexts/CartContext';
 export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<'main' | 'image1' | 'image2'>('main');
   const navigate = useNavigate();
   const { addItem } = useCart();
 
@@ -200,13 +201,79 @@ export function NSPlasma4R() {
             <div className="product-hero-image product-image-single">
               <div className="product-image-main-wrapper">
                 <div className="product-image-main">
-                  <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/main.jpg"
-                    alt="NS-Plasma 4R - Compact RF Plasma System"
-                    width={800}
-                    height={600}
-                    className="main-product-image"
-                  />
+                  {selectedImage === 'main' && (
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/main.jpg"
+                      alt="NS-Plasma 4R - Compact RF Plasma System"
+                      width={800}
+                      height={600}
+                      className="main-product-image"
+                    />
+                  )}
+                  {selectedImage === 'image1' && (
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/image-1.jpg"
+                      alt="NS-Plasma 4R - View 1"
+                      width={800}
+                      height={600}
+                      className="main-product-image"
+                    />
+                  )}
+                  {selectedImage === 'image2' && (
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/image-2.jpg"
+                      alt="NS-Plasma 4R - View 2"
+                      width={800}
+                      height={600}
+                      className="main-product-image"
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="product-image-thumbnails-wrapper">
+                <div className="product-image-thumbnails">
+                  <button
+                    className={`thumbnail-btn ${selectedImage === 'main' ? 'active' : ''}`}
+                    onClick={() => setSelectedImage('main')}
+                    type="button"
+                    aria-label="Main view"
+                  >
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/main.jpg"
+                      alt="Main View"
+                      width={150}
+                      height={112}
+                      className="thumbnail-image"
+                    />
+                  </button>
+                  <button
+                    className={`thumbnail-btn ${selectedImage === 'image1' ? 'active' : ''}`}
+                    onClick={() => setSelectedImage('image1')}
+                    type="button"
+                    aria-label="View 1"
+                  >
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/image-1.jpg"
+                      alt="View 1"
+                      width={150}
+                      height={112}
+                      className="thumbnail-image"
+                    />
+                  </button>
+                  <button
+                    className={`thumbnail-btn ${selectedImage === 'image2' ? 'active' : ''}`}
+                    onClick={() => setSelectedImage('image2')}
+                    type="button"
+                    aria-label="View 2"
+                  >
+                    <OptimizedImage
+                      src="/assets/images/products/ns-plasma-4r/image-2.jpg"
+                      alt="View 2"
+                      width={150}
+                      height={112}
+                      className="thumbnail-image"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
