@@ -140,37 +140,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       },
     };
 
-    // Pre-fill billing address, email, name, and phone from form data
-    // This allows customer to use shipping address as default billing address
-    // Customer can still modify it in Stripe Checkout if needed
-    const contactPhone = contactInformation?.phone;
-    
-    if (shippingAddress && customerEmail) {
-      // Use customer_details to pre-fill address, email, name, and phone
-      // This will default billing address to shipping address
-      sessionParams.customer_details = {
-        address: {
-          line1: shippingAddress.line1,
-          line2: shippingAddress.line2 || undefined,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          postal_code: shippingAddress.postal_code,
-          country: shippingAddress.country,
-        },
-        email: customerEmail,
-        name: customerName || undefined,
-        phone: contactPhone || undefined,
-      };
-    } else if (customerEmail) {
-      // If no shipping address, at least pre-fill email, name, and phone
+    // Pre-fill email in Stripe Checkout
+    // Note: Stripe Checkout Session API does not support pre-filling address, name, or phone
+    // These can only be pre-filled if customer has saved them in their Stripe account
+    // We use billing_address_collection: 'auto' to allow Stripe to auto-fill if available
+    if (customerEmail) {
       sessionParams.customer_email = customerEmail;
-      if (customerName || contactPhone) {
-        sessionParams.customer_details = {
-          email: customerEmail,
-          name: customerName || undefined,
-          phone: contactPhone || undefined,
-        };
-      }
     }
 
     // Store complete contact information in metadata
@@ -199,13 +174,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     // Stripe Tax requires address collection to calculate taxes
-    // Use 'auto' mode: if customer_details.address is provided, it will be pre-filled
-    // Customer can still modify the address in Stripe Checkout if needed
-    // This provides the best user experience: default to shipping address, but allow modification
+    // Use 'auto' mode: Stripe will auto-fill address if customer has saved address in their Stripe account
+    // Otherwise, customer will need to enter billing address (required for tax calculation)
+    // Note: Stripe Checkout Session API does not support pre-filling address from our form data
+    // Address information is saved in metadata for order processing
     sessionParams.billing_address_collection = 'auto';
     
     // Don't collect shipping address - it's already in metadata
-    // Billing address is pre-filled from shipping address via customer_details
     // Stripe Tax will use billing address for tax calculation
 
     const session = await stripe.checkout.sessions.create(sessionParams);
