@@ -346,6 +346,20 @@ export function PlasmaCleaner() {
         </div>
       </section>
 
+      {/* Branding Notice for Risk Mitigation */}
+      <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
+        <div className="container">
+          <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Branding Notice</h3>
+            <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
+              Plasma treatment systems are professionally integrated, configured, and branded by NineScrolls LLC. 
+              Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
+              All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section className="product-inquiry-section">
         <div className="container">
