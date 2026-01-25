@@ -175,7 +175,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="footer-section">
               <h4>Contact Us</h4>
               <p>Email: info@ninescrolls.com</p>
-              <p>For urgent inquiries: +1 (858) 537-7743</p>
+              <p>For urgent inquiries: +1 (858) 879-8898</p>
             </div>
             <div className="footer-section">
               <h4>Follow Us</h4>

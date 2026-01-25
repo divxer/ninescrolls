@@ -34,7 +34,7 @@ export function ContactPage() {
           "@type": "ContactPoint",
           "contactType": "sales",
           "email": "sales@ninescrolls.com",
-          "telephone": "+1-858-537-7743",
+          "telephone": "+1-858-879-8898",
           "availableLanguage": ["English", "Chinese"],
           "hoursAvailable": "Mo-Fr 09:00-17:00 PST"
         },
@@ -97,7 +97,7 @@ export function ContactPage() {
                 <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>
               </p>
               
-              <p className="note">For urgent matters only: +1 (858) 537-7743</p>
+              <p className="note">For urgent matters only: +1 (858) 879-8898</p>
             </div>
 
             <div className="contact-card">
