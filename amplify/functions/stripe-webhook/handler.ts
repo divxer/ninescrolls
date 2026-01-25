@@ -263,7 +263,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     
     <ul style="margin-bottom: 20px; padding-left: 20px;">
       <li style="margin-bottom: 8px;">📧 <a href="mailto:sales@ninescrolls.com" style="color: #2563eb; text-decoration: none;">sales@ninescrolls.com</a></li>
-      <li style="margin-bottom: 8px;">📞 <a href="tel:+18585377743" style="color: #2563eb; text-decoration: none;">+1 (858) 537-7743</a></li>
+      <li style="margin-bottom: 8px;">📞 <a href="tel:+18588798898" style="color: #2563eb; text-decoration: none;">+1 (858) 879-8898</a></li>
       <li style="margin-bottom: 8px;">🌐 <a href="https://www.ninescrolls.com" style="color: #2563eb; text-decoration: none;">www.ninescrolls.com</a></li>
     </ul>
     

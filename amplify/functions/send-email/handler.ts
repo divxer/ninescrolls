@@ -105,7 +105,7 @@ export const handler: Handler<SendEmailEvent> = async (event) => {
                     <li><strong>Product:</strong> ${productName}</li>
                     <li><strong>Your Message:</strong> ${message}</li>
                 </ul>
-                <p>If you have any immediate questions, please don't hesitate to call us at +1 (858) 537-7743.</p>
+                <p>If you have any immediate questions, please don't hesitate to call us at +1 (858) 879-8898.</p>
                 <br>
                 <p>Best regards,</p>
                 <p>The NineScrolls Team</p>

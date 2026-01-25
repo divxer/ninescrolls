@@ -26,7 +26,7 @@ export function HomePage() {
     },
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+1-858-537-7743",
+      "telephone": "+1-858-879-8898",
       "contactType": "sales",
       "email": "sales@ninescrolls.com",
       "availableLanguage": ["English", "Chinese"]
