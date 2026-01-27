@@ -10,6 +10,7 @@ export function NSPlasma20R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
+  const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
 
   useScrollToTop();
 
@@ -27,8 +28,8 @@ export function NSPlasma20R() {
     "@context": "https://schema.org/",
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/ns-plasma-20r#product",
-    "name": "NS-Plasma 20R - Compact RF Plasma Processing System",
-    "description": "Compact, research-grade RF plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation. 13.56 MHz RF power up to 300W, PLC-controlled operation.",
+    "name": "NS-Plasma 20R - Plasma Processing System (RF or Mid-Frequency)",
+    "description": "Compact, research-grade plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, PLC-controlled operation.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-20r/main.jpg"],
     "sku": "ns-plasma-20r",
     "brand": {
@@ -40,7 +41,7 @@ export function NSPlasma20R() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "14999",
+      "price": "11999",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
@@ -54,7 +55,7 @@ export function NSPlasma20R() {
     <>
       <SEO
         title="NS-Plasma 20R - Compact RF Plasma Processing System (20L) | NineScrolls"
-        description="Compact, research-grade RF plasma processing system with 20-liter chamber. Ideal for batch plasma cleaning, photoresist ashing, and surface activation. 13.56 MHz RF power up to 300W, PLC-controlled operation."
+        description="Compact, research-grade plasma processing system with 20-liter chamber. Ideal for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, up to 300W, PLC-controlled operation."
         keywords="NS-Plasma 20R, plasma cleaning, photoresist ashing, surface activation, RF plasma, batch processing, research plasma system"
         url="/products/ns-plasma-20r"
         image="/assets/images/products/ns-plasma-20r/main.jpg"
@@ -90,7 +91,7 @@ export function NSPlasma20R() {
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">⚡</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">13.56 MHz RF, up to 300 W</span>
+                  <span className="bullet-text-strong">RF or Mid-Frequency, up to 300 W</span>
                   <span className="bullet-text-sub">research-grade power & stability</span>
                 </div>
               </div>
@@ -102,10 +103,60 @@ export function NSPlasma20R() {
                 </div>
               </div>
             </div>
+            {/* Power Frequency Options */}
+            <div className="frequency-options" style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333', fontWeight: '600' }}>Power Frequency Options</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFrequency('mf')}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedFrequency === 'mf' ? '#fff' : '#f8f9fa',
+                    borderRadius: '6px',
+                    border: selectedFrequency === 'mf' ? '2px solid #28a745' : '2px solid #dee2e6',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', backgroundColor: '#28a745', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>BEST VALUE</span>
+                  </div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>Mid-Frequency (40 kHz)</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    Cost-effective, robust for routine batch cleaning and surface activation
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#28a745', fontWeight: '700' }}>$11,999 USD • 300W</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFrequency('rf')}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedFrequency === 'rf' ? '#fff' : '#f8f9fa',
+                    borderRadius: '6px',
+                    border: selectedFrequency === 'rf' ? '2px solid #2563eb' : '2px solid #dee2e6',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>RF (13.56 MHz)</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    Finer process control, broader recipe window for advanced batch processing
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>$14,999 USD • 150W</p>
+                </button>
+              </div>
+            </div>
+            
             <div className="hero-pricing">
               <div className="pricing-main">
                 <span className="pricing-label">price:</span>
-                <span className="pricing-amount">14,999 USD</span>
+                <span className="pricing-amount">
+                  {selectedFrequency === 'rf' ? '14,999' : '11,999'} USD
+                </span>
               </div>
               <p className="pricing-note">availability: in stock</p>
             </div>
@@ -188,7 +239,7 @@ export function NSPlasma20R() {
                 photoresist ashing, and surface activation in academic laboratories and pilot-scale research environments.
               </p>
               <p className="narrative-text">
-                With a 20-liter stainless steel chamber, 13.56 MHz RF power, and PLC-controlled operation, NS-Plasma 20R 
+                With a 20-liter stainless steel chamber, RF or Mid-Frequency power options, and PLC-controlled operation, NS-Plasma 20R 
                 bridges the gap between entry-level plasma cleaners and full-scale industrial plasma systems—delivering 
                 repeatable process performance without unnecessary system complexity.
               </p>
@@ -230,9 +281,9 @@ export function NSPlasma20R() {
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">⚡</div>
-                <h3>13.56 MHz RF, up to 300 W</h3>
+                <h3>RF or Mid-Frequency, up to 300W (MF) / 150W (RF)</h3>
                 <p className="feature-highlight">Research-grade power with industrial stability</p>
-                <p>Standard 13.56 MHz RF power source, continuously adjustable up to 300W. Stable plasma generation suitable for cleaning, ashing, and surface modification with reproducible results.</p>
+                <p>Available in RF (13.56 MHz, 150W) or Mid-Frequency (40 kHz, 300W) configurations, continuously adjustable. Stable plasma generation suitable for cleaning, ashing, and surface modification with reproducible results.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">🖥️</div>
@@ -377,15 +428,15 @@ export function NSPlasma20R() {
               <tbody>
                 <tr>
                   <td className="spec-label">Plasma Type</td>
-                  <td className="spec-value">RF Plasma</td>
+                  <td className="spec-value">RF Plasma / Mid-Frequency Plasma</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
+                  <td className="spec-label">Plasma Frequency</td>
+                  <td className="spec-value">13.56 MHz (RF) / 40 kHz (Mid-Frequency)</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">0–300 W (adjustable)</td>
+                  <td className="spec-label">Power Output</td>
+                  <td className="spec-value">300W (Mid-Frequency) / 150W (RF), adjustable</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
@@ -429,6 +480,12 @@ export function NSPlasma20R() {
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px', fontSize: '0.9rem', color: '#666', lineHeight: '1.6' }}>
+            <p style={{ margin: 0 }}>
+              <strong>Frequency Selection Guide:</strong> Mid-Frequency (40 kHz) is ideal for cost-sensitive research labs and routine batch cleaning applications. 
+              RF (13.56 MHz) supports more advanced surface activation recipes and offers finer process control for demanding batch processing requirements.
+            </p>
           </div>
         </div>
       </section>

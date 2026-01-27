@@ -13,6 +13,7 @@ export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'image1' | 'image2'>('main');
+  const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
   const navigate = useNavigate();
   const { addItem } = useCart();
 
@@ -29,36 +30,47 @@ export function NSPlasma4R() {
   };
 
   const handleAddToCart = () => {
+    const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
+    const price = selectedFrequency === 'rf' ? 7999 : 6499;
+    const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
+    
     // Add item to cart
     addItem({
-      id: 'ns-plasma-4r',
-      name: 'NS-Plasma 4R - Standard RF Plasma Cleaner',
-      price: 7999,
+      id: sku,
+      name: `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`,
+      price: price,
       quantity: 1,
       image: '/assets/images/products/ns-plasma-4r/main.jpg',
-      sku: 'ns-plasma-4r',
+      sku: sku,
     });
 
     // Track add to cart event for Google Analytics and Google Merchants
     if (typeof window !== 'undefined') {
       // Google Analytics 4 e-commerce event
       if ((window as any).gtag) {
+        const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
+        const price = selectedFrequency === 'rf' ? 7999 : 6499;
+        const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
+        
         (window as any).gtag('event', 'add_to_cart', {
           currency: 'USD',
-          value: 7999,
+          value: price,
           items: [{
-            item_id: 'ns-plasma-4r',
-            item_name: 'NS-Plasma 4R - Standard RF Plasma Cleaner',
+            item_id: sku,
+            item_name: `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`,
             item_category: 'Plasma Systems',
             item_category2: 'Research Equipment',
-            price: 7999,
+            price: price,
             quantity: 1
           }]
         });
       }
 
       // Analytics service tracking
-      analytics.trackAddToCart('ns-plasma-4r', 'NS-Plasma 4R - Standard RF Plasma Cleaner', 7999);
+      const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
+      const price = selectedFrequency === 'rf' ? 7999 : 6499;
+      const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
+      analytics.trackAddToCart(sku, `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`, price);
     }
 
     // Navigate to cart page
@@ -69,8 +81,8 @@ export function NSPlasma4R() {
     "@context": "https://schema.org/",
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/ns-plasma-4r#product",
-    "name": "NS-Plasma 4R - Standard RF Plasma Cleaner",
-    "description": "Compact RF plasma system for research and sample preparation. 4L chamber volume, 13.56 MHz RF power, ideal for teaching labs and low-volume processing.",
+    "name": "NS-Plasma 4R - Plasma Cleaner (RF or Mid-Frequency)",
+    "description": "Compact plasma system for research and sample preparation. 4L chamber volume, available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, ideal for teaching labs and low-volume processing.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-4r/main.jpg"],
     "sku": "ns-plasma-4r",
     "mpn": "NS-Plasma-4R-Standard",
@@ -83,7 +95,7 @@ export function NSPlasma4R() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "7999",
+      "price": "6499",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "url": "https://ninescrolls.com/products/ns-plasma-4r",
       "itemCondition": "https://schema.org/NewCondition",
@@ -126,9 +138,9 @@ export function NSPlasma4R() {
   return (
     <>
       <SEO
-        title="NS-Plasma 4R - Standard RF Plasma Cleaner | $7,999 USD | NineScrolls"
-        description="NS-Plasma 4R Standard RF Plasma Cleaner. Compact 4L chamber, 13.56 MHz RF power. In stock. Free shipping. Ships in 3–4 weeks."
-        keywords="NS-Plasma 4R, standard RF plasma cleaner, plasma cleaning system, research plasma equipment, $7999"
+        title="NS-Plasma 4R - Plasma Cleaner (RF or Mid-Frequency) | $6,499-$7,999 USD | NineScrolls"
+        description="NS-Plasma 4R Plasma Cleaner. Compact 4L chamber, available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations. In stock. Free shipping. Ships in 3–4 weeks."
+        keywords="NS-Plasma 4R, RF plasma cleaner, mid-frequency plasma, plasma cleaning system, research plasma equipment, $6499, $7999"
         url="/products/ns-plasma-4r"
         image="/assets/images/products/ns-plasma-4r/main.jpg"
         imageWidth={800}
@@ -146,10 +158,10 @@ export function NSPlasma4R() {
         <div className="container">
           <div className="product-header-enhanced">
             <h1>NS-Plasma 4R</h1>
-            <p className="product-subtitle">Standard RF Plasma Cleaner</p>
+            <p className="product-subtitle">Plasma Cleaner (RF or Mid-Frequency)</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
-                Compact RF plasma system for research and sample preparation applications
+                Compact plasma system for research and sample preparation applications
               </p>
             </div>
             <div className="hero-bullets">
@@ -163,8 +175,8 @@ export function NSPlasma4R() {
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">⚡</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">13.56 MHz RF Plasma</span>
-                  <span className="bullet-text-sub">standard RF technology for academic compatibility</span>
+                  <span className="bullet-text-strong">RF or Mid-Frequency Plasma</span>
+                  <span className="bullet-text-sub">choose RF for process flexibility or MF for best value</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
@@ -175,13 +187,64 @@ export function NSPlasma4R() {
                 </div>
               </div>
             </div>
+            {/* Power Frequency Options */}
+            <div className="frequency-options" style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333', fontWeight: '600' }}>Power Frequency Options</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFrequency('mf')}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedFrequency === 'mf' ? '#fff' : '#f8f9fa',
+                    borderRadius: '6px',
+                    border: selectedFrequency === 'mf' ? '2px solid #28a745' : '2px solid #dee2e6',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', backgroundColor: '#28a745', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>BEST VALUE</span>
+                  </div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>Mid-Frequency (40 kHz)</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    Cost-effective, robust for routine lab cleaning and surface activation
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#28a745', fontWeight: '700' }}>$6,499 USD • 300W</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFrequency('rf')}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedFrequency === 'rf' ? '#fff' : '#f8f9fa',
+                    borderRadius: '6px',
+                    border: selectedFrequency === 'rf' ? '2px solid #2563eb' : '2px solid #dee2e6',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>RF (13.56 MHz)</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    Finer process control, broader recipe window for advanced surface activation
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>$7,999 USD • 150W</p>
+                </button>
+              </div>
+            </div>
+            
             <div className="hero-pricing">
               <div className="pricing-main">
                 <span className="pricing-label">Price:</span>
-                <span className="pricing-amount">$7,999 USD</span>
+                <span className="pricing-amount">
+                  {selectedFrequency === 'rf' ? '$7,999' : '$6,499'} USD
+                </span>
               </div>
               <p className="pricing-note">Availability: In Stock • Ships in 3–4 weeks</p>
             </div>
+            
             <div className="hero-cta">
               <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
                 Add to Cart
@@ -280,12 +343,12 @@ export function NSPlasma4R() {
             <div className="product-hero-content">
               <h2>System Overview</h2>
               <p className="narrative-text">
-                NS-Plasma 4R is a compact RF plasma system designed for small-batch plasma cleaning, surface activation, 
+                NS-Plasma 4R is a compact plasma system designed for small-batch plasma cleaning, surface activation, 
                 and exploratory research applications where process flexibility and minimal footprint are preferred over high throughput.
               </p>
               <p className="narrative-text">
                 Positioned below full batch plasma platforms, NS-Plasma 4R provides a practical entry point for laboratories 
-                that require 13.56 MHz RF plasma capability without the complexity or space requirements of larger systems.
+                that require RF or Mid-Frequency plasma capability without the complexity or space requirements of larger systems.
               </p>
               
               <div className="comparison-block">
@@ -294,7 +357,7 @@ export function NSPlasma4R() {
                   <div className="comparison-item">
                     <div className="comparison-label">Desktop plasma cleaners</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">Standard RF plasma technology</div>
+                    <div className="comparison-value">RF or Mid-Frequency plasma technology</div>
                   </div>
                   <div className="comparison-item">
                     <div className="comparison-label">Batch plasma platforms</div>
@@ -315,8 +378,8 @@ export function NSPlasma4R() {
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
-              <h3>Compact RF Plasma Capability</h3>
-              <p>Standard 13.56 MHz RF plasma source with adjustable power suitable for gentle plasma processes and stable generation for research and educational use.</p>
+              <h3>RF or Mid-Frequency Plasma Capability</h3>
+              <p>Available in RF (13.56 MHz, 150W) or Mid-Frequency (40 kHz, 300W) configurations. Adjustable power suitable for gentle plasma processes and stable generation for research and educational use.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">📦</div>
@@ -427,7 +490,7 @@ export function NSPlasma4R() {
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
               <h3>Standard RF Technology</h3>
-              <p>Standard RF plasma technology for academic compatibility. Uses the same 13.56 MHz frequency as larger research systems.</p>
+              <p>Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations. RF option provides standard frequency for academic compatibility, matching larger research systems.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">🔧</div>
@@ -447,15 +510,15 @@ export function NSPlasma4R() {
               <tbody>
                 <tr>
                   <td className="spec-label">Plasma Type</td>
-                  <td className="spec-value">RF Plasma</td>
+                  <td className="spec-value">RF Plasma / Mid-Frequency Plasma</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
+                  <td className="spec-label">Plasma Frequency</td>
+                  <td className="spec-value">13.56 MHz (RF) / 40 kHz (Mid-Frequency)</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">Adjustable (research-grade range)</td>
+                  <td className="spec-label">Power Output</td>
+                  <td className="spec-value">150W (RF) / 300W (Mid-Frequency)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
@@ -499,6 +562,12 @@ export function NSPlasma4R() {
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px', fontSize: '0.9rem', color: '#666', lineHeight: '1.6' }}>
+            <p style={{ margin: 0 }}>
+              <strong>Frequency Selection Guide:</strong> Mid-Frequency (40 kHz) is ideal for cost-sensitive research labs and routine cleaning applications. 
+              RF (13.56 MHz) supports more advanced surface activation recipes and offers finer process control.
+            </p>
           </div>
         </div>
       </section>
