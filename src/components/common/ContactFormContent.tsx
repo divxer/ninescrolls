@@ -15,7 +15,6 @@ interface ContactFormContentProps {
   isSubmitting: boolean;
   error: string | null;
   productName?: string;
-  inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
 }
 
 export function ContactFormContent({
@@ -24,8 +23,7 @@ export function ContactFormContent({
   onSubmit,
   isSubmitting,
   error,
-  productName,
-  inquiryType
+  productName
 }: ContactFormContentProps) {
   return (
     <form onSubmit={onSubmit} className="contact-form-content">

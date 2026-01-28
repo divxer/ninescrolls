@@ -120,7 +120,6 @@ export function ContactFormInline({ className = '', topic, inquiryType }: Contac
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           error={error}
-          inquiryType={inquiryType}
         />
       )}
     </div>
