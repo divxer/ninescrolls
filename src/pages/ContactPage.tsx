@@ -1,9 +1,12 @@
 import { Helmet } from 'react-helmet-async';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
+
+type InquiryType = 'budgetary' | 'feasibility' | 'engineer' | null;
 
 export function ContactPage() {
   // Scroll to top when component mounts
@@ -12,6 +15,7 @@ export function ContactPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const topic = params.get('topic') || undefined;
+  const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(null);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -64,8 +68,8 @@ export function ContactPage() {
       </Helmet>
       <section className="contact-hero">
         <div className="container">
-          <h1>Contact Us</h1>
-          <p>Get in touch with our team for expert guidance on your research equipment needs</p>
+          <h1>Request a Budgetary Quote or Technical Consultation</h1>
+          <p>No obligation · No PO required · 24–48h response</p>
         </div>
       </section>
 
@@ -124,9 +128,123 @@ export function ContactPage() {
 
       <section className="contact-form-section">
         <div className="container">
-          <h2>Send Us a Message</h2>
-          <p>Have questions about our products or services? Fill out the form below and we'll get back to you shortly.</p>
-          <ContactFormInline topic={topic} />
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Choose Your Inquiry Type</h2>
+            
+            {/* Three Entry Points - Interactive */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedInquiryType('budgetary')}
+                style={{
+                  padding: '1.5rem',
+                  backgroundColor: selectedInquiryType === 'budgetary' ? '#e7f3ff' : '#f8f9fa',
+                  borderRadius: '8px',
+                  border: selectedInquiryType === 'budgetary' ? '2px solid #2563eb' : '2px solid #e9ecef',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>🅰️ Request a Budgetary Quote</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.5' }}>
+                  Used for internal evaluation, budgeting, or proposal planning.
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#999', fontStyle: 'italic' }}>
+                  Ideal for: PI, Lab manager, Proposal / grant stage
+                </p>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setSelectedInquiryType('feasibility')}
+                style={{
+                  padding: '1.5rem',
+                  backgroundColor: selectedInquiryType === 'feasibility' ? '#e7f3ff' : '#f8f9fa',
+                  borderRadius: '8px',
+                  border: selectedInquiryType === 'feasibility' ? '2px solid #2563eb' : '2px solid #e9ecef',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>🅱️ Technical Feasibility Check</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.5' }}>
+                  Share your material or process goals. We'll confirm feasibility.
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#999', fontStyle: 'italic' }}>
+                  Ideal for: Process engineers, PhD / Post-doc researchers
+                </p>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setSelectedInquiryType('engineer')}
+                style={{
+                  padding: '1.5rem',
+                  backgroundColor: selectedInquiryType === 'engineer' ? '#e7f3ff' : '#f8f9fa',
+                  borderRadius: '8px',
+                  border: selectedInquiryType === 'engineer' ? '2px solid #2563eb' : '2px solid #e9ecef',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>🅲 Talk to an Engineer</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.5' }}>
+                  Direct technical discussion without sales pressure.
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#999', fontStyle: 'italic' }}>
+                  Ideal for: Researchers who prefer technical dialogue
+                </p>
+              </button>
+            </div>
+            
+            <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              {selectedInquiryType === 'budgetary' && 'Request a Budgetary Quote'}
+              {selectedInquiryType === 'feasibility' && 'Technical Feasibility Check'}
+              {selectedInquiryType === 'engineer' && 'Talk to an Engineer (No Sales)'}
+              {!selectedInquiryType && 'Send Us a Message'}
+            </h2>
+            <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
+              Fill out the form below and we'll get back to you within 24–48 hours.
+            </p>
+            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} />
+            
+            {/* What Happens After You Submit - Trust Block */}
+            <div style={{ marginTop: '3rem', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#333', textAlign: 'center' }}>What Happens After You Submit</h3>
+              <ul style={{ listStyle: 'none', padding: 0, maxWidth: '600px', margin: '0 auto' }}>
+                <li style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ color: '#28a745', fontSize: '1.1rem', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Your message is reviewed by a technical team member</span>
+                </li>
+                <li style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ color: '#28a745', fontSize: '1.1rem', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>We typically respond within 1–2 business days</span>
+                </li>
+                <li style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ color: '#28a745', fontSize: '1.1rem', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>No automated sales sequences or mailing lists</span>
+                </li>
+                <li style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ color: '#28a745', fontSize: '1.1rem', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>NDA available upon request</span>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Safety Commitment */}
+            <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#fff', borderRadius: '6px', textAlign: 'center', border: '1px solid #e9ecef' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                <strong>We respect your time and privacy.</strong><br />
+                No spam. No mailing lists. Technical discussions only.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </>

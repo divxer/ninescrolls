@@ -70,7 +70,7 @@ function getApiEndpoint(): string {
   
   // Last resort: use the hardcoded URL (should not happen in production)
   console.warn('Using fallback API URL. Please configure VITE_API_URL or ensure amplify_outputs.json is available.');
-  return 'https://api.ninescrolls.us';
+  return 'https://api.ninescrolls.com';
 }
 
 /**

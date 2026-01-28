@@ -1,12 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ContactFormContent } from './ContactFormContent';
 
 interface ContactFormInlineProps {
   className?: string;
   topic?: string;
+  inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
 }
 
-function getPrefillMessage(topic?: string): string {
+function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null): string {
+  // Priority: inquiryType > topic
+  if (inquiryType === 'budgetary') {
+    return '[Budgetary Quote Request]\n\n';
+  }
+  if (inquiryType === 'feasibility') {
+    return '[Technical Feasibility Check]\n\n';
+  }
+  if (inquiryType === 'engineer') {
+    return '[Talk to an Engineer]\n\n';
+  }
+  
+  // Fallback to topic-based messages
   switch (topic) {
     case 'service':
       return 'I would like to start service planning for my equipment.';
@@ -23,7 +36,7 @@ function getPrefillMessage(topic?: string): string {
   }
 }
 
-export function ContactFormInline({ className = '', topic }: ContactFormInlineProps) {
+export function ContactFormInline({ className = '', topic, inquiryType }: ContactFormInlineProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -31,9 +44,23 @@ export function ContactFormInline({ className = '', topic }: ContactFormInlinePr
     email: '',
     phone: '',
     organization: '',
-    message: getPrefillMessage(topic)
+    message: getPrefillMessage(topic, inquiryType)
   });
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Update message when inquiryType changes
+  useEffect(() => {
+    if (inquiryType) {
+      const prefix = getPrefillMessage(topic, inquiryType);
+      setFormData(prev => {
+        // Only update if message is empty or starts with a prefix
+        if (!prev.message || prev.message.startsWith('[')) {
+          return { ...prev, message: prefix };
+        }
+        return prev;
+      });
+    }
+  }, [inquiryType, topic]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +68,7 @@ export function ContactFormInline({ className = '', topic }: ContactFormInlinePr
     setError(null);
 
     try {
-      const response = await fetch('https://api.ninescrolls.us/sendEmail', {
+      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -93,6 +120,7 @@ export function ContactFormInline({ className = '', topic }: ContactFormInlinePr
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           error={error}
+          inquiryType={inquiryType}
         />
       )}
     </div>

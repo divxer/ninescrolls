@@ -32,7 +32,7 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
     setError(null);
 
     try {
-      const response = await fetch('https://api.ninescrolls.us/sendEmail', {
+      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

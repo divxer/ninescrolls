@@ -163,6 +163,9 @@ export function NSPlasma4R() {
               <p className="hero-tagline">
                 Compact plasma system for research and sample preparation applications
               </p>
+              <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+                US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
+              </p>
             </div>
             <div className="hero-bullets">
               <div className="hero-bullet-item hero-bullet-primary">
@@ -366,6 +369,38 @@ export function NSPlasma4R() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Who Uses This - Use Case Block */}
+      <section className="product-use-cases-section" style={{ padding: '3rem 0', backgroundColor: '#fff' }}>
+        <div className="container">
+          <h2 className="section-title">Who Uses This</h2>
+          <p className="section-intro" style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
+            NS-Plasma 4R is commonly installed in:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎓</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>University Cleanrooms</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Teaching labs and research facilities</p>
+            </div>
+            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔬</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Materials Science Labs</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Surface treatment and activation</p>
+            </div>
+            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Failure Analysis Labs</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Sample preparation workflows</p>
+            </div>
+            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚗️</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Pilot-Scale R&D Lines</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Early-stage process development</p>
             </div>
           </div>
         </div>
@@ -611,18 +646,52 @@ export function NSPlasma4R() {
         </div>
       </section>
 
+      {/* Trust Block - What You Can Expect */}
+      <section className="trust-block-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+        <div className="container">
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>What You Can Expect When Working With Us</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <span>US-based sales & project coordination</span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <span>Installation & training support available</span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <span>Engineering-backed configuration (not off-the-shelf)</span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <span>NDA & export compliance supported</span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <span>Responsive support before & after delivery</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
             <h2>Ready to order?</h2>
-            <p>Add to cart to proceed with checkout, or contact our sales team for assistance.</p>
+            <p style={{ marginBottom: '1rem' }}>
+              You don't need a finalized specification or PO to reach out. 
+              We often assist labs during early evaluation and proposal stages.
+            </p>
             <div className="inquiry-buttons">
               <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
                 Add to Cart
               </button>
               <button className="btn btn-secondary btn-large" onClick={openContactForm}>
-                Contact Sales
+                Request a Budgetary Quote
               </button>
             </div>
             <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

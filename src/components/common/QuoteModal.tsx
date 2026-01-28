@@ -71,7 +71,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     setIsSubmitting(true);
     try {
       const payload = { productName: form.product || 'Products Inquiry', ...form, turnstileToken: token };
-      const res = await fetch('https://api.ninescrolls.us/sendEmail', {
+      const res = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       const txt = await res.text();
