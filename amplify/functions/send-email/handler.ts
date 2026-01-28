@@ -1,16 +1,5 @@
 import * as sgMail from '@sendgrid/mail';
-import type { Handler } from 'aws-lambda';
-
-type SendEmailEvent = {
-    httpMethod?: string;
-    body?: string;
-    productName?: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    organization?: string;
-    message?: string;
-};
+import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': 'https://ninescrolls.com',
@@ -19,32 +8,41 @@ const corsHeaders = {
     'Access-Control-Max-Age': '300',
 };
 
-export const handler: Handler<SendEmailEvent> = async (event) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     console.log('Lambda function invoked with event:', JSON.stringify(event, null, 2));
 
-    // Handle preflight requests
-    if (event.httpMethod === 'OPTIONS') {
+    // Get HTTP method
+    const method = event.requestContext?.http?.method || (event as any).httpMethod;
+    
+    // Handle preflight requests (OPTIONS)
+    if (method === 'OPTIONS') {
         return {
             statusCode: 200,
             headers: corsHeaders,
-            body: '',
+            body: JSON.stringify({ message: 'CORS preflight successful' }),
         };
     }
 
     try {
-        // Parse the request body if it exists
-        let formData = event;
-        if (event.body) {
-            try {
-                formData = JSON.parse(event.body);
-            } catch (error) {
-                console.error('Failed to parse request body:', error);
-                return {
-                    statusCode: 400,
-                    headers: corsHeaders,
-                    body: JSON.stringify({ error: 'Invalid JSON in request body' })
-                };
-            }
+        // Parse the request body
+        if (!event.body) {
+            return {
+                statusCode: 400,
+                headers: corsHeaders,
+                body: JSON.stringify({ error: 'Request body is required' })
+            };
+        }
+
+        let formData;
+        try {
+            formData = JSON.parse(event.body);
+        } catch (error) {
+            console.error('Failed to parse request body:', error);
+            return {
+                statusCode: 400,
+                headers: corsHeaders,
+                body: JSON.stringify({ error: 'Invalid JSON in request body' })
+            };
         }
 
         const { productName, name, email, phone, organization, message } = formData;

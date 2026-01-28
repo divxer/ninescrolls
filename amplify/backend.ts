@@ -37,29 +37,16 @@ const restApi = new RestApi(apiStack, 'RestApi', {
 // Create the /sendEmail resource
 const sendEmailResource = restApi.root.addResource('sendEmail');
 
-// Add POST method to /sendEmail with CORS enabled
+// Add POST method to /sendEmail - Use Lambda Proxy Integration (proxy: true)
+// This ensures CORS headers from Lambda are properly returned
 sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: false,
-    integrationResponses: [{
-        statusCode: '200',
-        responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': "'*'",  // Correct way to allow all origins
-            'method.response.header.Access-Control-Allow-Methods': "'POST'",
-            'method.response.header.Access-Control-Allow-Headers': "'Content-Type'",
-            'method.response.header.Access-Control-Max-Age': "'300'"
-        }
-    }]
-}), {
-    methodResponses: [{
-        statusCode: '200',
-        responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': true,
-            'method.response.header.Access-Control-Allow-Methods': true,
-            'method.response.header.Access-Control-Allow-Headers': true,
-            'method.response.header.Access-Control-Max-Age': true
-        }
-    }]
-});
+    proxy: true,
+}));
+
+// Add OPTIONS method for CORS preflight - handled by Lambda function
+sendEmailResource.addMethod('OPTIONS', new LambdaIntegration(backend.sendEmail.resources.lambda, {
+    proxy: true,
+}));
 
 // Create /checkout/session resource for Stripe Checkout
 const checkoutResource = restApi.root.addResource('checkout');
