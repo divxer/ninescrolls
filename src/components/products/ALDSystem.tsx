@@ -41,6 +41,41 @@ export function ALDSystem() {
           <div className="product-header">
             <h1>ALD System Series</h1>
             <p>Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>
+            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+              US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
+            </p>
+            
+            {/* Cost-Efficiency Hero Card */}
+            <div style={{ 
+              marginTop: '2rem', 
+              padding: '1.5rem', 
+              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)',
+              maxWidth: '800px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}>
+              <h3 style={{ 
+                margin: '0 0 0.75rem 0', 
+                fontSize: '1.1rem', 
+                color: '#EAEAEA', 
+                fontWeight: '600',
+                textAlign: 'center'
+              }}>
+                Cost-efficient, research-grade configurations
+              </h3>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '0.95rem', 
+                color: '#EAEAEA', 
+                lineHeight: '1.6',
+                textAlign: 'center'
+              }}>
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+                We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
+              </p>
+            </div>
           </div>
         </div>
       </section>
