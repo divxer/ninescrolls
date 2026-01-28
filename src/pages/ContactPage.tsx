@@ -70,6 +70,39 @@ export function ContactPage() {
         <div className="container">
           <h1>Request a Budgetary Quote or Technical Consultation</h1>
           <p>No obligation · No PO required · 24–48h response</p>
+          
+          {/* Cost-Efficiency Hero Card */}
+          <div style={{ 
+            marginTop: '2rem', 
+            padding: '1.5rem', 
+            backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+            borderRadius: '8px',
+            backdropFilter: 'blur(4px)',
+            maxWidth: '800px',
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }}>
+            <h3 style={{ 
+              margin: '0 0 0.75rem 0', 
+              fontSize: '1.1rem', 
+              color: '#EAEAEA', 
+              fontWeight: '600',
+              textAlign: 'center'
+            }}>
+              Cost-efficient, research-grade configurations
+            </h3>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '0.95rem', 
+              color: '#EAEAEA', 
+              lineHeight: '1.6',
+              textAlign: 'center'
+            }}>
+              We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              Our systems are designed to deliver essential performance without unnecessary industrial features, 
+              making them a practical and cost-efficient choice for university and research laboratories.
+            </p>
+          </div>
         </div>
       </section>
 
