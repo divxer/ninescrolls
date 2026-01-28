@@ -300,7 +300,7 @@ export function ServiceSupportPage() {
                 <li><span className="feature-check">✓</span>48-hour on-site response</li>
                 <li><span className="feature-check">✓</span>Parts discount (25%)</li>
                 <li><span className="feature-check">✓</span>Software updates included</li>
-                <li><span className="feature-check">✓</span>24/7 phone support</li>
+                <li><span className="feature-check">✓</span>Voicemail available 24/7 for critical issues</li>
                 <li><span className="feature-check">✓</span>Advanced training</li>
                 <li><span className="feature-check">✓</span>Performance optimization</li>
                 <li><span className="feature-check">✓</span>Priority parts availability</li>

@@ -43,7 +43,7 @@ export function ContactPage() {
           "contactType": "technical support",
           "email": "support@ninescrolls.com",
           "availableLanguage": ["English", "Chinese"],
-          "hoursAvailable": "Mo-Fr 08:00-18:00 PST"
+          "hoursAvailable": "Mo-Fr 09:00-18:00 PST"
         }
       ]
     }
@@ -97,7 +97,12 @@ export function ContactPage() {
                 <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>
               </p>
               
-              <p className="note">For urgent matters only: +1 (858) 879-8898</p>
+              <p className="note">
+                <strong>Phone:</strong> +1 (858) 879-8898<br />
+                <span style={{ fontSize: '0.9em', color: '#666' }}>
+                  Calls are routed through our automated support system. Voicemail messages are transcribed and responded to promptly.
+                </span>
+              </p>
             </div>
 
             <div className="contact-card">
@@ -109,8 +114,8 @@ export function ContactPage() {
               
               <div className="support-hours">
                 <p className="contact-label">Support Hours</p>
-                <p>Monday - Friday: 8:00 AM - 6:00 PM PST</p>
-                <p className="note">24/7 emergency support available for critical issues</p>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM PST</p>
+                <p className="note">Voicemail available 24/7 for critical issues</p>
               </div>
             </div>
           </div>

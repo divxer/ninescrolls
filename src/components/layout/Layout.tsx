@@ -175,7 +175,14 @@ export function Layout({ children }: LayoutProps) {
             <div className="footer-section">
               <h4>Contact Us</h4>
               <p>Email: info@ninescrolls.com</p>
-              <p>For urgent inquiries: +1 (858) 879-8898</p>
+              <p>Sales: sales@ninescrolls.com</p>
+              <p>Support: support@ninescrolls.com</p>
+              <p style={{ marginTop: '0.5rem' }}>
+                Urgent inquiries: +1 (858) 879-8898<br />
+                <span style={{ fontSize: '0.85em', color: '#999' }}>
+                  Calls may be routed to voicemail outside business hours.
+                </span>
+              </p>
             </div>
             <div className="footer-section">
               <h4>Follow Us</h4>
