@@ -13,7 +13,8 @@ type SendEmailEvent = {
 };
 
 const corsHeaders = {
-    'Access-Control-Allow-Methods': 'POST',
+    'Access-Control-Allow-Origin': 'https://ninescrolls.com',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '300',
 };
