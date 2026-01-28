@@ -15,6 +15,7 @@ interface ContactFormContentProps {
   isSubmitting: boolean;
   error: string | null;
   productName?: string;
+  inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
 }
 
 export function ContactFormContent({
@@ -23,7 +24,8 @@ export function ContactFormContent({
   onSubmit,
   isSubmitting,
   error,
-  productName
+  productName,
+  inquiryType
 }: ContactFormContentProps) {
   return (
     <form onSubmit={onSubmit} className="contact-form-content">
@@ -57,6 +59,9 @@ export function ContactFormContent({
           value={formData.phone}
           onChange={(e) => onFormDataChange({ ...formData, phone: e.target.value })}
         />
+        <span style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.25rem', display: 'block' }}>
+          Optional. Only if you prefer a call.
+        </span>
       </div>
       
       <div className="form-group">
@@ -77,7 +82,11 @@ export function ContactFormContent({
           onChange={(e) => onFormDataChange({ ...formData, message: e.target.value })}
           required
           rows={5}
-          placeholder={productName ? `I would like to learn more about ${productName}...` : 'How can we help you?'}
+          placeholder={
+            productName 
+              ? `I would like to learn more about ${productName}...` 
+              : 'Briefly describe your material, process goal, or evaluation stage (early discussion is perfectly fine)'
+          }
         />
       </div>
 
