@@ -167,6 +167,38 @@ export function NSPlasma4R() {
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>
+            
+            {/* Cost-Efficiency Hero Card */}
+            <div style={{ 
+              marginTop: '2rem', 
+              padding: '1.5rem', 
+              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)',
+              maxWidth: '800px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}>
+              <h3 style={{ 
+                margin: '0 0 0.75rem 0', 
+                fontSize: '1.1rem', 
+                color: '#EAEAEA', 
+                fontWeight: '600',
+                textAlign: 'center'
+              }}>
+                Cost-efficient, research-grade configurations
+              </h3>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '0.95rem', 
+                color: '#EAEAEA', 
+                lineHeight: '1.6',
+                textAlign: 'center'
+              }}>
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+                We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
+              </p>
+            </div>
             <div className="hero-bullets">
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">📦</span>
@@ -642,6 +674,57 @@ export function NSPlasma4R() {
               Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
               All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Cost Advantage Block */}
+      <section className="cost-advantage-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
+        <div className="container">
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>Why Our Systems Are Cost-Efficient</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <p style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1.05rem', color: '#666', lineHeight: '1.7' }}>
+              We understand that many research projects operate under tight budgets. Our systems are designed to deliver essential performance without unnecessary industrial features, making them a practical and cost-efficient choice for university and research laboratories.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Modular design</strong>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Pay only for what you need</span>
+                </div>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Research-focused configuration</strong>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Not overbuilt for production</span>
+                </div>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Direct engineering collaboration</strong>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>No unnecessary intermediaries</span>
+                </div>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Lean operational structure</strong>
+                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Efficient cost structure</span>
+                </div>
+              </li>
+            </ul>
+            <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333' }}>Typical use cases include:</h3>
+              <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
+                <li>New lab setup with limited initial funding</li>
+                <li>Grant-based or proposal-stage projects</li>
+                <li>Pilot or exploratory research</li>
+                <li>Teaching and shared facilities</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
