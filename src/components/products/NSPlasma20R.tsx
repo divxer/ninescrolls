@@ -3,6 +3,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
+import { TrustSection } from '../common/TrustSection';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 
@@ -646,6 +647,9 @@ export function NSPlasma20R() {
           </div>
         </div>
       </section>
+
+      {/* Trust Logos Section */}
+      <TrustSection />
 
       {/* Trust Block - What You Can Expect */}
       <section className="trust-block-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
