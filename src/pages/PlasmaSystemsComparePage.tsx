@@ -48,11 +48,9 @@ export function PlasmaSystemsComparePage() {
       <section className="compare-hero">
         <div className="container">
           <h1>Compare NS-Plasma Systems</h1>
-          <p className="compare-subtitle compare-subtitle-guide">
-            Start with 4R for validation. Choose 20R or 20R-I for core research.
-          </p>
-          <p className="compare-description">
-            Compare NS-Plasma 4R, 20R, and 20R-I to determine which system fits your research stage and requirements.
+          <p className="compare-subtitle">
+            Start with 4R for validation.<br />
+            Choose 20R or 20R-I for core research.
           </p>
         </div>
       </section>
