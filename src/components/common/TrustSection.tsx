@@ -65,19 +65,20 @@ export function TrustSection({
                 backgroundColor: '#ffffff',
                 borderRadius: '8px'
               }}>
-                <OptimizedImage
-                  src={logoImagePath}
-                  alt={logoImageAlt || 'Trusted by leading universities and research institutions'}
-                  width={1200}
-                  height={800}
-                  className="trust-logos-image"
-                  style={{ 
-                    width: '100%', 
-                    height: 'auto', 
-                    display: 'block',
-                    margin: '0 auto'
-                  }}
-                />
+                <div style={{ 
+                  width: '100%', 
+                  height: 'auto', 
+                  display: 'block',
+                  margin: '0 auto'
+                }}>
+                  <OptimizedImage
+                    src={logoImagePath}
+                    alt={logoImageAlt || 'Trusted by leading universities and research institutions'}
+                    width={1200}
+                    height={800}
+                    className="trust-logos-image"
+                  />
+                </div>
               </div>
               <p style={{ 
                 textAlign: 'center', 
