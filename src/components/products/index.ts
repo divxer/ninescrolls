@@ -11,6 +11,7 @@ import { CompactRIE } from './CompactRIE';
 import { PlasmaCleaner } from './PlasmaCleaner';
 import { NSPlasma20R } from './NSPlasma20R';
 import { NSPlasma4R } from './NSPlasma4R';
+import { NSPlasma20RI } from './NSPlasma20RI';
 
 const productComponents = {
   'hdp-cvd': HDPCVDSystem,
@@ -26,6 +27,7 @@ const productComponents = {
   'plasma-cleaner': PlasmaCleaner,
   'ns-plasma-20r': NSPlasma20R,
   'ns-plasma-4r': NSPlasma4R,
+  'ns-plasma-20r-i': NSPlasma20RI,
 };
 
 export function getProductComponent(productId: string) {
@@ -46,4 +48,5 @@ export {
   PlasmaCleaner,
   NSPlasma20R,
   NSPlasma4R,
+  NSPlasma20RI,
 };

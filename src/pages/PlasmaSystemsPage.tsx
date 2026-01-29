@@ -25,6 +25,12 @@ export function PlasmaSystemsPage() {
         "name": "NS-Plasma 20R",
         "url": "https://ninescrolls.com/products/ns-plasma-20r",
         "description": "Research-grade RF plasma processing system with batch processing"
+      },
+      {
+        "@type": "Product",
+        "name": "NS-Plasma 20R-I (Integrated)",
+        "url": "https://ninescrolls.com/products/ns-plasma-20r-i",
+        "description": "Integrated RF vacuum plasma cleaner with 20L batch chamber"
       }
     ]
   };
@@ -143,6 +149,51 @@ export function PlasmaSystemsPage() {
                 </div>
                 <div className="system-cta">
                   <Link to="/products/ns-plasma-20r" className="btn btn-primary">
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* NS-Plasma 20R-I (Integrated) */}
+            <div className="system-card system-card-core">
+              <div className="system-image">
+                <OptimizedImage
+                  src="/assets/images/products/ns-plasma-20r-i/main.jpg"
+                  alt="NS-Plasma 20R-I (Integrated) - Research-Grade Batch Plasma Cleaning"
+                  width={600}
+                  height={400}
+                  className="system-card-image"
+                />
+              </div>
+              <div className="system-content">
+                <div className="system-badge system-badge-core">Integrated</div>
+                <h2>NS-Plasma 20R-I</h2>
+                <p className="system-tagline">Integrated / Batch Processing</p>
+                <p className="system-description">
+                  Integrated RF vacuum plasma cleaner with 20-liter batch chamber. 
+                  Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.
+                </p>
+                <div className="system-highlights">
+                  <div className="highlight-item">
+                    <span className="highlight-icon">📦</span>
+                    <span>20 L Batch Chamber</span>
+                  </div>
+                  <div className="highlight-item">
+                    <span className="highlight-icon">⚡</span>
+                    <span>300 W RF (13.56 MHz)</span>
+                  </div>
+                  <div className="highlight-item">
+                    <span className="highlight-icon">🖥️</span>
+                    <span>PLC + Touchscreen</span>
+                  </div>
+                </div>
+                <div className="system-pricing">
+                  <span className="price-label">US Price</span>
+                  <span className="price-amount">$14,499</span>
+                </div>
+                <div className="system-cta">
+                  <Link to="/products/ns-plasma-20r-i" className="btn btn-primary">
                     View Details
                   </Link>
                 </div>

@@ -44,10 +44,12 @@
 .compare-grid {
     display: grid;
     grid-template-columns: 
-        220px              /* Feature */
+        200px              /* Feature */
         minmax(0, 1fr)     /* 4R */
-        2px                /* Divider - 这就是分隔线列 */
-        minmax(0, 1fr);    /* 20R */
+        2px                /* Divider 1 */
+        minmax(0, 1fr)     /* 20R */
+        2px                /* Divider 2 */
+        minmax(0, 1fr);    /* 20R-I */
     background: white;
     border-radius: 12px;
     overflow: hidden;
@@ -75,6 +77,10 @@
 }
 
 .grid-header.grid-product-20r {
+    background: white;
+}
+
+.grid-header.grid-product-20ri {
     background: white;
 }
 
@@ -106,15 +112,22 @@
     background: white;
 }
 
+.grid-cell.grid-product-20ri {
+    background: white;
+}
+
 /* 最后一行不需要底部边框 */
 .compare-grid > .grid-cell:last-child,
 .compare-grid > .grid-cell:nth-last-child(2),
 .compare-grid > .grid-cell:nth-last-child(3),
-.compare-grid > .grid-cell:nth-last-child(4) {
+.compare-grid > .grid-cell:nth-last-child(4),
+.compare-grid > .grid-cell:nth-last-child(5),
+.compare-grid > .grid-cell:nth-last-child(6) {
     border-bottom: none;
 }
 
-.compare-grid > .grid-divider:last-child {
+.compare-grid > .grid-divider:last-child,
+.compare-grid > .grid-divider:nth-last-child(2) {
     border-bottom: none;
 }
 
@@ -138,6 +151,11 @@
 
 /* 20R: 品牌蓝标题 */
 .grid-product-20r .product-header h3 {
+    color: var(--primary-color);
+}
+
+/* 20R-I: 品牌蓝标题 */
+.grid-product-20ri .product-header h3 {
     color: var(--primary-color);
 }
 
@@ -207,9 +225,9 @@
 /* Split Path CTAs */
 .compare-split-cta {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 2rem;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -239,6 +257,12 @@
     box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
 }
 
+.split-cta-20ri {
+    border-top-color: var(--primary-color);
+    background: white;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+}
+
 .split-cta-card h3 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -250,6 +274,10 @@
 }
 
 .split-cta-20r h3 {
+    color: var(--primary-color);
+}
+
+.split-cta-20ri h3 {
     color: var(--primary-color);
 }
 
@@ -317,10 +345,13 @@
     
     .compare-grid {
         grid-template-columns: 
-            120px
+            100px
+            minmax(0, 1fr)
+            2px
             minmax(0, 1fr)
             2px
             minmax(0, 1fr);
+        font-size: 0.85rem;
     }
     
     .grid-header,
