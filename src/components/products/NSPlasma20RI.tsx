@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { Helmet } from 'react-helmet-async';
@@ -8,7 +7,6 @@ import { SEO } from '../common/SEO';
 
 export function NSPlasma20RI() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
 
   useScrollToTop();
@@ -21,6 +19,15 @@ export function NSPlasma20RI() {
   const closeContactForm = () => {
     setIsModalOpen(false);
     document.body.style.overflow = 'auto';
+  };
+
+  const handleDownloadBrochure = () => {
+    const a = document.createElement('a');
+    a.href = '/docs/ns-plasma-20r-i-datasheet.pdf';
+    a.download = 'NineScrolls-NS-Plasma-20R-I-Datasheet.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const structuredData = {
@@ -488,6 +495,7 @@ export function NSPlasma20RI() {
       <QuoteModal
         isOpen={isModalOpen}
         onClose={closeContactForm}
+        onDownloadBrochure={handleDownloadBrochure}
         productName="NS-Plasma 20R-I (Integrated)"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
