@@ -4,7 +4,7 @@ import * as sgMail from '@sendgrid/mail';
 import { env } from '$amplify/env/stripe-webhook';
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
   // Get raw body for signature verification
   // API Gateway v2 may base64 encode the body
