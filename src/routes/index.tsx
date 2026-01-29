@@ -32,7 +32,8 @@ import {
   PECVDSystem,
   PlasmaCleaner,
   NSPlasma20R,
-  NSPlasma4R
+  NSPlasma4R,
+  NSPlasma20RI
 } from '../components/products';
 
 export function AppRoutes() {
@@ -72,6 +73,7 @@ export function AppRoutes() {
           <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
           <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
           <Route path="/products/ns-plasma-4r" element={<NSPlasma4R />} />
+          <Route path="/products/ns-plasma-20r-i" element={<NSPlasma20RI />} />
           <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
           <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
           <Route path="*" element={<NotFoundPage />} />
