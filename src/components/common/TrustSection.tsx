@@ -27,6 +27,20 @@ export function TrustSection({
           <p style={{ 
             textAlign: 'center', 
             maxWidth: '900px', 
+            margin: '0 auto 3rem', 
+            fontSize: '1.1rem', 
+            color: '#4b5563', 
+            lineHeight: '1.7' 
+          }}>
+            Our plasma surface treatment systems are widely adopted by
+            leading universities, national research institutes, and industrial R&D centers
+            for materials science, microelectronics, and advanced surface engineering research.
+          </p>
+
+          {/* Quantified Trust */}
+          <p style={{ 
+            textAlign: 'center', 
+            maxWidth: '900px', 
             margin: '0 auto', 
             fontSize: '1.2rem', 
             color: '#1f2937', 
@@ -40,6 +54,44 @@ export function TrustSection({
             {deploymentText},
             supporting materials science, microelectronics, and advanced surface engineering research.
           </p>
+
+          {/* Optional Logo Display */}
+          {showLogos && logoImagePath && (
+            <>
+              <div style={{ 
+                maxWidth: '1200px', 
+                margin: '2rem auto',
+                padding: '2rem',
+                backgroundColor: '#ffffff',
+                borderRadius: '8px'
+              }}>
+                <OptimizedImage
+                  src={logoImagePath}
+                  alt={logoImageAlt || 'Trusted by leading universities and research institutions'}
+                  width={1200}
+                  height={800}
+                  className="trust-logos-image"
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto', 
+                    display: 'block',
+                    margin: '0 auto'
+                  }}
+                />
+              </div>
+              <p style={{ 
+                textAlign: 'center', 
+                fontSize: '0.85rem', 
+                color: '#6b7280', 
+                fontStyle: 'italic',
+                maxWidth: '800px',
+                margin: '0 auto'
+              }}>
+                Logos are shown for reference only and represent institutions where similar systems have been used.
+                No endorsement or formal affiliation is implied.
+              </p>
+            </>
+          )}
         </div>
       </section>
 
