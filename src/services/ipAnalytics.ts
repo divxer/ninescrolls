@@ -13,10 +13,20 @@ interface IPInfo {
   longitude?: number;
 }
 
+interface ConfidenceBreakdown {
+  orgMatch: number;      // 组织关键词匹配得分
+  geo: number;           // 地理位置得分
+  ispPenalty: number;    // ISP/噪音惩罚（负数）
+  whitelist: number;     // 白名单加成
+  total: number;          // 总分
+}
+
 interface TargetCustomerAnalysis {
   isTargetCustomer: boolean;
   organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown';
   confidence: number;
+  confidenceBreakdown?: ConfidenceBreakdown;  // 子评分详情
+  leadTier?: 'A' | 'B' | 'C';  // 线索等级
   details: {
     orgName: string;
     orgType: string;
@@ -275,6 +285,15 @@ class IPAnalyticsService {
     const orgLower = orgName.toLowerCase();
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
 
+    // Initialize confidence breakdown
+    const breakdown: ConfidenceBreakdown = {
+      orgMatch: 0,
+      geo: 0,
+      ispPenalty: 0,
+      whitelist: 0,
+      total: 0
+    };
+
     // Define target customer keywords
     const universityKeywords = [
       'university', 'college', 'school', 'academy', 'institute', 'campus',
@@ -291,9 +310,28 @@ class IPAnalyticsService {
       // Chinese keywords: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
+    // Define noise/negative keywords (ISPs, cloud providers, etc.)
+    const noiseOrgs = [
+      'comcast', 'verizon', 'at&t', 't-mobile', 'tmobile', 'sprint',
+      'cloudflare', 'amazon', 'aws', 'google', 'microsoft', 'oracle',
+      'azure', 'gcp', 'digitalocean', 'linode', 'vultr', 'ovh',
+      'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn'
+    ];
+
+    // Check for noise/ISP organizations (negative signal)
+    const isNoiseOrg = noiseOrgs.some(noise => orgLower.includes(noise));
+    if (isNoiseOrg) {
+      breakdown.ispPenalty = -0.3;  // 显著降权
+    }
+
+    // Check whitelist first (highest priority)
+    const whitelistMatch = this.checkWhitelist(orgName, ipInfo.country);
+    if (whitelistMatch.matched) {
+      breakdown.whitelist = Math.max(0.85, breakdown.whitelist);
+    }
+
     // Analyze organization type
     let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
-    let confidence = 0;
     let keywords: string[] = [];
 
     // Check university keywords
@@ -302,7 +340,7 @@ class IPAnalyticsService {
     );
     if (universityMatches.length > 0) {
       organizationType = 'university';
-      confidence = Math.min(0.9, 0.3 + (universityMatches.length * 0.2));
+      breakdown.orgMatch = Math.min(0.9, 0.3 + (universityMatches.length * 0.2));
       keywords = universityMatches;
     }
 
@@ -310,9 +348,9 @@ class IPAnalyticsService {
     const researchMatches = researchKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
-    if (researchMatches.length > 0 && confidence < 0.5) {
+    if (researchMatches.length > 0 && breakdown.orgMatch < 0.5) {
       organizationType = 'research_institute';
-      confidence = Math.min(0.9, 0.4 + (researchMatches.length * 0.15));
+      breakdown.orgMatch = Math.min(0.9, 0.4 + (researchMatches.length * 0.15));
       keywords = researchMatches;
     }
 
@@ -320,21 +358,50 @@ class IPAnalyticsService {
     const enterpriseMatches = enterpriseKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
-    if (enterpriseMatches.length > 0 && confidence < 0.3) {
+    if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3) {
       organizationType = 'enterprise';
-      confidence = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
+      breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
       keywords = enterpriseMatches;
     }
 
-    // Geographic location bonus
-    if (this.isTargetLocation(ipInfo.country, ipInfo.region)) {
-      confidence = Math.min(0.95, confidence + 0.1);
+    // Apply ISP penalty to orgMatch if it's a noise org
+    if (isNoiseOrg && breakdown.orgMatch > 0) {
+      breakdown.orgMatch = breakdown.orgMatch * 0.5;  // 减半
+    }
+
+    // Geographic location scoring (not just bonus, but threshold adjuster)
+    const isTargetGeo = this.isTargetLocation(ipInfo.country, ipInfo.region);
+    if (isTargetGeo) {
+      breakdown.geo = 0.1;
+    }
+
+    // Calculate total confidence
+    breakdown.total = Math.max(0, Math.min(0.95, 
+      breakdown.orgMatch + 
+      breakdown.geo + 
+      breakdown.ispPenalty + 
+      breakdown.whitelist
+    ));
+
+    // Dynamic threshold based on geography
+    const threshold = isTargetGeo ? 0.3 : 0.5;  // 目标国家更宽松，其他地区更严格
+
+    // Determine lead tier
+    let leadTier: 'A' | 'B' | 'C' | undefined;
+    if (breakdown.total >= 0.7 && (organizationType === 'university' || organizationType === 'research_institute')) {
+      leadTier = 'A';
+    } else if (breakdown.total >= 0.5 && organizationType !== 'unknown') {
+      leadTier = 'B';
+    } else if (breakdown.total >= threshold) {
+      leadTier = 'C';
     }
 
     return {
-      isTargetCustomer: confidence > 0.3,
+      isTargetCustomer: breakdown.total > threshold,
       organizationType,
-      confidence,
+      confidence: breakdown.total,
+      confidenceBreakdown: breakdown,
+      leadTier,
       details: {
         orgName,
         orgType: this.getOrgTypeName(organizationType),
@@ -358,6 +425,36 @@ class IPAnalyticsService {
     ];
 
     return targetCountries.includes(country) || targetRegions.includes(region);
+  }
+
+  // Check against known universities/research institutes whitelist
+  private checkWhitelist(orgName: string, country: string): { matched: boolean; orgName?: string } {
+    const whitelist = [
+      // US Universities
+      'stanford', 'mit', 'massachusetts institute', 'harvard', 'ucsd', 'uc san diego',
+      'ucla', 'uc berkeley', 'caltech', 'california institute', 'princeton',
+      'yale', 'columbia', 'cornell', 'pennsylvania', 'upenn', 'chicago',
+      'northwestern', 'duke', 'johns hopkins', 'carnegie mellon', 'cmu',
+      // Research Institutes
+      'nano3', 'nano', 'national lab', 'argonne', 'oak ridge', 'lawrence',
+      'sandia', 'los alamos', 'brookhaven', 'fermilab',
+      // Chinese Universities
+      'tsinghua', 'peking', 'beijing university', 'fudan', 'shanghai jiao tong',
+      'zhejiang', 'nankai', 'nanjing', 'wuhan', 'huazhong',
+      // Chinese Research Institutes
+      'chinese academy', 'cas', 'academia sinica', 'tsinghua', 'peking',
+      // European
+      'eth zurich', 'epfl', 'max planck', 'fraunhofer', 'cnrs',
+      'cambridge', 'oxford', 'imperial college'
+    ];
+
+    const orgLower = orgName.toLowerCase();
+    const matched = whitelist.some(keyword => orgLower.includes(keyword));
+
+    return {
+      matched,
+      orgName: matched ? orgName : undefined
+    };
   }
 
   // Get organization type name
