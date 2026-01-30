@@ -248,16 +248,50 @@ class SegmentAnalyticsService {
       // If it's a target customer, send additional event (not duplicate)
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
+          // Event context
           originalEvent: event,
+          timestamp: new Date().toISOString(),
+          
+          // Organization information
           organizationType: analysis?.organizationType || 'unknown',
+          orgName: analysis?.details.orgName || 'Unknown',
+          orgType: analysis?.details.orgType || 'Unknown',
+          location: analysis?.details.location || 'Unknown',
+          keywords: analysis?.details.keywords || [],
+          
+          // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
-          leadTier: finalLeadTier || 'C',
           confidenceBreakdown: analysis?.confidenceBreakdown,
+          
+          // Lead qualification
+          leadTier: finalLeadTier || 'C',
+          
+          // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
-          orgName: analysis?.details.orgName || 'Unknown',
-          location: analysis?.details.location || 'Unknown',
-          keywords: analysis?.details.keywords || []
+          behaviorDetails: {
+            productPagesViewed: behaviorScore.productPagesViewed,
+            highValuePagesViewed: behaviorScore.highValuePagesViewed,
+            timeOnSite: behaviorScore.timeOnSite,
+            pdfDownloads: behaviorScore.pdfDownloads,
+            returnVisits: behaviorScore.returnVisits,
+            isPaidTraffic: behaviorScore.isPaidTraffic
+          },
+          
+          // IP information (for sales team context)
+          ipInfo: ipInfo ? {
+            ip: ipInfo.ip,
+            country: ipInfo.country,
+            region: ipInfo.region,
+            city: ipInfo.city,
+            org: ipInfo.org,
+            isp: ipInfo.isp
+          } : null,
+          
+          // Page context
+          pagePath: properties?.pathname || properties?.pagePath || 'unknown',
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+          pageTitle: typeof window !== 'undefined' ? document.title : undefined
         });
       }
 
@@ -356,17 +390,50 @@ class SegmentAnalyticsService {
       // If it's a target customer, send additional TRACK event with enhanced data
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
+          // Event context
           originalEvent: 'Page Viewed',
+          timestamp: new Date().toISOString(),
+          
+          // Organization information
           organizationType: analysis?.organizationType || 'unknown',
+          orgName: analysis?.details.orgName || 'Unknown',
+          orgType: analysis?.details.orgType || 'Unknown',
+          location: analysis?.details.location || 'Unknown',
+          keywords: analysis?.details.keywords || [],
+          
+          // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
-          leadTier: finalLeadTier || 'C',
           confidenceBreakdown: analysis?.confidenceBreakdown,
+          
+          // Lead qualification
+          leadTier: finalLeadTier || 'C',
+          
+          // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
-          timeOnSite: behaviorScore.timeOnSite,  // 停留时间也会包含在 Target Customer Detected 事件中
-          orgName: analysis?.details.orgName || 'Unknown',
-          location: analysis?.details.location || 'Unknown',
-          keywords: analysis?.details.keywords || []
+          behaviorDetails: {
+            productPagesViewed: behaviorScore.productPagesViewed,
+            highValuePagesViewed: behaviorScore.highValuePagesViewed,
+            timeOnSite: behaviorScore.timeOnSite,
+            pdfDownloads: behaviorScore.pdfDownloads,
+            returnVisits: behaviorScore.returnVisits,
+            isPaidTraffic: behaviorScore.isPaidTraffic
+          },
+          
+          // IP information (for sales team context)
+          ipInfo: ipInfo ? {
+            ip: ipInfo.ip,
+            country: ipInfo.country,
+            region: ipInfo.region,
+            city: ipInfo.city,
+            org: ipInfo.org,
+            isp: ipInfo.isp
+          } : null,
+          
+          // Page context
+          pagePath: properties?.pathname || pageName || 'unknown',
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+          pageTitle: typeof window !== 'undefined' ? document.title : undefined
         });
       }
 
