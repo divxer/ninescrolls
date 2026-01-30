@@ -435,6 +435,7 @@ class IPAnalyticsService {
       'ucla', 'uc berkeley', 'caltech', 'california institute', 'princeton',
       'yale', 'columbia', 'cornell', 'pennsylvania', 'upenn', 'chicago',
       'northwestern', 'duke', 'johns hopkins', 'carnegie mellon', 'cmu',
+      'University of Maryland', 'University of California, Los Angeles',
       // Research Institutes
       'nano3', 'nano', 'national lab', 'argonne', 'oak ridge', 'lawrence',
       'sandia', 'los alamos', 'brookhaven', 'fermilab',

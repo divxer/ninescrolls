@@ -23,14 +23,14 @@ export const InsightsPostPage: React.FC = () => {
       setLoading(false);
     }, 500);
 
-    if (foundPost) {
-      analytics.segment.trackWithSimpleIPAnalysis('Insights Post Viewed', {
-        slug: slug,
-        postTitle: foundPost.title,
-        category: foundPost.category
-      });
-    }
-  }, [slug, analytics]);
+    // Note: Page view is automatically tracked by SegmentAnalytics component
+    // No need for separate TRACK event - PAGE event already includes:
+    // - Full IP analysis with behavior scoring
+    // - Time on site
+    // - Target customer detection
+    // - Pathname (which identifies the article)
+    // If you need article-specific data in Segment, you can add it to PAGE event properties
+  }, [slug]);
 
   if (loading) {
     return (
