@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { insightsPosts, categories, InsightsPost } from '../types';
@@ -8,7 +7,6 @@ import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
 export const InsightsPage: React.FC = () => {
-  const analytics = useCombinedAnalytics();
   const [posts] = useState<InsightsPost[]>(
     [...insightsPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
   );
