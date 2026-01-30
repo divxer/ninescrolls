@@ -3,6 +3,7 @@
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
+import { behaviorAnalytics, type BehaviorScore } from './behaviorAnalytics';
 
 declare global {
   interface Window {
@@ -124,6 +125,9 @@ class SegmentAnalyticsService {
   }
 
   trackProductDownload(productId: string, productName: string) {
+    // Track behavior signal for PDF download
+    behaviorAnalytics.trackPDFDownload(productId);
+    
     this.track('Product Downloaded', {
       productId,
       productName,
@@ -180,6 +184,26 @@ class SegmentAnalyticsService {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
+      
+      // Get behavior score
+      const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
+      
+      // Calculate final confidence: IP (40%) + Behavior (60%)
+      const finalConfidence = analysis 
+        ? (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6)
+        : behaviorScore.behaviorScore;
+      
+      // Determine final lead tier with behavior
+      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+        finalLeadTier = 'A';
+      } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+        finalLeadTier = 'B';
+      } else if (finalConfidence >= 0.3) {
+        finalLeadTier = 'C';
+      }
+      
+      const isTargetCustomer = finalConfidence > 0.3;
 
       // Merge event properties
       const enhancedProperties = {
@@ -196,27 +220,44 @@ class SegmentAnalyticsService {
           longitude: ipInfo.longitude
         } : null,
         targetCustomerAnalysis: analysis ? {
-          isTargetCustomer: analysis.isTargetCustomer,
+          isTargetCustomer,
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
+          finalConfidence,
+          leadTier: finalLeadTier,
+          confidenceBreakdown: analysis.confidenceBreakdown,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
           location: analysis.details.location,
           keywords: analysis.details.keywords
-        } : null
+        } : null,
+        behaviorScore: {
+          productPagesViewed: behaviorScore.productPagesViewed,
+          highValuePagesViewed: behaviorScore.highValuePagesViewed,
+          timeOnSite: behaviorScore.timeOnSite,
+          pdfDownloads: behaviorScore.pdfDownloads,
+          returnVisits: behaviorScore.returnVisits,
+          isPaidTraffic: behaviorScore.isPaidTraffic,
+          behaviorScore: behaviorScore.behaviorScore
+        }
       };
 
       // Send to Segment with enhanced properties
       this.track(event, enhancedProperties);
 
       // If it's a target customer, send additional event (not duplicate)
-      if (analysis && analysis.isTargetCustomer) {
+      if (isTargetCustomer) {
         this.track('Target Customer Detected', {
           originalEvent: event,
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          orgName: analysis.details.orgName,
-          location: analysis.details.location
+          organizationType: analysis?.organizationType || 'unknown',
+          confidence: analysis?.confidence || 0,
+          finalConfidence,
+          leadTier: finalLeadTier || 'C',
+          confidenceBreakdown: analysis?.confidenceBreakdown,
+          behaviorScore: behaviorScore.behaviorScore,
+          orgName: analysis?.details.orgName || 'Unknown',
+          location: analysis?.details.location || 'Unknown',
+          keywords: analysis?.details.keywords || []
         });
       }
 
@@ -280,14 +321,17 @@ class SegmentAnalyticsService {
         console.log('Segment Page View with IP analysis:', enhancedProperties);
       }
 
-      // If it's a target customer, send additional TRACK event
+      // If it's a target customer, send additional TRACK event with enhanced data
       if (analysis && analysis.isTargetCustomer) {
         this.track('Target Customer Detected', {
           originalEvent: 'Page Viewed',
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
+          leadTier: analysis.leadTier || 'C',
+          confidenceBreakdown: analysis.confidenceBreakdown,
           orgName: analysis.details.orgName,
-          location: analysis.details.location
+          location: analysis.details.location,
+          keywords: analysis.details.keywords
         });
       }
 
@@ -309,6 +353,9 @@ class SegmentAnalyticsService {
 
   // Perform IP analysis on product view
   async trackProductViewWithAnalysis(productId: string, productName: string) {
+    // Track behavior signal for product view
+    behaviorAnalytics.trackProductView(productId, productName);
+    
     await this.trackWithIPAnalysis('Product Viewed', {
       productId,
       productName,
@@ -373,6 +420,7 @@ class SegmentAnalyticsService {
           originalEvent: event,
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
+          leadTier: analysis.leadTier || 'C',
           orgName: analysis.details.orgName,
           location: analysis.details.location
         });
