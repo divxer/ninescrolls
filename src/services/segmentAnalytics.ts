@@ -239,12 +239,72 @@ class SegmentAnalyticsService {
 
   // Perform IP analysis on page view
   async trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, any>) {
-    await this.trackWithIPAnalysis('Page Viewed', {
-      pageName,
-      pageUrl: typeof window !== 'undefined' ? window.location.href : '',
-      pageTitle: typeof window !== 'undefined' ? document.title : '',
-      ...properties
-    });
+    try {
+      // Get IP information and analysis results
+      const ipInfo = await ipAnalytics.getIPInfo();
+      const analysis = await ipAnalytics.analyzeTargetCustomer();
+
+      // Merge event properties with IP info
+      const enhancedProperties = {
+        ...properties,
+        pathname: properties?.pathname || pageName,
+        search: properties?.search || '',
+        hash: properties?.hash || '',
+        title: typeof window !== 'undefined' ? document.title : '',
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        ipInfo: ipInfo ? {
+          ip: ipInfo.ip,
+          country: ipInfo.country,
+          region: ipInfo.region,
+          city: ipInfo.city,
+          org: ipInfo.org,
+          isp: ipInfo.isp,
+          timezone: ipInfo.timezone,
+          latitude: ipInfo.latitude,
+          longitude: ipInfo.longitude
+        } : null,
+        targetCustomerAnalysis: analysis ? {
+          isTargetCustomer: analysis.isTargetCustomer,
+          organizationType: analysis.organizationType,
+          confidence: analysis.confidence,
+          orgName: analysis.details.orgName,
+          orgType: analysis.details.orgType,
+          location: analysis.details.location,
+          keywords: analysis.details.keywords
+        } : null
+      };
+
+      // Send PAGE event with enhanced properties (instead of TRACK event)
+      if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
+        window.analytics.page(pageName, enhancedProperties);
+        console.log('Segment Page View with IP analysis:', enhancedProperties);
+      }
+
+      // If it's a target customer, send additional TRACK event
+      if (analysis && analysis.isTargetCustomer) {
+        this.track('Target Customer Detected', {
+          originalEvent: 'Page Viewed',
+          organizationType: analysis.organizationType,
+          confidence: analysis.confidence,
+          orgName: analysis.details.orgName,
+          location: analysis.details.location
+        });
+      }
+
+    } catch (error) {
+      console.error('Error tracking page view with IP analysis:', error);
+      // If IP analysis fails, send the basic page event without IP data
+      if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
+        window.analytics.page(pageName, {
+          ...properties,
+          pathname: properties?.pathname || pageName,
+          search: properties?.search || '',
+          hash: properties?.hash || '',
+          title: typeof window !== 'undefined' ? document.title : '',
+          url: typeof window !== 'undefined' ? window.location.href : ''
+        });
+      }
+    }
   }
 
   // Perform IP analysis on product view

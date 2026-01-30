@@ -34,6 +34,7 @@ export function ProductsPage() {
       { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
       { "@type": "Product", "name": "NS-Plasma 20R", "url": "https://ninescrolls.com/products/ns-plasma-20r" },
       { "@type": "Product", "name": "NS-Plasma 4R", "url": "https://ninescrolls.com/products/ns-plasma-4r" },
+      { "@type": "Product", "name": "NS-Plasma 20R-I (Integrated)", "url": "https://ninescrolls.com/products/ns-plasma-20r-i" },
       { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
@@ -289,6 +290,21 @@ export function ProductsPage() {
                   <li>~4 L processing chamber</li>
                   <li>13.56 MHz RF plasma capability</li>
                   <li>Simplified operation for new users</li>
+                </ul>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/ns-plasma-20r-i">
+                <img src="/assets/images/products/ns-plasma-20r-i/main.jpg" alt="NS-Plasma 20R-I (Integrated) - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" />
+                <h3>NS-Plasma 20R-I (Integrated)</h3>
+                <p>Integrated 20L RF vacuum plasma cleaner for batch surface cleaning and activation. Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.</p>
+                <ul className="feature-list">
+                  <li>20 L batch processing chamber</li>
+                  <li>300 W RF (13.56 MHz)</li>
+                  <li>PLC + Touchscreen control</li>
                 </ul>
               </Link>
             </div>
