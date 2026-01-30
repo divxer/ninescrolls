@@ -31,15 +31,13 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   }, [writeKey]);
 
   useEffect(() => {
-    // Track page views with Segment (simplified - no duplicate events)
+    // Track page views with Segment and IP analysis (merged into single call)
     if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
-      // Only send simple page event, skip IP analysis to reduce event volume
-      window.analytics.page({
-        path: location.pathname,
+      // Single call that handles both page event and IP analysis
+      segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
+        pathname: location.pathname,
         search: location.search,
-        hash: location.hash,
-        title: document.title,
-        url: window.location.href
+        hash: location.hash
       });
     }
   }, [location]);
