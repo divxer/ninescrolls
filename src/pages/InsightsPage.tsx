@@ -19,13 +19,13 @@ export const InsightsPage: React.FC = () => {
   // Scroll to top when component mounts
   useScrollToTop();
 
-  useEffect(() => {
-    analytics.segment.trackWithSimpleIPAnalysis('Insights Page Viewed', {
-      page: 'insights',
-      category: selectedCategory,
-      searchTerm: searchTerm
-    });
-  }, [analytics, selectedCategory, searchTerm]);
+  // Note: Page view is automatically tracked by SegmentAnalytics component
+  // No need for separate TRACK event - PAGE event already includes:
+  // - Full IP analysis with behavior scoring
+  // - Time on site
+  // - Target customer detection
+  // - Pathname (which identifies this as insights page)
+  // Category and search filters can be tracked via URL query params if needed
 
   useEffect(() => {
     // Build a pseudo base post from current selection to compute recommendations
