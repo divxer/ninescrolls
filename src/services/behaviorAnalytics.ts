@@ -21,7 +21,6 @@ interface BehaviorScore {
 class BehaviorAnalyticsService {
   private static instance: BehaviorAnalyticsService;
   private behaviorSignals: BehaviorSignal[] = [];
-  private sessionStartTime: number = Date.now();
   private readonly SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
   private readonly STORAGE_KEY = 'ninescrolls_behavior_signals';
 
@@ -203,7 +202,6 @@ class BehaviorAnalyticsService {
   // Reset all signals
   reset() {
     this.behaviorSignals = [];
-    this.sessionStartTime = Date.now();
     this.saveToStorage();
   }
 }

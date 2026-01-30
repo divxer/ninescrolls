@@ -14,6 +14,7 @@ interface SimpleTargetCustomerAnalysis {
   isTargetCustomer: boolean;
   organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown';
   confidence: number;
+  leadTier?: 'A' | 'B' | 'C';  // Optional lead tier
   details: {
     orgName: string;
     orgType: string;
