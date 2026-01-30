@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { insightsPosts, InsightsPost } from '../types';
@@ -9,7 +8,6 @@ import '../styles/InsightsPostPage.css';
 
 export const InsightsPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const analytics = useCombinedAnalytics();
   const [post, setPost] = useState<InsightsPost | null>(null);
   const [loading, setLoading] = useState(true);
 
