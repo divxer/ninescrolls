@@ -284,8 +284,28 @@ class SegmentAnalyticsService {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
+      
+      // Get behavior score (includes timeOnSite)
+      const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
+      
+      // Calculate final confidence: IP (40%) + Behavior (60%)
+      const finalConfidence = analysis 
+        ? (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6)
+        : behaviorScore.behaviorScore;
+      
+      // Determine final lead tier with behavior
+      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+        finalLeadTier = 'A';
+      } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+        finalLeadTier = 'B';
+      } else if (finalConfidence >= 0.3) {
+        finalLeadTier = 'C';
+      }
+      
+      const isTargetCustomer = finalConfidence > 0.3;
 
-      // Merge event properties with IP info
+      // Merge event properties with IP info and behavior
       const enhancedProperties = {
         ...properties,
         pathname: properties?.pathname || pageName,
@@ -305,33 +325,48 @@ class SegmentAnalyticsService {
           longitude: ipInfo.longitude
         } : null,
         targetCustomerAnalysis: analysis ? {
-          isTargetCustomer: analysis.isTargetCustomer,
+          isTargetCustomer,
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
+          finalConfidence,
+          leadTier: finalLeadTier,
+          confidenceBreakdown: analysis.confidenceBreakdown,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
           location: analysis.details.location,
           keywords: analysis.details.keywords
-        } : null
+        } : null,
+        behaviorScore: {
+          productPagesViewed: behaviorScore.productPagesViewed,
+          highValuePagesViewed: behaviorScore.highValuePagesViewed,
+          timeOnSite: behaviorScore.timeOnSite,  // 停留时间（秒）
+          pdfDownloads: behaviorScore.pdfDownloads,
+          returnVisits: behaviorScore.returnVisits,
+          isPaidTraffic: behaviorScore.isPaidTraffic,
+          behaviorScore: behaviorScore.behaviorScore
+        }
       };
 
       // Send PAGE event with enhanced properties (instead of TRACK event)
       if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
         window.analytics.page(pageName, enhancedProperties);
-        console.log('Segment Page View with IP analysis:', enhancedProperties);
+        console.log('Segment Page View with IP + Behavior analysis:', enhancedProperties);
       }
 
       // If it's a target customer, send additional TRACK event with enhanced data
-      if (analysis && analysis.isTargetCustomer) {
+      if (isTargetCustomer) {
         this.track('Target Customer Detected', {
           originalEvent: 'Page Viewed',
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          leadTier: analysis.leadTier || 'C',
-          confidenceBreakdown: analysis.confidenceBreakdown,
-          orgName: analysis.details.orgName,
-          location: analysis.details.location,
-          keywords: analysis.details.keywords
+          organizationType: analysis?.organizationType || 'unknown',
+          confidence: analysis?.confidence || 0,
+          finalConfidence,
+          leadTier: finalLeadTier || 'C',
+          confidenceBreakdown: analysis?.confidenceBreakdown,
+          behaviorScore: behaviorScore.behaviorScore,
+          timeOnSite: behaviorScore.timeOnSite,  // 停留时间也会包含在 Target Customer Detected 事件中
+          orgName: analysis?.details.orgName || 'Unknown',
+          location: analysis?.details.location || 'Unknown',
+          keywords: analysis?.details.keywords || []
         });
       }
 
