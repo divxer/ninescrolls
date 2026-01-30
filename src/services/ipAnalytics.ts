@@ -428,7 +428,7 @@ class IPAnalyticsService {
   }
 
   // Check against known universities/research institutes whitelist
-  private checkWhitelist(orgName: string, country: string): { matched: boolean; orgName?: string } {
+  private checkWhitelist(orgName: string, _country: string): { matched: boolean; orgName?: string } {
     const whitelist = [
       // US Universities
       'stanford', 'mit', 'massachusetts institute', 'harvard', 'ucsd', 'uc san diego',

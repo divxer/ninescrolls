@@ -3,7 +3,7 @@
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
-import { behaviorAnalytics, type BehaviorScore } from './behaviorAnalytics';
+import { behaviorAnalytics } from './behaviorAnalytics';
 
 declare global {
   interface Window {
