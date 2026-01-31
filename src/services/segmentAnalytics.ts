@@ -188,22 +188,64 @@ class SegmentAnalyticsService {
       // Get behavior score
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
       
-      // Calculate final confidence: IP (40%) + Behavior (60%)
-      const finalConfidence = analysis 
-        ? (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6)
-        : behaviorScore.behaviorScore;
+      // Calculate final confidence with smart weighting
+      // For first-time visitors with high IP confidence, rely more on IP analysis
+      // For returning visitors with behavior data, use balanced weighting
+      let finalConfidence: number;
+      
+      if (analysis) {
+        const isHighConfidenceIP = analysis.confidence >= 0.5;
+        const isTargetOrgType = analysis.organizationType === 'university' || 
+                                analysis.organizationType === 'research_institute' ||
+                                analysis.organizationType === 'enterprise';
+        const hasBehaviorData = behaviorScore.behaviorScore > 0;
+        
+        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
+          // First-time visitor from high-confidence target organization
+          // Use IP confidence directly (don't penalize for lack of behavior data)
+          finalConfidence = analysis.confidence;
+        } else if (hasBehaviorData) {
+          // Returning visitor with behavior data - use balanced weighting
+          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
+        } else {
+          // Low IP confidence or unknown org - still use weighted average
+          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
+        }
+      } else {
+        // No IP analysis - rely on behavior only
+        finalConfidence = behaviorScore.behaviorScore;
+      }
       
       // Determine final lead tier with behavior
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      
+      // Tier A: High confidence + University/Research Institute
       if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
         finalLeadTier = 'A';
-      } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+      } 
+      // Tier A: Very high IP confidence (>= 0.9) for any target org type
+      else if (analysis && analysis.confidence >= 0.9 && 
+               (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+        finalLeadTier = 'A';
+      }
+      // Tier B: Medium-high confidence + any target org type
+      else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
         finalLeadTier = 'B';
-      } else if (finalConfidence >= 0.3) {
+      } 
+      // Tier C: Lower confidence but still target customer
+      else if (finalConfidence >= 0.3) {
         finalLeadTier = 'C';
       }
       
-      const isTargetCustomer = finalConfidence > 0.3;
+      // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
+      const threshold = (analysis && analysis.confidence >= 0.5 && 
+                        (analysis.organizationType === 'university' || 
+                         analysis.organizationType === 'research_institute' || 
+                         analysis.organizationType === 'enterprise'))
+        ? 0.25  // Lower threshold for target organizations with high IP confidence
+        : 0.3;  // Standard threshold
+      
+      const isTargetCustomer = finalConfidence > threshold;
 
       // Merge event properties
       const enhancedProperties = {
@@ -322,22 +364,64 @@ class SegmentAnalyticsService {
       // Get behavior score (includes timeOnSite)
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
       
-      // Calculate final confidence: IP (40%) + Behavior (60%)
-      const finalConfidence = analysis 
-        ? (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6)
-        : behaviorScore.behaviorScore;
+      // Calculate final confidence with smart weighting
+      // For first-time visitors with high IP confidence, rely more on IP analysis
+      // For returning visitors with behavior data, use balanced weighting
+      let finalConfidence: number;
+      
+      if (analysis) {
+        const isHighConfidenceIP = analysis.confidence >= 0.5;
+        const isTargetOrgType = analysis.organizationType === 'university' || 
+                                analysis.organizationType === 'research_institute' ||
+                                analysis.organizationType === 'enterprise';
+        const hasBehaviorData = behaviorScore.behaviorScore > 0;
+        
+        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
+          // First-time visitor from high-confidence target organization
+          // Use IP confidence directly (don't penalize for lack of behavior data)
+          finalConfidence = analysis.confidence;
+        } else if (hasBehaviorData) {
+          // Returning visitor with behavior data - use balanced weighting
+          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
+        } else {
+          // Low IP confidence or unknown org - still use weighted average
+          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
+        }
+      } else {
+        // No IP analysis - rely on behavior only
+        finalConfidence = behaviorScore.behaviorScore;
+      }
       
       // Determine final lead tier with behavior
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      
+      // Tier A: High confidence + University/Research Institute
       if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
         finalLeadTier = 'A';
-      } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+      } 
+      // Tier A: Very high IP confidence (>= 0.9) for any target org type
+      else if (analysis && analysis.confidence >= 0.9 && 
+               (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+        finalLeadTier = 'A';
+      }
+      // Tier B: Medium-high confidence + any target org type
+      else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
         finalLeadTier = 'B';
-      } else if (finalConfidence >= 0.3) {
+      } 
+      // Tier C: Lower confidence but still target customer
+      else if (finalConfidence >= 0.3) {
         finalLeadTier = 'C';
       }
       
-      const isTargetCustomer = finalConfidence > 0.3;
+      // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
+      const threshold = (analysis && analysis.confidence >= 0.5 && 
+                        (analysis.organizationType === 'university' || 
+                         analysis.organizationType === 'research_institute' || 
+                         analysis.organizationType === 'enterprise'))
+        ? 0.25  // Lower threshold for target organizations with high IP confidence
+        : 0.3;  // Standard threshold
+      
+      const isTargetCustomer = finalConfidence > threshold;
 
       // Merge event properties with IP info and behavior
       const enhancedProperties = {

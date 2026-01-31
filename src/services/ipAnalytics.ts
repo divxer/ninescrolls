@@ -310,24 +310,49 @@ class IPAnalyticsService {
       // Chinese keywords: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
-    // Define noise/negative keywords (ISPs, cloud providers, etc.)
+    // Define noise/negative keywords (ISPs, cloud providers, telecom, infrastructure, etc.)
     const noiseOrgs = [
+      // ISPs and Telecom
       'comcast', 'verizon', 'at&t', 't-mobile', 'tmobile', 'sprint',
+      'crown castle', 'crowncastle', 'fiber', 'telecom', 'telecommunications',
+      'infrastructure', 'tower', 'wireless', 'broadband', 'cable',
+      // Cloud providers
       'cloudflare', 'amazon', 'aws', 'google', 'microsoft', 'oracle',
       'azure', 'gcp', 'digitalocean', 'linode', 'vultr', 'ovh',
-      'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn'
+      'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn',
+      // Other non-target industries
+      'real estate', 'construction', 'logistics', 'shipping', 'transportation'
     ];
 
-    // Check for noise/ISP organizations (negative signal)
+    // Check for noise/ISP organizations (negative signal) - do this FIRST
     const isNoiseOrg = noiseOrgs.some(noise => orgLower.includes(noise));
     if (isNoiseOrg) {
-      breakdown.ispPenalty = -0.3;  // 显著降权
+      breakdown.ispPenalty = -0.5;  // 更强的降权
+      // If it's clearly a noise org, skip whitelist and enterprise checks
+      if (noiseOrgs.slice(0, 20).some(noise => orgLower.includes(noise))) {
+        // This is definitely not a target customer
+        return {
+          isTargetCustomer: false,
+          organizationType: 'unknown',
+          confidence: 0,
+          confidenceBreakdown: breakdown,
+          leadTier: undefined,
+          details: {
+            orgName,
+            orgType: 'Unknown',
+            location,
+            keywords: []
+          }
+        };
+      }
     }
 
-    // Check whitelist first (highest priority)
-    const whitelistMatch = this.checkWhitelist(orgName, ipInfo.country);
-    if (whitelistMatch.matched) {
-      breakdown.whitelist = Math.max(0.85, breakdown.whitelist);
+    // Check whitelist (only if not a noise org)
+    if (!isNoiseOrg) {
+      const whitelistMatch = this.checkWhitelist(orgName, ipInfo.country);
+      if (whitelistMatch.matched) {
+        breakdown.whitelist = Math.max(0.85, breakdown.whitelist);
+      }
     }
 
     // Analyze organization type
@@ -354,19 +379,42 @@ class IPAnalyticsService {
       keywords = researchMatches;
     }
 
-    // Check enterprise keywords
+    // Check enterprise keywords (but be more strict - need additional context)
     const enterpriseMatches = enterpriseKeywords.filter(keyword => 
       orgLower.includes(keyword)
     );
-    if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3) {
-      organizationType = 'enterprise';
-      breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
-      keywords = enterpriseMatches;
+    if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3 && !isNoiseOrg) {
+      // Only classify as enterprise if it has research/tech context
+      // Generic LLC/Inc without context should not be classified as target enterprise
+      const hasResearchTechContext = 
+        orgLower.includes('semiconductor') || 
+        orgLower.includes('technology') || 
+        orgLower.includes('research') ||
+        orgLower.includes('scientific') ||
+        orgLower.includes('engineering') ||
+        orgLower.includes('manufacturing') ||
+        orgLower.includes('materials') ||
+        orgLower.includes('nano') ||
+        orgLower.includes('microelectronics') ||
+        orgLower.includes('photonics') ||
+        orgLower.includes('optics') ||
+        orgLower.includes('biotech') ||
+        orgLower.includes('medical device');
+      
+      if (hasResearchTechContext) {
+        organizationType = 'enterprise';
+        breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
+        keywords = enterpriseMatches;
+      } else {
+        // Generic LLC/Inc without research/tech context - treat as unknown
+        organizationType = 'unknown';
+        breakdown.orgMatch = 0;
+      }
     }
 
     // Apply ISP penalty to orgMatch if it's a noise org
     if (isNoiseOrg && breakdown.orgMatch > 0) {
-      breakdown.orgMatch = breakdown.orgMatch * 0.5;  // 减半
+      breakdown.orgMatch = breakdown.orgMatch * 0.3;  // 更强烈的降权（从 0.5 改为 0.3）
     }
 
     // Geographic location scoring (not just bonus, but threshold adjuster)
