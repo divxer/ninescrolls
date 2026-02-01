@@ -4,6 +4,7 @@ import { Layout } from './components/layout/Layout';
 import { AppRoutes } from './routes';
 import { GoogleAnalytics } from './components/analytics/GoogleAnalytics';
 import { SegmentAnalytics } from './components/analytics/SegmentAnalytics';
+import { HubSpotPageViewSync } from './components/analytics/HubSpotPageViewSync';
 import { RedirectHandler } from './components/common/RedirectHandler';
 import { CartProvider } from './contexts/CartContext';
 
@@ -14,6 +15,7 @@ function App() {
         <CartProvider>
           <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
           <SegmentAnalytics writeKey={import.meta.env.VITE_SEGMENT_WRITE_KEY} />
+          <HubSpotPageViewSync />
           <RedirectHandler />
           <Layout>
             <AppRoutes />
