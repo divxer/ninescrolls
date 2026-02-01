@@ -11,6 +11,18 @@ interface IPInfo {
   timezone: string;
   latitude?: number;
   longitude?: number;
+  privacy?: {
+    vpn?: boolean;
+    proxy?: boolean;
+    hosting?: boolean;
+    tor?: boolean;
+    relay?: boolean;
+  };
+  company?: {
+    type?: string;
+    domain?: string;
+    name?: string;
+  };
 }
 
 interface ConfidenceBreakdown {
@@ -134,7 +146,21 @@ class IPAnalyticsService {
         isp: data.isp,
         timezone: data.timezone,
         latitude: data.loc ? parseFloat(data.loc.split(',')[0]) : undefined,
-        longitude: data.loc ? parseFloat(data.loc.split(',')[1]) : undefined
+        longitude: data.loc ? parseFloat(data.loc.split(',')[1]) : undefined,
+        // Extract privacy information
+        privacy: data.privacy ? {
+          vpn: data.privacy.vpn === true,
+          proxy: data.privacy.proxy === true,
+          hosting: data.privacy.hosting === true,
+          tor: data.privacy.tor === true,
+          relay: data.privacy.relay === true
+        } : undefined,
+        // Extract company information
+        company: data.company ? {
+          type: data.company.type,
+          domain: data.company.domain,
+          name: data.company.name
+        } : undefined
       };
     }
     return null;
@@ -281,6 +307,52 @@ class IPAnalyticsService {
 
   // Perform target customer analysis
   private performAnalysis(ipInfo: IPInfo): TargetCustomerAnalysis {
+    // L0_REJECT: Early rejection for VPN, proxy, hosting, and ISP types
+    if (ipInfo.privacy?.vpn || ipInfo.privacy?.proxy || ipInfo.privacy?.hosting) {
+      return {
+        isTargetCustomer: false,
+        organizationType: 'unknown',
+        confidence: 0,
+        confidenceBreakdown: {
+          orgMatch: 0,
+          geo: 0,
+          ispPenalty: -1.0, // Maximum penalty for privacy violations
+          whitelist: 0,
+          total: 0
+        },
+        leadTier: undefined,
+        details: {
+          orgName: ipInfo.org || ipInfo.isp || 'Unknown',
+          orgType: 'VPN/Proxy/Hosting',
+          location: `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`,
+          keywords: []
+        }
+      };
+    }
+
+    // L0_REJECT: Reject ISP type companies
+    if (ipInfo.company?.type === 'isp' || ipInfo.company?.type === 'hosting') {
+      return {
+        isTargetCustomer: false,
+        organizationType: 'unknown',
+        confidence: 0,
+        confidenceBreakdown: {
+          orgMatch: 0,
+          geo: 0,
+          ispPenalty: -1.0, // Maximum penalty for ISP
+          whitelist: 0,
+          total: 0
+        },
+        leadTier: undefined,
+        details: {
+          orgName: ipInfo.org || ipInfo.isp || 'Unknown',
+          orgType: 'ISP/Hosting Provider',
+          location: `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`,
+          keywords: []
+        }
+      };
+    }
+
     const orgName = ipInfo.org || ipInfo.isp || 'Unknown';
     const orgLower = orgName.toLowerCase();
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;

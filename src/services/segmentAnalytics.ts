@@ -259,7 +259,9 @@ class SegmentAnalyticsService {
           isp: ipInfo.isp,
           timezone: ipInfo.timezone,
           latitude: ipInfo.latitude,
-          longitude: ipInfo.longitude
+          longitude: ipInfo.longitude,
+          privacy: ipInfo.privacy,
+          company: ipInfo.company
         } : null,
         targetCustomerAnalysis: analysis ? {
           isTargetCustomer,
@@ -327,7 +329,9 @@ class SegmentAnalyticsService {
             region: ipInfo.region,
             city: ipInfo.city,
             org: ipInfo.org,
-            isp: ipInfo.isp
+            isp: ipInfo.isp,
+            privacy: ipInfo.privacy,
+            company: ipInfo.company
           } : null,
           
           // Page context
@@ -440,7 +444,9 @@ class SegmentAnalyticsService {
           isp: ipInfo.isp,
           timezone: ipInfo.timezone,
           latitude: ipInfo.latitude,
-          longitude: ipInfo.longitude
+          longitude: ipInfo.longitude,
+          privacy: ipInfo.privacy,
+          company: ipInfo.company
         } : null,
         targetCustomerAnalysis: analysis ? {
           isTargetCustomer,
@@ -511,7 +517,9 @@ class SegmentAnalyticsService {
             region: ipInfo.region,
             city: ipInfo.city,
             org: ipInfo.org,
-            isp: ipInfo.isp
+            isp: ipInfo.isp,
+            privacy: ipInfo.privacy,
+            company: ipInfo.company
           } : null,
           
           // Page context
