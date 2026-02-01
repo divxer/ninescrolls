@@ -402,6 +402,23 @@ export function NSPlasma4R() {
                   </div>
                 </div>
               </div>
+              
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
+                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+                  <Link 
+                    to="/insights/plasma-cleaner-comparison-research-labs" 
+                    style={{ 
+                      color: '#2563eb',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    Learn how research-grade batch plasma cleaners differ from desktop systems →
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -138,6 +138,55 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="resources-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+        <div className="container">
+          <h2 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '2rem', color: '#333' }}>Research Insights</h2>
+          <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666', fontSize: '1.1rem' }}>
+            Expert guides and technical resources for research laboratories
+          </p>
+          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+            <Link 
+              to="/insights/plasma-cleaner-comparison-research-labs" 
+              style={{ 
+                display: 'inline-block',
+                padding: '1rem 2rem',
+                backgroundColor: '#fff',
+                color: '#2563eb',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f0f4ff';
+                e.currentTarget.style.borderColor = '#2563eb';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              Research Insights: How to choose the right plasma cleaner for academic labs →
+            </Link>
+            <div style={{ marginTop: '1.5rem' }}>
+              <Link 
+                to="/insights" 
+                style={{ 
+                  color: '#2563eb',
+                  textDecoration: 'none',
+                  fontSize: '0.95rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+              >
+                View All Insights →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="partners">
         <div className="container">
           <h2>Trusted by Leading Institutions</h2>

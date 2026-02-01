@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -256,6 +257,23 @@ export function NSPlasma20RI() {
                 (customizable), and dual gas inlets supporting O₂, N₂, Ar, and mixed gases. PLC + touchscreen control 
                 with Auto / Manual modes ensures reproducible processes suitable for research documentation and scale-up studies.
               </p>
+              
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
+                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+                  <Link 
+                    to="/insights/plasma-cleaner-comparison-research-labs" 
+                    style={{ 
+                      color: '#2563eb',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    Learn how research-grade batch plasma cleaners differ from desktop systems →
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
