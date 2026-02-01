@@ -5517,6 +5517,18 @@ export const insightsPosts: InsightsPost[] = [
     imageUrl: '/assets/images/insights/thermoelectric-dry-etching-cover-lg.webp',
     slug: 'dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization',
     tags: ['thermoelectric', 'dry etching', 'plasma etching', 'Bi2Te3', 'MEMS', 'CH4/H2/Ar', 'microfabrication', 'materials science']
+  },
+  {
+    id: 'plasma-cleaner-comparison',
+    title: 'Plasma Cleaner Comparison for Research Laboratories',
+    excerpt: 'How to choose the right plasma cleaner for academic & institutional labs. Compare quartz vs stainless steel chambers, RF vs mid-frequency, and batch plasma cleaner selection guide.',
+    author: 'NineScrolls Team',
+    publishDate: '2025-01-15',
+    category: 'Materials Science',
+    readTime: 8,
+    imageUrl: '/assets/images/insights/plasma-cleaner-comparison-cover-lg.png',
+    slug: 'plasma-cleaner-comparison-research-labs',
+    tags: ['plasma cleaner comparison', 'plasma cleaner for research laboratories', 'RF plasma cleaner vs quartz plasma cleaner', 'batch plasma cleaner academic lab', 'research grade plasma cleaner', 'plasma cleaning', 'surface activation']
   }
 ];
 
