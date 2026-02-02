@@ -77,7 +77,10 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
       const txt = await res.text();
       if (!res.ok) throw new Error(txt || 'Failed');
       setIsSuccess(true); setIsSubmitting(false);
-      analytics.segment.trackContactFormSubmitWithAnalysis('Products', 'Products Inquiry');
+      // Send to both Google Analytics and Segment
+      const inquiryProduct = form.product || productName || 'Products Inquiry';
+      analytics.trackContactFormSubmit(inquiryProduct, inquiryProduct);
+      analytics.segment.trackContactFormSubmitWithAnalysis(inquiryProduct, inquiryProduct);
     } catch (err) {
       setIsSubmitting(false);
       setError(err instanceof Error ? err.message : 'Failed to submit form.');
