@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ContactFormContent } from './ContactFormContent';
+import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
 interface ContactFormInlineProps {
   className?: string;
@@ -37,6 +38,7 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
 }
 
 export function ContactFormInline({ className = '', topic, inquiryType }: ContactFormInlineProps) {
+  const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -92,6 +94,19 @@ export function ContactFormInline({ className = '', topic, inquiryType }: Contac
         organization: '',
         message: ''
       });
+      
+      // Send form_submit event to Google Analytics and Segment
+      const inquiryTypeLabel = inquiryType === 'budgetary' ? 'Budgetary Quote Request' :
+                               inquiryType === 'feasibility' ? 'Technical Feasibility Check' :
+                               inquiryType === 'engineer' ? 'Talk to an Engineer' :
+                               topic === 'service' ? 'Service Planning' :
+                               topic === 'amc' ? 'AMC Inquiry' :
+                               topic === 'tco' ? 'TCO Report Request' :
+                               topic === 'expert' ? 'Expert Consultation' :
+                               topic === 'compare' ? 'Product Comparison' :
+                               'General Inquiry';
+      analytics.trackContactFormSubmit(inquiryTypeLabel, inquiryTypeLabel);
+      analytics.segment.trackContactFormSubmitWithAnalysis(inquiryTypeLabel, inquiryTypeLabel);
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message. Please try again or contact us directly at info@ninescrolls.com');

@@ -288,10 +288,8 @@ export function ProductDetailPage() {
   };
 
   const handleFormSuccess = () => {
-    if (product) {
-      // Track contact form submission
-      analytics.trackContactFormSubmit(product.id, product.name);
-    }
+    // Form submission tracking is handled by ContactFormModal
+    // No need to track here to avoid duplicate events
   };
 
   useEffect(() => {

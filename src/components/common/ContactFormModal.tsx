@@ -119,11 +119,11 @@ export function ContactFormModal({
       });
       onSuccess?.();
 
-      if (productName) {
-        analytics.trackContactFormSubmit(productName, productName);
-        // Send event with IP analysis to Segment
-        analytics.segment.trackContactFormSubmitWithAnalysis(productName, productName);
-      }
+      // Always send form_submit event to Google Analytics, even if productName is empty
+      const inquiryProduct = productName || 'General Inquiry';
+      analytics.trackContactFormSubmit(inquiryProduct, inquiryProduct);
+      // Send event with IP analysis to Segment
+      analytics.segment.trackContactFormSubmitWithAnalysis(inquiryProduct, inquiryProduct);
     } catch (error) {
       console.error('Error in form submission:', error);
       if (error instanceof Error) {
