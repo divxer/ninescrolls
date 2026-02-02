@@ -41,11 +41,10 @@ export const useCombinedAnalytics = () => {
 
     // Contact form tracking
     trackContactFormSubmit: (productId?: string, productName?: string) => {
-      // Google Analytics
+      // Google Analytics only
+      // Segment tracking is handled separately via trackContactFormSubmitWithAnalysis
+      // to avoid duplicate events (simple vs. full version with IP analysis)
       gaAnalytics.trackContactFormSubmit(productId, productName);
-      
-      // Segment
-      segmentAnalytics.trackContactFormSubmit(productId, productName);
     },
 
     // Datasheet download tracking
