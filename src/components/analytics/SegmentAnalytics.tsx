@@ -7,9 +7,18 @@ interface SegmentAnalyticsProps {
   writeKey?: string;
 }
 
+type SegmentAnalyticsClient = {
+  track: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (userId: string, traits?: Record<string, unknown>) => void;
+  page: (name?: string, properties?: Record<string, unknown>) => void;
+  group: (groupId: string, traits?: Record<string, unknown>) => void;
+  alias: (userId: string, previousId?: string) => void;
+  reset: () => void;
+};
+
 declare global {
   interface Window {
-    analytics: any;
+    analytics?: SegmentAnalyticsClient;
   }
 }
 
@@ -47,7 +56,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     currentPathRef.current = location.pathname;
 
     // Track page views with Segment and IP analysis (merged into single call)
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
+    if (typeof window !== 'undefined' && window.analytics) {
       // Single call that handles both page event and IP analysis
       segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
         pathname: location.pathname,
@@ -107,65 +116,3 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
 
   return null; // This component doesn't render anything
 };
-
-// Hook for tracking custom events with Segment
-export const useSegmentAnalytics = () => {
-  return {
-    track: (event: string, properties?: Record<string, any>) => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.track) {
-        window.analytics.track(event, properties);
-      }
-    },
-    identify: (userId: string, traits?: Record<string, any>) => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.identify) {
-        window.analytics.identify(userId, traits);
-      }
-    },
-    page: (name?: string, properties?: Record<string, any>) => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
-        window.analytics.page(name, properties);
-      }
-    },
-    group: (groupId: string, traits?: Record<string, any>) => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.group) {
-        window.analytics.group(groupId, traits);
-      }
-    },
-    alias: (userId: string, previousId?: string) => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.alias) {
-        window.analytics.alias(userId, previousId);
-      }
-    },
-    reset: () => {
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.reset) {
-        window.analytics.reset();
-      }
-    },
-    // IP Analysis methods
-    trackWithIPAnalysis: async (event: string, properties?: Record<string, any>) => {
-      await segmentAnalytics.trackWithIPAnalysis(event, properties);
-    },
-    trackProductViewWithAnalysis: async (productId: string, productName: string) => {
-      await segmentAnalytics.trackProductViewWithAnalysis(productId, productName);
-    },
-    trackContactFormSubmitWithAnalysis: async (productId?: string, productName?: string) => {
-      await segmentAnalytics.trackContactFormSubmitWithAnalysis(productId, productName);
-    },
-    getCurrentIPInfo: async () => {
-      return await segmentAnalytics.getCurrentIPInfo();
-    },
-    getTargetCustomerAnalysis: async () => {
-      return await segmentAnalytics.getTargetCustomerAnalysis();
-    },
-    // Simple IP Analysis methods
-    trackWithSimpleIPAnalysis: async (event: string, properties?: Record<string, any>) => {
-      await segmentAnalytics.trackWithSimpleIPAnalysis(event, properties);
-    },
-    getSimpleIPInfo: async () => {
-      return await segmentAnalytics.getSimpleIPInfo();
-    },
-    getSimpleTargetCustomerAnalysis: async () => {
-      return await segmentAnalytics.getSimpleTargetCustomerAnalysis();
-    }
-  };
-}; 

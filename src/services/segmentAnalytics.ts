@@ -5,9 +5,18 @@ import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnaly
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 import { behaviorAnalytics } from './behaviorAnalytics';
 
+type SegmentAnalyticsClient = {
+  track: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (userId: string, traits?: Record<string, unknown>) => void;
+  page: (name?: string, properties?: Record<string, unknown>) => void;
+  group: (groupId: string, traits?: Record<string, unknown>) => void;
+  alias: (userId: string, previousId?: string) => void;
+  reset: () => void;
+};
+
 declare global {
   interface Window {
-    analytics: any;
+    analytics?: SegmentAnalyticsClient;
   }
 }
 
@@ -42,7 +51,7 @@ class SegmentAnalyticsService {
   }
 
   // Track custom events with debouncing to prevent duplicates
-  track(event: string, properties?: Record<string, any>) {
+  track(event: string, properties?: Record<string, unknown>) {
     if (!this.isInitialized) {
       console.warn('Segment Analytics not initialized');
       return;
@@ -76,7 +85,7 @@ class SegmentAnalyticsService {
   }
 
   // Identify users
-  identify(userId: string, traits?: Record<string, any>) {
+  identify(userId: string, traits?: Record<string, unknown>) {
     if (typeof window !== 'undefined' && window.analytics && window.analytics.identify) {
       window.analytics.identify(userId, traits);
       console.log('Segment Identify User:', userId, traits);
@@ -84,7 +93,7 @@ class SegmentAnalyticsService {
   }
 
   // Track page views
-  page(name?: string, properties?: Record<string, any>) {
+  page(name?: string, properties?: Record<string, unknown>) {
     if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
       window.analytics.page(name, properties);
       console.log('Segment Page View:', name, properties);
@@ -92,7 +101,7 @@ class SegmentAnalyticsService {
   }
 
   // Track group events
-  group(groupId: string, traits?: Record<string, any>) {
+  group(groupId: string, traits?: Record<string, unknown>) {
     if (typeof window !== 'undefined' && window.analytics && window.analytics.group) {
       window.analytics.group(groupId, traits);
       console.log('Segment Group Event:', groupId, traits);
@@ -179,7 +188,7 @@ class SegmentAnalyticsService {
   }
 
   // IP Analytics and Target Customer Analysis
-  async trackWithIPAnalysis(event: string, properties?: Record<string, any>) {
+  async trackWithIPAnalysis(event: string, properties?: Record<string, unknown>) {
     try {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
@@ -359,7 +368,7 @@ class SegmentAnalyticsService {
   }
 
   // Perform IP analysis on page view
-  async trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, any>) {
+  async trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, unknown>) {
     try {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
@@ -577,7 +586,7 @@ class SegmentAnalyticsService {
   }
 
   // Use simplified IP analysis service
-  async trackWithSimpleIPAnalysis(event: string, properties?: Record<string, any>) {
+  async trackWithSimpleIPAnalysis(event: string, properties?: Record<string, unknown>) {
     try {
       // Get simplified IP information and analysis results
       const ipInfo = await simpleIPAnalytics.getIPInfo();
