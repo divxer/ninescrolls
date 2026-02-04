@@ -31,13 +31,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       sig,
       env.STRIPE_WEBHOOK_SECRET
     );
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Webhook signature verification failed';
+    console.error('Webhook signature verification failed:', message);
     return {
       statusCode: 400,
       body: JSON.stringify({ 
         error: 'Webhook signature verification failed',
-        message: err.message 
+        message 
       }),
     };
   }
@@ -83,11 +84,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       statusCode: 200,
       body: JSON.stringify({ received: true }),
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error processing webhook:', err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Error processing webhook', message: err.message }),
+      body: JSON.stringify({ 
+        error: 'Error processing webhook', 
+        message: err instanceof Error ? err.message : 'Unknown error' 
+      }),
     };
   }
 };
@@ -120,14 +124,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     }
     
     // Determine customer name: use contact name from form if available, otherwise use Stripe customer details
-    const customerDetails = session.customer_details as any;
     const customerName = (contactFirstName && contactLastName)
       ? `${contactFirstName} ${contactLastName}`
-      : session.customer_details?.name || 
-        (customerDetails?.first_name 
-          ? `${customerDetails.first_name} ${customerDetails.last_name || ''}`.trim()
-          : '') ||
-        'Valued Customer';
+      : session.customer_details?.name || 'Valued Customer';
     
     // Generate order number from session ID (use last 12 characters)
     const orderNumber = `ORDER-${session.id.replace('cs_', '').substring(0, 12)}`;
@@ -137,7 +136,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     const currency = session.currency?.toUpperCase() || 'USD';
     
     // Extract line items
-    const lineItems = (session.line_items?.data || []).map((item: any) => {
+    const lineItems = (session.line_items?.data || []).map((item: Stripe.LineItem) => {
       const productName = item.description || item.price?.product?.name || 'Product';
       const quantity = item.quantity || 1;
       const unitPrice = item.price?.unit_amount ? (item.price.unit_amount / 100).toFixed(2) : '0.00';
@@ -161,7 +160,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     }
     // Fallback to Stripe collected address (if user entered it in Checkout)
     else {
-      const shippingDetails = (session as any).shipping_details || (session as any).shipping;
+      const shippingDetails = session.shipping_details ?? (session as Stripe.Checkout.Session & { shipping?: Stripe.Checkout.Session.Shipping }).shipping;
       const shippingAddress = shippingDetails?.address;
       if (shippingAddress) {
         shippingAddressText = `${shippingAddress.line1 || ''}\n${shippingAddress.line2 || ''}\n${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postal_code || ''}\n${shippingAddress.country || ''}`
@@ -234,6 +233,16 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
           <td style="padding: 12px 0; font-weight: 700; font-size: 16px;">Total:</td>
           <td style="padding: 12px 0; text-align: right; font-weight: 700; font-size: 16px;">$${amountTotal} ${currency}</td>
         </tr>
+      </table>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+          <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e0e0e0;">Item</th>
+          <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e0e0e0;">Qty</th>
+          <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e0e0e0;">Unit Price</th>
+          <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e0e0e0;">Total</th>
+        </tr>
+        ${orderSummaryHtml}
       </table>
       
       <div style="margin-top: 25px;">

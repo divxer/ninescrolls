@@ -4,8 +4,7 @@ import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
-import {Cors, RestApi, RestApiProps, AuthorizationType} from 'aws-cdk-lib/aws-apigateway';
-import { Duration } from 'aws-cdk-lib';
+import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 

@@ -1,6 +1,17 @@
 import * as sgMail from '@sendgrid/mail';
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 
+type SendEmailRequest = {
+    productName: string;
+    name: string;
+    email: string;
+    phone?: string;
+    organization?: string;
+    message: string;
+};
+
+type LegacyHttpEvent = { httpMethod?: string };
+
 const corsHeaders = {
     'Access-Control-Allow-Origin': 'https://ninescrolls.com',
     'Access-Control-Allow-Methods': 'POST,OPTIONS',
@@ -12,7 +23,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     console.log('Lambda function invoked with event:', JSON.stringify(event, null, 2));
 
     // Get HTTP method
-    const method = event.requestContext?.http?.method || (event as any).httpMethod;
+    const legacyEvent = event as LegacyHttpEvent;
+    const method = event.requestContext?.http?.method || legacyEvent.httpMethod;
     
     // Handle preflight requests (OPTIONS)
     if (method === 'OPTIONS') {
@@ -33,9 +45,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             };
         }
 
-        let formData;
+        let formData: Partial<SendEmailRequest>;
         try {
-            formData = JSON.parse(event.body);
+            formData = JSON.parse(event.body) as Partial<SendEmailRequest>;
         } catch (error) {
             console.error('Failed to parse request body:', error);
             return {

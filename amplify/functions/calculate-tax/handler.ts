@@ -2,6 +2,28 @@ import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import Stripe from 'stripe';
 import { env } from '$amplify/env/calculate-tax';
 
+type LineItemInput = {
+  id?: string;
+  name?: string;
+  price: number;
+  quantity: number;
+  taxCode?: string;
+};
+
+type ShippingAddressInput = {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+};
+
+type TaxRequestBody = {
+  items: LineItemInput[];
+  shippingAddress: ShippingAddressInput;
+};
+
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   // Allowed origins for CORS
   const allowedOrigins = [
@@ -50,7 +72,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
-    const body = event.body ? JSON.parse(event.body) : {};
+    const body = event.body ? (JSON.parse(event.body) as Partial<TaxRequestBody>) : {};
     const { items, shippingAddress } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -71,7 +93,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     // Prepare line items for tax calculation
-    const lineItems = items.map((item: any) => ({
+    const lineItems = items.map((item) => ({
       amount: Math.round(item.price * 100 * item.quantity), // Total amount in cents
       reference: item.id || item.name,
       tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods
@@ -106,7 +128,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         taxAmount: taxAmount / 100, // Convert from cents to dollars
         subtotal: subtotal / 100,
         total: totalAmount / 100,
-        taxBreakdown: taxCalculation.tax_breakdown?.map((breakdown: any) => ({
+        taxBreakdown: taxCalculation.tax_breakdown?.map((breakdown: Stripe.Tax.Calculation.TaxBreakdown) => ({
           amount: breakdown.amount / 100,
           jurisdiction: breakdown.jurisdiction?.display_name || breakdown.jurisdiction?.country || 'Tax',
           taxRateDetails: breakdown.tax_rate_details ? {
@@ -116,14 +138,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         })) || [],
       }),
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Error calculating tax:', e);
+    const message = e instanceof Error ? e.message : 'Internal server error';
+    const stack = e instanceof Error ? e.stack : undefined;
     return {
       statusCode: 500,
       headers: corsHeaders,
       body: JSON.stringify({
-        error: e?.message ?? 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? e?.stack : undefined,
+        error: message,
+        details: process.env.NODE_ENV === 'development' ? stack : undefined,
       }),
     };
   }
