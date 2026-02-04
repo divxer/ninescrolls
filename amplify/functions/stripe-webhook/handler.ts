@@ -181,7 +181,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     
     // Extract line items
     const lineItems = (session.line_items?.data || []).map((item: Stripe.LineItem) => {
-      const productName = escapeHtml(item.description || item.price?.product?.name || 'Product');
+      const product = item.price?.product;
+      const productNameCandidate = typeof product === 'string' ? undefined : product?.name;
+      const productName = escapeHtml(item.description || productNameCandidate || 'Product');
       const quantity = item.quantity || 1;
       const unitPrice = item.price?.unit_amount ? (item.price.unit_amount / 100).toFixed(2) : '0.00';
       return { productName, quantity, unitPrice };
@@ -204,7 +206,20 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     }
     // Fallback to Stripe collected address (if user entered it in Checkout)
     else {
-      const shippingDetails = session.shipping_details ?? (session as Stripe.Checkout.Session & { shipping?: Stripe.Checkout.Session.Shipping }).shipping;
+      type ShippingAddress = {
+        line1?: string;
+        line2?: string;
+        city?: string;
+        state?: string;
+        postal_code?: string;
+        country?: string;
+      };
+      type SessionShipping = {
+        shipping_details?: { address?: ShippingAddress };
+        shipping?: { address?: ShippingAddress };
+      };
+      const sessionWithShipping = session as Stripe.Checkout.Session & SessionShipping;
+      const shippingDetails = sessionWithShipping.shipping_details ?? sessionWithShipping.shipping;
       const shippingAddress = shippingDetails?.address;
       if (shippingAddress) {
         shippingAddressText = `${shippingAddress.line1 || ''}\n${shippingAddress.line2 || ''}\n${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postal_code || ''}\n${shippingAddress.country || ''}`
