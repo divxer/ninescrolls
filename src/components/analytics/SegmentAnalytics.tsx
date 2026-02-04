@@ -16,6 +16,17 @@ type SegmentAnalyticsClient = {
   reset: () => void;
 };
 
+type SegmentAnalyticsStub = SegmentAnalyticsClient & {
+  initialized?: boolean;
+  invoked?: boolean;
+  methods?: string[];
+  factory?: (method: string) => (...args: unknown[]) => void;
+  load?: (key: string, options?: Record<string, unknown>) => void;
+  _writeKey?: string;
+  SNIPPET_VERSION?: string;
+  push: (args: unknown[]) => number;
+};
+
 declare global {
   interface Window {
     analytics?: SegmentAnalyticsClient;
@@ -32,13 +43,79 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   useEffect(() => {
     // Load Segment script if not already loaded
     if (typeof window !== 'undefined' && !window.analytics) {
-      const script = document.createElement('script');
-      script.innerHTML = `
-        !function(){var i="analytics",analytics=window[i]=window[i]||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","screen","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware","register"];analytics.factory=function(e){return function(){if(window[i].initialized)return window[i][e].apply(window[i],arguments);var n=Array.prototype.slice.call(arguments);if(["track","screen","alias","group","page","identify"].indexOf(e)>-1){var c=document.querySelector("link[rel='canonical']");n.push({__t:"bpc",c:c&&c.getAttribute("href")||void 0,p:location.pathname,u:location.href,s:location.search,t:document.title,r:document.referrer})}n.unshift(e);analytics.push(n);return analytics}};for(var n=0;n<analytics.methods.length;n++){var key=analytics.methods[n];analytics[key]=analytics.factory(key)}analytics.load=function(key,n){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute("data-global-segment-analytics-key",i);t.src="https://cdn.segment.com/analytics.js/v1/" + key + "/analytics.min.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r);analytics._loadOptions=n};analytics._writeKey="${writeKey}";;analytics.SNIPPET_VERSION="5.2.0";
-        analytics.load("${writeKey}");
-        }}();
-      `;
-      document.head.appendChild(script);
+      const analytics = (window.analytics = (window.analytics || []) as SegmentAnalyticsStub);
+      if (analytics.invoked) {
+        window.console?.error?.('Segment snippet included twice.');
+        return;
+      }
+
+      analytics.invoked = true;
+      analytics.methods = [
+        'trackSubmit',
+        'trackClick',
+        'trackLink',
+        'trackForm',
+        'pageview',
+        'identify',
+        'reset',
+        'group',
+        'track',
+        'ready',
+        'alias',
+        'debug',
+        'page',
+        'screen',
+        'once',
+        'off',
+        'on',
+        'addSourceMiddleware',
+        'addIntegrationMiddleware',
+        'setAnonymousId',
+        'addDestinationMiddleware',
+        'register'
+      ];
+
+      analytics.factory = (method: string) => {
+        return (...args: unknown[]) => {
+          if (analytics.initialized && typeof (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient] === 'function') {
+            return (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient]?.apply(analytics, args as never);
+          }
+          const payload = args.slice();
+          if (['track', 'screen', 'alias', 'group', 'page', 'identify'].includes(method)) {
+            const canonical = document.querySelector("link[rel='canonical']")?.getAttribute('href') || undefined;
+            payload.push({
+              __t: 'bpc',
+              c: canonical,
+              p: window.location.pathname,
+              u: window.location.href,
+              s: window.location.search,
+              t: document.title,
+              r: document.referrer
+            });
+          }
+          payload.unshift(method);
+          analytics.push(payload);
+          return analytics;
+        };
+      };
+
+      analytics.methods.forEach((method) => {
+        (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient] = analytics.factory?.(method) as never;
+      });
+
+      analytics.load = (key: string) => {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.setAttribute('data-global-segment-analytics-key', 'analytics');
+        script.src = `https://cdn.segment.com/analytics.js/v1/${key}/analytics.min.js`;
+        const firstScript = document.getElementsByTagName('script')[0];
+        firstScript?.parentNode?.insertBefore(script, firstScript);
+      };
+
+      analytics._writeKey = writeKey;
+      analytics.SNIPPET_VERSION = '5.2.0';
+      analytics.load(writeKey);
     }
   }, [writeKey]);
 
@@ -80,7 +157,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         );
       }
     }
-  }, [location]);
+  }, [location.pathname, location.search, location.hash]);
 
   // Track time on page when user leaves the site
   useEffect(() => {
