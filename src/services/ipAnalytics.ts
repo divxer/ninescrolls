@@ -81,10 +81,11 @@ class IPAnalyticsService {
 
       // Select the most reliable response
       const successfulResponses = responses
-        .filter((response): response is PromiseFulfilledResult<any> => 
-          response.status === 'fulfilled' && response.value
+        .filter((response): response is PromiseFulfilledResult<Partial<IPInfo> | null> => 
+          response.status === 'fulfilled' && response.value !== null
         )
-        .map(response => response.value);
+        .map(response => response.value)
+        .filter((response): response is Partial<IPInfo> => response !== null);
 
       console.log(`IP query result: ${successfulResponses.length}/${responses.length} services successful`);
 
@@ -111,7 +112,7 @@ class IPAnalyticsService {
   }
 
   // Get information from ip-api.com
-  private async fetchFromIPAPI(): Promise<any> {
+  private async fetchFromIPAPI(): Promise<Partial<IPInfo> | null> {
           const response = await fetch('https://ipapi.co/json/');
     const data = await response.json();
     
@@ -132,7 +133,7 @@ class IPAnalyticsService {
   }
 
   // Get information from ipinfo.io
-  private async fetchFromIPInfo(): Promise<any> {
+  private async fetchFromIPInfo(): Promise<Partial<IPInfo> | null> {
     const response = await fetch('https://ipinfo.io/json');
     const data = await response.json();
     
@@ -167,7 +168,7 @@ class IPAnalyticsService {
   }
 
   // Get information from ipapi.co (free alternative to ipgeolocation.io)
-  private async fetchFromIPGeolocation(): Promise<any> {
+  private async fetchFromIPGeolocation(): Promise<Partial<IPInfo> | null> {
     try {
       // Use ipapi.co as a free alternative to ipgeolocation.io
       const response = await fetch('https://ipapi.co/json/');
@@ -198,7 +199,7 @@ class IPAnalyticsService {
   }
 
   // Get information from ipify.org
-  private async fetchFromIPify(): Promise<any> {
+  private async fetchFromIPify(): Promise<Partial<IPInfo> | null> {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
       if (!response.ok) {
@@ -233,7 +234,7 @@ class IPAnalyticsService {
   }
 
   // Get information from ip-api.com backup endpoint
-  private async fetchFromIPAPI2(): Promise<any> {
+  private async fetchFromIPAPI2(): Promise<Partial<IPInfo> | null> {
     try {
       const response = await fetch('https://ipapi.co/json/');
       if (!response.ok) {
@@ -263,19 +264,33 @@ class IPAnalyticsService {
   }
 
   // Merge data from multiple IP information sources
-  private mergeIPInfo(responses: any[]): IPInfo {
-    const merged: any = {};
+  private mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
+    const merged: Partial<IPInfo> = {};
     
     // Select the most complete data
-    responses.forEach(response => {
-      Object.keys(response).forEach(key => {
-        if (response[key] && !merged[key]) {
-          merged[key] = response[key];
+    responses.forEach((response) => {
+      Object.keys(response).forEach((key) => {
+        const typedKey = key as keyof IPInfo;
+        const value = response[typedKey];
+        if (value !== undefined && value !== null && merged[typedKey] === undefined) {
+          (merged as Record<string, unknown>)[typedKey] = value;
         }
       });
     });
 
-    return merged as IPInfo;
+    return {
+      ip: typeof merged.ip === 'string' ? merged.ip : '',
+      country: typeof merged.country === 'string' ? merged.country : '',
+      region: typeof merged.region === 'string' ? merged.region : '',
+      city: typeof merged.city === 'string' ? merged.city : '',
+      org: typeof merged.org === 'string' ? merged.org : '',
+      isp: typeof merged.isp === 'string' ? merged.isp : '',
+      timezone: typeof merged.timezone === 'string' ? merged.timezone : '',
+      latitude: typeof merged.latitude === 'number' ? merged.latitude : undefined,
+      longitude: typeof merged.longitude === 'number' ? merged.longitude : undefined,
+      privacy: merged.privacy,
+      company: merged.company
+    };
   }
 
   // Analyze if it's a target customer
@@ -421,7 +436,7 @@ class IPAnalyticsService {
 
     // Check whitelist (only if not a noise org)
     if (!isNoiseOrg) {
-      const whitelistMatch = this.checkWhitelist(orgName, ipInfo.country);
+      const whitelistMatch = this.checkWhitelist(orgName);
       if (whitelistMatch.matched) {
         breakdown.whitelist = Math.max(0.85, breakdown.whitelist);
       }
@@ -548,7 +563,7 @@ class IPAnalyticsService {
   }
 
   // Check against known universities/research institutes whitelist
-  private checkWhitelist(orgName: string, _country: string): { matched: boolean; orgName?: string } {
+  private checkWhitelist(orgName: string): { matched: boolean; orgName?: string } {
     const whitelist = [
       // US Universities
       'stanford', 'mit', 'massachusetts institute', 'harvard', 'ucsd', 'uc san diego',
