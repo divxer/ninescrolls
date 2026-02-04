@@ -49,7 +49,10 @@ export interface TaxCalculationResult {
   taxBreakdown: Array<{
     amount: number;
     jurisdiction: string;
-    taxRateDetails?: any;
+    taxRateDetails?: {
+      display_name?: string;
+      percentage_decimal?: string;
+    };
   }>;
 }
 
