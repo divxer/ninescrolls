@@ -3,6 +3,49 @@ import Stripe from 'stripe';
 import * as sgMail from '@sendgrid/mail';
 import { env } from '$amplify/env/stripe-webhook';
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const decodeBasicEntities = (value: string): string =>
+  value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+
+const sanitizeRichText = (value: string): string => {
+  const escaped = escapeHtml(value);
+  const simpleTags = ['b', 'strong', 'i', 'em', 'u', 'p', 'ul', 'ol', 'li'];
+  let result = escaped;
+
+  simpleTags.forEach((tag) => {
+    const open = new RegExp(`&lt;${tag}\\s*&gt;`, 'gi');
+    const close = new RegExp(`&lt;/${tag}\\s*&gt;`, 'gi');
+    result = result.replace(open, `<${tag}>`).replace(close, `</${tag}>`);
+  });
+
+  result = result.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+  result = result.replace(
+    /&lt;a\s+href=(&quot;|&#39;)([^&]*?)\1\s*&gt;/gi,
+    (_match, _quote, href) => {
+      const decoded = decodeBasicEntities(href);
+      if (!/^(https?:|mailto:)/i.test(decoded)) {
+        return '';
+      }
+      return `<a href="${escapeHtml(decoded)}">`;
+    }
+  );
+  result = result.replace(/&lt;\/a\s*&gt;/gi, '</a>');
+
+  return result.replace(/\r\n|\r|\n/g, '<br>');
+};
+
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
@@ -109,24 +152,25 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     sgMail.setApiKey(env.SENDGRID_API_KEY);
 
     // Extract contact information from metadata (contact person may differ from payment person)
-    const contactFirstName = session.metadata?.contactFirstName || '';
-    const contactLastName = session.metadata?.contactLastName || '';
-    const contactEmail = session.metadata?.contactEmail || '';
-    const contactPhone = session.metadata?.contactPhone || '';
-    const contactOrganization = session.metadata?.contactOrganization || '';
+    const contactFirstName = escapeHtml(session.metadata?.contactFirstName || '');
+    const contactLastName = escapeHtml(session.metadata?.contactLastName || '');
+    const contactEmail = escapeHtml(session.metadata?.contactEmail || '');
+    const contactPhone = escapeHtml(session.metadata?.contactPhone || '');
+    const contactOrganization = escapeHtml(session.metadata?.contactOrganization || '');
 
     // Determine which email to use: contact email (from form) or payment email (from Stripe)
     // Contact email takes priority as it's the person we should communicate with
-    const customerEmail = contactEmail || session.customer_details?.email;
+    const customerEmail = contactEmail || escapeHtml(session.customer_details?.email || '');
     if (!customerEmail) {
       console.error('Customer email not found in session or metadata');
       return;
     }
     
     // Determine customer name: use contact name from form if available, otherwise use Stripe customer details
-    const customerName = (contactFirstName && contactLastName)
+    const rawCustomerName = (contactFirstName && contactLastName)
       ? `${contactFirstName} ${contactLastName}`
       : session.customer_details?.name || 'Valued Customer';
+    const customerName = escapeHtml(rawCustomerName);
     
     // Generate order number from session ID (use last 12 characters)
     const orderNumber = `ORDER-${session.id.replace('cs_', '').substring(0, 12)}`;
@@ -137,7 +181,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     
     // Extract line items
     const lineItems = (session.line_items?.data || []).map((item: Stripe.LineItem) => {
-      const productName = item.description || item.price?.product?.name || 'Product';
+      const productName = escapeHtml(item.description || item.price?.product?.name || 'Product');
       const quantity = item.quantity || 1;
       const unitPrice = item.price?.unit_amount ? (item.price.unit_amount / 100).toFixed(2) : '0.00';
       return { productName, quantity, unitPrice };
@@ -169,6 +213,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
           .join('\n');
       }
     }
+    const safeShippingAddressText = escapeHtml(shippingAddressText);
 
     // Build order summary HTML
     const orderSummaryHtml = lineItems.map(item => `
@@ -179,6 +224,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
         <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;">$${(parseFloat(item.unitPrice) * item.quantity).toFixed(2)}</td>
       </tr>
     `).join('');
+    const safeNotes = session.metadata?.notes ? sanitizeRichText(session.metadata.notes) : 'None';
 
     // Professional email template
     const emailHtml = `
@@ -247,7 +293,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       
       <div style="margin-top: 25px;">
         <h3 style="color: #1a1a1a; font-size: 16px; margin-top: 0; margin-bottom: 10px;">Shipping Address</h3>
-        <p style="margin: 0; white-space: pre-line; color: #666;">${shippingAddressText}</p>
+        <p style="margin: 0; white-space: pre-line; color: #666;">${safeShippingAddressText}</p>
       </div>
       
       <div style="margin-top: 20px;">
@@ -262,7 +308,7 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
       
       <div style="margin-top: 20px;">
         <h3 style="color: #1a1a1a; font-size: 16px; margin-top: 0; margin-bottom: 10px;">Notes</h3>
-        <p style="margin: 0; color: #666;">${session.metadata?.notes || 'None'}</p>
+        <p style="margin: 0; color: #666;">${safeNotes}</p>
       </div>
     </div>
     
@@ -355,9 +401,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
         <p><strong>Payment Email:</strong> ${session.customer_details?.email || customerEmail}</p>
         
         <h3>Shipping Address</h3>
-        <pre style="white-space: pre-line;">${shippingAddressText}</pre>
+        <pre style="white-space: pre-line;">${safeShippingAddressText}</pre>
         
-        ${session.metadata?.notes ? `<h3>Order Notes</h3><p>${session.metadata.notes}</p>` : ''}
+        ${session.metadata?.notes ? `<h3>Order Notes</h3><p>${safeNotes}</p>` : ''}
         
         <p><a href="https://dashboard.stripe.com/payments/${session.payment_intent}">View in Stripe Dashboard</a></p>
       `,

@@ -1,6 +1,51 @@
 import * as sgMail from '@sendgrid/mail';
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 
+const escapeHtml = (value: string): string =>
+    value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+const decodeBasicEntities = (value: string): string =>
+    value
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+
+const sanitizeRichText = (value: string): string => {
+    const escaped = escapeHtml(value);
+
+    const simpleTags = ['b', 'strong', 'i', 'em', 'u', 'p', 'ul', 'ol', 'li'];
+    let result = escaped;
+
+    simpleTags.forEach((tag) => {
+        const open = new RegExp(`&lt;${tag}\\s*&gt;`, 'gi');
+        const close = new RegExp(`&lt;/${tag}\\s*&gt;`, 'gi');
+        result = result.replace(open, `<${tag}>`).replace(close, `</${tag}>`);
+    });
+
+    result = result.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+
+    result = result.replace(
+        /&lt;a\s+href=(&quot;|&#39;)([^&]*?)\1\s*&gt;/gi,
+        (_match, _quote, href) => {
+            const decoded = decodeBasicEntities(href);
+            if (!/^(https?:|mailto:)/i.test(decoded)) {
+                return '';
+            }
+            return `<a href="${escapeHtml(decoded)}">`;
+        }
+    );
+    result = result.replace(/&lt;\/a\s*&gt;/gi, '</a>');
+
+    return result.replace(/\r\n|\r|\n/g, '<br>');
+};
+
 type SendEmailRequest = {
     productName: string;
     name: string;
@@ -85,20 +130,27 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         sgMail.setApiKey(apiKey);
 
         // Email to company
+        const safeProductName = escapeHtml(productName);
+        const safeName = escapeHtml(name);
+        const safeEmail = escapeHtml(email);
+        const safePhone = phone ? escapeHtml(phone) : 'Not provided';
+        const safeOrganization = organization ? escapeHtml(organization) : 'Not provided';
+        const safeMessage = sanitizeRichText(message);
+
         const companyEmail = {
             to: 'info@ninescrolls.com',
             from: 'noreply@ninescrolls.com',
             replyTo: email,
-            subject: `New Product Inquiry: ${productName}`,
+            subject: `New Product Inquiry: ${safeProductName}`,
             html: `
                 <h2>New Product Inquiry</h2>
-                <p><strong>Product:</strong> ${productName}</p>
-                <p><strong>Customer Name:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-                <p><strong>Organization:</strong> ${organization || 'Not provided'}</p>
+                <p><strong>Product:</strong> ${safeProductName}</p>
+                <p><strong>Customer Name:</strong> ${safeName}</p>
+                <p><strong>Email:</strong> ${safeEmail}</p>
+                <p><strong>Phone:</strong> ${safePhone}</p>
+                <p><strong>Organization:</strong> ${safeOrganization}</p>
                 <p><strong>Message:</strong></p>
-                <p>${message}</p>
+                <p>${safeMessage}</p>
             `,
         };
 
@@ -106,15 +158,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         const customerEmail = {
             to: email,
             from: 'noreply@ninescrolls.com',
-            subject: `Thank you for your interest in ${productName}`,
+            subject: `Thank you for your interest in ${safeProductName}`,
             html: `
                 <h2>Thank you for contacting NineScrolls LLC</h2>
-                <p>Dear ${name},</p>
-                <p>We have received your inquiry about the ${productName}. Our team will review your request and get back to you within one business day.</p>
+                <p>Dear ${safeName},</p>
+                <p>We have received your inquiry about the ${safeProductName}. Our team will review your request and get back to you within one business day.</p>
                 <p>Here's a summary of your inquiry:</p>
                 <ul>
-                    <li><strong>Product:</strong> ${productName}</li>
-                    <li><strong>Your Message:</strong> ${message}</li>
+                    <li><strong>Product:</strong> ${safeProductName}</li>
+                    <li><strong>Your Message:</strong> ${safeMessage}</li>
                 </ul>
                 <p>If you have any immediate questions, please don't hesitate to call us at +1 (858) 879-8898.</p>
                 <br>
