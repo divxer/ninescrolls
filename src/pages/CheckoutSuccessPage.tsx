@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../contexts/useCart';
 import '../styles/CheckoutSuccessPage.css';
 
 export function CheckoutSuccessPage() {
@@ -23,8 +23,8 @@ export function CheckoutSuccessPage() {
       const total = getTotalPrice();
       
       // Track purchase event
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'purchase', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'purchase', {
           transaction_id: sessionId,
           value: total,
           currency: 'USD',

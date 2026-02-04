@@ -8,7 +8,7 @@ import { TrustSection } from '../common/TrustSection';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/CartContext';
+import { useCart } from '../../contexts/useCart';
 
 export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,12 +48,12 @@ export function NSPlasma4R() {
     // Track add to cart event for Google Analytics and Google Merchants
     if (typeof window !== 'undefined') {
       // Google Analytics 4 e-commerce event
-      if ((window as any).gtag) {
+      if (window.gtag) {
         const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
         const price = selectedFrequency === 'rf' ? 7999 : 6499;
         const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
         
-        (window as any).gtag('event', 'add_to_cart', {
+        window.gtag('event', 'add_to_cart', {
           currency: 'USD',
           value: price,
           items: [{

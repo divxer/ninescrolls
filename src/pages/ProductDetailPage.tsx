@@ -300,7 +300,7 @@ export function ProductDetailPage() {
   }, [product]);
 
   // Scroll to top when component mounts or productId changes
-  useScrollToTop([productId]);
+  useScrollToTop(productId);
 
   if (!ProductComponent) {
     return <div className="container">Product not found</div>;

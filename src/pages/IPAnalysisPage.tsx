@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from '../services/ipAnalytics';
@@ -16,11 +16,7 @@ export const IPAnalysisPage: React.FC = () => {
   // Scroll to top when component mounts
   useScrollToTop();
 
-  useEffect(() => {
-    loadIPAnalysis();
-  }, []);
-
-  const loadIPAnalysis = async () => {
+  const loadIPAnalysis = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,7 +58,11 @@ export const IPAnalysisPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [analytics.segment]);
+
+  useEffect(() => {
+    loadIPAnalysis();
+  }, [loadIPAnalysis]);
 
   const testTargetCustomerEvent = async () => {
     if (analysis) {

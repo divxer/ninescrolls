@@ -17,7 +17,7 @@ export function Layout({ children }: LayoutProps) {
   // Analytics helper
   const trackProductMenuClick = (label: string, category: string) => {
     if (typeof window !== 'undefined') {
-      const w = window as any;
+      const w = window;
       if (typeof w.gtag === 'function') {
         w.gtag('event', 'click', {
           event_category: 'Nav Products',
@@ -69,7 +69,7 @@ export function Layout({ children }: LayoutProps) {
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isProductsOpen]);
   
   return (
     <>

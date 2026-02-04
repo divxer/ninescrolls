@@ -13,7 +13,7 @@ export const InsightsPostPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Scroll to top when component mounts or slug changes
-  useScrollToTop([slug]);
+  useScrollToTop(slug);
 
   useEffect(() => {
     // Special handling for standalone component pages

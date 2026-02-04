@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { ipAnalytics } from '../services/ipAnalytics';
-import { simpleIPAnalytics } from '../services/simpleIPAnalytics';
+import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from '../services/ipAnalytics';
+import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from '../services/simpleIPAnalytics';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 
 export const IPAnalysisTestPage: React.FC = () => {
-  const [ipInfo, setIpInfo] = useState<any>(null);
-  const [analysis, setAnalysis] = useState<any>(null);
-  const [simpleIpInfo, setSimpleIpInfo] = useState<any>(null);
-  const [simpleAnalysis, setSimpleAnalysis] = useState<any>(null);
+  const [ipInfo, setIpInfo] = useState<IPInfo | null>(null);
+  const [analysis, setAnalysis] = useState<TargetCustomerAnalysis | null>(null);
+  const [simpleIpInfo, setSimpleIpInfo] = useState<SimpleIPInfo | null>(null);
+  const [simpleAnalysis, setSimpleAnalysis] = useState<SimpleTargetCustomerAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const analytics = useCombinedAnalytics();

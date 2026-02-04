@@ -3,22 +3,24 @@ import '../../styles/Chat.css';
 
 declare global {
   interface Window {
-    Tawk_API?: {
-      onLoad: (callback: () => void) => void;
-      setAttributes: (attributes: Record<string, string>, callback?: (error: any) => void) => void;
-      addEvent: (name: string, value: string, callback?: (error: any) => void) => void;
-      // customize method may not be available in all Tawk.to versions
-      customize?: (config: {
-        position?: string;
-        offsetVertical?: string;
-        offsetHorizontal?: string;
-        height?: string;
-        zIndex?: number;
-      }) => void;
-    };
+    Tawk_API?: TawkAPI;
     Tawk_LoadStart?: Date;
   }
 }
+
+type TawkAPI = {
+  onLoad?: (callback: () => void) => void;
+  setAttributes?: (attributes: Record<string, string>, callback?: (error: unknown) => void) => void;
+  addEvent?: (name: string, value: string, callback?: (error: unknown) => void) => void;
+  // customize method may not be available in all Tawk.to versions
+  customize?: (config: {
+    position?: string;
+    offsetVertical?: string;
+    offsetHorizontal?: string;
+    height?: string;
+    zIndex?: number;
+  }) => void;
+};
 
 export function Chat() {
   useEffect(() => {
@@ -32,8 +34,9 @@ export function Chat() {
     }
 
     // Initialize Tawk.to
-    const w = window as any;
-    w.Tawk_API = w.Tawk_API || {};
+    const w = window;
+    const tawkApi: TawkAPI = w.Tawk_API ?? {};
+    w.Tawk_API = tawkApi;
     w.Tawk_LoadStart = new Date();
 
     // Load Tawk.to script
@@ -44,40 +47,40 @@ export function Chat() {
     document.head.appendChild(script);
 
     // Configure Tawk.to
-    w.Tawk_API.onLoad = function() {
+    tawkApi.onLoad = function() {
       try {
         // Set visitor information - only set name, skip email to avoid INVALID_EMAIL error
-        w.Tawk_API.setAttributes({
+        tawkApi.setAttributes?.({
           'name': 'Visitor'
           // Skip email and hash to avoid validation errors
-        }, function(error: any) {
+        }, function(error: unknown) {
           if (error) {
             console.warn('Tawk.to attributes setting failed:', error);
           }
         });
 
         // Set custom variables - use a very simple event name
-        w.Tawk_API.addEvent('visit', 'ninescrolls', function(error: any) {
+        tawkApi.addEvent?.('visit', 'ninescrolls', function(error: unknown) {
           if (error) {
             console.warn('Tawk.to custom variable setting failed:', error);
           }
         });
 
         // Position the widget to avoid overlap - only if customize method exists
-        if (w.Tawk_API.customize) {
+        if (tawkApi.customize) {
           try {
-            w.Tawk_API.customize({
+            tawkApi.customize({
               position: 'right',
               offsetVertical: '120px',
               offsetHorizontal: '20px',
               height: '500px',
               zIndex: 1000
             });
-          } catch (customizeError) {
+          } catch (customizeError: unknown) {
             console.warn('Tawk.to customize failed:', customizeError);
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn('Tawk.to configuration failed:', error);
       }
     };
