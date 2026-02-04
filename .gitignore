@@ -31,6 +31,7 @@ amplifyconfiguration*
 # Local environment files
 .env.local
 .env.*.local
+.env.example
 /.env
 .npm
 /.npmrc
