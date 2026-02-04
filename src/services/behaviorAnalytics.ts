@@ -5,7 +5,7 @@ interface BehaviorSignal {
   event: string;
   timestamp: number;
   value?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface BehaviorScore {
@@ -65,7 +65,7 @@ class BehaviorAnalyticsService {
   }
 
   // Track a behavior signal
-  trackSignal(event: string, value?: number, metadata?: Record<string, any>) {
+  trackSignal(event: string, value?: number, metadata?: Record<string, unknown>) {
     const signal: BehaviorSignal = {
       event,
       timestamp: Date.now(),

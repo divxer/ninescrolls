@@ -1,15 +1,20 @@
-import { useAnalytics } from '../components/analytics/GoogleAnalytics';
-import { useSegmentAnalytics } from '../components/analytics/SegmentAnalytics';
+import { useMemo } from 'react';
+import { useAnalytics } from './useAnalytics';
+import { useSegmentAnalytics } from './useSegmentAnalytics';
 import { segmentAnalytics } from '../services/segmentAnalytics';
+import type { EventAction, EventCategory } from '../services/analytics';
+
+type AnalyticsTraits = Record<string, unknown>;
+type AnalyticsParams = Record<string, unknown>;
 
 // Combined analytics hook that works with both Google Analytics and Segment
 export const useCombinedAnalytics = () => {
   const gaAnalytics = useAnalytics();
   const segmentAnalyticsHook = useSegmentAnalytics();
 
-  return {
+  return useMemo(() => ({
     // Track events with both GA and Segment
-    trackEvent: (category: string, action: string, label?: string, value?: number) => {
+    trackEvent: (category: EventCategory | string, action: EventAction | string, label?: string, value?: number) => {
       // Google Analytics
       gaAnalytics.trackEvent(category, action, label, value);
       
@@ -66,7 +71,7 @@ export const useCombinedAnalytics = () => {
     },
 
     // User identification
-    identifyUser: (userId: string, traits?: any) => {
+    identifyUser: (userId: string, traits?: AnalyticsTraits) => {
       // Google Analytics
       gaAnalytics.identifyUser(userId, traits);
       
@@ -75,7 +80,7 @@ export const useCombinedAnalytics = () => {
     },
 
     // Custom event tracking
-    trackCustomEvent: (eventName: string, parameters?: Record<string, any>) => {
+    trackCustomEvent: (eventName: string, parameters?: AnalyticsParams) => {
       // Google Analytics
       gaAnalytics.trackCustomEvent(eventName, parameters);
       
@@ -114,5 +119,5 @@ export const useCombinedAnalytics = () => {
       identifyUser: gaAnalytics.identifyUser,
       trackCustomEvent: gaAnalytics.trackCustomEvent
     }
-  };
-}; 
+  }), [gaAnalytics, segmentAnalyticsHook]);
+};

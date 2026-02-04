@@ -19,7 +19,7 @@ interface EventData {
   action: EventAction;
   label?: string;
   value?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Google Analytics 4 Configuration
@@ -27,8 +27,8 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXX
 
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (...args: unknown[]) => void;
+    dataLayer: unknown[];
   }
 }
 
@@ -57,8 +57,8 @@ class Analytics {
 
       // Initialize gtag
       window.dataLayer = window.dataLayer || [];
-      window.gtag = function() {
-        window.dataLayer.push(arguments);
+      window.gtag = (...args: unknown[]) => {
+        window.dataLayer.push(args);
       };
       window.gtag('js', new Date());
       window.gtag('config', GA_MEASUREMENT_ID, {
@@ -195,7 +195,7 @@ class Analytics {
   }
 
   // User identification
-  identifyUser(userId: string, traits?: any) {
+  identifyUser(userId: string, traits?: Record<string, unknown>) {
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('config', GA_MEASUREMENT_ID, {
         user_id: userId,
@@ -207,7 +207,7 @@ class Analytics {
   }
 
   // Custom event tracking
-  trackCustomEvent(eventName: string, parameters?: Record<string, any>) {
+  trackCustomEvent(eventName: string, parameters?: Record<string, unknown>) {
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', eventName, parameters);
     }

@@ -3,9 +3,14 @@ import { useLocation } from 'react-router-dom';
 
 declare global {
   interface Window {
-    _hsq?: Array<any>;
+    _hsq?: HubSpotCommand[];
   }
 }
+
+type HubSpotCommand =
+  | ['setPath', string]
+  | ['trackPageView']
+  | ['trackEvent', { id: string; value: string }];
 
 /**
  * HubSpot Page View Sync Component
