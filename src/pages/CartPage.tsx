@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../contexts/useCart';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
 import '../styles/CartPage.css';

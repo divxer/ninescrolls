@@ -10,7 +10,11 @@ interface QuoteModalProps {
   turnstileSiteKey?: string;
 }
 
-declare global { interface Window { turnstile?: any } }
+declare global { interface Window { turnstile?: Turnstile } }
+
+type Turnstile = {
+  render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => void;
+};
 
 export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, downloadLabel = 'Download Brochure', turnstileSiteKey }: QuoteModalProps) {
   const analytics = useCombinedAnalytics();
@@ -44,11 +48,18 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     });
     ensureScript().then(() => {
       try {
-        window.turnstile.render(widgetRef.current, {
+        const widget = widgetRef.current;
+        const turnstile = window.turnstile;
+        if (!widget || !turnstile) {
+          return;
+        }
+        turnstile.render(widget, {
           sitekey: turnstileSiteKey,
           callback: (t: string) => setToken(t)
         });
-      } catch {}
+      } catch (error: unknown) {
+        console.warn('Turnstile render failed:', error);
+      }
     });
   }, [isOpen, turnstileSiteKey]);
 
@@ -164,4 +175,3 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
 }
 
 export default QuoteModal;
-

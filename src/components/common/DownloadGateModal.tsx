@@ -11,8 +11,12 @@ interface DownloadGateModalProps {
 }
 
 declare global {
-  interface Window { turnstile?: any }
+  interface Window { turnstile?: Turnstile }
 }
+
+type Turnstile = {
+  render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => void;
+};
 
 const intents = [
   'Actively looking to buy',
@@ -64,11 +68,18 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
     });
     ensureScript().then(() => {
       try {
-        window.turnstile.render(widgetRef.current, {
+        const widget = widgetRef.current;
+        const turnstile = window.turnstile;
+        if (!widget || !turnstile) {
+          return;
+        }
+        turnstile.render(widget, {
           sitekey: turnstileSiteKey,
           callback: (t: string) => setToken(t)
         });
-      } catch {}
+      } catch (error: unknown) {
+        console.warn('Turnstile render failed:', error);
+      }
     });
   }, [isOpen, turnstileSiteKey]);
 

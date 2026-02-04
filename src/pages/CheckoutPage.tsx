@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../contexts/useCart';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
 import { createCheckoutSession, calculateTax } from '../services/stripeService';
@@ -74,14 +74,19 @@ export function CheckoutPage() {
   });
 
   // Redirect if cart is empty
-  if (items.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/cart');
+    }
+  }, [items.length, navigate]);
 
   // Calculate tax when address fields are complete
   useEffect(() => {
     const performTaxCalculation = async () => {
+      if (items.length === 0) {
+        setTaxInfo(null);
+        return;
+      }
       // Check if we have enough address information
       if (!formData.address || !formData.city || !formData.state || !formData.zipCode || !formData.country) {
         setTaxInfo(null);
@@ -108,7 +113,7 @@ export function CheckoutPage() {
 
         const taxResult = await calculateTax(stripeItems, shippingAddress);
         setTaxInfo(taxResult);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error calculating tax:', err);
         // Don't show error to user, just don't display tax
         setTaxInfo(null);
@@ -124,6 +129,10 @@ export function CheckoutPage() {
 
     return () => clearTimeout(timeoutId);
   }, [formData.address, formData.city, formData.state, formData.zipCode, formData.country, items]);
+
+  if (items.length === 0) {
+    return null;
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -147,8 +156,8 @@ export function CheckoutPage() {
       const total = taxInfo && !isCalculatingTax ? taxInfo.total : getTotalPrice();
 
       // Track begin_checkout event
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'begin_checkout', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'begin_checkout', {
           currency: 'USD',
           value: total,
           items: items.map((item) => ({
@@ -204,8 +213,9 @@ export function CheckoutPage() {
       } else {
         throw new Error('Failed to get checkout URL from session');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to initialize checkout. Please try again or contact us directly.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to initialize checkout. Please try again or contact us directly.';
+      setError(message);
       console.error('Checkout initialization error:', err);
       setIsSubmitting(false);
     }
