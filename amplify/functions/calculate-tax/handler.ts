@@ -128,14 +128,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         taxAmount: taxAmount / 100, // Convert from cents to dollars
         subtotal: subtotal / 100,
         total: totalAmount / 100,
-        taxBreakdown: taxCalculation.tax_breakdown?.map((breakdown: Stripe.Tax.Calculation.TaxBreakdown) => ({
-          amount: breakdown.amount / 100,
-          jurisdiction: breakdown.jurisdiction?.display_name || breakdown.jurisdiction?.country || 'Tax',
-          taxRateDetails: breakdown.tax_rate_details ? {
-            display_name: breakdown.tax_rate_details.display_name,
-            percentage_decimal: breakdown.tax_rate_details.percentage_decimal,
-          } : undefined,
-        })) || [],
+        taxBreakdown: taxCalculation.tax_breakdown?.map((breakdown: Stripe.Tax.Calculation.TaxBreakdown) => {
+          const jurisdiction = (breakdown as unknown as { jurisdiction?: { display_name?: string; country?: string } })
+            .jurisdiction;
+          const taxRateDetails = (breakdown as unknown as { tax_rate_details?: { display_name?: string; percentage_decimal?: string } })
+            .tax_rate_details;
+
+          return {
+            amount: breakdown.amount / 100,
+            jurisdiction: jurisdiction?.display_name || jurisdiction?.country || 'Tax',
+            taxRateDetails: taxRateDetails ? {
+              display_name: taxRateDetails.display_name,
+              percentage_decimal: taxRateDetails.percentage_decimal,
+            } : undefined,
+          };
+        }) || [],
       }),
     };
   } catch (e: unknown) {

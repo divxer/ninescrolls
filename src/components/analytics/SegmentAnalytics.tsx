@@ -43,7 +43,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   useEffect(() => {
     // Load Segment script if not already loaded
     if (typeof window !== 'undefined' && !window.analytics) {
-      const analytics = (window.analytics = (window.analytics || []) as SegmentAnalyticsStub);
+      const analytics = (window.analytics = ((window.analytics || []) as unknown as SegmentAnalyticsStub));
       if (analytics.invoked) {
         window.console?.error?.('Segment snippet included twice.');
         return;
@@ -77,8 +77,9 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
 
       analytics.factory = (method: string) => {
         return (...args: unknown[]) => {
-          if (analytics.initialized && typeof (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient] === 'function') {
-            return (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient]?.apply(analytics, args as never);
+          if (analytics.initialized && typeof (analytics as Record<string, unknown>)[method] === 'function') {
+            const analyticsMethods = analytics as unknown as Record<string, (...params: unknown[]) => unknown>;
+            return analyticsMethods[method](...args);
           }
           const payload = args.slice();
           if (['track', 'screen', 'alias', 'group', 'page', 'identify'].includes(method)) {
@@ -100,7 +101,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       };
 
       analytics.methods.forEach((method) => {
-        (analytics as SegmentAnalyticsClient)[method as keyof SegmentAnalyticsClient] = analytics.factory?.(method) as never;
+        (analytics as Record<string, unknown>)[method] = analytics.factory?.(method);
       });
 
       analytics.load = (key: string) => {

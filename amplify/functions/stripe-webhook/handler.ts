@@ -182,7 +182,9 @@ async function sendOrderConfirmationEmail(session: Stripe.Checkout.Session) {
     // Extract line items
     const lineItems = (session.line_items?.data || []).map((item: Stripe.LineItem) => {
       const product = item.price?.product;
-      const productNameCandidate = typeof product === 'string' ? undefined : product?.name;
+      const productNameCandidate = typeof product === 'object' && product !== null && 'name' in product
+        ? (product as { name?: string }).name
+        : undefined;
       const productName = escapeHtml(item.description || productNameCandidate || 'Product');
       const quantity = item.quantity || 1;
       const unitPrice = item.price?.unit_amount ? (item.price.unit_amount / 100).toFixed(2) : '0.00';
