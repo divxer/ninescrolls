@@ -184,6 +184,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             phone: contactInformation?.phone || undefined,
           };
 
+          const shippingName = customerName || contactInformation?.firstName || 'Customer';
+
           // Add billing address if shipping address is provided
           if (shippingAddress) {
             updateData.address = {
@@ -204,7 +206,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 postal_code: shippingAddress.postal_code,
                 country: shippingAddress.country,
               },
-              name: customerName || undefined,
+              name: shippingName,
               phone: contactInformation?.phone || undefined,
             };
           }
@@ -218,6 +220,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             name: customerName || undefined,
             phone: contactInformation?.phone || undefined,
           };
+
+          const shippingName = customerName || contactInformation?.firstName || 'Customer';
 
           // Add billing address if shipping address is provided
           if (shippingAddress) {
@@ -239,7 +243,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 postal_code: shippingAddress.postal_code,
                 country: shippingAddress.country,
               },
-              name: customerName || undefined,
+              name: shippingName,
               phone: contactInformation?.phone || undefined,
             };
           }
