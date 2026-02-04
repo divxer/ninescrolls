@@ -2,6 +2,46 @@ import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import Stripe from 'stripe';
 import { env } from '$amplify/env/create-checkout-session';
 
+type CheckoutItemInput = {
+  id?: string;
+  name: string;
+  price: number;
+  quantity?: number;
+  image?: string;
+  priceId?: string;
+  taxCode?: string;
+};
+
+type ContactInformation = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  organization?: string;
+};
+
+type ShippingAddressInput = {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+};
+
+type CheckoutRequestBody = {
+  items: CheckoutItemInput[];
+  customerEmail?: string;
+  customerName?: string;
+  contactInformation?: ContactInformation;
+  shippingAddress?: ShippingAddressInput;
+  notes?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+};
+
+type LegacyHttpEvent = { httpMethod?: string };
+
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   // Allowed origins for CORS (production domains)
   // Only allow requests from your official website domains
@@ -29,9 +69,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   const corsHeaders = getCorsHeaders(requestOrigin);
 
   // Get HTTP method - try multiple ways
-  const method = event.requestContext?.http?.method || 
-                 (event as any).httpMethod || 
-                 (event.requestContext as any)?.httpMethod;
+  const legacyEvent = event as LegacyHttpEvent;
+  const method = event.requestContext?.http?.method || legacyEvent.httpMethod;
   
   const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
   
@@ -81,7 +120,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
-    const body = event.body ? JSON.parse(event.body) : {};
+    const body = event.body ? (JSON.parse(event.body) as Partial<CheckoutRequestBody>) : {};
     const { items, customerEmail, customerName, contactInformation, shippingAddress, notes, successUrl, cancelUrl } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -95,7 +134,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Convert items to Stripe line items format
     // If items have priceId, use it; otherwise create price_data
     // Add tax_code for Stripe Tax calculation (txcd_99999999 = General Tangible Goods)
-    const lineItems = items.map((item: any) => {
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => {
       if (item.priceId) {
         return {
           price: item.priceId,
@@ -139,7 +178,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         if (existingCustomers.data.length > 0) {
           // Update existing customer with address
           const customer = existingCustomers.data[0];
-          const updateData: any = {
+          const updateData: Stripe.CustomerUpdateParams = {
             email: customerEmail,
             name: customerName || undefined,
             phone: contactInformation?.phone || undefined,
@@ -174,7 +213,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           customerId = updatedCustomer.id;
         } else {
           // Create new customer with address
-          const createData: any = {
+          const createData: Stripe.CustomerCreateParams = {
             email: customerEmail,
             name: customerName || undefined,
             phone: contactInformation?.phone || undefined,
@@ -208,14 +247,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           const newCustomer = await stripe.customers.create(createData);
           customerId = newCustomer.id;
         }
-      } catch (customerError: any) {
+      } catch (customerError: unknown) {
         console.error('Error creating/updating customer:', customerError);
         // Continue without customer - Checkout will still work, just won't pre-fill address
       }
     }
 
     // Prepare session parameters
-    const sessionParams: any = {
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       line_items: lineItems,
       success_url: finalSuccessUrl,
@@ -225,7 +264,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         enabled: true,
       },
       metadata: {
-        items: JSON.stringify(items.map((i: any) => ({ id: i.id, name: i.name }))),
+        items: JSON.stringify(items.map((i) => ({ id: i.id, name: i.name }))),
         notes: notes || '',
         customerName: customerName || '', // Store customer name in metadata
       },
@@ -247,6 +286,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Store complete contact information in metadata
     // This is important because the contact person may differ from the payment person
     if (contactInformation) {
+      sessionParams.metadata = sessionParams.metadata || {};
       sessionParams.metadata.contactFirstName = contactInformation.firstName || '';
       sessionParams.metadata.contactLastName = contactInformation.lastName || '';
       sessionParams.metadata.contactEmail = contactInformation.email || '';
@@ -259,6 +299,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Store shipping address in metadata for order processing
     // Note: Address is also saved in Stripe Customer for tax calculation
     if (shippingAddress) {
+      sessionParams.metadata = sessionParams.metadata || {};
       sessionParams.metadata.shippingAddress = JSON.stringify(shippingAddress);
       // Also store individual fields for easier access
       sessionParams.metadata.shippingLine1 = shippingAddress.line1;
@@ -281,15 +322,17 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         url: session.url 
       }),
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Error creating checkout session:', e);
-    console.error('Error stack:', e?.stack);
+    if (e instanceof Error) {
+      console.error('Error stack:', e.stack);
+    }
     return {
       statusCode: 500,
       headers: corsHeaders,
       body: JSON.stringify({ 
-        error: e?.message ?? 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? e?.stack : undefined,
+        error: e instanceof Error ? e.message : 'Internal server error',
+        details: process.env.NODE_ENV === 'development' && e instanceof Error ? e.stack : undefined,
       }),
     };
   }
