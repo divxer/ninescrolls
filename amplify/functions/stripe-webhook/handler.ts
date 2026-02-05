@@ -101,9 +101,13 @@ const persistOrder = async (session: Stripe.Checkout.Session): Promise<'created'
     currency: item.price?.currency ?? currency,
   }));
 
+  const sessionShipping = session as Stripe.Checkout.Session & {
+    shipping_details?: { address?: Stripe.Address };
+    shipping?: { address?: Stripe.Address };
+  };
   const shippingAddress = session.metadata?.shippingAddress
     ? session.metadata.shippingAddress
-    : session.shipping_details?.address || session.shipping?.address || null;
+    : sessionShipping.shipping_details?.address || sessionShipping.shipping?.address || null;
 
   try {
     await ddbClient.send(new PutCommand({
