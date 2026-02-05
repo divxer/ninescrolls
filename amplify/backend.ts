@@ -98,7 +98,8 @@ const stripeWebhookEventsTable = new Table(apiStack, 'StripeWebhookEvents', {
 });
 
 stripeWebhookEventsTable.grantReadWriteData(backend.stripeWebhook.resources.lambda);
-backend.stripeWebhook.resources.lambda.addEnvironment('STRIPE_WEBHOOK_EVENTS_TABLE', stripeWebhookEventsTable.tableName);
+(backend.stripeWebhook.resources.lambda as unknown as { addEnvironment: (key: string, value: string) => void })
+  .addEnvironment('STRIPE_WEBHOOK_EVENTS_TABLE', stripeWebhookEventsTable.tableName);
 
 // Add outputs
 backend.addOutput({
