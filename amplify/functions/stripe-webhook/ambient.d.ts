@@ -7,5 +7,6 @@ declare module '$amplify/env/stripe-webhook' {
     STRIPE_WEBHOOK_SECRET: string;
     SENDGRID_API_KEY: string;
     APP_URL: string;
+    STRIPE_ORDERS_TABLE?: string;
   };
 }

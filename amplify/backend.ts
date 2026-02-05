@@ -101,6 +101,15 @@ const stripeWebhookEventsTable = new Table(stripeWebhookFunctionStack, 'StripeWe
 stripeWebhookEventsTable.grantReadWriteData(backend.stripeWebhook.resources.lambda);
 backend.stripeWebhook.addEnvironment('STRIPE_WEBHOOK_EVENTS_TABLE', stripeWebhookEventsTable.tableName);
 
+// Create DynamoDB table for persisted orders (same stack as webhook to avoid circular deps)
+const stripeOrdersTable = new Table(stripeWebhookFunctionStack, 'StripeOrders', {
+    partitionKey: { name: 'orderId', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+});
+
+stripeOrdersTable.grantReadWriteData(backend.stripeWebhook.resources.lambda);
+backend.stripeWebhook.addEnvironment('STRIPE_ORDERS_TABLE', stripeOrdersTable.tableName);
+
 // Create DynamoDB tables for simple rate limiting (per function stack to avoid circular deps)
 const checkoutFunctionStack = Stack.of(backend.createCheckoutSession.resources.lambda);
 const checkoutRateLimitTable = new Table(checkoutFunctionStack, 'CheckoutRateLimit', {
