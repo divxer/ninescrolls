@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.1.5",
+    "@aws-sdk/client-dynamodb": "^3.758.0",
+    "@aws-sdk/lib-dynamodb": "^3.758.0",
     "@sendgrid/mail": "^8.1.0",
     "@stripe/stripe-js": "^8.6.4",
     "@types/react-lazy-load-image-component": "^1.6.4",
