@@ -1,5 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import Stripe from 'stripe';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/calculate-tax';
 
 type LineItemInput = {
@@ -19,6 +21,47 @@ type ShippingAddressInput = {
 type TaxRequestBody = {
   items: LineItemInput[];
   shippingAddress: ShippingAddressInput;
+};
+
+const taxRateLimitTable = process.env.TAX_RATE_LIMIT_TABLE;
+const ddbClient = taxRateLimitTable
+  ? DynamoDBDocumentClient.from(new DynamoDBClient({}))
+  : null;
+
+const getClientIp = (event: Parameters<APIGatewayProxyHandlerV2>[0]): string => {
+  const forwarded = event.headers?.['x-forwarded-for'] || event.headers?.['X-Forwarded-For'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return event.requestContext?.http?.sourceIp || 'unknown';
+};
+
+const rateLimit = async (key: string, limit: number, windowSeconds: number): Promise<boolean> => {
+  if (!ddbClient || !taxRateLimitTable) {
+    return true;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = Math.floor(now / windowSeconds);
+  const partitionKey = `${key}:${windowStart}`;
+  const ttl = now + windowSeconds * 2;
+
+  const result = await ddbClient.send(new UpdateCommand({
+    TableName: taxRateLimitTable,
+    Key: { key: partitionKey },
+    UpdateExpression: 'ADD #count :incr SET #ttl = :ttl',
+    ExpressionAttributeNames: {
+      '#count': 'count',
+      '#ttl': 'ttl',
+    },
+    ExpressionAttributeValues: {
+      ':incr': 1,
+      ':ttl': ttl,
+    },
+    ReturnValues: 'UPDATED_NEW',
+  }));
+
+  const count = (result.Attributes?.count as number | undefined) ?? 0;
+  return count <= limit;
 };
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
@@ -81,6 +124,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   }
 
   try {
+    const clientIp = getClientIp(event);
+    const allowed = await rateLimit(clientIp, 60, 60);
+    if (!allowed) {
+      return {
+        statusCode: 429,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+      };
+    }
+
     if (!env.STRIPE_SECRET_KEY) {
       return {
         statusCode: 500,

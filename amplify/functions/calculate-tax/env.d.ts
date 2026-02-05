@@ -3,3 +3,6 @@ declare module '$amplify/env/calculate-tax' {
     STRIPE_SECRET_KEY: string;
   };
 }
+
+declare module '@aws-sdk/client-dynamodb';
+declare module '@aws-sdk/lib-dynamodb';
