@@ -90,8 +90,9 @@ stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebh
     authorizationType: AuthorizationType.NONE, // Explicitly make it public
 });
 
-// Create DynamoDB table for Stripe webhook idempotency
-const stripeWebhookEventsTable = new Table(apiStack, 'StripeWebhookEvents', {
+// Create DynamoDB table for Stripe webhook idempotency in the same stack as the function
+const stripeWebhookFunctionStack = Stack.of(backend.stripeWebhook.resources.lambda);
+const stripeWebhookEventsTable = new Table(stripeWebhookFunctionStack, 'StripeWebhookEvents', {
     partitionKey: { name: 'eventId', type: AttributeType.STRING },
     billingMode: BillingMode.PAY_PER_REQUEST,
     timeToLiveAttribute: 'ttl',
