@@ -4,7 +4,6 @@ export const stripeWebhook = defineFunction({
   name: 'stripe-webhook',
   entry: './handler.ts',
   runtime: 20,
-  resourceGroupName: 'api',
   environment: {
     STRIPE_SECRET_KEY: secret('STRIPE_SECRET_KEY'),
     STRIPE_WEBHOOK_SECRET: secret('STRIPE_WEBHOOK_SECRET'),
