@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import { insightsPosts, categories, InsightsPost } from '../types';
+import { InsightsPost } from '../types';
+import { listInsights, listInsightCategories } from '../services/catalogService';
 import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
 export const InsightsPage: React.FC = () => {
-  const [posts] = useState<InsightsPost[]>(
-    [...insightsPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
-  );
+  const [posts, setPosts] = useState<InsightsPost[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [recommended, setRecommended] = useState<InsightsPost[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -24,6 +25,21 @@ export const InsightsPage: React.FC = () => {
   // - Target customer detection
   // - Pathname (which identifies this as insights page)
   // Category and search filters can be tracked via URL query params if needed
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const [loadedPosts, loadedCategories] = await Promise.all([
+        listInsights(),
+        listInsightCategories(),
+      ]);
+      const sorted = [...loadedPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+      setPosts(sorted);
+      setCategories(loadedCategories);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     // Build a pseudo base post from current selection to compute recommendations
@@ -115,6 +131,13 @@ export const InsightsPage: React.FC = () => {
       <section className="insights-grid">
         <div className="container">
           <div className="posts-grid">
+            {loading && (
+              <div className="insights-card">
+                <div className="insights-card-content">
+                  <p>Loading insights...</p>
+                </div>
+              </div>
+            )}
             {filteredPosts.map(post => (
               <article key={post.id} className="insights-card">
                 <div className="insights-card-image">

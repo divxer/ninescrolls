@@ -1,354 +1,173 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import { ContactFormModal } from '../components/common/ContactFormModal';
 import { OptimizedImage } from '../components/common/OptimizedImage';
-import { getProductComponent } from '../components/products';
-import '../styles/ProductDetailPage.css';
+import { QuoteModal } from '../components/common/QuoteModal';
+import { DownloadGateModal } from '../components/common/DownloadGateModal';
+import { useCart } from '../contexts/useCart';
 import { analytics } from '../services/analytics';
+import { getProductBySlug, listManufacturers } from '../services/catalogService';
+import type { ProductRecord, ProductVariant, ManufacturerRecord, DownloadItem } from '../types';
+import '../styles/ProductDetailPage.css';
 
-// Product data for structured data and SEO
-const PRODUCTS = {
-  'hdp-cvd': {
-    id: 'hdp-cvd',
-    name: 'HDP-CVD System Series',
-    description: 'Advanced High-Density Plasma CVD system with uni-body design for exceptional film quality and gap-fill capability.',
-    features: [
-      'Compact uni-body design with outstanding space efficiency',
-      'Compatible with various deposition materials (Si, SiO₂, SiNx, SiON, SiC)',
-      'Optional RF system (Source: 1000-3000W / Bias: 300-1000W)',
-      'Excellent step coverage with tunable parameters'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" or multi-wafer',
-      'RF Power: Source 1000-3000W, Bias 300-1000W',
-      'Process Temperature: 20°C to 200°C',
-      'Film Uniformity: < 5% (edge exclusion)'
-    ],
-    images: ['/assets/images/products/hdp-cvd/main.jpg']
-  },
-  'pecvd': {
-    id: 'pecvd',
-    name: 'PECVD System Series',
-    description: 'Plasma-Enhanced CVD system with compact uni-body design for versatile thin film deposition.',
-    features: [
-      'Uni-body compact design (footprint: ~1.0m x 1.0m)',
-      'Variable plasma discharge gap for optimized performance',
-      'Dual RF configuration (13.56 MHz and/or 400 KHz)',
-      'Automated and modular process design'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" or multi-wafer',
-      'RF System: 13.56 MHz and/or 400 KHz, 500-2000W',
-      'Temperature Range: 20°C to 400°C',
-      'Film Uniformity: < 5% (edge exclusion)'
-    ],
-    images: ['/assets/images/products/pecvd/main.jpg']
-  },
-  'ald': {
-    id: 'ald',
-    name: 'ALD System Series',
-    description: 'Atomic Layer Deposition system offering atomic-level precision with compact uni-body design.',
-    features: [
-      'Compact uni-body design (0.8m x 1.0m footprint)',
-      'Box-in-box process chamber for enhanced stability',
-      'Excellent high-aspect-ratio step coverage',
-      'Optional remote plasma capability (300-1000W)'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" or supersize',
-      'Temperature Range: 20°C to 400°C',
-      'Growth Rate: 0.5-2 Å per cycle',
-      'Film Uniformity: < 1% (Al₂O₃, edge exclusion)'
-    ],
-    images: ['/assets/images/products/ald/main.jpg']
-  },
-  'sputter': {
-    id: 'sputter',
-    name: 'Sputter System Series',
-    description: 'Advanced PVD sputtering system with innovative magnetron design for high-performance thin films.',
-    features: [
-      'Compact uni-body design (approx. 1.0m x 1.7m)',
-      'Customizable magnetron target configuration',
-      'Multiple magnetron sources (2-6 available)',
-      'RF-biased substrate capability'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" or multi-wafer',
-      'Magnetron Sources: 2-6 independently configurable',
-      'Substrate Temperature: Water-cooled to 1200°C',
-      'Film Uniformity: < 1% typical, < 5% guaranteed'
-    ],
-    images: ['/assets/images/products/sputter/main.jpg']
-  },
-  'ibe-ribe': {
-    id: 'ibe-ribe',
-    name: 'IBE/RIBE System Series',
-    description: 'Ion Beam Etching system combining IBE and RIBE capabilities for precision material processing.',
-    features: [
-      'Compact uni-body design (1.0m x 0.8m)',
-      'Quick-swap ion source system (Kaufman/RF)',
-      'Dual-mode operation: IBE and RIBE',
-      'Variable incident angle (0-90°) with rotation'
-    ],
-    specifications: [
-      'Wafer Size: Up to 12" or multi-wafer',
-      'Tilt Angle: 0° to 90°, rotation 1-10 rpm',
-      'Base Pressure: < 7×10⁻⁷ Torr',
-      'Film Non-Uniformity: < 5% (edge exclusion)'
-    ],
-    images: ['/assets/images/products/ibe-ribe/main.jpg']
-  },
-  'striper': {
-    id: 'striper',
-    name: 'Stripping System Series',
-    description: 'Advanced photoresist stripping and surface cleaning system with compact uni-body design.',
-    features: [
-      'Compact uni-body design (0.8m x 0.8m)',
-      'Uniform chamber center pump-down design',
-      'Adjustable plasma discharge gap',
-      'Real-time process monitoring'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" or multi-wafer',
-      'RF Power: 300W to 1000W (customizable)',
-      'Stage Temperature: 5°C to 200°C',
-      'Film Non-Uniformity: < 5% (edge exclusion)'
-    ],
-    images: ['/assets/images/products/striper/main.jpg']
-  },
-  'coater-developer': {
-    id: 'coater-developer',
-    name: 'Coater/Developer System Series',
-    description: 'High-precision photoresist coating and developing system with modular configuration.',
-    features: [
-      'Compact uni-body design (1.0m x 0.8m)',
-      'Flexible module configuration (Coater, Developer, Hotplate)',
-      'High-speed spin modules with precise control',
-      'Optional edge bead removal (EBR)'
-    ],
-    specifications: [
-      'Wafer Size: 2" to 12" or square substrates',
-      'Coater Speed: Up to 8000 rpm ±1 rpm',
-      'Developer Speed: Up to 5000 rpm ±1 rpm',
-      'Coating Uniformity: < 0.5% (3σ typical)'
-    ],
-    images: ['/assets/images/products/coater-developer/main.jpg']
-  },
-  'rie-etcher': {
-    id: 'rie-etcher',
-    name: 'RIE Etcher Series',
-    description: 'Reactive Ion Etching system providing precise plasma etching for semiconductor manufacturing.',
-    features: [
-      'Precise control of etch parameters',
-      'Advanced plasma generation system',
-      'Real-time monitoring and control',
-      'Automated recipe management'
-    ],
-    specifications: [
-      'Process chamber size: 8" standard (12" available)',
-      'Base pressure: < 1×10⁻⁶ Torr',
-      'RF power: 600W standard (1000W optional)',
-      'Process gases: Up to 4 MFCs standard'
-    ],
-    images: ['/assets/images/products/rie-etcher/main.jpg']
-  },
-  'compact-rie': {
-    id: 'compact-rie',
-    name: 'Compact RIE Etcher (SV-RIE)',
-    description: 'Compact reactive ion etching system with ultra-small footprint, ideal for research labs, pilot-scale processes, and failure analysis applications.',
-    features: [
-      'Ultra-compact footprint: 630mm × 600mm (one-piece design)',
-      'Touchscreen control with fully automated operation system',
-      'Modular design for easy maintenance and convenient transport',
-      'Stable performance with excellent cost-effectiveness',
-      'Supports 4", 6", 8", 12" wafers (customizable for smaller sizes)'
-    ],
-    specifications: [
-      'Wafer Size: 4", 6", 8", 12" (customizable for smaller sizes)',
-      'RF Power: 300W / 500W / 1000W (customizable)',
-      'Process Gases: Up to 5 gas lines simultaneously',
-      'Flow Control: 0 ~ 1000 sccm range (selectable)',
-      'Pump: Mechanical pump / optional turbo pump',
-      'Optional: Removable contamination-resistant liner'
-    ],
-    images: ['/assets/images/products/compact-rie/main.jpg']
-  },
-  'icp-etcher': {
-    id: 'icp-etcher',
-    name: 'ICP Etcher Series',
-    description: 'Inductively Coupled Plasma etching system for high-aspect-ratio and advanced etching applications.',
-    features: [
-      'High-density plasma generation',
-      'Independent control of ion energy and density',
-      'Advanced process control system',
-      'Multi-step recipe capability'
-    ],
-    specifications: [
-      'Process chamber size: 12" standard',
-      'Base pressure: < 5×10⁻⁷ Torr',
-      'ICP power: 2000W standard',
-      'Bias power: 600W standard'
-    ],
-    images: ['/assets/images/products/icp-etcher/main.jpg']
-  }
-};
+const ResultIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
-interface ProductSEOData {
-  [key: string]: {
-    title: string;
-    description: string;
-    keywords: string;
+const HighlightIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M5 12l4 4 10-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const UseCaseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 6h16M4 12h10M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const ApplicationIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" stroke="currentColor" strokeWidth="2" fill="none" />
+  </svg>
+);
+
+const getImageSizes = (imagePath: string) => {
+  const parts = imagePath.split('.');
+  const ext = parts.pop();
+  const base = parts.join('.');
+  return {
+    sm: `${base}-sm.${ext}`,
+    md: `${base}-md.${ext}`,
+    lg: `${base}-lg.${ext}`,
+    xl: `${base}-xl.${ext}`,
+    webp: {
+      sm: `${base}-sm.webp`,
+      md: `${base}-md.webp`,
+      lg: `${base}-lg.webp`,
+      xl: `${base}-xl.webp`
+    }
   };
-}
-
-const productSEOData: ProductSEOData = {
-  'hdp-cvd': {
-    title: 'HDP-CVD System Series',
-    description: 'High-Density Plasma CVD system for semiconductor manufacturing. Compact design with exceptional film quality and superior gap-fill capability.',
-    keywords: 'HDP-CVD, chemical vapor deposition, semiconductor equipment, thin film deposition, plasma CVD',
-  },
-  'pecvd': {
-    title: 'PECVD System Series',
-    description: 'Plasma-Enhanced CVD system with compact design for versatile thin film deposition. Superior film quality and flexible process control.',
-    keywords: 'PECVD, plasma enhanced CVD, semiconductor equipment, thin film deposition, chemical vapor deposition',
-  },
-  'ald': {
-    title: 'ALD System Series',
-    description: 'Atomic Layer Deposition system with atomic-level precision. Exceptional conformality and sub-nanometer thickness control for advanced applications.',
-    keywords: 'ALD, atomic layer deposition, semiconductor equipment, thin film deposition, atomic-level precision',
-  },
-  'sputter': {
-    title: 'Sputter System Series',
-    description: 'Advanced PVD sputtering system with innovative magnetron design. Excellent film uniformity and precise thickness control.',
-    keywords: 'sputter system, PVD, physical vapor deposition, semiconductor equipment, thin film deposition',
-  },
-  'ibe-ribe': {
-    title: 'IBE/RIBE System Series',
-    description: 'Ion Beam Etching system combining IBE and RIBE modes for precision material processing. Exceptional control and surface uniformity.',
-    keywords: 'IBE, RIBE, ion beam etching, semiconductor equipment, surface treatment, reactive ion etching',
-  },
-  'striper': {
-    title: 'Striper System Series',
-    description: 'Advanced photoresist stripping and surface cleaning system. Complete organic material removal with precise process control.',
-    keywords: 'photoresist stripper, surface cleaning, semiconductor equipment, resist removal, wafer cleaning',
-  },
-  'coater-developer': {
-    title: 'Coater/Developer System Series',
-    description: 'High-precision photoresist coating and developing system. Compact modular design with customizable configurations.',
-    keywords: 'photoresist coating, wafer developing, semiconductor equipment, lithography system, spin coater',
-  },
-  'rie-etcher': {
-    title: 'RIE Etcher Series',
-    description: 'Reactive Ion Etching system with precise plasma etching capabilities. Excellent process control and uniformity for semiconductor fab.',
-    keywords: 'RIE etcher, reactive ion etching, semiconductor equipment, plasma etching, etching system',
-  },
-  'icp-etcher': {
-    title: 'ICP Etcher Series',
-    description: 'Inductively Coupled Plasma etcher for high-aspect-ratio etching. High-density plasma with independent ion energy control.',
-    keywords: 'ICP etcher, plasma etching, semiconductor equipment, inductively coupled plasma, etching system',
-  },
-  'compact-rie': {
-    title: 'Compact RIE Etcher (SV-RIE) - Ultra-Compact Reactive Ion Etching | NineScrolls',
-    description: 'Compact RIE etching system with 630mm×600mm footprint. Ideal for research labs, pilot-scale processes, and failure analysis. Touchscreen control, modular design.',
-    keywords: 'compact RIE, SV-RIE, small footprint RIE, compact reactive ion etching, research RIE system, failure analysis equipment',
-  },
 };
 
 export function ProductDetailPage() {
-  const { productId } = useParams<{ productId: string }>();
-  const ProductComponent = getProductComponent(productId || '');
-  const seoData = productSEOData[productId || ''] || {
-    title: 'Product Details',
-    description: 'Advanced semiconductor manufacturing equipment from Nine Scrolls Technology.',
-    keywords: 'semiconductor equipment, manufacturing equipment, semiconductor technology',
-  };
+  const { slug } = useParams<{ slug: string }>();
+  const { addItem } = useCart();
+  const [product, setProduct] = useState<ProductRecord | null>(null);
+  const [manufacturer, setManufacturer] = useState<ManufacturerRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [selectedDownload, setSelectedDownload] = useState<DownloadItem | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
-  const product = PRODUCTS[productId as keyof typeof PRODUCTS];
+  useScrollToTop([slug]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    organization: '',
-    message: ''
-  });
-
-  const openContactForm = () => {
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
-  const handleFormSuccess = () => {
-    // Form submission tracking is handled by ContactFormModal
-    // No need to track here to avoid duplicate events
-  };
+  useEffect(() => {
+    const load = async () => {
+      if (!slug) {
+        setProduct(null);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const found = await getProductBySlug(slug);
+      setProduct(found);
+      if (found?.manufacturerId) {
+        const manufacturers = await listManufacturers();
+        const match = manufacturers.find((item) => item.id === found.manufacturerId) || null;
+        setManufacturer(match);
+      } else {
+        setManufacturer(null);
+      }
+      setSelectedVariantId(found?.variants?.find((variant) => variant.isDefault)?.id || found?.variants?.[0]?.id || null);
+      setLoading(false);
+    };
+    load();
+  }, [slug]);
 
   useEffect(() => {
     if (product) {
-      // Track product view
       analytics.trackProductView(product.id, product.name);
     }
   }, [product]);
 
-  // Scroll to top when component mounts or productId changes
-  useScrollToTop([productId]);
+  const selectedVariant = useMemo<ProductVariant | null>(() => {
+    if (!product?.variants || !selectedVariantId) return null;
+    return product.variants.find((variant) => variant.id === selectedVariantId) || null;
+  }, [product, selectedVariantId]);
 
-  if (!ProductComponent) {
-    return <div className="container">Product not found</div>;
+  const heroSubtitle = product?.heroSubtitle || product?.shortDesc;
+  const heroBullets = product?.bullets || [];
+  const heroImage = product?.images?.[0] || product?.thumbnail;
+  const keyHighlights = (product?.features || []).slice(0, 4);
+  const quickSpecs = [
+    ...(product?.specifications || []).slice(0, 2),
+    ...(product?.features || []).slice(0, 2),
+  ].slice(0, 4);
+
+  if (loading) {
+    return (
+      <section className="product-overview">
+        <div className="container">
+          <p>Loading product...</p>
+        </div>
+      </section>
+    );
   }
 
   if (!product) {
-    return <div className="container">Product not found</div>;
+    return (
+      <section className="product-overview">
+        <div className="container">
+          <p>Product not found.</p>
+        </div>
+      </section>
+    );
   }
 
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "@id": `https://ninescrolls.com/products/${productId}#product`,
+    "@id": `https://ninescrolls.com/products/${product.slug}#product`,
     "name": product.name,
-    "description": product.description,
-    "image": product.images.map(img => `https://ninescrolls.com${img}`),
-    "sku": productId,
+    "description": product.shortDesc || product.name,
+    "image": (product.images || []).map((img) => `https://ninescrolls.com${img}`),
+    "sku": product.id,
     "brand": {
       "@type": "Brand",
-      "name": "Nine Scrolls Technology"
+      "name": "NineScrolls"
     },
     "manufacturer": {
       "@type": "Organization",
-      "name": "Nine Scrolls Technology",
-      "url": "https://ninescrolls.com"
+      "name": "NineScrolls"
     },
-    "category": "Semiconductor Manufacturing Equipment",
-    "offers": {
+    "category": product.category,
+    "offers": selectedVariant ? {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "0",
+      "price": `${selectedVariant.price}`,
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
-        "name": "Nine Scrolls Technology",
+        "name": "NineScrolls",
         "url": "https://ninescrolls.com"
       },
-      "url": `https://ninescrolls.com/products/${productId}`,
+      "url": `https://ninescrolls.com/products/${product.slug}`,
       "itemCondition": "https://schema.org/NewCondition"
-    },
+    } : undefined,
     "additionalProperty": [
-      ...product.features.map(feature => ({
+      ...(product.features || []).map((feature) => ({
         "@type": "PropertyValue",
         "name": "Feature",
         "value": feature
       })),
-      ...product.specifications.map(spec => ({
+      ...(product.specifications || []).map((spec) => ({
         "@type": "PropertyValue",
         "name": "Specification",
         "value": spec
@@ -356,7 +175,6 @@ export function ProductDetailPage() {
     ]
   };
 
-  // Breadcrumb structured data for SEO
   const breadcrumbData = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -377,37 +195,53 @@ export function ProductDetailPage() {
         "@type": "ListItem",
         "position": 3,
         "name": product.name,
-        "item": `https://ninescrolls.com/products/${productId}`
+        "item": `https://ninescrolls.com/products/${product.slug}`
       }
     ]
   };
 
-  const getImageSizes = (imagePath: string) => {
-    const parts = imagePath.split('.');
-    const ext = parts.pop();
-    const base = parts.join('.');
-    return {
-      sm: `${base}-sm.${ext}`,
-      md: `${base}-md.${ext}`,
-      lg: `${base}-lg.${ext}`,
-      xl: `${base}-xl.${ext}`,
-      webp: {
-        sm: `${base}-sm.webp`,
-        md: `${base}-md.webp`,
-        lg: `${base}-lg.webp`,
-        xl: `${base}-xl.webp`
-      }
-    };
+  const downloads = product.downloads || [];
+  const primaryDownload = downloads[0] || null;
+  const activeDownload = selectedDownload || primaryDownload;
+
+  const handleAddToCart = () => {
+    if (!selectedVariant) return;
+    const displayName = selectedVariant.name || `${product.name}${selectedVariant.label ? ` - ${selectedVariant.label}` : ''}`;
+
+    addItem({
+      id: selectedVariant.id,
+      name: displayName,
+      price: selectedVariant.price,
+      quantity: 1,
+      image: product.thumbnail || product.images?.[0],
+      sku: selectedVariant.id,
+    });
+
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'add_to_cart', {
+        currency: 'USD',
+        value: selectedVariant.price,
+        items: [{
+          item_id: selectedVariant.id,
+          item_name: displayName,
+          item_category: product.category,
+          price: selectedVariant.price,
+          quantity: 1
+        }]
+      });
+    }
+
+    analytics.trackAddToCart(selectedVariant.id, displayName, selectedVariant.price);
   };
 
   return (
     <>
-      <SEO 
-        title={seoData.title}
-        description={seoData.description}
-        keywords={seoData.keywords}
-        url={`/products/${productId}`}
-        image={`/assets/images/products/${productId}/main.jpg`}
+      <SEO
+        title={`${product.name} | NineScrolls`}
+        description={product.shortDesc || product.name}
+        keywords={[product.name, product.category, product.typeTag].filter(Boolean).join(', ')}
+        url={`/products/${product.slug}`}
+        image={heroImage}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -420,67 +254,599 @@ export function ProductDetailPage() {
           {JSON.stringify(breadcrumbData)}
         </script>
       </Helmet>
-      <section className="product-hero">
-        <div className="container">
-          <h1>{product.name}</h1>
-          <p className="product-description">{product.description}</p>
-        </div>
-      </section>
 
-      <section className="product-details">
+      <section className="product-detail-hero product-hero-enhanced hero-texture">
         <div className="container">
-          <div className="product-grid">
-            <div className="product-images">
-              <OptimizedImage
-                src={product.images[0]}
-                alt={`${product.name} - Main View`}
-                sizes={getImageSizes(product.images[0])}
-                width={800}
-                height={600}
-                loading="eager"
-                className="main-product-image"
-              />
+          <div className="product-header-enhanced">
+            <h1>{product.name}</h1>
+            {heroSubtitle && <p className="product-subtitle">{heroSubtitle}</p>}
+            <div className="hero-positioning">
+              <p className="hero-tagline">
+                US-based scientific equipment provider - Custom-configured systems for research labs and cleanrooms
+              </p>
             </div>
-
-            <div className="product-info">
-              <div className="info-section">
-                <h2>Key Features</h2>
-                <ul>
-                  {product.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
+            {heroBullets.length > 0 && (
+              <div className="hero-bullets">
+                {heroBullets.map((bullet) => (
+                  <div className="hero-bullet-item" key={bullet}>
+                    <span className="hero-bullet-icon">
+                      <HighlightIcon />
+                    </span>
+                    <div className="hero-bullet-text">{bullet}</div>
+                  </div>
+                ))}
               </div>
-
-              <div className="info-section">
-                <h2>Specifications</h2>
-                <ul>
-                  {product.specifications.map((spec, index) => (
-                    <li key={index}>{spec}</li>
-                  ))}
-                </ul>
+            )}
+            {keyHighlights.length > 0 && (
+              <div className="hero-info-cards">
+                {keyHighlights.map((item) => (
+                  <div className="hero-info-card" key={item}>
+                    <div className="hero-info-icon">
+                      <ResultIcon />
+                    </div>
+                    <div className="hero-info-text">{item}</div>
+                  </div>
+                ))}
               </div>
+            )}
+            {quickSpecs.length > 0 && (
+              <div className="hero-chips">
+                {quickSpecs.map((item) => (
+                  <span className="hero-chip" key={item}>{item}</span>
+                ))}
+              </div>
+            )}
+            {keyHighlights.length > 0 && (
+              <div className="key-highlights">
+                {keyHighlights.map((item) => (
+                  <div className="highlight-item" key={item}>
+                    <span className="highlight-icon">+</span>
+                    <span className="highlight-text">{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
-              <div className="product-inquiry">
-                <h2>Interested in this product?</h2>
-                <p>Contact our team for detailed specifications and pricing information.</p>
-                <button className="btn btn-primary" onClick={openContactForm}>
-                  Request Information
+            {product.variants && product.variants.length > 0 && (
+              <div className="hero-config hero-panel">
+                <h3>Configuration Options</h3>
+                <div className="hero-config-grid">
+                  {product.variants.map((variant) => {
+                    const isActive = variant.id === selectedVariantId;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        className={`hero-config-card ${isActive ? 'active' : ''}`}
+                        onClick={() => setSelectedVariantId(variant.id)}
+                      >
+                        <div className="config-card-header">
+                          <span className="config-title">{variant.label || variant.name}</span>
+                          {variant.price ? (
+                            <span className="config-price">{variant.price.toLocaleString()} USD</span>
+                          ) : (
+                            <span className="config-price">Contact</span>
+                          )}
+                        </div>
+                        {variant.description && (
+                          <p className="config-note">{variant.description}</p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="hero-pricing">
+                  <div className="pricing-main">
+                    <span className="pricing-label">price:</span>
+                    <span className="pricing-amount">
+                      {selectedVariant ? `${selectedVariant.price.toLocaleString()} USD` : 'Contact for pricing'}
+                    </span>
+                  </div>
+                  <p className="pricing-note">availability: in stock</p>
+                </div>
+                <div className="hero-badges">
+                  <span className="hero-badge">In Stock</span>
+                  <span className="hero-badge">Ships in 3-4 weeks</span>
+                  <span className="hero-badge">US-based configuration</span>
+                </div>
+                {product.variants.length > 1 && (
+                  <div className="hero-mini-table">
+                    <div className="mini-header">
+                      <span>Configuration</span>
+                      <span>Price (USD)</span>
+                    </div>
+                    {product.variants.map((variant) => (
+                      <div className="mini-row" key={variant.id}>
+                        <span>{variant.label || variant.name}</span>
+                        <span>{variant.price ? variant.price.toLocaleString() : 'Contact'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="hero-cta">
+              <button className="btn btn-primary btn-large" onClick={() => setQuoteOpen(true)}>
+                Request Configuration
+              </button>
+              <a className="btn btn-secondary btn-large" href="/contact?topic=expert">
+                Talk to an Expert
+              </a>
+              {selectedVariant && (
+                <button className="btn btn-secondary btn-large" onClick={handleAddToCart}>
+                  Add to Cart
                 </button>
-              </div>
+              )}
+              {primaryDownload && (
+                <button
+                  className="btn btn-secondary btn-large"
+                  onClick={() => {
+                    setSelectedDownload(primaryDownload);
+                    setDownloadOpen(true);
+                  }}
+                >
+                  Download Brochure
+                </button>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      <ContactFormModal
-        isOpen={isModalOpen}
-        onClose={closeContactForm}
+      <section className="product-overview product-overview-hero">
+        <div className="container">
+          <div className="product-hero-layout">
+            <div className="product-hero-content">
+              <h2>Why This System</h2>
+              <p className="lead-text">{product.shortDesc || product.name}</p>
+              <p>
+                We focus on research-grade performance with configurations optimized for lab workflows,
+                predictable outcomes, and future upgrades. Our team helps you scope the right chamber,
+                power, and control options without overbuilding for industrial-only features.
+              </p>
+              <div className="positioning-block">
+                <h3>System Positioning</h3>
+                <p>
+                  {product.positioningNote ||
+                    'This platform bridges early-stage research and pilot-scale processing. It is designed to deliver repeatable results while keeping footprint, complexity, and cost aligned with academic and institutional labs.'}
+                </p>
+                {heroBullets.length > 0 && (
+                  <ul>
+                    {heroBullets.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {product.whoUsesStats && product.whoUsesStats.length > 0 && (
+                <div className="who-uses">
+                  <h3>Who Uses This</h3>
+                  <div className="who-uses-grid">
+                    {product.whoUsesStats.map((stat) => (
+                      <div className="who-uses-card" key={`${stat.label}-${stat.value}`}>
+                        <div className="stat-value">{stat.value}</div>
+                        <div className="stat-label">{stat.label}</div>
+                        {stat.detail && <div className="stat-detail">{stat.detail}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {product.applications && product.applications.length > 0 && (
+                <>
+                  <h3>Where It Fits Best</h3>
+                  <ul>
+                    {product.applications.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+            <div className="product-hero-image product-image-single">
+              {heroImage && (
+                <div className="product-image-main-wrapper">
+                  <OptimizedImage
+                    src={heroImage}
+                    alt={`${product.name} - Main view`}
+                    sizes={getImageSizes(heroImage)}
+                    width={800}
+                    height={600}
+                    loading="eager"
+                    className="main-product-image"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview product-overview-narrative">
+        <div className="container">
+          <div className="product-hero-layout">
+            <div className="product-hero-image product-image-single">
+              {heroImage && (
+                <div className="product-image-main-wrapper">
+                  <OptimizedImage
+                    src={heroImage}
+                    alt={`${product.name} - Main view`}
+                    sizes={getImageSizes(heroImage)}
+                    width={800}
+                    height={600}
+                    loading="eager"
+                    className="main-product-image"
+                  />
+                </div>
+              )}
+              {product.images && product.images.length > 1 && (
+                <div className="image-gallery">
+                  {product.images.slice(1).map((image) => (
+                    <img key={image} src={image} alt={product.name} loading="lazy" decoding="async" />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="product-hero-content">
+              <h2>System Overview</h2>
+              <p className="lead-text">{product.shortDesc || product.name}</p>
+              <p>
+                Each system is configured based on your substrates, throughput, and process goals.
+                We align chamber design, gas delivery, and control software to ensure reproducibility
+                and fast ramp-up for your lab team.
+              </p>
+              {product.variants && product.variants.length > 0 && (
+                <div className="comparison-block">
+                  <h3>Configuration Comparison</h3>
+                  <div className="comparison-items">
+                    {product.variants.map((variant) => (
+                      <div className="comparison-item" key={variant.id}>
+                        <div className="comparison-label">{variant.label || variant.name}</div>
+                        <div className="comparison-arrow">{'->'}</div>
+                        <div className="comparison-value">
+                          {variant.price ? `${variant.price.toLocaleString()} USD` : 'Contact for pricing'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="product-overview">
+        <div className="container">
+          <div className="product-content">
+            <div className="product-info">
+              {product.features && product.features.length > 0 && (
+                <div className="info-section">
+                  <h2>Key Features</h2>
+                  <ul>
+                    {product.features.map((feature) => (
+                      <li key={feature}>{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {product.specifications && product.specifications.length > 0 && (
+                <div className="info-section">
+                  <h2>Specifications</h2>
+                  <div className="specs-table">
+                    {product.specifications.map((spec) => {
+                      const parts = spec.split(':');
+                      const label = parts[0] || spec;
+                      const value = parts.slice(1).join(':').trim() || '-';
+                      return (
+                        <div className="spec-row" key={spec}>
+                          <span className="spec-label">{label.trim()}</span>
+                          <span className="spec-value">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="product-info">
+              {product.processResults && product.processResults.length > 0 && (
+                <div className="info-section">
+                  <h2>Process Results</h2>
+                  <div className="results-grid">
+                    {product.processResults.map((item) => (
+                      <div className="result-card" key={item}>
+                        <div className="result-icon">
+                          <ResultIcon />
+                        </div>
+                        <p>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {product.resultsHighlights && product.resultsHighlights.length > 0 && (
+                <div className="info-section">
+                  <h2>Results Highlights</h2>
+                  <div className="highlights-grid">
+                    {product.resultsHighlights.map((item) => (
+                      <div className="highlight-card" key={item}>
+                        <span className="highlight-icon">
+                          <HighlightIcon />
+                        </span>
+                        <span className="highlight-text">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {product.options && product.options.length > 0 && (
+                <div className="info-section">
+                  <h2>Configuration Options</h2>
+                  <ul>
+                    {product.options.map((option) => (
+                      <li key={option}>{option}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {product.deliveryAndService && (
+                <div className="info-section">
+                  <h2>Delivery & Service</h2>
+                  <p>{product.deliveryAndService}</p>
+                </div>
+              )}
+
+              {product.partnerNote && (
+                <div className="info-section">
+                  <h2>Partner Note</h2>
+                  <p>{product.partnerNote}</p>
+                </div>
+              )}
+
+              {downloads.length > 0 && (
+                <div className="info-section">
+                  <h2>Downloads</h2>
+                  <ul>
+                    {downloads.map((item) => (
+                      <li key={item.url}>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setSelectedDownload(item);
+                            setDownloadOpen(true);
+                          }}
+                        >
+                          {item.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {(product.schematicImage || product.schematicCaption) && (
+        <section className="product-overview">
+          <div className="container">
+            <div className="technical-diagram diagram-layout">
+              <div className="diagram-text">
+                <h3>System Schematic</h3>
+                <p>
+                  Explore the system architecture and key subsystems that shape process stability
+                  and repeatability in your lab.
+                </p>
+                {product.schematicCaption && (
+                  <p className="diagram-caption">{product.schematicCaption}</p>
+                )}
+              </div>
+              {product.schematicImage && (
+                <div className="diagram-media">
+                  <img
+                    src={product.schematicImage}
+                    alt={`${product.name} schematic`}
+                    className="schematic-image"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.useCases && product.useCases.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <h2>Use Cases</h2>
+            <div className="applications-grid">
+              {product.useCases.map((item) => (
+                <div className="app-card" key={item}>
+                  <div className="use-case-header">
+                    <span className="use-case-icon">
+                      <UseCaseIcon />
+                    </span>
+                    <h3>{item}</h3>
+                  </div>
+                  <p>Talk to our team about configuring this system for your workflow.</p>
+                </div>
+              ))}
+            </div>
+            <div className="applications-cta">
+              <button className="btn btn-primary" onClick={() => setQuoteOpen(true)}>
+                Get a Configuration Plan
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.applications && product.applications.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <h2>Typical Applications</h2>
+            <div className="applications-grid">
+              {product.applications.map((item) => (
+                <div className="app-card" key={item}>
+                  <div className="use-case-header">
+                    <span className="use-case-icon">
+                      <ApplicationIcon />
+                    </span>
+                    <h3>{item}</h3>
+                  </div>
+                  <p>We help map application requirements to optimal configurations.</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.keyCharacteristics && product.keyCharacteristics.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <h2>Key Characteristics</h2>
+            <div className="applications-grid">
+              {product.keyCharacteristics.map((item) => (
+                <div className="app-card" key={item}>
+                  <div className="use-case-header">
+                    <span className="use-case-icon">
+                      <HighlightIcon />
+                    </span>
+                    <h3>{item}</h3>
+                  </div>
+                  <p>Configured for repeatable results and research workflows.</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.supportIntegration && product.supportIntegration.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <h2>Support & Integration</h2>
+            <div className="applications-grid">
+              {product.supportIntegration.map((item) => (
+                <div className="app-card" key={item}>
+                  <div className="use-case-header">
+                    <span className="use-case-icon">
+                      <ResultIcon />
+                    </span>
+                    <h3>{item}</h3>
+                  </div>
+                  <p>We help coordinate delivery, onboarding, and service requests.</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.costEffectivePoints && product.costEffectivePoints.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <div className="cost-effective-block">
+              <h2>Why Our Systems Are Cost-Effective</h2>
+              <ul>
+                {product.costEffectivePoints.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.expectations && product.expectations.length > 0 && (
+        <section className="applications-section">
+          <div className="container">
+            <h2>What You Can Expect</h2>
+            <div className="applications-grid">
+              {product.expectations.map((item) => (
+                <div className="app-card" key={item}>
+                  <div className="use-case-header">
+                    <span className="use-case-icon">
+                      <ResultIcon />
+                    </span>
+                    <h3>{item}</h3>
+                  </div>
+                  <p>We keep communication clear and timelines predictable.</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {manufacturer && (
+        <section className="manufacturer-intro">
+          <div className="container">
+            <div className="manufacturer-content">
+              <h2>Manufacturing Partner</h2>
+              <div className="manufacturer-info">
+                <div className="manufacturer-text">
+                  <p>{manufacturer.description || manufacturer.name}</p>
+                  {manufacturer.highlights && manufacturer.highlights.length > 0 && (
+                    <ul className="manufacturer-strengths">
+                      {manufacturer.highlights.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="manufacturer-stats">
+                  <div className="stat-item">
+                    <span className="stat-number">30+</span>
+                    <span className="stat-label">Years of<br />Experience</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">1000+</span>
+                    <span className="stat-label">Global<br />Installations</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">300+</span>
+                    <span className="stat-label">Research<br />Institutions Served</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <QuoteModal
+        isOpen={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        onDownloadBrochure={() => {
+          setSelectedDownload(primaryDownload);
+          setDownloadOpen(true);
+        }}
         productName={product.name}
-        formData={formData}
-        onFormDataChange={setFormData}
-        onSuccess={handleFormSuccess}
       />
+
+      {activeDownload && (
+        <DownloadGateModal
+          isOpen={downloadOpen}
+          onClose={() => setDownloadOpen(false)}
+          fileUrl={activeDownload.url}
+          fileName={activeDownload.name}
+          title={`Download ${product.name} Brochure`}
+        />
+      )}
     </>
   );
-} 
+}
+
+export default ProductDetailPage;

@@ -19,22 +19,7 @@ import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
 import { CheckoutSuccessPage } from '../pages/CheckoutSuccessPage';
 import { CheckoutCancelPage } from '../pages/CheckoutCancelPage';
-import { 
-  ICPEtcher,
-  RIEEtcher,
-  CompactRIE,
-  IBERIBESystem,
-  ALDSystem,
-  StriperSystem,
-  HDPCVDSystem,
-  SputterSystem,
-  CoaterDeveloper,
-  PECVDSystem,
-  PlasmaCleaner,
-  NSPlasma20R,
-  NSPlasma4R,
-  NSPlasma20RI
-} from '../components/products';
+import { ProductDetailPage } from '../pages/ProductDetailPage';
 
 export function AppRoutes() {
   return (
@@ -60,23 +45,10 @@ export function AppRoutes() {
           <Route path="/ip-analysis-test" element={<IPAnalysisTestPage />} />
         </>
       )}
-      <Route path="/products/rie-etcher" element={<RIEEtcher />} />
-      <Route path="/products/compact-rie" element={<CompactRIE />} />
-      <Route path="/products/icp-etcher" element={<ICPEtcher />} />
-      <Route path="/products/ibe-ribe" element={<IBERIBESystem />} />
-      <Route path="/products/ald" element={<ALDSystem />} />
-      <Route path="/products/striper" element={<StriperSystem />} />
-      <Route path="/products/hdp-cvd" element={<HDPCVDSystem />} />
-      <Route path="/products/sputter" element={<SputterSystem />} />
-      <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
-          <Route path="/products/pecvd" element={<PECVDSystem />} />
-          <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
-          <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
-          <Route path="/products/ns-plasma-4r" element={<NSPlasma4R />} />
-          <Route path="/products/ns-plasma-20r-i" element={<NSPlasma20RI />} />
-          <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
-          <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
-          <Route path="*" element={<NotFoundPage />} />
+      <Route path="/products/:slug" element={<ProductDetailPage />} />
+      <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
+      <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-} 
+}

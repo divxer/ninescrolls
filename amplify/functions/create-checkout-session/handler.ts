@@ -118,7 +118,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' });
 
     const body = event.body ? (JSON.parse(event.body) as Partial<CheckoutRequestBody>) : {};
     const { items, customerEmail, customerName, contactInformation, shippingAddress, notes, successUrl, cancelUrl } = body;

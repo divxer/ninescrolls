@@ -1,43 +1,50 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
 import { QuoteModal } from '../components/common/QuoteModal';
+import type { ProductRecord } from '../types';
+import { listProducts, listCategories } from '../services/catalogService';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
   // Scroll to top when component mounts
   useScrollToTop();
-  const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
+  const [selected, setSelected] = useState<string>('All');
   const [gateOpen, setGateOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [products, setProducts] = useState<ProductRecord[]>([]);
+  const [tabs, setTabs] = useState<string[]>(['All']);
+  const [loading, setLoading] = useState(true);
 
-  const tabs = ['All','Etching','Deposition','Coating/Developing','Cleaning/Stripping'] as const;
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const [loadedProducts, loadedCategories] = await Promise.all([
+        listProducts(),
+        listCategories(),
+      ]);
+      setProducts(loadedProducts);
+      const categoryNames = loadedCategories.map((c) => c.name);
+      const unique = Array.from(new Set(['All', ...categoryNames]));
+      setTabs(unique);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const schema = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "ItemList",
     "name": "Plasma Etching Systems",
-    "itemListElement": [
-      { "@type": "Product", "name": "ICP‑RIE Etcher", "url": "https://ninescrolls.com/products/icp-etcher" },
-      { "@type": "Product", "name": "RIE Etcher", "url": "https://ninescrolls.com/products/rie-etcher" },
-      { "@type": "Product", "name": "Compact RIE Etcher (SV-RIE)", "url": "https://ninescrolls.com/products/compact-rie" },
-      { "@type": "Product", "name": "DRIE Etcher (Bosch)", "url": "https://ninescrolls.com/products/rie-etcher#drie" },
-      { "@type": "Product", "name": "HDP‑CVD System", "url": "https://ninescrolls.com/products/hdp-cvd" },
-      { "@type": "Product", "name": "PECVD System", "url": "https://ninescrolls.com/products/pecvd" },
-      { "@type": "Product", "name": "ALD System", "url": "https://ninescrolls.com/products/ald" },
-      { "@type": "Product", "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
-      { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
-      { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
-      { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
-      { "@type": "Product", "name": "NS-Plasma 20R", "url": "https://ninescrolls.com/products/ns-plasma-20r" },
-      { "@type": "Product", "name": "NS-Plasma 4R", "url": "https://ninescrolls.com/products/ns-plasma-4r" },
-      { "@type": "Product", "name": "NS-Plasma 20R-I (Integrated)", "url": "https://ninescrolls.com/products/ns-plasma-20r-i" },
-      { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
-    ]
-  }), []);
+    "itemListElement": products.map((product) => ({
+      "@type": "Product",
+      "name": product.name,
+      "url": `https://ninescrolls.com/products/${product.slug}`
+    }))
+  }), [products]);
 
   return (
     <>
@@ -107,7 +114,7 @@ export function ProductsPage() {
               <button
                 key={t}
                 className={`tab-btn ${selected === t ? 'active' : ''}`}
-                onClick={() => setSelected(t as typeof selected)}
+                onClick={() => setSelected(t)}
               >{t}</button>
             ))}
           </div>
@@ -115,215 +122,38 @@ export function ProductsPage() {
             Our comprehensive range of plasma etching equipment and semiconductor processing systems is designed to meet the diverse needs of research institutions and manufacturers. From reactive ion etching (RIE) to inductively coupled plasma etching, our plasma etching processes deliver optimized etch rates and superior plasma treatment capabilities. Each system is built with precision, reliability, and innovation in mind.
           </p>
           <div className="category-grid">
-            {(selected === 'All' || selected === 'Etching') && (
-            <div className="category-card">
-              <Link to="/products/icp-etcher">
-                <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP‑RIE plasma etching system in cleanroom" loading="lazy" decoding="async" />
-                <h3>ICP Etcher Series - Inductively Coupled Plasma Etching</h3>
-                <p>Advanced inductively coupled plasma etching system with superior process control and optimized etch rates for high-aspect-ratio etching applications.</p>
-                <ul className="product-features">
-                  <li>High-density plasma source</li>
-                  <li>Multi-gas capability</li>
-                  <li>Advanced temperature control</li>
-                </ul>
-              </Link>
-            </div>
+            {loading && (
+              <div className="category-card">
+                <p>Loading products...</p>
+              </div>
             )}
-
-            {(selected === 'All' || selected === 'Etching') && (
-            <div className="category-card">
-              <Link to="/products/rie-etcher">
-                <img src="/assets/images/products/rie-etcher/main.jpg" alt="Reactive Ion Etching system (RIE) for anisotropic etch" loading="lazy" decoding="async" />
-                <h3>RIE Etcher Series - Reactive Ion Etching</h3>
-                <p>Versatile reactive ion etching system for precise material processing with excellent plasma treatment capabilities and controlled etch rates.</p>
-                <ul className="feature-list">
-                  <li>Flexible process control</li>
-                  <li>Multiple gas options</li>
-                  <li>Compact design</li>
-                </ul>
-              </Link>
-            </div>
+            {!loading && products.length === 0 && (
+              <div className="category-card">
+                <p>No products available at the moment.</p>
+              </div>
             )}
-
-            {(selected === 'All' || selected === 'Etching') && (
-            <div className="category-card">
-              <Link to="/products/compact-rie">
-                <img src="/assets/images/products/compact-rie/main.jpg" alt="Compact RIE Etcher (SV-RIE) - compact reactive ion etching system" loading="lazy" decoding="async" />
-                <h3>Compact RIE Etcher (SV-RIE)</h3>
-                <p>Compact reactive ion etching system with ultra-small footprint (630mm×600mm), ideal for research labs and pilot-scale processes.</p>
-                <ul className="feature-list">
-                  <li>Ultra-compact footprint: 630mm × 600mm</li>
-                  <li>Touchscreen control with fully automated operation</li>
-                  <li>Modular design for easy maintenance and transport</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Deposition') && (
-            <div className="category-card">
-              <Link to="/products/hdp-cvd">
-                <img src="/assets/images/products/hdp-cvd/main.jpg" alt="HDP‑CVD system for high‑density plasma chemical vapor deposition" loading="lazy" decoding="async" />
-                <h3>HDP-CVD System Series</h3>
-                <p>High-density plasma CVD for superior film quality and gap-fill performance.</p>
-                <ul className="feature-list">
-                  <li>Excellent gap-fill capability</li>
-                  <li>High deposition rates</li>
-                  <li>Multi-zone heating</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Deposition') && (
-            <div className="category-card">
-              <Link to="/products/pecvd">
-                <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD thin film deposition system" loading="lazy" decoding="async" />
-                <h3>PECVD System Series</h3>
-                <p>Plasma-enhanced CVD system for high-quality thin film deposition.</p>
-                <ul className="feature-list">
-                  <li>Low temperature processing</li>
-                  <li>Multiple material options</li>
-                  <li>Precise control</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Deposition') && (
-            <div className="category-card">
-              <Link to="/products/ald">
-                <img src="/assets/images/products/ald/main.jpg" alt="Atomic Layer Deposition (ALD) system" loading="lazy" decoding="async" />
-                <h3>ALD System Series</h3>
-                <p>Atomic layer deposition system for precise thin film growth.</p>
-                <ul className="feature-list">
-                  <li>Atomic-level precision</li>
-                  <li>Excellent conformality</li>
-                  <li>Multiple precursor lines</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Deposition') && (
-            <div className="category-card">
-              <Link to="/products/sputter">
-                <img src="/assets/images/products/sputter/main.jpg" alt="Sputter deposition system for high‑quality PVD coatings" loading="lazy" decoding="async" />
-                <h3>Sputter System Series</h3>
-                <p>Advanced PVD system for high-quality thin film coating.</p>
-                <ul className="feature-list">
-                  <li>Multiple target positions</li>
-                  <li>DC/RF capability</li>
-                  <li>Co-sputtering option</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Etching') && (
-            <div className="category-card">
-              <Link to="/products/ibe-ribe">
-                <img src="/assets/images/products/ibe-ribe/main.jpg" alt="Ion Beam Etching (IBE/RIBE) system for directional etch" loading="lazy" decoding="async" />
-                <h3>IBE/RIBE System Series</h3>
-                <p>Ion beam etching system for precise material processing.</p>
-                <ul className="feature-list">
-                  <li>Dual mode operation</li>
-                  <li>Precise angle control</li>
-                  <li>Multiple gas options</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/striper">
-                <img src="/assets/images/products/striper/main.jpg" alt="Plasma photoresist stripping system" loading="lazy" decoding="async" />
-                <h3>Stripping System Series</h3>
-                <p>Advanced photoresist stripping and surface cleaning system.</p>
-                <ul className="feature-list">
-                  <li>Multiple process modes</li>
-                  <li>High throughput</li>
-                  <li>Process monitoring</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/plasma-cleaner">
-                <img src="/assets/images/products/plasma-cleaner/main.jpg" alt="Plasma Treatment/Cleaner System - compact plasma cleaning system" loading="lazy" decoding="async" />
-                <h3>Plasma Treatment/Cleaner System</h3>
-                <p>Compact plasma cleaning and surface treatment system with ultra-small footprint (630mm×600mm).</p>
-                <ul className="feature-list">
-                  <li>Ultra-compact footprint: 630mm × 600mm</li>
-                  <li>Touchscreen control with fully automated operation</li>
-                  <li>Surface cleaning and modification capabilities</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/ns-plasma-20r">
-                <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="NS-Plasma 20R - Compact RF Plasma Processing System" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 20R</h3>
-                <p>Compact, research-grade RF plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation.</p>
-                <ul className="feature-list">
-                  <li>20-liter batch processing chamber</li>
-                  <li>13.56 MHz RF power up to 300W</li>
-                  <li>PLC-controlled with touch screen interface</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/ns-plasma-4r">
-                <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="NS-Plasma 4R - Compact RF Plasma System" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 4R</h3>
-                <p>Compact RF plasma system for research and sample preparation. 4L chamber volume, ideal for teaching labs and low-volume processing.</p>
-                <ul className="feature-list">
-                  <li>~4 L processing chamber</li>
-                  <li>13.56 MHz RF plasma capability</li>
-                  <li>Simplified operation for new users</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/ns-plasma-20r-i">
-                <img src="/assets/images/products/ns-plasma-20r-i/main.jpg" alt="NS-Plasma 20R-I (Integrated) - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 20R-I (Integrated)</h3>
-                <p>Integrated 20L RF vacuum plasma cleaner for batch surface cleaning and activation. Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.</p>
-                <ul className="feature-list">
-                  <li>20 L batch processing chamber</li>
-                  <li>300 W RF (13.56 MHz)</li>
-                  <li>PLC + Touchscreen control</li>
-                </ul>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Coating/Developing') && (
-            <div className="category-card">
-              <Link to="/products/coater-developer">
-                <img src="/assets/images/products/coater-developer/main.jpg" alt="Coater/Developer system for photolithography" loading="lazy" decoding="async" />
-                <h3>Coater/Developer System Series</h3>
-                <p>Precision coating and developing system for photolithography.</p>
-                <ul className="feature-list">
-                  <li>Dual module design</li>
-                  <li>Advanced dispensing</li>
-                  <li>Environmental control</li>
-                </ul>
-              </Link>
-            </div>
-            )}
+            {!loading && products
+              .filter((product) => selected === 'All' || product.category === selected)
+              .map((product) => {
+                const image = product.thumbnail || product.images?.[0] || '/assets/images/products/product-placeholder.jpg';
+                const features = product.features?.slice(0, 3) || product.bullets?.slice(0, 3) || [];
+                return (
+                  <div className="category-card" key={product.slug}>
+                    <Link to={`/products/${product.slug}`}>
+                      <img src={image} alt={product.name} loading="lazy" decoding="async" />
+                      <h3>{product.name}</h3>
+                      <p>{product.shortDesc || 'Custom-configured system for research labs and cleanrooms.'}</p>
+                      {features.length > 0 && (
+                        <ul className="feature-list">
+                          {features.map((feature) => (
+                            <li key={feature}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </Link>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </section>

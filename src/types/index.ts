@@ -6,6 +6,74 @@ export interface ContactFormData {
   message: string;
 }
 
+export interface DownloadItem {
+  name: string;
+  url: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  label?: string;
+  description?: string;
+  price: number;
+  isDefault?: boolean;
+}
+
+export interface ProductRecord {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  typeTag?: string;
+  shortDesc?: string;
+  bullets?: string[];
+  schematicImage?: string;
+  schematicCaption?: string;
+  images?: string[];
+  thumbnail?: string;
+  features?: string[];
+  specifications?: string[];
+  options?: string[];
+  deliveryAndService?: string;
+  downloads?: DownloadItem[];
+  partnerNote?: string;
+  manufacturerId?: string;
+  manufacturer?: ManufacturerRecord;
+  applications?: string[];
+  processResults?: string[];
+  useCases?: string[];
+  resultsHighlights?: string[];
+  keyCharacteristics?: string[];
+  supportIntegration?: string[];
+  whoUsesStats?: Array<{ label: string; value: string; detail?: string }>;
+  positioningNote?: string;
+  costEffectivePoints?: string[];
+  expectations?: string[];
+  heroSubtitle?: string;
+  variants?: ProductVariant[];
+}
+
+export interface ManufacturerRecord {
+  id: string;
+  slug: string;
+  name: string;
+  logo?: string;
+  description?: string;
+  highlights?: string[];
+  supportPolicy?: string;
+  caseHighlights?: string[];
+}
+
+export interface CategoryRecord {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  productCount?: number;
+  manufacturerCount?: number;
+}
+
 export interface ContactFormModalProps {
   isOpen: boolean;
   onClose: () => void;

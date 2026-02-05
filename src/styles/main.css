@@ -1271,6 +1271,26 @@ section h3 {
     overflow: hidden;
 }
 
+.hero-texture {
+    background:
+        linear-gradient(120deg, rgba(6, 24, 44, 0.8), rgba(3, 7, 18, 0.9)),
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.25), transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(56, 189, 248, 0.2), transparent 50%),
+        url('/assets/images/products/product-detail-bg.jpg') center / cover;
+}
+
+.hero-texture::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
 .product-detail-hero .container {
     position: relative;
     z-index: 2;
@@ -1347,7 +1367,7 @@ section h3 {
     align-items: flex-start;
     gap: 1.25rem;
     padding: 1.5rem 2rem;
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
     backdrop-filter: blur(10px);
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1355,7 +1375,7 @@ section h3 {
 }
 
 .hero-bullet-item:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.12) 100%);
     transform: translateX(5px);
 }
 

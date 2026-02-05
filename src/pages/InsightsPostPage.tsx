@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import { insightsPosts, InsightsPost } from '../types';
+import { InsightsPost } from '../types';
+import { getInsightBySlug, listInsights } from '../services/catalogService';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import '../styles/InsightsPostPage.css';
@@ -10,27 +11,35 @@ import '../styles/InsightsPostPage.css';
 export const InsightsPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<InsightsPost | null>(null);
+  const [allPosts, setAllPosts] = useState<InsightsPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top when component mounts or slug changes
   useScrollToTop([slug]);
 
   useEffect(() => {
-    // Special handling for standalone component pages
-    if (slug === 'plasma-cleaner-comparison-research-labs') {
-      const foundPost = insightsPosts.find(p => p.slug === slug);
-      if (foundPost) {
-        setPost(foundPost);
+    const load = async () => {
+      if (!slug) {
+        setPost(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
-    }
-    
-    const foundPost = insightsPosts.find(p => p.slug === slug);
-    setTimeout(() => {
+      const loadedPosts = await listInsights();
+      setAllPosts(loadedPosts);
+      // Special handling for standalone component pages
+      if (slug === 'plasma-cleaner-comparison-research-labs') {
+        const foundPost = loadedPosts.find((p) => p.slug === slug) || await getInsightBySlug(slug);
+        if (foundPost) {
+          setPost(foundPost);
+        }
+        setLoading(false);
+        return;
+      }
+      const foundPost = loadedPosts.find((p) => p.slug === slug) || await getInsightBySlug(slug);
       setPost(foundPost || null);
       setLoading(false);
-    }, 500);
+    };
+    load();
 
     // Note: Page view is automatically tracked by SegmentAnalytics component
     // No need for separate TRACK event - PAGE event already includes:
@@ -320,7 +329,7 @@ export const InsightsPostPage: React.FC = () => {
                     <div className="related-articles">
                       <h3>Related Articles</h3>
                       <ul>
-                        {displayPost && rankRelatedInsights(insightsPosts, displayPost, 4).map(rp => (
+                        {displayPost && rankRelatedInsights(allPosts, displayPost, 4).map(rp => (
                           <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
                         ))}
                       </ul>
@@ -456,7 +465,7 @@ export const InsightsPostPage: React.FC = () => {
                   <div className="related-articles">
                     <h3>Related Articles</h3>
                     <ul>
-                      {displayPost && rankRelatedInsights(insightsPosts, displayPost, 4).map(rp => (
+                      {displayPost && rankRelatedInsights(allPosts, displayPost, 4).map(rp => (
                         <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
                       ))}
                     </ul>

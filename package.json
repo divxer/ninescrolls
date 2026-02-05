@@ -8,7 +8,8 @@
     "build": "npm install --no-ignore-optional && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "optimize-images": "node scripts/optimize-images.js"
+    "optimize-images": "node scripts/optimize-images.js",
+    "seed:data": "tsx scripts/seed-amplify-data.ts"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.1.5",
