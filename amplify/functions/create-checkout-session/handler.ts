@@ -1,5 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import Stripe from 'stripe';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/create-checkout-session';
 
 type CheckoutItemInput = {
@@ -36,6 +38,47 @@ type CheckoutRequestBody = {
 };
 
 type LegacyHttpEvent = { httpMethod?: string };
+
+const checkoutRateLimitTable = process.env.CHECKOUT_RATE_LIMIT_TABLE;
+const ddbClient = checkoutRateLimitTable
+  ? DynamoDBDocumentClient.from(new DynamoDBClient({}))
+  : null;
+
+const getClientIp = (event: Parameters<APIGatewayProxyHandlerV2>[0]): string => {
+  const forwarded = event.headers?.['x-forwarded-for'] || event.headers?.['X-Forwarded-For'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return event.requestContext?.http?.sourceIp || 'unknown';
+};
+
+const rateLimit = async (key: string, limit: number, windowSeconds: number): Promise<boolean> => {
+  if (!ddbClient || !checkoutRateLimitTable) {
+    return true;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = Math.floor(now / windowSeconds);
+  const partitionKey = `${key}:${windowStart}`;
+  const ttl = now + windowSeconds * 2;
+
+  const result = await ddbClient.send(new UpdateCommand({
+    TableName: checkoutRateLimitTable,
+    Key: { key: partitionKey },
+    UpdateExpression: 'ADD #count :incr SET #ttl = :ttl',
+    ExpressionAttributeNames: {
+      '#count': 'count',
+      '#ttl': 'ttl',
+    },
+    ExpressionAttributeValues: {
+      ':incr': 1,
+      ':ttl': ttl,
+    },
+    ReturnValues: 'UPDATED_NEW',
+  }));
+
+  const count = (result.Attributes?.count as number | undefined) ?? 0;
+  return count <= limit;
+};
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   // Allowed origins for CORS (production domains)
@@ -126,6 +169,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   }
 
   try {
+    const clientIp = getClientIp(event);
+    const allowed = await rateLimit(clientIp, 20, 60);
+    if (!allowed) {
+      return {
+        statusCode: 429,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+      };
+    }
+
     // Validate environment variables
     if (!env.STRIPE_SECRET_KEY) {
       console.error('STRIPE_SECRET_KEY is not configured');

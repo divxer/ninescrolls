@@ -101,6 +101,25 @@ const stripeWebhookEventsTable = new Table(stripeWebhookFunctionStack, 'StripeWe
 stripeWebhookEventsTable.grantReadWriteData(backend.stripeWebhook.resources.lambda);
 backend.stripeWebhook.addEnvironment('STRIPE_WEBHOOK_EVENTS_TABLE', stripeWebhookEventsTable.tableName);
 
+// Create DynamoDB tables for simple rate limiting (per function stack to avoid circular deps)
+const checkoutFunctionStack = Stack.of(backend.createCheckoutSession.resources.lambda);
+const checkoutRateLimitTable = new Table(checkoutFunctionStack, 'CheckoutRateLimit', {
+    partitionKey: { name: 'key', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+    timeToLiveAttribute: 'ttl',
+});
+checkoutRateLimitTable.grantReadWriteData(backend.createCheckoutSession.resources.lambda);
+backend.createCheckoutSession.addEnvironment('CHECKOUT_RATE_LIMIT_TABLE', checkoutRateLimitTable.tableName);
+
+const taxFunctionStack = Stack.of(backend.calculateTax.resources.lambda);
+const taxRateLimitTable = new Table(taxFunctionStack, 'TaxRateLimit', {
+    partitionKey: { name: 'key', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+    timeToLiveAttribute: 'ttl',
+});
+taxRateLimitTable.grantReadWriteData(backend.calculateTax.resources.lambda);
+backend.calculateTax.addEnvironment('TAX_RATE_LIMIT_TABLE', taxRateLimitTable.tableName);
+
 // Add outputs
 backend.addOutput({
     custom: {
