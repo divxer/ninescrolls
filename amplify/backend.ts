@@ -7,6 +7,7 @@ import { calculateTax } from './functions/calculate-tax/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 
 const backend = defineBackend({
     data,
@@ -88,6 +89,16 @@ stripeWebhookResource.addMethod('POST', new LambdaIntegration(backend.stripeWebh
 }), {
     authorizationType: AuthorizationType.NONE, // Explicitly make it public
 });
+
+// Create DynamoDB table for Stripe webhook idempotency
+const stripeWebhookEventsTable = new Table(apiStack, 'StripeWebhookEvents', {
+    partitionKey: { name: 'eventId', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+    timeToLiveAttribute: 'ttl',
+});
+
+stripeWebhookEventsTable.grantReadWriteData(backend.stripeWebhook.resources.lambda);
+backend.stripeWebhook.resources.lambda.addEnvironment('STRIPE_WEBHOOK_EVENTS_TABLE', stripeWebhookEventsTable.tableName);
 
 // Add outputs
 backend.addOutput({
