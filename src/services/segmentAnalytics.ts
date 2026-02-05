@@ -437,9 +437,11 @@ class SegmentAnalyticsService {
       const isTargetCustomer = finalConfidence > threshold;
 
       // Merge event properties with IP info and behavior
+      const pathname = properties?.pathname || pageName || '';
       const enhancedProperties = {
         ...properties,
-        pathname: properties?.pathname || pageName,
+        path: pathname,  // Segment expects 'path' property
+        pathname: pathname,
         search: properties?.search || '',
         hash: properties?.hash || '',
         title: typeof window !== 'undefined' ? document.title : '',
