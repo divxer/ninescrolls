@@ -49,13 +49,14 @@ const sanitizeRichText = (value: string): string => {
 };
 
 const webhookEventsTable = process.env.STRIPE_WEBHOOK_EVENTS_TABLE;
-const ddbClient = webhookEventsTable
+const ordersTable = process.env.STRIPE_ORDERS_TABLE;
+const ddbClient = webhookEventsTable || ordersTable
   ? DynamoDBDocumentClient.from(new DynamoDBClient({}))
   : null;
 
-const reserveWebhookEvent = async (eventId: string): Promise<boolean> => {
+const recordWebhookEvent = async (eventId: string): Promise<void> => {
   if (!ddbClient || !webhookEventsTable) {
-    return true;
+    return;
   }
 
   const ttlSeconds = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 days
@@ -71,11 +72,67 @@ const reserveWebhookEvent = async (eventId: string): Promise<boolean> => {
         ConditionExpression: 'attribute_not_exists(eventId)',
       })
     );
-    return true;
   } catch (err: unknown) {
     const name = err instanceof Error ? err.name : '';
     if (name === 'ConditionalCheckFailedException') {
-      return false;
+      return;
+    }
+    throw err;
+  }
+};
+
+const persistOrder = async (session: Stripe.Checkout.Session): Promise<'created' | 'existing'> => {
+  if (!ddbClient || !ordersTable) {
+    throw new Error('STRIPE_ORDERS_TABLE is not configured');
+  }
+
+  const orderId = session.id;
+  const createdAt = new Date().toISOString();
+  const amountTotal = session.amount_total ?? 0;
+  const currency = session.currency ?? 'usd';
+  const customerEmail = session.customer_details?.email || session.metadata?.contactEmail || '';
+  const customerName = session.customer_details?.name || session.metadata?.customerName || '';
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
+
+  const lineItems = (session.line_items?.data || []).map((item) => ({
+    description: item.description || 'Item',
+    quantity: item.quantity || 1,
+    unitAmount: item.price?.unit_amount ?? 0,
+    currency: item.price?.currency ?? currency,
+  }));
+
+  const shippingAddress = session.metadata?.shippingAddress
+    ? session.metadata.shippingAddress
+    : session.shipping_details?.address || session.shipping?.address || null;
+
+  try {
+    await ddbClient.send(new PutCommand({
+      TableName: ordersTable,
+      Item: {
+        orderId,
+        createdAt,
+        status: 'paid',
+        amountTotal,
+        currency,
+        customerEmail,
+        customerName,
+        paymentIntentId,
+        contactFirstName: session.metadata?.contactFirstName || '',
+        contactLastName: session.metadata?.contactLastName || '',
+        contactPhone: session.metadata?.contactPhone || '',
+        contactOrganization: session.metadata?.contactOrganization || '',
+        shippingAddress,
+        notes: session.metadata?.notes || '',
+        lineItems,
+        rawMetadata: session.metadata || {},
+      },
+      ConditionExpression: 'attribute_not_exists(orderId)',
+    }));
+    return 'created';
+  } catch (err: unknown) {
+    const name = err instanceof Error ? err.name : '';
+    if (name === 'ConditionalCheckFailedException') {
+      return 'existing';
     }
     throw err;
   }
@@ -121,23 +178,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   }
 
-  try {
-    const reserved = await reserveWebhookEvent(stripeEvent.id);
-    if (!reserved) {
-      console.log('Duplicate webhook ignored:', stripeEvent.id);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ received: true }),
-      };
-    }
-  } catch (err: unknown) {
-    console.error('Failed to reserve webhook event:', err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to process webhook event' }),
-    };
-  }
-
   // Handle different event types
   try {
     if (stripeEvent.type === 'checkout.session.completed') {
@@ -154,6 +194,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
         expand: ['line_items', 'line_items.data.price.product'],
       });
+
+      const orderResult = await persistOrder(fullSession);
+      if (orderResult === 'existing') {
+        console.log('Order already persisted for session:', session.id);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ received: true }),
+        };
+      }
+
+      try {
+        await recordWebhookEvent(stripeEvent.id);
+      } catch (err: unknown) {
+        console.error('Failed to record webhook event:', err);
+      }
 
       // Send order confirmation email
       await sendOrderConfirmationEmail(fullSession);
