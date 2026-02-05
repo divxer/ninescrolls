@@ -99,12 +99,7 @@ export async function createCheckoutSession(
       body: JSON.stringify({
         items: params.items.map((item) => ({
           id: item.id,
-          name: item.name,
-          price: item.price,
           quantity: item.quantity,
-          image: item.image,
-          // If you have priceId configured in Stripe Dashboard, use it instead:
-          // priceId: item.priceId,
         })),
         customerEmail: params.customerEmail,
         customerName: params.customerName,
@@ -151,8 +146,6 @@ export async function calculateTax(
       body: JSON.stringify({
         items: items.map((item) => ({
           id: item.id,
-          name: item.name,
-          price: item.price,
           quantity: item.quantity,
         })),
         shippingAddress,

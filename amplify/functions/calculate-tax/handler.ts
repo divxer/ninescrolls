@@ -4,10 +4,7 @@ import { env } from '$amplify/env/calculate-tax';
 
 type LineItemInput = {
   id?: string;
-  name?: string;
-  price: number;
   quantity: number;
-  taxCode?: string;
 };
 
 type ShippingAddressInput = {
@@ -32,6 +29,19 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     'https://ninescrolls.us',
     'https://www.ninescrolls.us',
   ];
+
+  const productCatalog: Record<string, { name: string; price: number; taxCode?: string }> = {
+    'ns-plasma-4r-rf': {
+      name: 'NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner',
+      price: 7999,
+      taxCode: 'txcd_99999999',
+    },
+    'ns-plasma-4r-mf': {
+      name: 'NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner',
+      price: 6499,
+      taxCode: 'txcd_99999999',
+    },
+  };
 
   const getCorsHeaders = (origin: string): Record<string, string> => {
     const isAllowedOrigin = allowedOrigins.includes(origin);
@@ -58,6 +68,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({ message: 'CORS preflight successful' }),
+    };
+  }
+
+  const isAllowedOrigin = allowedOrigins.includes(requestOrigin);
+  if (!isAllowedOrigin) {
+    return {
+      statusCode: 403,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Origin not allowed' }),
     };
   }
 
@@ -92,12 +111,31 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
-    // Prepare line items for tax calculation
-    const lineItems = items.map((item) => ({
-      amount: Math.round(item.price * 100 * item.quantity), // Total amount in cents
-      reference: item.id || item.name,
-      tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods
-    }));
+    // Prepare line items for tax calculation from server-side catalog
+    const lineItems: Stripe.Tax.CalculationCreateParams.LineItem[] = [];
+    for (const item of items) {
+      if (!item.id) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Item id is required' }),
+        };
+      }
+      const catalogItem = productCatalog[item.id];
+      if (!catalogItem) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: `Unknown product id: ${item.id}` }),
+        };
+      }
+      const quantity = Math.min(Math.max(item.quantity || 1, 1), 10);
+      lineItems.push({
+        amount: Math.round(catalogItem.price * 100 * quantity), // Total amount in cents
+        reference: item.id,
+        tax_code: catalogItem.taxCode || 'txcd_99999999', // General Tangible Goods
+      });
+    }
 
     // Calculate tax using Stripe Tax Calculations API
     const taxCalculation = await stripe.tax.calculations.create({

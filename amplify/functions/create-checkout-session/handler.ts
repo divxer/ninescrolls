@@ -4,12 +4,7 @@ import { env } from '$amplify/env/create-checkout-session';
 
 type CheckoutItemInput = {
   id?: string;
-  name: string;
-  price: number;
   quantity?: number;
-  image?: string;
-  priceId?: string;
-  taxCode?: string;
 };
 
 type ContactInformation = {
@@ -51,6 +46,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     'https://ninescrolls.us', // Legacy domain
     'https://www.ninescrolls.us', // Legacy domain
   ];
+
+  const productCatalog: Record<string, { name: string; price: number; imagePath?: string; taxCode?: string; priceId?: string }> = {
+    'ns-plasma-4r-rf': {
+      name: 'NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner',
+      price: 7999,
+      imagePath: '/assets/images/products/ns-plasma-4r/main.jpg',
+      taxCode: 'txcd_99999999',
+    },
+    'ns-plasma-4r-mf': {
+      name: 'NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner',
+      price: 6499,
+      imagePath: '/assets/images/products/ns-plasma-4r/main.jpg',
+      taxCode: 'txcd_99999999',
+    },
+  };
 
   // Helper function to get CORS headers
   const getCorsHeaders = (origin: string): Record<string, string> => {
@@ -107,6 +117,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   }
 
+  if (!isAllowedOrigin) {
+    return {
+      statusCode: 403,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Origin not allowed' }),
+    };
+  }
+
   try {
     // Validate environment variables
     if (!env.STRIPE_SECRET_KEY) {
@@ -121,7 +139,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
     const body = event.body ? (JSON.parse(event.body) as Partial<CheckoutRequestBody>) : {};
-    const { items, customerEmail, customerName, contactInformation, shippingAddress, notes, successUrl, cancelUrl } = body;
+    const { items, customerEmail, customerName, contactInformation, shippingAddress, notes } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return {
@@ -131,15 +149,45 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
+    if (!env.APP_URL) {
+      console.error('APP_URL is not configured');
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Server configuration error' }),
+      };
+    }
+
+    const normalizedItems: Array<{ id: string; quantity: number; catalogItem: { name: string; price: number; imagePath?: string; taxCode?: string; priceId?: string } }> = [];
+    for (const item of items) {
+      if (!item.id) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Item id is required' }),
+        };
+      }
+      const catalogItem = productCatalog[item.id];
+      if (!catalogItem) {
+        return {
+          statusCode: 400,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: `Unknown product id: ${item.id}` }),
+        };
+      }
+      const quantity = Math.min(Math.max(item.quantity || 1, 1), 10);
+      normalizedItems.push({ id: item.id, quantity, catalogItem });
+    }
+
     // Convert items to Stripe line items format
     // If items have priceId, use it; otherwise create price_data
     // Add tax_code for Stripe Tax calculation (txcd_99999999 = General Tangible Goods)
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => {
-      if (item.priceId) {
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = normalizedItems.map(({ catalogItem, quantity }) => {
+      if (catalogItem.priceId) {
         return {
-          price: item.priceId,
-          quantity: item.quantity || 1,
-          tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods tax code
+          price: catalogItem.priceId,
+          quantity,
+          tax_code: catalogItem.taxCode || 'txcd_99999999', // General Tangible Goods tax code
         };
       } else {
         // Create price_data for one-time payment
@@ -147,20 +195,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: item.name,
-              images: item.image ? [item.image] : undefined,
-              tax_code: item.taxCode || 'txcd_99999999', // General Tangible Goods tax code
+              name: catalogItem.name,
+              images: catalogItem.imagePath ? [`${env.APP_URL}${catalogItem.imagePath}`] : undefined,
+              tax_code: catalogItem.taxCode || 'txcd_99999999', // General Tangible Goods tax code
             },
-            unit_amount: Math.round(item.price * 100), // Convert to cents
+            unit_amount: Math.round(catalogItem.price * 100), // Convert to cents
           },
-          quantity: item.quantity || 1,
+          quantity,
         };
       }
     });
 
-    // Use successUrl and cancelUrl from request, or fallback to env.APP_URL
-    const finalSuccessUrl = successUrl || `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-    const finalCancelUrl = cancelUrl || `${env.APP_URL}/checkout/cancel`;
+    // Always use server-controlled URLs to prevent open redirect abuse
+    const finalSuccessUrl = `${env.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = `${env.APP_URL}/checkout/cancel`;
 
     // Create or update Stripe Customer with address information
     // This allows Stripe Tax to use the address for automatic tax calculation
@@ -268,7 +316,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         enabled: true,
       },
       metadata: {
-        items: JSON.stringify(items.map((i) => ({ id: i.id, name: i.name }))),
+        items: JSON.stringify(normalizedItems.map((i) => ({ id: i.id, name: i.catalogItem.name }))),
         notes: notes || '',
         customerName: customerName || '', // Store customer name in metadata
       },

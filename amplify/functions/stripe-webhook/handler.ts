@@ -1,6 +1,8 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import Stripe from 'stripe';
 import * as sgMail from '@sendgrid/mail';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/stripe-webhook';
 
 const escapeHtml = (value: string): string =>
@@ -46,6 +48,39 @@ const sanitizeRichText = (value: string): string => {
   return result.replace(/\r\n|\r|\n/g, '<br>');
 };
 
+const webhookEventsTable = process.env.STRIPE_WEBHOOK_EVENTS_TABLE;
+const ddbClient = webhookEventsTable
+  ? DynamoDBDocumentClient.from(new DynamoDBClient({}))
+  : null;
+
+const reserveWebhookEvent = async (eventId: string): Promise<boolean> => {
+  if (!ddbClient || !webhookEventsTable) {
+    return true;
+  }
+
+  const ttlSeconds = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 days
+  try {
+    await ddbClient.send(
+      new PutCommand({
+        TableName: webhookEventsTable,
+        Item: {
+          eventId,
+          createdAt: new Date().toISOString(),
+          ttl: ttlSeconds,
+        },
+        ConditionExpression: 'attribute_not_exists(eventId)',
+      })
+    );
+    return true;
+  } catch (err: unknown) {
+    const name = err instanceof Error ? err.name : '';
+    if (name === 'ConditionalCheckFailedException') {
+      return false;
+    }
+    throw err;
+  }
+};
+
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
 
@@ -86,6 +121,23 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   }
 
+  try {
+    const reserved = await reserveWebhookEvent(stripeEvent.id);
+    if (!reserved) {
+      console.log('Duplicate webhook ignored:', stripeEvent.id);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ received: true }),
+      };
+    }
+  } catch (err: unknown) {
+    console.error('Failed to reserve webhook event:', err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to process webhook event' }),
+    };
+  }
+
   // Handle different event types
   try {
     if (stripeEvent.type === 'checkout.session.completed') {
@@ -96,7 +148,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         customerEmail: session.customer_details?.email,
         amountTotal: session.amount_total,
         currency: session.currency,
-        metadata: session.metadata,
       });
 
       // Retrieve full session details including line items
