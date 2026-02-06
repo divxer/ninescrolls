@@ -403,20 +403,31 @@ class IPAnalyticsService {
       'comcast', 'verizon', 'at&t', 't-mobile', 'tmobile', 'sprint',
       'crown castle', 'crowncastle', 'fiber', 'telecom', 'telecommunications',
       'infrastructure', 'tower', 'wireless', 'broadband', 'cable',
-      // Cloud providers
+      // Cloud providers and Hosting
       'cloudflare', 'amazon', 'aws', 'google', 'microsoft', 'oracle',
       'azure', 'gcp', 'digitalocean', 'linode', 'vultr', 'ovh',
       'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn',
+      // Data centers and Colocation
+      'colo', 'colocation', 'datacenter', 'data center', 'whitelabel',
+      'whitelabelcolo', 'server', 'hosting', 'host', 'dedicated',
       // Other non-target industries
       'real estate', 'construction', 'logistics', 'shipping', 'transportation'
     ];
 
     // Check for noise/ISP organizations (negative signal) - do this FIRST
+    // Priority: data centers/hosting > cloud providers > ISPs > others
     const isNoiseOrg = noiseOrgs.some(noise => orgLower.includes(noise));
     if (isNoiseOrg) {
       breakdown.ispPenalty = -0.5;  // 更强的降权
-      // If it's clearly a noise org, skip whitelist and enterprise checks
-      if (noiseOrgs.slice(0, 20).some(noise => orgLower.includes(noise))) {
+      // If it's clearly a noise org (data center, hosting, ISP, cloud), reject immediately
+      // Check for high-priority noise keywords (data centers, hosting, cloud, ISP)
+      const highPriorityNoise = [
+        'colo', 'colocation', 'datacenter', 'data center', 'whitelabel',
+        'hosting', 'host', 'server', 'dedicated',
+        'cloudflare', 'amazon', 'aws', 'azure', 'gcp',
+        'comcast', 'verizon', 'at&t', 't-mobile', 'isp'
+      ];
+      if (highPriorityNoise.some(noise => orgLower.includes(noise))) {
         // This is definitely not a target customer
         return {
           isTargetCustomer: false,
@@ -426,7 +437,7 @@ class IPAnalyticsService {
           leadTier: undefined,
           details: {
             orgName,
-            orgType: 'Unknown',
+            orgType: 'Data Center/Hosting/ISP',
             location,
             keywords: []
           }
@@ -456,10 +467,18 @@ class IPAnalyticsService {
       keywords = universityMatches;
     }
 
-    // Check research institution keywords
-    const researchMatches = researchKeywords.filter(keyword => 
-      orgLower.includes(keyword)
-    );
+    // Check research institution keywords (use word boundary matching to avoid partial matches)
+    const researchMatches = researchKeywords.filter(keyword => {
+      // For short keywords like 'lab', check if it appears as a whole word
+      // to avoid matching 'label' -> 'lab'
+      if (keyword.length <= 3) {
+        // Use word boundary regex: \b matches word boundaries
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        return regex.test(orgLower);
+      }
+      // For longer keywords, simple includes is fine
+      return orgLower.includes(keyword);
+    });
     if (researchMatches.length > 0 && breakdown.orgMatch < 0.5) {
       organizationType = 'research_institute';
       breakdown.orgMatch = Math.min(0.9, 0.4 + (researchMatches.length * 0.15));
