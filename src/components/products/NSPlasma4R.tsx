@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
@@ -14,9 +14,45 @@ export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'image1' | 'image2'>('main');
-  const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { addItem } = useCart();
+
+  // Determine frequency from URL parameter or path
+  // Support both: /products/ns-plasma-4r?config=rf and /products/ns-plasma-4r-rf
+  const getFrequencyFromURL = (): 'rf' | 'mf' => {
+    // Check path for dedicated routes first (most reliable)
+    if (location.pathname.includes('-rf')) {
+      return 'rf';
+    }
+    if (location.pathname.includes('-mf')) {
+      return 'mf';
+    }
+    // Check URL parameter (use location.search to avoid dependency on searchParams)
+    const urlParams = new URLSearchParams(location.search);
+    const configParam = urlParams.get('config');
+    if (configParam === 'rf' || configParam === 'mf') {
+      return configParam;
+    }
+    // Default to RF
+    return 'rf';
+  };
+
+  const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>(() => {
+    // Initialize from URL on first render
+    if (location.pathname.includes('-rf')) return 'rf';
+    if (location.pathname.includes('-mf')) return 'mf';
+    const configParam = new URLSearchParams(location.search).get('config');
+    if (configParam === 'rf' || configParam === 'mf') return configParam;
+    return 'rf';
+  });
+
+  // Update frequency when URL changes
+  useEffect(() => {
+    const frequency = getFrequencyFromURL();
+    setSelectedFrequency(frequency);
+  }, [location.pathname, location.search]);
 
   useScrollToTop();
 
@@ -78,15 +114,46 @@ export function NSPlasma4R() {
     navigate('/cart');
   };
 
+  // Get product details based on selected frequency
+  const getProductDetails = () => {
+    if (selectedFrequency === 'rf') {
+      return {
+        name: "NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner",
+        description: "Compact RF plasma system for research and sample preparation. 4L chamber volume, 13.56 MHz RF frequency, 150W power, ideal for teaching labs and low-volume processing.",
+        sku: "ns-plasma-4r-rf",
+        mpn: "NS-Plasma-4R-RF",
+        price: "7999",
+        url: "https://ninescrolls.com/products/ns-plasma-4r-rf",
+        seoTitle: "NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner | $7,999 USD | NineScrolls",
+        seoDescription: "NS-Plasma 4R RF Plasma Cleaner. 13.56 MHz RF frequency, 150W power, 4L chamber. In stock. Free shipping. Ships in 3–4 weeks.",
+        seoKeywords: "NS-Plasma 4R RF, 13.56 MHz plasma cleaner, RF plasma system, research plasma equipment, $7999"
+      };
+    } else {
+      return {
+        name: "NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner",
+        description: "Compact mid-frequency plasma system for research and sample preparation. 4L chamber volume, 40 kHz frequency, ideal for teaching labs and low-volume processing.",
+        sku: "ns-plasma-4r-mf",
+        mpn: "NS-Plasma-4R-MF",
+        price: "6499",
+        url: "https://ninescrolls.com/products/ns-plasma-4r-mf",
+        seoTitle: "NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner | $6,499 USD | NineScrolls",
+        seoDescription: "NS-Plasma 4R Mid-Frequency Plasma Cleaner. 40 kHz frequency, 4L chamber. In stock. Free shipping. Ships in 3–4 weeks.",
+        seoKeywords: "NS-Plasma 4R MF, 40 kHz plasma cleaner, mid-frequency plasma system, research plasma equipment, $6499"
+      };
+    }
+  };
+
+  const productDetails = getProductDetails();
+
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "@id": "https://ninescrolls.com/products/ns-plasma-4r#product",
-    "name": "NS-Plasma 4R - Plasma Cleaner (RF or Mid-Frequency)",
-    "description": "Compact plasma system for research and sample preparation. 4L chamber volume, available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, ideal for teaching labs and low-volume processing.",
+    "@id": `https://ninescrolls.com/products/${productDetails.sku}#product`,
+    "name": productDetails.name,
+    "description": productDetails.description,
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-4r/main.jpg"],
-    "sku": "ns-plasma-4r",
-    "mpn": "NS-Plasma-4R-Standard",
+    "sku": productDetails.sku,
+    "mpn": productDetails.mpn,
     "brand": {
       "@type": "Brand",
       "name": "Nine Scrolls Technology"
@@ -96,9 +163,9 @@ export function NSPlasma4R() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "6499",
+      "price": productDetails.price,
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      "url": "https://ninescrolls.com/products/ns-plasma-4r",
+      "url": productDetails.url,
       "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
@@ -139,10 +206,10 @@ export function NSPlasma4R() {
   return (
     <>
       <SEO
-        title="NS-Plasma 4R - Plasma Cleaner (RF or Mid-Frequency) | $6,499-$7,999 USD | NineScrolls"
-        description="NS-Plasma 4R Plasma Cleaner. Compact 4L chamber, available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations. In stock. Free shipping. Ships in 3–4 weeks."
-        keywords="NS-Plasma 4R, RF plasma cleaner, mid-frequency plasma, plasma cleaning system, research plasma equipment, $6499, $7999"
-        url="/products/ns-plasma-4r"
+        title={productDetails.seoTitle}
+        description={productDetails.seoDescription}
+        keywords={productDetails.seoKeywords}
+        url={location.pathname}
         image="/assets/images/products/ns-plasma-4r/main.jpg"
         imageWidth={800}
         imageHeight={600}
@@ -229,7 +296,13 @@ export function NSPlasma4R() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                 <button
                   type="button"
-                  onClick={() => setSelectedFrequency('mf')}
+                  onClick={() => {
+                    setSelectedFrequency('mf');
+                    // Update URL parameter
+                    const newSearchParams = new URLSearchParams(searchParams);
+                    newSearchParams.set('config', 'mf');
+                    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true });
+                  }}
                   style={{
                     padding: '1rem',
                     backgroundColor: selectedFrequency === 'mf' ? '#fff' : '#f8f9fa',
@@ -251,7 +324,13 @@ export function NSPlasma4R() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedFrequency('rf')}
+                  onClick={() => {
+                    setSelectedFrequency('rf');
+                    // Update URL parameter
+                    const newSearchParams = new URLSearchParams(searchParams);
+                    newSearchParams.set('config', 'rf');
+                    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true });
+                  }}
                   style={{
                     padding: '1rem',
                     backgroundColor: selectedFrequency === 'rf' ? '#fff' : '#f8f9fa',
