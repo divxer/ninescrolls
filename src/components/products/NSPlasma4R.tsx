@@ -14,7 +14,7 @@ export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'image1' | 'image2'>('main');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { addItem } = useCart();
