@@ -91,6 +91,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ninescrolls.com/products/ns-plasma-4r-rf</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/products/ns-plasma-4r-mf</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ninescrolls.com/products/ns-plasma-20r-i</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>monthly</changefreq>

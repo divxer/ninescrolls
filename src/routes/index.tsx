@@ -73,6 +73,8 @@ export function AppRoutes() {
           <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
           <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
           <Route path="/products/ns-plasma-4r" element={<NSPlasma4R />} />
+          <Route path="/products/ns-plasma-4r-rf" element={<NSPlasma4R />} />
+          <Route path="/products/ns-plasma-4r-mf" element={<NSPlasma4R />} />
           <Route path="/products/ns-plasma-20r-i" element={<NSPlasma20RI />} />
           <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
           <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
