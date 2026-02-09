@@ -59,12 +59,25 @@ export function Chat() {
           }
         });
 
-        // Set custom variables - use a very simple event name
-        tawkApi.addEvent?.('visit', 'ninescrolls', function(error: unknown) {
-          if (error) {
-            console.warn('Tawk.to custom variable setting failed:', error);
+        // Add visit event with proper metadata format
+        // Note: addEvent expects (eventName, metadata, callback) where metadata is an object
+        if (tawkApi.addEvent) {
+          try {
+            tawkApi.addEvent('visit', { source: 'ninescrolls' }, function(error: unknown) {
+              if (error) {
+                // Silently handle errors - only log in development
+                if (import.meta.env.DEV) {
+                  console.debug('Tawk.to event tracking failed:', error);
+                }
+              }
+            });
+          } catch (eventError: unknown) {
+            // Silently handle errors - only log in development
+            if (import.meta.env.DEV) {
+              console.debug('Tawk.to addEvent failed:', eventError);
+            }
           }
-        });
+        }
 
         // Position the widget to avoid overlap - only if customize method exists
         if (tawkApi.customize) {
