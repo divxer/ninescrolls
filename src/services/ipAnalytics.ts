@@ -87,14 +87,20 @@ class IPAnalyticsService {
         .map(response => response.value)
         .filter((response): response is Partial<IPInfo> => response !== null);
 
-      console.log(`IP query result: ${successfulResponses.length}/${responses.length} services successful`);
+      // Only log in development mode to reduce console noise
+      if (import.meta.env.DEV) {
+        console.debug(`IP query result: ${successfulResponses.length}/${responses.length} services successful`);
+      }
 
       if (successfulResponses.length > 0) {
         this.ipInfo = this.mergeIPInfo(successfulResponses);
         return this.ipInfo;
       }
 
-      console.warn('All IP query services failed');
+      // Silently fail in production, only warn in development
+      if (import.meta.env.DEV) {
+        console.warn('All IP query services failed');
+      }
       return null;
     } catch (error) {
       console.error('Error fetching IP info:', error);
@@ -113,69 +119,18 @@ class IPAnalyticsService {
 
   // Get information from ip-api.com
   private async fetchFromIPAPI(): Promise<Partial<IPInfo> | null> {
-          const response = await fetch('https://ipapi.co/json/');
-    const data = await response.json();
-    
-          if (data.ip) {
-        return {
-          ip: data.ip,
-          country: data.country_name,
-          region: data.region,
-          city: data.city,
-          org: data.org,
-          isp: data.org,
-          timezone: data.timezone,
-          latitude: data.latitude,
-          longitude: data.longitude
-        };
-      }
-    return null;
-  }
-
-  // Get information from ipinfo.io
-  private async fetchFromIPInfo(): Promise<Partial<IPInfo> | null> {
-    const response = await fetch('https://ipinfo.io/json');
-    const data = await response.json();
-    
-    if (data.ip) {
-      return {
-        ip: data.ip,
-        country: data.country,
-        region: data.region,
-        city: data.city,
-        org: data.org,
-        isp: data.isp,
-        timezone: data.timezone,
-        latitude: data.loc ? parseFloat(data.loc.split(',')[0]) : undefined,
-        longitude: data.loc ? parseFloat(data.loc.split(',')[1]) : undefined,
-        // Extract privacy information
-        privacy: data.privacy ? {
-          vpn: data.privacy.vpn === true,
-          proxy: data.privacy.proxy === true,
-          hosting: data.privacy.hosting === true,
-          tor: data.privacy.tor === true,
-          relay: data.privacy.relay === true
-        } : undefined,
-        // Extract company information
-        company: data.company ? {
-          type: data.company.type,
-          domain: data.company.domain,
-          name: data.company.name
-        } : undefined
-      };
-    }
-    return null;
-  }
-
-  // Get information from ipapi.co (free alternative to ipgeolocation.io)
-  private async fetchFromIPGeolocation(): Promise<Partial<IPInfo> | null> {
     try {
-      // Use ipapi.co as a free alternative to ipgeolocation.io
       const response = await fetch('https://ipapi.co/json/');
+      
+      // Handle rate limiting (429) and other errors silently
       if (!response.ok) {
-        console.warn('ipapi.co request failed:', response.status);
+        if (response.status === 429) {
+          // Rate limited - silently fail
+          return null;
+        }
         return null;
       }
+      
       const data = await response.json();
       
       if (data.ip) {
@@ -193,7 +148,106 @@ class IPAnalyticsService {
       }
       return null;
     } catch (error) {
-      console.warn('ipapi.co fetch error:', error);
+      // Silently handle CORS and network errors
+      // Only log in development mode
+      if (import.meta.env.DEV && error instanceof Error && !error.message.includes('CORS')) {
+        console.debug('ipapi.co fetch error:', error);
+      }
+      return null;
+    }
+  }
+
+  // Get information from ipinfo.io
+  private async fetchFromIPInfo(): Promise<Partial<IPInfo> | null> {
+    try {
+      const response = await fetch('https://ipinfo.io/json');
+      
+      // Handle rate limiting (429) and other errors silently
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Rate limited - silently fail
+          return null;
+        }
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      if (data.ip) {
+        return {
+          ip: data.ip,
+          country: data.country,
+          region: data.region,
+          city: data.city,
+          org: data.org,
+          isp: data.isp,
+          timezone: data.timezone,
+          latitude: data.loc ? parseFloat(data.loc.split(',')[0]) : undefined,
+          longitude: data.loc ? parseFloat(data.loc.split(',')[1]) : undefined,
+          // Extract privacy information
+          privacy: data.privacy ? {
+            vpn: data.privacy.vpn === true,
+            proxy: data.privacy.proxy === true,
+            hosting: data.privacy.hosting === true,
+            tor: data.privacy.tor === true,
+            relay: data.privacy.relay === true
+          } : undefined,
+          // Extract company information
+          company: data.company ? {
+            type: data.company.type,
+            domain: data.company.domain,
+            name: data.company.name
+          } : undefined
+        };
+      }
+      return null;
+    } catch (error) {
+      // Silently handle CORS and network errors
+      // Only log in development mode
+      if (import.meta.env.DEV && error instanceof Error && !error.message.includes('CORS')) {
+        console.debug('ipinfo.io fetch error:', error);
+      }
+      return null;
+    }
+  }
+
+  // Get information from ipapi.co (free alternative to ipgeolocation.io)
+  private async fetchFromIPGeolocation(): Promise<Partial<IPInfo> | null> {
+    try {
+      // Use ipapi.co as a free alternative to ipgeolocation.io
+      const response = await fetch('https://ipapi.co/json/');
+      
+      // Handle rate limiting (429) and other errors silently
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Rate limited - silently fail
+          return null;
+        }
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      if (data.ip) {
+        return {
+          ip: data.ip,
+          country: data.country_name,
+          region: data.region,
+          city: data.city,
+          org: data.org,
+          isp: data.org,
+          timezone: data.timezone,
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+      }
+      return null;
+    } catch (error) {
+      // Silently handle CORS and network errors
+      // Only log in development mode
+      if (import.meta.env.DEV && error instanceof Error && !error.message.includes('CORS')) {
+        console.debug('ipapi.co fetch error:', error);
+      }
       return null;
     }
   }
@@ -202,33 +256,49 @@ class IPAnalyticsService {
   private async fetchFromIPify(): Promise<Partial<IPInfo> | null> {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
+      
+      // Handle rate limiting (429) and other errors silently
       if (!response.ok) {
-        console.warn('ipify.org request failed:', response.status);
+        if (response.status === 429) {
+          // Rate limited - silently fail
+          return null;
+        }
         return null;
       }
+      
       const data = await response.json();
       
       if (data.ip) {
         // ipify only provides IP, need to get geolocation information separately
-        const geoResponse = await fetch(`https://ipapi.co/${data.ip}/json/`);
-        if (geoResponse.ok) {
-          const geoData = await geoResponse.json();
-          return {
-            ip: data.ip,
-            country: geoData.country_name,
-            region: geoData.region,
-            city: geoData.city,
-            org: geoData.org,
-            isp: geoData.org,
-            timezone: geoData.timezone,
-            latitude: geoData.latitude,
-            longitude: geoData.longitude
-          };
+        // Skip geolocation lookup if we're already rate limited to avoid more 429 errors
+        try {
+          const geoResponse = await fetch(`https://ipapi.co/${data.ip}/json/`);
+          if (geoResponse.ok && geoResponse.status !== 429) {
+            const geoData = await geoResponse.json();
+            return {
+              ip: data.ip,
+              country: geoData.country_name,
+              region: geoData.region,
+              city: geoData.city,
+              org: geoData.org,
+              isp: geoData.org,
+              timezone: geoData.timezone,
+              latitude: geoData.latitude,
+              longitude: geoData.longitude
+            };
+          }
+        } catch (geoError) {
+          // Silently handle geolocation lookup errors
+          return null;
         }
       }
       return null;
     } catch (error) {
-      console.warn('ipify.org fetch error:', error);
+      // Silently handle CORS and network errors
+      // Only log in development mode
+      if (import.meta.env.DEV && error instanceof Error && !error.message.includes('CORS')) {
+        console.debug('ipify.org fetch error:', error);
+      }
       return null;
     }
   }
@@ -237,10 +307,16 @@ class IPAnalyticsService {
   private async fetchFromIPAPI2(): Promise<Partial<IPInfo> | null> {
     try {
       const response = await fetch('https://ipapi.co/json/');
+      
+      // Handle rate limiting (429) and other errors silently
       if (!response.ok) {
-        console.warn('ipapi.co backup request failed:', response.status);
+        if (response.status === 429) {
+          // Rate limited - silently fail
+          return null;
+        }
         return null;
       }
+      
       const data = await response.json();
       
       if (data.ip) {
@@ -258,7 +334,11 @@ class IPAnalyticsService {
       }
       return null;
     } catch (error) {
-      console.warn('ipapi.co backup fetch error:', error);
+      // Silently handle CORS and network errors
+      // Only log in development mode
+      if (import.meta.env.DEV && error instanceof Error && !error.message.includes('CORS')) {
+        console.debug('ipapi.co backup fetch error:', error);
+      }
       return null;
     }
   }
