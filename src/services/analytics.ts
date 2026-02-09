@@ -48,11 +48,20 @@ class Analytics {
   initialize() {
     if (this.isInitialized) return;
     
+    // Check if measurement ID is valid
+    if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID === 'G-XXXXXXXXXX') {
+      console.warn('Google Analytics: Measurement ID not configured. Please set VITE_GA_MEASUREMENT_ID environment variable.');
+      return;
+    }
+    
     if (typeof window !== 'undefined') {
       // Load Google Analytics script
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+      script.onerror = () => {
+        console.error('Failed to load Google Analytics script');
+      };
       document.head.appendChild(script);
 
       // Initialize gtag
@@ -64,12 +73,12 @@ class Analytics {
       window.gtag('config', GA_MEASUREMENT_ID, {
         page_title: document.title,
         page_location: window.location.href,
-        send_page_view: false // We'll handle page views manually
+        send_page_view: true // Enable automatic page view tracking
       });
+      
+      this.isInitialized = true;
+      console.log(`Google Analytics 4 initialized with ID: ${GA_MEASUREMENT_ID}`);
     }
-    
-    this.isInitialized = true;
-    console.log('Google Analytics 4 initialized');
   }
 
   trackEvent(data: EventData) {
@@ -156,6 +165,11 @@ class Analytics {
 
   // Navigation events
   trackPageView(path: string, title: string) {
+    if (!this.isInitialized) {
+      console.warn('Analytics not initialized, skipping page view');
+      return;
+    }
+
     this.trackEvent({
       category: 'Navigation',
       action: 'View',
@@ -163,8 +177,16 @@ class Analytics {
       path
     });
 
-    // GA4 page view tracking
+    // GA4 page view tracking - use config to update page info
     if (typeof window !== 'undefined' && window.gtag) {
+      // Update config with new page info (this sends a page_view event)
+      window.gtag('config', GA_MEASUREMENT_ID, {
+        page_title: title,
+        page_location: window.location.href,
+        page_path: path
+      });
+      
+      // Also send explicit page_view event for better tracking
       window.gtag('event', 'page_view', {
         page_title: title,
         page_location: window.location.href,
