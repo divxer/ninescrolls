@@ -59,25 +59,9 @@ export function Chat() {
           }
         });
 
-        // Add visit event with proper metadata format
-        // Note: addEvent expects (eventName, metadata, callback) where metadata is an object
-        if (tawkApi.addEvent) {
-          try {
-            tawkApi.addEvent('visit', { source: 'ninescrolls' }, function(error: unknown) {
-              if (error) {
-                // Silently handle errors - only log in development
-                if (import.meta.env.DEV) {
-                  console.debug('Tawk.to event tracking failed:', error);
-                }
-              }
-            });
-          } catch (eventError: unknown) {
-            // Silently handle errors - only log in development
-            if (import.meta.env.DEV) {
-              console.debug('Tawk.to addEvent failed:', eventError);
-            }
-          }
-        }
+        // Note: addEvent is optional and may cause INVALID_ATTRIBUTES errors
+        // Tawk.to automatically tracks visits, so this is not required
+        // Removed to avoid console errors
 
         // Position the widget to avoid overlap - only if customize method exists
         if (tawkApi.customize) {
