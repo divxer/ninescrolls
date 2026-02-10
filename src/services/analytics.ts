@@ -88,11 +88,8 @@ class Analytics {
         console.log(`📊 dataLayer has ${window.dataLayer?.length || 0} commands queued`);
         
         // 脚本加载后，真正的 GA4 会处理 dataLayer 中的所有命令
-        // 验证 gtag 是否被正确接管（真正的 GA4 gtag 函数会更复杂）
+        // 验证 gtag 是否可用
         if (window.gtag && typeof window.gtag === 'function') {
-          const gtagSource = window.gtag.toString();
-          // 如果 gtag 仍然是简单的 dataLayer.push，说明可能有问题
-          // 但通常 GA4 脚本会保留这个函数，只是内部实现不同
           console.log('✅ GA4 initialization complete');
         }
       };
