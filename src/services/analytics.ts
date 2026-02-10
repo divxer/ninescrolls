@@ -60,9 +60,10 @@ class Analytics {
       window.dataLayer = window.dataLayer || [];
       
       // 定义占位符 gtag 函数（只在不存在时设置，避免覆盖已存在的）
+      // 🔥 关键：使用 arguments 对象而不是数组，这样 GA4 脚本才能正确处理
       if (!window.gtag) {
-        window.gtag = function(...args: unknown[]) {
-          window.dataLayer.push(args);
+        window.gtag = function() {
+          window.dataLayer.push(arguments);
         };
       }
       
@@ -85,13 +86,8 @@ class Analytics {
 
       script.onload = () => {
         console.log('✅ GA4 script loaded successfully');
+        // GA4 脚本加载后会自动处理 dataLayer 中的所有命令（包括之前推送的 'js' 和 'config'）
         console.log(`📊 dataLayer has ${window.dataLayer?.length || 0} commands queued`);
-        
-        // 脚本加载后，真正的 GA4 会处理 dataLayer 中的所有命令
-        // 验证 gtag 是否可用
-        if (window.gtag && typeof window.gtag === 'function') {
-          console.log('✅ GA4 initialization complete');
-        }
       };
 
       document.head.appendChild(script);
