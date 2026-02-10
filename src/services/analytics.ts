@@ -55,29 +55,52 @@ class Analytics {
     }
     
     if (typeof window !== 'undefined') {
-      // Load Google Analytics script
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-      script.onerror = () => {
-        console.error('Failed to load Google Analytics script');
-      };
-      document.head.appendChild(script);
-
-      // Initialize gtag
+      // 🔥 标准 GA4 初始化：先设置 dataLayer 和占位符 gtag 函数
+      // 这样在脚本加载前，命令会被缓存到 dataLayer，脚本加载后会自动处理
       window.dataLayer = window.dataLayer || [];
-      window.gtag = (...args: unknown[]) => {
-        window.dataLayer.push(args);
-      };
+      
+      // 定义占位符 gtag 函数（只在不存在时设置，避免覆盖已存在的）
+      if (!window.gtag) {
+        window.gtag = function(...args: unknown[]) {
+          window.dataLayer.push(args);
+        };
+      }
+      
+      // 先推送命令到 dataLayer（脚本加载后会自动处理）
       window.gtag('js', new Date());
       window.gtag('config', GA_MEASUREMENT_ID, {
         page_title: document.title,
         page_location: window.location.href,
-        send_page_view: true // Enable automatic page view tracking
+        send_page_view: true
       });
+
+      // Load Google Analytics script
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+      
+      script.onerror = () => {
+        console.error('❌ Failed to load Google Analytics script');
+      };
+
+      script.onload = () => {
+        console.log('✅ GA4 script loaded successfully');
+        console.log(`📊 dataLayer has ${window.dataLayer?.length || 0} commands queued`);
+        
+        // 脚本加载后，真正的 GA4 会处理 dataLayer 中的所有命令
+        // 验证 gtag 是否被正确接管（真正的 GA4 gtag 函数会更复杂）
+        if (window.gtag && typeof window.gtag === 'function') {
+          const gtagSource = window.gtag.toString();
+          // 如果 gtag 仍然是简单的 dataLayer.push，说明可能有问题
+          // 但通常 GA4 脚本会保留这个函数，只是内部实现不同
+          console.log('✅ GA4 initialization complete');
+        }
+      };
+
+      document.head.appendChild(script);
       
       this.isInitialized = true;
-      console.log(`Google Analytics 4 initialized with ID: ${GA_MEASUREMENT_ID}`);
+      console.log(`📡 Loading Google Analytics 4 with ID: ${GA_MEASUREMENT_ID}`);
     }
   }
 

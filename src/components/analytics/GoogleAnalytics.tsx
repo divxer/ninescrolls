@@ -15,6 +15,8 @@ export const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({
     // Initialize analytics if measurement ID is provided
     if (measurementId) {
       analytics.initialize();
+    } else {
+      console.warn('⚠️ GoogleAnalytics: measurementId is undefined. Check VITE_GA_MEASUREMENT_ID env variable.');
     }
   }, [measurementId]);
 
