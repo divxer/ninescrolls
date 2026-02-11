@@ -31,6 +31,40 @@ const corsHeaders = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Sync subscriber to SendGrid Marketing Contacts.
+ * This is a non-blocking best-effort operation — failures are logged but
+ * do not prevent the subscription from succeeding.
+ */
+async function syncToSendGridContacts(email: string, apiKey: string, source: string): Promise<void> {
+    const listId = process.env.SENDGRID_NEWSLETTER_LIST_ID;
+
+    const payload: Record<string, unknown> = {
+        contacts: [{ email }],
+    };
+
+    // If a specific list ID is configured, add the contact to that list
+    if (listId) {
+        payload.list_ids = [listId];
+    }
+
+    const response = await fetch('https://api.sendgrid.com/v3/marketing/contacts', {
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`SendGrid Marketing API error ${response.status}: ${errorBody}`);
+    }
+
+    console.log(`SendGrid Contacts synced: ${email} (source: ${source})`);
+}
+
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     console.log('Subscribe newsletter Lambda invoked');
 
@@ -168,6 +202,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             sgMail.send(welcomeEmail).then(() => console.log('Welcome email sent')),
             sgMail.send(notificationEmail).then(() => console.log('Notification email sent')),
         ]);
+
+        // Sync to SendGrid Marketing Contacts (best-effort, non-blocking)
+        try {
+            await syncToSendGridContacts(normalizedEmail, apiKey, source);
+        } catch (syncError) {
+            // Log but don't fail — DynamoDB is the source of truth
+            console.warn('SendGrid Contacts sync failed (non-critical):', syncError);
+        }
 
         return {
             statusCode: 200,
