@@ -1,7 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
