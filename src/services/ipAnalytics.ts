@@ -570,7 +570,11 @@ class IPAnalyticsService {
       orgLower.includes(keyword)
     );
     if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3 && !isNoiseOrg) {
-      // Only classify as enterprise if it has research/tech context
+      // Check whitelist first - if in whitelist, treat as enterprise regardless of context
+      const whitelistMatch = this.checkWhitelist(orgName);
+      const isWhitelisted = whitelistMatch.matched;
+      
+      // Only classify as enterprise if it has research/tech context OR is whitelisted
       // Generic LLC/Inc without context should not be classified as target enterprise
       const hasResearchTechContext = 
         orgLower.includes('semiconductor') || 
@@ -585,9 +589,13 @@ class IPAnalyticsService {
         orgLower.includes('photonics') ||
         orgLower.includes('optics') ||
         orgLower.includes('biotech') ||
-        orgLower.includes('medical device');
+        orgLower.includes('medical device') ||
+        orgLower.includes('computer') ||
+        orgLower.includes('systems') ||
+        orgLower.includes('software') ||
+        orgLower.includes('tech');
       
-      if (hasResearchTechContext) {
+      if (hasResearchTechContext || isWhitelisted) {
         organizationType = 'enterprise';
         breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
         keywords = enterpriseMatches;
