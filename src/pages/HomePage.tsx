@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { insightsPosts } from '../types';
 import '../styles/HomePage.css';
 
 export function HomePage() {
@@ -112,19 +113,19 @@ export function HomePage() {
             <div className="tech-card">
               <span className="tech-icon">⚙️</span>
               <h3>Precision Engineering</h3>
-              <p>Advanced manufacturing techniques ensuring nanometer-scale accuracy</p>
+              <p>Advanced manufacturing techniques ensuring nanometer-scale accuracy with ±3% uniformity across wafer surfaces</p>
             </div>
             
             <div className="tech-card">
               <span className="tech-icon">🔧</span>
               <h3>Automation Systems</h3>
-              <p>Intelligent control systems for reproducible results</p>
+              <p>Intelligent control systems with temperature range from -70°C to 200°C for reproducible results and process stability</p>
             </div>
             
             <div className="tech-card">
               <span className="tech-icon">⚡</span>
               <h3>Plasma Technology</h3>
-              <p>State-of-the-art plasma processing solutions</p>
+              <p>State-of-the-art plasma processing with high-density sources delivering etch rates up to 5 μm/min for advanced applications</p>
             </div>
           </div>
         </div>
@@ -138,51 +139,39 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="resources-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
+      <section className="resources-section">
         <div className="container">
-          <h2 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '2rem', color: '#333' }}>Research Insights</h2>
-          <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666', fontSize: '1.1rem' }}>
-            Expert guides and technical resources for research laboratories
-          </p>
-          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-            <Link 
-              to="/insights/plasma-cleaner-comparison-research-labs" 
-              style={{ 
-                display: 'inline-block',
-                padding: '1rem 2rem',
-                backgroundColor: '#fff',
-                color: '#2563eb',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                border: '1px solid #e5e7eb',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#f0f4ff';
-                e.currentTarget.style.borderColor = '#2563eb';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#fff';
-                e.currentTarget.style.borderColor = '#e5e7eb';
-              }}
-            >
-              Research Insights: How to choose the right plasma cleaner for academic labs →
-            </Link>
-            <div style={{ marginTop: '1.5rem' }}>
-              <Link 
-                to="/insights" 
-                style={{ 
-                  color: '#2563eb',
-                  textDecoration: 'none',
-                  fontSize: '0.95rem'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-              >
-                View All Insights →
-              </Link>
-            </div>
+          <h2>Research Insights</h2>
+          <p className="section-subtitle">Expert guides and technical resources for research laboratories</p>
+          <div className="insights-showcase">
+            {insightsPosts
+              .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+              .slice(0, 3)
+              .map((post) => (
+                <Link key={post.id} to={`/insights/${post.slug}`} className="insight-card">
+                  <div className="insight-card-image">
+                    <OptimizedImage
+                      src={post.imageUrl}
+                      alt={post.title}
+                      width={400}
+                      height={250}
+                    />
+                  </div>
+                  <div className="insight-card-content">
+                    <div className="insight-card-meta">
+                      <span className="insight-category">{post.category}</span>
+                      <span className="insight-read-time">{post.readTime} min read</span>
+                    </div>
+                    <h3 className="insight-card-title">{post.title}</h3>
+                    {post.excerpt && (
+                      <p className="insight-card-excerpt">{post.excerpt}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+          </div>
+          <div className="text-center" style={{ marginTop: '2rem' }}>
+            <Link to="/insights" className="btn btn-primary">View All Insights</Link>
           </div>
         </div>
       </section>
@@ -194,20 +183,35 @@ export function HomePage() {
             <div className="partner-category">
               <span className="partner-icon">🏛️</span>
               <h3>Research Universities</h3>
+              <p>Top-tier academic institutions worldwide</p>
             </div>
             <div className="partner-category">
               <span className="partner-icon">🔬</span>
               <h3>Research Institutes</h3>
+              <p>National labs and research centers</p>
             </div>
             <div className="partner-category">
               <span className="partner-icon">🏢</span>
               <h3>Corporate R&D</h3>
+              <p>Innovation labs and tech companies</p>
             </div>
           </div>
-          <div className="testimonial">
-            <p>"NineScrolls' cutting-edge systems have significantly advanced our research capabilities in semiconductor device fabrication."</p>
-            <p className="testimonial-author">Dr. Sarah Chen</p>
-            <p className="testimonial-title">Principal Investigator, Advanced Materials Research</p>
+          <div className="testimonials-grid">
+            <div className="testimonial">
+              <p>"NineScrolls' cutting-edge systems have significantly advanced our research capabilities in semiconductor device fabrication."</p>
+              <p className="testimonial-author">Dr. Sarah Chen</p>
+              <p className="testimonial-title">Principal Investigator, Advanced Materials Research Lab</p>
+            </div>
+            <div className="testimonial">
+              <p>"The precision and reliability of NineScrolls equipment has been essential for our MEMS fabrication processes."</p>
+              <p className="testimonial-author">Prof. Michael Rodriguez</p>
+              <p className="testimonial-title">Department of Electrical Engineering, Research University</p>
+            </div>
+            <div className="testimonial">
+              <p>"Excellent technical support and equipment performance. Highly recommended for research-grade applications."</p>
+              <p className="testimonial-author">Dr. Jennifer Kim</p>
+              <p className="testimonial-title">Materials Science Research Center</p>
+            </div>
           </div>
         </div>
       </section>

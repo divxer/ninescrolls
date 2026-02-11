@@ -4,6 +4,7 @@ import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
+import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -15,6 +16,7 @@ const backend = defineBackend({
     createCheckoutSession,
     stripeWebhook,
     calculateTax,
+    subscribeNewsletter,
 });
 
 // Create a fixed stage name
@@ -75,6 +77,29 @@ calculateTaxResource.addMethod('POST', new LambdaIntegration(backend.calculateTa
 calculateTaxResource.addMethod('OPTIONS', new LambdaIntegration(backend.calculateTax.resources.lambda, {
     proxy: true,
 }));
+
+// Create /subscribe resource for newsletter subscription
+const subscribeResource = restApi.root.addResource('subscribe');
+
+// Add POST method for newsletter subscription
+subscribeResource.addMethod('POST', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
+    proxy: true,
+}));
+
+// Add OPTIONS method for CORS preflight
+subscribeResource.addMethod('OPTIONS', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
+    proxy: true,
+}));
+
+// Create DynamoDB table for newsletter subscribers
+const subscribeFunctionStack = Stack.of(backend.subscribeNewsletter.resources.lambda);
+const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'NewsletterSubscribers', {
+    partitionKey: { name: 'email', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+});
+
+newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
+backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
 // Create /stripe/webhook resource for Stripe Webhook
 // Note: Webhook endpoint should NOT have wide CORS - security is handled by signature verification
