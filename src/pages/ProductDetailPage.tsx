@@ -5,6 +5,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { ContactFormModal } from '../components/common/ContactFormModal';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { getProductComponent } from '../components/products';
 import '../styles/ProductDetailPage.css';
 import { analytics } from '../services/analytics';
@@ -422,6 +423,10 @@ export function ProductDetailPage() {
       </Helmet>
       <section className="product-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: product.name, path: `/products/${productId}` }
+          ]} />
           <h1>{product.name}</h1>
           <p className="product-description">{product.description}</p>
         </div>

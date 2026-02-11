@@ -122,6 +122,52 @@
   padding: 0 1rem;
 }
 
+/* Breadcrumbs in product hero section */
+.product-hero .breadcrumbs {
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0;
+  background: transparent;
+  border-bottom: none;
+}
+
+.product-hero .breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.product-hero .breadcrumbs li {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.product-hero .breadcrumbs li:not(:last-child)::after {
+  content: '›';
+  margin-left: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.product-hero .breadcrumbs a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.product-hero .breadcrumbs a:hover {
+  color: var(--white);
+  text-decoration: underline;
+}
+
+.product-hero .breadcrumbs span[aria-current="page"] {
+  color: var(--white);
+  font-weight: 500;
+}
+
 /* Contact button positioning */
 .contact-button-container {
   position: fixed;
@@ -135,5 +181,9 @@
 @media (max-width: 767px) {
   .contact-button-container {
     bottom: 30px;
+  }
+  
+  .breadcrumbs {
+    font-size: 0.85rem;
   }
 } 

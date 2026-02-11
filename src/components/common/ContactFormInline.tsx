@@ -6,6 +6,7 @@ interface ContactFormInlineProps {
   className?: string;
   topic?: string;
   inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
+  prefillEmail?: string;
 }
 
 function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null): string {
@@ -22,6 +23,8 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
   
   // Fallback to topic-based messages
   switch (topic) {
+    case 'newsletter':
+      return 'I would like to subscribe to your newsletter to stay updated with your latest insights, product updates, and technical resources.';
     case 'service':
       return 'I would like to start service planning for my equipment.';
     case 'amc':
@@ -37,13 +40,13 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
   }
 }
 
-export function ContactFormInline({ className = '', topic, inquiryType }: ContactFormInlineProps) {
+export function ContactFormInline({ className = '', topic, inquiryType, prefillEmail }: ContactFormInlineProps) {
   const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: prefillEmail || '',
     phone: '',
     organization: '',
     message: getPrefillMessage(topic, inquiryType)
@@ -99,6 +102,7 @@ export function ContactFormInline({ className = '', topic, inquiryType }: Contac
       const inquiryTypeLabel = inquiryType === 'budgetary' ? 'Budgetary Quote Request' :
                                inquiryType === 'feasibility' ? 'Technical Feasibility Check' :
                                inquiryType === 'engineer' ? 'Talk to an Engineer' :
+                               topic === 'newsletter' ? 'Newsletter Subscription' :
                                topic === 'service' ? 'Service Planning' :
                                topic === 'amc' ? 'AMC Inquiry' :
                                topic === 'tco' ? 'TCO Report Request' :
@@ -119,13 +123,20 @@ export function ContactFormInline({ className = '', topic, inquiryType }: Contac
     <div className={`contact-form ${className}`}>
       {isSuccess ? (
         <div className="success-message">
-          <h3>Thank You for Your Message!</h3>
-          <p>We have received your inquiry and will get back to you shortly.</p>
+          <h3>
+            {topic === 'newsletter' ? '🎉 Successfully Subscribed!' : 'Thank You for Your Message!'}
+          </h3>
+          <p>
+            {topic === 'newsletter' 
+              ? 'Thank you for subscribing to our newsletter! You\'ll receive our latest insights, product updates, and technical resources (1–2 emails per month). We respect your privacy and you can unsubscribe at any time.'
+              : 'We have received your inquiry and will get back to you shortly.'
+            }
+          </p>
           <button 
             className="btn btn-primary" 
             onClick={() => setIsSuccess(false)}
           >
-            Send Another Message
+            {topic === 'newsletter' ? 'Subscribe Another Email' : 'Send Another Message'}
           </button>
         </div>
       ) : (

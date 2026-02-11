@@ -358,11 +358,50 @@ section h3 {
 .social-links {
     display: flex;
     gap: 1rem;
+    align-items: center;
 }
 
 .social-link {
     color: var(--white);
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.social-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+.footer-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-nav-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    font-size: 0.9rem;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+.footer-nav-links a:hover {
+    color: var(--white);
+    text-decoration: underline;
 }
 
 .footer-bottom {

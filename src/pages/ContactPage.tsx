@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
@@ -9,13 +9,29 @@ import '../styles/ContactPage.css';
 type InquiryType = 'budgetary' | 'feasibility' | 'engineer' | null;
 
 export function ContactPage() {
-  // Scroll to top when component mounts
-  useScrollToTop();
-
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const topic = params.get('topic') || undefined;
+  const prefillEmail = params.get('email') || undefined;
   const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(null);
+  const formSectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top when component mounts (unless it's newsletter subscription)
+  // For newsletter, scroll to form section instead
+  useEffect(() => {
+    if (topic === 'newsletter' && formSectionRef.current) {
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        formSectionRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
+    } else {
+      // Default behavior: scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [topic]);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -159,12 +175,30 @@ export function ContactPage() {
         </div>
       </section>
 
-      <section className="contact-form-section">
+      <section className="contact-form-section" ref={formSectionRef}>
         <div className="container">
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Choose Your Inquiry Type</h2>
+            {topic === 'newsletter' ? (
+              <div style={{ 
+                textAlign: 'center', 
+                marginBottom: '2rem',
+                padding: '1.5rem',
+                backgroundColor: '#e7f3ff',
+                borderRadius: '8px',
+                border: '2px solid #2563eb'
+              }}>
+                <h2 style={{ marginBottom: '0.5rem', color: '#2563eb' }}>📧 Subscribe to Our Newsletter</h2>
+                <p style={{ margin: 0, color: '#666', fontSize: '1rem' }}>
+                  Stay updated with our latest insights, product updates, and technical resources. 
+                  We send 1–2 emails per month with valuable content for research professionals.
+                </p>
+              </div>
+            ) : (
+              <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Choose Your Inquiry Type</h2>
+            )}
             
-            {/* Three Entry Points - Interactive */}
+            {/* Three Entry Points - Interactive (hidden for newsletter subscription) */}
+            {topic !== 'newsletter' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
               <button
                 type="button"
@@ -235,17 +269,22 @@ export function ContactPage() {
                 </p>
               </button>
             </div>
+            )}
             
             <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              {selectedInquiryType === 'budgetary' && 'Request a Budgetary Quote'}
-              {selectedInquiryType === 'feasibility' && 'Technical Feasibility Check'}
-              {selectedInquiryType === 'engineer' && 'Talk to an Engineer (No Sales)'}
-              {!selectedInquiryType && 'Send Us a Message'}
+              {topic === 'newsletter' && 'Newsletter Subscription Form'}
+              {topic !== 'newsletter' && selectedInquiryType === 'budgetary' && 'Request a Budgetary Quote'}
+              {topic !== 'newsletter' && selectedInquiryType === 'feasibility' && 'Technical Feasibility Check'}
+              {topic !== 'newsletter' && selectedInquiryType === 'engineer' && 'Talk to an Engineer (No Sales)'}
+              {topic !== 'newsletter' && !selectedInquiryType && 'Send Us a Message'}
             </h2>
             <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
-              Fill out the form below and we'll get back to you within 24–48 hours.
+              {topic === 'newsletter' 
+                ? 'Please provide your information below to subscribe to our newsletter. We respect your privacy and will never spam you.'
+                : "Fill out the form below and we'll get back to you within 24–48 hours."
+              }
             </p>
-            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} />
+            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} prefillEmail={prefillEmail} />
             
             {/* What Happens After You Submit - Trust Block */}
             <div style={{ marginTop: '3rem', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
