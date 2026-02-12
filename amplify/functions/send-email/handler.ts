@@ -169,7 +169,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             from: 'noreply@ninescrolls.com',
             subject: `Thank you for your interest in ${safeProductName}`,
             html: `
-                <h2>Thank you for contacting Nine Scrolls Technology</h2>
+                <h2>Thank you for contacting NineScrolls LLC</h2>
                 <p>Dear ${safeName},</p>
                 <p>We have received your inquiry about the ${safeProductName}. Our team will review your request and get back to you within 1–2 business days.</p>
                 <p>Here's a summary of your inquiry:</p>
@@ -180,7 +180,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 <p>If you have any immediate questions, please don't hesitate to call us at +1 (858) 879-8898.</p>
                 <br>
                 <p>Best regards,</p>
-                <p>The Nine Scrolls Technology Team</p>
+                <p>The NineScrolls LLC Team</p>
             `,
         };
 

@@ -34,7 +34,7 @@ export function CompactRIE() {
     "sku": "compact-rie",
     "brand": {
       "@type": "Brand",
-      "name": "Nine Scrolls Technology"
+      "name": "NineScrolls LLC"
     },
     "category": "Semiconductor Manufacturing Equipment",
     "offers": {
@@ -45,7 +45,7 @@ export function CompactRIE() {
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
-        "name": "Nine Scrolls Technology",
+        "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
       }
     }

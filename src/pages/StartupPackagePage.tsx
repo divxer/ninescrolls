@@ -33,13 +33,13 @@ export function StartupPackagePage() {
                 "url": "https://ninescrolls.com/startup-package",
                 "name": "NineScrolls Startup Package – Supporting New Labs from Day One",
                 "description": "Special discounts, extended warranty, and complimentary accessories for new faculty establishing their labs. ICP-RIE/RIE, PECVD/ALD.",
-                "isPartOf": { "@type": "WebSite", "name": "NineScrolls Technology", "url": "https://ninescrolls.com" }
+                "isPartOf": { "@type": "WebSite", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" }
               },
               {
                 "@type": "Service",
                 "name": "Startup Package for New Faculty Labs",
                 "serviceType": "Laboratory equipment discount and onboarding program",
-                "provider": { "@type": "Organization", "name": "NineScrolls Technology", "url": "https://ninescrolls.com" },
+                "provider": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" },
                 "areaServed": ["US", "EU", "APAC"],
                 "audience": {
                   "@type": "Audience",
