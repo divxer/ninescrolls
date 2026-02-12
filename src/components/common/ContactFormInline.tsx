@@ -6,6 +6,7 @@ interface ContactFormInlineProps {
   className?: string;
   topic?: string;
   inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
+  onInquiryTypeChange?: (type: 'budgetary' | 'feasibility' | 'engineer' | null) => void;
   prefillEmail?: string;
   onSuccess?: () => void;
 }
@@ -41,7 +42,7 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
   }
 }
 
-export function ContactFormInline({ className = '', topic, inquiryType, prefillEmail, onSuccess }: ContactFormInlineProps) {
+export function ContactFormInline({ className = '', topic, inquiryType, onInquiryTypeChange, prefillEmail, onSuccess }: ContactFormInlineProps) {
   const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +169,8 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           error={error}
+          inquiryType={inquiryType}
+          onInquiryTypeChange={onInquiryTypeChange}
         />
       )}
     </div>

@@ -9,6 +9,8 @@ interface FormData {
   website: string; // honeypot field
 }
 
+type InquiryType = 'budgetary' | 'feasibility' | 'engineer' | null;
+
 interface ContactFormContentProps {
   formData: FormData;
   onFormDataChange: (data: FormData) => void;
@@ -16,7 +18,15 @@ interface ContactFormContentProps {
   isSubmitting: boolean;
   error: string | null;
   productName?: string;
+  inquiryType?: InquiryType;
+  onInquiryTypeChange?: (type: InquiryType) => void;
 }
+
+const INQUIRY_TYPE_LABELS: Record<string, string> = {
+  budgetary: 'Request a Budgetary Quote',
+  feasibility: 'Technical Feasibility Check',
+  engineer: 'Talk to an Engineer',
+};
 
 export function ContactFormContent({
   formData,
@@ -24,7 +34,9 @@ export function ContactFormContent({
   onSubmit,
   isSubmitting,
   error,
-  productName
+  productName,
+  inquiryType,
+  onInquiryTypeChange,
 }: ContactFormContentProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -84,11 +96,30 @@ export function ContactFormContent({
         />
       </div>
 
+      {onInquiryTypeChange && (
+        <div className="form-group">
+          <label htmlFor="inquiryType">Inquiry Type</label>
+          <select
+            id="inquiryType"
+            name="inquiryType"
+            value={inquiryType || ''}
+            onChange={(e) => onInquiryTypeChange((e.target.value || null) as InquiryType)}
+          >
+            <option value="">General Inquiry</option>
+            {Object.entries(INQUIRY_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="name">Name</label>
         <input
           type="text"
           id="name"
+          name="name"
+          autoComplete="name"
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
           onBlur={(e) => handleBlur('name', e.target.value)}
@@ -103,6 +134,8 @@ export function ContactFormContent({
         <input
           type="email"
           id="email"
+          name="email"
+          autoComplete="email"
           value={formData.email}
           onChange={(e) => handleChange('email', e.target.value)}
           onBlur={(e) => handleBlur('email', e.target.value)}
@@ -117,10 +150,12 @@ export function ContactFormContent({
         <input
           type="tel"
           id="phone"
+          name="phone"
+          autoComplete="tel"
           value={formData.phone}
           onChange={(e) => handleChange('phone', e.target.value)}
         />
-        <span style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.25rem', display: 'block' }}>
+        <span className="field-hint">
           Optional. Only if you prefer a call.
         </span>
       </div>
@@ -130,6 +165,8 @@ export function ContactFormContent({
         <input
           type="text"
           id="organization"
+          name="organization"
+          autoComplete="organization"
           value={formData.organization}
           onChange={(e) => handleChange('organization', e.target.value)}
         />
@@ -139,6 +176,7 @@ export function ContactFormContent({
         <label htmlFor="message">Message</label>
         <textarea
           id="message"
+          name="message"
           value={formData.message}
           onChange={(e) => handleChange('message', e.target.value)}
           onBlur={(e) => handleBlur('message', e.target.value)}
