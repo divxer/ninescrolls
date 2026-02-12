@@ -58,6 +58,10 @@ body {
     margin: 0 auto;
 }
 
+.logo {
+    margin-right: 40px;
+}
+
 .logo a {
     display: flex;
     align-items: center;
