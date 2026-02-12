@@ -22,7 +22,8 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
     email: '',
     phone: '',
     organization: '',
-    message: ''
+    message: '',
+    website: ''
   });
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -53,7 +54,8 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
         email: '',
         phone: '',
         organization: '',
-        message: ''
+        message: '',
+        website: ''
       });
       onClose?.();
     } catch (error) {

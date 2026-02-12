@@ -69,9 +69,6 @@ export function ContactFormModal({
     }
 
     try {
-      console.log('Starting form submission...');
-      console.log('Form data:', JSON.stringify(formDataToSubmit, null, 2));
-      
       const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
@@ -80,34 +77,10 @@ export function ContactFormModal({
         body: JSON.stringify(formDataToSubmit)
       });
 
-      console.log('Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      const responseText = await response.text();
-      console.log('Response body:', responseText);
-
       if (!response.ok) {
-        console.error('Request failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: responseText
-        });
+        const responseText = await response.text();
         throw new Error(`Failed to submit form: ${response.status} ${responseText}`);
       }
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-        console.log('Parsed response:', result);
-      } catch (e) {
-        console.warn('Failed to parse response as JSON:', responseText);
-        result = { message: 'Form submitted successfully' };
-      }
-
-      console.log('Form submission successful');
       setIsSuccess(true);
       setIsSubmitting(false);
       onFormDataChange({
@@ -249,7 +222,7 @@ export function ContactFormModal({
                 <ul>
                   <li>You'll receive a confirmation email within the next few minutes</li>
                   <li>Our sales team will review your request</li>
-                  <li>We'll respond with detailed information within 1 business day</li>
+                  <li>We'll respond with detailed information within 1–2 business days</li>
                 </ul>
               </div>
               <div className="success-actions">

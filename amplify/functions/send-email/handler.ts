@@ -57,20 +57,29 @@ type SendEmailRequest = {
 
 type LegacyHttpEvent = { httpMethod?: string };
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://ninescrolls.com',
-    'Access-Control-Allow-Methods': 'POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '300',
+const allowedOrigins = [
+    'https://ninescrolls.com',
+    'https://www.ninescrolls.com',
+];
+
+const getCorsHeaders = (origin?: string) => {
+    const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+    return {
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Methods': 'POST,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '300',
+    };
 };
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
-    console.log('Lambda function invoked with event:', JSON.stringify(event, null, 2));
+    const requestOrigin = event.headers?.origin;
+    const corsHeaders = getCorsHeaders(requestOrigin);
 
     // Get HTTP method
     const legacyEvent = event as LegacyHttpEvent;
     const method = event.requestContext?.http?.method || legacyEvent.httpMethod;
-    
+
     // Handle preflight requests (OPTIONS)
     if (method === 'OPTIONS') {
         return {
@@ -103,7 +112,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         const { productName, name, email, phone, organization, message } = formData;
-        console.log('Extracted form data:', { productName, name, email, phone, organization, message });
+        console.log('Form submission received:', { productName, hasName: !!name, hasEmail: !!email, hasMessage: !!message });
 
         // Validate required fields
         if (!productName || !name || !email || !message) {
@@ -160,9 +169,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             from: 'noreply@ninescrolls.com',
             subject: `Thank you for your interest in ${safeProductName}`,
             html: `
-                <h2>Thank you for contacting NineScrolls LLC</h2>
+                <h2>Thank you for contacting Nine Scrolls Technology</h2>
                 <p>Dear ${safeName},</p>
-                <p>We have received your inquiry about the ${safeProductName}. Our team will review your request and get back to you within one business day.</p>
+                <p>We have received your inquiry about the ${safeProductName}. Our team will review your request and get back to you within 1–2 business days.</p>
                 <p>Here's a summary of your inquiry:</p>
                 <ul>
                     <li><strong>Product:</strong> ${safeProductName}</li>
@@ -171,7 +180,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 <p>If you have any immediate questions, please don't hesitate to call us at +1 (858) 879-8898.</p>
                 <br>
                 <p>Best regards,</p>
-                <p>The NineScrolls Team</p>
+                <p>The Nine Scrolls Technology Team</p>
             `,
         };
 
