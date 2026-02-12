@@ -1,7 +1,11 @@
-/* About Hero Section */
+/* ================================
+   About Page Styles
+   ================================ */
+
+/* Hero Section */
 .about-hero {
-    height: 300px;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,102,204,0.3)),
+    min-height: 380px;
+    background: linear-gradient(rgba(11, 31, 77, 0.85), rgba(11, 31, 77, 0.7)),
                 url('/assets/images/research-facility.jpg') center/cover;
     display: flex;
     align-items: center;
@@ -9,125 +13,494 @@
     text-align: center;
     color: var(--white);
     margin-top: 60px;
+    padding: 4rem 2rem;
 }
 
 .about-hero h1 {
-    font-size: 3rem;
+    font-size: 2.8rem;
+    margin-bottom: 1.25rem;
+    color: var(--white);
+    font-weight: 700;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.about-hero-subtitle {
+    font-size: 1.15rem;
+    opacity: 0.9;
+    max-width: 650px;
+    margin: 0 auto;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ================================
+   How We Support You Section
+   ================================ */
+.about-services {
+    padding: 5rem 0;
+    background: var(--white);
+}
+
+.about-services h2 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-subtitle {
+    text-align: center;
+    color: #555;
+    font-size: 1.05rem;
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.service-card {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.service-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--primary-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    color: var(--white);
+}
+
+.service-card h3 {
+    color: #1a1a2e;
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.service-card p {
+    color: #555;
+    line-height: 1.65;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ================================
+   Manufacturing Partner Section
+   ================================ */
+.about-partner {
+    padding: 5rem 0;
+    background: #f8f9fa;
+}
+
+.about-partner h2 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 2.5rem;
+}
+
+.partner-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.partner-description {
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    text-align: center;
+}
+
+.partner-description p {
+    font-size: 1.05rem;
+    color: #444;
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+}
+
+.partner-description p:last-child {
+    margin-bottom: 0;
+}
+
+.partner-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.partner-stat-card {
+    background: var(--white);
+    padding: 1.75rem 1.25rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* ================================
+   Core Values Section
+   ================================ */
+.about-values {
+    padding: 5rem 0;
+    background: var(--white);
+}
+
+.about-values h2 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.values-list {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.value-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.value-item:hover {
+    background-color: #f8f9fa;
+}
+
+.value-icon-circle {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    background: #eef2ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.value-text h3 {
+    color: #1a1a2e;
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.value-text p {
+    color: #555;
+    line-height: 1.65;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ================================
+   Trust & Credentials Section
+   ================================ */
+.about-trust {
+    padding: 4rem 0;
+    background: #f8f9fa;
+}
+
+.about-trust h2 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 2.5rem;
+}
+
+.trust-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.trust-item {
+    background: var(--white);
+    padding: 1.75rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9ecef;
+}
+
+.trust-item h4 {
+    color: var(--primary-color);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.trust-item p {
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+}
+
+.trust-item p:last-child {
+    margin-bottom: 0;
+}
+
+.trust-highlight {
+    font-size: 1.1rem !important;
+    font-weight: 700;
+    color: #1a1a2e !important;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* ================================
+   CTA Section
+   ================================ */
+.about-cta {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, #0B1F4D 0%, #1a3a7a 100%);
+    text-align: center;
+    color: var(--white);
+}
+
+.about-cta h2 {
+    font-size: 2rem;
     margin-bottom: 1rem;
     color: var(--white);
 }
 
-.about-hero p {
-    font-size: 1.25rem;
-    opacity: 0.9;
-}
-
-/* Story Section */
-.story {
-    padding: 4rem 0;
-    background: var(--white);
-}
-
-.story h2 {
-    text-align: center;
-    color: var(--primary-color);
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-}
-
-.story-content {
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: 1.8;
-}
-
-.story-content p {
-    margin-bottom: 1.5rem;
+.about-cta p {
     font-size: 1.1rem;
-    color: #444;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.story-content p:last-child {
-    margin-bottom: 0;
+.about-cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
-/* Values Section */
-.values {
-    padding: 4rem 0;
-    background: var(--light-gray);
-}
-
-.values h2 {
-    text-align: center;
-    color: var(--primary-color);
-    font-size: 2.5rem;
-    margin-bottom: 3rem;
-}
-
-.values-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.value-card {
+.about-cta-buttons .btn-primary {
     background: var(--white);
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-}
-
-.value-card:hover {
-    transform: translateY(-5px);
-}
-
-.value-card h3 {
     color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+    border: 2px solid var(--white);
+    font-weight: 600;
 }
 
-.value-card p {
-    color: #666;
-    line-height: 1.6;
+.about-cta-buttons .btn-primary:hover {
+    background: transparent;
+    color: var(--white);
 }
 
-/* Responsive Design */
+.about-cta-buttons .btn-secondary {
+    background: transparent;
+    color: var(--white);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+}
+
+.about-cta-buttons .btn-secondary:hover {
+    border-color: var(--white);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
 @media (max-width: 768px) {
     .about-hero {
-        height: 250px;
-        padding: 2rem 0;
+        min-height: 300px;
+        padding: 3rem 1.5rem;
     }
 
     .about-hero h1 {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
     }
 
-    .about-hero p {
-        font-size: 1.1rem;
+    .about-hero-subtitle {
+        font-size: 1rem;
     }
 
-    .story,
-    .values {
-        padding: 3rem 0;
+    /* Services */
+    .about-services {
+        padding: 3.5rem 0;
     }
 
-    .story h2,
-    .values h2 {
-        font-size: 2rem;
-        margin-bottom: 1.5rem;
+    .about-services h2,
+    .about-partner h2,
+    .about-values h2,
+    .about-trust h2 {
+        font-size: 1.8rem;
     }
 
-    .values-grid {
+    .section-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+        padding: 0 1rem;
+    }
+
+    .services-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1.25rem;
         padding: 0 1rem;
     }
 
-    .story-content {
+    .service-card {
+        padding: 1.5rem;
+    }
+
+    /* Partner */
+    .about-partner {
+        padding: 3.5rem 0;
+    }
+
+    .partner-description {
+        padding: 0 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .partner-description p {
+        font-size: 1rem;
+        text-align: left;
+    }
+
+    .partner-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
         padding: 0 1rem;
     }
-} 
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    /* Values */
+    .about-values {
+        padding: 3.5rem 0;
+    }
+
+    .values-list {
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+
+    .value-item {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .value-icon-circle {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+    }
+
+    .value-icon-circle svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Trust */
+    .about-trust {
+        padding: 3.5rem 0;
+    }
+
+    .trust-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+
+    .trust-item {
+        padding: 1.25rem;
+    }
+
+    /* CTA */
+    .about-cta {
+        padding: 3.5rem 0;
+    }
+
+    .about-cta h2 {
+        font-size: 1.6rem;
+        padding: 0 1rem;
+    }
+
+    .about-cta p {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .about-cta-buttons {
+        flex-direction: column;
+        align-items: center;
+        padding: 0 2rem;
+    }
+
+    .about-cta-buttons .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .trust-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-stats {
+        grid-template-columns: 1fr;
+    }
+}

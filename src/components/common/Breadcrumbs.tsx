@@ -19,7 +19,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       "@type": "ListItem",
       "position": index + 1,
       "item": {
-        "@id": `https://ninescrolls.us${item.path}`,
+        "@id": `https://ninescrolls.com${item.path}`,
         "name": item.name
       }
     }))
