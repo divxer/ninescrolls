@@ -12,7 +12,31 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [openAccordions, setOpenAccordions] = useState<Set<string>>(new Set());
   const hoverTimerRef = useRef<number | null>(null);
+
+  const toggleAccordion = (category: string) => {
+    setOpenAccordions(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  // Header scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Analytics helper
   const trackProductMenuClick = (label: string, category: string) => {
@@ -48,6 +72,7 @@ export function Layout({ children }: LayoutProps) {
   useEffect(() => {
     setIsMenuOpen(false);
     setIsProductsOpen(false);
+    setOpenAccordions(new Set());
   }, [location]);
   
   // Close menu when clicking outside
@@ -75,12 +100,12 @@ export function Layout({ children }: LayoutProps) {
     <>
       <Chat />
       <CookieBanner />
-      <header className="main-header">
+      <header className={`main-header ${isScrolled ? 'scrolled' : ''}`}>
         <nav className="nav-container">
           <div className="logo">
             <Link to="/">
               <img src="/assets/images/logo.svg" alt="NineScrolls LLC" className="logo-img" />
-              <span className="logo-text">NineScrolls LLC</span>
+              <span className="logo-text">NineScrolls</span>
             </Link>
           </div>
           
@@ -127,42 +152,99 @@ export function Layout({ children }: LayoutProps) {
                 </Link>
               )}
               <div className="dropdown-panel" role="menu" aria-label="Products">
-                <div className="dropdown-grid">
-                  <div className="dropdown-col">
-                    <h4>Etching</h4>
-                    <Link to="/products/icp-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('ICP‑RIE','Etching'); }}>ICP‑RIE</Link>
-                    <Link to="/products/rie-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('RIE','Etching'); }}>RIE</Link>
-                    <Link to="/products/compact-rie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Compact RIE','Etching'); }}>Compact RIE</Link>
-                    <Link to="/products/rie-etcher#drie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('DRIE','Etching'); }}>DRIE (Bosch)</Link>
+                {isMenuOpen ? (
+                  /* Mobile accordion layout */
+                  <div className="mobile-accordion-menu">
+                    <div className="mobile-accordion">
+                      <button className={`accordion-trigger ${openAccordions.has('etching') ? 'open' : ''}`} onClick={() => toggleAccordion('etching')}>
+                        <span>Etching</span>
+                        <svg className="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div className={`accordion-content ${openAccordions.has('etching') ? 'open' : ''}`}>
+                        <Link to="/products/icp-etcher" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('ICP‑RIE','Etching'); }}>ICP‑RIE</Link>
+                        <Link to="/products/rie-etcher" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('RIE','Etching'); }}>RIE</Link>
+                        <Link to="/products/compact-rie" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Compact RIE','Etching'); }}>Compact RIE</Link>
+                        <Link to="/products/rie-etcher#drie" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('DRIE','Etching'); }}>DRIE (Bosch)</Link>
+                      </div>
+                    </div>
+                    <div className="mobile-accordion">
+                      <button className={`accordion-trigger ${openAccordions.has('deposition') ? 'open' : ''}`} onClick={() => toggleAccordion('deposition')}>
+                        <span>Deposition</span>
+                        <svg className="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div className={`accordion-content ${openAccordions.has('deposition') ? 'open' : ''}`}>
+                        <Link to="/products/pecvd" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('PECVD','Deposition'); }}>PECVD</Link>
+                        <Link to="/products/ald" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('ALD','Deposition'); }}>ALD</Link>
+                        <Link to="/products/hdp-cvd" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('HDP‑CVD','Deposition'); }}>HDP‑CVD</Link>
+                      </div>
+                    </div>
+                    <div className="mobile-accordion">
+                      <button className={`accordion-trigger ${openAccordions.has('coating') ? 'open' : ''}`} onClick={() => toggleAccordion('coating')}>
+                        <span>Coating / Developing</span>
+                        <svg className="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div className={`accordion-content ${openAccordions.has('coating') ? 'open' : ''}`}>
+                        <Link to="/products/coater-developer" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Coater / Developer','Coating / Developing'); }}>Coater / Developer</Link>
+                      </div>
+                    </div>
+                    <div className="mobile-accordion">
+                      <button className={`accordion-trigger ${openAccordions.has('cleaning') ? 'open' : ''}`} onClick={() => toggleAccordion('cleaning')}>
+                        <span>Cleaning / Stripping</span>
+                        <svg className="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div className={`accordion-content ${openAccordions.has('cleaning') ? 'open' : ''}`}>
+                        <Link to="/products/striper" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
+                        <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
+                        <Link to="/products/plasma-systems" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma Systems','Cleaning / Stripping'); }}>NS-Plasma Systems</Link>
+                        <Link to="/products/ns-plasma-4r" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 4R','Cleaning / Stripping'); }}>NS-Plasma 4R</Link>
+                        <Link to="/products/ns-plasma-20r" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 20R','Cleaning / Stripping'); }}>NS-Plasma 20R</Link>
+                        <Link to="/products/ns-plasma-20r-i" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 20R-I','Cleaning / Stripping'); }}>NS-Plasma 20R-I</Link>
+                      </div>
+                    </div>
+                    <div className="dropdown-cta">
+                      <Link to="/products" className="btn btn-primary" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
+                      <Link to="/contact?topic=quote" className="btn btn-secondary" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
+                    </div>
                   </div>
-                  <div className="dropdown-col">
-                    <h4>Deposition</h4>
-                    <Link to="/products/pecvd" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('PECVD','Deposition'); }}>PECVD</Link>
-                    <Link to="/products/ald" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('ALD','Deposition'); }}>ALD</Link>
-                    <Link to="/products/hdp-cvd" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('HDP‑CVD','Deposition'); }}>HDP‑CVD</Link>
+                ) : (
+                  /* Desktop grid layout */
+                  <div className="dropdown-grid">
+                    <div className="dropdown-col">
+                      <h4>Etching</h4>
+                      <Link to="/products/icp-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('ICP‑RIE','Etching'); }}>ICP‑RIE</Link>
+                      <Link to="/products/rie-etcher" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('RIE','Etching'); }}>RIE</Link>
+                      <Link to="/products/compact-rie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Compact RIE','Etching'); }}>Compact RIE</Link>
+                      <Link to="/products/rie-etcher#drie" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('DRIE','Etching'); }}>DRIE (Bosch)</Link>
+                    </div>
+                    <div className="dropdown-col">
+                      <h4>Deposition</h4>
+                      <Link to="/products/pecvd" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('PECVD','Deposition'); }}>PECVD</Link>
+                      <Link to="/products/ald" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('ALD','Deposition'); }}>ALD</Link>
+                      <Link to="/products/hdp-cvd" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('HDP‑CVD','Deposition'); }}>HDP‑CVD</Link>
+                    </div>
+                    <div className="dropdown-col">
+                      <h4>Coating / Developing</h4>
+                      <Link to="/products/coater-developer" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Coater / Developer','Coating / Developing'); }}>Coater / Developer</Link>
+                      <h4 style={{marginTop:'12px'}}>Cleaning / Stripping</h4>
+                      <Link to="/products/striper" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
+                      <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
+                      <Link to="/products/plasma-systems" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma Systems','Cleaning / Stripping'); }}>NS-Plasma Systems</Link>
+                      <Link to="/products/ns-plasma-4r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 4R','Cleaning / Stripping'); }}>NS-Plasma 4R</Link>
+                      <Link to="/products/ns-plasma-20r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R','Cleaning / Stripping'); }}>NS-Plasma 20R</Link>
+                      <Link to="/products/ns-plasma-20r-i" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R-I','Cleaning / Stripping'); }}>NS-Plasma 20R-I</Link>
+                    </div>
+                    <div className="dropdown-cta">
+                      <Link to="/products" className="btn btn-primary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
+                      <Link to="/contact?topic=quote" className="btn btn-secondary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
+                    </div>
                   </div>
-                  <div className="dropdown-col">
-                    <h4>Coating / Developing</h4>
-                    <Link to="/products/coater-developer" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Coater / Developer','Coating / Developing'); }}>Coater / Developer</Link>
-                    <h4 style={{marginTop:'12px'}}>Cleaning / Stripping</h4>
-                    <Link to="/products/striper" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
-                    <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
-                    <Link to="/products/plasma-systems" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma Systems','Cleaning / Stripping'); }}>NS-Plasma Systems</Link>
-                    <Link to="/products/ns-plasma-4r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 4R','Cleaning / Stripping'); }}>NS-Plasma 4R</Link>
-                    <Link to="/products/ns-plasma-20r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R','Cleaning / Stripping'); }}>NS-Plasma 20R</Link>
-                    <Link to="/products/ns-plasma-20r-i" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R-I','Cleaning / Stripping'); }}>NS-Plasma 20R-I</Link>
-                  </div>
-                  <div className="dropdown-cta">
-                    <Link to="/products" className="btn btn-primary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
-                    <Link to="/contact?topic=quote" className="btn btn-secondary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
-                  </div>
-                </div>
+                )}
               </div>
             </li>
             <li><Link to="/startup-package" className={`nav-link ${location.pathname === '/startup-package' || location.pathname === '/solutions/startup-labs' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Startup Package</Link></li>
             <li><Link to="/service-support" className={`nav-link ${location.pathname === '/service-support' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Service & Support</Link></li>
             <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Insights</Link></li>
-            <li><Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Contact Us</Link></li>
+            <li><Link to="/contact" className="nav-cta" onClick={() => setIsMenuOpen(false)}>Request a Quote</Link></li>
             <li className="cart-icon-nav"><CartIcon /></li>
           </ul>
         </nav>
