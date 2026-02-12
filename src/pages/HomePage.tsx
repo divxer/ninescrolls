@@ -14,7 +14,7 @@ export function HomePage() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "url": "https://ninescrolls.com",
-    "name": "Nine Scrolls Technology",
+    "name": "NineScrolls LLC",
     "description": "Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions.",
     "logo": "https://ninescrolls.com/assets/images/logo.png",
     "address": {

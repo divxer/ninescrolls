@@ -43,7 +43,7 @@ export function NSPlasma20RI() {
     "mpn": "NS-Plasma-20R-I",
     "brand": {
       "@type": "Brand",
-      "name": "Nine Scrolls Technology"
+      "name": "NineScrolls LLC"
     },
     "category": "Semiconductor Manufacturing Equipment",
     "offers": {
@@ -56,7 +56,7 @@ export function NSPlasma20RI() {
       "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
-        "name": "Nine Scrolls Technology",
+        "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
       }
     }

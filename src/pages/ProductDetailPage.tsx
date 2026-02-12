@@ -263,7 +263,7 @@ export function ProductDetailPage() {
   const ProductComponent = getProductComponent(productId || '');
   const seoData = productSEOData[productId || ''] || {
     title: 'Product Details',
-    description: 'Advanced semiconductor manufacturing equipment from Nine Scrolls Technology.',
+    description: 'Advanced semiconductor manufacturing equipment from NineScrolls LLC.',
     keywords: 'semiconductor equipment, manufacturing equipment, semiconductor technology',
   };
 
@@ -321,11 +321,11 @@ export function ProductDetailPage() {
     "sku": productId,
     "brand": {
       "@type": "Brand",
-      "name": "Nine Scrolls Technology"
+      "name": "NineScrolls LLC"
     },
     "manufacturer": {
       "@type": "Organization",
-      "name": "Nine Scrolls Technology",
+      "name": "NineScrolls LLC",
       "url": "https://ninescrolls.com"
     },
     "category": "Semiconductor Manufacturing Equipment",
@@ -337,7 +337,7 @@ export function ProductDetailPage() {
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
-        "name": "Nine Scrolls Technology",
+        "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
       },
       "url": `https://ninescrolls.com/products/${productId}`,

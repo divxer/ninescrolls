@@ -39,11 +39,11 @@ export function ContactPage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": "Contact Nine Scrolls Technology",
-    "description": "Get in touch with Nine Scrolls Technology for inquiries about our semiconductor manufacturing equipment and solutions.",
+    "name": "Contact NineScrolls LLC",
+    "description": "Get in touch with NineScrolls LLC for inquiries about our semiconductor manufacturing equipment and solutions.",
     "mainEntity": {
       "@type": "Organization",
-      "name": "Nine Scrolls Technology",
+      "name": "NineScrolls LLC",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "12546 Cabezon Pl",
@@ -76,7 +76,7 @@ export function ContactPage() {
     <>
       <SEO
         title="Contact Us"
-        description="Get in touch with Nine Scrolls Technology. Contact our team for inquiries about our semiconductor manufacturing equipment and solutions."
+        description="Get in touch with NineScrolls LLC. Contact our team for inquiries about our semiconductor manufacturing equipment and solutions."
         keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service"
         url="/contact"
       />
