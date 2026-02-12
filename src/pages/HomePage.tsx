@@ -13,10 +13,10 @@ export function HomePage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "url": "https://ninescrolls.us",
+    "url": "https://ninescrolls.com",
     "name": "Nine Scrolls Technology",
     "description": "Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions.",
-    "logo": "https://ninescrolls.us/assets/images/logo.png",
+    "logo": "https://ninescrolls.com/assets/images/logo.png",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "12546 Cabezon Pl",

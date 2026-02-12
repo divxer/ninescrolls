@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Chat } from '../common/Chat';
 import { CookieBanner } from '../common/CookieBanner';
 import { CartIcon } from '../common/CartIcon';
-import { NewsletterSubscribe } from '../common/NewsletterSubscribe';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -173,59 +172,142 @@ export function Layout({ children }: LayoutProps) {
       </main>
       <footer className="main-footer" id="contact">
         <div className="container">
-          <div className="footer-content">
-            <div className="footer-section">
-              <h4>Contact Us</h4>
-              <p>Email: info@ninescrolls.com</p>
-              <p>Sales: sales@ninescrolls.com</p>
-              <p>Support: support@ninescrolls.com</p>
-              <p style={{ marginTop: '0.5rem' }}>
-                Urgent inquiries: +1 (858) 879-8898<br />
-                <span style={{ fontSize: '0.85em', color: '#999' }}>
-                  Calls may be routed to voicemail outside business hours.
-                </span>
-              </p>
-            </div>
-            <div className="footer-section">
-              <h4>Quick Links</h4>
-              <div className="footer-nav-links">
-                <Link to="/products">Products</Link>
-                <Link to="/about">About Us</Link>
-                <Link to="/insights">Insights</Link>
-                <Link to="/service-support">Service & Support</Link>
-                <Link to="/contact">Contact</Link>
+          {/* Brand Header */}
+          <div className="footer-brand-header">
+            <div className="footer-brand-identity">
+              <img src="/assets/images/logo.svg" alt="NineScrolls LLC" className="footer-logo" />
+              <div>
+                <h3 className="footer-company-name">NineScrolls LLC</h3>
+                <p className="footer-tagline">Advanced Plasma Processing &amp; Thin Film Deposition Systems</p>
               </div>
             </div>
+          </div>
+
+          <div className="footer-divider" />
+
+          {/* 4-Column Layout */}
+          <div className="footer-content footer-4col">
+
+            {/* Column 1 – Contact & Location */}
+            <div className="footer-section footer-contact-col">
+              <h4>Contact</h4>
+
+              <div className="footer-contact-block">
+                <span className="footer-contact-label">General Inquiries</span>
+                <a href="mailto:info@ninescrolls.com" className="footer-email">info@ninescrolls.com</a>
+              </div>
+
+              <div className="footer-contact-block">
+                <span className="footer-contact-label">Sales &amp; Quotations</span>
+                <a href="mailto:sales@ninescrolls.com" className="footer-email">sales@ninescrolls.com</a>
+              </div>
+
+              <div className="footer-contact-block">
+                <span className="footer-contact-label">Technical Support</span>
+                <a href="mailto:support@ninescrolls.com" className="footer-email">support@ninescrolls.com</a>
+              </div>
+
+              <div className="footer-divider-thin" />
+
+              <div className="footer-contact-block">
+                <span className="footer-contact-label">San Diego Office</span>
+                <a href="tel:+18588798898" className="footer-phone">+1 (858) 879-8898</a>
+              </div>
+
+              <div className="footer-contact-block footer-emergency">
+                <span className="footer-contact-label">Emergency Service</span>
+                <span className="footer-contact-detail">24/7 response for installed systems</span>
+                <span className="footer-contact-note">(Existing customers only)</span>
+              </div>
+            </div>
+
+            {/* Column 2 – Equipment Platforms */}
             <div className="footer-section">
-              <h4>Follow Us</h4>
+              <h4>Equipment Platforms</h4>
+              <div className="footer-nav-links">
+                <Link to="/products/icp-etcher">Plasma Etching Systems</Link>
+                <Link to="/products/ald">ALD Systems</Link>
+                <Link to="/products/pecvd">PECVD Systems</Link>
+                <Link to="/products/hdp-cvd">HDP-CVD Systems</Link>
+                <Link to="/products/coater-developer">Sputtering &amp; Coating Systems</Link>
+                <Link to="/products">All Equipment →</Link>
+              </div>
+            </div>
+
+            {/* Column 3 – Company */}
+            <div className="footer-section">
+              <h4>Company</h4>
+              <div className="footer-nav-links">
+                <Link to="/about">About NineScrolls</Link>
+                <Link to="/about#manufacturer">Manufacturer Network</Link>
+                <Link to="/insights">Technical Insights</Link>
+                <Link to="/service-support">Service &amp; Support</Link>
+                <Link to="/startup-package">Startup Lab Package</Link>
+                <Link to="/contact">Contact Us</Link>
+              </div>
+            </div>
+
+            {/* Column 4 – Trust & Credentials */}
+            <div className="footer-section footer-trust-col">
+              <h4>Trust &amp; Credentials</h4>
+
+              <div className="footer-trust-block">
+                <span className="footer-trust-label">Manufacturer Partner</span>
+                <a href="http://en.beijingtailong.com/" target="_blank" rel="noopener noreferrer" className="footer-trust-partner">
+                  Tyloong Semiconductor Equipment
+                </a>
+                <span className="footer-trust-detail">30+ years in plasma processing</span>
+                <span className="footer-trust-detail">Continuous platform R&D investment</span>
+              </div>
+
+              <div className="footer-divider-thin" />
+
+              <div className="footer-trust-block">
+                <span className="footer-trust-label">U.S.-Based Operations</span>
+                <span className="footer-trust-location">San Diego, California</span>
+                <span className="footer-trust-detail">Direct technical support team</span>
+              </div>
+
+              <div className="footer-divider-thin" />
+
+              <div className="footer-trust-block">
+                <span className="footer-trust-label">D-U-N-S®</span>
+                <span className="footer-trust-detail">13-477-6662</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Positioning Statement */}
+          <div className="footer-positioning">
+            <p>Serving U.S. universities, research institutions, and advanced semiconductor laboratories.</p>
+          </div>
+
+          <div className="footer-divider" />
+
+          {/* Footer Bottom */}
+          <div className="footer-bottom">
+            <p>&copy; {new Date().getFullYear()} NineScrolls LLC. All rights reserved.</p>
+
+            <div className="footer-bottom-center">
               <div className="social-links">
                 <a href="https://linkedin.com/company/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                   </svg>
                 </a>
-                <a href="https://twitter.com/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                <a href="https://twitter.com/ninescrolls" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                 </a>
                 <a href="https://www.youtube.com/@NineScrollsLLC" className="social-link" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </a>
               </div>
-              <NewsletterSubscribe variant="footer" />
             </div>
-            <div className="footer-section">
-              <h4>Partners</h4>
-              <div className="footer-nav-links">
-                <a href="http://en.beijingtailong.com/" target="_blank" rel="noopener noreferrer">Beijing Tailong Electronic Technology</a>
-              </div>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} NineScrolls LLC. All rights reserved.</p>
+
             <div className="footer-links">
               <Link to="/privacy">Privacy Policy</Link>
               <span className="footer-link-separator">|</span>
