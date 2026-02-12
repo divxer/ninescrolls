@@ -86,8 +86,10 @@
 .contact-hours h4,
 .support-hours .contact-label {
     color: #333;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 0.5rem;
+    text-decoration: none;
+    font-size: 0.95rem;
 }
 
 .location-icon {
@@ -135,10 +137,12 @@
     margin-bottom: 0.5rem;
     color: #333;
     font-weight: 500;
+    text-align: left;
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #ddd;
@@ -147,8 +151,14 @@
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.form-group select {
+    background-color: var(--white);
+    cursor: pointer;
+}
+
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
@@ -213,12 +223,25 @@
     margin-right: auto;
 }
 
-.hero-card h3 {
+.hero-card .hero-card-title {
     margin: 0 0 0.75rem 0;
     font-size: 1.1rem;
     color: #EAEAEA;
     font-weight: 600;
     text-align: center;
+}
+
+/* Screen-reader only heading for accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
 
 .hero-card p {
@@ -406,6 +429,13 @@
     font-size: 0.85rem;
     color: #dc3545;
     margin-top: 0.25rem;
+}
+
+.field-hint {
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 0.25rem;
+    display: block;
 }
 
 /* Responsive Design */

@@ -40,7 +40,7 @@ export function ContactPage() {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     "name": "Contact NineScrolls LLC",
-    "description": "Get in touch with NineScrolls LLC for inquiries about our semiconductor manufacturing equipment and solutions.",
+    "description": "Contact NineScrolls LLC for a budgetary quote, technical feasibility check, or to talk directly with an engineer.",
     "mainEntity": {
       "@type": "Organization",
       "name": "NineScrolls LLC",
@@ -76,8 +76,8 @@ export function ContactPage() {
     <>
       <SEO
         title="Contact Us"
-        description="Get in touch with NineScrolls LLC. Contact our team for inquiries about our semiconductor manufacturing equipment and solutions."
-        keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service"
+        description="Contact NineScrolls LLC for a budgetary quote, technical feasibility check, or to talk directly with an engineer. We respond within 1–2 business days."
+        keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service, budgetary quote, technical consultation"
         url="/contact"
       />
       <Helmet>
@@ -92,11 +92,9 @@ export function ContactPage() {
 
           {/* Cost-Efficiency Hero Card */}
           <div className="hero-card">
-            <h3>Cost-efficient, research-grade configurations</h3>
+            <p className="hero-card-title">Cost-efficient, research-grade configurations</p>
             <p>
-              We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
-              Our systems are designed to deliver essential performance without unnecessary industrial features,
-              making them a practical and cost-efficient choice for university and research laboratories.
+              We specialize in helping research labs balance performance and budget — delivering essential capabilities without unnecessary industrial features.
             </p>
           </div>
         </div>
@@ -104,6 +102,7 @@ export function ContactPage() {
 
       <section className="contact-info">
         <div className="container">
+          <h2 className="section-heading sr-only">Contact Information</h2>
           <div className="contact-grid">
             <div className="contact-card">
               <h3>Office Location</h3>
@@ -230,7 +229,7 @@ export function ContactPage() {
                 : "Fill out the form below and we'll get back to you within 1–2 business days."
               }
             </p>
-            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
+            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} onInquiryTypeChange={topic !== 'newsletter' ? setSelectedInquiryType : undefined} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
 
             {/* What Happens After You Submit - Trust Block */}
             <div className="trust-block">
