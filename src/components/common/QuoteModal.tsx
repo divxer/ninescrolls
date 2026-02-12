@@ -140,7 +140,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                     <ul>
                       <li>You'll receive a confirmation email within the next few minutes</li>
                       <li>Our sales team will review your request</li>
-                      <li>We'll respond with detailed information within 1 business day</li>
+                      <li>We'll respond with detailed information within 1–2 business days</li>
                     </ul>
                   </div>
                   <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
@@ -157,7 +157,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                     <ul>
                       <li>You'll receive a confirmation email within the next few minutes</li>
                       <li>Our sales team will review your request</li>
-                      <li>We'll respond with detailed information within 1 business day</li>
+                      <li>We'll respond with detailed information within 1–2 business days</li>
                     </ul>
                   </div>
                   <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>

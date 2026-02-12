@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ContactFormContent } from './ContactFormContent';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
@@ -7,6 +7,7 @@ interface ContactFormInlineProps {
   topic?: string;
   inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
   prefillEmail?: string;
+  onSuccess?: () => void;
 }
 
 function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null): string {
@@ -20,7 +21,7 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
   if (inquiryType === 'engineer') {
     return '[Talk to an Engineer]\n\n';
   }
-  
+
   // Fallback to topic-based messages
   switch (topic) {
     case 'newsletter':
@@ -40,7 +41,7 @@ function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibil
   }
 }
 
-export function ContactFormInline({ className = '', topic, inquiryType, prefillEmail }: ContactFormInlineProps) {
+export function ContactFormInline({ className = '', topic, inquiryType, prefillEmail, onSuccess }: ContactFormInlineProps) {
   const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +50,11 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
     email: prefillEmail || '',
     phone: '',
     organization: '',
-    message: getPrefillMessage(topic, inquiryType)
+    message: getPrefillMessage(topic, inquiryType),
+    website: '' // honeypot
   });
   const [isSuccess, setIsSuccess] = useState(false);
+  const successRef = useRef<HTMLDivElement>(null);
 
   // Update message when inquiryType changes
   useEffect(() => {
@@ -67,19 +70,34 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
     }
   }, [inquiryType, topic]);
 
+  // Scroll to success message when it appears
+  useEffect(() => {
+    if (isSuccess && successRef.current) {
+      successRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Honeypot check - if the hidden field is filled, silently "succeed"
+    if (formData.website) {
+      setIsSuccess(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const { website: _honeypot, ...submitData } = formData;
       const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...formData,
+          ...submitData,
           productName: 'General Inquiry',
           topic: topic || 'general'
         })
@@ -95,9 +113,13 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
         email: '',
         phone: '',
         organization: '',
-        message: ''
+        message: '',
+        website: ''
       });
-      
+
+      // Notify parent of success (e.g., to reset inquiry type)
+      onSuccess?.();
+
       // Send form_submit event to Google Analytics and Segment
       const inquiryTypeLabel = inquiryType === 'budgetary' ? 'Budgetary Quote Request' :
                                inquiryType === 'feasibility' ? 'Technical Feasibility Check' :
@@ -122,18 +144,18 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
   return (
     <div className={`contact-form ${className}`}>
       {isSuccess ? (
-        <div className="success-message">
+        <div className="success-message" ref={successRef}>
           <h3>
-            {topic === 'newsletter' ? '🎉 Successfully Subscribed!' : 'Thank You for Your Message!'}
+            {topic === 'newsletter' ? 'Successfully Subscribed!' : 'Thank You for Your Message!'}
           </h3>
           <p>
-            {topic === 'newsletter' 
+            {topic === 'newsletter'
               ? 'Thank you for subscribing to our newsletter! You\'ll receive our latest insights, product updates, and technical resources (1–2 emails per month). We respect your privacy and you can unsubscribe at any time.'
-              : 'We have received your inquiry and will get back to you shortly.'
+              : 'We have received your inquiry and will get back to you within 1–2 business days.'
             }
           </p>
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             onClick={() => setIsSuccess(false)}
           >
             {topic === 'newsletter' ? 'Subscribe Another Email' : 'Send Another Message'}
@@ -150,4 +172,4 @@ export function ContactFormInline({ className = '', topic, inquiryType, prefillE
       )}
     </div>
   );
-} 
+}
