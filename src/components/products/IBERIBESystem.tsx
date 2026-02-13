@@ -32,7 +32,6 @@ export function IBERIBESystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
 
   return (
     <>
@@ -41,7 +40,7 @@ export function IBERIBESystem() {
           <div className="product-header">
             <h1>IBE/RIBE System Series</h1>
             <p>Advanced Ion Beam Etching System for High-Precision Material Processing</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -75,6 +74,12 @@ export function IBERIBESystem() {
                 We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
+            </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
             </div>
           </div>
         </div>
@@ -110,13 +115,13 @@ export function IBERIBESystem() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>Magnetic materials processing</li>
-                <li>Optical device fabrication</li>
-                <li>MEMS/NEMS device development</li>
-                <li>Multilayer film etching</li>
-                <li>Surface planarization</li>
-                <li>Precise pattern transfer</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F9F2;</span> Magnetic materials processing</li>
+                <li><span className="app-icon">&#x1F4A1;</span> Optical device fabrication</li>
+                <li><span className="app-icon">&#x2699;</span> MEMS/NEMS device development</li>
+                <li><span className="app-icon">&#x1F4CB;</span> Multilayer film etching</li>
+                <li><span className="app-icon">&#x1F6E0;</span> Surface planarization</li>
+                <li><span className="app-icon">&#x1F3AF;</span> Precise pattern transfer</li>
               </ul>
             </div>
           </div>
@@ -165,6 +170,14 @@ export function IBERIBESystem() {
                   <td>Film Non-Uniformity</td>
                   <td>Less than 5% (edge exclusion)</td>
                 </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 1.0m x 0.8m</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -204,20 +217,29 @@ export function IBERIBESystem() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/rie-etcher">RIE Etcher Series</a> – plasma etching platform with different mechanism.
-            </li>
-            <li>
-              <a href="/products/icp-etcher">ICP Etcher Series</a> – high‑density plasma etching alternative.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – process basics and terminology.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/rie-etcher" className="related-card">
+              <span className="related-card-icon">&#x26A1;</span>
+              <h3>RIE Etcher Series</h3>
+              <p>Plasma etching platform with different mechanism for reactive ion processing.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/products/icp-etcher" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>ICP Etcher Series</h3>
+              <p>High-density plasma etching alternative for advanced semiconductor processing.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Fundamentals</h3>
+              <p>Process basics and terminology for understanding etch technologies.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 

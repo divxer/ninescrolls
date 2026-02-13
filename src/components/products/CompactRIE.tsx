@@ -79,7 +79,7 @@ export function CompactRIE() {
               <p className="hero-tagline">
                 Ultra-small footprint RIE system for research labs. Full reactive ion etching capability in a 630mm × 600mm space.
               </p>
-              <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+              <p className="hero-subtitle-emphasis">
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>

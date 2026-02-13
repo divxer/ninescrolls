@@ -74,7 +74,7 @@ export function PlasmaCleaner() {
           <div className="product-header">
             <h1>Plasma Treatment/Cleaner System</h1>
             <p>Compact Plasma Cleaning and Surface Treatment System</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -108,6 +108,12 @@ export function PlasmaCleaner() {
                 We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
+            </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Brochure
+              </a>
             </div>
           </div>
         </div>

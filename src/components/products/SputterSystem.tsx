@@ -32,8 +32,6 @@ export function SputterSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
-
   return (
     <>
       <section className="product-detail-hero">
@@ -41,7 +39,7 @@ export function SputterSystem() {
           <div className="product-header">
             <h1>Sputter System Series</h1>
             <p>Advanced Physical Vapor Deposition System for High-Performance Thin Film Growth</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -76,6 +74,12 @@ export function SputterSystem() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -108,14 +112,14 @@ export function SputterSystem() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>Metallic thin films</li>
-                <li>Magnetic materials and coatings</li>
-                <li>Compound semiconductors</li>
-                <li>Magnetic films and devices</li>
-                <li>Optical and protective coatings</li>
-                <li>Compound semiconductor devices</li>
-                <li>Advanced materials research</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x2699;</span> Metallic thin films</li>
+                <li><span className="app-icon">&#x1F9F2;</span> Magnetic materials and coatings</li>
+                <li><span className="app-icon">&#x1F4BB;</span> Compound semiconductors</li>
+                <li><span className="app-icon">&#x1F9F2;</span> Magnetic films and devices</li>
+                <li><span className="app-icon">&#x1F4A1;</span> Optical and protective coatings</li>
+                <li><span className="app-icon">&#x26A1;</span> Compound semiconductor devices</li>
+                <li><span className="app-icon">&#x1F52C;</span> Advanced materials research</li>
               </ul>
             </div>
           </div>
@@ -159,6 +163,14 @@ export function SputterSystem() {
                   <td>Film Uniformity</td>
                   <td>Less than 1% (typical), less than 5% edge exclusion guaranteed</td>
                 </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 1.0m x 1.7m</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -198,20 +210,29 @@ export function SputterSystem() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/pecvd">PECVD System Series</a> – CVD alternative for dielectric films.
-            </li>
-            <li>
-              <a href="/products/ald">ALD System Series</a> – conformal thin films for complex topography.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – downstream pattern transfer considerations.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/pecvd" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>PECVD System Series</h3>
+              <p>CVD alternative for dielectric films and versatile thin film deposition.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/products/ald" className="related-card">
+              <span className="related-card-icon">&#x1F52C;</span>
+              <h3>ALD System Series</h3>
+              <p>Conformal thin films for complex topography with atomic-level precision.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Explained</h3>
+              <p>Downstream pattern transfer considerations for integrated processes.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 

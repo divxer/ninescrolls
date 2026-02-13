@@ -32,7 +32,7 @@ export function CoaterDeveloper() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
+
 
   return (
     <>
@@ -41,7 +41,7 @@ export function CoaterDeveloper() {
           <div className="product-header">
             <h1>Coater/Developer System Series</h1>
             <p>Advanced Photoresist Coating and Developing System</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -76,6 +76,12 @@ export function CoaterDeveloper() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -108,13 +114,13 @@ export function CoaterDeveloper() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>Photoresist Coating (positive/negative resists, electron-beam resists)</li>
-                <li>HMDS Priming and Adhesion Promotion</li>
-                <li>Developer Processing and Lift-off Processes</li>
-                <li>Thick Film and Multi-layer Applications</li>
-                <li>Anti-reflective and Specialty Polymer Coatings</li>
-                <li>Small-piece substrate and wafer processing (up to 12-inch or square substrates)</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F3A8;</span> Photoresist Coating (positive/negative resists, electron-beam resists)</li>
+                <li><span className="app-icon">&#x1F9EA;</span> HMDS Priming and Adhesion Promotion</li>
+                <li><span className="app-icon">&#x2699;</span> Developer Processing and Lift-off Processes</li>
+                <li><span className="app-icon">&#x1F4CB;</span> Thick Film and Multi-layer Applications</li>
+                <li><span className="app-icon">&#x1F6E1;</span> Anti-reflective and Specialty Polymer Coatings</li>
+                <li><span className="app-icon">&#x1F4E6;</span> Small-piece substrate and wafer processing (up to 12-inch or square substrates)</li>
               </ul>
             </div>
           </div>
@@ -167,6 +173,14 @@ export function CoaterDeveloper() {
                 <tr>
                   <td>Environmental Control (optional)</td>
                   <td>Temperature (23±0.5°C), Humidity (45±5% RH)</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 1.0m x 0.8m</td>
+                </tr>
+                <tr>
+                  <td>Edge Bead Removal</td>
+                  <td>Optional EBR capability</td>
                 </tr>
               </tbody>
             </table>

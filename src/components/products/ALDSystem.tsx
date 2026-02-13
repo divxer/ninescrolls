@@ -32,8 +32,6 @@ export function ALDSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
-
   return (
     <>
       <section className="product-detail-hero">
@@ -41,7 +39,7 @@ export function ALDSystem() {
           <div className="product-header">
             <h1>ALD System Series</h1>
             <p>Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -76,6 +74,12 @@ export function ALDSystem() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -109,13 +113,13 @@ export function ALDSystem() {
               </ul>
 
               <h3>Target Applications</h3>
-              <ul className="application-list">
-                <li>Advanced semiconductor devices</li>
-                <li>Nanotechnology research</li>
-                <li>Energy storage materials</li>
-                <li>Optical applications</li>
-                <li>Protective coatings</li>
-                <li>Novel materials development</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F4BB;</span> Advanced semiconductor devices</li>
+                <li><span className="app-icon">&#x1F52C;</span> Nanotechnology research</li>
+                <li><span className="app-icon">&#x1F50B;</span> Energy storage materials</li>
+                <li><span className="app-icon">&#x1F4A1;</span> Optical applications</li>
+                <li><span className="app-icon">&#x1F6E1;</span> Protective coatings</li>
+                <li><span className="app-icon">&#x1F9EA;</span> Novel materials development</li>
               </ul>
             </div>
           </div>
@@ -159,6 +163,14 @@ export function ALDSystem() {
                   <td>Number of Precursor Lines</td>
                   <td>2-6 lines (customizable)</td>
                 </tr>
+                <tr>
+                  <td>Remote Plasma</td>
+                  <td>Optional RF capability (300-1000W)</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 0.8m x 1.0m</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -196,20 +208,29 @@ export function ALDSystem() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/pecvd">PECVD System Series</a> – plasma-enhanced deposition alternative.
-            </li>
-            <li>
-              <a href="/products/hdp-cvd">HDP‑CVD System Series</a> – high-density plasma CVD for gap‑fill.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – terminology useful for ALD/CVD integration.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/pecvd" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>PECVD System Series</h3>
+              <p>Plasma-enhanced deposition alternative for versatile thin film growth applications.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/products/hdp-cvd" className="related-card">
+              <span className="related-card-icon">&#x1F3D7;</span>
+              <h3>HDP-CVD System Series</h3>
+              <p>High-density plasma CVD for superior gap-fill and dense dielectric films.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Fundamentals</h3>
+              <p>Terminology and concepts useful for ALD/CVD integration workflows.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 

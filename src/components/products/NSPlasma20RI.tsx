@@ -90,7 +90,7 @@ export function NSPlasma20RI() {
               <p className="hero-tagline">
                 Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.
               </p>
-              <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+              <p className="hero-subtitle-emphasis">
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>
