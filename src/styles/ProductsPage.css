@@ -23,6 +23,75 @@
     color: var(--white);
 }
 
+.hero-cta-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.products-hero .breadcrumbs {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    background: transparent;
+    border-bottom: none;
+}
+
+.products-hero .breadcrumbs a {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.products-hero .breadcrumbs a:hover {
+    color: var(--white);
+}
+
+.products-hero .breadcrumbs span[aria-current="page"] {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.products-hero .breadcrumbs li:not(:last-child)::after {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Collapsible section toggle */
+.section-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+}
+
+.section-toggle h2 {
+    margin: 0;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    color: var(--primary-color);
+}
+
+.toggle-icon.open {
+    transform: rotate(180deg);
+}
+
+.collapsed {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.expanded {
+    max-height: 2000px;
+    transition: max-height 0.4s ease;
+}
+
 /* Manufacturer Introduction Section */
 .manufacturer-intro {
     padding: 4rem 0;
@@ -106,6 +175,8 @@
     font-size: 1rem;
     color: #666;
     line-height: 1.2;
+    max-width: 120px;
+    text-align: center;
 }
 
 /* Product Categories */
@@ -120,6 +191,12 @@
     justify-content: center;
     flex-wrap: wrap;
     margin-bottom: 18px;
+    position: sticky;
+    top: 72px;
+    z-index: 100;
+    background: var(--white);
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
 }
 .tab-btn {
     border: 1px solid #e5e7eb;
@@ -195,7 +272,8 @@
 
 .section-intro {
     text-align: center;
-    max-width: 800px;
+    max-width: 750px;
+    width: 100%;
     margin: 0 auto 3rem;
     color: #666;
     font-size: 1.1rem;
@@ -203,9 +281,12 @@
 
 .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
     margin-top: 3rem;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Related reading */
@@ -310,13 +391,15 @@
     border-radius: 10px;
     box-shadow: 0 2px 15px rgba(0,0,0,0.1);
     overflow: hidden;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     height: 100%;
     display: flex;
+    cursor: pointer;
 }
 
 .category-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
 }
 
 .category-card a {
@@ -326,6 +409,7 @@
     flex-direction: column;
     padding: 1.5rem;
     width: 100%;
+    flex-grow: 1;
 }
 
 .category-card img {
@@ -356,6 +440,7 @@
     list-style: none;
     padding: 0;
     margin: 0;
+    margin-top: auto;
 }
 
 .product-features li,
@@ -374,58 +459,27 @@
     color: var(--primary-color);
 }
 
+.card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1rem;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: gap 0.2s ease;
+}
+
+.category-card:hover .card-cta {
+    gap: 8px;
+}
+
 /* Equipment Solutions */
 .equipment-solutions {
     padding: 6rem 0;
     background: var(--light-gray);
 }
 
-/* Plasma Etching Processes Section */
-.plasma-etching-processes {
-    padding: 6rem 0;
-    background: var(--white);
-}
-
-.plasma-etching-processes h2 {
-    text-align: center;
-    color: var(--primary-color);
-    margin-bottom: 3rem;
-    font-size: 2rem;
-}
-
-.processes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
-}
-
-.process-card {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-    padding: 2rem;
-    transition: transform 0.3s ease;
-    border: 1px solid #e0e0e0;
-}
-
-.process-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.process-card h3 {
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-.process-card p {
-    color: #666;
-    line-height: 1.6;
-    margin: 0;
-}
 
 /* FAQ Section */
 .faq-section {
@@ -747,8 +801,9 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .products-hero {
-        height: 250px;
-        padding: 2rem 0;
+        height: auto;
+        min-height: 250px;
+        padding: 2rem 0 3rem;
     }
 
     .products-hero h1 {
@@ -757,6 +812,18 @@
 
     .products-hero p {
         font-size: 1rem;
+    }
+
+    .hero-cta-group {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .hero-cta-group .btn {
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
     }
 
     .manufacturer-info {
@@ -802,7 +869,6 @@
         padding: 1.5rem;
     }
 
-    .plasma-etching-processes h2,
     .faq-section h2 {
         font-size: 1.8rem;
         margin-bottom: 2rem;
