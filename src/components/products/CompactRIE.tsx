@@ -5,7 +5,7 @@ import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { AcademicCitations } from '../common/AcademicCitations';
+
 import '../../styles/ProcessResults.css';
 
 export function CompactRIE() {
@@ -593,48 +593,6 @@ export function CompactRIE() {
           </div>
         </div>
       </section>
-
-      {/* Academic Citations */}
-      <AcademicCitations
-        heading="Trusted by Leading Research Labs"
-        subtitle="Our RIE etching systems are cited in 60+ peer-reviewed publications across top-tier journals including Science, Nature Communications, and Advanced Materials."
-        stats={[
-          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
-          { value: '2800', suffix: '+', label: 'Total Citations' },
-          { value: '20', suffix: '+', label: 'Research Institutions' },
-          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
-        ]}
-        publications={[
-          {
-            journal: 'Nature Communications',
-            tier: 'top',
-            title: 'Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions',
-            authors: 'X Zhang, B Liu, L Gao et al.',
-            year: '2021',
-            citations: 218,
-          },
-          {
-            journal: 'Science',
-            tier: 'top',
-            title: 'Multifunctional tendon-mimetic hydrogels',
-            authors: 'M Sun, H Li, Y Hou et al.',
-            year: '2023',
-            citations: 135,
-          },
-          {
-            journal: 'Advanced Materials',
-            tier: 'top',
-            title: 'Hidden vacancy benefit in monolayer 2D semiconductors',
-            authors: 'X Zhang, Q Liao, Z Kang et al.',
-            year: '2021',
-            citations: 115,
-          },
-        ]}
-        journalNames={['Nature Communications', 'Science', 'Adv. Materials', 'Adv. Functional Materials', 'Nano Research']}
-        onRequestQuote={openContactForm}
-        onDownloadDatasheet={() => setGateOpen(true)}
-        ctaLabel="Request a Quote"
-      />
 
       {/* Contact Section */}
       <section className="product-inquiry-section">
