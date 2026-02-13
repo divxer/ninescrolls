@@ -33,7 +33,7 @@ export function ICPEtcher() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
+
 
   return (
     <>
@@ -42,7 +42,7 @@ export function ICPEtcher() {
           <div className="product-header">
             <h1>ICP Etcher Series</h1>
             <p>Advanced Inductively Coupled Plasma Etching System with Uni-body Design</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -76,6 +76,12 @@ export function ICPEtcher() {
                 We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
+            </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
             </div>
           </div>
         </div>
@@ -191,13 +197,13 @@ export function ICPEtcher() {
               </ul>
 
               <h3>Target Applications</h3>
-              <ul className="application-list">
-                <li>Advanced semiconductor research</li>
-                <li>Production environment processing</li>
-                <li>Materials development</li>
-                <li>Device fabrication</li>
-                <li>Process optimization</li>
-                <li>Specialty manufacturing</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F4BB;</span> Advanced semiconductor research</li>
+                <li><span className="app-icon">&#x1F3ED;</span> Production environment processing</li>
+                <li><span className="app-icon">&#x1F9EA;</span> Materials development</li>
+                <li><span className="app-icon">&#x2699;</span> Device fabrication</li>
+                <li><span className="app-icon">&#x1F50D;</span> Process optimization</li>
+                <li><span className="app-icon">&#x1F3D7;</span> Specialty manufacturing</li>
               </ul>
             </div>
           </div>
@@ -236,6 +242,14 @@ export function ICPEtcher() {
                 <tr>
                   <td>Vacuum System</td>
                   <td>TMP & Mechanical Pump</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>1.0m x 1.5m</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
                 </tr>
               </tbody>
             </table>
@@ -276,23 +290,29 @@ export function ICPEtcher() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/rie-etcher">RIE Etcher Series</a> – compact RIE platform for research labs.
-            </li>
-            <li>
-              <a href="/insights/plasma-cleaning-precision-surface-preparation">Plasma Cleaning for Precision Surface Preparation</a> – improves adhesion and yield.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – overview and terminology.
-            </li>
-            <li>
-              <a href="/insights/future-of-plasma-etching-microelectronics">Future of Plasma Etching</a> – ALE, pulsed plasma, EUV resist removal.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/rie-etcher" className="related-card">
+              <span className="related-card-icon">&#x26A1;</span>
+              <h3>RIE Etcher Series</h3>
+              <p>Compact RIE platform for research labs with high-precision etching.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-cleaning-precision-surface-preparation" className="related-card">
+              <span className="related-card-icon">&#x2728;</span>
+              <h3>Plasma Cleaning for Surface Preparation</h3>
+              <p>Improves adhesion and yield through precision surface preparation.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+            <a href="/insights/future-of-plasma-etching-microelectronics" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Future of Plasma Etching</h3>
+              <p>Trends in ALE, pulsed plasma, and EUV resist removal technologies.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 

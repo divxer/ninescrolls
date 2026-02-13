@@ -33,8 +33,6 @@ export function RIEEtcher() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
-
   return (
     <>
       <section className="product-detail-hero">
@@ -42,7 +40,7 @@ export function RIEEtcher() {
           <div className="product-header">
             <h1>RIE Etcher Series</h1>
             <p>High-precision Reactive Ion Etching System with Compact Design</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -77,6 +75,12 @@ export function RIEEtcher() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -108,13 +112,13 @@ export function RIEEtcher() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>Silicon Processing</li>
-                <li>Dielectric Etching</li>
-                <li>Metal Etching</li>
-                <li>Polymer Processing</li>
-                <li>MEMS Fabrication</li>
-                <li>Research & Development</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F4BB;</span> Silicon Processing</li>
+                <li><span className="app-icon">&#x1F4A0;</span> Dielectric Etching</li>
+                <li><span className="app-icon">&#x2699;</span> Metal Etching</li>
+                <li><span className="app-icon">&#x1F9EA;</span> Polymer Processing</li>
+                <li><span className="app-icon">&#x1F3D7;</span> MEMS Fabrication</li>
+                <li><span className="app-icon">&#x1F52C;</span> Research & Development</li>
               </ul>
             </div>
           </div>
@@ -153,6 +157,18 @@ export function RIEEtcher() {
                 <tr>
                   <td>Process Control</td>
                   <td>Automated with endpoint detection</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>1.0m x 1.0m</td>
+                </tr>
+                <tr>
+                  <td>Pump System</td>
+                  <td>TMP & mechanical pump</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
                 </tr>
               </tbody>
             </table>
@@ -193,23 +209,29 @@ export function RIEEtcher() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/icp-etcher">ICP Etcher Series</a> – high-density plasma etching alternative.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – key concepts, terms, and control knobs.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – practical guidance and applications.
-            </li>
-            <li>
-              <a href="/insights/future-of-plasma-etching-microelectronics">Future of Plasma Etching</a> – trends: ALE, pulsed plasma, low‑damage etch.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/icp-etcher" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>ICP Etcher Series</h3>
+              <p>High-density plasma etching alternative for advanced applications.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Fundamentals</h3>
+              <p>Key concepts, terms, and control knobs for plasma etch processes.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Explained</h3>
+              <p>Practical guidance and applications for plasma etching technology.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 

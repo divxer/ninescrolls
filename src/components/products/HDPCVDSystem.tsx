@@ -32,8 +32,6 @@ export function HDPCVDSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
-
   return (
     <>
       <section className="product-detail-hero">
@@ -41,40 +39,47 @@ export function HDPCVDSystem() {
           <div className="product-header">
             <h1>HDP-CVD System Series</h1>
             <p>Advanced High-Density Plasma Chemical Vapor Deposition System for Superior Film Quality</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
+
             {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+            <div style={{
+              marginTop: '2rem',
+              padding: '1.5rem',
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
               borderRadius: '8px',
               backdropFilter: 'blur(4px)',
               maxWidth: '800px',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
+              <h3 style={{
+                margin: '0 0 0.75rem 0',
+                fontSize: '1.1rem',
+                color: '#EAEAEA',
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
+              <p style={{
+                margin: 0,
+                fontSize: '0.95rem',
+                color: '#EAEAEA',
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
+            </div>
+
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
             </div>
           </div>
         </div>
@@ -84,16 +89,16 @@ export function HDPCVDSystem() {
         <div className="container">
           <div className="product-content">
             <div className="product-images">
-              <img 
-                src="/assets/images/products/hdp-cvd/main.jpg" 
-                alt="HDP-CVD System" 
-                className="main-product-image" 
+              <img
+                src="/assets/images/products/hdp-cvd/main.jpg"
+                alt="HDP-CVD System"
+                className="main-product-image"
               />
             </div>
             <div className="product-info">
               <h2>Product Description</h2>
               <p>The HDP-CVD Series features a uni-body design that delivers exceptional film quality and superior gap-fill capability. Designed for semiconductor manufacturing, advanced packaging, and research applications, it balances high performance with space efficiency (footprint: approximately 1.0m x 1.5m). The system supports modular configuration, allowing for optimized cost and performance according to specific process requirements.</p>
-              
+
               <h3>Key Features</h3>
               <ul className="feature-list">
                 <li>Compact uni-body design with outstanding space efficiency</li>
@@ -107,13 +112,13 @@ export function HDPCVDSystem() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>High-quality dielectric film deposition</li>
-                <li>Gap-fill applications</li>
-                <li>Inter-metal dielectric (IMD)</li>
-                <li>Shallow trench isolation (STI)</li>
-                <li>Pre-metal dielectric (PMD)</li>
-                <li>Advanced packaging</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F4A0;</span> High-quality dielectric film deposition</li>
+                <li><span className="app-icon">&#x1F3D7;</span> Gap-fill applications</li>
+                <li><span className="app-icon">&#x26A1;</span> Inter-metal dielectric (IMD)</li>
+                <li><span className="app-icon">&#x1F50D;</span> Shallow trench isolation (STI)</li>
+                <li><span className="app-icon">&#x1F9EA;</span> Pre-metal dielectric (PMD)</li>
+                <li><span className="app-icon">&#x1F4E6;</span> Advanced packaging</li>
               </ul>
             </div>
           </div>
@@ -153,6 +158,18 @@ export function HDPCVDSystem() {
                   <td>Film Uniformity</td>
                   <td>Less than 5% (edge exclusion)</td>
                 </tr>
+                <tr>
+                  <td>Chamber Design</td>
+                  <td>Uni-body with liner & electrode temperature control</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 1.0m x 1.5m</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -182,6 +199,7 @@ export function HDPCVDSystem() {
                 <li>Silicon Oxynitride (SiON)</li>
                 <li>Silicon Carbide (SiC)</li>
                 <li>Low-k Dielectrics</li>
+                <li>Doped Silicate Glass (BSG, PSG, BPSG)</li>
               </ul>
             </div>
           </div>
@@ -189,20 +207,29 @@ export function HDPCVDSystem() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/pecvd">PECVD System Series</a> – versatile plasma‑enhanced CVD platform.
-            </li>
-            <li>
-              <a href="/products/ald">ALD System Series</a> – atomic‑level conformal deposition.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching">Plasma Etching Fundamentals</a> – etch/deposition integration.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/pecvd" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>PECVD System Series</h3>
+              <p>Versatile plasma-enhanced CVD platform for thin film deposition across a wide range of materials.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/products/ald" className="related-card">
+              <span className="related-card-icon">&#x1F52C;</span>
+              <h3>ALD System Series</h3>
+              <p>Atomic-level conformal deposition for ultra-thin films with precise thickness control.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Fundamentals</h3>
+              <p>Understanding etch and deposition integration for advanced semiconductor processes.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -237,4 +264,4 @@ export function HDPCVDSystem() {
       <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/hdp-cvd-system-datasheet.pdf'} fileName={'NineScrolls-HDP-CVD-Datasheet.pdf'} title={'Download HDP-CVD Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
     </>
   );
-} 
+}

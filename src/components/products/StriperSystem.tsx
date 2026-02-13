@@ -33,7 +33,7 @@ export function StriperSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
+
 
   return (
     <>
@@ -42,7 +42,7 @@ export function StriperSystem() {
           <div className="product-header">
             <h1>Stripping System Series</h1>
             <p>Advanced photoresist stripping and precision surface cleaning system</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -77,6 +77,12 @@ export function StriperSystem() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -108,14 +114,14 @@ export function StriperSystem() {
               </ul>
 
               <h3>Applications</h3>
-              <ul className="application-list">
-                <li>Photoresist Stripping (positive and negative)</li>
-                <li>Post-etch Residue Cleaning</li>
-                <li>Organic Contamination Removal</li>
-                <li>Surface Activation and Descum</li>
-                <li>Surface Preparation and Pre-metal Cleaning</li>
-                <li>2D Materials Etching (e.g., MoS₂, BN, Graphene)</li>
-                <li>Failure Analysis Sample Cleaning</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x2728;</span> Photoresist Stripping (positive and negative)</li>
+                <li><span className="app-icon">&#x1F9F9;</span> Post-etch Residue Cleaning</li>
+                <li><span className="app-icon">&#x1F6AB;</span> Organic Contamination Removal</li>
+                <li><span className="app-icon">&#x26A1;</span> Surface Activation and Descum</li>
+                <li><span className="app-icon">&#x1F6E0;</span> Surface Preparation and Pre-metal Cleaning</li>
+                <li><span className="app-icon">&#x1F52C;</span> 2D Materials Etching (e.g., MoS&#x2082;, BN, Graphene)</li>
+                <li><span className="app-icon">&#x1F50D;</span> Failure Analysis Sample Cleaning</li>
               </ul>
             </div>
           </div>
@@ -158,6 +164,14 @@ export function StriperSystem() {
                 <tr>
                   <td>Film Non-Uniformity</td>
                   <td>Less than 5% (edge exclusion)</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 0.8m x 0.8m</td>
+                </tr>
+                <tr>
+                  <td>Endpoint Detection</td>
+                  <td>Automated, real-time monitoring</td>
                 </tr>
               </tbody>
             </table>

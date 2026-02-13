@@ -231,7 +231,7 @@ export function NSPlasma4R() {
               <p className="hero-tagline">
                 Compact plasma system for research and sample preparation applications
               </p>
-              <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+              <p className="hero-subtitle-emphasis">
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>

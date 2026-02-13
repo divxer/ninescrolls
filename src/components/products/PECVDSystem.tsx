@@ -32,7 +32,6 @@ export function PECVDSystem() {
     document.body.style.overflow = 'auto';
   };
 
-  // no-op
 
   return (
     <>
@@ -41,7 +40,7 @@ export function PECVDSystem() {
           <div className="product-header">
             <h1>PECVD System Series</h1>
             <p>Advanced Plasma-Enhanced Chemical Vapor Deposition System for Versatile Film Growth</p>
-            <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: '#666', fontStyle: 'italic' }}>
+            <p className="hero-subtitle-emphasis">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
             
@@ -76,6 +75,12 @@ export function PECVDSystem() {
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
+            <div className="hero-cta-simple">
+              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+                Download Datasheet
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -107,13 +112,13 @@ export function PECVDSystem() {
               </ul>
 
               <h3>Target Applications</h3>
-              <ul className="application-list">
-                <li>Advanced semiconductor devices</li>
-                <li>Optoelectronic components</li>
-                <li>Protective coatings</li>
-                <li>Research & development</li>
-                <li>Novel materials synthesis</li>
-                <li>Device optimization</li>
+              <ul className="application-list-styled">
+                <li><span className="app-icon">&#x1F4BB;</span> Advanced semiconductor devices</li>
+                <li><span className="app-icon">&#x1F4A1;</span> Optoelectronic components</li>
+                <li><span className="app-icon">&#x1F6E1;</span> Protective coatings</li>
+                <li><span className="app-icon">&#x1F52C;</span> Research & development</li>
+                <li><span className="app-icon">&#x1F9EA;</span> Novel materials synthesis</li>
+                <li><span className="app-icon">&#x2699;</span> Device optimization</li>
               </ul>
             </div>
           </div>
@@ -153,6 +158,18 @@ export function PECVDSystem() {
                   <td>Film Uniformity</td>
                   <td>Less than 5% (edge exclusion)</td>
                 </tr>
+                <tr>
+                  <td>Plasma Discharge Gap</td>
+                  <td>Variable, optimized per process</td>
+                </tr>
+                <tr>
+                  <td>Footprint</td>
+                  <td>Approximately 1.0m x 1.0m</td>
+                </tr>
+                <tr>
+                  <td>Sample Loading</td>
+                  <td>Open-Load or Load-Lock (configurable)</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -191,20 +208,29 @@ export function PECVDSystem() {
       </section>
 
       {/* Related equipment & articles */}
-      <section className="related-reading">
+      <section className="related-reading-cards">
         <div className="container">
           <h2>Related Equipment & Articles</h2>
-          <ul>
-            <li>
-              <a href="/products/ald">ALD System Series</a> – atomic layer precision for conformal films.
-            </li>
-            <li>
-              <a href="/products/hdp-cvd">HDP‑CVD System Series</a> – gap‑fill and dense dielectric films.
-            </li>
-            <li>
-              <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Explained</a> – downstream steps and integration notes.
-            </li>
-          </ul>
+          <div className="related-cards-grid">
+            <a href="/products/ald" className="related-card">
+              <span className="related-card-icon">&#x1F52C;</span>
+              <h3>ALD System Series</h3>
+              <p>Atomic layer precision for conformal films with sub-nanometer thickness control.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/products/hdp-cvd" className="related-card">
+              <span className="related-card-icon">&#x2699;</span>
+              <h3>HDP-CVD System Series</h3>
+              <p>Gap-fill and dense dielectric films for advanced semiconductor manufacturing.</p>
+              <span className="related-card-link">View Product &rarr;</span>
+            </a>
+            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="related-card">
+              <span className="related-card-icon">&#x1F4D6;</span>
+              <h3>Plasma Etching Explained</h3>
+              <p>Downstream steps and integration notes for etch/deposition workflows.</p>
+              <span className="related-card-link">Read Article &rarr;</span>
+            </a>
+          </div>
         </div>
       </section>
 
