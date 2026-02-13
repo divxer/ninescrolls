@@ -5,6 +5,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
 import { QuoteModal } from '../components/common/QuoteModal';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import '../styles/ProductsPage.css';
 
 export function ProductsPage() {
@@ -13,6 +14,8 @@ export function ProductsPage() {
   const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
   const [gateOpen, setGateOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [etchingOpen, setEtchingOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   const tabs = ['All','Etching','Deposition','Coating/Developing','Cleaning/Stripping'] as const;
 
@@ -49,11 +52,14 @@ export function ProductsPage() {
       />
       <section className="products-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' }
+          ]} />
           <h1>Plasma Etching & Thin-Film Systems</h1>
           <p><strong>NineScrolls provides ICP‑RIE, RIE, PECVD and ALD systems</strong> for research labs, delivering low‑damage processing, ±3% uniformity, and wide temperature control for 150–200 mm wafers.</p>
-          <div style={{marginTop:'16px', display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
-            <a href="#" className="btn btn-primary" onClick={(e)=>{e.preventDefault(); setQuoteOpen(true);}}>Request a Quote</a>
-            <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>Download Brochure</a>
+          <div className="hero-cta-group">
+            <button type="button" className="btn btn-primary" onClick={() => setQuoteOpen(true)}>Request a Quote</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setGateOpen(true)}>Download Brochure</button>
             <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
           </div>
         </div>
@@ -83,15 +89,15 @@ export function ProductsPage() {
               <div className="manufacturer-stats">
                 <div className="stat-item">
                   <span className="stat-number">30+</span>
-                  <span className="stat-label">Years of<br />Experience</span>
+                  <span className="stat-label">Years of Experience</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-number">1000+</span>
-                  <span className="stat-label">Global<br />Installations</span>
+                  <span className="stat-label">Global Installations</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-number">300+</span>
-                  <span className="stat-label">Research<br />Institutions Served</span>
+                  <span className="stat-label">Research Institutions Served</span>
                 </div>
               </div>
             </div>
@@ -121,11 +127,12 @@ export function ProductsPage() {
                 <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP‑RIE plasma etching system in cleanroom" loading="lazy" decoding="async" />
                 <h3>ICP Etcher Series - Inductively Coupled Plasma Etching</h3>
                 <p>Advanced inductively coupled plasma etching system with superior process control and optimized etch rates for high-aspect-ratio etching applications.</p>
-                <ul className="product-features">
+                <ul className="feature-list">
                   <li>High-density plasma source</li>
                   <li>Multi-gas capability</li>
                   <li>Advanced temperature control</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -141,6 +148,7 @@ export function ProductsPage() {
                   <li>Multiple gas options</li>
                   <li>Compact design</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -156,6 +164,7 @@ export function ProductsPage() {
                   <li>Touchscreen control with fully automated operation</li>
                   <li>Modular design for easy maintenance and transport</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -171,6 +180,7 @@ export function ProductsPage() {
                   <li>High deposition rates</li>
                   <li>Multi-zone heating</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -186,6 +196,7 @@ export function ProductsPage() {
                   <li>Multiple material options</li>
                   <li>Precise control</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -201,6 +212,7 @@ export function ProductsPage() {
                   <li>Excellent conformality</li>
                   <li>Multiple precursor lines</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -216,6 +228,7 @@ export function ProductsPage() {
                   <li>DC/RF capability</li>
                   <li>Co-sputtering option</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -231,6 +244,7 @@ export function ProductsPage() {
                   <li>Precise angle control</li>
                   <li>Multiple gas options</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -246,6 +260,7 @@ export function ProductsPage() {
                   <li>High throughput</li>
                   <li>Process monitoring</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -261,6 +276,7 @@ export function ProductsPage() {
                   <li>Touchscreen control with fully automated operation</li>
                   <li>Surface cleaning and modification capabilities</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -276,6 +292,7 @@ export function ProductsPage() {
                   <li>13.56 MHz RF power up to 300W</li>
                   <li>PLC-controlled with touch screen interface</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -291,6 +308,7 @@ export function ProductsPage() {
                   <li>13.56 MHz RF plasma capability</li>
                   <li>Simplified operation for new users</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -306,6 +324,7 @@ export function ProductsPage() {
                   <li>300 W RF (13.56 MHz)</li>
                   <li>PLC + Touchscreen control</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -321,6 +340,7 @@ export function ProductsPage() {
                   <li>Advanced dispensing</li>
                   <li>Environmental control</li>
                 </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>
             </div>
             )}
@@ -331,9 +351,17 @@ export function ProductsPage() {
       {/* Etching Processes – modular sections like ICP‑RIE / RIE / DRIE */}
       <section className="etching-processes">
         <div className="container">
-          <h2>Etching Processes</h2>
+          <button
+            type="button"
+            className="section-toggle"
+            onClick={() => setEtchingOpen(!etchingOpen)}
+            aria-expanded={etchingOpen}
+          >
+            <h2>Etching Processes</h2>
+            <svg className={`toggle-icon ${etchingOpen ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
 
-          <div className="process-modules">
+          <div className={`process-modules ${etchingOpen ? 'expanded' : 'collapsed'}`}>
             <div className="process-module">
               <div className="process-text">
                 <div className="process-header">
@@ -461,26 +489,6 @@ export function ProductsPage() {
         </div>
       </section>
 
-      {/* New Semantic Content Section for SEO */}
-      <section className="plasma-etching-processes">
-        <div className="container">
-          <h2>Plasma Etching Processes & Technologies</h2>
-          <div className="processes-grid">
-            <div className="process-card">
-              <h3>Reactive Ion Etching (RIE)</h3>
-              <p>Our reactive ion etching systems combine chemical and physical etching mechanisms to achieve precise control over etch rates and profile anisotropy. Ideal for semiconductor manufacturing and MEMS fabrication applications.</p>
-            </div>
-            <div className="process-card">
-              <h3>Inductively Coupled Plasma Etching</h3>
-              <p>Advanced inductively coupled plasma etching technology delivers high-density plasma for superior etch rates and deep reactive ion etching (DRIE) capabilities. Perfect for high-aspect-ratio etching applications.</p>
-            </div>
-            <div className="process-card">
-              <h3>Plasma Treatment Solutions</h3>
-              <p>Comprehensive plasma treatment solutions for surface modification, cleaning, and activation. Our plasma processing equipment supports both wet etching and dry etching processes for maximum flexibility.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Related reading – internal links to key plasma etching articles */}
       <section className="related-reading">
@@ -598,23 +606,8 @@ export function ProductsPage() {
           <h2>Need Equipment Consultation?</h2>
           <p>Our technical team is ready to help you choose the right equipment for your application.</p>
           <div className="contact-buttons">
-            <a href="#" className="btn btn-primary" onClick={(e)=>{e.preventDefault(); setQuoteOpen(true);}}>Contact Our Team</a>
-            <a 
-              href="#" 
-              className="btn btn-secondary"
-              style={{ 
-                position: 'relative', 
-                zIndex: 1000,
-                pointerEvents: 'auto',
-                cursor: 'pointer'
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                setGateOpen(true);
-              }}
-            >
-              Download Equipment Guide
-            </a>
+            <button type="button" className="btn btn-primary" onClick={() => setQuoteOpen(true)}>Contact Our Team</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setGateOpen(true)}>Download Equipment Guide</button>
           </div>
         </div>
       </section>
@@ -622,8 +615,16 @@ export function ProductsPage() {
       {/* FAQ Section for Featured Snippets */}
       <section className="faq-section">
         <div className="container">
-          <h2>Frequently Asked Questions About Plasma Etching Equipment</h2>
-          <div className="faq-grid">
+          <button
+            type="button"
+            className="section-toggle"
+            onClick={() => setFaqOpen(!faqOpen)}
+            aria-expanded={faqOpen}
+          >
+            <h2>Frequently Asked Questions About Plasma Etching Equipment</h2>
+            <svg className={`toggle-icon ${faqOpen ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div className={`faq-grid ${faqOpen ? 'expanded' : 'collapsed'}`}>
             <div className="faq-item">
               <h3>What is plasma etching equipment?</h3>
               <p>Plasma etching equipment uses ionized gas (plasma) to remove material from substrates with precise control. Our plasma etching systems include reactive ion etching (RIE) and inductively coupled plasma etching technologies for semiconductor manufacturing and research applications.</p>
