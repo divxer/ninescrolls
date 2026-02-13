@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-// import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 export function ICPEtcher() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -288,6 +288,72 @@ export function ICPEtcher() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="Our ICP etching systems are cited in 60+ peer-reviewed publications across top-tier journals including Nature Communications, Advanced Materials, and Light: Science & Applications, powering breakthroughs in photonics, micro-optics, and nanofabrication."
+        stats={[
+          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '2800', suffix: '+', label: 'Total Citations' },
+          { value: '20', suffix: '+', label: 'Research Institutions' },
+          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'PhotoniX',
+            tier: 'high',
+            title: 'Biomimetic sapphire windows enabled by inside-out femtosecond laser deep-scribing',
+            authors: 'XQ Liu, YL Zhang, QK Li et al.',
+            year: '2022',
+            citations: 124,
+          },
+          {
+            journal: 'Advanced Functional Materials',
+            tier: 'high',
+            title: 'Rapid engraving of artificial compound eyes from curved sapphire substrate',
+            authors: 'XQ Liu, SN Yang, L Yu et al.',
+            year: '2019',
+            citations: 110,
+          },
+          {
+            journal: 'IEEE Photonics Technology Letters',
+            tier: 'mid',
+            title: 'Sapphire concave microlens arrays for high-fluence pulsed laser homogenization',
+            authors: 'XQ Liu, L Yu, QD Chen et al.',
+            year: '2019',
+            citations: 32,
+          },
+          {
+            journal: 'Laser & Photonics Reviews',
+            tier: 'high',
+            title: 'Neural-optic co-designed polarization-multiplexed metalens for compact computational spectral imaging',
+            authors: 'Q Zhang, P Lin, C Wang et al.',
+            year: '2024',
+            citations: 24,
+          },
+          {
+            journal: 'Optics Letters',
+            tier: 'mid',
+            title: 'Ultra-smooth micro-optical components of various geometries',
+            authors: 'XQ Liu, SN Yang, YL Sun et al.',
+            year: '2019',
+            citations: 23,
+          },
+          {
+            journal: 'Applied Optics',
+            tier: 'mid',
+            title: 'Silicon three-dimensional structures fabricated by femtosecond laser modification with dry etching',
+            authors: 'XQ Liu, L Yu, ZC Ma et al.',
+            year: '2017',
+            citations: 22,
+          },
+        ]}
+        journalNames={['Adv. Functional Materials', 'PhotoniX', 'Laser & Photonics Reviews', 'Light: Sci. & Applications', 'Optics Letters', 'Applied Optics']}
+        onRequestQuote={openContactForm}
+        onDownloadDatasheet={() => setGateOpen(true)}
+        ctaLabel="Request a Quote"
+      />
 
       {/* Related equipment & articles */}
       <section className="related-reading-cards">

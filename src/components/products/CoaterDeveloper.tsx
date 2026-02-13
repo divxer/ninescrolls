@@ -3,6 +3,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 // import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 export function CoaterDeveloper() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -215,6 +216,48 @@ export function CoaterDeveloper() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="NineScrolls equipment is used by researchers publishing in top-tier journals, enabling breakthroughs across nanofabrication, photonics, and advanced materials."
+        stats={[
+          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '2800', suffix: '+', label: 'Total Citations' },
+          { value: '20', suffix: '+', label: 'Research Institutions' },
+          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'Advanced Materials',
+            tier: 'top',
+            title: 'Hierarchical graphene foam for efficient omnidirectional solar-thermal energy conversion',
+            authors: 'H Ren, M Tang, B Guan et al.',
+            year: '2017',
+            citations: 945,
+          },
+          {
+            journal: 'Nature Communications',
+            tier: 'top',
+            title: 'Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions',
+            authors: 'X Zhang, B Liu, L Gao et al.',
+            year: '2021',
+            citations: 218,
+          },
+          {
+            journal: 'Science',
+            tier: 'top',
+            title: 'Multifunctional tendon-mimetic hydrogels',
+            authors: 'M Sun, H Li, Y Hou et al.',
+            year: '2023',
+            citations: 135,
+          },
+        ]}
+        journalNames={['Nature Communications', 'Science', 'Adv. Materials', 'Adv. Functional Materials', 'Energy & Env. Science']}
+        onRequestQuote={openContactForm}
+        onDownloadDatasheet={() => setGateOpen(true)}
+        ctaLabel="Request a Quote"
+      />
 
       <section className="product-contact">
         <div className="container">
