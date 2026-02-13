@@ -5,7 +5,7 @@ import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { AcademicCitations } from '../common/AcademicCitations';
+
 import '../../styles/ProcessResults.css';
 
 export function PlasmaCleaner() {
@@ -401,48 +401,6 @@ export function PlasmaCleaner() {
           </div>
         </div>
       </section>
-
-      {/* Academic Citations */}
-      <AcademicCitations
-        heading="Trusted by Leading Research Labs"
-        subtitle="Our plasma treatment systems are used by researchers publishing in top-tier journals, enabling breakthroughs in flexible electronics, surface engineering, and advanced materials."
-        stats={[
-          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
-          { value: '2800', suffix: '+', label: 'Total Citations' },
-          { value: '20', suffix: '+', label: 'Research Institutions' },
-          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
-        ]}
-        publications={[
-          {
-            journal: 'Advanced Materials',
-            tier: 'top',
-            title: 'Robust and multifunctional kirigami electronics with a tough and permeable aramid nanofiber framework',
-            authors: 'H Liu, H Li, Z Wang et al.',
-            year: '2022',
-            citations: 71,
-          },
-          {
-            journal: 'Nature Communications',
-            tier: 'top',
-            title: 'A high-current hydrogel generator with engineered mechanoionic asymmetry',
-            authors: 'H Liu, X Ji, Z Guo et al.',
-            year: '2024',
-            citations: 22,
-          },
-          {
-            journal: 'CCS Chemistry',
-            tier: 'mid',
-            title: 'Gas-induced phase transition of dipeptide supramolecular assembly',
-            authors: 'H Xue, J Fei, A Wu et al.',
-            year: '2021',
-            citations: 20,
-          },
-        ]}
-        journalNames={['Adv. Materials', 'Nature Communications', 'CCS Chemistry', 'Colloids & Surfaces', 'Adv. Functional Materials']}
-        onRequestQuote={openContactForm}
-        onDownloadDatasheet={() => setGateOpen(true)}
-        ctaLabel="Request a Quote"
-      />
 
       {/* Contact Section */}
       <section className="product-inquiry-section">
