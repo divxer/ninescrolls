@@ -3,6 +3,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 // import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 export function PECVDSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,6 +207,48 @@ export function PECVDSystem() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="Our PECVD systems are used by researchers publishing in top-tier journals, enabling breakthroughs in thin film encapsulation, 2D materials, and semiconductor device fabrication."
+        stats={[
+          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '2800', suffix: '+', label: 'Total Citations' },
+          { value: '20', suffix: '+', label: 'Research Institutions' },
+          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'Small',
+            tier: 'high',
+            title: 'In situ selenization engineered dual Schottky heterojunctions for high-speed broadband photonic communication detector arrays',
+            authors: 'S Ke, M Ge, S Zu et al.',
+            year: '2025',
+            citations: 1,
+          },
+          {
+            journal: 'Applied Physics Letters',
+            tier: 'mid',
+            title: 'A synaptic transistor with a stacked layer of SiNx and SiO2 deposited from hexamethyldisiloxane/O2',
+            authors: 'C Peng, Y Liu, C Yu et al.',
+            year: '2025',
+            citations: 3,
+          },
+          {
+            journal: 'Thin Solid Films',
+            tier: 'mid',
+            title: 'Low temperature plasma deposited SiO2/organosilicon stacked film for transparent gate dielectric of InGaZnO thin film transistor',
+            authors: 'C Peng, H Qin, Y Liu et al.',
+            year: '2024',
+            citations: 1,
+          },
+        ]}
+        journalNames={['Small', 'Applied Physics Letters', 'Thin Solid Films', 'Materials Today', 'ACS AMI']}
+        onRequestQuote={openContactForm}
+        onDownloadDatasheet={() => setGateOpen(true)}
+        ctaLabel="Request a Quote"
+      />
 
       {/* Related equipment & articles */}
       <section className="related-reading-cards">

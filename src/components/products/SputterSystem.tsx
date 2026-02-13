@@ -3,6 +3,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 // import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 export function SputterSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -208,6 +209,48 @@ export function SputterSystem() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="Our sputtering systems are used by researchers publishing in top-tier journals, enabling breakthroughs in catalysis, thin film engineering, and advanced materials."
+        stats={[
+          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '2800', suffix: '+', label: 'Total Citations' },
+          { value: '20', suffix: '+', label: 'Research Institutions' },
+          { value: '9', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'ACS Applied Materials & Interfaces',
+            tier: 'high',
+            title: 'Tuning the catalytic selectivity toward C2+ oxygenate products by manipulating Cu oxidation states in CO electroreduction',
+            authors: 'Y Yan, B Lei, X Wang et al.',
+            year: '2024',
+            citations: 4,
+          },
+          {
+            journal: 'Applied Catalysis B',
+            tier: 'high',
+            title: 'Mixed CO adsorption modes induced by lattice strain to facilitate C-C coupling during electrochemical CO reduction',
+            authors: 'Y Li, X Huang, B Zhang et al.',
+            year: '2025',
+            citations: 4,
+          },
+          {
+            journal: 'Advanced Materials',
+            tier: 'top',
+            title: 'Graphene-armored aluminum foil with enhanced anticorrosion performance as current collectors for lithium-ion battery',
+            authors: 'M Wang, M Tang, S Chen et al.',
+            year: '2017',
+            citations: 149,
+          },
+        ]}
+        journalNames={['ACS AMI', 'Applied Catalysis B', 'Adv. Materials', 'Energy & Env. Science', 'Adv. Functional Materials']}
+        onRequestQuote={openContactForm}
+        onDownloadDatasheet={() => setGateOpen(true)}
+        ctaLabel="Request a Quote"
+      />
 
       {/* Related equipment & articles */}
       <section className="related-reading-cards">
