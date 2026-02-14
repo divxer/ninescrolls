@@ -4,6 +4,11 @@ export interface ContactFormData {
   phone: string;
   organization: string;
   message: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }
 
 export interface ContactFormModalProps {

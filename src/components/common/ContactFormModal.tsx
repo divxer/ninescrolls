@@ -39,6 +39,14 @@ export function ContactFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gateOpen, setGateOpen] = useState(false);
+  const [isQuote, setIsQuote] = useState(false);
+  const [addressData, setAddressData] = useState({
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States'
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -46,9 +54,14 @@ export function ContactFormModal({
     }
   }, [isOpen]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     onFormDataChange({ ...formData, [name]: value });
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setAddressData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -58,7 +71,9 @@ export function ContactFormModal({
 
     const formDataToSubmit = {
       productName,
-      ...formData
+      ...formData,
+      inquiryType: isQuote ? 'budgetary' : 'general',
+      ...(isQuote ? { shippingAddress: addressData } : {})
     };
 
     if (!formDataToSubmit.message.trim()) {
@@ -181,16 +196,80 @@ export function ContactFormModal({
               </div>
               <div className="form-group">
                 <label htmlFor="organization">Organization:</label>
-                <input 
-                  type="text" 
-                  id="organization" 
-                  name="organization" 
-                  placeholder="Optional: Enter your organization name" 
+                <input
+                  type="text"
+                  id="organization"
+                  name="organization"
+                  placeholder="Optional: Enter your organization name"
                   autoComplete="organization"
                   value={formData.organization}
                   onChange={handleInputChange}
                 />
               </div>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+                  I need a budgetary quote (requires shipping address for tax calculation)
+                </label>
+              </div>
+              {isQuote && (
+                <div className="quote-address-fields" style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
+                  <p style={{ fontSize: '13px', color: '#555', marginBottom: '12px' }}>Shipping address is required to calculate applicable taxes.</p>
+                  <div className="form-group">
+                    <label htmlFor="address">Address *</label>
+                    <input type="text" id="address" name="address" placeholder="Street address" value={addressData.address} onChange={handleAddressChange} required autoComplete="street-address" />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label htmlFor="city">City *</label>
+                      <input type="text" id="city" name="city" placeholder="City" value={addressData.city} onChange={handleAddressChange} required autoComplete="address-level2" />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="state">State/Province *</label>
+                      <input type="text" id="state" name="state" placeholder="State" value={addressData.state} onChange={handleAddressChange} required autoComplete="address-level1" />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label htmlFor="zipCode">ZIP/Postal Code *</label>
+                      <input type="text" id="zipCode" name="zipCode" placeholder="ZIP Code" value={addressData.zipCode} onChange={handleAddressChange} required autoComplete="postal-code" />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="country">Country *</label>
+                      <select id="country" name="country" value={addressData.country} onChange={handleAddressChange} required autoComplete="country-name">
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Germany">Germany</option>
+                        <option value="France">France</option>
+                        <option value="Japan">Japan</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="Switzerland">Switzerland</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Norway">Norway</option>
+                        <option value="Denmark">Denmark</option>
+                        <option value="Finland">Finland</option>
+                        <option value="Belgium">Belgium</option>
+                        <option value="Austria">Austria</option>
+                        <option value="Italy">Italy</option>
+                        <option value="Spain">Spain</option>
+                        <option value="Ireland">Ireland</option>
+                        <option value="New Zealand">New Zealand</option>
+                        <option value="Israel">Israel</option>
+                        <option value="Taiwan">Taiwan</option>
+                        <option value="Hong Kong">Hong Kong</option>
+                        <option value="China">China</option>
+                        <option value="India">India</option>
+                        <option value="Brazil">Brazil</option>
+                        <option value="Mexico">Mexico</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="message">Message</label>
                 <textarea 

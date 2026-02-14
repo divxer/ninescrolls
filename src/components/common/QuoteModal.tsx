@@ -21,13 +21,19 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isQuote, setIsQuote] = useState(false);
   const [form, setForm] = useState({
     product: productName || '',
     name: '',
     email: '',
     phone: '',
     organization: '',
-    message: ''
+    message: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States'
   });
   const [token, setToken] = useState<string>('');
   const widgetRef = useRef<HTMLDivElement | null>(null);
@@ -65,7 +71,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
 
   if (!isOpen) return null;
 
-  const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -81,7 +87,14 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     }
     setIsSubmitting(true);
     try {
-      const payload = { productName: form.product || 'Products Inquiry', ...form, turnstileToken: token };
+      const { address, city, state, zipCode, country, ...rest } = form;
+      const payload = {
+        productName: rest.product || 'Products Inquiry',
+        ...rest,
+        turnstileToken: token,
+        inquiryType: isQuote ? 'budgetary' : 'general',
+        ...(isQuote ? { shippingAddress: { address, city, state, zipCode, country } } : {})
+      };
       const res = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
@@ -117,6 +130,58 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
               <div className="form-group"><label>Email</label><input type="email" name="email" placeholder="Enter your email address" value={form.email} onChange={update} required /></div>
               <div className="form-group"><label>Phone:</label><input name="phone" placeholder="Optional: Enter your phone number" value={form.phone} onChange={update} /></div>
               <div className="form-group"><label>Organization:</label><input name="organization" placeholder="Optional: Enter your organization name" value={form.organization} onChange={update} /></div>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+                  I need a budgetary quote (requires shipping address for tax calculation)
+                </label>
+              </div>
+              {isQuote && (
+                <div className="quote-address-fields" style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
+                  <p style={{ fontSize: '13px', color: '#555', marginBottom: '12px' }}>Shipping address is required to calculate applicable taxes.</p>
+                  <div className="form-group"><label>Address *</label><input name="address" placeholder="Street address" value={form.address} onChange={update} required={isQuote} autoComplete="street-address" /></div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group"><label>City *</label><input name="city" placeholder="City" value={form.city} onChange={update} required={isQuote} autoComplete="address-level2" /></div>
+                    <div className="form-group"><label>State/Province *</label><input name="state" placeholder="State" value={form.state} onChange={update} required={isQuote} autoComplete="address-level1" /></div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group"><label>ZIP/Postal Code *</label><input name="zipCode" placeholder="ZIP Code" value={form.zipCode} onChange={update} required={isQuote} autoComplete="postal-code" /></div>
+                    <div className="form-group">
+                      <label>Country *</label>
+                      <select name="country" value={form.country} onChange={update} required={isQuote} autoComplete="country-name">
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Germany">Germany</option>
+                        <option value="France">France</option>
+                        <option value="Japan">Japan</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="Switzerland">Switzerland</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Norway">Norway</option>
+                        <option value="Denmark">Denmark</option>
+                        <option value="Finland">Finland</option>
+                        <option value="Belgium">Belgium</option>
+                        <option value="Austria">Austria</option>
+                        <option value="Italy">Italy</option>
+                        <option value="Spain">Spain</option>
+                        <option value="Ireland">Ireland</option>
+                        <option value="New Zealand">New Zealand</option>
+                        <option value="Israel">Israel</option>
+                        <option value="Taiwan">Taiwan</option>
+                        <option value="Hong Kong">Hong Kong</option>
+                        <option value="China">China</option>
+                        <option value="India">India</option>
+                        <option value="Brazil">Brazil</option>
+                        <option value="Mexico">Mexico</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="form-group"><label>Message</label><textarea name="message" rows={4} placeholder="Please let us know your specific requirements or questions" value={form.message} onChange={update} required /></div>
               {turnstileSiteKey && (<div className="form-group"><div ref={widgetRef} /></div>)}
               <div className="form-actions">

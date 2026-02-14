@@ -23,7 +23,12 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
     phone: '',
     organization: '',
     message: '',
-    website: ''
+    website: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States'
   });
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -55,7 +60,12 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
         phone: '',
         organization: '',
         message: '',
-        website: ''
+        website: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: 'United States'
       });
       onClose?.();
     } catch (error) {
