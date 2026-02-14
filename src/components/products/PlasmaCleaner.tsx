@@ -10,11 +10,13 @@ import '../../styles/ProcessResults.css';
 
 export function PlasmaCleaner() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
 
   useScrollToTop();
 
-  const openContactForm = () => {
+  const openContactForm = (quote = false) => {
+    setIsQuoteIntent(quote);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -111,7 +113,7 @@ export function PlasmaCleaner() {
               </p>
             </div>
             <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
               <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
                 Download Brochure
               </a>
@@ -409,7 +411,7 @@ export function PlasmaCleaner() {
             <h2>Interested in this product?</h2>
             <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={openContactForm}>
+              <button className="btn btn-primary" onClick={() => openContactForm(false)}>
                 Request Information
               </button>
               <a 
@@ -438,6 +440,7 @@ export function PlasmaCleaner() {
 
       <QuoteModal
         isOpen={isModalOpen}
+        defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="Plasma Treatment/Cleaner System"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}

@@ -11,13 +11,15 @@ import { SEO } from '../common/SEO';
 
 export function NSPlasma20R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
   const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
 
   useScrollToTop();
 
-  const openContactForm = () => {
+  const openContactForm = (quote = false) => {
+    setIsQuoteIntent(quote);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -199,7 +201,7 @@ export function NSPlasma20R() {
               <p className="pricing-note">availability: in stock</p>
             </div>
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={openContactForm}>
+              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
                 Request Configuration
               </button>
               <a 
@@ -711,7 +713,7 @@ export function NSPlasma20R() {
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={openContactForm}>
+              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
               <a 
@@ -736,6 +738,7 @@ export function NSPlasma20R() {
 
       <QuoteModal
         isOpen={isModalOpen}
+        defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="NS-Plasma 20R"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}

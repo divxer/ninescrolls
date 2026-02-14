@@ -10,12 +10,14 @@ import '../../styles/ProcessResults.css';
 
 export function CompactRIE() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'main2'>('main');
 
   useScrollToTop();
 
-  const openContactForm = () => {
+  const openContactForm = (quote = false) => {
+    setIsQuoteIntent(quote);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -141,7 +143,7 @@ export function CompactRIE() {
             </div>
             
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={openContactForm}>
+              <button className="btn btn-primary btn-large" onClick={() => openContactForm(false)}>
                 Request Information
               </button>
               <a 
@@ -601,7 +603,7 @@ export function CompactRIE() {
             <h2>Interested in this product?</h2>
             <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={openContactForm}>
+              <button className="btn btn-primary" onClick={() => openContactForm(false)}>
                 Request Information
               </button>
               <a 
@@ -630,6 +632,7 @@ export function CompactRIE() {
 
       <QuoteModal
         isOpen={isModalOpen}
+        defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="Compact RIE Etcher (SV-RIE)"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}

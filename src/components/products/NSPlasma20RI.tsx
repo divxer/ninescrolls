@@ -10,11 +10,13 @@ import { SEO } from '../common/SEO';
 
 export function NSPlasma20RI() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
 
   useScrollToTop();
 
-  const openContactForm = () => {
+  const openContactForm = (quote = false) => {
+    setIsQuoteIntent(quote);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -175,10 +177,10 @@ export function NSPlasma20RI() {
             </div>
             
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={openContactForm}>
+              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
                 Request a Quote / Lead Time
               </button>
-              <button className="btn btn-secondary btn-large" onClick={openContactForm}>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(false)}>
                 Ask for Process Recommendation
               </button>
             </div>
@@ -501,10 +503,10 @@ export function NSPlasma20RI() {
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={openContactForm}>
+              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <button className="btn btn-secondary" onClick={openContactForm}>
+              <button className="btn btn-secondary" onClick={() => openContactForm(false)}>
                 Ask for Process Recommendation
               </button>
             </div>
@@ -517,6 +519,7 @@ export function NSPlasma20RI() {
 
       <QuoteModal
         isOpen={isModalOpen}
+        defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         onDownloadBrochure={handleDownloadBrochure}
         productName="NS-Plasma 20R-I (Integrated)"
