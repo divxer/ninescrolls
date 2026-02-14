@@ -8,6 +8,7 @@ interface QuoteModalProps {
   productName?: string;
   downloadLabel?: string;
   turnstileSiteKey?: string;
+  defaultIsQuote?: boolean;
 }
 
 declare global { interface Window { turnstile?: Turnstile } }
@@ -16,12 +17,12 @@ type Turnstile = {
   render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => void;
 };
 
-export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, downloadLabel = 'Download Brochure', turnstileSiteKey }: QuoteModalProps) {
+export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, downloadLabel = 'Download Brochure', turnstileSiteKey, defaultIsQuote = false }: QuoteModalProps) {
   const analytics = useCombinedAnalytics();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isQuote, setIsQuote] = useState(false);
+  const [isQuote, setIsQuote] = useState(defaultIsQuote);
   const [form, setForm] = useState({
     product: productName || '',
     name: '',
@@ -39,6 +40,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { if (!isOpen) { setIsSuccess(false); setError(null); } }, [isOpen]);
+  useEffect(() => { setIsQuote(defaultIsQuote); }, [defaultIsQuote]);
 
   // Load Cloudflare Turnstile if a site key is provided
   useEffect(() => {

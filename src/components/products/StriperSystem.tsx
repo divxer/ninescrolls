@@ -7,6 +7,7 @@ import { AcademicCitations } from '../common/AcademicCitations';
 
 export function StriperSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   // using QuoteModal; no local form state required
@@ -24,7 +25,8 @@ export function StriperSystem() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const openContactForm = () => {
+  const openContactForm = (quote = false) => {
+    setIsQuoteIntent(quote);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -79,7 +81,7 @@ export function StriperSystem() {
               </p>
             </div>
             <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={openContactForm}>Request a Quote</button>
+              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
               <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
                 Download Datasheet
               </a>
@@ -245,7 +247,7 @@ export function StriperSystem() {
           },
         ]}
         journalNames={['Nature Communications', 'Science', 'Adv. Materials', 'Adv. Functional Materials', 'Energy & Env. Science']}
-        onRequestQuote={openContactForm}
+        onRequestQuote={() => openContactForm(true)}
         onDownloadDatasheet={() => setGateOpen(true)}
         ctaLabel="Request a Quote"
       />
@@ -255,7 +257,7 @@ export function StriperSystem() {
           <h2>Request Information</h2>
           <p>Get detailed specs, pricing & customization options.</p>
           <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={openContactForm}>Contact Sales Team</button>
+            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
             <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
               <span className="icon-download"></span> Download Product Datasheet
             </a>
@@ -264,13 +266,14 @@ export function StriperSystem() {
       </section>
 
       <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={openContactForm}>
+        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
           Contact Sales Team
         </button>
       </div>
 
       <QuoteModal
         isOpen={isModalOpen}
+        defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="Stripping System Series"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
