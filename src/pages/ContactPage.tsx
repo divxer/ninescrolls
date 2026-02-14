@@ -15,10 +15,9 @@ export function ContactPage() {
   const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(null);
   const formSectionRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top when component mounts (unless it's newsletter subscription)
-  // For newsletter, scroll to form section instead
+  // Scroll to form section for newsletter or quote topics, otherwise scroll to top
   useEffect(() => {
-    if (topic === 'newsletter' && formSectionRef.current) {
+    if ((topic === 'newsletter' || topic === 'quote') && formSectionRef.current) {
       // Small delay to ensure DOM is fully rendered
       setTimeout(() => {
         formSectionRef.current?.scrollIntoView({
@@ -29,6 +28,13 @@ export function ContactPage() {
     } else {
       // Default behavior: scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [topic]);
+
+  // Auto-select budgetary inquiry type when topic=quote
+  useEffect(() => {
+    if (topic === 'quote') {
+      setSelectedInquiryType('budgetary');
     }
   }, [topic]);
 
