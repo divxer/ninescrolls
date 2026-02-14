@@ -52,7 +52,12 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     phone: '',
     organization: '',
     message: getPrefillMessage(topic, inquiryType),
-    website: '' // honeypot
+    website: '', // honeypot
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States'
   });
   const [isSuccess, setIsSuccess] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
@@ -91,7 +96,7 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     setError(null);
 
     try {
-      const { website: _honeypot, ...submitData } = formData;
+      const { website: _honeypot, address, city, state, zipCode, country, ...submitData } = formData;
       const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
@@ -100,7 +105,9 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
         body: JSON.stringify({
           ...submitData,
           productName: 'General Inquiry',
-          topic: topic || 'general'
+          topic: topic || 'general',
+          inquiryType: inquiryType || 'general',
+          ...(inquiryType === 'budgetary' ? { shippingAddress: { address, city, state, zipCode, country } } : {})
         })
       });
 
@@ -115,7 +122,12 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
         phone: '',
         organization: '',
         message: '',
-        website: ''
+        website: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: 'United States'
       });
 
       // Notify parent of success (e.g., to reset inquiry type)
