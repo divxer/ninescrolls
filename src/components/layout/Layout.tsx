@@ -244,7 +244,7 @@ export function Layout({ children }: LayoutProps) {
             <li><Link to="/startup-package" className={`nav-link ${location.pathname === '/startup-package' || location.pathname === '/solutions/startup-labs' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Startup Package</Link></li>
             <li><Link to="/service-support" className={`nav-link ${location.pathname === '/service-support' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Service & Support</Link></li>
             <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Insights</Link></li>
-            <li><Link to="/contact" className="nav-cta" onClick={() => setIsMenuOpen(false)}>Request a Quote</Link></li>
+            <li><Link to="/contact?topic=quote" className="nav-cta" onClick={() => setIsMenuOpen(false)}>Request a Quote</Link></li>
             <li className="cart-icon-nav"><CartIcon /></li>
           </ul>
         </nav>
