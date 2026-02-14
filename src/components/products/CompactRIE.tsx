@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 
 import '../../styles/ProcessResults.css';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function CompactRIE() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,6 +76,10 @@ export function CompactRIE() {
       {/* Hero Section - Strong Information Hero with Positioning */}
       <section className="product-detail-hero product-hero-enhanced">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Compact RIE Etcher (SV-RIE)', path: '/products/compact-rie' }
+          ]} />
           <div className="product-header-enhanced">
             <h1>Compact RIE Etcher (SV-RIE)</h1>
             <p className="product-subtitle">Ultra-Compact Reactive Ion Etching System</p>

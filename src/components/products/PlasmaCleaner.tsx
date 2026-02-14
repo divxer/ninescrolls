@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 
 import '../../styles/ProcessResults.css';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function PlasmaCleaner() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,6 +75,10 @@ export function PlasmaCleaner() {
       {/* Hero Section */}
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Plasma Treatment/Cleaner System', path: '/products/plasma-cleaner' }
+          ]} />
           <div className="product-header">
             <h1>Plasma Treatment/Cleaner System</h1>
             <p>Compact Plasma Cleaning and Surface Treatment System</p>

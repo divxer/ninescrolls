@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function SputterSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +40,10 @@ export function SputterSystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Sputter System Series', path: '/products/sputter' }
+          ]} />
           <div className="product-header">
             <h1>Sputter System Series</h1>
             <p>Advanced Physical Vapor Deposition System for High-Performance Thin Film Growth</p>

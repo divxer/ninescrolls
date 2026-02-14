@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function HDPCVDSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +40,10 @@ export function HDPCVDSystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'HDP-CVD System Series', path: '/products/hdp-cvd' }
+          ]} />
           <div className="product-header">
             <h1>HDP-CVD System Series</h1>
             <p>Advanced High-Density Plasma Chemical Vapor Deposition System for Superior Film Quality</p>

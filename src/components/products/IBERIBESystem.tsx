@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function IBERIBESystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,6 +41,10 @@ export function IBERIBESystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'IBE/RIBE System Series', path: '/products/ibe-ribe' }
+          ]} />
           <div className="product-header">
             <h1>IBE/RIBE System Series</h1>
             <p>Advanced Ion Beam Etching System for High-Precision Material Processing</p>

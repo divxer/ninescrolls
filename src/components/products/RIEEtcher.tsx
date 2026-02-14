@@ -3,6 +3,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function RIEEtcher() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +40,10 @@ export function RIEEtcher() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'RIE Etcher Series', path: '/products/rie-etcher' }
+          ]} />
           <div className="product-header">
             <h1>RIE Etcher Series</h1>
             <p>High-precision Reactive Ion Etching System with Compact Design</p>
