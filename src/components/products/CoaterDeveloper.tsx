@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function CoaterDeveloper() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +42,10 @@ export function CoaterDeveloper() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Coater/Developer System Series', path: '/products/coater-developer' }
+          ]} />
           <div className="product-header">
             <h1>Coater/Developer System Series</h1>
             <p>Advanced Photoresist Coating and Developing System</p>

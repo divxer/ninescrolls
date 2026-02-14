@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function PECVDSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,6 +41,10 @@ export function PECVDSystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'PECVD System Series', path: '/products/pecvd' }
+          ]} />
           <div className="product-header">
             <h1>PECVD System Series</h1>
             <p>Advanced Plasma-Enhanced Chemical Vapor Deposition System for Versatile Film Growth</p>

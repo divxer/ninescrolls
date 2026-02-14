@@ -8,6 +8,7 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function NSPlasma20R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,6 +78,10 @@ export function NSPlasma20R() {
       {/* Hero Section - Strong Information Hero with Positioning */}
       <section className="product-detail-hero product-hero-enhanced">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'NS-Plasma 20R', path: '/products/ns-plasma-20r' }
+          ]} />
           <div className="product-header-enhanced">
             <h1>NS-Plasma 20R</h1>
             <p className="product-subtitle">Compact RF Plasma Processing System (20 L)</p>

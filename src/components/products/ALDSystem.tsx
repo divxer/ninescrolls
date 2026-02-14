@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function ALDSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +40,10 @@ export function ALDSystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'ALD System Series', path: '/products/ald' }
+          ]} />
           <div className="product-header">
             <h1>ALD System Series</h1>
             <p>Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>

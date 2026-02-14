@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function StriperSystem() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +43,10 @@ export function StriperSystem() {
     <>
       <section className="product-detail-hero">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Stripping System Series', path: '/products/striper' }
+          ]} />
           <div className="product-header">
             <h1>Stripping System Series</h1>
             <p>Advanced photoresist stripping and precision surface cleaning system</p>

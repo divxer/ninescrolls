@@ -10,6 +10,7 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
+import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function NSPlasma4R() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,6 +228,10 @@ export function NSPlasma4R() {
       {/* Hero Section - Entry-Level Positioning */}
       <section className="product-detail-hero product-hero-enhanced">
         <div className="container">
+          <Breadcrumbs items={[
+            { name: 'Products', path: '/products' },
+            { name: 'NS-Plasma 4R', path: '/products/ns-plasma-4r' }
+          ]} />
           <div className="product-header-enhanced">
             <h1>NS-Plasma 4R</h1>
             <p className="product-subtitle">Plasma Cleaner (RF or Mid-Frequency)</p>
