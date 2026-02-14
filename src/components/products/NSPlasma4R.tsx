@@ -905,7 +905,7 @@ export function NSPlasma4R() {
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
-        productName="NS-Plasma 4R"
+        productName={`NS-Plasma 4R - ${selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)'}`}
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={() => {
           closeContactForm();
