@@ -63,9 +63,9 @@
 
 .system-image {
     width: 100%;
-    aspect-ratio: 1 / 1;
+    height: 300px;
     overflow: hidden;
-    background: #fff;
+    background-color: var(--light-gray);
     display: flex;
     align-items: center;
     justify-content: center;
