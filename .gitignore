@@ -35,3 +35,4 @@ amplifyconfiguration*
 /.env
 .npm
 /.npmrc
+/.claude
