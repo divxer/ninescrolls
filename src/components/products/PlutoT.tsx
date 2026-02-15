@@ -233,9 +233,9 @@ export function PlutoT() {
                     <div className="comparison-value">33% more RF power, touchscreen control</div>
                   </div>
                   <div className="comparison-item">
-                    <div className="comparison-label">Premium desktop cleaners</div>
+                    <div className="comparison-label">Harrick PDC-001-HP ($8,925)</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">4x+ RF power at similar or lower price</div>
+                    <div className="comparison-value">4.4x RF power (200W vs 45W), stainless steel chamber, touchscreen control</div>
                   </div>
                 </div>
               </div>
@@ -396,8 +396,8 @@ export function PlutoT() {
             </div>
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
-              <h3>vs. Harrick PDC-32G (~$10-12K)</h3>
-              <p>4.4x RF power (200W vs 45W), larger stainless steel chamber, and touchscreen control — all at a similar or lower price point. Better specifications across the board.</p>
+              <h3>vs. Harrick PDC-32G ($5,865)</h3>
+              <p>4.4x RF power (200W vs 18W), stainless steel chamber vs. glass, and touchscreen control vs. manual dials. At $4,134 more, PLUTO-T delivers a fundamentally different class of RF capability with automated operation.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">💰</div>
