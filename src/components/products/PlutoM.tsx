@@ -236,25 +236,10 @@ export function PlutoM() {
                 </p>
               </div>
 
-              <div className="comparison-block">
-                <h3>Compared to:</h3>
-                <div className="comparison-items">
-                  <div className="comparison-item">
-                    <div className="comparison-label">PLUTO-T ($9,999)</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">2x chamber volume for batch processing</div>
-                  </div>
-                  <div className="comparison-item">
-                    <div className="comparison-label">HY-20LRF ($14,499)</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">$1,500 less, 33% more RF power</div>
-                  </div>
-                  <div className="comparison-item">
-                    <div className="comparison-label">Desktop plasma cleaners</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">200W true RF, stainless steel batch chamber, touchscreen recipe management</div>
-                  </div>
-                </div>
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
+                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+                  <strong>Why PLUTO-M:</strong> 2x the chamber of PLUTO-T for batch processing, 33% more RF power than HY-20LRF at $1,500 less. The sweet spot between compact and industrial.
+                </p>
               </div>
             </div>
           </div>

@@ -224,20 +224,10 @@ export function PlutoT() {
                 dry pump upgrade available for oil-free operation.
               </p>
 
-              <div className="comparison-block">
-                <h3>Why 200W matters:</h3>
-                <div className="comparison-items">
-                  <div className="comparison-item">
-                    <div className="comparison-label">Faster activation</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">Surface treatments that take 10+ min at 50W finish in 2–3 min</div>
-                  </div>
-                  <div className="comparison-item">
-                    <div className="comparison-label">Broader recipe window</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">Power headroom for demanding substrates and multi-step processes</div>
-                  </div>
-                </div>
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
+                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+                  <strong>Why 200W matters:</strong> Surface treatments that take 10+ min at 50W complete in 2–3 min. More power also means broader recipe flexibility for demanding substrates.
+                </p>
               </div>
             </div>
           </div>
