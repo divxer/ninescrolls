@@ -4,6 +4,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
@@ -600,6 +601,63 @@ export function PlutoT() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="The PLUTO-T plasma cleaner is cited in 20+ peer-reviewed publications across top-tier journals including Nature, ACS Nano, and Small Methods, enabling breakthroughs in nanofabrication, biosensors, microfluidics, and surface engineering."
+        stats={[
+          { value: '20', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '200', suffix: '+', label: 'Total Citations' },
+          { value: '15', suffix: '+', label: 'Research Institutions' },
+          { value: '4', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'Advanced Optical Materials',
+            tier: 'high',
+            title: 'Ultraflexible photothermal superhydrophobic coating with multifunctional applications based on plasmonic TiN nanoparticles',
+            authors: 'B Wang, Z Jing, M Zhao et al.',
+            year: '2022',
+            citations: 54,
+          },
+          {
+            journal: 'Nature',
+            tier: 'top',
+            title: 'Metal 3D nanoprinting with coupled fields',
+            authors: 'B Liu, S Liu, V Devaraj et al.',
+            year: '2023',
+            citations: 48,
+          },
+          {
+            journal: 'Tribology International',
+            tier: 'high',
+            title: 'Fishbone-like micro-textured surface for unidirectional spreading of droplets and lubricity improvement',
+            authors: 'H Zhang, DAI Songjie, LIU Yang et al.',
+            year: '2024',
+            citations: 40,
+          },
+          {
+            journal: 'ACS Nano',
+            tier: 'top',
+            title: 'A calibration strategy for silicon nanowire field-effect transistor biosensors and its application in ultra-sensitive, label-free biosensing',
+            authors: 'D Chen, T Xu, Y Dou, T Li',
+            year: '2024',
+            citations: 16,
+          },
+          {
+            journal: 'ACS Applied Materials & Interfaces',
+            tier: 'high',
+            title: 'Facile transfer of a transparent silver nanowire pattern to a soft substrate using graphene oxide as a double-sided adhesion-tuning layer',
+            authors: 'J Wang, Y Jin, K Wang et al.',
+            year: '2023',
+            citations: 15,
+          },
+        ]}
+        journalNames={['Nature', 'ACS Nano', 'Small Methods', 'Nature Communications', 'Adv. Optical Materials', 'Lab on a Chip']}
+        onRequestQuote={() => openContactForm(true)}
+        ctaLabel="Request a Quote"
+      />
 
       {/* Trust Logos Section */}
       <TrustSection />
