@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
+import { AcademicCitations } from '../common/AcademicCitations';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
@@ -637,6 +638,63 @@ export function PlutoM() {
           </div>
         </div>
       </section>
+
+      {/* Academic Citations */}
+      <AcademicCitations
+        heading="Trusted by Leading Research Labs"
+        subtitle="The PLUTO-M plasma cleaner is cited in peer-reviewed publications across top-tier journals including Science, Advanced Materials, and ACS Applied Materials, supporting research in 2D materials, photodetectors, nano-antibiotics, and surface engineering."
+        stats={[
+          { value: '6', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '85', suffix: '+', label: 'Total Citations' },
+          { value: '5', suffix: '+', label: 'Research Institutions' },
+          { value: '4', suffix: ' yr', label: 'Publication Track Record' },
+        ]}
+        publications={[
+          {
+            journal: 'Science',
+            tier: 'top',
+            title: 'Transformable nano-antibiotics for mechanotherapy and immune activation against drug-resistant Gram-negative bacteria',
+            authors: 'RS Li, J Liu, C Wen, Y Shi et al.',
+            year: '2023',
+            citations: 37,
+          },
+          {
+            journal: 'Advanced Materials',
+            tier: 'top',
+            title: 'An Ultrasensitive and Broad-Spectrum MoS₂ Photodetector with Extrinsic Response Using Surrounding Homojunction',
+            authors: 'X Liu, J Zhu, Y Shan, C Liu et al.',
+            year: '2024',
+            citations: 21,
+          },
+          {
+            journal: 'Advanced Electronic Materials',
+            tier: 'high',
+            title: 'Few-layered MoS₂ Based Vertical van der Waals p-n Homojunction by Highly-efficient N₂ Plasma Implantation',
+            authors: 'Y Shan, Z Yin, J Zhu, X Li et al.',
+            year: '2022',
+            citations: 16,
+          },
+          {
+            journal: 'ACS Applied Materials & Interfaces',
+            tier: 'high',
+            title: 'Ultrafast and Highly Sensitive Dual-Channel FET Photodetector Based on a Two-Dimensional MoS₂ Homojunction',
+            authors: 'Y Shan, Z Yin, Y Zhang, C Pan et al.',
+            year: '2021',
+            citations: 7,
+          },
+          {
+            journal: 'Advanced Materials',
+            tier: 'top',
+            title: 'Tailoring Dynamic Chains of Cross-Linked PDMS to Hinder Oil Penetration',
+            authors: 'R Hao, H Jing, Q Wang, Y Han et al.',
+            year: '2025',
+            citations: 4,
+          },
+        ]}
+        journalNames={['Science', 'Adv. Materials', 'Adv. Electronic Materials', 'ACS Applied Materials']}
+        onRequestQuote={() => openContactForm(true)}
+        ctaLabel="Request a Quote"
+      />
 
       {/* Trust Logos Section */}
       <TrustSection />
