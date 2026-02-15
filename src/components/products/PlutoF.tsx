@@ -41,7 +41,7 @@ export function PlutoF() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/pluto-f#product",
     "name": "PLUTO-F — 500W RF Flagship Plasma Cleaner",
-    "description": "The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz, ~14.5L stainless steel chamber, touchscreen control with advanced recipe management. 11x the RF power of comparable desktop plasma cleaners at a similar price point.",
+    "description": "The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz, ~14.5L stainless steel chamber, touchscreen control with advanced recipe management. Designed for university core facilities, advanced materials labs, and semiconductor process development.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-f/main.jpg"],
     "sku": "pluto-f",
     "mpn": "PLUTO-F",
@@ -70,7 +70,7 @@ export function PlutoF() {
     <>
       <SEO
         title="PLUTO-F | 500W RF Flagship Plasma Cleaner | 14.5L Chamber | $15,999"
-        description="The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz with ~14.5L stainless steel chamber. 11x the RF power of comparable desktop plasma cleaners at a similar price point. Touchscreen control, advanced recipe management."
+        description="The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz with ~14.5L stainless steel chamber. Designed for core facilities, advanced materials research, and semiconductor process development. Touchscreen control, advanced recipe management."
         keywords="PLUTO-F, 500W RF Plasma Cleaner, Flagship Plasma Cleaner, 14.5L Chamber, Harrick Alternative, Surface Activation, Batch Processing, Research Lab, 13.56MHz plasma, Advanced Recipe Management"
         url="/products/pluto-f"
         image="/assets/images/products/pluto-f/main.jpg"
@@ -121,7 +121,7 @@ export function PlutoF() {
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
-                Same price range. 11x the RF power.
+                500W RF. 14.5L stainless steel. Under $16K.
               </h3>
               <p style={{
                 margin: 0,
@@ -130,9 +130,9 @@ export function PlutoF() {
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                PLUTO-F delivers 500W of RF power and a 14.5-liter stainless steel chamber for under $16,000.
-                Comparable desktop plasma cleaners top out at 45W with ~4L glass chambers — at similar or even higher prices.
-                PLUTO-F offers a fundamentally different class of RF capability for research labs and core facilities.
+                When your research requires aggressive surface activation, large-batch plasma cleaning, or complex
+                multi-step recipes — you need real RF power, not a desktop cleaner. PLUTO-F delivers industrial-level
+                capability at a research-lab price point.
               </p>
             </div>
 
@@ -141,28 +141,28 @@ export function PlutoF() {
                 <span className="bullet-icon">⚡</span>
                 <div className="bullet-content">
                   <span className="bullet-text-strong">500W RF (13.56 MHz)</span>
-                  <span className="bullet-text-sub">highest RF power in its class — 11x typical desktop cleaners</span>
+                  <span className="bullet-text-sub">continuously adjustable, highest in its class under $20K</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">📦</span>
                 <div className="bullet-content">
                   <span className="bullet-text-strong">~14.5L Stainless Steel Chamber</span>
-                  <span className="bullet-text-sub">large-capacity batch processing</span>
+                  <span className="bullet-text-sub">process wafers, devices, and components in batch</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">🖥️</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">Touchscreen Control</span>
-                  <span className="bullet-text-sub">advanced recipe management, fully automated</span>
+                  <span className="bullet-text-strong">Touchscreen + Recipe Management</span>
+                  <span className="bullet-text-sub">multi-step sequences, reproducible across users</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">💰</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">11x More Power, Similar Price</span>
-                  <span className="bullet-text-sub">500W vs 45W at comparable price points</span>
+                  <span className="bullet-text-strong">Under $16,000</span>
+                  <span className="bullet-text-sub">industrial-level RF power at research-lab pricing</span>
                 </div>
               </div>
             </div>
@@ -226,10 +226,10 @@ export function PlutoF() {
                 this RF power level.
               </p>
               <p className="narrative-text">
-                Comparable desktop plasma cleaners like the Harrick PDC-001-HP deliver just 45W of RF power with a ~4L
-                glass chamber and manual dials — at a similar price point. PLUTO-F provides 11x the RF power, 3.6x
-                the chamber volume, and touchscreen recipe management. For labs that need real processing capability,
-                PLUTO-F represents a fundamentally different tier of performance per dollar.
+                For labs that have outgrown entry-level desktop cleaners or need capabilities beyond what compact
+                systems can deliver — aggressive ashing, deep surface activation, large-batch processing — PLUTO-F
+                provides the RF power and chamber volume to handle it, with touchscreen recipe management for
+                reproducible, documented results across users and sessions.
               </p>
               <p className="narrative-text">
                 The system features continuously adjustable 13.56 MHz RF power, 2–3 gas lines supporting O₂, N₂, and Ar,
@@ -258,66 +258,25 @@ export function PlutoF() {
         </div>
       </section>
 
-      {/* Competitive Comparison — PLUTO-F vs. Desktop Plasma Cleaners */}
+      {/* What 500W RF Enables */}
       <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
         <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>PLUTO-F vs. Desktop Plasma Cleaners</h2>
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>What 500W RF Power Enables</h2>
           <p style={{ textAlign: 'center', marginBottom: '2.5rem', color: '#666', fontSize: '1.05rem' }}>
-            At a similar price point, PLUTO-F delivers a different class of RF capability.
+            Higher RF power isn't just a bigger number — it unlocks processes that lower-power systems cannot perform.
           </p>
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div className="specs-table-wrapper">
-              <table className="specs-table">
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '1rem', backgroundColor: '#e9ecef', fontWeight: '600' }}>Specification</th>
-                    <th style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#2563eb', color: '#fff', fontWeight: '600' }}>PLUTO-F</th>
-                    <th style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#e9ecef', fontWeight: '600' }}>Harrick PDC-001-HP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="spec-label">RF Power</td>
-                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>500W</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>45W</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">Frequency</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>13.56 MHz</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>13.56 MHz</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">Chamber Volume</td>
-                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>~14.5L</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>~4L</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">Chamber Material</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>Stainless Steel</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>Glass</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">Control</td>
-                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>Touchscreen + Recipes</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>Manual Dials</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">Gas Lines</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>2–3</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>1</td>
-                  </tr>
-                  <tr>
-                    <td className="spec-label">US Price</td>
-                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>$15,999</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>$8,925</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', borderTop: '3px solid #2563eb' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>Faster process cycles</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>Surface activation that takes 10–15 minutes at 50W completes in 1–2 minutes at 500W. For high-throughput labs, this means dramatically higher daily sample capacity.</p>
             </div>
-            <div style={{ marginTop: '1.5rem', padding: '1.25rem', backgroundColor: '#fff', borderRadius: '8px', border: '2px solid #2563eb' }}>
-              <p style={{ margin: 0, fontSize: '1rem', color: '#333', lineHeight: '1.6', textAlign: 'center', fontWeight: '500' }}>
-                11x the RF power · 3.6x the chamber volume · Stainless steel vs. glass · Touchscreen vs. manual dials
-              </p>
+            <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', borderTop: '3px solid #2563eb' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>Deeper surface modification</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>Aggressive ashing, deep activation, and stubborn contaminant removal require sustained high-power plasma density that low-power sources cannot generate — regardless of treatment time.</p>
+            </div>
+            <div style={{ padding: '1.5rem', backgroundColor: '#fff', borderRadius: '8px', borderTop: '3px solid #2563eb' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>Uniform large-batch processing</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>A 14.5L chamber needs significantly more RF power to maintain uniform plasma density across the entire volume. 500W ensures consistent treatment from center to edge, batch after batch.</p>
             </div>
           </div>
         </div>
@@ -367,20 +326,20 @@ export function PlutoF() {
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">⚡</div>
                 <h3>500W RF Power at 13.56 MHz</h3>
-                <p className="feature-highlight">Highest RF power in its class — 11x typical desktop plasma cleaners</p>
-                <p>Continuously adjustable 500W RF power at 13.56 MHz — the highest RF power available in any benchtop plasma cleaner under $20K. Enables aggressive cleaning, deep surface activation, and complex multi-step recipes that 45W desktop systems simply cannot achieve.</p>
+                <p className="feature-highlight">Highest RF power available in any benchtop plasma cleaner under $20K</p>
+                <p>Continuously adjustable 500W RF power at 13.56 MHz. Enables aggressive cleaning, deep surface activation, and complex multi-step recipes. The power headroom to handle demanding processes — not just routine cleaning.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">📦</div>
                 <h3>~14.5L Stainless Steel Chamber</h3>
-                <p className="feature-highlight">Large-capacity batch processing — 3.6x typical desktop chambers</p>
+                <p className="feature-highlight">Large-capacity batch processing for multi-sample workflows</p>
                 <p>Stainless steel chamber with ~14.5 liters of processing volume. Supports large-batch processing of multiple substrates, components, or devices simultaneously — essential for core facilities and production-scale R&D workflows.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">🖥️</div>
                 <h3>Touchscreen Control with Recipe Management</h3>
                 <p className="feature-highlight">Fully automated operation with advanced recipe storage</p>
-                <p>Touchscreen interface with advanced recipe management enables multi-step process sequences, parameter storage, and reproducible operation. A significant upgrade from manual-dial desktop systems — critical for research documentation and multi-user facilities.</p>
+                <p>Touchscreen interface with advanced recipe management enables multi-step process sequences, parameter storage, and reproducible operation across users and sessions — critical for research documentation and multi-user core facilities.</p>
               </div>
             </div>
           </div>
@@ -416,13 +375,13 @@ export function PlutoF() {
               <div className="application-icon">🧹</div>
               <h3>High-Power Plasma Cleaning</h3>
               <p className="application-use-case">Aggressive contaminant removal at 500W</p>
-              <p>Remove stubborn organic residues, photoresist, and surface contaminants with 500W of RF power — significantly faster and more thorough than low-power desktop cleaners.</p>
+              <p>Remove stubborn organic residues, photoresist, and surface contaminants with 500W of RF power. High power density means faster cycle times and more thorough cleaning — even on difficult substrates.</p>
             </div>
             <div className="application-card">
               <div className="application-icon">⚡</div>
               <h3>Advanced Surface Activation</h3>
               <p className="application-use-case">Deep activation for demanding bonding & coating</p>
-              <p>Achieve deep surface activation and energy modification for advanced bonding, thin film deposition, and coating processes. 500W enables activation levels that 45W systems cannot reach.</p>
+              <p>Achieve deep surface activation and energy modification for advanced bonding, thin film deposition, and coating processes. 500W enables activation levels and contact angle changes that lower-power systems cannot reach.</p>
             </div>
             <div className="application-card">
               <div className="application-icon">📦</div>
@@ -440,7 +399,7 @@ export function PlutoF() {
               <div className="application-icon">🔬</div>
               <h3>Industrial-Grade Research Processing</h3>
               <p className="application-use-case">Research-grade pricing with industrial-level RF power</p>
-              <p>Bridge the gap between desktop plasma cleaners and full industrial systems. PLUTO-F delivers industrial-level RF power at research-grade pricing — ideal for labs that have outgrown entry-level equipment.</p>
+              <p>Industrial-level RF power in a benchtop form factor at research-grade pricing. PLUTO-F fills the gap between entry-level cleaners and full industrial platforms — ideal for labs that need more capability without the complexity and cost of production-scale systems.</p>
             </div>
           </div>
         </div>
@@ -452,11 +411,10 @@ export function PlutoF() {
           <div className="positioning-statement positioning-block-strategic">
             <h2 className="positioning-title">System Positioning</h2>
             <p className="positioning-lead">
-              PLUTO-F is NineScrolls' flagship RF plasma cleaner, delivering an unmatched combination of 500W RF power
-              and 14.5-liter chamber capacity at under $16,000. While comparable desktop plasma cleaners offer 45W
-              with ~4L glass chambers at similar price points, PLUTO-F delivers 11x the RF power with a stainless steel
-              chamber, touchscreen recipe management, and multi-gas capability — a fundamentally different class of
-              system for university labs and R&D centers that need real processing capability.
+              PLUTO-F is NineScrolls' flagship RF plasma cleaner, delivering 500W of continuously adjustable RF power
+              with a 14.5-liter stainless steel chamber at under $16,000. Designed for university core facilities,
+              advanced materials labs, and semiconductor process development teams that need high-power plasma
+              processing with reproducible, recipe-managed workflows.
             </p>
             <p className="positioning-note">
               For labs needing a mid-tier option, see <Link to="/products/pluto-m" style={{ color: '#2563eb' }}>PLUTO-M</Link> ($12,999, 200W, ~8L).
@@ -473,23 +431,23 @@ export function PlutoF() {
           <div className="comparison-choice-grid">
             <div className="choice-item">
               <div className="choice-icon">⚡</div>
-              <h3>Need the highest RF power under $20K</h3>
-              <p>500W of RF power at 13.56 MHz — 11x more than typical desktop plasma cleaners and 3.3x more than HY-20LRF. No other system in this price range comes close.</p>
+              <h3>Your processes demand high RF power</h3>
+              <p>Aggressive ashing, deep surface activation, stubborn contaminant removal — these require sustained high-power plasma density. 500W at 13.56 MHz gives you the headroom to handle demanding applications.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">📦</div>
-              <h3>Process large batches routinely</h3>
-              <p>14.5L stainless steel chamber supports high-throughput batch processing for core facilities and production-scale R&D — 3.6x the volume of typical desktop plasma cleaners.</p>
+              <h3>You process multiple samples per run</h3>
+              <p>14.5L stainless steel chamber supports batch processing of wafers, devices, and components. Essential for core facilities and labs with high daily sample throughput.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">🖥️</div>
-              <h3>Require advanced recipe management</h3>
-              <p>Touchscreen control with multi-step recipe storage and recall. Essential for multi-user facilities, research documentation, and complex process development.</p>
+              <h3>Multiple users share your system</h3>
+              <p>Touchscreen recipe management ensures every user runs the same documented process. Store, recall, and lock recipes — critical for shared facilities and publication-quality reproducibility.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">💰</div>
-              <h3>Want to upgrade beyond desktop plasma cleaners</h3>
-              <p>Desktop systems max out at ~45W. PLUTO-F delivers 500W — an 11x power increase with a 14.5L stainless steel chamber and touchscreen automation. The direct upgrade path for labs that have outgrown entry-level equipment.</p>
+              <h3>You need industrial capability at research pricing</h3>
+              <p>PLUTO-F delivers the RF power and chamber capacity of systems costing $30K+ in a benchtop format under $16K. Designed for labs that need real processing capability without production-scale complexity.</p>
             </div>
           </div>
         </div>
@@ -642,10 +600,10 @@ export function PlutoF() {
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
-                Q: How does PLUTO-F compare to desktop plasma cleaners like Harrick?
+                Q: Who is PLUTO-F designed for?
               </h3>
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
-                A: PLUTO-F delivers 500W of RF power vs. Harrick's maximum of 45W (11x more), with a 14.5L stainless steel chamber vs. ~4L glass (3.6x larger), and touchscreen recipe management vs. manual dials. Harrick's most powerful model (PDC-001-HP) is listed at $8,925 on Fisher Scientific, while PLUTO-F is $15,999. The price difference reflects a fundamentally different class of system: industrial-level RF power, large-batch stainless steel processing, and fully automated recipe control vs. a compact desktop cleaner. For labs that need high-power capability, PLUTO-F offers dramatically more performance per dollar.
+                A: PLUTO-F is designed for labs that need more capability than compact desktop plasma cleaners can provide. If your work involves aggressive ashing, deep surface activation, large-batch processing, or multi-step recipe sequences — and you need reproducible, documented results across multiple users — PLUTO-F provides the RF power, chamber volume, and automation to handle it.
               </p>
             </div>
             <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
@@ -729,7 +687,7 @@ export function PlutoF() {
             <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333' }}>Typical use cases include:</h3>
               <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
-                <li>Core facilities upgrading beyond desktop plasma cleaners</li>
+                <li>Core facilities needing high-throughput plasma processing</li>
                 <li>Grant-funded labs needing maximum capability per dollar</li>
                 <li>R&D centers requiring industrial-level RF power at research pricing</li>
                 <li>Multi-user shared facilities needing recipe management</li>

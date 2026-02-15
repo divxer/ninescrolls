@@ -250,9 +250,9 @@ export function PlutoM() {
                     <div className="comparison-value">$1,500 less, 33% more RF power</div>
                   </div>
                   <div className="comparison-item">
-                    <div className="comparison-label">Harrick PDC-001-HP ($8,925)</div>
+                    <div className="comparison-label">Desktop plasma cleaners</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">4.4x RF power (200W vs 45W), 2x chamber volume, stainless steel vs. glass</div>
+                    <div className="comparison-value">200W true RF, stainless steel batch chamber, touchscreen recipe management</div>
                   </div>
                 </div>
               </div>
@@ -414,7 +414,7 @@ export function PlutoM() {
             <div className="choice-item">
               <div className="choice-icon">💰</div>
               <h3>Want the best value in mid-range RF plasma</h3>
-              <p>$1,500 less than HY-20LRF with 33% more RF power (200W vs 150W). Delivers 4.4x the RF power of desktop alternatives like Harrick with stainless steel construction and touchscreen recipe management.</p>
+              <p>$1,500 less than HY-20LRF with 33% more RF power (200W vs 150W). Stainless steel construction and touchscreen recipe management deliver research-grade reproducibility for multi-user labs.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">📈</div>
@@ -433,7 +433,7 @@ export function PlutoM() {
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
               <h3>Superior RF Power</h3>
-              <p>200W at 13.56 MHz delivers 33% more RF power than the HY-20LRF (150W) and 4.4x the power of Harrick's most powerful desktop cleaner (45W). More power means faster processing and broader recipe capability.</p>
+              <p>200W at 13.56 MHz delivers true research-grade RF performance with the power headroom for demanding surface activation, polymer treatment, and multi-step process development. More power means faster cycle times and broader recipe flexibility.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">📦</div>
@@ -443,7 +443,7 @@ export function PlutoM() {
             <div className="feature-card">
               <div className="feature-icon">💰</div>
               <h3>Exceptional Value</h3>
-              <p>At $12,999, PLUTO-M delivers more RF power per dollar than any comparable system. 4.4x the RF power of Harrick's top model ($8,925) with 2x the chamber volume and touchscreen recipe management — superior specifications across the board.</p>
+              <p>At $12,999, PLUTO-M delivers 200W of true 13.56 MHz RF power with an 8L stainless steel batch chamber and touchscreen recipe management. Research-grade performance without production-scale pricing.</p>
             </div>
           </div>
         </div>
