@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -7,12 +7,16 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function PlutoF() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open' | 'chamber-interior'>('main');
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -34,6 +38,37 @@ export function PlutoF() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      id: 'pluto-f',
+      name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
+      price: 15999,
+      quantity: 1,
+      image: '/assets/images/products/pluto-f/main.jpg',
+      sku: 'pluto-f',
+    });
+
+    if (typeof window !== 'undefined') {
+      if (window.gtag) {
+        window.gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: 15999,
+          items: [{
+            item_id: 'pluto-f',
+            item_name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: 15999,
+            quantity: 1
+          }]
+        });
+      }
+      analytics.trackAddToCart('pluto-f', 'PLUTO-F - 500W RF Flagship Plasma Cleaner', 15999);
+    }
+
+    navigate('/cart');
   };
 
   const structuredData = {
@@ -62,6 +97,34 @@ export function PlutoF() {
         "@type": "Organization",
         "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -176,11 +239,11 @@ export function PlutoF() {
             </div>
 
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request a Quote / Lead Time
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Contact Sales
               </button>
             </div>
           </div>
@@ -735,22 +798,22 @@ export function PlutoF() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
+            <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
               You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <button className="btn btn-secondary" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
-              </button>
             </div>
-            <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-              Tell us your material and process goals, and we'll provide technical recommendations.
-            </p>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
+            </div>
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -7,12 +7,16 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function HY20LRF() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -34,6 +38,37 @@ export function HY20LRF() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      id: 'hy-20lrf',
+      name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
+      price: 14499,
+      quantity: 1,
+      image: '/assets/images/products/ns-plasma-20r-i/main.jpg',
+      sku: 'hy-20lrf',
+    });
+
+    if (typeof window !== 'undefined') {
+      if (window.gtag) {
+        window.gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: 14499,
+          items: [{
+            item_id: 'hy-20lrf',
+            item_name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: 14499,
+            quantity: 1
+          }]
+        });
+      }
+      analytics.trackAddToCart('hy-20lrf', 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner', 14499);
+    }
+
+    navigate('/cart');
   };
 
   const structuredData = {
@@ -62,6 +97,34 @@ export function HY20LRF() {
         "@type": "Organization",
         "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -182,11 +245,11 @@ export function HY20LRF() {
             </div>
 
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request a Quote / Lead Time
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Contact Sales
               </button>
             </div>
           </div>
@@ -514,22 +577,22 @@ export function HY20LRF() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
+            <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
               You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <button className="btn btn-secondary" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
-              </button>
             </div>
-            <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-              Tell us your material and process goals, and we'll provide technical recommendations.
-            </p>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
+            </div>
           </div>
         </div>
       </section>
