@@ -12,7 +12,7 @@ import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
-export function NSPlasma4R() {
+export function HY4L() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
@@ -23,7 +23,7 @@ export function NSPlasma4R() {
   const { addItem } = useCart();
 
   // Determine frequency from URL parameter or path
-  // Support both: /products/ns-plasma-4r?config=rf and /products/ns-plasma-4r-rf
+  // Support both: /products/hy-4l?config=rf and /products/hy-4l-rf
   const getFrequencyFromURL = (): 'rf' | 'mf' => {
     // Check path for dedicated routes first (most reliable)
     if (location.pathname.includes('-rf')) {
@@ -73,12 +73,12 @@ export function NSPlasma4R() {
   const handleAddToCart = () => {
     const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
     const price = selectedFrequency === 'rf' ? 7999 : 6499;
-    const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
-    
+    const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
+
     // Add item to cart
     addItem({
       id: sku,
-      name: `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`,
+      name: `HY-4L - ${frequencyLabel} Plasma Cleaner`,
       price: price,
       quantity: 1,
       image: '/assets/images/products/ns-plasma-4r/main.jpg',
@@ -91,14 +91,14 @@ export function NSPlasma4R() {
       if (window.gtag) {
         const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
         const price = selectedFrequency === 'rf' ? 7999 : 6499;
-        const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
-        
+        const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
+
         window.gtag('event', 'add_to_cart', {
           currency: 'USD',
           value: price,
           items: [{
             item_id: sku,
-            item_name: `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`,
+            item_name: `HY-4L - ${frequencyLabel} Plasma Cleaner`,
             item_category: 'Plasma Systems',
             item_category2: 'Research Equipment',
             price: price,
@@ -110,8 +110,8 @@ export function NSPlasma4R() {
       // Analytics service tracking
       const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
       const price = selectedFrequency === 'rf' ? 7999 : 6499;
-      const sku = selectedFrequency === 'rf' ? 'ns-plasma-4r-rf' : 'ns-plasma-4r-mf';
-      analytics.trackAddToCart(sku, `NS-Plasma 4R - ${frequencyLabel} Plasma Cleaner`, price);
+      const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
+      analytics.trackAddToCart(sku, `HY-4L - ${frequencyLabel} Plasma Cleaner`, price);
     }
 
     // Navigate to cart page
@@ -122,27 +122,27 @@ export function NSPlasma4R() {
   const getProductDetails = () => {
     if (selectedFrequency === 'rf') {
       return {
-        name: "NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner",
+        name: "HY-4L - RF (13.56 MHz) Plasma Cleaner",
         description: "Compact RF plasma system for research and sample preparation. 4L chamber volume, 13.56 MHz RF frequency, 150W power, ideal for teaching labs and low-volume processing.",
-        sku: "ns-plasma-4r-rf",
-        mpn: "NS-Plasma-4R-RF",
+        sku: "hy-4l-rf",
+        mpn: "HY-4L-RF",
         price: "7999",
-        url: "https://ninescrolls.com/products/ns-plasma-4r-rf",
-        seoTitle: "NS-Plasma 4R - RF (13.56 MHz) Plasma Cleaner | $7,999 USD | NineScrolls",
-        seoDescription: "NS-Plasma 4R RF Plasma Cleaner. 13.56 MHz RF frequency, 150W power, 4L chamber. In stock. Free shipping. Ships in 3–4 weeks.",
-        seoKeywords: "NS-Plasma 4R RF, 13.56 MHz plasma cleaner, RF plasma system, research plasma equipment, $7999"
+        url: "https://ninescrolls.com/products/hy-4l-rf",
+        seoTitle: "HY-4L - RF (13.56 MHz) Plasma Cleaner | $7,999 USD | NineScrolls",
+        seoDescription: "HY-4L RF Plasma Cleaner. 13.56 MHz RF frequency, 150W power, 4L chamber. In stock. Free shipping. Ships in 3-4 weeks.",
+        seoKeywords: "HY-4L RF, 13.56 MHz plasma cleaner, RF plasma system, research plasma equipment, $7999"
       };
     } else {
       return {
-        name: "NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner",
+        name: "HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner",
         description: "Compact mid-frequency plasma system for research and sample preparation. 4L chamber volume, 40 kHz frequency, ideal for teaching labs and low-volume processing.",
-        sku: "ns-plasma-4r-mf",
-        mpn: "NS-Plasma-4R-MF",
+        sku: "hy-4l-mf",
+        mpn: "HY-4L-MF",
         price: "6499",
-        url: "https://ninescrolls.com/products/ns-plasma-4r-mf",
-        seoTitle: "NS-Plasma 4R - Mid-Frequency (40 kHz) Plasma Cleaner | $6,499 USD | NineScrolls",
-        seoDescription: "NS-Plasma 4R Mid-Frequency Plasma Cleaner. 40 kHz frequency, 4L chamber. In stock. Free shipping. Ships in 3–4 weeks.",
-        seoKeywords: "NS-Plasma 4R MF, 40 kHz plasma cleaner, mid-frequency plasma system, research plasma equipment, $6499"
+        url: "https://ninescrolls.com/products/hy-4l-mf",
+        seoTitle: "HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner | $6,499 USD | NineScrolls",
+        seoDescription: "HY-4L Mid-Frequency Plasma Cleaner. 40 kHz frequency, 4L chamber. In stock. Free shipping. Ships in 3-4 weeks.",
+        seoKeywords: "HY-4L MF, 40 kHz plasma cleaner, mid-frequency plasma system, research plasma equipment, $6499"
       };
     }
   };
@@ -230,10 +230,10 @@ export function NSPlasma4R() {
         <div className="container">
           <Breadcrumbs items={[
             { name: 'Products', path: '/products' },
-            { name: 'NS-Plasma 4R', path: '/products/ns-plasma-4r' }
+            { name: 'HY-4L', path: '/products/hy-4l' }
           ]} />
           <div className="product-header-enhanced">
-            <h1>NS-Plasma 4R</h1>
+            <h1>HY-4L</h1>
             <p className="product-subtitle">Plasma Cleaner (RF or Mid-Frequency)</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
@@ -243,35 +243,35 @@ export function NSPlasma4R() {
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>
-            
+
             {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+            <div style={{
+              marginTop: '2rem',
+              padding: '1.5rem',
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
               borderRadius: '8px',
               backdropFilter: 'blur(4px)',
               maxWidth: '800px',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
+              <h3 style={{
+                margin: '0 0 0.75rem 0',
+                fontSize: '1.1rem',
+                color: '#EAEAEA',
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
+              <p style={{
+                margin: 0,
+                fontSize: '0.95rem',
+                color: '#EAEAEA',
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
@@ -357,7 +357,7 @@ export function NSPlasma4R() {
                 </button>
               </div>
             </div>
-            
+
             <div className="hero-pricing">
               <div className="pricing-main">
                 <span className="pricing-label">Price:</span>
@@ -365,9 +365,9 @@ export function NSPlasma4R() {
                   {selectedFrequency === 'rf' ? '$7,999' : '$6,499'} USD
                 </span>
               </div>
-              <p className="pricing-note">Availability: In Stock • Ships in 3–4 weeks</p>
+              <p className="pricing-note">Availability: In Stock • Ships in 3-4 weeks</p>
             </div>
-            
+
             <div className="hero-cta">
               <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
                 Add to Cart
@@ -390,7 +390,7 @@ export function NSPlasma4R() {
                   {selectedImage === 'main' && (
                     <OptimizedImage
                       src="/assets/images/products/ns-plasma-4r/main.jpg"
-                      alt="NS-Plasma 4R - Compact RF Plasma System"
+                      alt="HY-4L - Compact RF Plasma System"
                       width={800}
                       height={600}
                       className="main-product-image"
@@ -399,7 +399,7 @@ export function NSPlasma4R() {
                   {selectedImage === 'image1' && (
                     <OptimizedImage
                       src="/assets/images/products/ns-plasma-4r/image-1.jpg"
-                      alt="NS-Plasma 4R - View 1"
+                      alt="HY-4L - View 1"
                       width={800}
                       height={600}
                       className="main-product-image"
@@ -408,7 +408,7 @@ export function NSPlasma4R() {
                   {selectedImage === 'image2' && (
                     <OptimizedImage
                       src="/assets/images/products/ns-plasma-4r/image-2.jpg"
-                      alt="NS-Plasma 4R - View 2"
+                      alt="HY-4L - View 2"
                       width={800}
                       height={600}
                       className="main-product-image"
@@ -466,14 +466,14 @@ export function NSPlasma4R() {
             <div className="product-hero-content">
               <h2>System Overview</h2>
               <p className="narrative-text">
-                NS-Plasma 4R is a compact plasma system designed for small-batch plasma cleaning, surface activation, 
+                HY-4L is a compact plasma system designed for small-batch plasma cleaning, surface activation,
                 and exploratory research applications where process flexibility and minimal footprint are preferred over high throughput.
               </p>
               <p className="narrative-text">
-                Positioned below full batch plasma platforms, NS-Plasma 4R provides a practical entry point for laboratories 
+                Positioned below full batch plasma platforms, HY-4L provides a practical entry point for laboratories
                 that require RF or Mid-Frequency plasma capability without the complexity or space requirements of larger systems.
               </p>
-              
+
               <div className="comparison-block">
                 <h3>Compared to:</h3>
                 <div className="comparison-items">
@@ -489,12 +489,12 @@ export function NSPlasma4R() {
                   </div>
                 </div>
               </div>
-              
+
               <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
                 <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
-                  <Link 
-                    to="/insights/plasma-cleaner-comparison-research-labs" 
-                    style={{ 
+                  <Link
+                    to="/insights/plasma-cleaner-comparison-research-labs"
+                    style={{
                       color: '#2563eb',
                       textDecoration: 'none',
                       fontWeight: '500'
@@ -516,7 +516,7 @@ export function NSPlasma4R() {
         <div className="container">
           <h2 className="section-title">Who Uses This</h2>
           <p className="section-intro" style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
-            NS-Plasma 4R is commonly installed in:
+            HY-4L is commonly installed in:
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
@@ -572,7 +572,7 @@ export function NSPlasma4R() {
         </div>
       </section>
 
-      {/* Upgrade Path Card - 4R → 20R Bridge */}
+      {/* Upgrade Path Card - 4L → 20L Bridge */}
       <section className="upgrade-path-section">
         <div className="container">
           <div className="upgrade-path-card">
@@ -580,12 +580,12 @@ export function NSPlasma4R() {
               <h3>Need higher throughput or better process repeatability?</h3>
               <p>
                 For larger batch processing, automated process control, and improved reproducibility,
-                consider upgrading to NS-Plasma 20R.
+                consider upgrading to HY-20L.
               </p>
             </div>
             <div className="upgrade-path-cta">
-              <Link to="/products/ns-plasma-20r" className="btn btn-secondary btn-large">
-                View NS-Plasma 20R →
+              <Link to="/products/hy-20l" className="btn btn-secondary btn-large">
+                View HY-20L →
               </Link>
             </div>
           </div>
@@ -649,10 +649,10 @@ export function NSPlasma4R() {
         </div>
       </section>
 
-      {/* Why NS-Plasma 4R - Benefits */}
+      {/* Why HY-4L - Benefits */}
       <section className="product-features-section product-benefits-section">
         <div className="container">
-          <h2 className="section-title">Why NS-Plasma 4R</h2>
+          <h2 className="section-title">Why HY-4L</h2>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">💰</div>
@@ -737,7 +737,7 @@ export function NSPlasma4R() {
           </div>
           <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px', fontSize: '0.9rem', color: '#666', lineHeight: '1.6' }}>
             <p style={{ margin: 0 }}>
-              <strong>Frequency Selection Guide:</strong> Mid-Frequency (40 kHz) is ideal for cost-sensitive research labs and routine cleaning applications. 
+              <strong>Frequency Selection Guide:</strong> Mid-Frequency (40 kHz) is ideal for cost-sensitive research labs and routine cleaning applications.
               RF (13.56 MHz) supports more advanced surface activation recipes and offers finer process control.
             </p>
           </div>
@@ -769,15 +769,13 @@ export function NSPlasma4R() {
         </div>
       </section>
 
-      {/* Branding Notice for Risk Mitigation */}
+      {/* Distributor Notice */}
       <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
         <div className="container">
           <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Branding Notice</h3>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Distributor Notice</h3>
             <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
-              NS-Plasma™ systems are professionally integrated, configured, and branded by NineScrolls LLC. 
-              Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
-              All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
+              HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. (慧仪智控), a leading plasma equipment manufacturer with 30+ years of industry experience and 1,000+ global installations. NineScrolls LLC is the authorized US distributor, providing local sales, technical support, system configuration, and warranty service.
             </p>
           </div>
         </div>
@@ -874,7 +872,7 @@ export function NSPlasma4R() {
           <div className="product-inquiry">
             <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
-              You don't need a finalized specification or PO to reach out. 
+              You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
@@ -886,7 +884,7 @@ export function NSPlasma4R() {
               </button>
             </div>
             <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3–4 weeks after order confirmation.</p>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
             </div>
           </div>
         </div>
@@ -905,7 +903,7 @@ export function NSPlasma4R() {
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
-        productName={`NS-Plasma 4R - ${selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)'}`}
+        productName={`HY-4L - ${selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)'}`}
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={() => {
           closeContactForm();

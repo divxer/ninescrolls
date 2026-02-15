@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
-export function NSPlasma20RI() {
+export function HY20LRF() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
@@ -29,8 +29,8 @@ export function NSPlasma20RI() {
 
   const handleDownloadBrochure = () => {
     const a = document.createElement('a');
-    a.href = '/docs/ns-plasma-20r-i-datasheet.pdf';
-    a.download = 'NineScrolls-NS-Plasma-20R-I-Datasheet.pdf';
+    a.href = '/docs/hy-20lrf-datasheet.pdf';
+    a.download = 'NineScrolls-HY-20LRF-Datasheet.pdf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -39,12 +39,12 @@ export function NSPlasma20RI() {
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "@id": "https://ninescrolls.com/products/ns-plasma-20r-i#product",
-    "name": "NS-Plasma 20R-I (Integrated) — Research-Grade Batch Plasma Cleaning",
+    "@id": "https://ninescrolls.com/products/hy-20lrf#product",
+    "name": "HY-20LRF — Research-Grade Batch Plasma Cleaning",
     "description": "Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O₂/N₂/Ar). US price $14,499.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-20r-i/main.jpg"],
-    "sku": "ns-plasma-20r-i",
-    "mpn": "NS-Plasma-20R-I",
+    "sku": "hy-20lrf",
+    "mpn": "HY-20LRF",
     "brand": {
       "@type": "Brand",
       "name": "NineScrolls LLC"
@@ -56,7 +56,7 @@ export function NSPlasma20RI() {
       "priceCurrency": "USD",
       "price": "14499",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      "url": "https://ninescrolls.com/products/ns-plasma-20r-i",
+      "url": "https://ninescrolls.com/products/hy-20lrf",
       "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
@@ -69,10 +69,10 @@ export function NSPlasma20RI() {
   return (
     <>
       <SEO
-        title="NS-Plasma 20R-I (Integrated) | 20L RF Vacuum Plasma Cleaner | 13.56MHz 300W | $14,499"
+        title="HY-20LRF | 20L RF Vacuum Plasma Cleaner | 13.56MHz 300W | $14,499"
         description="Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O₂/N₂/Ar). US price $14,499."
-        keywords="NS-Plasma 20R-I, RF Plasma Cleaner, Vacuum Plasma, 20L Chamber, Surface Activation, Batch Processing, Research Lab, Integrated plasma system, 13.56MHz plasma, 300W RF"
-        url="/products/ns-plasma-20r-i"
+        keywords="HY-20LRF, RF Plasma Cleaner, Vacuum Plasma, 20L Chamber, Surface Activation, Batch Processing, Research Lab, Integrated plasma system, 13.56MHz plasma, 300W RF"
+        url="/products/hy-20lrf"
         image="/assets/images/products/ns-plasma-20r-i/main.jpg"
         imageWidth={800}
         imageHeight={600}
@@ -89,10 +89,10 @@ export function NSPlasma20RI() {
         <div className="container">
           <Breadcrumbs items={[
             { name: 'Products', path: '/products' },
-            { name: 'NS-Plasma 20R-I (Integrated)', path: '/products/ns-plasma-20r-i' }
+            { name: 'HY-20LRF', path: '/products/hy-20lrf' }
           ]} />
           <div className="product-header-enhanced">
-            <h1>NS-Plasma 20R-I (Integrated)</h1>
+            <h1>HY-20LRF</h1>
             <p className="product-subtitle">Research-Grade Batch Plasma Cleaning (20 L)</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
@@ -102,39 +102,39 @@ export function NSPlasma20RI() {
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>
-            
+
             {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+            <div style={{
+              marginTop: '2rem',
+              padding: '1.5rem',
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
               borderRadius: '8px',
               backdropFilter: 'blur(4px)',
               maxWidth: '800px',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
+              <h3 style={{
+                margin: '0 0 0.75rem 0',
+                fontSize: '1.1rem',
+                color: '#EAEAEA',
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
+              <p style={{
+                margin: 0,
+                fontSize: '0.95rem',
+                color: '#EAEAEA',
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            
+
             <div className="hero-bullets">
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">📦</span>
@@ -172,7 +172,7 @@ export function NSPlasma20RI() {
                 </div>
               </div>
             </div>
-            
+
             <div className="hero-pricing">
               <div className="pricing-main">
                 <span className="pricing-label">US Price:</span>
@@ -180,7 +180,7 @@ export function NSPlasma20RI() {
               </div>
               <p className="pricing-note">Availability: In Stock • Ships in 3–4 weeks</p>
             </div>
-            
+
             <div className="hero-cta">
               <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
                 Request a Quote / Lead Time
@@ -203,7 +203,7 @@ export function NSPlasma20RI() {
                   {selectedImage === 'main' && (
                     <OptimizedImage
                       src="/assets/images/products/ns-plasma-20r-i/main.jpg"
-                      alt="NS-Plasma 20R-I (Integrated) - 20L Batch Plasma Cleaning System"
+                      alt="HY-20LRF - 20L Batch Plasma Cleaning System"
                       width={800}
                       height={600}
                       className="main-product-image"
@@ -212,7 +212,7 @@ export function NSPlasma20RI() {
                   {selectedImage === 'front' && (
                     <OptimizedImage
                       src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
-                      alt="NS-Plasma 20R-I (Integrated) - Front View"
+                      alt="HY-20LRF - Front View"
                       width={800}
                       height={600}
                       className="main-product-image"
@@ -256,21 +256,21 @@ export function NSPlasma20RI() {
             <div className="product-hero-content">
               <h2>System Overview</h2>
               <p className="narrative-text">
-                NS-Plasma 20R-I (Integrated) is a compact, research-grade RF vacuum plasma system designed for batch plasma cleaning, 
-                surface activation, and adhesion improvement. With a 20-liter chamber and PLC-controlled operation, 
+                HY-20LRF is a compact, research-grade RF vacuum plasma system designed for batch plasma cleaning,
+                surface activation, and adhesion improvement. With a 20-liter chamber and PLC-controlled operation,
                 it delivers repeatable results for academic labs and R&D environments.
               </p>
               <p className="narrative-text">
-                The system features a stainless-steel batch chamber, 13.56 MHz RF plasma source with up to 300W power 
-                (customizable), and dual gas inlets supporting O₂, N₂, Ar, and mixed gases. PLC + touchscreen control 
+                The system features a stainless-steel batch chamber, 13.56 MHz RF plasma source with up to 300W power
+                (customizable), and dual gas inlets supporting O₂, N₂, Ar, and mixed gases. PLC + touchscreen control
                 with Auto / Manual modes ensures reproducible processes suitable for research documentation and scale-up studies.
               </p>
-              
+
               <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
                 <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
-                  <Link 
-                    to="/insights/plasma-cleaner-comparison-research-labs" 
-                    style={{ 
+                  <Link
+                    to="/insights/plasma-cleaner-comparison-research-labs"
+                    style={{
                       color: '#2563eb',
                       textDecoration: 'none',
                       fontWeight: '500'
@@ -329,7 +329,7 @@ export function NSPlasma20RI() {
               <tbody>
                 <tr>
                   <td className="spec-label">Model</td>
-                  <td className="spec-value">NS-Plasma 20R-I (Integrated)</td>
+                  <td className="spec-value">HY-20LRF</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
@@ -387,7 +387,7 @@ export function NSPlasma20RI() {
           <h2 className="section-title">What's Included</h2>
           <div className="functions-grid">
             <div className="function-card">
-              <h3>NS-Plasma 20R-I Main System</h3>
+              <h3>HY-20LRF Main System</h3>
               <p>Integrated RF plasma source and vacuum chamber with stainless-steel construction.</p>
             </div>
             <div className="function-card">
@@ -464,6 +464,18 @@ export function NSPlasma20RI() {
         </div>
       </section>
 
+      {/* Distributor Notice */}
+      <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
+        <div className="container">
+          <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Distributor Notice</h3>
+            <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
+              HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. (慧仪智控), a leading plasma equipment manufacturer with 30+ years of industry experience and 1,000+ global installations. NineScrolls LLC is the authorized US distributor, providing local sales, technical support, system configuration, and warranty service.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Trust Logos Section */}
       <TrustSection />
 
@@ -504,7 +516,7 @@ export function NSPlasma20RI() {
           <div className="product-inquiry">
             <h2>Interested in this product?</h2>
             <p style={{ marginBottom: '1rem' }}>
-              You don't need a finalized specification or PO to reach out. 
+              You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
@@ -527,7 +539,7 @@ export function NSPlasma20RI() {
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         onDownloadBrochure={handleDownloadBrochure}
-        productName="NS-Plasma 20R-I (Integrated)"
+        productName="HY-20LRF"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
     </>

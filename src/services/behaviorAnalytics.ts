@@ -10,7 +10,7 @@ interface BehaviorSignal {
 
 interface BehaviorScore {
   productPagesViewed: number;      // 浏览的产品页数量
-  highValuePagesViewed: number;    // 高价值页面（如 ns-plasma-20r）
+  highValuePagesViewed: number;    // 高价值页面（如 hy-20l）
   timeOnSite: number;              // 总停留时间（秒）
   pdfDownloads: number;            // PDF 下载次数
   returnVisits: number;            // 回访次数（7天内）
@@ -84,8 +84,8 @@ class BehaviorAnalyticsService {
 
   // Track product page view
   trackProductView(productId: string, productName: string) {
-    const isHighValue = productId.includes('ns-plasma-20r') || 
-                        productId.includes('ns-plasma-20r-i') ||
+    const isHighValue = productId.includes('hy-20l') ||
+                        productId.includes('hy-20lrf') ||
                         productId.includes('compact-rie');
     
     this.trackSignal('product_view', isHighValue ? 1 : 0.5, {

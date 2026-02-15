@@ -21,7 +21,7 @@ export function PlasmaCleanerComparisonPage() {
           <ul>
             <li><a href="#types">Types of Plasma Cleaners Commonly Used in Research Labs</a></li>
             <li><a href="#comparison">Key Comparison Factors for Plasma Cleaners</a></li>
-            <li><a href="#ns-plasma">Where the NS-Plasma Series Fits</a></li>
+            <li><a href="#hy-series">Where the HY Series Fits</a></li>
             <li><a href="#conclusion">Conclusion: Choosing the Right Plasma Cleaner</a></li>
           </ul>
         </div>
@@ -251,22 +251,22 @@ export function PlasmaCleanerComparisonPage() {
           <div className="product-callout">
             <h3>Looking for a research-grade batch plasma cleaner?</h3>
             <p>
-              Explore NS-Plasma systems designed for academic labs requiring batch processing, 
+              Explore HY Series systems designed for academic labs requiring batch processing,
               reproducible results, and compact footprints.
             </p>
             <div className="product-callout-buttons">
-              <Link to="/products/ns-plasma-4r">NS-Plasma 4R →</Link>
-              <Link to="/products/ns-plasma-20r" className="secondary">NS-Plasma 20R →</Link>
+              <Link to="/products/hy-4l">HY-4L →</Link>
+              <Link to="/products/hy-20l" className="secondary">HY-20L →</Link>
             </div>
           </div>
 
-          {/* NS-Plasma Series */}
-          <section id="ns-plasma" style={{ marginBottom: '3rem', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+          {/* HY Series */}
+          <section id="hy-series" style={{ marginBottom: '3rem', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
             <h2 style={{ fontSize: '2rem', fontWeight: '600', color: '#333', marginBottom: '1.5rem' }}>
-              Where the NS-Plasma Series Fits
+              Where the HY Series Fits
             </h2>
             <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: '#444', marginBottom: '1.5rem' }}>
-              The <strong>NS-Plasma research-grade plasma cleaner series</strong> is designed for laboratories that require 
+              The <strong>HY Series research-grade plasma cleaner series</strong> is designed for laboratories that require 
               batch plasma cleaning, reproducible results, and compact system footprints.
             </p>
             
@@ -289,7 +289,7 @@ export function PlasmaCleanerComparisonPage() {
             </div>
 
             <p style={{ fontSize: '1rem', lineHeight: '1.7', color: '#444', marginTop: '1.5rem' }}>
-              NS-Plasma systems fill the gap between desktop quartz plasma cleaners and large industrial plasma platforms.
+              HY Series systems fill the gap between desktop quartz plasma cleaners and large industrial plasma platforms.
             </p>
           </section>
 
@@ -373,12 +373,12 @@ export function PlasmaCleanerComparisonPage() {
               </li>
               <li>
                 <Link 
-                  to="/products/plasma-systems/compare" 
+                  to="/products/plasma-cleaner/compare" 
                   style={{ color: '#2563eb', textDecoration: 'none' }}
                   onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                   onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                 >
-                  → Compare NS-Plasma Systems
+                  → Compare HY Series Plasma Cleaners
                 </Link>
               </li>
               <li>

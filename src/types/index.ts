@@ -88,10 +88,10 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Want to Learn More?</h2>
       <p>If you're interested in discovering how the Plasma Treatment/Cleaner System can elevate your research or manufacturing process, don't hesitate to reach out to our team. We offer detailed specifications, pricing, and configuration options to help you find the right solution for your needs.</p>
 
-      <p>For more information, feel free to <a href="/contact?topic=Plasma%20Treatment%20Inquiry" style="color: #007bff; text-decoration: none;">contact us</a>, or <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">explore the product page</a> for detailed specifications.</p>
+      <p>For more information, feel free to <a href="/contact?topic=Plasma%20Treatment%20Inquiry" style="color: #007bff; text-decoration: none;">contact us</a>, or <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">explore our plasma cleaner lineup</a> for detailed specifications.</p>
 
       <p><strong>Contact:</strong><br>
-      Product Page: <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">Plasma Treatment/Cleaner System</a><br>
+      Product Page: <a href="/products/plasma-cleaner" style="color: #007bff; text-decoration: none;">Plasma Cleaners Overview</a><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
     `,
     author: 'NineScrolls Team',

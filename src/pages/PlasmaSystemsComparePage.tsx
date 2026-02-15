@@ -10,22 +10,22 @@ export function PlasmaSystemsComparePage() {
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "ItemList",
-    "name": "NS-Plasma Systems Comparison",
+    "name": "HY Series Plasma Cleaners Comparison",
     "itemListElement": [
       {
         "@type": "Product",
-        "name": "NS-Plasma 4R",
-        "url": "https://ninescrolls.com/products/ns-plasma-4r"
+        "name": "HY-4L",
+        "url": "https://ninescrolls.com/products/hy-4l"
       },
       {
         "@type": "Product",
-        "name": "NS-Plasma 20R",
-        "url": "https://ninescrolls.com/products/ns-plasma-20r"
+        "name": "HY-20L",
+        "url": "https://ninescrolls.com/products/hy-20l"
       },
       {
         "@type": "Product",
-        "name": "NS-Plasma 20R-I (Integrated)",
-        "url": "https://ninescrolls.com/products/ns-plasma-20r-i"
+        "name": "HY-20LRF (Integrated)",
+        "url": "https://ninescrolls.com/products/hy-20lrf"
       }
     ]
   };
@@ -33,10 +33,10 @@ export function PlasmaSystemsComparePage() {
   return (
     <>
       <SEO
-        title="Compare NS-Plasma Systems - 4R vs 20R vs 20R-I | NineScrolls"
-        description="Compare NS-Plasma 4R, 20R, and 20R-I systems. Find the right compact RF plasma system for your research laboratory needs."
-        keywords="NS-Plasma comparison, plasma system comparison, NS-Plasma 4R vs 20R vs 20R-I, research plasma systems"
-        url="/products/plasma-systems/compare"
+        title="Compare HY Series Plasma Cleaners - HY-4L vs HY-20L vs HY-20LRF | NineScrolls"
+        description="Compare HY-4L, HY-20L, and HY-20LRF systems. Find the right compact RF plasma system for your research laboratory needs."
+        keywords="HY Series comparison, plasma system comparison, HY-4L vs HY-20L vs HY-20LRF, research plasma systems"
+        url="/products/plasma-cleaner/compare"
         type="website"
       />
       <Helmet>
@@ -47,10 +47,10 @@ export function PlasmaSystemsComparePage() {
 
       <section className="compare-hero">
         <div className="container">
-          <h1>Compare NS-Plasma Systems</h1>
+          <h1>Compare HY Series Plasma Cleaners</h1>
           <p className="compare-subtitle">
-            Start with 4R for validation.<br />
-            Choose 20R or 20R-I for core research.
+            Start with HY-4L for validation.<br />
+            Choose HY-20L or HY-20LRF for core research.
           </p>
         </div>
       </section>
@@ -63,9 +63,9 @@ export function PlasmaSystemsComparePage() {
               <div className="grid-header grid-feature">Feature</div>
               <div className="grid-header grid-product-4r">
                 <div className="product-header">
-                  <h3>NS-Plasma 4R</h3>
+                  <h3>HY-4L</h3>
                   <p className="product-subtitle">Compact / Teaching / Validation</p>
-                  <Link to="/products/ns-plasma-4r" className="product-link">
+                  <Link to="/products/hy-4l" className="product-link">
                     View Details →
                   </Link>
                 </div>
@@ -73,9 +73,9 @@ export function PlasmaSystemsComparePage() {
               <div className="grid-divider"></div>
               <div className="grid-header grid-product-20r">
                 <div className="product-header">
-                  <h3>NS-Plasma 20R</h3>
+                  <h3>HY-20L</h3>
                   <p className="product-subtitle">Core Research / Batch Processing</p>
-                  <Link to="/products/ns-plasma-20r" className="product-link">
+                  <Link to="/products/hy-20l" className="product-link">
                     View Details →
                   </Link>
                 </div>
@@ -83,9 +83,9 @@ export function PlasmaSystemsComparePage() {
               <div className="grid-divider"></div>
               <div className="grid-header grid-product-20ri">
                 <div className="product-header">
-                  <h3>NS-Plasma 20R-I</h3>
+                  <h3>HY-20LRF</h3>
                   <p className="product-subtitle">Integrated / Batch Processing</p>
-                  <Link to="/products/ns-plasma-20r-i" className="product-link">
+                  <Link to="/products/hy-20lrf" className="product-link">
                     View Details →
                   </Link>
                 </div>
@@ -154,8 +154,8 @@ export function PlasmaSystemsComparePage() {
 
               <div className="grid-cell grid-feature">Upgrade Path</div>
               <div className="grid-cell grid-product-4r">
-                <Link to="/products/ns-plasma-20r" className="upgrade-link">
-                  → 20R / 20R-I
+                <Link to="/products/hy-20l" className="upgrade-link">
+                  → HY-20L / HY-20LRF
                 </Link>
               </div>
               <div className="grid-divider"></div>
@@ -167,31 +167,31 @@ export function PlasmaSystemsComparePage() {
 
           <div className="compare-upgrade-note">
             <p>
-              Many laboratories begin with NS-Plasma 4R and upgrade to NS-Plasma 20R or 20R-I as their process requirements evolve.
+              Many laboratories begin with HY-4L and upgrade to HY-20L or HY-20LRF as their process requirements evolve.
             </p>
           </div>
 
           {/* Split Path CTAs - Direct Action */}
           <div className="compare-split-cta">
             <div className="split-cta-card split-cta-4r">
-              <h3>Start with NS-Plasma 4R</h3>
+              <h3>Start with HY-4L</h3>
               <p>Ideal for validation, teaching labs, and exploratory research</p>
-              <Link to="/products/ns-plasma-4r" className="btn btn-primary">
-                Explore NS-Plasma 4R →
+              <Link to="/products/hy-4l" className="btn btn-primary">
+                Explore HY-4L →
               </Link>
             </div>
             <div className="split-cta-card split-cta-20r">
-              <h3>Explore NS-Plasma 20R</h3>
+              <h3>Explore HY-20L</h3>
               <p>Designed for core research requiring batch processing and reproducibility</p>
-              <Link to="/products/ns-plasma-20r" className="btn btn-primary">
-                Explore NS-Plasma 20R →
+              <Link to="/products/hy-20l" className="btn btn-primary">
+                Explore HY-20L →
               </Link>
             </div>
             <div className="split-cta-card split-cta-20ri">
-              <h3>Explore NS-Plasma 20R-I</h3>
+              <h3>Explore HY-20LRF</h3>
               <p>Integrated system for batch processing with optimized cost-efficiency</p>
-              <Link to="/products/ns-plasma-20r-i" className="btn btn-primary">
-                Explore NS-Plasma 20R-I →
+              <Link to="/products/hy-20lrf" className="btn btn-primary">
+                Explore HY-20LRF →
               </Link>
             </div>
           </div>

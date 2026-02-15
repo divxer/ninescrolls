@@ -34,10 +34,12 @@ export function ProductsPage() {
       { "@type": "Product", "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
       { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
       { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
-      { "@type": "Product", "name": "Plasma Treatment/Cleaner System", "url": "https://ninescrolls.com/products/plasma-cleaner" },
-      { "@type": "Product", "name": "NS-Plasma 20R", "url": "https://ninescrolls.com/products/ns-plasma-20r" },
-      { "@type": "Product", "name": "NS-Plasma 4R", "url": "https://ninescrolls.com/products/ns-plasma-4r" },
-      { "@type": "Product", "name": "NS-Plasma 20R-I (Integrated)", "url": "https://ninescrolls.com/products/ns-plasma-20r-i" },
+      { "@type": "Product", "name": "HY-20L", "url": "https://ninescrolls.com/products/hy-20l" },
+      { "@type": "Product", "name": "HY-4L", "url": "https://ninescrolls.com/products/hy-4l" },
+      { "@type": "Product", "name": "HY-20LRF", "url": "https://ninescrolls.com/products/hy-20lrf" },
+      { "@type": "Product", "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
+      { "@type": "Product", "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
+      { "@type": "Product", "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" },
       { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
@@ -267,25 +269,9 @@ export function ProductsPage() {
 
             {(selected === 'All' || selected === 'Cleaning/Stripping') && (
             <div className="category-card">
-              <Link to="/products/plasma-cleaner">
-                <img src="/assets/images/products/plasma-cleaner/main.jpg" alt="Plasma Treatment/Cleaner System - compact plasma cleaning system" loading="lazy" decoding="async" />
-                <h3>Plasma Treatment/Cleaner System</h3>
-                <p>Compact plasma cleaning and surface treatment system with ultra-small footprint (630mm×600mm).</p>
-                <ul className="feature-list">
-                  <li>Ultra-compact footprint: 630mm × 600mm</li>
-                  <li>Touchscreen control with fully automated operation</li>
-                  <li>Surface cleaning and modification capabilities</li>
-                </ul>
-                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
-              </Link>
-            </div>
-            )}
-
-            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
-            <div className="category-card">
-              <Link to="/products/ns-plasma-20r">
-                <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="NS-Plasma 20R - Compact RF Plasma Processing System" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 20R</h3>
+              <Link to="/products/hy-20l">
+                <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="HY-20L - Compact RF Plasma Processing System" loading="lazy" decoding="async" />
+                <h3>HY-20L</h3>
                 <p>Compact, research-grade RF plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation.</p>
                 <ul className="feature-list">
                   <li>20-liter batch processing chamber</li>
@@ -299,9 +285,9 @@ export function ProductsPage() {
 
             {(selected === 'All' || selected === 'Cleaning/Stripping') && (
             <div className="category-card">
-              <Link to="/products/ns-plasma-4r">
-                <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="NS-Plasma 4R - Compact RF Plasma System" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 4R</h3>
+              <Link to="/products/hy-4l">
+                <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="HY-4L - Compact RF Plasma System" loading="lazy" decoding="async" />
+                <h3>HY-4L</h3>
                 <p>Compact RF plasma system for research and sample preparation. 4L chamber volume, ideal for teaching labs and low-volume processing.</p>
                 <ul className="feature-list">
                   <li>~4 L processing chamber</li>
@@ -315,14 +301,62 @@ export function ProductsPage() {
 
             {(selected === 'All' || selected === 'Cleaning/Stripping') && (
             <div className="category-card">
-              <Link to="/products/ns-plasma-20r-i">
-                <img src="/assets/images/products/ns-plasma-20r-i/main.jpg" alt="NS-Plasma 20R-I (Integrated) - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" />
-                <h3>NS-Plasma 20R-I (Integrated)</h3>
+              <Link to="/products/hy-20lrf">
+                <img src="/assets/images/products/ns-plasma-20r-i/main.jpg" alt="HY-20LRF - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" />
+                <h3>HY-20LRF</h3>
                 <p>Integrated 20L RF vacuum plasma cleaner for batch surface cleaning and activation. Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.</p>
                 <ul className="feature-list">
                   <li>20 L batch processing chamber</li>
                   <li>300 W RF (13.56 MHz)</li>
                   <li>PLC + Touchscreen control</li>
+                </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/pluto-t">
+                <img src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T - Compact RF Plasma Cleaner" loading="lazy" decoding="async" />
+                <h3>PLUTO-T</h3>
+                <p>200W RF plasma cleaner with ~4.3L stainless steel chamber. Touchscreen control, 13.56 MHz. $9,999 USD.</p>
+                <ul className="feature-list">
+                  <li>200W RF (13.56 MHz)</li>
+                  <li>~4.3L stainless steel chamber</li>
+                  <li>Touchscreen control</li>
+                </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/pluto-m">
+                <img src="/assets/images/products/pluto-m/main.jpg" alt="PLUTO-M - Mid-Size RF Plasma Cleaner" loading="lazy" decoding="async" />
+                <h3>PLUTO-M</h3>
+                <p>200W RF plasma cleaner with ~8L stainless steel chamber. Batch processing capable, touchscreen control. $12,999 USD.</p>
+                <ul className="feature-list">
+                  <li>200W RF (13.56 MHz)</li>
+                  <li>~8L stainless steel chamber</li>
+                  <li>Batch processing</li>
+                </ul>
+                <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
+              </Link>
+            </div>
+            )}
+
+            {(selected === 'All' || selected === 'Cleaning/Stripping') && (
+            <div className="category-card">
+              <Link to="/products/pluto-f">
+                <img src="/assets/images/products/pluto-f/main.jpg" alt="PLUTO-F - Flagship RF Plasma Cleaner" loading="lazy" decoding="async" />
+                <h3>PLUTO-F</h3>
+                <p>500W RF plasma cleaner with ~14.5L stainless steel chamber. Advanced recipe management, touchscreen control. $15,999 USD.</p>
+                <ul className="feature-list">
+                  <li>500W RF (13.56 MHz)</li>
+                  <li>~14.5L stainless steel chamber</li>
+                  <li>Advanced recipe management</li>
                 </ul>
                 <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>
               </Link>

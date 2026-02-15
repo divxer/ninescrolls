@@ -13,13 +13,13 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { PrivacyPage } from '../pages/PrivacyPage';
 import { ReturnPolicyPage } from '../pages/ReturnPolicyPage';
 import { StartupPackagePage } from '../pages/StartupPackagePage';
-import { PlasmaSystemsPage } from '../pages/PlasmaSystemsPage';
+import { PlasmaCleanerOverviewPage } from '../pages/PlasmaCleanerOverviewPage';
 import { PlasmaSystemsComparePage } from '../pages/PlasmaSystemsComparePage';
 import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
 import { CheckoutSuccessPage } from '../pages/CheckoutSuccessPage';
 import { CheckoutCancelPage } from '../pages/CheckoutCancelPage';
-import { 
+import {
   ICPEtcher,
   RIEEtcher,
   CompactRIE,
@@ -30,10 +30,12 @@ import {
   SputterSystem,
   CoaterDeveloper,
   PECVDSystem,
-  PlasmaCleaner,
-  NSPlasma20R,
-  NSPlasma4R,
-  NSPlasma20RI
+  HY4L,
+  HY20L,
+  HY20LRF,
+  PlutoT,
+  PlutoM,
+  PlutoF
 } from '../components/products';
 
 export function AppRoutes() {
@@ -70,14 +72,16 @@ export function AppRoutes() {
       <Route path="/products/sputter" element={<SputterSystem />} />
       <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
           <Route path="/products/pecvd" element={<PECVDSystem />} />
-          <Route path="/products/plasma-cleaner" element={<PlasmaCleaner />} />
-          <Route path="/products/ns-plasma-20r" element={<NSPlasma20R />} />
-          <Route path="/products/ns-plasma-4r" element={<NSPlasma4R />} />
-          <Route path="/products/ns-plasma-4r-rf" element={<NSPlasma4R />} />
-          <Route path="/products/ns-plasma-4r-mf" element={<NSPlasma4R />} />
-          <Route path="/products/ns-plasma-20r-i" element={<NSPlasma20RI />} />
-          <Route path="/products/plasma-systems" element={<PlasmaSystemsPage />} />
-          <Route path="/products/plasma-systems/compare" element={<PlasmaSystemsComparePage />} />
+          <Route path="/products/plasma-cleaner" element={<PlasmaCleanerOverviewPage />} />
+          <Route path="/products/plasma-cleaner/compare" element={<PlasmaSystemsComparePage />} />
+          <Route path="/products/hy-4l" element={<HY4L />} />
+          <Route path="/products/hy-4l-rf" element={<HY4L />} />
+          <Route path="/products/hy-4l-mf" element={<HY4L />} />
+          <Route path="/products/hy-20l" element={<HY20L />} />
+          <Route path="/products/hy-20lrf" element={<HY20LRF />} />
+          <Route path="/products/pluto-t" element={<PlutoT />} />
+          <Route path="/products/pluto-m" element={<PlutoM />} />
+          <Route path="/products/pluto-f" element={<PlutoF />} />
           <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
