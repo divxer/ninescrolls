@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -7,12 +7,16 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function PlutoT() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front-view' | 'chamber' | 'samples' | 'with-pump'>('main');
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -27,6 +31,37 @@ export function PlutoT() {
     document.body.style.overflow = 'auto';
   };
 
+  const handleAddToCart = () => {
+    addItem({
+      id: 'pluto-t',
+      name: 'PLUTO-T - 200W RF Plasma Cleaner',
+      price: 9999,
+      quantity: 1,
+      image: '/assets/images/products/pluto-t/main.jpg',
+      sku: 'pluto-t',
+    });
+
+    if (typeof window !== 'undefined') {
+      if (window.gtag) {
+        window.gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: 9999,
+          items: [{
+            item_id: 'pluto-t',
+            item_name: 'PLUTO-T - 200W RF Plasma Cleaner',
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: 9999,
+            quantity: 1
+          }]
+        });
+      }
+      analytics.trackAddToCart('pluto-t', 'PLUTO-T - 200W RF Plasma Cleaner', 9999);
+    }
+
+    navigate('/cart');
+  };
+
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -35,6 +70,7 @@ export function PlutoT() {
     "description": "Compact, high-performance 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 2 gas lines. Designed for research laboratories requiring true RF capability at an accessible price point. Under $10,000.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-t/main.jpg"],
     "sku": "pluto-t",
+    "mpn": "PLUTO-T",
     "brand": {
       "@type": "Brand",
       "name": "NineScrolls LLC"
@@ -52,6 +88,34 @@ export function PlutoT() {
         "@type": "Organization",
         "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -165,11 +229,11 @@ export function PlutoT() {
             </div>
 
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request a Quote
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Contact Sales
               </button>
             </div>
           </div>
@@ -575,22 +639,22 @@ export function PlutoT() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
+            <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
               You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-                Request a Quote
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <button className="btn btn-secondary" onClick={() => openContactForm(false)}>
-                Ask for Process Recommendation
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Request a Budgetary Quote
               </button>
             </div>
-            <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-              Tell us your material and process goals, and we'll provide technical recommendations.
-            </p>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
+            </div>
           </div>
         </div>
       </section>

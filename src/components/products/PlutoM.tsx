@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
@@ -8,6 +8,8 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function PlutoM() {
@@ -15,6 +17,8 @@ export function PlutoM() {
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open'>('main');
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -29,6 +33,37 @@ export function PlutoM() {
     document.body.style.overflow = 'auto';
   };
 
+  const handleAddToCart = () => {
+    addItem({
+      id: 'pluto-m',
+      name: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
+      price: 12999,
+      quantity: 1,
+      image: '/assets/images/products/pluto-m/main.jpg',
+      sku: 'pluto-m',
+    });
+
+    if (typeof window !== 'undefined') {
+      if (window.gtag) {
+        window.gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: 12999,
+          items: [{
+            item_id: 'pluto-m',
+            item_name: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: 12999,
+            quantity: 1
+          }]
+        });
+      }
+      analytics.trackAddToCart('pluto-m', 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber', 12999);
+    }
+
+    navigate('/cart');
+  };
+
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -37,6 +72,7 @@ export function PlutoM() {
     "description": "200W RF plasma cleaner (13.56 MHz) with ~8L stainless steel chamber. Batch capability meets RF precision. Touchscreen control with recipe storage. Ideal for university research labs, MEMS fabrication, and multi-sample preparation.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-m/main.jpg"],
     "sku": "pluto-m",
+    "mpn": "PLUTO-M",
     "brand": {
       "@type": "Brand",
       "name": "NineScrolls LLC"
@@ -48,10 +84,40 @@ export function PlutoM() {
       "priceCurrency": "USD",
       "price": "12999",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": "https://ninescrolls.com/products/pluto-m",
+      "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
         "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -164,15 +230,12 @@ export function PlutoM() {
               <p className="pricing-note">availability: in stock</p>
             </div>
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request a Quote
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <a
-                href="/products/plasma-cleaner/compare"
-                className="btn btn-secondary btn-large"
-              >
-                Compare Models
-              </a>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Contact Sales
+              </button>
             </div>
           </div>
         </div>
@@ -613,21 +676,21 @@ export function PlutoM() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
+            <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
               You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <a
-                href="mailto:sales@ninescrolls.com"
-                className="btn btn-secondary"
-              >
-                Talk to an Engineer
-              </a>
+            </div>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
             </div>
           </div>
         </div>

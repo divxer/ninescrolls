@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
@@ -8,6 +8,8 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
+import { analytics } from '../../services/analytics';
+import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function HY20L() {
@@ -16,6 +18,8 @@ export function HY20L() {
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
   const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   useScrollToTop();
 
@@ -30,14 +34,60 @@ export function HY20L() {
     document.body.style.overflow = 'auto';
   };
 
+  const handleAddToCart = () => {
+    const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
+    const price = selectedFrequency === 'rf' ? 14999 : 11999;
+    const sku = selectedFrequency === 'rf' ? 'hy-20l-rf' : 'hy-20l-mf';
+
+    addItem({
+      id: sku,
+      name: `HY-20L - ${frequencyLabel} Plasma Processing System`,
+      price: price,
+      quantity: 1,
+      image: '/assets/images/products/ns-plasma-20r/main.jpg',
+      sku: sku,
+    });
+
+    if (typeof window !== 'undefined') {
+      if (window.gtag) {
+        window.gtag('event', 'add_to_cart', {
+          currency: 'USD',
+          value: price,
+          items: [{
+            item_id: sku,
+            item_name: `HY-20L - ${frequencyLabel} Plasma Processing System`,
+            item_category: 'Plasma Systems',
+            item_category2: 'Research Equipment',
+            price: price,
+            quantity: 1
+          }]
+        });
+      }
+      analytics.trackAddToCart(sku, `HY-20L - ${frequencyLabel} Plasma Processing System`, price);
+    }
+
+    navigate('/cart');
+  };
+
+  const getProductDetails = () => {
+    if (selectedFrequency === 'rf') {
+      return { name: "HY-20L - RF (13.56 MHz) Plasma Processing System", sku: "hy-20l-rf", mpn: "HY-20L-RF", price: "14999", url: "https://ninescrolls.com/products/hy-20l" };
+    } else {
+      return { name: "HY-20L - Mid-Frequency (40 kHz) Plasma Processing System", sku: "hy-20l-mf", mpn: "HY-20L-MF", price: "11999", url: "https://ninescrolls.com/products/hy-20l" };
+    }
+  };
+
+  const productDetails = getProductDetails();
+
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "@id": "https://ninescrolls.com/products/hy-20l#product",
-    "name": "HY-20L - Plasma Processing System (RF or Mid-Frequency)",
+    "@id": `https://ninescrolls.com/products/${productDetails.sku}#product`,
+    "name": productDetails.name,
     "description": "Compact, research-grade plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, PLC-controlled operation.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-20r/main.jpg"],
-    "sku": "hy-20l",
+    "sku": productDetails.sku,
+    "mpn": productDetails.mpn,
     "brand": {
       "@type": "Brand",
       "name": "NineScrolls LLC"
@@ -47,12 +97,42 @@ export function HY20L() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "11999",
+      "price": productDetails.price,
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": productDetails.url,
+      "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
         "name": "NineScrolls LLC",
         "url": "https://ninescrolls.com"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          },
+          "cutoffTime": "14:00",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 21,
+            "maxValue": 28,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 7,
+            "maxValue": 14,
+            "unitCode": "DAY"
+          }
+        }
       }
     }
   };
@@ -206,15 +286,12 @@ export function HY20L() {
               <p className="pricing-note">availability: in stock</p>
             </div>
             <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request Configuration
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
               </button>
-              <a
-                href="/products/plasma-cleaner/compare"
-                className="btn btn-secondary btn-large"
-              >
-                Compare Models
-              </a>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+                Contact Sales
+              </button>
             </div>
           </div>
         </div>
@@ -710,21 +787,21 @@ export function HY20L() {
       <section className="product-inquiry-section">
         <div className="container">
           <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
+            <h2>Ready to order?</h2>
             <p style={{ marginBottom: '1rem' }}>
               You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>
+              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+                Add to Cart
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <a
-                href="mailto:sales@ninescrolls.com"
-                className="btn btn-secondary"
-              >
-                Talk to an Engineer
-              </a>
+            </div>
+            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
             </div>
           </div>
         </div>
