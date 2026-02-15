@@ -41,7 +41,7 @@ export function PlutoF() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/pluto-f#product",
     "name": "PLUTO-F — 500W RF Flagship Plasma Cleaner",
-    "description": "The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz, ~14.5L stainless steel chamber, touchscreen control with advanced recipe management. 11x the RF power of Harrick PDC-001-HP at 60-80% of the price.",
+    "description": "The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz, ~14.5L stainless steel chamber, touchscreen control with advanced recipe management. 11x the RF power of comparable desktop plasma cleaners at a similar price point.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-f/main.jpg"],
     "sku": "pluto-f",
     "mpn": "PLUTO-F",
@@ -70,7 +70,7 @@ export function PlutoF() {
     <>
       <SEO
         title="PLUTO-F | 500W RF Flagship Plasma Cleaner | 14.5L Chamber | $15,999"
-        description="The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz with ~14.5L stainless steel chamber. 11x the RF power of Harrick PDC-001-HP at 60-80% of the price. Touchscreen control, advanced recipe management."
+        description="The most powerful RF plasma cleaner under $20K. 500W at 13.56 MHz with ~14.5L stainless steel chamber. 11x the RF power of comparable desktop plasma cleaners at a similar price point. Touchscreen control, advanced recipe management."
         keywords="PLUTO-F, 500W RF Plasma Cleaner, Flagship Plasma Cleaner, 14.5L Chamber, Harrick Alternative, Surface Activation, Batch Processing, Research Lab, 13.56MHz plasma, Advanced Recipe Management"
         url="/products/pluto-f"
         image="/assets/images/products/pluto-f/main.jpg"
@@ -121,7 +121,7 @@ export function PlutoF() {
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
-                The Harrick Killer: 11x the RF power at 60-80% of the price
+                Same price range. 11x the RF power.
               </h3>
               <p style={{
                 margin: 0,
@@ -130,9 +130,9 @@ export function PlutoF() {
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                PLUTO-F delivers 500W of RF power and a 14.5-liter chamber for under $16,000.
-                No other system in this price range comes close. With 11x the RF power of a Harrick PDC-001-HP
-                and 3.6x the chamber volume, PLUTO-F is designed to be a disruptive alternative for university labs and R&D centers.
+                PLUTO-F delivers 500W of RF power and a 14.5-liter stainless steel chamber for under $16,000.
+                Comparable desktop plasma cleaners top out at 45W with ~4L glass chambers — at similar or even higher prices.
+                PLUTO-F offers a fundamentally different class of RF capability for research labs and core facilities.
               </p>
             </div>
 
@@ -141,7 +141,7 @@ export function PlutoF() {
                 <span className="bullet-icon">⚡</span>
                 <div className="bullet-content">
                   <span className="bullet-text-strong">500W RF (13.56 MHz)</span>
-                  <span className="bullet-text-sub">highest RF power in its class — 11x Harrick's 45W</span>
+                  <span className="bullet-text-sub">highest RF power in its class — 11x typical desktop cleaners</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
@@ -161,8 +161,8 @@ export function PlutoF() {
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">💰</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">$4,000–9,000 Less Than Harrick</span>
-                  <span className="bullet-text-sub">with 11x the RF power</span>
+                  <span className="bullet-text-strong">11x More Power, Similar Price</span>
+                  <span className="bullet-text-sub">500W vs 45W at comparable price points</span>
                 </div>
               </div>
             </div>
@@ -226,10 +226,10 @@ export function PlutoF() {
                 this RF power level.
               </p>
               <p className="narrative-text">
-                With 11x the RF power of a Harrick PDC-001-HP (500W vs 45W), 3.6x the chamber volume (14.5L vs ~4L),
-                and touchscreen control versus Harrick's manual dials — all at $4,000–9,000 less — PLUTO-F is designed
-                to be a disruptive alternative for university labs and R&D centers that need high-power plasma processing
-                without the premium price tag.
+                Comparable desktop plasma cleaners like the Harrick PDC-001-HP deliver just 45W of RF power with a ~4L
+                glass chamber and manual dials — at a similar price point. PLUTO-F provides 11x the RF power, 3.6x
+                the chamber volume, and touchscreen recipe management. For labs that need real processing capability,
+                PLUTO-F represents a fundamentally different tier of performance per dollar.
               </p>
               <p className="narrative-text">
                 The system features continuously adjustable 13.56 MHz RF power, 2–3 gas lines supporting O₂, N₂, and Ar,
@@ -258,12 +258,12 @@ export function PlutoF() {
         </div>
       </section>
 
-      {/* Competitive Comparison — The Harrick Killer */}
+      {/* Competitive Comparison — PLUTO-F vs. Desktop Plasma Cleaners */}
       <section style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
         <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>Why PLUTO-F Over Harrick?</h2>
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>PLUTO-F vs. Desktop Plasma Cleaners</h2>
           <p style={{ textAlign: 'center', marginBottom: '2.5rem', color: '#666', fontSize: '1.05rem' }}>
-            PLUTO-F vs. Harrick PDC-001-HP — the numbers speak for themselves.
+            At a similar price point, PLUTO-F delivers a different class of RF capability.
           </p>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div className="specs-table-wrapper">
@@ -308,15 +308,15 @@ export function PlutoF() {
                   </tr>
                   <tr>
                     <td className="spec-label">US Price</td>
-                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#28a745' }}>$15,999</td>
-                    <td className="spec-value" style={{ textAlign: 'center' }}>$20,000–25,000</td>
+                    <td className="spec-value" style={{ textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>$15,999</td>
+                    <td className="spec-value" style={{ textAlign: 'center' }}>$8,925</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div style={{ marginTop: '1.5rem', padding: '1.25rem', backgroundColor: '#fff', borderRadius: '8px', border: '2px solid #2563eb' }}>
               <p style={{ margin: 0, fontSize: '1rem', color: '#333', lineHeight: '1.6', textAlign: 'center', fontWeight: '500' }}>
-                11x the RF power · 3.6x the chamber volume · Touchscreen vs. manual · $4,000–9,000 less
+                11x the RF power · 3.6x the chamber volume · Stainless steel vs. glass · Touchscreen vs. manual dials
               </p>
             </div>
           </div>
@@ -367,20 +367,20 @@ export function PlutoF() {
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">⚡</div>
                 <h3>500W RF Power at 13.56 MHz</h3>
-                <p className="feature-highlight">Highest RF power in its class — 11x Harrick's 45W</p>
-                <p>Continuously adjustable 500W RF power at 13.56 MHz. This is the highest RF power available in any plasma cleaner under $20K, enabling aggressive cleaning, deep surface activation, and complex multi-step recipes that lower-power systems simply cannot achieve.</p>
+                <p className="feature-highlight">Highest RF power in its class — 11x typical desktop plasma cleaners</p>
+                <p>Continuously adjustable 500W RF power at 13.56 MHz — the highest RF power available in any benchtop plasma cleaner under $20K. Enables aggressive cleaning, deep surface activation, and complex multi-step recipes that 45W desktop systems simply cannot achieve.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">📦</div>
                 <h3>~14.5L Stainless Steel Chamber</h3>
-                <p className="feature-highlight">Large-capacity batch processing — 3.6x Harrick's ~4L</p>
+                <p className="feature-highlight">Large-capacity batch processing — 3.6x typical desktop chambers</p>
                 <p>Stainless steel chamber with ~14.5 liters of processing volume. Supports large-batch processing of multiple substrates, components, or devices simultaneously — essential for core facilities and production-scale R&D workflows.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">🖥️</div>
                 <h3>Touchscreen Control with Recipe Management</h3>
                 <p className="feature-highlight">Fully automated operation with advanced recipe storage</p>
-                <p>Touchscreen interface with advanced recipe management enables multi-step process sequences, parameter storage, and reproducible operation. A significant upgrade from manual-dial systems like Harrick — critical for research documentation and multi-user facilities.</p>
+                <p>Touchscreen interface with advanced recipe management enables multi-step process sequences, parameter storage, and reproducible operation. A significant upgrade from manual-dial desktop systems — critical for research documentation and multi-user facilities.</p>
               </div>
             </div>
           </div>
@@ -453,9 +453,10 @@ export function PlutoF() {
             <h2 className="positioning-title">System Positioning</h2>
             <p className="positioning-lead">
               PLUTO-F is NineScrolls' flagship RF plasma cleaner, delivering an unmatched combination of 500W RF power
-              and 14.5-liter chamber capacity at under $16,000. With 11x the RF power of a Harrick PDC-001-HP at
-              60-80% of the price, PLUTO-F is designed to be a disruptive alternative for university labs and R&D centers
-              that need high-power plasma processing without the premium price tag.
+              and 14.5-liter chamber capacity at under $16,000. While comparable desktop plasma cleaners offer 45W
+              with ~4L glass chambers at similar price points, PLUTO-F delivers 11x the RF power with a stainless steel
+              chamber, touchscreen recipe management, and multi-gas capability — a fundamentally different class of
+              system for university labs and R&D centers that need real processing capability.
             </p>
             <p className="positioning-note">
               For labs needing a mid-tier option, see <Link to="/products/pluto-m" style={{ color: '#2563eb' }}>PLUTO-M</Link> ($12,999, 200W, ~8L).
@@ -473,12 +474,12 @@ export function PlutoF() {
             <div className="choice-item">
               <div className="choice-icon">⚡</div>
               <h3>Need the highest RF power under $20K</h3>
-              <p>500W of RF power at 13.56 MHz — 11x more than Harrick's PDC-001-HP and 3.3x more than HY-20LRF. No other system in this price range comes close.</p>
+              <p>500W of RF power at 13.56 MHz — 11x more than typical desktop plasma cleaners and 3.3x more than HY-20LRF. No other system in this price range comes close.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">📦</div>
               <h3>Process large batches routinely</h3>
-              <p>14.5L stainless steel chamber supports high-throughput batch processing for core facilities and production-scale R&D — 3.6x the volume of a Harrick.</p>
+              <p>14.5L stainless steel chamber supports high-throughput batch processing for core facilities and production-scale R&D — 3.6x the volume of typical desktop plasma cleaners.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">🖥️</div>
@@ -487,8 +488,8 @@ export function PlutoF() {
             </div>
             <div className="choice-item">
               <div className="choice-icon">💰</div>
-              <h3>Want to replace or upgrade from Harrick</h3>
-              <p>$4,000–9,000 less than a Harrick PDC-001-HP with dramatically superior specs. PLUTO-F is the direct upgrade path for labs looking beyond desktop plasma cleaners.</p>
+              <h3>Want to upgrade beyond desktop plasma cleaners</h3>
+              <p>Desktop systems max out at ~45W. PLUTO-F delivers 500W — an 11x power increase with a 14.5L stainless steel chamber and touchscreen automation. The direct upgrade path for labs that have outgrown entry-level equipment.</p>
             </div>
           </div>
         </div>
@@ -641,10 +642,10 @@ export function PlutoF() {
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
-                Q: How does PLUTO-F compare to a Harrick PDC-001-HP?
+                Q: How does PLUTO-F compare to desktop plasma cleaners like Harrick?
               </h3>
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
-                A: PLUTO-F delivers 500W of RF power vs. Harrick's 45W (11x more), with a 14.5L stainless steel chamber vs. Harrick's ~4L glass chamber (3.6x larger). PLUTO-F includes touchscreen control with recipe management vs. Harrick's manual dials, and is priced at $15,999 vs. Harrick's $20,000–25,000. The power and capacity advantages are substantial.
+                A: PLUTO-F delivers 500W of RF power vs. Harrick's maximum of 45W (11x more), with a 14.5L stainless steel chamber vs. ~4L glass (3.6x larger), and touchscreen recipe management vs. manual dials. Harrick's most powerful model (PDC-001-HP) is listed at $8,925 on Fisher Scientific, while PLUTO-F is $15,999. The price difference reflects a fundamentally different class of system: industrial-level RF power, large-batch stainless steel processing, and fully automated recipe control vs. a compact desktop cleaner. For labs that need high-power capability, PLUTO-F offers dramatically more performance per dollar.
               </p>
             </div>
             <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
@@ -728,7 +729,7 @@ export function PlutoF() {
             <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333' }}>Typical use cases include:</h3>
               <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
-                <li>Core facilities upgrading from Harrick or similar desktop systems</li>
+                <li>Core facilities upgrading beyond desktop plasma cleaners</li>
                 <li>Grant-funded labs needing maximum capability per dollar</li>
                 <li>R&D centers requiring industrial-level RF power at research pricing</li>
                 <li>Multi-user shared facilities needing recipe management</li>
