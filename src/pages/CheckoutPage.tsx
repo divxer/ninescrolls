@@ -227,7 +227,7 @@ export function CheckoutPage() {
     <>
       <SEO
         title="Checkout | NineScrolls"
-        description="Complete your order for NS-Plasma systems."
+        description="Complete your order for HY Series plasma systems."
         url="/checkout"
       />
       <section className="checkout-page">
@@ -413,7 +413,7 @@ export function CheckoutPage() {
                          You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
                        </p>
                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                         <strong>System Branding:</strong> NS-Plasma™ systems are integrated and branded by NineScrolls LLC. 
+                         <strong>Distributor:</strong> HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. NineScrolls LLC is the authorized US distributor.
                          Configuration details and support are managed directly by us.
                        </p>
                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

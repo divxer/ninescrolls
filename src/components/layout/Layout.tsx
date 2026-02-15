@@ -194,11 +194,13 @@ export function Layout({ children }: LayoutProps) {
                       </button>
                       <div className={`accordion-content ${openAccordions.has('cleaning') ? 'open' : ''}`}>
                         <Link to="/products/striper" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
-                        <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
-                        <Link to="/products/plasma-systems" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma Systems','Cleaning / Stripping'); }}>NS-Plasma Systems</Link>
-                        <Link to="/products/ns-plasma-4r" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 4R','Cleaning / Stripping'); }}>NS-Plasma 4R</Link>
-                        <Link to="/products/ns-plasma-20r" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 20R','Cleaning / Stripping'); }}>NS-Plasma 20R</Link>
-                        <Link to="/products/ns-plasma-20r-i" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('NS-Plasma 20R-I','Cleaning / Stripping'); }}>NS-Plasma 20R-I</Link>
+                        <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Plasma Cleaners','Cleaning / Stripping'); }}>Plasma Cleaners</Link>
+                        <Link to="/products/hy-4l" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('HY-4L','Cleaning / Stripping'); }}>HY-4L</Link>
+                        <Link to="/products/hy-20l" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('HY-20L','Cleaning / Stripping'); }}>HY-20L</Link>
+                        <Link to="/products/hy-20lrf" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('HY-20LRF','Cleaning / Stripping'); }}>HY-20LRF</Link>
+                        <Link to="/products/pluto-t" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('PLUTO-T','Cleaning / Stripping'); }}>PLUTO-T</Link>
+                        <Link to="/products/pluto-m" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('PLUTO-M','Cleaning / Stripping'); }}>PLUTO-M</Link>
+                        <Link to="/products/pluto-f" role="menuitem" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('PLUTO-F','Cleaning / Stripping'); }}>PLUTO-F</Link>
                       </div>
                     </div>
                     <div className="dropdown-cta">
@@ -227,11 +229,13 @@ export function Layout({ children }: LayoutProps) {
                       <Link to="/products/coater-developer" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Coater / Developer','Coating / Developing'); }}>Coater / Developer</Link>
                       <h4 style={{marginTop:'12px'}}>Cleaning / Stripping</h4>
                       <Link to="/products/striper" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Stripping System','Cleaning / Stripping'); }}>Stripping System</Link>
-                      <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Plasma Cleaner','Cleaning / Stripping'); }}>Plasma Cleaner</Link>
-                      <Link to="/products/plasma-systems" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma Systems','Cleaning / Stripping'); }}>NS-Plasma Systems</Link>
-                      <Link to="/products/ns-plasma-4r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 4R','Cleaning / Stripping'); }}>NS-Plasma 4R</Link>
-                      <Link to="/products/ns-plasma-20r" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R','Cleaning / Stripping'); }}>NS-Plasma 20R</Link>
-                      <Link to="/products/ns-plasma-20r-i" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('NS-Plasma 20R-I','Cleaning / Stripping'); }}>NS-Plasma 20R-I</Link>
+                      <Link to="/products/plasma-cleaner" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Plasma Cleaners','Cleaning / Stripping'); }}>Plasma Cleaners</Link>
+                      <Link to="/products/hy-4l" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('HY-4L','Cleaning / Stripping'); }}>HY-4L</Link>
+                      <Link to="/products/hy-20l" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('HY-20L','Cleaning / Stripping'); }}>HY-20L</Link>
+                      <Link to="/products/hy-20lrf" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('HY-20LRF','Cleaning / Stripping'); }}>HY-20LRF</Link>
+                      <Link to="/products/pluto-t" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('PLUTO-T','Cleaning / Stripping'); }}>PLUTO-T</Link>
+                      <Link to="/products/pluto-m" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('PLUTO-M','Cleaning / Stripping'); }}>PLUTO-M</Link>
+                      <Link to="/products/pluto-f" role="menuitem" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('PLUTO-F','Cleaning / Stripping'); }}>PLUTO-F</Link>
                     </div>
                     <div className="dropdown-cta">
                       <Link to="/products" className="btn btn-primary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>

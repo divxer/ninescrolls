@@ -10,12 +10,11 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
-export function NSPlasma20R() {
+export function PlutoM() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
-  const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
+  const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open'>('main');
 
   useScrollToTop();
 
@@ -33,11 +32,11 @@ export function NSPlasma20R() {
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "@id": "https://ninescrolls.com/products/ns-plasma-20r#product",
-    "name": "NS-Plasma 20R - Plasma Processing System (RF or Mid-Frequency)",
-    "description": "Compact, research-grade plasma processing system with 20-liter chamber for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, PLC-controlled operation.",
-    "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-20r/main.jpg"],
-    "sku": "ns-plasma-20r",
+    "@id": "https://ninescrolls.com/products/pluto-m#product",
+    "name": "PLUTO-M - 200W RF Plasma Cleaner with 8L Mid-Capacity Chamber",
+    "description": "200W RF plasma cleaner (13.56 MHz) with ~8L stainless steel chamber. Batch capability meets RF precision. Touchscreen control with recipe storage. Ideal for university research labs, MEMS fabrication, and multi-sample preparation.",
+    "image": ["https://ninescrolls.com/assets/images/products/pluto-m/main.jpg"],
+    "sku": "pluto-m",
     "brand": {
       "@type": "Brand",
       "name": "NineScrolls LLC"
@@ -47,7 +46,7 @@ export function NSPlasma20R() {
       "@type": "Offer",
       "availability": "https://schema.org/InStock",
       "priceCurrency": "USD",
-      "price": "11999",
+      "price": "12999",
       "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "seller": {
         "@type": "Organization",
@@ -60,11 +59,11 @@ export function NSPlasma20R() {
   return (
     <>
       <SEO
-        title="NS-Plasma 20R - Compact RF Plasma Processing System (20L) | NineScrolls"
-        description="Compact, research-grade plasma processing system with 20-liter chamber. Ideal for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, up to 300W, PLC-controlled operation."
-        keywords="NS-Plasma 20R, plasma cleaning, photoresist ashing, surface activation, RF plasma, batch processing, research plasma system"
-        url="/products/ns-plasma-20r"
-        image="/assets/images/products/ns-plasma-20r/main.jpg"
+        title="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber | NineScrolls"
+        description="200W RF plasma cleaner (13.56 MHz) with ~8L stainless steel chamber. Batch capability meets RF precision. Touchscreen control with recipe storage. Best value in mid-range RF plasma. $12,999 USD."
+        keywords="PLUTO-M, RF plasma cleaner, 200W plasma, 8L chamber, batch plasma cleaning, surface activation, 13.56 MHz, research plasma system"
+        url="/products/pluto-m"
+        image="/assets/images/products/pluto-m/main.jpg"
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -75,142 +74,101 @@ export function NSPlasma20R() {
         </script>
       </Helmet>
 
-      {/* Hero Section - Strong Information Hero with Positioning */}
+      {/* Hero Section */}
       <section className="product-detail-hero product-hero-enhanced">
         <div className="container">
           <Breadcrumbs items={[
             { name: 'Products', path: '/products' },
-            { name: 'NS-Plasma 20R', path: '/products/ns-plasma-20r' }
+            { name: 'PLUTO-M', path: '/products/pluto-m' }
           ]} />
           <div className="product-header-enhanced">
-            <h1>NS-Plasma 20R</h1>
-            <p className="product-subtitle">Compact RF Plasma Processing System (20 L)</p>
+            <h1>PLUTO-M</h1>
+            <p className="product-subtitle">200W RF Plasma Cleaner with 8L Mid-Capacity Chamber</p>
             <div className="hero-positioning">
               <p className="hero-tagline">
-                Designed for research laboratories requiring batch processing and process reproducibility
+                Batch capability meets RF precision | Best value in mid-range RF plasma
               </p>
               <p className="hero-subtitle-emphasis">
                 US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
               </p>
             </div>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
+
+            {/* Positioning Hero Card */}
+            <div style={{
+              marginTop: '2rem',
+              padding: '1.5rem',
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
               borderRadius: '8px',
               backdropFilter: 'blur(4px)',
               maxWidth: '800px',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
+              <h3 style={{
+                margin: '0 0 0.75rem 0',
+                fontSize: '1.1rem',
+                color: '#EAEAEA',
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
-                Cost-efficient, research-grade configurations
+                The optimal RF plasma cleaner for batch processing
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
+              <p style={{
+                margin: 0,
+                fontSize: '0.95rem',
+                color: '#EAEAEA',
                 lineHeight: '1.6',
                 textAlign: 'center'
               }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
-                We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
+                PLUTO-M is the optimal choice for laboratories that need both RF precision and batch processing capability.
+                With an 8-liter chamber (2x the capacity of PLUTO-T) and 200W RF power, PLUTO-M enables efficient multi-sample
+                processing without sacrificing RF performance.
               </p>
             </div>
             <div className="hero-bullets">
               <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">📦</span>
+                <span className="bullet-icon">⚡</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">20 L Batch Chamber</span>
-                  <span className="bullet-text-sub">vs. desktop cleaners: 5–10× capacity</span>
+                  <span className="bullet-text-strong">200W RF (13.56 MHz)</span>
+                  <span className="bullet-text-sub">continuously adjustable, research-grade precision</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">⚡</span>
+                <span className="bullet-icon">📦</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">RF or Mid-Frequency, up to 300 W</span>
-                  <span className="bullet-text-sub">research-grade power & stability</span>
+                  <span className="bullet-text-strong">~8L Stainless Steel Chamber</span>
+                  <span className="bullet-text-sub">2x capacity vs PLUTO-T for batch processing</span>
                 </div>
               </div>
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">🖥️</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">PLC-Controlled Reproducibility</span>
-                  <span className="bullet-text-sub">documented processes for scale-up</span>
+                  <span className="bullet-text-strong">Touchscreen Control with Recipe Storage</span>
+                  <span className="bullet-text-sub">fully automated operation for reproducible results</span>
+                </div>
+              </div>
+              <div className="hero-bullet-item hero-bullet-primary">
+                <span className="bullet-icon">💰</span>
+                <div className="bullet-content">
+                  <span className="bullet-text-strong">$1,500 Less Than HY-20LRF</span>
+                  <span className="bullet-text-sub">with superior 200W RF power (vs 150W)</span>
                 </div>
               </div>
             </div>
-            {/* Power Frequency Options */}
-            <div className="frequency-options" style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333', fontWeight: '600' }}>Power Frequency Options</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedFrequency('mf')}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: selectedFrequency === 'mf' ? '#fff' : '#f8f9fa',
-                    borderRadius: '6px',
-                    border: selectedFrequency === 'mf' ? '2px solid #28a745' : '2px solid #dee2e6',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', backgroundColor: '#28a745', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>BEST VALUE</span>
-                  </div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>Mid-Frequency (40 kHz)</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
-                    Cost-effective, robust for routine batch cleaning and surface activation
-                  </p>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#28a745', fontWeight: '700' }}>$11,999 USD • 300W</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedFrequency('rf')}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: selectedFrequency === 'rf' ? '#fff' : '#f8f9fa',
-                    borderRadius: '6px',
-                    border: selectedFrequency === 'rf' ? '2px solid #2563eb' : '2px solid #dee2e6',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#333' }}>RF (13.56 MHz)</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
-                    Finer process control, broader recipe window for advanced batch processing
-                  </p>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#2563eb', fontWeight: '700' }}>$14,999 USD • 150W</p>
-                </button>
-              </div>
-            </div>
-            
+
             <div className="hero-pricing">
               <div className="pricing-main">
                 <span className="pricing-label">price:</span>
-                <span className="pricing-amount">
-                  {selectedFrequency === 'rf' ? '14,999' : '11,999'} USD
-                </span>
+                <span className="pricing-amount">12,999 USD</span>
               </div>
               <p className="pricing-note">availability: in stock</p>
             </div>
             <div className="hero-cta">
               <button className="btn btn-primary btn-large" onClick={() => openContactForm(true)}>
-                Request Configuration
+                Request a Quote
               </button>
-              <a 
-                href="/products/plasma-systems/compare" 
+              <a
+                href="/products/plasma-cleaner/compare"
                 className="btn btn-secondary btn-large"
               >
                 Compare Models
@@ -227,73 +185,45 @@ export function NSPlasma20R() {
             <div className="product-hero-image product-image-single">
               <div className="product-image-main-wrapper">
                 <div className="product-image-main">
-                  {selectedImage === 'main' ? (
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r/main.jpg"
-                      alt="NS-Plasma 20R - Compact RF Plasma Processing System"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
-                  ) : (
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r/front-view.jpg"
-                      alt="NS-Plasma 20R - Front View"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
+                  {selectedImage === 'main' && (
+                    <OptimizedImage src="/assets/images/products/pluto-m/main.jpg" alt="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber" width={800} height={600} className="main-product-image" />
+                  )}
+                  {selectedImage === 'with-pump' && (
+                    <OptimizedImage src="/assets/images/products/pluto-m/with-pump.jpg" alt="PLUTO-M - System with Pump" width={800} height={600} className="main-product-image" />
+                  )}
+                  {selectedImage === 'chamber-open' && (
+                    <OptimizedImage src="/assets/images/products/pluto-m/chamber-open.jpg" alt="PLUTO-M - Chamber Interior" width={800} height={600} className="main-product-image" />
                   )}
                 </div>
               </div>
               <div className="product-image-thumbnails-wrapper">
                 <div className="product-image-thumbnails">
-                  <button 
-                    className={`thumbnail-btn ${selectedImage === 'main' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('main')}
-                    type="button"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r/main.jpg"
-                      alt="Main View"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
-                  <button 
-                    className={`thumbnail-btn ${selectedImage === 'front' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('front')}
-                    type="button"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r/front-view.jpg"
-                      alt="Front View"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
+                  {(['main', 'with-pump', 'chamber-open'] as const).map((img) => (
+                    <button key={img} className={`thumbnail-btn ${selectedImage === img ? 'active' : ''}`} onClick={() => setSelectedImage(img)} type="button">
+                      <OptimizedImage src={`/assets/images/products/pluto-m/${img}.jpg`} alt={img.replace(/-/g, ' ')} width={150} height={112} className="thumbnail-image" />
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
             <div className="product-hero-content">
               <h2>System Overview</h2>
               <p className="narrative-text">
-                NS-Plasma 20R is a compact, research-grade RF plasma processing system designed for batch plasma cleaning, 
-                photoresist ashing, and surface activation in academic laboratories and pilot-scale research environments.
+                PLUTO-M is a 200W RF plasma cleaner with an ~8-liter stainless steel chamber, designed for laboratories
+                that need both RF precision and batch processing capability. It delivers the same 200W / 13.56 MHz RF power
+                as the compact PLUTO-T, but with double the chamber volume for efficient multi-sample processing.
               </p>
               <p className="narrative-text">
-                With a 20-liter stainless steel chamber, RF or Mid-Frequency power options, and PLC-controlled operation, NS-Plasma 20R 
-                bridges the gap between entry-level plasma cleaners and full-scale industrial plasma systems—delivering 
-                repeatable process performance without unnecessary system complexity.
+                With touchscreen control, recipe storage, and a fully automated vacuum cycle, PLUTO-M bridges the gap
+                between compact desktop RF cleaners and larger industrial systems—offering research-grade RF performance
+                at a price point significantly below comparable Western-brand alternatives.
               </p>
-              
+
               <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
                 <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
-                  <Link 
-                    to="/insights/plasma-cleaner-comparison-research-labs" 
-                    style={{ 
+                  <Link
+                    to="/insights/plasma-cleaner-comparison-research-labs"
+                    style={{
                       color: '#2563eb',
                       textDecoration: 'none',
                       fontWeight: '500'
@@ -301,23 +231,28 @@ export function NSPlasma20R() {
                     onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                     onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                   >
-                    Learn how research-grade batch plasma cleaners differ from desktop systems →
+                    Learn how research-grade RF plasma cleaners compare across price and performance tiers →
                   </Link>
                 </p>
               </div>
-              
+
               <div className="comparison-block">
                 <h3>Compared to:</h3>
                 <div className="comparison-items">
                   <div className="comparison-item">
-                    <div className="comparison-label">Desktop plasma cleaners</div>
+                    <div className="comparison-label">PLUTO-T ($9,999)</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">Larger batch, higher power</div>
+                    <div className="comparison-value">2x chamber volume for batch processing</div>
                   </div>
                   <div className="comparison-item">
-                    <div className="comparison-label">Industrial plasma tools</div>
+                    <div className="comparison-label">HY-20LRF ($14,499)</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">Simpler operation, lower cost</div>
+                    <div className="comparison-value">$1,500 less, 33% more RF power</div>
+                  </div>
+                  <div className="comparison-item">
+                    <div className="comparison-label">Harrick PDC-001-HP ($20–25K)</div>
+                    <div className="comparison-arrow">→</div>
+                    <div className="comparison-value">4.4x RF power, 2x+ chamber, 50–65% of price</div>
                   </div>
                 </div>
               </div>
@@ -326,64 +261,64 @@ export function NSPlasma20R() {
         </div>
       </section>
 
-      {/* Who Uses This - Use Case Block */}
+      {/* Who Uses This */}
       <section className="product-use-cases-section" style={{ padding: '3rem 0', backgroundColor: '#fff' }}>
         <div className="container">
           <h2 className="section-title">Who Uses This</h2>
           <p className="section-intro" style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
-            NS-Plasma 20R is commonly installed in:
+            PLUTO-M is commonly installed in:
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎓</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>University Cleanrooms</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Materials science and research facilities</p>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>University Research Labs</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Multi-sample RF plasma processing</p>
             </div>
             <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔬</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Materials Science Labs</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Batch processing and surface treatment</p>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Materials Characterization Labs</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Surface analysis sample preparation</p>
             </div>
             <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Failure Analysis Labs</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Batch sample preparation workflows</p>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚙️</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>MEMS / Micro Fabrication</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Surface activation and photoresist ashing</p>
             </div>
             <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚗️</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Pilot-Scale R&D Lines</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Process development and scale-up</p>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏛️</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Multi-user Core Facilities</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Shared-use batch processing workflows</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Key Features - Primary and Secondary */}
+      {/* Key Features */}
       <section className="product-features-section">
         <div className="container">
           <h2 className="section-title">Key Features</h2>
-          
-          {/* Primary Features - TOP 3 */}
+
+          {/* Primary Features */}
           <div className="features-primary">
             <h3 className="features-subtitle">Core Capabilities</h3>
             <div className="features-grid features-grid-primary">
               <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">📦</div>
-                <h3>20 L Batch Processing Chamber</h3>
-                <p className="feature-highlight">5–10× larger capacity than desktop plasma cleaners</p>
-                <p>Internal chamber: 250 × 250 × 320 mm with multi-level removable sample trays. Process multiple samples, components, or substrates simultaneously—essential for research labs requiring batch throughput.</p>
+                <div className="feature-icon">⚡</div>
+                <h3>200W RF Power (13.56 MHz)</h3>
+                <p className="feature-highlight">Continuously adjustable, research-grade RF precision</p>
+                <p>True RF plasma at 13.56 MHz with 200W continuously adjustable power. Delivers finer process control and broader recipe windows than mid-frequency alternatives, essential for advanced surface activation and selective etching applications.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">⚡</div>
-                <h3>RF or Mid-Frequency, up to 300W (MF) / 150W (RF)</h3>
-                <p className="feature-highlight">Research-grade power with industrial stability</p>
-                <p>Available in RF (13.56 MHz, 150W) or Mid-Frequency (40 kHz, 300W) configurations, continuously adjustable. Stable plasma generation suitable for cleaning, ashing, and surface modification with reproducible results.</p>
+                <div className="feature-icon">📦</div>
+                <h3>~8L Stainless Steel Chamber</h3>
+                <p className="feature-highlight">2x capacity vs PLUTO-T for batch processing</p>
+                <p>Mid-capacity stainless steel chamber enables efficient multi-sample processing. Large enough for batch workflows while maintaining uniform plasma distribution across the chamber volume.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">🖥️</div>
-                <h3>PLC-Based Reproducibility</h3>
-                <p className="feature-highlight">Documented processes ready for scale-up</p>
-                <p>PLC control system with touch screen interface. Automatic and manual operation modes with reproducible process parameters—critical for research documentation and transitioning to production.</p>
+                <h3>Touchscreen Control with Recipe Storage</h3>
+                <p className="feature-highlight">Fully automated operation for reproducible results</p>
+                <p>Intuitive touchscreen interface with built-in recipe storage. Save, recall, and execute process recipes for consistent results across runs—critical for multi-user facilities and documented research workflows.</p>
               </div>
             </div>
           </div>
@@ -394,126 +329,127 @@ export function NSPlasma20R() {
             <div className="features-grid features-grid-secondary">
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">💨</div>
-                <h3>Process-Focused Vacuum Design</h3>
-                <p>Mechanical vacuum pumping system matched to chamber volume. Optimized for plasma processing pressures with fast pump-down and stable operating conditions.</p>
+                <h3>Mechanical Vacuum System</h3>
+                <p>Oil pump included as standard; dry pump available as an option (+$2,500) for oil-free operation in sensitive environments. Optimized for plasma processing pressures with reliable pump-down performance.</p>
               </div>
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">🔧</div>
-                <h3>Flexible Gas Configuration</h3>
-                <p>Dual gas inlets (standard) compatible with common process gases such as O₂, N₂, and Ar. Mixed-gas plasma processes supported.</p>
+                <h3>Multi-Gas Configuration</h3>
+                <p>2–3 gas lines supporting O₂, N₂, and Ar. Flexible gas mixing enables a wide range of plasma chemistries for cleaning, activation, and etching applications.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Applications - With Real Use Cases */}
+      {/* Applications */}
       <section className="product-applications-section">
         <div className="container">
           <h2 className="section-title">Typical Applications</h2>
           <p className="section-intro">
-            <strong>Commonly installed in:</strong> Materials science cleanrooms, failure analysis facilities, and pilot-scale processing environments requiring batch plasma treatment capabilities.
+            <strong>Commonly used for:</strong> Batch plasma cleaning, surface activation, polymer treatment, photoresist ashing, and multi-sample preparation in research and development environments.
           </p>
           <div className="applications-grid">
             <div className="application-card">
               <div className="application-icon">🧹</div>
-              <h3>Plasma Cleaning</h3>
-              <p className="application-use-case">Used for batch PR removal before lithography steps</p>
-              <p>Effective removal of organic contaminants from substrates, including photoresist (PR), PMMA, PDMS, and more. Typical batch: 10–20 substrates per run.</p>
-            </div>
-            <div className="application-card">
-              <div className="application-icon">🔥</div>
-              <h3>Photoresist Ashing</h3>
-              <p className="application-use-case">Complete PR removal with uniform processing across batch samples</p>
-              <p>Precise control and uniform processing across batch samples. Essential for materials research labs processing multiple wafers simultaneously.</p>
+              <h3>Batch Plasma Cleaning</h3>
+              <p className="application-use-case">Multi-sample organic contaminant removal in a single run</p>
+              <p>Efficient removal of organic residues from multiple substrates simultaneously. The 8L chamber enables batch workflows that improve lab throughput without compromising RF cleaning quality.</p>
             </div>
             <div className="application-card">
               <div className="application-icon">⚡</div>
               <h3>Surface Activation</h3>
-              <p className="application-use-case">Preparation prior to bonding, coating, or deposition</p>
-              <p>Enhance adhesion and improve material performance. Commonly used in MEMS fabrication and advanced packaging workflows.</p>
+              <p className="application-use-case">Improve adhesion prior to bonding, coating, or deposition</p>
+              <p>RF plasma activation enhances surface energy for improved wettability and adhesion. Commonly used before PDMS bonding, thin film deposition, and coating applications.</p>
             </div>
             <div className="application-card">
               <div className="application-icon">🔬</div>
-              <h3>Surface Energy Modification</h3>
-              <p className="application-use-case">Modify wettability for polymers, metals, and ceramics</p>
-              <p>Achieve desired wettability and adhesion characteristics. Typical users: polymer research labs and biomaterials facilities.</p>
+              <h3>Polymer / Plastics Treatment</h3>
+              <p className="application-use-case">Surface modification for biocompatibility and adhesion</p>
+              <p>Modify surface properties of polymers and plastics without affecting bulk material characteristics. Widely used in biomedical device research and materials science studies.</p>
+            </div>
+            <div className="application-card">
+              <div className="application-icon">🔥</div>
+              <h3>Photoresist Ashing</h3>
+              <p className="application-use-case">Complete PR removal with uniform RF processing</p>
+              <p>Precise photoresist removal using oxygen-based RF plasma. Uniform processing across the chamber volume ensures consistent ashing results across batch samples.</p>
             </div>
             <div className="application-card">
               <div className="application-icon">📊</div>
-              <h3>Batch Sample Preparation</h3>
-              <p className="application-use-case">Efficient processing of multiple substrates for materials research</p>
-              <p>Ideal for batch preparation workflows, enabling efficient processing of multiple substrates simultaneously—critical for research productivity.</p>
+              <h3>Multi-sample Preparation</h3>
+              <p className="application-use-case">Efficient batch preparation for characterization workflows</p>
+              <p>Prepare multiple samples simultaneously for XPS, SEM, TEM, and other characterization techniques. Recipe storage ensures repeatable preparation protocols.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Positioning Block - Strategic Statement */}
+      {/* Positioning Block */}
       <section className="product-positioning-section">
         <div className="container">
           <div className="positioning-statement positioning-block-strategic">
             <h2 className="positioning-title">System Positioning</h2>
             <p className="positioning-lead">
-              NS-Plasma 20R bridges the gap between desktop plasma cleaners and full industrial plasma platforms, 
-              offering controlled batch processing without excessive system complexity.
+              PLUTO-M is the optimal choice for laboratories that need both RF precision and batch processing capability.
+              With an 8-liter chamber (2x the capacity of PLUTO-T) and the same 200W RF power, PLUTO-M enables efficient
+              multi-sample processing without sacrificing RF performance.
             </p>
             <p className="positioning-note">
-              This is NineScrolls' strategic positioning statement for research-grade plasma processing.
+              Clear upgrade path: <Link to="/products/pluto-t" style={{ color: '#2563eb' }}>PLUTO-T</Link> (compact, $9,999) → <strong>PLUTO-M</strong> (mid-capacity, $12,999) → <Link to="/products/pluto-f" style={{ color: '#2563eb' }}>PLUTO-F</Link> (flagship, $15,999)
             </p>
           </div>
         </div>
       </section>
 
-      {/* Reverse Comparison - 20R vs 4R */}
+      {/* Competitive Comparison */}
       <section className="product-comparison-section">
         <div className="container">
-          <h2 className="section-title">Choose NS-Plasma 20R if you:</h2>
+          <h2 className="section-title">Choose PLUTO-M if you:</h2>
           <div className="comparison-choice-grid">
             <div className="choice-item">
               <div className="choice-icon">📦</div>
-              <h3>Process multiple samples per run</h3>
-              <p>20-liter chamber enables efficient batch processing of 10–20 substrates simultaneously, essential for research productivity.</p>
+              <h3>Need RF precision with batch capability</h3>
+              <p>8L chamber handles multiple samples per run while maintaining the RF plasma quality needed for advanced surface treatment and activation applications.</p>
             </div>
             <div className="choice-item">
-              <div className="choice-icon">🔄</div>
-              <h3>Require repeatable plasma conditions</h3>
-              <p>Full PLC control with documented process parameters ensures consistent results across runs, critical for scale-up studies.</p>
+              <div className="choice-icon">💰</div>
+              <h3>Want the best value in mid-range RF plasma</h3>
+              <p>$1,500 less than HY-20LRF with 33% more RF power (200W vs 150W). Significantly less expensive than comparable Western-brand alternatives like Harrick PDC-001-HP.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">📈</div>
-              <h3>Plan to scale from validation to routine use</h3>
-              <p>Automated operation and process reproducibility make NS-Plasma 20R ideal for transitioning from exploratory research to routine processing.</p>
+              <h3>Are upgrading from a compact plasma cleaner</h3>
+              <p>Clear upgrade path from PLUTO-T: same 200W RF power with 2x chamber volume for $3,000 more. Scales naturally as your lab's batch processing needs grow.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Why NS-Plasma 20R - Benefits */}
+      {/* Why PLUTO-M */}
       <section className="product-features-section product-benefits-section">
         <div className="container">
-          <h2 className="section-title">Why NS-Plasma 20R</h2>
+          <h2 className="section-title">Why PLUTO-M</h2>
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">📊</div>
-              <h3>Larger Batch Capacity</h3>
-              <p>20-liter chamber provides 5–10× larger batch capacity than desktop plasma cleaners, enabling efficient processing of multiple samples—essential for research workflows.</p>
-            </div>
-            <div className="feature-card">
               <div className="feature-icon">⚡</div>
-              <h3>Higher Power & Control</h3>
-              <p>Up to 300W RF power with better process control than entry-level systems, delivering research-grade performance suitable for scale-up studies.</p>
+              <h3>Superior RF Power</h3>
+              <p>200W at 13.56 MHz delivers 33% more RF power than the HY-20LRF (150W) and 4.4x the power of Harrick PDC-001-HP (45W). More power means faster processing and broader recipe capability.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">🔧</div>
-              <h3>Simpler Operation</h3>
-              <p>Simpler installation and operation than industrial plasma tools, optimized for academic research labs and pilot-scale processing environments.</p>
+              <div className="feature-icon">📦</div>
+              <h3>Right-Sized for Batch</h3>
+              <p>~8L chamber provides 2x the capacity of PLUTO-T without the footprint of a 20L system. Ideal for labs that process 3–10 samples per run and need efficient batch throughput.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">💰</div>
+              <h3>Exceptional Value</h3>
+              <p>At $12,999, PLUTO-M delivers more RF power per dollar than any comparable system. 50–65% the price of Western-brand alternatives with superior specifications.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Specifications - Full Width Table */}
+      {/* Specifications */}
       <section className="product-specs-section">
         <div className="container">
           <h2 className="section-title">System Specifications</h2>
@@ -522,69 +458,51 @@ export function NSPlasma20R() {
               <tbody>
                 <tr>
                   <td className="spec-label">Plasma Type</td>
-                  <td className="spec-value">RF Plasma / Mid-Frequency Plasma</td>
+                  <td className="spec-value">RF Plasma</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Plasma Frequency</td>
-                  <td className="spec-value">13.56 MHz (RF) / 40 kHz (Mid-Frequency)</td>
+                  <td className="spec-value">13.56 MHz</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Output</td>
-                  <td className="spec-value">300W (Mid-Frequency) / 150W (RF), adjustable</td>
+                  <td className="spec-value">200W, continuously adjustable</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
-                  <td className="spec-value">20 L</td>
+                  <td className="spec-value">~8 L</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Material</td>
                   <td className="spec-value">Stainless steel</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Chamber Dimensions</td>
-                  <td className="spec-value">250 × 250 × 320 mm (internal)</td>
+                  <td className="spec-label">Gas Lines</td>
+                  <td className="spec-value">2–3 lines (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Sample Tray Dimensions</td>
-                  <td className="spec-value">242 × 250 × 45 mm</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Gas Channels</td>
-                  <td className="spec-value">2</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Pumping Speed</td>
-                  <td className="spec-value">~4.4 L/s (mechanical pump)</td>
+                  <td className="spec-label">Vacuum System</td>
+                  <td className="spec-value">Mechanical pump (oil pump included; dry pump optional +$2,500)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Control System</td>
-                  <td className="spec-value">PLC + Touch Screen</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Operation Modes</td>
-                  <td className="spec-value">Automatic / Manual</td>
+                  <td className="spec-value">Touchscreen, fully automated with recipe storage</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
                   <td className="spec-value">110 V</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">System Dimensions</td>
-                  <td className="spec-value">630 × 580 × 810 mm</td>
+                  <td className="spec-label">Manufacturer</td>
+                  <td className="spec-value">Shanghai Peiyuan Instrument Equipment Co., Ltd.</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px', fontSize: '0.9rem', color: '#666', lineHeight: '1.6' }}>
-            <p style={{ margin: 0 }}>
-              <strong>Frequency Selection Guide:</strong> Mid-Frequency (40 kHz) is ideal for cost-sensitive research labs and routine batch cleaning applications. 
-              RF (13.56 MHz) supports more advanced surface activation recipes and offers finer process control for demanding batch processing requirements.
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* Support & Integration - Full Width */}
+      {/* Support & Integration */}
       <section className="product-functions-section">
         <div className="container">
           <h2 className="section-title">Support & Integration</h2>
@@ -603,21 +521,19 @@ export function NSPlasma20R() {
             </div>
             <div className="function-card">
               <h3>Custom Configurations</h3>
-              <p>Custom configurations and scale-up options are available upon request to meet your specific research or production needs.</p>
+              <p>Custom configurations and upgrade options are available upon request, including dry pump upgrade and additional gas line configurations.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Branding Notice for Risk Mitigation */}
+      {/* Distributor Notice */}
       <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
         <div className="container">
           <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Branding Notice</h3>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Distributor Notice</h3>
             <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
-              NS-Plasma™ systems are professionally integrated, configured, and branded by NineScrolls LLC. 
-              Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
-              All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
+              PLUTO Series plasma systems are manufactured by Shanghai Peiyuan Instrument Equipment Co., Ltd., a specialized plasma equipment manufacturer. NineScrolls LLC is the authorized US distributor, providing local sales, technical support, system configuration, and warranty service.
             </p>
           </div>
         </div>
@@ -677,7 +593,7 @@ export function NSPlasma20R() {
       {/* Trust Logos Section */}
       <TrustSection />
 
-      {/* Trust Block - What You Can Expect */}
+      {/* Trust Block */}
       <section className="trust-block-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
         <div className="container">
           <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>What You Can Expect When Working With Us</h2>
@@ -714,15 +630,15 @@ export function NSPlasma20R() {
           <div className="product-inquiry">
             <h2>Interested in this product?</h2>
             <p style={{ marginBottom: '1rem' }}>
-              You don't need a finalized specification or PO to reach out. 
+              You don't need a finalized specification or PO to reach out.
               We often assist labs during early evaluation and proposal stages.
             </p>
             <div className="inquiry-buttons">
               <button className="btn btn-primary" onClick={() => openContactForm(true)}>
                 Request a Budgetary Quote
               </button>
-              <a 
-                href="mailto:sales@ninescrolls.com" 
+              <a
+                href="mailto:sales@ninescrolls.com"
                 className="btn btn-secondary"
               >
                 Talk to an Engineer
@@ -745,7 +661,7 @@ export function NSPlasma20R() {
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
-        productName={`NS-Plasma 20R - ${selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)'}`}
+        productName="PLUTO-M"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
         onDownloadBrochure={() => {
           closeContactForm();

@@ -8,10 +8,12 @@ import { CoaterDeveloper } from './CoaterDeveloper';
 import { RIEEtcher } from './RIEEtcher';
 import { ICPEtcher } from './ICPEtcher';
 import { CompactRIE } from './CompactRIE';
-import { PlasmaCleaner } from './PlasmaCleaner';
-import { NSPlasma20R } from './NSPlasma20R';
-import { NSPlasma4R } from './NSPlasma4R';
-import { NSPlasma20RI } from './NSPlasma20RI';
+import { HY4L } from './HY4L';
+import { HY20L } from './HY20L';
+import { HY20LRF } from './HY20LRF';
+import { PlutoT } from './PlutoT';
+import { PlutoM } from './PlutoM';
+import { PlutoF } from './PlutoF';
 
 const productComponents = {
   'hdp-cvd': HDPCVDSystem,
@@ -24,10 +26,12 @@ const productComponents = {
   'rie-etcher': RIEEtcher,
   'icp-etcher': ICPEtcher,
   'compact-rie': CompactRIE,
-  'plasma-cleaner': PlasmaCleaner,
-  'ns-plasma-20r': NSPlasma20R,
-  'ns-plasma-4r': NSPlasma4R,
-  'ns-plasma-20r-i': NSPlasma20RI,
+  'hy-4l': HY4L,
+  'hy-20l': HY20L,
+  'hy-20lrf': HY20LRF,
+  'pluto-t': PlutoT,
+  'pluto-m': PlutoM,
+  'pluto-f': PlutoF,
 };
 
 export function getProductComponent(productId: string) {
@@ -45,8 +49,10 @@ export {
   RIEEtcher,
   ICPEtcher,
   CompactRIE,
-  PlasmaCleaner,
-  NSPlasma20R,
-  NSPlasma4R,
-  NSPlasma20RI,
+  HY4L,
+  HY20L,
+  HY20LRF,
+  PlutoT,
+  PlutoM,
+  PlutoF,
 };

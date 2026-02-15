@@ -292,15 +292,15 @@ export const InsightsPostPage: React.FC = () => {
                         ) : displayPost?.slug === 'plasma-cleaner-comparison-research-labs' ? (
                           <>
                             <li>
-                              <a href="/products/ns-plasma-4r">NS-Plasma 4R</a>
+                              <a href="/products/hy-4l">HY-4L</a>
                               <span className="product-mini">Compact / Teaching / Validation</span>
                             </li>
                             <li>
-                              <a href="/products/ns-plasma-20r">NS-Plasma 20R</a>
+                              <a href="/products/hy-20l">HY-20L</a>
                               <span className="product-mini">Core Research / Batch Processing</span>
                             </li>
                             <li>
-                              <a href="/products/ns-plasma-20r-i">NS-Plasma 20R-I</a>
+                              <a href="/products/hy-20lrf">HY-20LRF</a>
                               <span className="product-mini">Integrated / Batch Processing</span>
                             </li>
                             <li style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e9ecef' }}>

@@ -22,6 +22,13 @@ NineScrolls serves universities, institutes, and corporate R&D labs. For questio
 - [Sputter Systems](https://ninescrolls.com/products/sputter): PVD sputtering
 - [Striper Systems](https://ninescrolls.com/products/striper): Photoresist removal
 - [Coater/Developer](https://ninescrolls.com/products/coater-developer): Photolithography track
+- [Plasma Cleaners Overview](https://ninescrolls.com/products/plasma-cleaner): HY and PLUTO series plasma cleaners
+- [HY-4L](https://ninescrolls.com/products/hy-4l): Compact RF/MF plasma cleaner (~4L)
+- [HY-20L](https://ninescrolls.com/products/hy-20l): Research-grade batch plasma cleaner (20L)
+- [HY-20LRF](https://ninescrolls.com/products/hy-20lrf): Integrated RF vacuum plasma cleaner (20L)
+- [PLUTO-T](https://ninescrolls.com/products/pluto-t): 200W RF plasma cleaner (~4.3L)
+- [PLUTO-M](https://ninescrolls.com/products/pluto-m): 200W RF plasma cleaner (~8L)
+- [PLUTO-F](https://ninescrolls.com/products/pluto-f): 500W RF flagship plasma cleaner (~14.5L)
 
 ## Insights
 
