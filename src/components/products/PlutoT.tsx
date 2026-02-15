@@ -225,17 +225,17 @@ export function PlutoT() {
               </p>
 
               <div className="comparison-block">
-                <h3>Compared to:</h3>
+                <h3>Why 200W matters:</h3>
                 <div className="comparison-items">
                   <div className="comparison-item">
-                    <div className="comparison-label">Entry-level RF cleaners</div>
+                    <div className="comparison-label">Faster activation</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">33% more RF power, touchscreen control</div>
+                    <div className="comparison-value">Surface treatments that take 10+ min at 50W finish in 2–3 min</div>
                   </div>
                   <div className="comparison-item">
-                    <div className="comparison-label">Harrick PDC-001-HP ($8,925)</div>
+                    <div className="comparison-label">Broader recipe window</div>
                     <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">4.4x RF power (200W vs 45W), stainless steel chamber, touchscreen control</div>
+                    <div className="comparison-value">Power headroom for demanding substrates and multi-step processes</div>
                   </div>
                 </div>
               </div>
@@ -396,8 +396,8 @@ export function PlutoT() {
             </div>
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
-              <h3>vs. Harrick PDC-32G ($5,865)</h3>
-              <p>4.4x RF power (200W vs 18W), stainless steel chamber vs. glass, and touchscreen control vs. manual dials. At $4,134 more, PLUTO-T delivers a fundamentally different class of RF capability with automated operation.</p>
+              <h3>True Research-Grade RF</h3>
+              <p>200W at 13.56 MHz with stainless steel chamber and touchscreen automation. Not a desktop cleaner with manual dials — a research-grade instrument designed for reproducible, documented plasma processing.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">💰</div>
