@@ -506,16 +506,12 @@ export function PlutoM() {
             <table className="specs-table">
               <tbody>
                 <tr>
-                  <td className="spec-label">Plasma Type</td>
-                  <td className="spec-value">RF Plasma</td>
+                  <td className="spec-label">System Dimensions (W×H×D)</td>
+                  <td className="spec-value">405 × 610 × 670 mm</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Plasma Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Power Output</td>
-                  <td className="spec-value">200W, continuously adjustable</td>
+                  <td className="spec-label">Chamber Dimensions</td>
+                  <td className="spec-value">φ210 mm × 230 mm</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
@@ -526,20 +522,36 @@ export function PlutoM() {
                   <td className="spec-value">Stainless steel</td>
                 </tr>
                 <tr>
+                  <td className="spec-label">Electrode Size</td>
+                  <td className="spec-value">125 × 125 mm, perforated gas-shower flat plate electrode</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Power</td>
+                  <td className="spec-value">0–200W continuously adjustable, 1W precision</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Frequency</td>
+                  <td className="spec-value">13.56 MHz, auto-impedance matching</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Vacuum Gauge</td>
+                  <td className="spec-value">Thermocouple vacuum gauge, 0–100 KPa</td>
+                </tr>
+                <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2 lines (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">2 lines, 6 mm national standard connectors (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
-                  <td className="spec-value">Mechanical pump (oil pump included; dry pump optional +$2,500)</td>
+                  <td className="spec-value">VRD-4 two-stage oil pump, 4 m³/h (dry pump optional +$2,500)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Control System</td>
-                  <td className="spec-value">Touchscreen, fully automated with recipe storage</td>
+                  <td className="spec-value">4.3″ Touchscreen, fully automated with recipe storage</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">110 V</td>
+                  <td className="spec-value">220 V</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Manufacturer</td>
