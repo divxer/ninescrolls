@@ -523,6 +523,10 @@ export function PlutoT() {
                   <td className="spec-value">110 V</td>
                 </tr>
                 <tr>
+                  <td className="spec-label">Optional Accessories</td>
+                  <td className="spec-value">Dry pump upgrade (Leybold / Agilent DS series); Oxygen generator; Gas mixer; Powder treatment fixture</td>
+                </tr>
+                <tr>
                   <td className="spec-label">Manufacturer</td>
                   <td className="spec-value">Shanghai Peiyuan Instrument Equipment Co., Ltd.</td>
                 </tr>
