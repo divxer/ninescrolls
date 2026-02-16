@@ -528,12 +528,12 @@ export function PlutoF() {
                   <td className="spec-value">PLUTO-F</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">500W, continuously adjustable</td>
+                  <td className="spec-label">System Dimensions (W×H×D)</td>
+                  <td className="spec-value">405 × 610 × 670 mm</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
+                  <td className="spec-label">Chamber Dimensions</td>
+                  <td className="spec-value">240 × 300 × 200 mm</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
@@ -544,8 +544,24 @@ export function PlutoF() {
                   <td className="spec-value">6061-T6 Aluminum alloy</td>
                 </tr>
                 <tr>
+                  <td className="spec-label">Electrode Size</td>
+                  <td className="spec-value">205 × 205 mm, multi-control adaptive flat plate electrode</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Power</td>
+                  <td className="spec-value">0–500W continuously adjustable, 1W precision</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Frequency</td>
+                  <td className="spec-value">13.56 MHz, auto-impedance matching</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Vacuum Gauge</td>
+                  <td className="spec-value">Thermocouple vacuum gauge, 0–100 KPa</td>
+                </tr>
+                <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2 lines (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">2 lines, precision needle valve control (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
@@ -553,11 +569,11 @@ export function PlutoF() {
                 </tr>
                 <tr>
                   <td className="spec-label">Control</td>
-                  <td className="spec-value">Touchscreen, fully automated with advanced recipe management</td>
+                  <td className="spec-value">4.3″ Touchscreen, fully automated with advanced recipe management</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">110 V</td>
+                  <td className="spec-value">220 V, 10 A</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Manufacturer</td>

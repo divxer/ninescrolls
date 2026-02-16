@@ -475,12 +475,12 @@ export function PlutoT() {
                   <td className="spec-value">PLUTO-T</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">200W, continuously adjustable</td>
+                  <td className="spec-label">System Dimensions (W×H×D)</td>
+                  <td className="spec-value">380 × 500 × 490 mm</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
+                  <td className="spec-label">Chamber Dimensions</td>
+                  <td className="spec-value">φ150 mm × 245 mm depth</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Volume</td>
@@ -489,6 +489,22 @@ export function PlutoT() {
                 <tr>
                   <td className="spec-label">Chamber Material</td>
                   <td className="spec-value">Stainless steel</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Electrode Size</td>
+                  <td className="spec-value">95 × 170 mm, multi-control adaptive flat plate electrode</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">RF Power</td>
+                  <td className="spec-value">0–200W continuously adjustable, 1W precision</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Frequency</td>
+                  <td className="spec-value">13.56 MHz, auto-impedance matching</td>
+                </tr>
+                <tr>
+                  <td className="spec-label">Vacuum Gauge</td>
+                  <td className="spec-value">Thermocouple vacuum gauge, 0–100 KPa</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Lines</td>
@@ -500,11 +516,11 @@ export function PlutoT() {
                 </tr>
                 <tr>
                   <td className="spec-label">Control</td>
-                  <td className="spec-value">Touchscreen, fully automated</td>
+                  <td className="spec-value">4.3″ Touchscreen, fully automated</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">110 V</td>
+                  <td className="spec-value">220 V, 10 A</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Manufacturer</td>
