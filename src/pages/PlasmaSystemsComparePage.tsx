@@ -139,7 +139,7 @@ export function PlasmaSystemsComparePage() {
               <div className="grid-cell grid-product-20ri">300 W (13.56 MHz)</div>
 
               <div className="grid-cell grid-feature">Control System</div>
-              <div className="grid-cell grid-product-4r">Manual / Semi-automatic</div>
+              <div className="grid-cell grid-product-4r">PLC + Touchscreen, Auto / Manual</div>
               <div className="grid-divider"></div>
               <div className="grid-cell grid-product-20r">PLC + Touch Screen</div>
               <div className="grid-divider"></div>

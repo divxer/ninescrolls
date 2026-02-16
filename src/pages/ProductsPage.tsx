@@ -352,10 +352,10 @@ export function ProductsPage() {
               <Link to="/products/pluto-f">
                 <img src="/assets/images/products/pluto-f/main.jpg" alt="PLUTO-F - Flagship RF Plasma Cleaner" loading="lazy" decoding="async" />
                 <h3>PLUTO-F</h3>
-                <p>500W RF plasma cleaner with ~14.5L stainless steel chamber. Advanced recipe management, touchscreen control. $15,999 USD.</p>
+                <p>500W RF plasma cleaner with ~14.5L aluminum alloy chamber. Advanced recipe management, touchscreen control. $15,999 USD.</p>
                 <ul className="feature-list">
                   <li>500W RF (13.56 MHz)</li>
-                  <li>~14.5L stainless steel chamber</li>
+                  <li>~14.5L aluminum alloy chamber</li>
                   <li>Advanced recipe management</li>
                 </ul>
                 <span className="card-cta">Learn More <span aria-hidden="true">&rarr;</span></span>

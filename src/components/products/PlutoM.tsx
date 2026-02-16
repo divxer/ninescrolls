@@ -384,7 +384,7 @@ export function PlutoM() {
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">🔧</div>
                 <h3>Multi-Gas Configuration</h3>
-                <p>2–3 gas lines supporting O₂, N₂, and Ar. Flexible gas mixing enables a wide range of plasma chemistries for cleaning, activation, and etching applications.</p>
+                <p>2 gas lines supporting O₂, N₂, and Ar. Flexible gas mixing enables a wide range of plasma chemistries for cleaning, activation, and etching applications.</p>
               </div>
             </div>
           </div>
@@ -527,7 +527,7 @@ export function PlutoM() {
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2–3 lines (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">2 lines (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>

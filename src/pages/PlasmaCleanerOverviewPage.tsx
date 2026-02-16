@@ -48,7 +48,7 @@ export function PlasmaCleanerOverviewPage() {
         "@type": "Product",
         "name": "PLUTO-F",
         "url": "https://ninescrolls.com/products/pluto-f",
-        "description": "500W RF flagship plasma cleaner with ~14.5L stainless steel chamber"
+        "description": "500W RF flagship plasma cleaner with ~14.5L aluminum alloy chamber"
       }
     ]
   };
