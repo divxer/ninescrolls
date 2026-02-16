@@ -573,7 +573,7 @@ export function PlutoF() {
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">220 V, 10 A</td>
+                  <td className="spec-value">110 V</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Manufacturer</td>
