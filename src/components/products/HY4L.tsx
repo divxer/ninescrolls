@@ -701,10 +701,6 @@ export function HY4L() {
                   <td className="spec-value">148mm diameter × 266mm depth</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Chamber Material</td>
-                  <td className="spec-value">Stainless steel</td>
-                </tr>
-                <tr>
                   <td className="spec-label">Sample Tray Dimensions</td>
                   <td className="spec-value">220 × 110 × 90 mm (L × W × H)</td>
                 </tr>
