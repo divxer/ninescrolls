@@ -539,7 +539,7 @@ export function PlutoM() {
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2 lines, 6 mm national standard connectors (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">2 lines, 6 mm hose connectors (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
