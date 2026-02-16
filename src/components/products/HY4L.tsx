@@ -710,15 +710,15 @@ export function HY4L() {
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Configuration</td>
-                  <td className="spec-value">Standard single / dual gas</td>
+                  <td className="spec-value">2 gas channels (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
-                  <td className="spec-value">Mechanical vacuum pump</td>
+                  <td className="spec-value">Mechanical vacuum pump, 2.2 L/s</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Operation Mode</td>
-                  <td className="spec-value">Manual / Semi-automatic</td>
+                  <td className="spec-value">PLC + Touchscreen, Auto / Manual switchable</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Power Supply</td>

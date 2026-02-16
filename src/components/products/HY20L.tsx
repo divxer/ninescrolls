@@ -647,7 +647,7 @@ export function HY20L() {
                 </tr>
                 <tr>
                   <td className="spec-label">System Dimensions</td>
-                  <td className="spec-value">630 × 580 × 810 mm</td>
+                  <td className="spec-value">630 × 580 × 550 mm</td>
                 </tr>
               </tbody>
             </table>

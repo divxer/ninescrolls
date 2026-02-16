@@ -76,7 +76,7 @@ export function PlutoF() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/pluto-f#product",
     "name": "PLUTO-F — 500W RF Flagship Plasma Cleaner",
-    "description": "The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz, ~14.5L stainless steel chamber, touchscreen control with advanced recipe management. Designed for university core facilities, advanced materials labs, and semiconductor process development.",
+    "description": "The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz, ~14.5L 6061-T6 aluminum alloy chamber, touchscreen control with advanced recipe management. Designed for university core facilities, advanced materials labs, and semiconductor process development.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-f/main.jpg"],
     "sku": "pluto-f",
     "mpn": "PLUTO-F",
@@ -133,7 +133,7 @@ export function PlutoF() {
     <>
       <SEO
         title="PLUTO-F | 500W RF Flagship Plasma Cleaner | 14.5L Chamber | $15,999"
-        description="The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz with ~14.5L stainless steel chamber. Designed for core facilities, advanced materials research, and semiconductor process development. Touchscreen control, advanced recipe management."
+        description="The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz with ~14.5L 6061-T6 aluminum alloy chamber. Designed for core facilities, advanced materials research, and semiconductor process development. Touchscreen control, advanced recipe management."
         keywords="PLUTO-F, 500W RF Plasma Cleaner, Flagship Plasma Cleaner, 14.5L Chamber, Harrick Alternative, Surface Activation, Batch Processing, Research Lab, 13.56MHz plasma, Advanced Recipe Management"
         url="/products/pluto-f"
         image="/assets/images/products/pluto-f/main.jpg"
@@ -184,7 +184,7 @@ export function PlutoF() {
                 fontWeight: '600',
                 textAlign: 'center'
               }}>
-                500W RF. 14.5L stainless steel. Under $16K.
+                500W RF. 14.5L aluminum alloy chamber. Under $16K.
               </h3>
               <p style={{
                 margin: 0,
@@ -210,7 +210,7 @@ export function PlutoF() {
               <div className="hero-bullet-item hero-bullet-primary">
                 <span className="bullet-icon">📦</span>
                 <div className="bullet-content">
-                  <span className="bullet-text-strong">~14.5L Stainless Steel Chamber</span>
+                  <span className="bullet-text-strong">~14.5L Aluminum Alloy Chamber</span>
                   <span className="bullet-text-sub">process wafers, devices, and components in batch</span>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export function PlutoF() {
                 reproducible, documented results across users and sessions.
               </p>
               <p className="narrative-text">
-                The system features continuously adjustable 13.56 MHz RF power, 2–3 gas lines supporting O₂, N₂, and Ar,
+                The system features continuously adjustable 13.56 MHz RF power, 2 gas lines supporting O₂, N₂, and Ar,
                 and advanced recipe management via a touchscreen interface. A mechanical vacuum pump is included, with an
                 optional dry pump upgrade available.
               </p>
@@ -394,9 +394,9 @@ export function PlutoF() {
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">📦</div>
-                <h3>~14.5L Stainless Steel Chamber</h3>
+                <h3>~14.5L Aluminum Alloy Chamber</h3>
                 <p className="feature-highlight">Large-capacity batch processing for multi-sample workflows</p>
-                <p>Stainless steel chamber with ~14.5 liters of processing volume. Supports large-batch processing of multiple substrates, components, or devices simultaneously — essential for core facilities and production-scale R&D workflows.</p>
+                <p>6061-T6 aluminum alloy chamber with ~14.5 liters of processing volume. Supports large-batch processing of multiple substrates, components, or devices simultaneously — essential for core facilities and production-scale R&D workflows.</p>
               </div>
               <div className="feature-card feature-card-primary feature-card-top">
                 <div className="feature-icon">🖥️</div>
@@ -413,7 +413,7 @@ export function PlutoF() {
             <div className="features-grid features-grid-secondary">
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">💨</div>
-                <h3>2–3 Gas Lines (O₂, N₂, Ar)</h3>
+                <h3>2 Gas Lines (O₂, N₂, Ar)</h3>
                 <p>Multi-gas capability supporting O₂, N₂, Ar, and mixed-gas processes. More flexible than single-gas systems, enabling a wider range of surface treatment chemistries and process optimization.</p>
               </div>
               <div className="feature-card feature-card-secondary">
@@ -475,7 +475,7 @@ export function PlutoF() {
             <h2 className="positioning-title">System Positioning</h2>
             <p className="positioning-lead">
               PLUTO-F is NineScrolls' flagship RF plasma cleaner, delivering 500W of continuously adjustable RF power
-              with a 14.5-liter stainless steel chamber at under $16,000. Designed for university core facilities,
+              with a 14.5-liter aluminum alloy chamber at under $16,000. Designed for university core facilities,
               advanced materials labs, and semiconductor process development teams that need high-power plasma
               processing with reproducible, recipe-managed workflows.
             </p>
@@ -500,7 +500,7 @@ export function PlutoF() {
             <div className="choice-item">
               <div className="choice-icon">📦</div>
               <h3>You process multiple samples per run</h3>
-              <p>14.5L stainless steel chamber supports batch processing of wafers, devices, and components. Essential for core facilities and labs with high daily sample throughput.</p>
+              <p>14.5L aluminum alloy chamber supports batch processing of wafers, devices, and components. Essential for core facilities and labs with high daily sample throughput.</p>
             </div>
             <div className="choice-item">
               <div className="choice-icon">🖥️</div>
@@ -541,11 +541,11 @@ export function PlutoF() {
                 </tr>
                 <tr>
                   <td className="spec-label">Chamber Material</td>
-                  <td className="spec-value">Stainless steel</td>
+                  <td className="spec-value">6061-T6 Aluminum alloy</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2–3 lines (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">2 lines (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
@@ -576,7 +576,7 @@ export function PlutoF() {
           <div className="functions-grid">
             <div className="function-card">
               <h3>PLUTO-F Main System</h3>
-              <p>500W RF plasma source with ~14.5L stainless steel vacuum chamber and integrated power supply.</p>
+              <p>500W RF plasma source with ~14.5L 6061-T6 aluminum alloy vacuum chamber and integrated power supply.</p>
             </div>
             <div className="function-card">
               <h3>Touchscreen Control Interface</h3>
@@ -588,7 +588,7 @@ export function PlutoF() {
             </div>
             <div className="function-card">
               <h3>Gas Delivery System</h3>
-              <p>2–3 gas line configuration supporting O₂, N₂, Ar, and mixed-gas processes.</p>
+              <p>2 gas line configuration supporting O₂, N₂, Ar, and mixed-gas processes.</p>
             </div>
             <div className="function-card">
               <h3>User Documentation</h3>
@@ -690,7 +690,7 @@ export function PlutoF() {
                 Q: What gases can I use?
               </h3>
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
-                A: PLUTO-F supports O₂, N₂, Ar, and mixed-gas processes with 2–3 gas lines. The system is designed for flexible gas configuration to support a wide range of surface treatment applications.
+                A: PLUTO-F supports O₂, N₂, Ar, and mixed-gas processes with 2 gas lines. The system is designed for flexible gas configuration to support a wide range of surface treatment applications.
               </p>
             </div>
           </div>

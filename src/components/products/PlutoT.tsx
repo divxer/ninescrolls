@@ -68,7 +68,7 @@ export function PlutoT() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/pluto-t#product",
     "name": "PLUTO-T - 200W RF Plasma Cleaner for Research Labs",
-    "description": "Compact, high-performance 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 2 gas lines. Designed for research laboratories requiring true RF capability at an accessible price point. Under $10,000.",
+    "description": "Compact, high-performance 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 1 gas line (optional 2nd). Designed for research laboratories requiring true RF capability at an accessible price point. Under $10,000.",
     "image": ["https://ninescrolls.com/assets/images/products/pluto-t/main.jpg"],
     "sku": "pluto-t",
     "mpn": "PLUTO-T",
@@ -125,7 +125,7 @@ export function PlutoT() {
     <>
       <SEO
         title="PLUTO-T | 200W RF Plasma Cleaner | 13.56 MHz | Under $10,000 | NineScrolls"
-        description="Compact 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 2 gas lines. High-power RF cleaning for research labs under $10,000. Authorized US distributor."
+        description="Compact 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 1 gas line (optional 2nd). High-power RF cleaning for research labs under $10,000. Authorized US distributor."
         keywords="PLUTO-T, 200W RF plasma cleaner, 13.56 MHz, plasma cleaning, surface activation, polymer treatment, research lab plasma, affordable RF plasma, touchscreen plasma cleaner"
         url="/products/pluto-t"
         image="/assets/images/products/pluto-t/main.jpg"
@@ -285,7 +285,7 @@ export function PlutoT() {
               </p>
               <p className="narrative-text">
                 The system features a stainless steel chamber (~4.3L), touchscreen-controlled fully automated operation,
-                and dual gas lines supporting O₂, N₂, and Ar. An oil pump is included as standard, with an optional
+                and a gas line supporting O₂, N₂, and Ar (optional second line available). An oil pump is included as standard, with an optional
                 dry pump upgrade available for oil-free operation.
               </p>
 
@@ -367,8 +367,8 @@ export function PlutoT() {
             <div className="features-grid features-grid-secondary">
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">💨</div>
-                <h3>Dual Gas Lines</h3>
-                <p>Two gas inlets supporting O₂, N₂, and Ar for flexible process configurations. Enables a wide range of plasma chemistries for cleaning, activation, and treatment applications.</p>
+                <h3>Flexible Gas Configuration</h3>
+                <p>One gas inlet standard with optional second line, supporting O₂, N₂, and Ar for flexible process configurations. Enables a range of plasma chemistries for cleaning, activation, and treatment applications.</p>
               </div>
               <div className="feature-card feature-card-secondary">
                 <div className="feature-icon">🔧</div>
@@ -447,7 +447,7 @@ export function PlutoT() {
             <div className="feature-card">
               <div className="feature-icon">📊</div>
               <h3>vs. HY-4L ($7,999 RF)</h3>
-              <p>33% more RF power (200W vs 150W) and touchscreen control vs semi-automatic operation. The +$2,000 premium is justified by significantly better RF performance and modern automation.</p>
+              <p>33% more RF power (200W vs 150W) with stainless steel chamber construction. The +$2,000 premium is justified by significantly better RF performance and a durable, contamination-resistant chamber.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
@@ -492,7 +492,7 @@ export function PlutoT() {
                 </tr>
                 <tr>
                   <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2 lines (O₂, N₂, Ar supported)</td>
+                  <td className="spec-value">1 line standard, optional 2nd line (O₂, N₂, Ar supported)</td>
                 </tr>
                 <tr>
                   <td className="spec-label">Vacuum System</td>
@@ -594,7 +594,7 @@ export function PlutoT() {
             <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333' }}>Looking at other options?</h3>
               <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
-                <li><Link to="/products/hy-4l" style={{ color: '#2563eb', textDecoration: 'none' }}>HY-4L ($7,999)</Link> — Budget-friendly 150W RF alternative with semi-automatic control</li>
+                <li><Link to="/products/hy-4l" style={{ color: '#2563eb', textDecoration: 'none' }}>HY-4L ($7,999)</Link> — Budget-friendly 150W RF alternative</li>
                 <li><Link to="/products/pluto-m" style={{ color: '#2563eb', textDecoration: 'none' }}>PLUTO-M</Link> — Upgrade path with higher power and expanded capability</li>
               </ul>
             </div>
