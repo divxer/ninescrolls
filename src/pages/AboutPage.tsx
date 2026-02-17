@@ -156,6 +156,63 @@ export function AboutPage() {
         </div>
       </section>
 
+      {/* Brand Philosophy */}
+      <section className="about-philosophy">
+        <div className="container">
+          <h2>Our Story</h2>
+          <p className="section-subtitle">Order in the Universe. Precision in Engineering.</p>
+          <div className="philosophy-content">
+            <p className="philosophy-intro">
+              At NineScrolls, we believe that science and engineering are expressions of a deeper order
+              that governs both the universe and human innovation. Our visual symbol and name reflect two
+              complementary traditions of understanding order.
+            </p>
+            <div className="philosophy-grid">
+              <div className="philosophy-card">
+                <div className="philosophy-icon">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a7.5 7.5 0 0 0 0 20 7.5 7.5 0 0 0 0-20" />
+                    <path d="M12 2c3 2.5 4.5 6 4.5 10s-1.5 7.5-4.5 10" />
+                    <path d="M2 12h20" />
+                  </svg>
+                </div>
+                <h3>The Dragon: Cosmic Order</h3>
+                <p>
+                  Our circular dragon motif represents an ancient understanding of the universe — celestial
+                  motion, the continuous flow of energy, and harmony between opposing forces. In early Chinese
+                  philosophy, the universe is structured and dynamic, governed by balance, motion, and
+                  transformation. <strong>Nature operates through order.</strong>
+                </p>
+              </div>
+              <div className="philosophy-card">
+                <div className="philosophy-icon">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    <line x1="8" y1="7" x2="16" y2="7" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
+                </div>
+                <h3>The Nine Chapters: Mathematical Order</h3>
+                <p>
+                  Our name draws inspiration from <em>The Nine Chapters on the Mathematical Art</em>, an ancient
+                  text that systematized practical problem-solving — from land measurement and engineering
+                  calculations to solving simultaneous equations. Its essence was simple and
+                  powerful: <strong>Mathematics creates order in the human world.</strong>
+                </p>
+              </div>
+            </div>
+            <div className="philosophy-mission">
+              <p>
+                NineScrolls exists to translate scientific order into engineering precision. From cosmic order
+                to engineered precision — this is the spirit of NineScrolls.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Core Values — Timeline/Horizontal Layout */}
       <section className="about-values">
         <div className="container">
