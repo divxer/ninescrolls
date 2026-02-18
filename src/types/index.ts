@@ -5580,7 +5580,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <figure style="margin: 2em 0; text-align: center;">
         <img src="/assets/images/insights/oxygen-plasma-cleaning.jpg" alt="Oxygen plasma cleaning in action — the characteristic blue-violet glow of an oxygen plasma inside a reactor chamber" style="max-width: 100%; border-radius: 8px;" />
-        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Oxygen plasma cleaning in action: the characteristic blue-violet glow of an O₂ plasma inside a reactor chamber.</figcaption>
+        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Oxygen plasma cleaning in action: the characteristic blue-violet glow of an O₂ plasma inside a reactor chamber. (Image: Maxfisch / <a href="https://commons.wikimedia.org/wiki/File:Oxygen_Plasma_Cleaning.JPG" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, CC0 1.0)</figcaption>
       </figure>
 
       <h2>Types of Plasma Cleaners: A Technical Comparison</h2>
@@ -5716,7 +5716,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <figure style="margin: 2em 0; text-align: center;">
         <img src="/assets/images/insights/wire-bonding-semiconductor-die.jpg" alt="Semiconductor die with wire bonds" style="max-width: 100%; border-radius: 8px;" />
-        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Close-up of a semiconductor die with gold wire bonds connecting the chip to package leads. Surface cleanliness of bond pads is critical for reliable bonding.</figcaption>
+        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Close-up of a semiconductor die with gold wire bonds connecting the chip to package leads. Surface cleanliness of bond pads is critical for reliable bonding. (Image: Mister rf / <a href="https://commons.wikimedia.org/wiki/File:National_Semiconductor_J_2N2222A.png" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>)</figcaption>
       </figure>
 
       <p>Before thin film deposition, lithography, or oxidation steps, silicon wafers must be free of organic contaminants, native oxides, and metallic impurities. Even sub-monolayer contamination can cause defects in nanometer-scale device structures. Oxygen plasma cleaning removes organic residues (such as photoresist remnants after ashing), while argon sputtering can strip thin native oxide layers before metal deposition.</p>
@@ -5788,7 +5788,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <figure style="margin: 2em 0; text-align: center;">
         <img src="/assets/images/insights/wire-bonding-detail.jpg" alt="Wire bonding detail on a semiconductor package" style="max-width: 100%; border-radius: 8px;" />
-        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Detailed view of wire bonds on a semiconductor package. Even trace contamination on bond pads can cause bond failures — making plasma cleaning an essential pre-bonding step.</figcaption>
+        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Detailed view of wire bonds on a semiconductor package. Even trace contamination on bond pads can cause bond failures — making plasma cleaning an essential pre-bonding step. (Image: Mister rf / <a href="https://commons.wikimedia.org/wiki/File:EXP416.jpg" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>)</figcaption>
       </figure>
 
       <p>Transmission electron microscopy (TEM) and scanning electron microscopy (SEM) samples are extremely sensitive to hydrocarbon contamination. Even trace amounts of organic material on a TEM grid can cause carbon buildup under the electron beam, degrading image quality and obscuring fine structural details. A brief (30–120 second) low-power plasma clean immediately before loading samples into the microscope removes these contaminants and dramatically improves imaging results.</p>
