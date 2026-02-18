@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="rfGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="dcGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/><stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <linearGradient id="mwGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdf4ff"/><stop offset="100%" stop-color="#f3e8ff"/>
+    </linearGradient>
+    <linearGradient id="elecMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9ca3af"/><stop offset="100%" stop-color="#6b7280"/>
+    </linearGradient>
+    <linearGradient id="plasmaBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.5"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="plasmaGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#86efac" stop-opacity="0.5"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="plasmaPurple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d8b4fe" stop-opacity="0.5"/><stop offset="100%" stop-color="#a855f7" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="cardShadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="4" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="520" fill="#f8fafc" rx="12"/>
+
+  <!-- Title -->
+  <text x="480" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#1e293b">Plasma Cleaner Types: Structural Comparison</text>
+
+  <!-- ==================== RF Plasma ==================== -->
+  <g transform="translate(20, 60)">
+    <rect width="290" height="440" rx="12" fill="url(#rfGrad)" stroke="#93c5fd" stroke-width="1.5" filter="url(#cardShadow)"/>
+    <!-- Header -->
+    <rect width="290" height="44" rx="12" fill="#3b82f6"/>
+    <rect y="24" width="290" height="20" fill="#3b82f6"/>
+    <text x="145" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">RF Plasma Cleaner</text>
+
+    <!-- Chamber outline -->
+    <rect x="45" y="65" width="200" height="195" rx="10" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+
+    <!-- Top electrode -->
+    <rect x="65" y="80" width="160" height="12" rx="3" fill="url(#elecMetal)" stroke="#6b7280" stroke-width="0.8"/>
+    <text x="145" y="75" text-anchor="middle" font-size="8.5" fill="#3b82f6" font-weight="600">RF Powered ⚡</text>
+
+    <!-- Bottom electrode -->
+    <rect x="65" y="225" width="160" height="12" rx="3" fill="url(#elecMetal)" stroke="#6b7280" stroke-width="0.8"/>
+    <text x="145" y="250" text-anchor="middle" font-size="8.5" fill="#6b7280" font-weight="500">Grounded</text>
+
+    <!-- Substrate -->
+    <rect x="100" y="215" width="90" height="10" rx="2" fill="#3b82f6"/>
+    <text x="145" y="223" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Sample</text>
+
+    <!-- Plasma glow -->
+    <rect x="65" y="95" width="160" height="118" rx="6" fill="url(#plasmaBlue)"/>
+
+    <!-- Plasma particles -->
+    <g font-size="9" font-weight="600">
+      <text x="85" y="125" fill="#2563eb">O⁺</text>
+      <text x="155" y="115" fill="#2563eb">O⁺</text>
+      <text x="120" y="150" fill="#ec4899">O•</text>
+      <text x="185" y="140" fill="#ec4899">O•</text>
+      <text x="95" y="180" fill="#6366f1">e⁻</text>
+      <text x="170" y="170" fill="#6366f1">e⁻</text>
+      <text x="140" y="195" fill="#2563eb">Ar⁺</text>
+    </g>
+
+    <!-- RF wave symbol -->
+    <path d="M250,100 Q255,90 260,100 Q265,110 270,100" stroke="#3b82f6" stroke-width="1.5" fill="none"/>
+    <text x="265" y="88" font-size="8" fill="#3b82f6" font-weight="600">13.56 MHz</text>
+
+    <!-- Specs -->
+    <g transform="translate(20, 275)">
+      <text x="0" y="0" font-size="11" font-weight="700" fill="#1e40af">Key Features</text>
+
+      <circle cx="8" cy="18" r="3" fill="#3b82f6"/>
+      <text x="18" y="22" font-size="10" fill="#334155">Uniform plasma distribution</text>
+
+      <circle cx="8" cy="38" r="3" fill="#3b82f6"/>
+      <text x="18" y="42" font-size="10" fill="#334155">All substrate types (incl. insulating)</text>
+
+      <circle cx="8" cy="58" r="3" fill="#3b82f6"/>
+      <text x="18" y="62" font-size="10" fill="#334155">Multiple gas compatibility</text>
+
+      <circle cx="8" cy="78" r="3" fill="#3b82f6"/>
+      <text x="18" y="82" font-size="10" fill="#334155">Most versatile — industry standard</text>
+
+      <rect x="0" y="98" width="250" height="28" rx="6" fill="#3b82f6" opacity="0.1"/>
+      <text x="125" y="117" text-anchor="middle" font-size="10" font-weight="600" fill="#1e40af">Best for: General purpose &amp; semiconductor</text>
+    </g>
+  </g>
+
+  <!-- ==================== DC Plasma ==================== -->
+  <g transform="translate(335, 60)">
+    <rect width="290" height="440" rx="12" fill="url(#dcGrad)" stroke="#86efac" stroke-width="1.5" filter="url(#cardShadow)"/>
+    <!-- Header -->
+    <rect width="290" height="44" rx="12" fill="#16a34a"/>
+    <rect y="24" width="290" height="20" fill="#16a34a"/>
+    <text x="145" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">DC Plasma Cleaner</text>
+
+    <!-- Chamber outline -->
+    <rect x="45" y="65" width="200" height="195" rx="10" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+
+    <!-- Cathode (top) -->
+    <rect x="65" y="80" width="160" height="12" rx="3" fill="url(#elecMetal)" stroke="#6b7280" stroke-width="0.8"/>
+    <text x="145" y="75" text-anchor="middle" font-size="8.5" fill="#16a34a" font-weight="600">Cathode (−)</text>
+
+    <!-- Anode (bottom) -->
+    <rect x="65" y="225" width="160" height="12" rx="3" fill="url(#elecMetal)" stroke="#6b7280" stroke-width="0.8"/>
+    <text x="145" y="250" text-anchor="middle" font-size="8.5" fill="#6b7280" font-weight="500">Anode (+)</text>
+
+    <!-- Substrate (must be conductive) -->
+    <rect x="100" y="215" width="90" height="10" rx="2" fill="#16a34a"/>
+    <text x="145" y="223" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Metal</text>
+
+    <!-- Plasma glow -->
+    <rect x="65" y="95" width="160" height="118" rx="6" fill="url(#plasmaGreen)"/>
+
+    <!-- DC field arrows (straight down) -->
+    <g stroke="#16a34a" stroke-width="1.2" opacity="0.5">
+      <line x1="100" y1="100" x2="100" y2="200"/>
+      <line x1="145" y1="100" x2="145" y2="200"/>
+      <line x1="190" y1="100" x2="190" y2="200"/>
+      <polygon points="97,200 100,210 103,200" fill="#16a34a"/>
+      <polygon points="142,200 145,210 148,200" fill="#16a34a"/>
+      <polygon points="187,200 190,210 193,200" fill="#16a34a"/>
+    </g>
+
+    <!-- Plasma particles -->
+    <g font-size="9" font-weight="600">
+      <text x="108" y="130" fill="#15803d">Ar⁺</text>
+      <text x="160" y="150" fill="#15803d">Ar⁺</text>
+      <text x="80" y="165" fill="#6366f1">e⁻</text>
+      <text x="185" y="120" fill="#6366f1">e⁻</text>
+      <text x="130" y="185" fill="#15803d">Ar⁺</text>
+    </g>
+
+    <!-- DC voltage label -->
+    <text x="260" y="95" font-size="8" fill="#16a34a" font-weight="600">300–1000 V</text>
+    <text x="260" y="107" font-size="8" fill="#16a34a" font-weight="600">DC</text>
+
+    <!-- Specs -->
+    <g transform="translate(20, 275)">
+      <text x="0" y="0" font-size="11" font-weight="700" fill="#15803d">Key Features</text>
+
+      <circle cx="8" cy="18" r="3" fill="#16a34a"/>
+      <text x="18" y="22" font-size="10" fill="#334155">Simple, low-cost design</text>
+
+      <circle cx="8" cy="38" r="3" fill="#16a34a"/>
+      <text x="18" y="42" font-size="10" fill="#334155">Conductive substrates only</text>
+
+      <circle cx="8" cy="58" r="3" fill="#16a34a"/>
+      <text x="18" y="62" font-size="10" fill="#334155">Straightforward power control</text>
+
+      <circle cx="8" cy="78" r="3" fill="#16a34a"/>
+      <text x="18" y="82" font-size="10" fill="#334155">Less uniform plasma</text>
+
+      <rect x="0" y="98" width="250" height="28" rx="6" fill="#16a34a" opacity="0.1"/>
+      <text x="125" y="117" text-anchor="middle" font-size="10" font-weight="600" fill="#15803d">Best for: Metal cleaning, cost-sensitive</text>
+    </g>
+  </g>
+
+  <!-- ==================== Microwave Plasma ==================== -->
+  <g transform="translate(650, 60)">
+    <rect width="290" height="440" rx="12" fill="url(#mwGrad)" stroke="#d8b4fe" stroke-width="1.5" filter="url(#cardShadow)"/>
+    <!-- Header -->
+    <rect width="290" height="44" rx="12" fill="#9333ea"/>
+    <rect y="24" width="290" height="20" fill="#9333ea"/>
+    <text x="145" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">Microwave Plasma Cleaner</text>
+
+    <!-- Remote plasma source (top box) -->
+    <rect x="70" y="65" width="150" height="55" rx="8" fill="#fff" stroke="#d8b4fe" stroke-width="1.5"/>
+    <rect x="85" y="75" width="120" height="30" rx="5" fill="url(#plasmaPurple)"/>
+    <text x="145" y="94" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">Plasma Source</text>
+    <text x="145" y="60" text-anchor="middle" font-size="8.5" fill="#9333ea" font-weight="600">Microwave 2.45 GHz</text>
+
+    <!-- Waveguide connecting -->
+    <rect x="130" y="120" width="30" height="30" rx="2" fill="#e9d5ff" stroke="#c084fc" stroke-width="1"/>
+    <text x="145" y="140" text-anchor="middle" font-size="7" fill="#7c3aed">↓</text>
+
+    <!-- Downstream chamber -->
+    <rect x="45" y="155" width="200" height="105" rx="10" fill="#fff" stroke="#d8b4fe" stroke-width="1.5"/>
+    <text x="145" y="172" text-anchor="middle" font-size="8" fill="#7c3aed" font-weight="500">Downstream Chamber</text>
+
+    <!-- Radicals flowing down (no ions) -->
+    <g font-size="9" font-weight="600" fill="#a855f7">
+      <text x="80" y="200">O•</text>
+      <text x="120" y="195">O•</text>
+      <text x="160" y="205">O•</text>
+      <text x="200" y="195">O•</text>
+      <text x="100" y="225">O•</text>
+      <text x="175" y="230">O•</text>
+    </g>
+    <text x="145" y="245" text-anchor="middle" font-size="7.5" fill="#6b21a8" font-style="italic">Radicals only — minimal ions</text>
+
+    <!-- Substrate -->
+    <rect x="100" y="248" width="90" height="10" rx="2" fill="#9333ea"/>
+    <text x="145" y="256" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Sample</text>
+
+    <!-- Specs -->
+    <g transform="translate(20, 275)">
+      <text x="0" y="0" font-size="11" font-weight="700" fill="#7c3aed">Key Features</text>
+
+      <circle cx="8" cy="18" r="3" fill="#9333ea"/>
+      <text x="18" y="22" font-size="10" fill="#334155">Very high radical density</text>
+
+      <circle cx="8" cy="38" r="3" fill="#9333ea"/>
+      <text x="18" y="42" font-size="10" fill="#334155">Minimal ion damage (downstream)</text>
+
+      <circle cx="8" cy="58" r="3" fill="#9333ea"/>
+      <text x="18" y="62" font-size="10" fill="#334155">Electrode-free — no contamination</text>
+
+      <circle cx="8" cy="78" r="3" fill="#9333ea"/>
+      <text x="18" y="82" font-size="10" fill="#334155">Higher cost, complex equipment</text>
+
+      <rect x="0" y="98" width="250" height="28" rx="6" fill="#9333ea" opacity="0.1"/>
+      <text x="125" y="117" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Best for: Sensitive substrates, III-V</text>
+    </g>
+  </g>
+</svg>

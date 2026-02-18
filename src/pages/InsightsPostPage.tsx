@@ -289,8 +289,12 @@ export const InsightsPostPage: React.FC = () => {
                             <li><a href="/products/pecvd">PECVD Systems</a></li>
                             <li><a href="/products/ald">ALD Systems</a></li>
                           </>
-                        ) : displayPost?.slug === 'plasma-cleaner-comparison-research-labs' ? (
+                        ) : displayPost?.slug === 'plasma-cleaner-comparison-research-labs' || displayPost?.slug === 'what-is-plasma-cleaner-principles-types' || displayPost?.slug === 'plasma-cleaner-applications-guide' || displayPost?.slug === 'plasma-cleaner-buying-guide' ? (
                           <>
+                            <li>
+                              <a href="/products/plasma-cleaner">Plasma Cleaner Systems</a>
+                              <span className="product-mini">PLUTO Series / RF Plasma</span>
+                            </li>
                             <li>
                               <a href="/products/hy-4l">HY-4L</a>
                               <span className="product-mini">Compact / Teaching / Validation</span>
@@ -302,9 +306,6 @@ export const InsightsPostPage: React.FC = () => {
                             <li>
                               <a href="/products/hy-20lrf">HY-20LRF</a>
                               <span className="product-mini">Integrated / Batch Processing</span>
-                            </li>
-                            <li style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e9ecef' }}>
-                              <a href="/products/plasma-systems" style={{ fontSize: '0.9rem', color: '#667eea' }}>View all plasma systems →</a>
                             </li>
                           </>
                         ) : (
@@ -442,6 +443,13 @@ export const InsightsPostPage: React.FC = () => {
                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
                            <li><a href="/products/pecvd">PECVD Systems</a></li>
                            <li><a href="/products/ald">ALD Systems</a></li>
+                         </>
+                       ) : displayPost?.slug === 'what-is-plasma-cleaner-principles-types' || displayPost?.slug === 'plasma-cleaner-applications-guide' || displayPost?.slug === 'plasma-cleaner-buying-guide' ? (
+                         <>
+                           <li><a href="/products/plasma-cleaner">Plasma Cleaner Systems</a></li>
+                           <li><a href="/products/hy-4l">HY-4L</a></li>
+                           <li><a href="/products/hy-20l">HY-20L</a></li>
+                           <li><a href="/products/hy-20lrf">HY-20LRF</a></li>
                          </>
                        ) : (
                         <>
