@@ -2017,6 +2017,7 @@ section h3 {
 
 .product-image-main .lazy-load-image-background {
     width: 100% !important;
+    height: auto !important;
     background-color: #ffffff !important;
     position: relative !important;
     display: block !important;
@@ -2205,6 +2206,7 @@ section h3 {
 .product-images .lazy-load-image-background {
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
     background-color: #ffffff !important;
     position: relative !important;
 }
