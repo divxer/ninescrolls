@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useInsightsPost, useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
-import type { InsightsPost, RelatedProduct } from '../types';
+import { insightsPosts, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import '../styles/InsightsPostPage.css';
@@ -14,79 +13,48 @@ const ARTICLE_REDIRECTS: Record<string, string> = {
   'plasma-cleaning-precision-surface-preparation': 'what-is-plasma-cleaner-principles-types',
 };
 
-// ─── Helper Components ───────────────────────────────────────────────────────
-
-function InsightsHeroImage({ post }: { post: InsightsPost }) {
-  if (post.heroImages) {
-    const { prefix, fallbackExt } = post.heroImages;
-    return (
-      <picture>
-        <source srcSet={`/assets/images/insights/${prefix}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-lg.webp`} media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-md.webp`} media="(min-width: 768px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-sm.webp`} media="(max-width: 767px)" type="image/webp" />
-        <img src={`/assets/images/insights/${prefix}-lg.${fallbackExt}`} alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
-      </picture>
-    );
-  }
-  return <img src={post.imageUrl} alt={post.title} loading="eager" fetchPriority="high" />;
-}
-
-function RelatedProductsSidebar({ products }: { products?: RelatedProduct[] }) {
-  if (!products || products.length === 0) return null;
-  return (
-    <div className="related-products">
-      <h3>Related Products</h3>
-      <ul>
-        {products.map(p => (
-          <li key={p.href}>
-            <a href={p.href}>{p.label}</a>
-            {p.subtitle && <span className="product-mini">{p.subtitle}</span>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function RelatedArticlesSidebar({ post, allPosts }: { post: InsightsPost; allPosts: InsightsPost[] }) {
-  const related = rankRelatedInsights(allPosts, post, 4);
-  if (related.length === 0) return null;
-  return (
-    <div className="related-articles">
-      <h3>Related Articles</h3>
-      <ul>
-        {related.map(rp => (
-          <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// ─── Main Component ──────────────────────────────────────────────────────────
-
 export const InsightsPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-
-  // Resolve redirect slug to avoid fetching redirect entries
-  const resolvedSlug = slug && ARTICLE_REDIRECTS[slug] ? undefined : slug;
-  const isRedirect = slug ? !!ARTICLE_REDIRECTS[slug] : false;
+  const [post, setPost] = useState<InsightsPost | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Scroll to top when component mounts or slug changes
   useScrollToTop([slug]);
 
-  const { post, loading } = useInsightsPost(resolvedSlug);
-  const { posts: allPosts } = useInsightsPosts();
+  useEffect(() => {
+    // Special handling for standalone component pages
+    if (slug === 'plasma-cleaner-comparison-research-labs') {
+      const foundPost = insightsPosts.find(p => p.slug === slug);
+      if (foundPost) {
+        setPost(foundPost);
+      }
+      setLoading(false);
+      return;
+    }
 
-  // Handle consolidated article redirects (client-side)
-  if (isRedirect && slug) {
+    const foundPost = insightsPosts.find(p => p.slug === slug);
+    setTimeout(() => {
+      setPost(foundPost || null);
+      setLoading(false);
+    }, 500);
+
+    // Note: Page view is automatically tracked by SegmentAnalytics component
+    // No need for separate TRACK event - PAGE event already includes:
+    // - Full IP analysis with behavior scoring
+    // - Time on site
+    // - Target customer detection
+    // - Pathname (which identifies the article)
+    // If you need article-specific data in Segment, you can add it to PAGE event properties
+  }, [slug]);
+
+  // Special handling for standalone component pages
+  // For these pages, we still show the standard hero section, then render the custom content
+  const isStandaloneComponent = slug === 'plasma-cleaner-comparison-research-labs';
+
+  // Handle consolidated article redirects
+  if (slug && ARTICLE_REDIRECTS[slug]) {
     return <Navigate to={`/insights/${ARTICLE_REDIRECTS[slug]}`} replace />;
   }
-
-  const isStandaloneComponent = post?.isStandaloneComponent ?? false;
-
-  // Note: Page view is automatically tracked by SegmentAnalytics component
 
   if (loading) {
     return (
@@ -98,7 +66,12 @@ export const InsightsPostPage: React.FC = () => {
     );
   }
 
-  if (!post) {
+  // Use post data (set in useEffect)
+  const displayPost = post;
+
+  // For standalone components, we can still render even if post data is missing
+  // (it will use fallback values)
+  if (!displayPost && !isStandaloneComponent) {
     return (
       <div className="insights-post-page">
         <div className="container">
@@ -111,60 +84,104 @@ export const InsightsPostPage: React.FC = () => {
   return (
     <>
       <SEO
-        title={post.title}
-        description={post.excerpt || post.title}
-        keywords={post.tags?.join(', ') || ''}
-        image={post.imageUrl}
-        url={`/insights/${post.slug}`}
+        title={displayPost?.title || (isStandaloneComponent ? 'Plasma Cleaner Comparison for Research Laboratories' : 'Insights')}
+        description={displayPost?.excerpt || displayPost?.title || (isStandaloneComponent ? 'Compare plasma cleaners for academic labs. Quartz vs stainless steel, RF vs MF, and batch plasma cleaner selection guide.' : '')}
+        keywords={displayPost?.tags?.join(', ') || (isStandaloneComponent ? 'plasma cleaner comparison, plasma cleaner for research laboratories' : '')}
+        image={displayPost?.imageUrl || (isStandaloneComponent ? '/assets/images/insights/plasma-cleaner-comparison-cover-lg.png' : undefined)}
+        url={`/insights/${displayPost?.slug || slug || ''}`}
         type="article"
       />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          "headline": post.title,
-          "description": post.excerpt || post.title,
-          "image": `https://ninescrolls.com${post.imageUrl}`,
-          "author": {
-            "@type": "Organization",
-            "name": "NineScrolls",
-            "url": "https://ninescrolls.com/about"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "NineScrolls",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://ninescrolls.com/assets/images/logo.png"
-            }
-          },
-          "datePublished": post.publishDate,
-          "dateModified": post.publishDate,
-          "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": `https://ninescrolls.com/insights/${post.slug}`
-          },
-          "keywords": post.tags?.join(', ') || '',
-          "articleSection": post.category,
-          "timeRequired": `PT${post.readTime}M`
-        })}
-      </script>
+      {(displayPost || isStandaloneComponent) && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": displayPost?.title || (isStandaloneComponent ? 'Plasma Cleaner Comparison for Research Laboratories' : ''),
+            "description": displayPost?.excerpt || displayPost?.title || '',
+            "image": `https://ninescrolls.com${displayPost?.imageUrl || (isStandaloneComponent ? '/assets/images/insights/plasma-cleaner-comparison-cover-lg.png' : '')}`,
+            "author": {
+              "@type": "Organization",
+              "name": "NineScrolls",
+              "url": "https://ninescrolls.com/about"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "NineScrolls",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://ninescrolls.com/assets/images/logo.png"
+              }
+            },
+            "datePublished": displayPost?.publishDate || (isStandaloneComponent ? '2025-01-15' : ''),
+            "dateModified": displayPost?.publishDate || (isStandaloneComponent ? '2025-01-15' : ''),
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://ninescrolls.com/insights/${displayPost?.slug || slug || ''}`
+            },
+            "keywords": displayPost?.tags?.join(', ') || '',
+            "articleSection": displayPost?.category || (isStandaloneComponent ? 'Materials Science' : ''),
+            "timeRequired": `PT${displayPost?.readTime || (isStandaloneComponent ? 8 : 0)}M`
+          })}
+        </script>
+      )}
       <div className="insights-post-page">
         {/* Hero Section */}
         <section className="insights-post-hero">
           <div className="container">
             <div className="hero-content">
               <div className="hero-text">
-                <h1 className="insights-post-title">{post.title}</h1>
+                <h1 className="insights-post-title">{displayPost?.title || (isStandaloneComponent ? 'Plasma Cleaner Comparison for Research Laboratories' : '')}</h1>
                 <div className="insights-post-meta">
-                  <span className="author">{post.author}</span>
-                  <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
-                  <span className="category">{post.category}</span>
-                  <span className="read-time">{post.readTime} min read</span>
+                  <span className="author">{displayPost?.author || (isStandaloneComponent ? 'NineScrolls Engineering' : '')}</span>
+                  <span className="date">{displayPost ? new Date(displayPost.publishDate).toLocaleDateString() : (isStandaloneComponent ? new Date('2025-01-15').toLocaleDateString() : '')}</span>
+                  <span className="category">{displayPost?.category || (isStandaloneComponent ? 'Materials Science' : '')}</span>
+                  <span className="read-time">{displayPost?.readTime || (isStandaloneComponent ? 8 : 0)} min read</span>
                 </div>
               </div>
               <div className="hero-image">
-                <InsightsHeroImage post={post} />
+                {displayPost?.slug === 'deep-reactive-ion-etching-bosch-process' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/drie-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/drie-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/drie-cover-lg.png" alt={displayPost?.title || ''} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : displayPost?.slug === 'icp-rie-technology-advanced-etching' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/icp-rie-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/icp-rie-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/icp-rie-cover-lg.png" alt={displayPost?.title || ''} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : displayPost?.slug === 'reactive-ion-etching-vs-ion-milling' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/rie-vs-milling-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/rie-vs-milling-cover-lg.png" alt={displayPost?.title || ''} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : displayPost?.slug === 'semiconductor-etchers-overview' ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/etchers-overview-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/etchers-overview-cover-lg.png" alt={displayPost?.title || ''} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : displayPost?.slug === 'plasma-cleaner-comparison-research-labs' || isStandaloneComponent ? (
+                  <picture>
+                    <source srcSet="/assets/images/insights/plasma-cleaner-comparison-cover-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/plasma-cleaner-comparison-cover-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/plasma-cleaner-comparison-cover-md.webp" media="(min-width: 768px)" type="image/webp" />
+                    <source srcSet="/assets/images/insights/plasma-cleaner-comparison-cover-sm.webp" media="(max-width: 767px)" type="image/webp" />
+                    <img src="/assets/images/insights/plasma-cleaner-comparison-cover-lg.png" alt={displayPost?.title || 'Plasma Cleaner Comparison for Research Laboratories'} loading="eager" fetchPriority="high" decoding="sync" />
+                  </picture>
+                ) : (
+                  <img src={displayPost?.imageUrl || ''} alt={displayPost?.title || ''} loading="eager" fetchPriority="high" />
+                )}
               </div>
             </div>
           </div>
@@ -175,60 +192,258 @@ export const InsightsPostPage: React.FC = () => {
           {isStandaloneComponent ? (
             /* Two-stage layout with unified alignment */
             <div className="content-container-unified">
+              {/* Top Section: Two-column layout with sidebar (TL;DR, TOC, Introduction) */}
               <div className="content-wrapper-top">
                 <div className="main-content">
                   <PlasmaCleanerComparisonPage />
                 </div>
                 <div className="sidebar">
-                  <RelatedProductsSidebar products={post.relatedProducts} />
-                  <RelatedArticlesSidebar post={post} allPosts={allPosts} />
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Standard single-column layout for regular posts */
-            <div className="content-wrapper">
-              <div className="main-content">
-                {post.content ? (
-                  <div
-                    className="post-content"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                  />
-                ) : null}
-
-                {/* Tags */}
-                {post.tags && post.tags.length > 0 && (
-                  <div className="post-tags">
-                    <h3>Tags:</h3>
-                    <div className="tags">
-                      {post.tags.map(tag => (
-                        <span key={tag} className="tag">{tag}</span>
-                      ))}
+                    <div className="related-products">
+                      <h3>Related Products</h3>
+                      <ul>
+                        {displayPost?.slug === 'hdp-cvd-in-depth-guide-practical-handbook' ? (
+                          <>
+                            <li><a href="/products/hdp-cvd">HDP-CVD Systems</a></li>
+                            <li><a href="/products/pecvd">PECVD Systems</a></li>
+                            <li><a href="/products/ald">ALD Systems</a></li>
+                            <li><a href="/products/sputter">Sputter Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'reactive-ion-etching-guide' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'deep-reactive-ion-etching-bosch-process' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'icp-rie-technology-advanced-etching' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'reactive-ion-etching-vs-ion-milling' ? (
+                          <>
+                            <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/sputter">Sputter Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'semiconductor-etchers-overview' ? (
+                          <>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'plasma-etching-explained-fundamentals-applications' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                            <li><a href="/products/pecvd">PECVD Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'understanding-differences-pe-rie-icp-rie-plasma-etching' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                            <li><a href="/products/pecvd">PECVD Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'plasma-non-uniform-etch-chamber-solutions' ? (
+                          <>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                            <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                            <li><a href="/products/pecvd">PECVD Systems</a></li>
+                            <li><a href="/products/ald">ALD Systems</a></li>
+                          </>
+                        ) : displayPost?.slug === 'plasma-cleaner-comparison-research-labs' || displayPost?.slug === 'what-is-plasma-cleaner-principles-types' || displayPost?.slug === 'plasma-cleaner-applications-guide' || displayPost?.slug === 'plasma-cleaner-buying-guide' ? (
+                          <>
+                            <li>
+                              <a href="/products/plasma-cleaner">Plasma Cleaner Systems</a>
+                              <span className="product-mini">PLUTO Series / RF Plasma</span>
+                            </li>
+                            <li>
+                              <a href="/products/hy-4l">HY-4L</a>
+                              <span className="product-mini">Compact / Teaching / Validation</span>
+                            </li>
+                            <li>
+                              <a href="/products/hy-20l">HY-20L</a>
+                              <span className="product-mini">Core Research / Batch Processing</span>
+                            </li>
+                            <li>
+                              <a href="/products/hy-20lrf">HY-20LRF</a>
+                              <span className="product-mini">Integrated / Batch Processing</span>
+                            </li>
+                          </>
+                        ) : (
+                          <>
+                            <li><a href="/products/striper">Striper Systems</a></li>
+                            <li><a href="/products/pecvd">PECVD Systems</a></li>
+                            <li><a href="/products/ald">ALD Systems</a></li>
+                            <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          </>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="related-articles">
+                      <h3>Related Articles</h3>
+                      <ul>
+                        {displayPost && rankRelatedInsights(insightsPosts, displayPost, 4).map(rp => (
+                          <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                )}
+                </div>
+              </div>
+            ) : (
+              /* Standard single-column layout for regular posts */
+              <div className="content-wrapper">
+                <div className="main-content">
+                  {post?.content ? (
+                    <div 
+                      className="post-content"
+                      dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
+                  ) : null}
+                  
+                  {/* Tags */}
+                  {displayPost?.tags && displayPost.tags.length > 0 && (
+                    <div className="post-tags">
+                      <h3>Tags:</h3>
+                      <div className="tags">
+                        {displayPost.tags.map(tag => (
+                          <span key={tag} className="tag">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                {/* Share Buttons */}
-                <div className="share-section">
-                  <h3>Share this article:</h3>
-                  <div className="share-buttons">
-                    <button className="share-btn twitter">Twitter</button>
-                    <button className="share-btn linkedin">LinkedIn</button>
-                    <button className="share-btn email">Email</button>
+                  {/* Share Buttons */}
+                  <div className="share-section">
+                    <h3>Share this article:</h3>
+                    <div className="share-buttons">
+                      <button className="share-btn twitter">Twitter</button>
+                      <button className="share-btn linkedin">LinkedIn</button>
+                      <button className="share-btn email">Email</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sidebar">
+                  <div className="related-products">
+                    <h3>Related Products</h3>
+                    <ul>
+                      {displayPost?.slug === 'hdp-cvd-in-depth-guide-practical-handbook' ? (
+                        <>
+                          <li><a href="/products/hdp-cvd">HDP-CVD Systems</a></li>
+                          <li><a href="/products/pecvd">PECVD Systems</a></li>
+                          <li><a href="/products/ald">ALD Systems</a></li>
+                          <li><a href="/products/sputter">Sputter Systems</a></li>
+                        </>
+                      ) : post?.slug === 'reactive-ion-etching-guide' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'deep-reactive-ion-etching-bosch-process' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'icp-rie-technology-advanced-etching' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'reactive-ion-etching-vs-ion-milling' ? (
+                        <>
+                          <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/sputter">Sputter Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'semiconductor-etchers-overview' ? (
+                        <>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/ibe-ribe">IBE/RIBE Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'plasma-cleaning-precision-surface-preparation' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/pecvd">PECVD Systems</a></li>
+                          <li><a href="/products/ald">ALD Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'plasma-etching-explained-fundamentals-applications' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                          <li><a href="/products/pecvd">PECVD Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'understanding-differences-pe-rie-icp-rie-plasma-etching' ? (
+                        <>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                          <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                          <li><a href="/products/pecvd">PECVD Systems</a></li>
+                        </>
+                      ) : displayPost?.slug === 'plasma-non-uniform-etch-chamber-solutions' ? (
+                         <>
+                           <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                           <li><a href="/products/rie-etcher">RIE Etching Systems</a></li>
+                           <li><a href="/products/pecvd">PECVD Systems</a></li>
+                           <li><a href="/products/ald">ALD Systems</a></li>
+                         </>
+                       ) : displayPost?.slug === 'what-is-plasma-cleaner-principles-types' || displayPost?.slug === 'plasma-cleaner-applications-guide' || displayPost?.slug === 'plasma-cleaner-buying-guide' ? (
+                         <>
+                           <li><a href="/products/plasma-cleaner">Plasma Cleaner Systems</a></li>
+                           <li><a href="/products/hy-4l">HY-4L</a></li>
+                           <li><a href="/products/hy-20l">HY-20L</a></li>
+                           <li><a href="/products/hy-20lrf">HY-20LRF</a></li>
+                         </>
+                       ) : (
+                        <>
+                          <li><a href="/products/striper">Striper Systems</a></li>
+                          <li><a href="/products/pecvd">PECVD Systems</a></li>
+                          <li><a href="/products/ald">ALD Systems</a></li>
+                          <li><a href="/products/icp-etcher">ICP Etching Systems</a></li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                  <div className="related-articles">
+                    <h3>Related Articles</h3>
+                    <ul>
+                      {displayPost && rankRelatedInsights(insightsPosts, displayPost, 4).map(rp => (
+                        <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
-
-              <div className="sidebar">
-                <RelatedProductsSidebar products={post.relatedProducts} />
-                <RelatedArticlesSidebar post={post} allPosts={allPosts} />
-              </div>
-            </div>
-          )}
+            )}
         </section>
       </div>
     </>
   );
 };
 
-export default InsightsPostPage;
+export default InsightsPostPage; 

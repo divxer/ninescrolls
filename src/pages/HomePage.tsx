@@ -1,23 +1,14 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { insightsPosts } from '../types';
 import '../styles/HomePage.css';
 
 export function HomePage() {
   // Scroll to top when component mounts
   useScrollToTop();
-
-  const { posts: allInsightsPosts, loading: insightsLoading } = useInsightsPosts();
-  const latestInsights = useMemo(
-    () => [...allInsightsPosts]
-      .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
-      .slice(0, 3),
-    [allInsightsPosts]
-  );
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -153,9 +144,10 @@ export function HomePage() {
           <h2>Research Insights</h2>
           <p className="section-subtitle">Expert guides and technical resources for research laboratories</p>
           <div className="insights-showcase">
-            {insightsLoading ? (
-              <div className="loading">Loading insights...</div>
-            ) : latestInsights.map((post) => (
+            {insightsPosts
+              .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+              .slice(0, 3)
+              .map((post) => (
                 <Link key={post.id} to={`/insights/${post.slug}`} className="insight-card">
                   <div className="insight-card-image">
                     <OptimizedImage
