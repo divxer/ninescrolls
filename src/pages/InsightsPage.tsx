@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
+import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
-import { insightsPosts, categories, InsightsPost } from '../types';
+import { categories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
 export const InsightsPage: React.FC = () => {
-  const [posts] = useState<InsightsPost[]>(
-    [...insightsPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+  const { posts: rawPosts, loading } = useInsightsPosts();
+  const posts = useMemo(
+    () => [...rawPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()),
+    [rawPosts]
   );
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +71,7 @@ export const InsightsPage: React.FC = () => {
 
   return (
     <>
-      <SEO 
+      <SEO
         title="Insights"
         description="NineScrolls Insights - Expert analysis and breakthrough technologies in advanced manufacturing and materials science. Explore articles on plasma etching, semiconductor manufacturing, MEMS, nanotechnology, and more."
         keywords="semiconductor insights, plasma etching, advanced manufacturing, materials science, MEMS, nanotechnology, semiconductor equipment, thin film processing"
@@ -96,7 +99,7 @@ export const InsightsPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <div className="category-filters">
             {categories.map(category => (
               <button
@@ -114,29 +117,33 @@ export const InsightsPage: React.FC = () => {
       {/* Insights Grid */}
       <section className="insights-grid">
         <div className="container">
-          <div className="posts-grid">
-            {filteredPosts.map(post => (
-              <article key={post.id} className="insights-card">
-                <div className="insights-card-image">
-                  <img src={post.imageUrl} alt={post.title} loading="lazy" decoding="async" />
-                </div>
-                <div className="insights-card-content">
-                  <div className="insights-card-meta">
-                    <span className="category">{post.category}</span>
-                    <span className="read-time">{post.readTime} min read</span>
+          {loading ? (
+            <div className="loading">Loading articles...</div>
+          ) : (
+            <div className="posts-grid">
+              {filteredPosts.map(post => (
+                <article key={post.id} className="insights-card">
+                  <div className="insights-card-image">
+                    <img src={post.imageUrl} alt={post.title} loading="lazy" decoding="async" />
                   </div>
-                  <h3 className="insights-card-title">
-                    <Link to={`/insights/${post.slug}`}>{post.title}</Link>
-                  </h3>
-                  <p className="insights-card-excerpt">{post.excerpt}</p>
-                  <div className="insights-card-footer">
-                    <span className="author">{post.author}</span>
-                    <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
+                  <div className="insights-card-content">
+                    <div className="insights-card-meta">
+                      <span className="category">{post.category}</span>
+                      <span className="read-time">{post.readTime} min read</span>
+                    </div>
+                    <h3 className="insights-card-title">
+                      <Link to={`/insights/${post.slug}`}>{post.title}</Link>
+                    </h3>
+                    <p className="insights-card-excerpt">{post.excerpt}</p>
+                    <div className="insights-card-footer">
+                      <span className="author">{post.author}</span>
+                      <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -176,4 +183,4 @@ export const InsightsPage: React.FC = () => {
   );
 };
 
-export default InsightsPage; 
+export default InsightsPage;
