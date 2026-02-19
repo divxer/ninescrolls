@@ -168,21 +168,22 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Plasma Cleaner Series (2026) -->
   <url>
     <loc>https://ninescrolls.com/insights/what-is-plasma-cleaner-principles-types</loc>
-    <lastmod>2026-02-10</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/plasma-cleaner-applications-guide</loc>
-    <lastmod>2026-02-12</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/plasma-cleaner-buying-guide</loc>
-    <lastmod>2026-02-15</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -198,142 +199,102 @@
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
+  <!-- Research & Technical Articles (2025) -->
   <url>
     <loc>https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization</loc>
-    <lastmod>2025-11-13</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics</loc>
-    <lastmod>2025-09-08</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/reactive-ion-etching-guide</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/deep-reactive-ion-etching-bosch-process</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/icp-rie-technology-advanced-etching</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/semiconductor-etchers-overview</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook</loc>
-    <lastmod>2025-01-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/plasma-cleaning-precision-surface-preparation</loc>
-    <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/plasma-etching</loc>
-    <lastmod>2025-08-21</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications</loc>
-    <lastmod>2025-01-26</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching</loc>
-    <lastmod>2025-01-25</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <!-- Retained 2024 Articles (updated with references) -->
   <url>
     <loc>https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering</loc>
-    <lastmod>2024-01-10</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future</loc>
-    <lastmod>2024-01-08</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/energy-storage-materials-tomorrow-technologies</loc>
-    <lastmod>2024-01-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/biotechnology-applications-lab-market</loc>
-    <lastmod>2024-01-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy</loc>
-    <lastmod>2024-01-20</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/microfluidics-revolution-lab-on-chip</loc>
-    <lastmod>2024-01-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/optical-waveguides-modern-communications</loc>
-    <lastmod>2024-01-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ninescrolls.com/insights/quantum-computing-future-information-processing</loc>
-    <lastmod>2024-01-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy</loc>
-    <lastmod>2024-01-12</lastmod>
+    <lastmod>2026-02-18</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
-</urlset> 
+</urlset>

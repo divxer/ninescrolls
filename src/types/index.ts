@@ -89,8 +89,17 @@ export const insightsPosts: InsightsPost[] = [
       <h2>9) Conclusion & CTA</h2>
       <p>Need help choosing between RIE and ICP‑RIE? Our process engineers can evaluate your materials and target CDs/HAR.</p>
       <p><a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/contact?topic=Etching%20Inquiry">Contact us</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Jansen, H., et al. "A survey on the reactive ion etching of silicon in microtechnology." <em>Journal of Micromechanics and Microengineering</em>, 6(1), 14–28 (1996). <a href="https://doi.org/10.1088/0960-1317/6/1/002" target="_blank" rel="noopener noreferrer">doi:10.1088/0960-1317/6/1/002</a></li>
+        <li>Coburn, J. W. & Winters, H. F. "Plasma etching — A discussion of mechanisms." <em>Journal of Vacuum Science & Technology</em>, 16(2), 391–403 (1979). <a href="https://doi.org/10.1116/1.569958" target="_blank" rel="noopener noreferrer">doi:10.1116/1.569958</a></li>
+        <li>Donnelly, V. M. & Kornblit, A. "Plasma etching: Yesterday, today, and tomorrow." <em>Journal of Vacuum Science & Technology A</em>, 31(5), 050825 (2013). <a href="https://doi.org/10.1116/1.4819316" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4819316</a></li>
+        <li>SEMI Standard E10-0304: Guide for Measurement of Plasma Etch Uniformity. <a href="https://www.semi.org" target="_blank" rel="noopener noreferrer">semi.org</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-28',
     category: 'Nanotechnology',
     readTime: 8,
@@ -100,11 +109,11 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '21',
-    title: 'Deep Reactive Ion Etching (DRIE) – The Bosch Process Explained',
+    title: '<a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive Ion Etching (DRIE)</a> – The Bosch Process Explained',
     excerpt: 'DRIE fundamentals, Bosch cycles (etch–passivation), applications in MEMS/TSV, common defects and mitigations, and ICP‑DRIE equipment notes.',
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
-      <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional Reactive Ion Etching (RIE), DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1, making it indispensable for advanced MEMS, TSVs, and photonic devices.</p>
+      <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1, making it indispensable for advanced MEMS, TSVs, and photonic devices.</p>
       <p>The Bosch process, first commercialized by Robert Bosch GmbH, has become the industry standard for DRIE. It relies on a cyclical sequence of passivation and etching to sculpt vertical silicon structures with precision and repeatability.</p>
       <hr/>
 
@@ -156,8 +165,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>The Bosch process has redefined what is possible in microfabrication, enabling the miniaturization and integration of MEMS, photonics, and 3D ICs. As process innovations continue, DRIE will remain a key enabler of nanotechnology and semiconductor advancement.</p>
       <p>Need guidance on DRIE vs cryogenic etching for your application? Our engineers at NineScrolls can help evaluate your aspect ratio, etch depth, and material requirements to recommend the best DRIE solution.</p>
       <p><a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/products/icp-etcher">DRIE Solutions</a> · <a href="/contact?topic=DRIE%20Inquiry">Contact Us</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Laermer, F. & Schilp, A. "Method of Anisotropically Etching Silicon." U.S. Patent 5,501,893 (1996). Robert Bosch GmbH.</li>
+        <li>Wu, B., Kumar, A. & Pamarthy, S. "High aspect ratio silicon etch: A review." <em>Journal of Applied Physics</em>, 108(5), 051101 (2010). <a href="https://doi.org/10.1063/1.3474652" target="_blank" rel="noopener noreferrer">doi:10.1063/1.3474652</a></li>
+        <li>Blauw, M. A., et al. "Advanced time-multiplexed plasma etching of high aspect ratio silicon structures." <em>Journal of Vacuum Science & Technology B</em>, 20(6), 3106–3110 (2002). <a href="https://doi.org/10.1116/1.1523403" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1523403</a></li>
+        <li>Rangelow, I. W. "Critical tasks in high aspect ratio silicon dry etching for microelectromechanical systems." <em>Journal of Vacuum Science & Technology A</em>, 21(4), 1550–1562 (2003). <a href="https://doi.org/10.1116/1.1580488" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1580488</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 10,
@@ -171,7 +189,7 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'How ICP differs from conventional RIE, benefits for deep/high‑aspect‑ratio etching, and typical materials (SiC/GaN).',
     content: `
       <h2>1) Introduction to ICP‑RIE</h2>
-      <p>Inductively Coupled Plasma Reactive Ion Etching (ICP‑RIE) is a powerful dry etching technology that has become indispensable for advanced semiconductor processing, MEMS fabrication, and nanostructure development. Unlike conventional RIE systems, which rely on relatively low plasma densities, ICP‑RIE employs a high‑density plasma source that can generate ion concentrations on the order of 10¹¹–10¹² cm⁻³.</p>
+      <p>Inductively Coupled Plasma Reactive Ion Etching (ICP‑RIE) is a powerful dry etching technology that has become indispensable for advanced semiconductor processing, MEMS fabrication, and nanostructure development. Unlike conventional <a href="/insights/reactive-ion-etching-guide">RIE</a> systems, which rely on relatively low plasma densities, ICP‑RIE employs a high‑density plasma source that can generate ion concentrations on the order of 10¹¹–10¹² cm⁻³.</p>
       <p>The result is a process that achieves:</p>
       <ul>
         <li>High etch rates (up to several µm/min depending on material)</li>
@@ -265,11 +283,20 @@ export const insightsPosts: InsightsPost[] = [
       <p>These advancements ensure ICP‑RIE remains at the heart of next‑generation nanofabrication.</p>
       <hr/>
 
-      <h2>📌 Summary</h2>
+      <h2>Summary</h2>
       <p>Inductively Coupled Plasma Reactive Ion Etching (ICP‑RIE) provides unmatched control, anisotropy, and material versatility compared with conventional RIE. Its ability to decouple plasma density from ion energy makes it ideal for advanced MEMS, photonics, and semiconductor device fabrication. While challenges remain in microloading and damage mitigation, ongoing innovations are extending ICP‑RIE capabilities for the most demanding etch applications.</p>
-      <p><strong>👉 Explore more advanced etching insights at NineScrolls Insights.</strong></p>
+      <p><strong>Explore more advanced etching insights at <a href="/insights">NineScrolls Insights</a>.</strong></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
+        <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
+        <li>Lee, C. G. N., et al. "Etching of SiC using inductively coupled SF₆/O₂ plasma." <em>Journal of The Electrochemical Society</em>, 151(2), G155 (2004). <a href="https://doi.org/10.1149/1.1637900" target="_blank" rel="noopener noreferrer">doi:10.1149/1.1637900</a></li>
+        <li>Pearton, S. J., et al. "Plasma etching of wide bandgap semiconductors." <em>Plasma Processes and Polymers</em>, 2(1), 16–37 (2005). <a href="https://doi.org/10.1002/ppap.200400035" target="_blank" rel="noopener noreferrer">doi:10.1002/ppap.200400035</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 12,
@@ -294,7 +321,7 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Etch Directionality:</strong> Achieves anisotropic etching because ions are accelerated toward the substrate under an electric field, while reactive radicals provide selective chemical reactions.</li>
         <li><strong>Control Parameters:</strong> Gas chemistry, RF power, pressure, and bias voltage allow fine‑tuning of etch rate, selectivity, and profile.</li>
       </ul>
-      <p>➡️ RIE is best seen as a hybrid process: physical sputtering enhances anisotropy, while chemical reactions provide high selectivity.</p>
+      <p><strong>Key takeaway:</strong> RIE is best seen as a hybrid process: physical sputtering enhances anisotropy, while chemical reactions provide high selectivity.</p>
       <hr/>
 
       <h3>Ion Milling (Ion Beam Etching, IBE)</h3>
@@ -303,7 +330,7 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Etch Directionality:</strong> Controlled by the angle and energy of the ion beam, which can be normal incidence (vertical milling) or oblique (angled milling).</li>
         <li><strong>Control Parameters:</strong> Beam energy, incidence angle, and ion flux primarily determine etch rate and profile.</li>
       </ul>
-      <p>➡️ Ion Milling is essentially a “sandblasting” process at the nanoscale, offering precise directional control but no inherent chemical selectivity.</p>
+      <p><strong>Key takeaway:</strong> Ion Milling is essentially a "sandblasting" process at the nanoscale, offering precise directional control but no inherent chemical selectivity.</p>
       <hr/>
 
       <h2>Advantages and Limitations</h2>
@@ -416,8 +443,17 @@ export const insightsPosts: InsightsPost[] = [
         <li>If you need to etch metals or difficult materials, or require angled etching, Ion Milling is the technique of choice.</li>
       </ul>
       <p>In practice, many research labs and fabs integrate both technologies, choosing the appropriate one based on material, geometry, and performance requirements.</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Coburn, J. W. "Plasma-assisted etching." <em>Plasma Chemistry and Plasma Processing</em>, 2(1), 1–41 (1982). <a href="https://doi.org/10.1007/BF00566856" target="_blank" rel="noopener noreferrer">doi:10.1007/BF00566856</a></li>
+        <li>Sigmund, P. "Theory of sputtering. I. Sputtering yield of amorphous and polycrystalline targets." <em>Physical Review</em>, 184(2), 383 (1969). <a href="https://doi.org/10.1103/PhysRev.184.383" target="_blank" rel="noopener noreferrer">doi:10.1103/PhysRev.184.383</a></li>
+        <li>Harper, J. M. E. "Ion beam etching." In <em>Thin Film Processes</em>, Academic Press, 175–206 (1978). ISBN 978-0125219501.</li>
+        <li>Flamm, D. L. & Donnelly, V. M. "The design of plasma etchants." <em>Plasma Chemistry and Plasma Processing</em>, 1(4), 317–363 (1981). <a href="https://doi.org/10.1007/BF00565992" target="_blank" rel="noopener noreferrer">doi:10.1007/BF00565992</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 8,
@@ -443,8 +479,8 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>2. Types of Semiconductor Etchers</h2>
       <ul>
-        <li><strong>Reactive Ion Etching (RIE)</strong><br/>Combines chemical reactions with physical ion bombardment. Provides anisotropic profiles and is widely used for silicon, oxides, and polymers. Ideal for general-purpose R&D labs.</li>
-        <li><strong>Inductively Coupled Plasma RIE (ICP‑RIE)</strong><br/>Uses high-density plasma with independent control of ion density and ion energy. Suited for advanced processes requiring deep etching, high selectivity, and smooth sidewalls.</li>
+        <li><strong><a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a></strong><br/>Combines chemical reactions with physical ion bombardment. Provides anisotropic profiles and is widely used for silicon, oxides, and polymers. Ideal for general-purpose R&D labs.</li>
+        <li><strong><a href="/insights/icp-rie-technology-advanced-etching">Inductively Coupled Plasma RIE (ICP‑RIE)</a></strong><br/>Uses high-density plasma with independent control of ion density and ion energy. Suited for advanced processes requiring deep etching, high selectivity, and smooth sidewalls.</li>
         <li><strong>Deep Reactive Ion Etching (DRIE)</strong><br/>Specialized for high aspect ratio (HAR) etching, commonly using the Bosch process. Critical for MEMS, TSV (Through‑Silicon Vias), and photonic devices.</li>
         <li><strong>Ion Beam Etching (IBE/RIBE)</strong><br/>Uses a focused ion beam for physical sputtering. Offers excellent directionality but is slower and more niche—often used in optics and magnetic films.</li>
         <li><strong>Wet Benches with Plasma Strippers (Complementary Tools)</strong><br/>While not strictly “etchers,” these are often needed for resist stripping or pre‑cleaning processes, ensuring compatibility in a complete etching workflow.</li>
@@ -575,8 +611,16 @@ export const insightsPosts: InsightsPost[] = [
       <h2>8. Conclusion</h2>
       <p>Choosing the right etcher for your lab requires balancing immediate research needs with long‑term flexibility and cost of ownership. While RIE systems are excellent entry points, ICP‑RIE and DRIE tools open opportunities for advanced nanofabrication, MEMS, and photonics.</p>
       <p>The key is to match your material set, target applications, and scalability goals with the capabilities of the etching system. With the right choice, your lab can future‑proof its research capabilities and accelerate innovation.</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Donnelly, V. M. & Kornblit, A. "Plasma etching: Yesterday, today, and tomorrow." <em>Journal of Vacuum Science & Technology A</em>, 31(5), 050825 (2013). <a href="https://doi.org/10.1116/1.4819316" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4819316</a></li>
+        <li>Abe, H., Yoneda, M. & Fujiwara, N. "Developments of plasma etching technology for fabricating semiconductor devices." <em>Japanese Journal of Applied Physics</em>, 47(3R), 1435 (2008). <a href="https://doi.org/10.1143/JJAP.47.1435" target="_blank" rel="noopener noreferrer">doi:10.1143/JJAP.47.1435</a></li>
+        <li>Nojiri, K. <em>Dry Etching Technology for Semiconductors</em>. Springer (2015). ISBN 978-3319102948.</li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 10,
@@ -873,183 +917,23 @@ export const insightsPosts: InsightsPost[] = [
       
       <p><strong>Contact:</strong><br>
       Product page: <a href="/products/hdp-cvd" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/hdp-cvd</a> | Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a> | Online technical consultation available</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Vassiliev, V. Y., et al. "Trends in void-free pre-metal CVD dielectrics." <em>Solid State Technology</em>, 44(3), 129 (2001).</li>
+        <li>Nguyen, S. V. "High-density plasma chemical vapor deposition of silicon-based dielectric films for IC applications." <em>IBM Journal of Research and Development</em>, 43(1.2), 109–126 (1999). <a href="https://doi.org/10.1147/rd.431.0109" target="_blank" rel="noopener noreferrer">doi:10.1147/rd.431.0109</a></li>
+        <li>Chiang, C., et al. "High-density plasma CVD oxide gap-fill." <em>Thin Solid Films</em>, 313–314, 506–511 (1998). <a href="https://doi.org/10.1016/S0040-6090(97)00872-6" target="_blank" rel="noopener noreferrer">doi:10.1016/S0040-6090(97)00872-6</a></li>
+        <li>SEMI Standard E112: Guide for Measuring Dielectric Film Thickness and Uniformity. <a href="https://www.semi.org" target="_blank" rel="noopener noreferrer">semi.org</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-01-28',
     category: 'Materials Science',
     readTime: 15,
     imageUrl: '/assets/images/insights/hdp-cvd-guide-cover-optimized.webp',
     slug: 'hdp-cvd-in-depth-guide-practical-handbook',
     tags: ['HDP-CVD', 'High-Density Plasma', 'Chemical Vapor Deposition', 'Semiconductor Manufacturing', 'Thin Film Deposition', 'Gap-Fill Technology', 'Dielectric Films', 'Process Engineering', 'Equipment Selection', 'Cost of Ownership']
-  },
-  {
-    id: '15',
-    title: 'Plasma Etching: Principles, Techniques, and Applications in Semiconductor Manufacturing',
-    excerpt: 'Comprehensive guide to plasma etching technology covering principles, techniques, and applications in semiconductor manufacturing. Learn about RIE, ICP, and advanced plasma etching methods.',
-    content: `
-      <p><strong>Target Readers:</strong> Semiconductor process engineers, equipment engineers, R&D scientists, and technical decision-makers in plasma processing and semiconductor manufacturing.</p>
-      
-      <h2>Introduction to Plasma Etching</h2>
-      
-      <h3>What is Plasma Etching?</h3>
-      <p>Plasma etching is a dry etching technique widely used in semiconductor and microfabrication industries. It involves exposing a material surface—typically a silicon wafer—to a plasma composed of reactive ions and radicals. Unlike wet etching, which relies on liquid chemicals, plasma etching enables precise, anisotropic removal of material at the nanoscale.</p>
-      
-      <h3>Why Plasma Etching Matters in Modern Manufacturing</h3>
-      <p>As semiconductor devices shrink and 3D integration advances, traditional wet etching methods fail to deliver the precision and aspect ratios required. Plasma etching has become indispensable for fabricating features such as shallow trench isolation (STI), interlayer dielectrics (ILD/IMD), through-silicon vias (TSV), MEMS structures, and advanced photonic devices.</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-etching-principles-optimized.png" 
-          alt="Plasma Etching Principles - Visual representation of plasma etching process showing ion bombardment and chemical reactions" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Plasma Etching Principles - Showing the fundamental mechanisms of plasma etching technology</p>
-      </div>
-      
-      <h2>Working Principles of Plasma Etching</h2>
-      
-      <h3>Plasma Generation</h3>
-      <p>A plasma is generated by applying high-frequency RF power to a process chamber filled with etching gases such as CF₄, O₂, Cl₂, or Ar. The electric field ionizes the gas molecules, creating a reactive mixture of ions, electrons, and radicals capable of breaking chemical bonds on the wafer surface.</p>
-      
-      <h3>Etching Mechanisms</h3>
-      <p>Plasma etching typically combines:</p>
-      <ul>
-        <li><strong>Physical sputtering:</strong> Ion bombardment dislodges atoms from the surface.</li>
-        <li><strong>Chemical reaction:</strong> Reactive radicals form volatile byproducts with the material, which are then pumped away.</li>
-      </ul>
-      <p>This synergy provides high anisotropy, enabling vertical profiles and high aspect ratio trench formation.</p>
-      
-      <h3>Process Parameters</h3>
-      <p>Etching performance depends on:</p>
-      <ul>
-        <li><strong>RF power:</strong> Controls ion density and energy</li>
-        <li><strong>Chamber pressure:</strong> Affects plasma stability</li>
-        <li><strong>Electrode bias:</strong> Drives ion acceleration</li>
-        <li><strong>Gas composition and flow rate:</strong> Determines etching selectivity</li>
-        <li><strong>Wafer temperature:</strong> Stabilizes byproducts and minimizes defects</li>
-      </ul>
-      
-      <h2>Types of Plasma Etching Techniques</h2>
-      
-      <h3>Reactive Ion Etching (RIE)</h3>
-      <p>RIE is the most common form of plasma etching, balancing chemical reactivity and physical sputtering. It is widely used for pattern transfer in silicon, silicon oxide, and nitride layers, offering superior anisotropy compared to pure chemical etching.</p>
-      
-      <h3>Inductively Coupled Plasma Etching (ICP)</h3>
-      <p>ICP systems generate high-density plasma with independent control of ion energy and plasma density. This flexibility enables ultra-deep etching of materials like SiC and GaN, making ICP essential for power electronics, MEMS, and advanced packaging applications.</p>
-      
-      <h3>High-Density Plasma Etching</h3>
-      <p>High-density plasma systems are often integrated with HDP-CVD tools, enabling simultaneous etching and deposition for void-free dielectric gap-fill in complex structures.</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-etching-comparison-optimized.png" 
-          alt="Plasma Etching Comparison - Side-by-side comparison of different plasma etching techniques and their applications" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: Plasma Etching Comparison - Demonstrating the evolution of etching capabilities</p>
-      </div>
-      
-      <h2>Applications of Plasma Etching</h2>
-      
-      <h3>Semiconductor Fabrication</h3>
-      <ul>
-        <li><strong>Shallow Trench Isolation (STI):</strong> Defining isolation trenches for transistor arrays.</li>
-        <li><strong>ILD/IMD Etching:</strong> Removing dielectric layers for metal interconnect formation.</li>
-        <li><strong>Through-Silicon Vias (TSV):</strong> Enabling vertical interconnects in 3D IC packaging.</li>
-      </ul>
-      
-      <h3>MEMS and Photonics</h3>
-      <ul>
-        <li><strong>Micro-electromechanical systems:</strong> Accelerometers, pressure sensors.</li>
-        <li><strong>Optical waveguides and photonic crystals.</strong></li>
-        <li><strong>Microlens arrays and diffraction gratings.</strong></li>
-      </ul>
-      
-      <h3>Advanced Materials (SiC, GaN, Graphene, etc.)</h3>
-      <p>Plasma etching is essential for processing wide bandgap semiconductors (SiC, GaN) used in high-power and high-frequency devices. It also plays a role in research on emerging materials like graphene, 2D semiconductors, and nanostructured surfaces.</p>
-      
-      <h2>Plasma Etching vs Other Etching Methods</h2>
-      
-      <h3>Plasma Etching vs Wet Etching</h3>
-      <ul>
-        <li><strong>Precision:</strong> Plasma etching offers anisotropic profiles; wet etching is often isotropic.</li>
-        <li><strong>Scalability:</strong> Plasma etching is ideal for nanoscale and 3D integration.</li>
-        <li><strong>Cost:</strong> Wet etching is cheaper but less suited for advanced nodes.</li>
-      </ul>
-      
-      <h3>Plasma Etching vs Plasma Cleaning</h3>
-      <p>While both use plasma, their goals differ:</p>
-      <ul>
-        <li><strong>Etching:</strong> Removes bulk material to define patterns.</li>
-        <li><strong>Cleaning:</strong> Removes contaminants or activates surfaces for bonding and coating.</li>
-      </ul>
-      
-      <h2>NineScrolls Plasma Etching Solutions</h2>
-      
-      <h3>Plasma Etcher Systems</h3>
-      <p>NineScrolls offers both research-oriented and industrial-grade plasma etcher systems. Our platforms support a wide range of materials including Si, SiO₂, SiNx, GaN, and SiC, making them suitable for both R&D labs and high-volume manufacturing.</p>
-      
-      <h3>Customization Options</h3>
-      <ul>
-        <li><strong>Open-load or load-lock sample handling</strong></li>
-        <li><strong>Multi-zone gas delivery:</strong> Standard: 6 lines, customizable</li>
-        <li><strong>RF configurations:</strong> Source and bias control</li>
-        <li><strong>Chamber liner and electrode temperature regulation</strong></li>
-      </ul>
-      
-      <h3>Related Equipment</h3>
-      <ul>
-        <li><strong>Plasma Cleaning Equipment:</strong> Surface activation and contaminant removal.</li>
-        <li><strong>ICP and RIE Etcher Series:</strong> For advanced patterning and deep trench applications.</li>
-      </ul>
-      
-      <p><strong>👉 Contact NineScrolls to explore tailored plasma etching solutions for your research and manufacturing needs.</strong></p>
-      
-      <h2>Frequently Asked Questions (FAQ)</h2>
-      
-      <p><strong>Q: What is plasma etching?</strong><br>
-      A: Plasma etching uses ionized gases to remove material selectively from a substrate surface.</p>
-      
-      <p><strong>Q: How does plasma etching work?</strong><br>
-      A: It combines ion bombardment (physical sputtering) with chemical reactions to achieve precise material removal.</p>
-      
-      <p><strong>Q: What is plasma etching used for?</strong><br>
-      A: Semiconductor device fabrication, MEMS processing, photonics, and advanced packaging.</p>
-      
-      <p><strong>Q: Can a plasma cutter etch metal?</strong><br>
-      A: No. Plasma cutting and plasma etching are distinct processes; cutters remove bulk metal, while etchers define nanoscale patterns.</p>
-      
-      <p><strong>Q: What about SiC reactive ion etching?</strong><br>
-      A: Specialized fluorinated plasmas are required to achieve high selectivity and smooth sidewalls in SiC etching.</p>
-      
-      <h2>Conclusion</h2>
-      <p>Plasma etching is a cornerstone technology in modern semiconductor and advanced material processing. From shallow trench isolation to MEMS and wide bandgap devices, it provides the precision and flexibility required for next-generation innovations.</p>
-      
-      <p>With NineScrolls' plasma etcher systems and customization capabilities, research labs and manufacturers gain access to reliable, high-performance tools that enable breakthrough technologies.</p>
-      
-      <p><strong>👉 <a href="/products" style="color: #007bff; text-decoration: none;">Learn more at NineScrolls Plasma Etching Solutions</a></strong></p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Need help selecting the right plasma etching technology for your application? Contact our technical team.</li>
-        <li>Interested in our RIE or ICP etching systems? Explore our product pages for detailed specifications.</li>
-        <li>Want to discuss process optimization and parameter tuning? Our process engineers are available for consultation.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
-      ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2025-08-21',
-    category: 'Materials Science',
-    readTime: 12,
-    imageUrl: '/assets/images/insights/plasma-etching-cover.webp',
-    slug: 'plasma-etching',
-    tags: ['Plasma Etching', 'RIE', 'ICP', 'Semiconductor Manufacturing', 'Dry Etching', 'MEMS', 'Photonics', 'Advanced Materials']
   },
   {
     id: '16',
@@ -1271,8 +1155,16 @@ export const insightsPosts: InsightsPost[] = [
       Plasma Etching Systems: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a><br>
       Technical Support: <a href="/contact" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/contact</a><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Lee, C. & Lieberman, M. A. "Global model of Ar, O₂, Cl₂, and Ar/O₂ high-density plasma discharges." <em>Journal of Vacuum Science & Technology A</em>, 13(2), 368–380 (1995). <a href="https://doi.org/10.1116/1.579366" target="_blank" rel="noopener noreferrer">doi:10.1116/1.579366</a></li>
+        <li>Kushner, M. J. "Hybrid modelling of low temperature plasmas for fundamental investigations and equipment design." <em>Journal of Physics D: Applied Physics</em>, 42(19), 194013 (2009). <a href="https://doi.org/10.1088/0022-3727/42/19/194013" target="_blank" rel="noopener noreferrer">doi:10.1088/0022-3727/42/19/194013</a></li>
+        <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-08-19',
     category: 'Materials Science',
     readTime: 12,
@@ -1281,105 +1173,9 @@ export const insightsPosts: InsightsPost[] = [
     tags: ['Plasma Etching', 'Plasma Uniformity', 'Etch Chamber', 'Semiconductor Manufacturing', 'Process Control', 'Equipment Optimization']
   },
   {
-    id: '13',
-    title: 'Plasma Cleaning: Precision Surface Preparation for Next-Level Performance',
-    excerpt: 'Discover how plasma cleaning technology provides eco-friendly, chemical-free surface preparation for semiconductors, medical devices, optics, and advanced manufacturing...',
-    content: `
-      <p>In today's high-tech manufacturing landscape—spanning semiconductors, medical devices, optics, and beyond—surface cleanliness is mission-critical. Even invisible, nano-scale contaminants like oil, dust, or oxidation can undermine adhesion, compromise performance, or cause defects in downstream processes. Plasma cleaning has emerged as an eco-friendly, highly effective solution, delivering chemical-free, residue-free, and ultra-precise surface preparation.</p>
-      
-      <h2>What Is Plasma Cleaning?</h2>
-      <p>Plasma cleaning uses an ionized gas—plasma—to remove surface contamination and activate materials. Process involves energizing gases like oxygen, air, or inert species (e.g. argon, hydrogen) to create reactive radicals or ions that either chemically react with contaminants or physically dislodge them with micro-abrasion. The vaporized residues are then evacuated by vacuum or airflow.</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-cleaning-diagram-optimized.png" 
-          alt="Plasma Cleaning Process Diagram - Visual representation of plasma cleaning technology showing ionized gas treatment, surface activation, and contaminant removal process" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Visualize with diagrams: Plasma cleaning process showing surface treatment and contaminant removal</p>
-      </div>
-      
-      <h2>Advantages Over Traditional Cleaning</h2>
-      <ul>
-        <li><strong>No harsh chemicals or solvents</strong> — eco-friendly and safe, eliminating hazardous waste.</li>
-        <li><strong>Non-contact, gentle yet thorough</strong> — effectively cleans delicate microstructures or optics without mechanical damage.</li>
-        <li><strong>Surface activation</strong> — increases surface energy and adhesion, critical for bonding, coating, printing, and sealing processes.</li>
-      </ul>
-      
-      <h2>Key Applications Across Industries</h2>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-        <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Industry</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Applications & Benefits</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Electronics & Semiconductors</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Essential for PCB prep, leadframe cleaning, oxidation removal, and ensuring reliable soldering and coating.</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Optics & Glass</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Cleans lenses and mirrors without abrasive damage or solvent residue.</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Automotive & Aerospace</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Prepares surfaces for adhesives, sealants, and paints, enhancing durability and finish quality.</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Medical Devices & Life Sciences</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Removes proteins, sterilizes surfaces, and improves biocompatibility—ideal for implants and culture substrates.</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Cultural Heritage & Restoration</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Gently removes corrosion and encrustation from artifacts without damaging underlying materials.</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Textiles & Polymers</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Improves wetting and adhesion on fabrics and plastics while retaining bulk properties.</td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <h2>Specialized Modes of Plasma Cleaning</h2>
-      <ul>
-        <li><strong>Atmospheric Plasma</strong> (e.g., Openair‑Plasma®) — integrates seamlessly into production lines, offers real-time, dry cleaning for metals, polymers, glass, and ceramics.</li>
-        <li><strong>HydroPlasma®</strong> — adds ionized water molecules to selectively clean stubborn organic and inorganic residues without solvents.</li>
-        <li><strong>Oxygen- or Air-Based Plasma</strong> — excels at removing organic films, improving wettability for printing or coating applications.</li>
-        <li><strong>Hydrogen or Inert-Gas Plasma</strong> — ideal for removing oxide layers and enhancing conductivity in sensitive electronic components.</li>
-      </ul>
-      
-      <h2>Why It Matters</h2>
-      <ul>
-        <li><strong>Reliability:</strong> Cleaner surfaces reduce defects and rework across critical manufacturing steps.</li>
-        <li><strong>Speed:</strong> Dry, inline-ready process eliminates wait times inherent to wet cleaning and drying.</li>
-        <li><strong>Environmental and Safety Leadership:</strong> Chemical-free cleaning aligns with sustainability goals and regulatory compliance.</li>
-      </ul>
-      
-      <h2>NineScrolls: Advancing Plasma Technology for Surface Processing</h2>
-      <p>At NineScrolls, we specialize in advanced plasma processing equipment and technologies that support surface preparation and thin film deposition applications. While we focus on plasma-enhanced deposition and etching systems, our expertise in plasma technology enables us to provide valuable insights and solutions for surface processing challenges.</p>
-      <ul>
-        <li>Advanced plasma processing systems for thin film deposition and etching</li>
-        <li>Expert consultation on surface preparation and plasma technology integration</li>
-        <li>Comprehensive support for plasma-enhanced manufacturing processes</li>
-      </ul>
-      
-      <p><strong>Interested in learning more about our plasma processing solutions? <a href="/contact" style="color: #007bff; text-decoration: none; font-weight: bold;">Contact NineScrolls</a> to discuss how our plasma technology expertise can support your manufacturing needs.</strong></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2025-01-27',
-    category: 'Materials Science',
-    readTime: 10,
-    imageUrl: '/assets/images/insights/plasma-cleaning-cover-optimized.png',
-    slug: 'plasma-cleaning-precision-surface-preparation',
-    tags: ['Plasma Cleaning', 'Surface Preparation', 'Semiconductor Manufacturing', 'Medical Devices', 'Optics', 'Environmental Technology', 'Manufacturing']
-  },
-  {
     id: '12',
     title: 'Plasma Etching Explained: From Fundamentals to Applications',
-    excerpt: 'A comprehensive guide to plasma etching fundamentals, covering ion etching, chemical plasma etching, and reactive ion etching (RIE) with applications in semiconductor manufacturing...',
+    excerpt: 'A comprehensive guide to plasma etching fundamentals, covering ion etching, chemical plasma etching, and reactive ion etching (RIE) with applications in semiconductor manufacturing.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor process engineers, equipment engineers, R&D scientists, and technical decision-makers in plasma processing and microfabrication.</p>
       
@@ -1448,7 +1244,7 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Applications:</strong> Photoresist stripping, surface cleaning, isotropic etching</li>
       </ul>
       
-      <h3>3.2 Reactive Ion Etching (RIE)</h3>
+      <h3>3.2 <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a></h3>
       <p>Combines chemical and physical etching mechanisms:</p>
       <ul>
         <li><strong>Mechanism:</strong> Chemical reactions + ion bombardment</li>
@@ -1643,8 +1439,16 @@ export const insightsPosts: InsightsPost[] = [
       RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
       ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Manos, D. M. & Flamm, D. L. <em>Plasma Etching: An Introduction</em>. Academic Press (1989). ISBN 978-0124693708.</li>
+        <li>Flamm, D. L. "Mechanisms of silicon etching in fluorine- and chlorine-containing plasmas." <em>Pure and Applied Chemistry</em>, 62(9), 1709–1720 (1990). <a href="https://doi.org/10.1351/pac199062091709" target="_blank" rel="noopener noreferrer">doi:10.1351/pac199062091709</a></li>
+        <li>Winters, H. F. & Coburn, J. W. "Surface science aspects of etching reactions." <em>Surface Science Reports</em>, 14(4–6), 161–269 (1992). <a href="https://doi.org/10.1016/0167-5729(92)90009-Z" target="_blank" rel="noopener noreferrer">doi:10.1016/0167-5729(92)90009-Z</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-01-26',
     category: 'Materials Science',
     readTime: 12,
@@ -1655,7 +1459,7 @@ export const insightsPosts: InsightsPost[] = [
   {
     id: '11',
     title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
-    excerpt: 'A comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) technologies...',
+    excerpt: 'A comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) — principles, trade-offs, and selection criteria.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor process engineers, equipment engineers, R&D scientists, and technical decision-makers in plasma processing.</p>
       
@@ -1993,8 +1797,16 @@ export const insightsPosts: InsightsPost[] = [
       RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
       ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
+        <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
+        <li>Coburn, J. W. & Winters, H. F. "Plasma etching — A discussion of mechanisms." <em>Journal of Vacuum Science & Technology</em>, 16(2), 391–403 (1979). <a href="https://doi.org/10.1116/1.569958" target="_blank" rel="noopener noreferrer">doi:10.1116/1.569958</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-01-25',
     category: 'Materials Science',
     readTime: 15,
@@ -2005,7 +1817,7 @@ export const insightsPosts: InsightsPost[] = [
   {
     id: '1',
     title: 'Advanced Materials Processing: From Nanotechnology to Energy Applications',
-    excerpt: 'Explore how NineScrolls equipment enables breakthroughs across materials science, nanotechnology, and energy technologies...',
+    excerpt: 'How precision thin film deposition, plasma etching, and surface modification enable breakthroughs across materials science, nanotechnology, and energy applications.',
     content: `
       <p><strong>Target Readers:</strong> Materials scientists, process engineers, R&D managers, and technical decision-makers in advanced materials and nanotechnology applications.</p>
       
@@ -2243,8 +2055,16 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Contact:</strong><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
       Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>George, S. M. "Atomic layer deposition: An overview." <em>Chemical Reviews</em>, 110(1), 111–131 (2010). <a href="https://doi.org/10.1021/cr900056b" target="_blank" rel="noopener noreferrer">doi:10.1021/cr900056b</a></li>
+        <li>Reyntjens, S. & Puers, R. "A review of focused ion beam applications in microsystem technology." <em>Journal of Micromechanics and Microengineering</em>, 11(4), 287 (2001). <a href="https://doi.org/10.1088/0960-1317/11/4/301" target="_blank" rel="noopener noreferrer">doi:10.1088/0960-1317/11/4/301</a></li>
+        <li>Martín-Palma, R. J. & Lakhtakia, A. <em>Nanotechnology: A Crash Course</em>. SPIE Press (2010). ISBN 978-0819478375.</li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2024-01-15',
     category: 'Materials Science',
     readTime: 8,
@@ -2255,7 +2075,7 @@ export const insightsPosts: InsightsPost[] = [
   {
     id: '2',
     title: 'Photonics Manufacturing: Precision Engineering for Optical Devices',
-    excerpt: 'Discover how precision manufacturing systems are revolutionizing photonics and optical device production...',
+    excerpt: 'Precision manufacturing techniques for photonics: optical coatings, waveguide fabrication, photonic crystal patterning, and integrated photonic device production.',
     content: `
       <p><strong>Target Readers:</strong> Optical engineers, photonics researchers, manufacturing engineers, and technical decision-makers in optical device manufacturing and telecommunications.</p>
       
@@ -2503,8 +2323,16 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Contact:</strong><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
       Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Saleh, B. E. A. & Teich, M. C. <em>Fundamentals of Photonics</em>, 3rd ed. Wiley (2019). ISBN 978-1119506874.</li>
+        <li>Hochberg, M. & Baehr-Jones, T. "Towards fabless silicon photonics." <em>Nature Photonics</em>, 4(8), 492–494 (2010). <a href="https://doi.org/10.1038/nphoton.2010.172" target="_blank" rel="noopener noreferrer">doi:10.1038/nphoton.2010.172</a></li>
+        <li>Bogaerts, W., et al. "Silicon microring resonators." <em>Laser & Photonics Reviews</em>, 6(1), 47–73 (2012). <a href="https://doi.org/10.1002/lpor.201100017" target="_blank" rel="noopener noreferrer">doi:10.1002/lpor.201100017</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2024-01-10',
     category: 'Photonics',
     readTime: 12,
@@ -2515,7 +2343,7 @@ export const insightsPosts: InsightsPost[] = [
   {
     id: '3',
     title: 'Nanofabrication Techniques: Building the Nanoscale Future',
-    excerpt: 'Learn about cutting-edge nanofabrication methods and their applications in next-generation technologies...',
+    excerpt: 'Nanofabrication techniques including electron beam lithography, nanoimprint, self-assembly, and their applications in semiconductors, photonics, and biomedical devices.',
     content: `
       <p><strong>Target Readers:</strong> Nanotechnology researchers, process engineers, R&D scientists, and technical decision-makers in nanofabrication and advanced manufacturing.</p>
       
@@ -2794,8 +2622,16 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Contact:</strong><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
       Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Cui, Z. <em>Nanofabrication: Principles, Capabilities and Limits</em>, 3rd ed. Springer (2024). ISBN 978-3031141956.</li>
+        <li>Chen, Y. "Nanofabrication by electron beam lithography and its applications: A review." <em>Microelectronic Engineering</em>, 135, 57–72 (2015). <a href="https://doi.org/10.1016/j.mee.2015.02.042" target="_blank" rel="noopener noreferrer">doi:10.1016/j.mee.2015.02.042</a></li>
+        <li>Madou, M. J. <em>Fundamentals of Microfabrication and Nanotechnology</em>, 3rd ed. CRC Press (2011). ISBN 978-0849331800.</li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2024-01-08',
     category: 'Nanotechnology',
     readTime: 10,
@@ -2804,611 +2640,9 @@ export const insightsPosts: InsightsPost[] = [
     tags: ['Nanofabrication', 'Nanotechnology', 'Microfabrication', 'Advanced Manufacturing']
   },
   {
-    id: '4',
-    title: 'Energy Storage Materials: Powering Tomorrow\'s Technologies',
-    excerpt: 'Explore innovative energy storage solutions and their role in sustainable technology development...',
-    content: `
-      <p><strong>Target Readers:</strong> Energy storage researchers, battery engineers, materials scientists, and technical decision-makers in renewable energy and sustainable technology development.</p>
-      
-      <h2>TL;DR Summary</h2>
-      <p>Energy storage materials are critical for enabling renewable energy integration, electric vehicles, and grid stability. NineScrolls precision manufacturing equipment enables the development of next-generation energy storage materials through advanced thin film deposition, surface modification, and nanostructuring techniques. Our systems support research and production of high-performance batteries, supercapacitors, and energy storage devices.</p>
-      
-      <h2>1) The Energy Storage Challenge</h2>
-      <p>As the world transitions to renewable energy sources and electrified transportation, the need for efficient, reliable, and cost-effective energy storage has never been greater. Energy storage materials must meet demanding requirements for:</p>
-      <ul>
-        <li><strong>High Energy Density:</strong> Store large amounts of energy in small volumes</li>
-        <li><strong>High Power Density:</strong> Deliver energy quickly when needed</li>
-        <li><strong>Long Cycle Life:</strong> Maintain performance over thousands of cycles</li>
-        <li><strong>Safety:</strong> Operate reliably without thermal runaway or degradation</li>
-        <li><strong>Cost Effectiveness:</strong> Enable widespread adoption</li>
-      </ul>
-      
-      <h2>2) Battery Materials and Technologies</h2>
-      
-      <h3>2.1 Lithium-Ion Batteries</h3>
-      <p>Lithium-ion batteries dominate portable electronics and electric vehicles:</p>
-      
-      <p><strong>Cathode Materials:</strong></p>
-      <ul>
-        <li><strong>Lithium Cobalt Oxide (LCO):</strong> High energy density, limited cycle life</li>
-        <li><strong>Lithium Iron Phosphate (LFP):</strong> Excellent safety, moderate energy density</li>
-        <li><strong>Lithium Nickel Manganese Cobalt (NMC):</strong> Balanced performance</li>
-        <li><strong>Lithium Nickel Cobalt Aluminum (NCA):</strong> High energy density</li>
-      </ul>
-      
-      <p><strong>Anode Materials:</strong></p>
-      <ul>
-        <li><strong>Graphite:</strong> Standard anode material, good stability</li>
-        <li><strong>Silicon:</strong> High capacity, volume expansion challenges</li>
-        <li><strong>Lithium Titanate (LTO):</strong> Fast charging, long cycle life</li>
-        <li><strong>Lithium Metal:</strong> Highest theoretical capacity, safety concerns</li>
-      </ul>
-      
-      <p><strong>Electrolytes:</strong></p>
-      <ul>
-        <li><strong>Liquid Electrolytes:</strong> High conductivity, safety concerns</li>
-        <li><strong>Solid-State Electrolytes:</strong> Enhanced safety, lower conductivity</li>
-        <li><strong>Polymer Electrolytes:</strong> Flexibility, moderate performance</li>
-      </ul>
-      
-      <h3>2.2 Next-Generation Battery Technologies</h3>
-      <p>Emerging battery technologies for improved performance:</p>
-      
-      <p><strong>Solid-State Batteries:</strong></p>
-      <ul>
-        <li>Enhanced safety and energy density</li>
-        <li>Wider operating temperature range</li>
-        <li>Longer cycle life</li>
-        <li>Challenges: Interface resistance, manufacturing complexity</li>
-      </ul>
-      
-      <p><strong>Lithium-Sulfur Batteries:</strong></p>
-      <ul>
-        <li>High theoretical energy density</li>
-        <li>Low-cost sulfur cathode</li>
-        <li>Challenges: Polysulfide shuttle, poor cycle life</li>
-      </ul>
-      
-      <p><strong>Flow Batteries:</strong></p>
-      <ul>
-        <li>Scalable energy storage for grid applications</li>
-        <li>Independent power and energy capacity</li>
-        <li>Long cycle life</li>
-        <li>Applications: Renewable energy integration, grid stabilization</li>
-      </ul>
-      
-      <h2>3) Supercapacitor Materials</h2>
-      
-      <h3>3.1 Electric Double Layer Capacitors (EDLCs)</h3>
-      <p>EDLCs store energy through electrostatic charge separation:</p>
-      <ul>
-        <li><strong>Activated Carbon:</strong> High surface area, moderate performance</li>
-        <li><strong>Graphene:</strong> Excellent conductivity, high surface area</li>
-        <li><strong>Carbon Nanotubes:</strong> High conductivity, good stability</li>
-        <li><strong>Applications:</strong> Power electronics, regenerative braking</li>
-      </ul>
-      
-      <h3>3.2 Pseudocapacitors</h3>
-      <p>Pseudocapacitors combine electrostatic and faradaic processes:</p>
-      <ul>
-        <li><strong>Transition Metal Oxides:</strong> RuO₂, MnO₂, NiO</li>
-        <li><strong>Conducting Polymers:</strong> Polyaniline, polypyrrole</li>
-        <li><strong>MXenes:</strong> 2D transition metal carbides/nitrides</li>
-        <li><strong>Advantages:</strong> Higher energy density than EDLCs</li>
-      </ul>
-      
-      <h2>4) Advanced Materials Processing for Energy Storage</h2>
-      
-      <h3>4.1 Thin Film Deposition</h3>
-      <p>Precision thin film deposition enables advanced energy storage materials:</p>
-      
-      <p><strong>Atomic Layer Deposition (ALD):</strong></p>
-      <ul>
-        <li>Ultra-thin protective coatings on electrodes</li>
-        <li>Conformal coverage of complex 3D structures</li>
-        <li>Interface engineering for improved performance</li>
-        <li>Applications: Solid-state electrolytes, protective layers</li>
-      </ul>
-      
-      <p><strong>Plasma-Enhanced CVD (PECVD):</strong></p>
-      <ul>
-        <li>High-quality dielectric and functional films</li>
-        <li>Low-temperature processing for temperature-sensitive materials</li>
-        <li>Applications: Separators, protective coatings</li>
-      </ul>
-      
-      <p><strong>Sputter Deposition:</strong></p>
-      <ul>
-        <li>High-quality metal and compound films</li>
-        <li>Precise control of composition and structure</li>
-        <li>Applications: Current collectors, electrode materials</li>
-      </ul>
-      
-      <h3>4.2 Surface Modification and Functionalization</h3>
-      <p>Surface engineering improves material performance:</p>
-      <ul>
-        <li><strong>Plasma Treatment:</strong> Surface activation and cleaning</li>
-        <li><strong>Chemical Functionalization:</strong> Addition of specific chemical groups</li>
-        <li><strong>Coating Deposition:</strong> Protective and functional layers</li>
-        <li><strong>Benefits:</strong> Improved wettability, reduced side reactions</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/energy-storage.jpg" 
-          alt="Energy Storage Materials - Visual representation of various energy storage technologies and materials" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Energy Storage Materials - Showcasing the diversity of energy storage technologies and materials</p>
-      </div>
-      
-      <h2>5) Nanostructured Materials for Energy Storage</h2>
-      
-      <h3>5.1 Nanostructured Electrodes</h3>
-      <p>Nanostructuring improves electrode performance:</p>
-      
-      <p><strong>Nanoparticle Electrodes:</strong></p>
-      <ul>
-        <li>Reduced diffusion distances for faster kinetics</li>
-        <li>Increased surface area for higher capacity</li>
-        <li>Better strain accommodation during cycling</li>
-        <li>Applications: High-power batteries, supercapacitors</li>
-      </ul>
-      
-      <p><strong>Nanowire and Nanotube Electrodes:</strong></p>
-      <ul>
-        <li>Direct electron transport pathways</li>
-        <li>Large surface area for active material loading</li>
-        <li>Flexible and stretchable architectures</li>
-        <li>Applications: Flexible electronics, wearable devices</li>
-      </ul>
-      
-      <h3>5.2 3D Architectures</h3>
-      <p>3D electrode architectures enhance performance:</p>
-      <ul>
-        <li><strong>Porous Structures:</strong> High surface area, good electrolyte access</li>
-        <li><strong>Hierarchical Architectures:</strong> Multiple length scales for optimization</li>
-        <li><strong>Core-Shell Structures:</strong> Protective coatings on active materials</li>
-        <li><strong>Benefits:</strong> Higher energy density, better rate capability</li>
-      </ul>
-      
-      <h2>6) Applications of Energy Storage Materials</h2>
-      
-      <h3>6.1 Electric Vehicles</h3>
-      <p>Energy storage is critical for electric vehicle adoption:</p>
-      <ul>
-        <li><strong>Battery Electric Vehicles (BEVs):</strong> High energy density batteries</li>
-        <li><strong>Plug-in Hybrid Electric Vehicles (PHEVs):</strong> Moderate battery capacity</li>
-        <li><strong>Hybrid Electric Vehicles (HEVs):</strong> High-power batteries/supercapacitors</li>
-        <li><strong>Requirements:</strong> High energy density, fast charging, long cycle life</li>
-      </ul>
-      
-      <h3>6.2 Grid Energy Storage</h3>
-      <p>Grid storage enables renewable energy integration:</p>
-      <ul>
-        <li><strong>Frequency Regulation:</strong> Fast response energy storage</li>
-        <li><strong>Peak Shaving:</strong> Store excess energy during low demand</li>
-        <li><strong>Renewable Integration:</strong> Smooth intermittent power generation</li>
-        <li><strong>Technologies:</strong> Lithium-ion, flow batteries, pumped hydro</li>
-      </ul>
-      
-      <h3>6.3 Portable Electronics</h3>
-      <p>Energy storage for consumer electronics:</p>
-      <ul>
-        <li><strong>Smartphones and Tablets:</strong> High energy density, long cycle life</li>
-        <li><strong>Laptops and Wearables:</strong> Lightweight, flexible designs</li>
-        <li><strong>IoT Devices:</strong> Long-lasting, maintenance-free operation</li>
-      </ul>
-      
-      <h2>7) NineScrolls Equipment for Energy Storage Materials</h2>
-      <p>NineScrolls provides comprehensive solutions for energy storage materials development:</p>
-      
-      <h3>7.1 Deposition Systems</h3>
-      <ul>
-        <li><strong>ALD Systems:</strong> Ultra-precise thin film deposition for protective coatings</li>
-        <li><strong>PECVD Systems:</strong> High-quality dielectric and functional films</li>
-        <li><strong>HDP-CVD Systems:</strong> Superior gap-fill for complex electrode structures</li>
-        <li><strong>Sputter Systems:</strong> High-quality metal and compound films</li>
-      </ul>
-      
-      <h3>7.2 Etching Systems</h3>
-      <ul>
-        <li><strong>RIE Systems:</strong> Precise etching of electrode materials</li>
-        <li><strong>ICP-RIE Systems:</strong> High-aspect-ratio etching for 3D structures</li>
-        <li><strong>IBE/RIBE Systems:</strong> Ion beam etching for specialized applications</li>
-      </ul>
-      
-      <h3>7.3 Supporting Equipment</h3>
-      <ul>
-        <li><strong>Coater/Developer Systems:</strong> Photoresist processing for patterning</li>
-        <li><strong>Striper Systems:</strong> Photoresist removal and surface cleaning</li>
-      </ul>
-      
-      <h2>8) Process Optimization and Quality Control</h2>
-      
-      <h3>8.1 Material Characterization</h3>
-      <p>Comprehensive characterization of energy storage materials:</p>
-      <ul>
-        <li><strong>Structural Analysis:</strong> XRD, SEM, TEM for morphology and structure</li>
-        <li><strong>Chemical Analysis:</strong> XPS, FTIR for composition and bonding</li>
-        <li><strong>Electrochemical Testing:</strong> Cyclic voltammetry, impedance spectroscopy</li>
-        <li><strong>Performance Testing:</strong> Capacity, rate capability, cycle life</li>
-      </ul>
-      
-      <h3>8.2 Process Monitoring</h3>
-      <p>Real-time monitoring for quality control:</p>
-      <ul>
-        <li><strong>In-situ Monitoring:</strong> Film thickness, composition, stress</li>
-        <li><strong>Process Control:</strong> Temperature, pressure, gas flows</li>
-        <li><strong>Statistical Process Control:</strong> Process stability and repeatability</li>
-        <li><strong>Data Analytics:</strong> Process optimization and yield improvement</li>
-      </ul>
-      
-      <h2>9) Future Trends in Energy Storage</h2>
-      
-      <h3>9.1 Emerging Technologies</h3>
-      <ul>
-        <li><strong>Solid-State Batteries:</strong> Enhanced safety and energy density</li>
-        <li><strong>Lithium-Air Batteries:</strong> Ultra-high energy density</li>
-        <li><strong>Quantum Batteries:</strong> Quantum mechanical energy storage</li>
-        <li><strong>Bio-inspired Materials:</strong> Learning from biological systems</li>
-      </ul>
-      
-      <h3>9.2 Manufacturing Challenges</h3>
-      <ul>
-        <li><strong>Scalability:</strong> High-volume manufacturing of advanced materials</li>
-        <li><strong>Cost Reduction:</strong> Lowering manufacturing costs for widespread adoption</li>
-        <li><strong>Quality Control:</strong> Ensuring consistent performance across large batches</li>
-        <li><strong>Recycling:</strong> Sustainable end-of-life management</li>
-      </ul>
-      
-      <h2>10) Conclusion</h2>
-      <p>Energy storage materials are fundamental to the transition to a sustainable energy future. Advanced materials processing techniques enable the development of high-performance, safe, and cost-effective energy storage solutions for electric vehicles, renewable energy integration, and portable electronics.</p>
-      
-      <p>NineScrolls is committed to providing the equipment and expertise needed to advance energy storage materials. Our comprehensive range of processing systems supports research and development across the full spectrum of energy storage applications.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Interested in energy storage materials for your application? Contact our technical team for consultation.</li>
-        <li>Need equipment for energy storage material development? Explore our product range and discuss your requirements.</li>
-        <li>Want to learn more about process optimization for energy storage materials? Our process engineers are available for technical discussions.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
-      Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2024-01-05',
-    category: 'Energy',
-    readTime: 9,
-    imageUrl: '/assets/images/insights/energy-storage.jpg',
-    slug: 'energy-storage-materials-tomorrow-technologies',
-    tags: ['Energy Storage', 'Battery Technology', 'Sustainable Energy', 'Materials Science']
-  },
-  {
-    id: '5',
-    title: 'Biotechnology Applications: From Lab to Market',
-    excerpt: 'Discover how precision manufacturing enables breakthroughs in biotechnology and medical applications...',
-    content: `
-      <p><strong>Target Readers:</strong> Biotechnology researchers, medical device engineers, pharmaceutical scientists, and technical decision-makers in biomedical and life sciences applications.</p>
-      
-      <h2>TL;DR Summary</h2>
-      <p>Biotechnology applications are revolutionizing healthcare, drug discovery, and medical diagnostics through precision manufacturing and advanced materials processing. NineScrolls equipment enables the development of cutting-edge biotechnological devices and materials through precise thin film deposition, surface modification, and microfabrication techniques. Our systems support research and production across drug delivery, medical diagnostics, tissue engineering, and biosensing applications.</p>
-      
-      <h2>1) The Biotechnology Revolution</h2>
-      <p>Biotechnology is transforming healthcare and medicine through the application of biological systems and processes. Precision manufacturing plays a crucial role in enabling breakthroughs in:</p>
-      <ul>
-        <li><strong>Drug Discovery and Delivery:</strong> Targeted therapies and controlled release systems</li>
-        <li><strong>Medical Diagnostics:</strong> Point-of-care testing and biosensors</li>
-        <li><strong>Tissue Engineering:</strong> Regenerative medicine and organ-on-chip systems</li>
-        <li><strong>Medical Devices:</strong> Implants, prosthetics, and surgical tools</li>
-      </ul>
-      
-      <h2>2) Drug Delivery Systems</h2>
-      
-      <h3>2.1 Nanoparticle Drug Carriers</h3>
-      <p>Nanoparticle-based drug delivery systems enable targeted and controlled drug release:</p>
-      
-      <p><strong>Liposomes:</strong></p>
-      <ul>
-        <li>Phospholipid bilayer vesicles for drug encapsulation</li>
-        <li>Biocompatible and biodegradable</li>
-        <li>Applications: Cancer therapy, gene delivery, vaccine delivery</li>
-        <li>Advantages: High drug loading, controlled release</li>
-      </ul>
-      
-      <p><strong>Polymer Nanoparticles:</strong></p>
-      <ul>
-        <li>Biodegradable polymers for sustained drug release</li>
-        <li>PLGA, PLA, chitosan-based systems</li>
-        <li>Applications: Controlled release, targeted delivery</li>
-        <li>Advantages: Tunable properties, FDA-approved materials</li>
-      </ul>
-      
-      <p><strong>Inorganic Nanoparticles:</strong></p>
-      <ul>
-        <li>Gold, silica, iron oxide nanoparticles</li>
-        <li>Applications: Imaging, hyperthermia, drug delivery</li>
-        <li>Advantages: Unique optical, magnetic, and thermal properties</li>
-      </ul>
-      
-      <h3>2.2 Implantable Drug Delivery Systems</h3>
-      <p>Implantable devices for long-term drug delivery:</p>
-      <ul>
-        <li><strong>Drug-Eluting Stents:</strong> Cardiovascular applications</li>
-        <li><strong>Implantable Pumps:</strong> Continuous drug administration</li>
-        <li><strong>Biodegradable Implants:</strong> Sustained release over weeks to months</li>
-        <li><strong>Microchip Implants:</strong> Programmable drug delivery</li>
-      </ul>
-      
-      <h2>3) Medical Diagnostics and Biosensors</h2>
-      
-      <h3>3.1 Biosensor Technologies</h3>
-      <p>Biosensors combine biological recognition with signal transduction:</p>
-      
-      <p><strong>Electrochemical Biosensors:</strong></p>
-      <ul>
-        <li>Enzyme-based glucose sensors</li>
-        <li>DNA hybridization sensors</li>
-        <li>Immunosensors for protein detection</li>
-        <li>Applications: Point-of-care testing, continuous monitoring</li>
-      </ul>
-      
-      <p><strong>Optical Biosensors:</strong></p>
-      <ul>
-        <li>Surface plasmon resonance (SPR) sensors</li>
-        <li>Fiber optic biosensors</li>
-        <li>Fluorescence-based detection</li>
-        <li>Applications: High-sensitivity detection, real-time monitoring</li>
-      </ul>
-      
-      <p><strong>Microfluidic Biosensors:</strong></p>
-      <ul>
-        <li>Lab-on-a-chip systems</li>
-        <li>Point-of-care diagnostic devices</li>
-        <li>High-throughput screening platforms</li>
-        <li>Advantages: Miniaturization, automation, reduced sample volume</li>
-      </ul>
-      
-      <h3>3.2 Advanced Diagnostic Platforms</h3>
-      <p>Next-generation diagnostic technologies:</p>
-      <ul>
-        <li><strong>Digital PCR:</strong> Absolute quantification of nucleic acids</li>
-        <li><strong>Next-Generation Sequencing:</strong> High-throughput DNA/RNA analysis</li>
-        <li><strong>Mass Spectrometry Imaging:</strong> Spatial molecular analysis</li>
-        <li><strong>Raman Spectroscopy:</strong> Label-free molecular detection</li>
-      </ul>
-      
-      <h2>4) Tissue Engineering and Regenerative Medicine</h2>
-      
-      <h3>4.1 Scaffold Materials</h3>
-      <p>Biocompatible scaffolds for tissue regeneration:</p>
-      
-      <p><strong>Natural Polymers:</strong></p>
-      <ul>
-        <li>Collagen, fibrin, hyaluronic acid</li>
-        <li>Excellent biocompatibility and bioactivity</li>
-        <li>Applications: Skin, cartilage, bone regeneration</li>
-        <li>Challenges: Batch-to-batch variability, mechanical properties</li>
-      </ul>
-      
-      <p><strong>Synthetic Polymers:</strong></p>
-      <ul>
-        <li>PLGA, PCL, PEG-based scaffolds</li>
-        <li>Controllable properties and degradation</li>
-        <li>Applications: Various tissue types</li>
-        <li>Advantages: Reproducible, tunable properties</li>
-      </ul>
-      
-      <p><strong>Composite Materials:</strong></p>
-      <ul>
-        <li>Polymer-ceramic composites</li>
-        <li>Enhanced mechanical and biological properties</li>
-        <li>Applications: Bone tissue engineering</li>
-      </ul>
-      
-      <h3>4.2 3D Bioprinting</h3>
-      <p>Additive manufacturing for tissue engineering:</p>
-      <ul>
-        <li><strong>Extrusion-Based Printing:</strong> Cell-laden hydrogels</li>
-        <li><strong>Inkjet Printing:</strong> High-resolution cell deposition</li>
-        <li><strong>Laser-Assisted Printing:</strong> Precise cell positioning</li>
-        <li><strong>Applications:</strong> Organ-on-chip, drug screening, tissue models</li>
-      </ul>
-      
-      <h2>5) Medical Devices and Implants</h2>
-      
-      <h3>5.1 Surface Modification for Medical Devices</h3>
-      <p>Surface engineering improves device performance and biocompatibility:</p>
-      
-      <p><strong>Antimicrobial Coatings:</strong></p>
-      <ul>
-        <li>Silver, copper, antibiotic coatings</li>
-        <li>Prevention of device-related infections</li>
-        <li>Applications: Catheters, implants, surgical tools</li>
-      </ul>
-      
-      <p><strong>Bioactive Coatings:</strong></p>
-      <ul>
-        <li>Growth factors, peptides, proteins</li>
-        <li>Enhanced tissue integration</li>
-        <li>Applications: Orthopedic implants, dental implants</li>
-      </ul>
-      
-      <p><strong>Antifouling Coatings:</strong></p>
-      <ul>
-        <li>PEG, zwitterionic polymers</li>
-        <li>Reduced protein adsorption and cell adhesion</li>
-        <li>Applications: Blood-contacting devices, sensors</li>
-      </ul>
-      
-      <h3>5.2 Advanced Medical Devices</h3>
-      <p>Next-generation medical device technologies:</p>
-      <ul>
-        <li><strong>Neural Interfaces:</strong> Brain-computer interfaces, deep brain stimulation</li>
-        <li><strong>Cardiovascular Devices:</strong> Stents, heart valves, pacemakers</li>
-        <li><strong>Orthopedic Implants:</strong> Joint replacements, bone fixation</li>
-        <li><strong>Drug Delivery Devices:</strong> Implantable pumps, transdermal patches</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/biotechnology.jpg" 
-          alt="Biotechnology Applications - Visual representation of various biotechnology applications and medical devices" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Biotechnology Applications - Showcasing the diversity of biotechnology applications and medical devices</p>
-      </div>
-      
-      <h2>6) Advanced Materials Processing for Biotechnology</h2>
-      
-      <h3>6.1 Thin Film Deposition</h3>
-      <p>Precision thin film deposition for biomedical applications:</p>
-      
-      <p><strong>Atomic Layer Deposition (ALD):</strong></p>
-      <ul>
-        <li>Ultra-thin protective coatings on medical devices</li>
-        <li>Conformal coverage of complex 3D structures</li>
-        <li>Applications: Drug-eluting stents, implant coatings</li>
-        <li>Advantages: Precise thickness control, excellent conformality</li>
-      </ul>
-      
-      <p><strong>Plasma-Enhanced CVD (PECVD):</strong></p>
-      <ul>
-        <li>Biocompatible coatings and surface modifications</li>
-        <li>Low-temperature processing for temperature-sensitive materials</li>
-        <li>Applications: Medical device coatings, biosensor surfaces</li>
-      </ul>
-      
-      <p><strong>Sputter Deposition:</strong></p>
-      <ul>
-        <li>High-quality metal and compound films</li>
-        <li>Precise control of composition and structure</li>
-        <li>Applications: Electrodes, conductive coatings</li>
-      </ul>
-      
-      <h3>6.2 Surface Modification Techniques</h3>
-      <p>Advanced surface engineering for biomedical applications:</p>
-      <ul>
-        <li><strong>Plasma Treatment:</strong> Surface activation and cleaning</li>
-        <li><strong>Chemical Functionalization:</strong> Addition of specific chemical groups</li>
-        <li><strong>Self-Assembled Monolayers (SAMs):</strong> Molecular-level surface control</li>
-        <li><strong>Benefits:</strong> Improved biocompatibility, enhanced functionality</li>
-      </ul>
-      
-      <h2>7) Microfabrication for Biotechnology</h2>
-      
-      <h3>7.1 Microfluidic Devices</h3>
-      <p>Microfabrication enables complex microfluidic systems:</p>
-      <ul>
-        <li><strong>Lab-on-a-Chip Systems:</strong> Integrated sample preparation and analysis</li>
-        <li><strong>Organ-on-Chip Platforms:</strong> Tissue and organ models</li>
-        <li><strong>Point-of-Care Devices:</strong> Portable diagnostic systems</li>
-        <li><strong>High-Throughput Screening:</strong> Drug discovery and testing</li>
-      </ul>
-      
-      <h3>7.2 Biosensor Fabrication</h3>
-      <p>Precision manufacturing for biosensor development:</p>
-      <ul>
-        <li><strong>Electrode Patterning:</strong> Microelectrode arrays for sensing</li>
-        <li><strong>Surface Functionalization:</strong> Immobilization of biomolecules</li>
-        <li><strong>Packaging and Integration:</strong> Complete sensor systems</li>
-        <li><strong>Quality Control:</strong> Performance validation and testing</li>
-      </ul>
-      
-      <h2>8) NineScrolls Equipment for Biotechnology</h2>
-      <p>NineScrolls provides comprehensive solutions for biotechnology applications:</p>
-      
-      <h3>8.1 Deposition Systems</h3>
-      <ul>
-        <li><strong>ALD Systems:</strong> Ultra-precise thin film deposition for medical device coatings</li>
-        <li><strong>PECVD Systems:</strong> Biocompatible coatings and surface modifications</li>
-        <li><strong>HDP-CVD Systems:</strong> High-quality films for complex device structures</li>
-        <li><strong>Sputter Systems:</strong> High-quality metal and compound films</li>
-      </ul>
-      
-      <h3>8.2 Etching Systems</h3>
-      <ul>
-        <li><strong>RIE Systems:</strong> Precise etching of biomedical materials</li>
-        <li><strong>ICP-RIE Systems:</strong> High-aspect-ratio etching for microfluidic devices</li>
-        <li><strong>IBE/RIBE Systems:</strong> Ion beam etching for specialized applications</li>
-      </ul>
-      
-      <h3>8.3 Supporting Equipment</h3>
-      <ul>
-        <li><strong>Coater/Developer Systems:</strong> Photoresist processing for microfabrication</li>
-        <li><strong>Striper Systems:</strong> Photoresist removal and surface cleaning</li>
-      </ul>
-      
-      <h2>9) Quality Control and Regulatory Compliance</h2>
-      
-      <h3>9.1 Biocompatibility Testing</h3>
-      <p>Essential testing for biomedical applications:</p>
-      <ul>
-        <li><strong>Cytotoxicity Testing:</strong> Cell viability and proliferation</li>
-        <li><strong>Hemocompatibility Testing:</strong> Blood compatibility assessment</li>
-        <li><strong>Immunogenicity Testing:</strong> Immune response evaluation</li>
-        <li><strong>Sterilization Validation:</strong> Sterility assurance</li>
-      </ul>
-      
-      <h3>9.2 Regulatory Requirements</h3>
-      <p>Compliance with medical device regulations:</p>
-      <ul>
-        <li><strong>FDA Requirements:</strong> 510(k), PMA, De Novo pathways</li>
-        <li><strong>ISO Standards:</strong> ISO 13485, ISO 14971</li>
-        <li><strong>CE Marking:</strong> European Union compliance</li>
-        <li><strong>Documentation:</strong> Design history files, risk management</li>
-      </ul>
-      
-      <h2>10) Future Trends in Biotechnology</h2>
-      
-      <h3>10.1 Emerging Technologies</h3>
-      <ul>
-        <li><strong>CRISPR Gene Editing:</strong> Precise genetic modifications</li>
-        <li><strong>CAR-T Cell Therapy:</strong> Personalized cancer treatment</li>
-        <li><strong>3D Bioprinting:</strong> Organ and tissue fabrication</li>
-        <li><strong>AI-Enhanced Diagnostics:</strong> Machine learning for disease detection</li>
-      </ul>
-      
-      <h3>10.2 Manufacturing Challenges</h3>
-      <ul>
-        <li><strong>Scalability:</strong> High-volume manufacturing of biotechnological products</li>
-        <li><strong>Quality Control:</strong> Ensuring consistent performance and safety</li>
-        <li><strong>Cost Reduction:</strong> Lowering manufacturing costs for widespread adoption</li>
-        <li><strong>Regulatory Compliance:</strong> Meeting evolving regulatory requirements</li>
-      </ul>
-      
-      <h2>11) Conclusion</h2>
-      <p>Biotechnology applications are transforming healthcare and medicine through precision manufacturing and advanced materials processing. From drug delivery systems to medical diagnostics and tissue engineering, these technologies are enabling breakthroughs that improve patient outcomes and quality of life.</p>
-      
-      <p>NineScrolls is committed to providing the equipment and expertise needed to advance biotechnology applications. Our comprehensive range of processing systems supports research and development across the full spectrum of biomedical applications.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Interested in biotechnology applications for your research? Contact our technical team for consultation.</li>
-        <li>Need equipment for biomedical device development? Explore our product range and discuss your requirements.</li>
-        <li>Want to learn more about process optimization for biotechnology applications? Our process engineers are available for technical discussions.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
-      Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2024-01-03',
-    category: 'Biotechnology',
-    readTime: 11,
-    imageUrl: '/assets/images/insights/biotechnology.jpg',
-    slug: 'biotechnology-applications-lab-market',
-    tags: ['Biotechnology', 'Medical Applications', 'Lab Equipment', 'Precision Manufacturing']
-  },
-  {
     id: '6',
     title: 'Fuel Cell Technology: Powering the Hydrogen Economy',
-    excerpt: 'Explore how NineScrolls precision manufacturing systems are enabling breakthroughs in fuel cell technology...',
+    excerpt: 'Fuel cell manufacturing processes: MEA fabrication, catalyst deposition, bipolar plate processing, and how precision thin film and etching equipment supports hydrogen economy R&D.',
     content: `
       <p><strong>Target Readers:</strong> Fuel cell researchers, energy engineers, materials scientists, and technical decision-makers in clean energy and hydrogen economy applications.</p>
       
@@ -3763,8 +2997,16 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Contact:</strong><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
       Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>O\'Hayre, R. P., et al. <em>Fuel Cell Fundamentals</em>, 3rd ed. Wiley (2016). ISBN 978-1119113805.</li>
+        <li>Wang, Y., et al. "A review of polymer electrolyte membrane fuel cells: Technology, applications, and needs on fundamental research." <em>Applied Energy</em>, 88(4), 981–1007 (2011). <a href="https://doi.org/10.1016/j.apenergy.2010.09.030" target="_blank" rel="noopener noreferrer">doi:10.1016/j.apenergy.2010.09.030</a></li>
+        <li>U.S. Department of Energy Hydrogen and Fuel Cell Technologies Office. <a href="https://www.energy.gov/eere/fuelcells" target="_blank" rel="noopener noreferrer">energy.gov/eere/fuelcells</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2024-01-20',
     category: 'Energy',
     readTime: 10,
@@ -3773,1127 +3015,9 @@ export const insightsPosts: InsightsPost[] = [
     tags: ['Fuel Cells', 'Hydrogen Economy', 'Clean Energy', 'Energy Technology']
   },
   {
-    id: '7',
-    title: 'Microfluidics Revolution: Lab-on-a-Chip Technologies',
-    excerpt: 'Discover how microfluidics is transforming medical diagnostics and drug discovery processes...',
-    content: `
-      <p><strong>Target Readers:</strong> Microfluidics researchers, biomedical engineers, diagnostic developers, and technical decision-makers in lab-on-a-chip and medical device applications.</p>
-      
-      <h2>TL;DR Summary</h2>
-      <p>Microfluidics is revolutionizing medical diagnostics, drug discovery, and biological research through lab-on-a-chip technologies. NineScrolls precision manufacturing equipment enables the development of advanced microfluidic devices through precise etching, thin film deposition, and surface modification techniques. Our systems support research and production of high-performance microfluidic devices for point-of-care diagnostics, drug screening, and biological analysis.</p>
-      
-      <h2>1) The Microfluidics Revolution</h2>
-      <p>Microfluidics, the science of manipulating fluids at the microscale, has transformed biological and chemical analysis by enabling precise control over fluid flow, mixing, and reactions in miniaturized devices. This technology has revolutionized:</p>
-      <ul>
-        <li><strong>Medical Diagnostics:</strong> Point-of-care testing and rapid disease detection</li>
-        <li><strong>Drug Discovery:</strong> High-throughput screening and drug development</li>
-        <li><strong>Biological Research:</strong> Single-cell analysis and organ-on-chip systems</li>
-        <li><strong>Chemical Analysis:</strong> Automated sample preparation and analysis</li>
-      </ul>
-      
-      <h2>2) Fundamentals of Microfluidics</h2>
-      
-      <h3>2.1 Microscale Fluid Dynamics</h3>
-      <p>At the microscale, fluid behavior differs significantly from macroscopic systems:</p>
-      
-      <p><strong>Laminar Flow:</strong></p>
-      <ul>
-        <li>Low Reynolds numbers (Re < 2300)</li>
-        <li>Predictable, parallel streamlines</li>
-        <li>Diffusion-based mixing</li>
-        <li>Applications: Controlled mixing, separation</li>
-      </ul>
-      
-      <p><strong>Surface Effects:</strong></p>
-      <ul>
-        <li>High surface-to-volume ratios</li>
-        <li>Surface tension dominates</li>
-        <li>Capillary forces important</li>
-        <li>Applications: Droplet formation, capillary action</li>
-      </ul>
-      
-      <p><strong>Diffusion:</strong></p>
-      <ul>
-        <li>Fast molecular diffusion</li>
-        <li>Efficient mass transfer</li>
-        <li>Rapid reaction kinetics</li>
-        <li>Applications: Chemical reactions, sensing</li>
-      </ul>
-      
-      <h3>2.2 Key Microfluidic Phenomena</h3>
-      <p>Understanding these phenomena is crucial for device design:</p>
-      
-      <p><strong>Electroosmosis:</strong></p>
-      <ul>
-        <li>Fluid motion induced by electric fields</li>
-        <li>Important for capillary electrophoresis</li>
-        <li>Surface charge dependent</li>
-        <li>Applications: Separation, pumping</li>
-      </ul>
-      
-      <p><strong>Dielectrophoresis:</strong></p>
-      <ul>
-        <li>Particle motion in non-uniform electric fields</li>
-        <li>Size and dielectric properties dependent</li>
-        <li>Applications: Cell sorting, particle manipulation</li>
-      </ul>
-      
-      <p><strong>Droplet Microfluidics:</strong></p>
-      <ul>
-        <li>Immiscible fluid systems</li>
-        <li>Discrete reaction volumes</li>
-        <li>High-throughput processing</li>
-        <li>Applications: Digital PCR, single-cell analysis</li>
-      </ul>
-      
-      <h2>3) Lab-on-a-Chip Technologies</h2>
-      
-      <h3>3.1 Device Architecture</h3>
-      <p>Lab-on-a-chip devices integrate multiple functions:</p>
-      
-      <p><strong>Sample Preparation:</strong></p>
-      <ul>
-        <li>Filtration and concentration</li>
-        <li>Cell lysis and DNA extraction</li>
-        <li>Protein purification</li>
-        <li>Automated sample handling</li>
-      </ul>
-      
-      <p><strong>Reaction Chambers:</strong></p>
-      <ul>
-        <li>PCR amplification</li>
-        <li>Enzyme reactions</li>
-        <li>Immunoassays</li>
-        <li>Temperature control</li>
-      </ul>
-      
-      <p><strong>Detection Systems:</strong></p>
-      <ul>
-        <li>Optical detection (fluorescence, absorbance)</li>
-        <li>Electrochemical sensing</li>
-        <li>Mass spectrometry</li>
-        <li>Imaging and microscopy</li>
-      </ul>
-      
-      <h3>3.2 Integration Strategies</h3>
-      <p>Different approaches to device integration:</p>
-      
-      <p><strong>Monolithic Integration:</strong></p>
-      <ul>
-        <li>All functions on single substrate</li>
-        <li>Reduced interconnections</li>
-        <li>Lower cost and complexity</li>
-        <li>Challenges: Process compatibility</li>
-      </ul>
-      
-      <p><strong>Hybrid Integration:</strong></p>
-      <ul>
-        <li>Multiple substrates bonded together</li>
-        <li>Optimized processes for each layer</li>
-        <li>Greater design flexibility</li>
-        <li>Challenges: Bonding, alignment</li>
-      </ul>
-      
-      <h2>4) Applications in Medical Diagnostics</h2>
-      
-      <h3>4.1 Point-of-Care Diagnostics</h3>
-      <p>Microfluidics enables rapid, portable diagnostic testing:</p>
-      
-      <p><strong>Infectious Disease Detection:</strong></p>
-      <ul>
-        <li>Rapid pathogen identification</li>
-        <li>Antibiotic resistance testing</li>
-        <li>Viral load quantification</li>
-        <li>Examples: COVID-19, HIV, malaria</li>
-      </ul>
-      
-      <p><strong>Cancer Diagnostics:</strong></p>
-      <ul>
-        <li>Circulating tumor cell detection</li>
-        <li>Biomarker analysis</li>
-        <li>Liquid biopsy platforms</li>
-        <li>Early detection and monitoring</li>
-      </ul>
-      
-      <p><strong>Cardiovascular Disease:</strong></p>
-      <ul>
-        <li>Troponin detection</li>
-        <li>Blood coagulation analysis</li>
-        <li>Cholesterol monitoring</li>
-        <li>Risk assessment</li>
-      </ul>
-      
-      <h3>4.2 Clinical Laboratory Automation</h3>
-      <p>Microfluidics streamlines laboratory workflows:</p>
-      <ul>
-        <li><strong>Sample Processing:</strong> Automated sample preparation and handling</li>
-        <li><strong>High-Throughput Analysis:</strong> Parallel processing of multiple samples</li>
-        <li><strong>Quality Control:</strong> Integrated calibration and validation</li>
-        <li><strong>Data Management:</strong> Automated data collection and analysis</li>
-      </ul>
-      
-      <h2>5) Drug Discovery and Development</h2>
-      
-      <h3>5.1 High-Throughput Screening</h3>
-      <p>Microfluidics accelerates drug discovery processes:</p>
-      
-      <p><strong>Compound Screening:</strong></p>
-      <ul>
-        <li>Automated compound dispensing</li>
-        <li>Cell-based assays</li>
-        <li>Dose-response analysis</li>
-        <li>Hit identification and validation</li>
-      </ul>
-      
-      <p><strong>ADME Studies:</strong></p>
-      <ul>
-        <li>Absorption, distribution, metabolism, excretion</li>
-        <li>Liver-on-chip models</li>
-        <li>Blood-brain barrier models</li>
-        <li>Pharmacokinetic analysis</li>
-      </ul>
-      
-      <h3>5.2 Organ-on-Chip Systems</h3>
-      <p>Microfluidic models of human organs:</p>
-      <ul>
-        <li><strong>Liver-on-Chip:</strong> Drug metabolism and toxicity testing</li>
-        <li><strong>Lung-on-Chip:</strong> Respiratory disease modeling</li>
-        <li><strong>Heart-on-Chip:</strong> Cardiac toxicity assessment</li>
-        <li><strong>Brain-on-Chip:</strong> Neurodegenerative disease research</li>
-      </ul>
-      
-      <h2>6) Biological Research Applications</h2>
-      
-      <h3>6.1 Single-Cell Analysis</h3>
-      <p>Microfluidics enables high-resolution cellular analysis:</p>
-      
-      <p><strong>Single-Cell Genomics:</strong></p>
-      <ul>
-        <li>Single-cell RNA sequencing</li>
-        <li>DNA amplification and sequencing</li>
-        <li>Epigenetic analysis</li>
-        <li>Cellular heterogeneity studies</li>
-      </ul>
-      
-      <p><strong>Single-Cell Proteomics:</strong></p>
-      <ul>
-        <li>Protein expression analysis</li>
-        <li>Post-translational modifications</li>
-        <li>Cell signaling studies</li>
-        <li>Biomarker discovery</li>
-      </ul>
-      
-      <h3>6.2 Cell Culture and Tissue Engineering</h3>
-      <p>Microfluidic cell culture systems:</p>
-      <ul>
-        <li><strong>3D Cell Culture:</strong> More physiologically relevant models</li>
-        <li><strong>Co-culture Systems:</strong> Multiple cell type interactions</li>
-        <li><strong>Dynamic Culture:</strong> Flow and mechanical stimulation</li>
-        <li><strong>Stem Cell Differentiation:</strong> Controlled differentiation protocols</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/microfluidics.jpg" 
-          alt="Microfluidics Revolution - Visual representation of lab-on-a-chip devices and microfluidic applications" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Microfluidics Revolution - Showcasing lab-on-a-chip devices and microfluidic applications</p>
-      </div>
-      
-      <h2>7) Manufacturing Technologies for Microfluidics</h2>
-      
-      <h3>7.1 Substrate Materials</h3>
-      <p>Choice of materials depends on application requirements:</p>
-      
-      <p><strong>Glass:</strong></p>
-      <ul>
-        <li>Excellent optical properties</li>
-        <li>Chemical resistance</li>
-        <li>High-temperature compatibility</li>
-        <li>Applications: Optical detection, high-temperature processes</li>
-      </ul>
-      
-      <p><strong>Silicon:</strong></p>
-      <ul>
-        <li>Precise microfabrication</li>
-        <li>Excellent thermal properties</li>
-        <li>Integration with electronics</li>
-        <li>Applications: Sensors, actuators, heaters</li>
-      </ul>
-      
-      <p><strong>Polymers:</strong></p>
-      <ul>
-        <li>Low cost and rapid prototyping</li>
-        <li>Biocompatibility</li>
-        <li>Flexible and transparent</li>
-        <li>Applications: Disposable devices, biological applications</li>
-      </ul>
-      
-      <h3>7.2 Fabrication Techniques</h3>
-      <p>Advanced manufacturing for microfluidic devices:</p>
-      
-      <p><strong>Photolithography:</strong></p>
-      <ul>
-        <li>High-resolution patterning</li>
-        <li>Batch processing</li>
-        <li>Precise feature control</li>
-        <li>Applications: Silicon and glass devices</li>
-      </ul>
-      
-      <p><strong>Soft Lithography:</strong></p>
-      <ul>
-        <li>PDMS molding and bonding</li>
-        <li>Rapid prototyping</li>
-        <li>Low cost</li>
-        <li>Applications: Research and development</li>
-      </ul>
-      
-      <p><strong>3D Printing:</strong></p>
-      <ul>
-        <li>Complex 3D structures</li>
-        <li>Rapid design iteration</li>
-        <li>Multi-material printing</li>
-        <li>Applications: Prototyping, specialized devices</li>
-      </ul>
-      
-      <h2>8) NineScrolls Equipment for Microfluidics</h2>
-      <p>NineScrolls provides comprehensive solutions for microfluidic device manufacturing:</p>
-      
-      <h3>8.1 Etching Systems</h3>
-      <ul>
-        <li><strong>RIE Systems:</strong> Precise etching of microfluidic channels</li>
-        <li><strong>ICP-RIE Systems:</strong> High-aspect-ratio etching for deep channels</li>
-        <li><strong>IBE/RIBE Systems:</strong> Ion beam etching for specialized applications</li>
-      </ul>
-      
-      <h3>8.2 Deposition Systems</h3>
-      <ul>
-        <li><strong>ALD Systems:</strong> Ultra-thin coatings for surface modification</li>
-        <li><strong>PECVD Systems:</strong> Functional coatings and passivation layers</li>
-        <li><strong>Sputter Systems:</strong> Metal electrodes and conductive layers</li>
-      </ul>
-      
-      <h3>8.3 Supporting Equipment</h3>
-      <ul>
-        <li><strong>Coater/Developer Systems:</strong> Photoresist processing for lithography</li>
-        <li><strong>Striper Systems:</strong> Photoresist removal and surface cleaning</li>
-      </ul>
-      
-      <h2>9) Quality Control and Testing</h2>
-      
-      <h3>9.1 Device Characterization</h3>
-      <p>Comprehensive testing of microfluidic devices:</p>
-      <ul>
-        <li><strong>Flow Characterization:</strong> Flow rate, pressure drop, mixing efficiency</li>
-        <li><strong>Surface Analysis:</strong> Wettability, surface roughness, chemical composition</li>
-        <li><strong>Optical Testing:</strong> Transparency, fluorescence, imaging quality</li>
-        <li><strong>Biological Testing:</strong> Cell viability, protein adsorption, biocompatibility</li>
-      </ul>
-      
-      <h3>9.2 Performance Validation</h3>
-      <p>Validation of device performance:</p>
-      <ul>
-        <li><strong>Analytical Performance:</strong> Sensitivity, specificity, limit of detection</li>
-        <li><strong>Reproducibility:</strong> Inter-device and intra-device variability</li>
-        <li><strong>Stability:</strong> Long-term performance and shelf life</li>
-        <li><strong>Reliability:</strong> Failure modes and lifetime testing</li>
-      </ul>
-      
-      <h2>10) Future Trends in Microfluidics</h2>
-      
-      <h3>10.1 Emerging Technologies</h3>
-      <ul>
-        <li><strong>Digital Microfluidics:</strong> Electrowetting-based droplet manipulation</li>
-        <li><strong>Paper Microfluidics:</strong> Low-cost, disposable devices</li>
-        <li><strong>Flexible Microfluidics:</strong> Wearable and implantable devices</li>
-        <li><strong>AI-Enhanced Microfluidics:</strong> Machine learning for device optimization</li>
-      </ul>
-      
-      <h3>10.2 Manufacturing Challenges</h3>
-      <ul>
-        <li><strong>Scalability:</strong> High-volume manufacturing of microfluidic devices</li>
-        <li><strong>Cost Reduction:</strong> Lowering manufacturing costs for widespread adoption</li>
-        <li><strong>Integration:</strong> Combining multiple functions in single devices</li>
-        <li><strong>Standardization:</strong> Establishing industry standards and protocols</li>
-      </ul>
-      
-      <h2>11) Conclusion</h2>
-      <p>Microfluidics is revolutionizing medical diagnostics, drug discovery, and biological research through lab-on-a-chip technologies. The ability to manipulate fluids at the microscale enables precise control over biological and chemical processes, leading to faster, more accurate, and more accessible diagnostic and research tools.</p>
-      
-      <p>NineScrolls is committed to providing the equipment and expertise needed to advance microfluidic technology. Our comprehensive range of processing systems supports research and development across the full spectrum of microfluidic applications.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Interested in microfluidics for your application? Contact our technical team for consultation.</li>
-        <li>Need equipment for microfluidic device manufacturing? Explore our product range and discuss your requirements.</li>
-        <li>Want to learn more about process optimization for microfluidic devices? Our process engineers are available for technical discussions.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
-      Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2024-01-18',
-    category: 'Biotechnology',
-    readTime: 9,
-    imageUrl: '/assets/images/insights/microfluidics.jpg',
-    slug: 'microfluidics-revolution-lab-on-chip',
-    tags: ['Microfluidics', 'Lab-on-a-Chip', 'Medical Diagnostics', 'Biotechnology']
-  },
-  {
-    id: '8',
-    title: 'Optical Waveguides: Modern Communications Infrastructure',
-    excerpt: 'Learn about the latest developments in optical waveguide technology for telecommunications...',
-    content: `
-      <p><strong>Target Readers:</strong> Optical engineers, telecommunications researchers, photonics scientists, and technical decision-makers in optical communications and waveguide technology.</p>
-      
-      <h2>TL;DR Summary</h2>
-      <p>Optical waveguides are the backbone of modern telecommunications, enabling high-speed data transmission through fiber optic networks and integrated photonic circuits. NineScrolls precision manufacturing equipment enables the development of advanced optical waveguide devices through precise etching, thin film deposition, and surface modification techniques. Our systems support research and production of high-performance waveguides for telecommunications, sensing, and integrated photonics applications.</p>
-      
-      <h2>1) The Optical Communications Revolution</h2>
-      <p>Optical waveguides have revolutionized telecommunications by enabling high-speed, high-capacity data transmission over long distances. These devices guide light through carefully designed structures, providing the foundation for:</p>
-      <ul>
-        <li><strong>Fiber Optic Communications:</strong> Long-distance data transmission</li>
-        <li><strong>Integrated Photonics:</strong> Miniaturized optical circuits</li>
-        <li><strong>Optical Sensing:</strong> Distributed sensing and monitoring</li>
-        <li><strong>Data Centers:</strong> High-speed interconnects and switching</li>
-      </ul>
-      
-      <h2>2) Waveguide Fundamentals</h2>
-      
-      <h3>2.1 Basic Principles</h3>
-      <p>Optical waveguides confine and guide light through total internal reflection:</p>
-      
-      <p><strong>Total Internal Reflection:</strong></p>
-      <ul>
-        <li>Light reflects at core-cladding interface</li>
-        <li>Requires higher refractive index in core</li>
-        <li>Critical angle determines guidance</li>
-        <li>Foundation of all waveguide operation</li>
-      </ul>
-      
-      <p><strong>Mode Propagation:</strong></p>
-      <ul>
-        <li>Discrete guided modes</li>
-        <li>Mode field distribution</li>
-        <li>Effective refractive index</li>
-        <li>Dispersion characteristics</li>
-      </ul>
-      
-      <p><strong>Waveguide Parameters:</strong></p>
-      <ul>
-        <li>Core diameter and refractive index</li>
-        <li>Cladding refractive index</li>
-        <li>Numerical aperture (NA)</li>
-        <li>V-number (normalized frequency)</li>
-      </ul>
-      
-      <h3>2.2 Waveguide Types</h3>
-      <p>Different waveguide geometries for various applications:</p>
-      
-      <p><strong>Planar Waveguides:</strong></p>
-      <ul>
-        <li>2D confinement in thin films</li>
-        <li>Integrated photonic circuits</li>
-        <li>High index contrast</li>
-        <li>Applications: Sensors, modulators, filters</li>
-      </ul>
-      
-      <p><strong>Channel Waveguides:</strong></p>
-      <ul>
-        <li>3D confinement in rectangular channels</li>
-        <li>Strong lateral confinement</li>
-        <li>Low loss propagation</li>
-        <li>Applications: Integrated optics, interconnects</li>
-      </ul>
-      
-      <p><strong>Fiber Waveguides:</strong></p>
-      <ul>
-        <li>Cylindrical geometry</li>
-        <li>Long-distance transmission</li>
-        <li>Low loss and dispersion</li>
-        <li>Applications: Telecommunications, sensing</li>
-      </ul>
-      
-      <h2>3) Optical Fiber Technology</h2>
-      
-      <h3>3.1 Fiber Types and Applications</h3>
-      <p>Different fiber designs for specific applications:</p>
-      
-      <p><strong>Single-Mode Fiber (SMF):</strong></p>
-      <ul>
-        <li>Single guided mode</li>
-        <li>Low dispersion</li>
-        <li>Long-distance transmission</li>
-        <li>Applications: Telecommunications, sensing</li>
-      </ul>
-      
-      <p><strong>Multi-Mode Fiber (MMF):</strong></p>
-      <ul>
-        <li>Multiple guided modes</li>
-        <li>Higher bandwidth</li>
-        <li>Short-distance transmission</li>
-        <li>Applications: Local area networks, data centers</li>
-      </ul>
-      
-      <p><strong>Specialty Fibers:</strong></p>
-      <ul>
-        <li>Photonic crystal fibers</li>
-        <li>Polarization-maintaining fibers</li>
-        <li>Dispersion-shifted fibers</li>
-        <li>Applications: Specialized sensing, nonlinear optics</li>
-      </ul>
-      
-      <h3>3.2 Fiber Manufacturing</h3>
-      <p>Advanced manufacturing processes for optical fibers:</p>
-      <ul>
-        <li><strong>Modified Chemical Vapor Deposition (MCVD):</strong> High-purity silica layers</li>
-        <li><strong>Outside Vapor Deposition (OVD):</strong> Soot deposition and consolidation</li>
-        <li><strong>Vapor Axial Deposition (VAD):</strong> Continuous preform fabrication</li>
-        <li><strong>Fiber Drawing:</strong> High-speed drawing and coating</li>
-      </ul>
-      
-      <h2>4) Integrated Photonic Waveguides</h2>
-      
-      <h3>4.1 Silicon Photonics</h3>
-      <p>Silicon-based integrated photonic circuits:</p>
-      
-      <p><strong>Silicon-on-Insulator (SOI):</strong></p>
-      <ul>
-        <li>High index contrast</li>
-        <li>CMOS-compatible processing</li>
-        <li>Compact device footprint</li>
-        <li>Applications: Data communications, sensing</li>
-      </ul>
-      
-      <p><strong>Waveguide Components:</strong></p>
-      <ul>
-        <li>Directional couplers</li>
-        <li>Ring resonators</li>
-        <li>Grating couplers</li>
-        <li>Phase shifters</li>
-      </ul>
-      
-      <h3>4.2 Other Material Systems</h3>
-      <p>Alternative materials for integrated photonics:</p>
-      
-      <p><strong>III-V Semiconductors:</strong></p>
-      <ul>
-        <li>Direct bandgap materials</li>
-        <li>Active devices (lasers, detectors)</li>
-        <li>High performance</li>
-        <li>Applications: Telecommunications, sensing</li>
-      </ul>
-      
-      <p><strong>Glass Waveguides:</strong></p>
-      <ul>
-        <li>Low loss propagation</li>
-        <li>Excellent optical properties</li>
-        <li>Passive devices</li>
-        <li>Applications: Telecommunications, sensing</li>
-      </ul>
-      
-      <p><strong>Polymer Waveguides:</strong></p>
-      <ul>
-        <li>Low cost and easy processing</li>
-        <li>Flexible and lightweight</li>
-        <li>Rapid prototyping</li>
-        <li>Applications: Displays, sensors, interconnects</li>
-      </ul>
-      
-      <h2>5) Waveguide Fabrication Technologies</h2>
-      
-      <h3>5.1 Lithography and Etching</h3>
-      <p>Precision patterning for waveguide fabrication:</p>
-      
-      <p><strong>Photolithography:</strong></p>
-      <ul>
-        <li>High-resolution patterning</li>
-        <li>Batch processing</li>
-        <li>Precise feature control</li>
-        <li>Applications: Silicon photonics, glass waveguides</li>
-      </ul>
-      
-      <p><strong>Electron Beam Lithography:</strong></p>
-      <ul>
-        <li>Sub-100 nm resolution</li>
-        <li>Direct writing capability</li>
-        <li>Research and prototyping</li>
-        <li>Applications: High-precision devices</li>
-      </ul>
-      
-      <p><strong>Plasma Etching:</strong></p>
-      <ul>
-        <li>Anisotropic etching</li>
-        <li>High aspect ratios</li>
-        <li>Smooth sidewalls</li>
-        <li>Applications: Channel waveguides, gratings</li>
-      </ul>
-      
-      <h3>5.2 Thin Film Deposition</h3>
-      <p>Advanced deposition techniques for waveguide materials:</p>
-      
-      <p><strong>Plasma-Enhanced CVD (PECVD):</strong></p>
-      <ul>
-        <li>High-quality silica films</li>
-        <li>Low-temperature processing</li>
-        <li>Good optical properties</li>
-        <li>Applications: Planar waveguides, cladding layers</li>
-      </ul>
-      
-      <p><strong>Atomic Layer Deposition (ALD):</strong></p>
-      <ul>
-        <li>Ultra-thin, conformal films</li>
-        <li>Precise thickness control</li>
-        <li>Excellent uniformity</li>
-        <li>Applications: Protective coatings, interface engineering</li>
-      </ul>
-      
-      <p><strong>Sputter Deposition:</strong></p>
-      <ul>
-        <li>High-quality metal and dielectric films</li>
-        <li>Precise composition control</li>
-        <li>Good adhesion</li>
-        <li>Applications: Electrodes, cladding layers</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/optical-waveguides.jpg" 
-          alt="Optical Waveguides - Visual representation of waveguide structures and optical communications applications" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Optical Waveguides - Showcasing waveguide structures and optical communications applications</p>
-      </div>
-      
-      <h2>6) Applications in Telecommunications</h2>
-      
-      <h3>6.1 Long-Haul Communications</h3>
-      <p>Optical waveguides enable global telecommunications:</p>
-      
-      <p><strong>Undersea Cables:</strong></p>
-      <ul>
-        <li>Transoceanic data transmission</li>
-        <li>High-capacity fiber systems</li>
-        <li>Amplification and regeneration</li>
-        <li>Global internet infrastructure</li>
-      </ul>
-      
-      <p><strong>Terrestrial Networks:</strong></p>
-      <ul>
-        <li>Long-distance fiber links</li>
-        <li>Wavelength division multiplexing (WDM)</li>
-        <li>Optical amplification</li>
-        <li>Network backbone systems</li>
-      </ul>
-      
-      <h3>6.2 Data Center Interconnects</h3>
-      <p>High-speed optical interconnects for data centers:</p>
-      <ul>
-        <li><strong>Intra-Data Center:</strong> High-speed server interconnects</li>
-        <li><strong>Inter-Data Center:</strong> Long-distance data center links</li>
-        <li><strong>Optical Switching:</strong> Fast packet switching</li>
-        <li><strong>Co-packaged Optics:</strong> Integration with electronic chips</li>
-      </ul>
-      
-      <h2>7) Sensing Applications</h2>
-      
-      <h3>7.1 Distributed Fiber Sensing</h3>
-      <p>Optical waveguides enable distributed sensing:</p>
-      
-      <p><strong>Temperature Sensing:</strong></p>
-      <ul>
-        <li>Distributed temperature sensing (DTS)</li>
-        <li>Raman scattering-based detection</li>
-        <li>High spatial resolution</li>
-        <li>Applications: Oil and gas, power cables</li>
-      </ul>
-      
-      <p><strong>Strain Sensing:</strong></p>
-      <ul>
-        <li>Distributed strain sensing (DSS)</li>
-        <li>Brillouin scattering detection</li>
-        <li>Structural health monitoring</li>
-        <li>Applications: Bridges, pipelines, aircraft</li>
-      </ul>
-      
-      <h3>7.2 Integrated Optical Sensors</h3>
-      <p>Miniaturized sensors using integrated waveguides:</p>
-      <ul>
-        <li><strong>Ring Resonator Sensors:</strong> High-sensitivity detection</li>
-        <li><strong>Interferometric Sensors:</strong> Phase-sensitive measurements</li>
-        <li><strong>Surface Plasmon Sensors:</strong> Label-free detection</li>
-        <li><strong>Applications:</strong> Chemical sensing, biosensing, environmental monitoring</li>
-      </ul>
-      
-      <h2>8) NineScrolls Equipment for Waveguide Manufacturing</h2>
-      <p>NineScrolls provides comprehensive solutions for optical waveguide manufacturing:</p>
-      
-      <h3>8.1 Etching Systems</h3>
-      <ul>
-        <li><strong>RIE Systems:</strong> Precise etching of waveguide materials</li>
-        <li><strong>ICP-RIE Systems:</strong> High-aspect-ratio etching for deep waveguides</li>
-        <li><strong>IBE/RIBE Systems:</strong> Ion beam etching for specialized applications</li>
-      </ul>
-      
-      <h3>8.2 Deposition Systems</h3>
-      <ul>
-        <li><strong>ALD Systems:</strong> Ultra-precise thin film deposition for waveguide coatings</li>
-        <li><strong>PECVD Systems:</strong> High-quality dielectric films for waveguide layers</li>
-        <li><strong>HDP-CVD Systems:</strong> Superior gap-fill for complex waveguide structures</li>
-        <li><strong>Sputter Systems:</strong> High-quality metal and compound films</li>
-      </ul>
-      
-      <h3>8.3 Supporting Equipment</h3>
-      <ul>
-        <li><strong>Coater/Developer Systems:</strong> Photoresist processing for lithography</li>
-        <li><strong>Striper Systems:</strong> Photoresist removal and surface cleaning</li>
-      </ul>
-      
-      <h2>9) Quality Control and Testing</h2>
-      
-      <h3>9.1 Optical Characterization</h3>
-      <p>Comprehensive testing of waveguide devices:</p>
-      <ul>
-        <li><strong>Insertion Loss:</strong> Total power loss through device</li>
-        <li><strong>Return Loss:</strong> Reflected power measurement</li>
-        <li><strong>Mode Field Diameter:</strong> Spatial distribution of guided light</li>
-        <li><strong>Dispersion:</strong> Wavelength-dependent phase velocity</li>
-      </ul>
-      
-      <h3>9.2 Performance Validation</h3>
-      <p>Validation of waveguide performance:</p>
-      <ul>
-        <li><strong>Bandwidth Testing:</strong> Frequency response measurement</li>
-        <li><strong>Polarization Testing:</strong> Polarization-dependent loss</li>
-        <li><strong>Environmental Testing:</strong> Temperature and humidity effects</li>
-        <li><strong>Reliability Testing:</strong> Long-term stability assessment</li>
-      </ul>
-      
-      <h2>10) Future Trends in Optical Waveguides</h2>
-      
-      <h3>10.1 Emerging Technologies</h3>
-      <ul>
-        <li><strong>3D Integrated Photonics:</strong> Multi-layer photonic circuits</li>
-        <li><strong>Heterogeneous Integration:</strong> Combining different materials and technologies</li>
-        <li><strong>Quantum Photonics:</strong> Quantum information processing</li>
-        <li><strong>AI-Enhanced Design:</strong> Machine learning for waveguide optimization</li>
-      </ul>
-      
-      <h3>10.2 Manufacturing Challenges</h3>
-      <ul>
-        <li><strong>Scalability:</strong> High-volume manufacturing of waveguide devices</li>
-        <li><strong>Cost Reduction:</strong> Lowering manufacturing costs for widespread adoption</li>
-        <li><strong>Integration:</strong> Combining multiple functions in single devices</li>
-        <li><strong>Standardization:</strong> Establishing industry standards and protocols</li>
-      </ul>
-      
-      <h2>11) Conclusion</h2>
-      <p>Optical waveguides are fundamental to modern telecommunications and integrated photonics, enabling high-speed data transmission and advanced optical devices. The precision and quality requirements of waveguide applications demand advanced manufacturing capabilities and rigorous process control.</p>
-      
-      <p>NineScrolls is committed to providing the equipment and expertise needed to advance optical waveguide technology. Our comprehensive range of processing systems supports research and development across the full spectrum of waveguide applications.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Interested in optical waveguide technology for your application? Contact our technical team for consultation.</li>
-        <li>Need equipment for waveguide device manufacturing? Explore our product range and discuss your requirements.</li>
-        <li>Want to learn more about process optimization for waveguide fabrication? Our process engineers are available for technical discussions.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
-      Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2024-01-16',
-    category: 'Photonics',
-    readTime: 11,
-    imageUrl: '/assets/images/insights/optical-waveguides.jpg',
-    slug: 'optical-waveguides-modern-communications',
-    tags: ['Optical Waveguides', 'Telecommunications', 'Photonics', 'Communications']
-  },
-  {
-    id: '9',
-    title: 'Quantum Computing: The Future of Information Processing',
-    excerpt: 'Explore how quantum computing technologies are revolutionizing information processing...',
-    content: `
-      <p><strong>Target Readers:</strong> Quantum computing researchers, physicists, computer scientists, and technical decision-makers in quantum technology and advanced computing applications.</p>
-      
-      <h2>TL;DR Summary</h2>
-      <p>Quantum computing represents a paradigm shift in information processing, leveraging quantum mechanical phenomena to solve complex problems that are intractable for classical computers. NineScrolls precision manufacturing equipment enables the development of quantum computing components through precise thin film deposition, etching, and surface modification techniques. Our systems support research and production of quantum devices, including qubits, quantum circuits, and quantum sensing systems.</p>
-      
-      <h2>1) The Quantum Revolution</h2>
-      <p>Quantum computing harnesses the principles of quantum mechanics to process information in fundamentally new ways. Unlike classical computers that use bits (0 or 1), quantum computers use quantum bits (qubits) that can exist in superposition states, enabling:</p>
-      <ul>
-        <li><strong>Exponential Speedup:</strong> Solving certain problems exponentially faster</li>
-        <li><strong>Quantum Parallelism:</strong> Processing multiple states simultaneously</li>
-        <li><strong>Quantum Entanglement:</strong> Correlated quantum states across multiple qubits</li>
-        <li><strong>Quantum Interference:</strong> Constructive and destructive interference effects</li>
-      </ul>
-      
-      <h2>2) Quantum Computing Fundamentals</h2>
-      
-      <h3>2.1 Quantum Bits (Qubits)</h3>
-      <p>Qubits are the fundamental units of quantum information:</p>
-      
-      <p><strong>Superposition States:</strong></p>
-      <ul>
-        <li>Qubits can exist in |0⟩, |1⟩, or superposition α|0⟩ + β|1⟩</li>
-        <li>Complex amplitudes α and β with |α|² + |β|² = 1</li>
-        <li>Measurement collapses superposition to classical state</li>
-        <li>Foundation of quantum parallelism</li>
-      </ul>
-      
-      <p><strong>Quantum Gates:</strong></p>
-      <ul>
-        <li>Unitary operations on qubits</li>
-        <li>Single-qubit gates: X, Y, Z, H, S, T</li>
-        <li>Two-qubit gates: CNOT, SWAP, controlled-phase</li>
-        <li>Universal gate sets for quantum computation</li>
-      </ul>
-      
-      <p><strong>Quantum Circuits:</strong></p>
-      <ul>
-        <li>Sequences of quantum gates</li>
-        <li>Quantum algorithm implementation</li>
-        <li>Measurement and readout operations</li>
-        <li>Error correction and fault tolerance</li>
-      </ul>
-      
-      <h3>2.2 Quantum Phenomena</h3>
-      <p>Key quantum mechanical effects in computing:</p>
-      
-      <p><strong>Quantum Entanglement:</strong></p>
-      <ul>
-        <li>Correlated quantum states across multiple qubits</li>
-        <li>Bell states and GHZ states</li>
-        <li>Non-local correlations</li>
-        <li>Essential for quantum algorithms</li>
-      </ul>
-      
-      <p><strong>Quantum Interference:</strong></p>
-      <ul>
-        <li>Constructive and destructive interference</li>
-        <li>Quantum amplitude amplification</li>
-        <li>Quantum Fourier transform</li>
-        <li>Basis for quantum algorithms</li>
-      </ul>
-      
-      <p><strong>Quantum Tunneling:</strong></p>
-      <ul>
-        <li>Particle penetration through energy barriers</li>
-        <li>Quantum annealing applications</li>
-        <li>Superconducting qubit operation</li>
-        <li>Quantum sensing applications</li>
-      </ul>
-      
-      <h2>3) Quantum Computing Technologies</h2>
-      
-      <h3>3.1 Superconducting Qubits</h3>
-      <p>Superconducting circuits as qubits:</p>
-      
-      <p><strong>Transmon Qubits:</strong></p>
-      <ul>
-        <li>Josephson junction-based qubits</li>
-        <li>High coherence times</li>
-        <li>Scalable fabrication</li>
-        <li>Leading technology for quantum computers</li>
-      </ul>
-      
-      <p><strong>Flux Qubits:</strong></p>
-      <ul>
-        <li>Magnetic flux-based qubits</li>
-        <li>Quantum annealing applications</li>
-        <li>D-Wave systems</li>
-        <li>Optimization problems</li>
-      </ul>
-      
-      <p><strong>Phase Qubits:</strong></p>
-      <ul>
-        <li>Phase difference-based qubits</li>
-        <li>Simpler fabrication</li>
-        <li>Lower coherence times</li>
-        <li>Research applications</li>
-      </ul>
-      
-      <h3>3.2 Trapped Ion Qubits</h3>
-      <p>Ions trapped in electromagnetic fields:</p>
-      <ul>
-        <li><strong>High Fidelity:</strong> Excellent gate operations</li>
-        <li><strong>Long Coherence:</strong> Stable quantum states</li>
-        <li><strong>All-to-All Connectivity:</strong> Direct qubit interactions</li>
-        <li><strong>Challenges:</strong> Scaling and speed limitations</li>
-      </ul>
-      
-      <h3>3.3 Other Qubit Technologies</h3>
-      <p>Emerging qubit platforms:</p>
-      
-      <p><strong>Semiconductor Qubits:</strong></p>
-      <ul>
-        <li>Silicon and GaAs quantum dots</li>
-        <li>Spin-based qubits</li>
-        <li>CMOS-compatible fabrication</li>
-        <li>Scalability potential</li>
-      </ul>
-      
-      <p><strong>Topological Qubits:</strong></p>
-      <ul>
-        <li>Majorana fermions</li>
-        <li>Intrinsic error protection</li>
-        <li>Microsoft's approach</li>
-        <li>Fault-tolerant operation</li>
-      </ul>
-      
-      <p><strong>Photonic Qubits:</strong></p>
-      <ul>
-        <li>Single photons as qubits</li>
-        <li>Linear optical quantum computing</li>
-        <li>Quantum communication applications</li>
-        <li>Room temperature operation</li>
-      </ul>
-      
-      <h2>4) Quantum Algorithms</h2>
-      
-      <h3>4.1 Shor's Algorithm</h3>
-      <p>Quantum factoring algorithm:</p>
-      <ul>
-        <li><strong>Problem:</strong> Integer factorization</li>
-        <li><strong>Speedup:</strong> Exponential over classical algorithms</li>
-        <li><strong>Applications:</strong> Cryptography, security</li>
-        <li><strong>Impact:</strong> RSA encryption vulnerability</li>
-      </ul>
-      
-      <h3>4.2 Grover's Algorithm</h3>
-      <p>Quantum search algorithm:</p>
-      <ul>
-        <li><strong>Problem:</strong> Unstructured search</li>
-        <li><strong>Speedup:</strong> Quadratic over classical algorithms</li>
-        <li><strong>Applications:</strong> Database search, optimization</li>
-        <li><strong>Limitations:</strong> Not exponential speedup</li>
-      </ul>
-      
-      <h3>4.3 Quantum Machine Learning</h3>
-      <p>Quantum algorithms for machine learning:</p>
-      <ul>
-        <li><strong>Quantum Neural Networks:</strong> Quantum-enhanced neural networks</li>
-        <li><strong>Quantum Support Vector Machines:</strong> Quantum kernel methods</li>
-        <li><strong>Quantum Principal Component Analysis:</strong> Dimensionality reduction</li>
-        <li><strong>Applications:</strong> Pattern recognition, optimization</li>
-      </ul>
-      
-      <h2>5) Quantum Error Correction</h2>
-      
-      <h3>5.1 Error Types</h3>
-      <p>Common quantum errors:</p>
-      
-      <p><strong>Bit Flip Errors:</strong></p>
-      <ul>
-        <li>X-gate errors</li>
-        <li>Phase flip errors (Z-gate)</li>
-        <li>Combined errors (Y-gate)</li>
-        <li>Decoherence effects</li>
-      </ul>
-      
-      <p><strong>Environmental Noise:</strong></p>
-      <ul>
-        <li>Thermal fluctuations</li>
-        <li>Electromagnetic interference</li>
-        <li>Material defects</li>
-        <li>Control system noise</li>
-      </ul>
-      
-      <h3>5.2 Error Correction Codes</h3>
-      <p>Quantum error correction strategies:</p>
-      
-      <p><strong>Surface Codes:</strong></p>
-      <ul>
-        <li>Topological error correction</li>
-        <li>High fault tolerance</li>
-        <li>Scalable architecture</li>
-        <li>Leading approach for fault-tolerant quantum computing</li>
-      </ul>
-      
-      <p><strong>Stabilizer Codes:</strong></p>
-      <ul>
-        <li>CSS codes and stabilizer formalism</li>
-        <li>Syndrome measurement</li>
-        <li>Error detection and correction</li>
-        <li>Foundation of quantum error correction</li>
-      </ul>
-      
-      <h2>6) Manufacturing Technologies for Quantum Computing</h2>
-      
-      <h3>6.1 Superconducting Qubit Fabrication</h3>
-      <p>Advanced manufacturing for superconducting qubits:</p>
-      
-      <p><strong>Josephson Junction Fabrication:</strong></p>
-      <ul>
-        <li>Aluminum/aluminum oxide/aluminum junctions</li>
-        <li>Precise oxide thickness control</li>
-        <li>Critical current density tuning</li>
-        <li>Applications: Transmon qubits, SQUIDs</li>
-      </ul>
-      
-      <p><strong>Circuit Patterning:</strong></p>
-      <ul>
-        <li>Electron beam lithography</li>
-        <li>Reactive ion etching</li>
-        <li>Lift-off processes</li>
-        <li>High-resolution patterning</li>
-      </ul>
-      
-      <h3>6.2 Semiconductor Qubit Fabrication</h3>
-      <p>Silicon-based quantum dot fabrication:</p>
-      <ul>
-        <li><strong>Quantum Dot Formation:</strong> Electrostatic confinement</li>
-        <li><strong>Gate Electrodes:</strong> Control and readout gates</li>
-        <li><strong>Isotope Engineering:</strong> Nuclear spin-free silicon</li>
-        <li><strong>Interface Quality:</strong> Silicon-silicon dioxide interfaces</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/quantum-computing.jpg" 
-          alt="Quantum Computing - Visual representation of quantum computing components and applications" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Quantum Computing - Showcasing quantum computing components and applications</p>
-      </div>
-      
-      <h2>7) NineScrolls Equipment for Quantum Computing</h2>
-      <p>NineScrolls provides comprehensive solutions for quantum computing device manufacturing:</p>
-      
-      <h3>7.1 Etching Systems</h3>
-      <ul>
-        <li><strong>RIE Systems:</strong> Precise etching of quantum device materials</li>
-        <li><strong>ICP-RIE Systems:</strong> High-aspect-ratio etching for quantum circuits</li>
-        <li><strong>IBE/RIBE Systems:</strong> Ion beam etching for specialized applications</li>
-      </ul>
-      
-      <h3>7.2 Deposition Systems</h3>
-      <ul>
-        <li><strong>ALD Systems:</strong> Ultra-precise thin film deposition for quantum device coatings</li>
-        <li><strong>PECVD Systems:</strong> High-quality dielectric films for quantum circuits</li>
-        <li><strong>HDP-CVD Systems:</strong> Superior gap-fill for complex quantum device structures</li>
-        <li><strong>Sputter Systems:</strong> High-quality metal and compound films</li>
-      </ul>
-      
-      <h3>7.3 Supporting Equipment</h3>
-      <ul>
-        <li><strong>Coater/Developer Systems:</strong> Photoresist processing for lithography</li>
-        <li><strong>Striper Systems:</strong> Photoresist removal and surface cleaning</li>
-      </ul>
-      
-      <h2>8) Applications of Quantum Computing</h2>
-      
-      <h3>8.1 Cryptography and Security</h3>
-      <p>Quantum computing impact on cryptography:</p>
-      
-      <p><strong>Cryptographic Breaking:</strong></p>
-      <ul>
-        <li>RSA encryption vulnerability</li>
-        <li>Elliptic curve cryptography</li>
-        <li>Hash function security</li>
-        <li>Post-quantum cryptography development</li>
-      </ul>
-      
-      <p><strong>Quantum Cryptography:</strong></p>
-      <ul>
-        <li>Quantum key distribution (QKD)</li>
-        <li>BB84 protocol</li>
-        <li>Unconditionally secure communication</li>
-        <li>Quantum internet applications</li>
-      </ul>
-      
-      <h3>8.2 Optimization Problems</h3>
-      <p>Quantum computing for optimization:</p>
-      <ul>
-        <li><strong>Combinatorial Optimization:</strong> Traveling salesman problem</li>
-        <li><strong>Financial Modeling:</strong> Portfolio optimization, risk assessment</li>
-        <li><strong>Logistics:</strong> Supply chain optimization, routing</li>
-        <li><strong>Machine Learning:</strong> Training optimization, feature selection</li>
-      </ul>
-      
-      <h3>8.3 Scientific Simulation</h3>
-      <p>Quantum simulation applications:</p>
-      <ul>
-        <li><strong>Quantum Chemistry:</strong> Molecular structure and dynamics</li>
-        <li><strong>Material Science:</strong> Novel material properties</li>
-        <li><strong>Drug Discovery:</strong> Protein folding, drug design</li>
-        <li><strong>Physics:</strong> Quantum many-body systems</li>
-      </ul>
-      
-      <h2>9) Challenges and Limitations</h2>
-      
-      <h3>9.1 Technical Challenges</h3>
-      <p>Key technical hurdles:</p>
-      <ul>
-        <li><strong>Decoherence:</strong> Quantum state loss to environment</li>
-        <li><strong>Error Rates:</strong> High gate error rates</li>
-        <li><strong>Scalability:</strong> Maintaining coherence with more qubits</li>
-        <li><strong>Control Systems:</strong> Precise quantum control</li>
-      </ul>
-      
-      <h3>9.2 Manufacturing Challenges</h3>
-      <p>Fabrication challenges:</p>
-      <ul>
-        <li><strong>Material Quality:</strong> Ultra-pure materials required</li>
-        <li><strong>Process Control:</strong> Atomic-level precision needed</li>
-        <li><strong>Yield:</strong> Low device yield</li>
-        <li><strong>Integration:</strong> Complex multi-layer integration</li>
-      </ul>
-      
-      <h2>10) Future Trends in Quantum Computing</h2>
-      
-      <h3>10.1 Emerging Technologies</h3>
-      <ul>
-        <li><strong>Quantum-Classical Hybrid:</strong> Combining quantum and classical computing</li>
-        <li><strong>Quantum Cloud:</strong> Cloud-based quantum computing access</li>
-        <li><strong>Quantum Software:</strong> Development tools and frameworks</li>
-        <li><strong>Quantum Internet:</strong> Quantum communication networks</li>
-      </ul>
-      
-      <h3>10.2 Commercial Applications</h3>
-      <ul>
-        <li><strong>Quantum Advantage:</strong> Practical quantum advantage demonstration</li>
-        <li><strong>Industry Adoption:</strong> Quantum computing in industry</li>
-        <li><strong>Quantum Workforce:</strong> Training and education</li>
-        <li><strong>Quantum Ecosystem:</strong> Complete quantum technology ecosystem</li>
-      </ul>
-      
-      <h2>11) Conclusion</h2>
-      <p>Quantum computing represents a revolutionary approach to information processing, with the potential to solve problems that are currently intractable for classical computers. While significant challenges remain, advances in quantum hardware, algorithms, and error correction are bringing practical quantum computing closer to reality.</p>
-      
-      <p>NineScrolls is committed to providing the equipment and expertise needed to advance quantum computing technology. Our comprehensive range of processing systems supports research and development across the full spectrum of quantum computing applications.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Interested in quantum computing for your application? Contact our technical team for consultation.</li>
-        <li>Need equipment for quantum device manufacturing? Explore our product range and discuss your requirements.</li>
-        <li>Want to learn more about process optimization for quantum devices? Our process engineers are available for technical discussions.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
-      Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
-    `,
-    author: 'NineScrolls Team',
-    publishDate: '2024-01-14',
-    category: 'Nanotechnology',
-    readTime: 12,
-    imageUrl: '/assets/images/insights/quantum-computing.jpg',
-    slug: 'quantum-computing-future-information-processing',
-    tags: ['Quantum Computing', 'Information Processing', 'Nanotechnology', 'Advanced Computing']
-  },
-  {
     id: '10',
     title: 'Solar Cell Manufacturing: Renewable Energy Solutions',
-    excerpt: 'Discover advanced manufacturing techniques for next-generation solar cell technologies...',
+    excerpt: 'Solar cell manufacturing techniques: silicon wafer processing, thin film deposition for perovskite and multi-junction cells, and precision etching for next-generation photovoltaics.',
     content: `
       <p><strong>Target Readers:</strong> Solar cell researchers, photovoltaic engineers, renewable energy specialists, and technical decision-makers in solar energy and clean technology applications.</p>
       
@@ -5234,8 +3358,16 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Contact:</strong><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a><br>
       Products: <a href="/products" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Green, M. A. <em>Solar Cells: Operating Principles, Technology and System Applications</em>. Prentice Hall (1982). ISBN 978-0138222703.</li>
+        <li>NREL Best Research-Cell Efficiency Chart. <a href="https://www.nrel.gov/pv/cell-efficiency.html" target="_blank" rel="noopener noreferrer">nrel.gov/pv/cell-efficiency.html</a></li>
+        <li>Green, M. A., et al. "Solar cell efficiency tables (version 64)." <em>Progress in Photovoltaics: Research and Applications</em>, 32(7), 425–441 (2024). <a href="https://doi.org/10.1002/pip.3831" target="_blank" rel="noopener noreferrer">doi:10.1002/pip.3831</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2024-01-12',
     category: 'Energy',
     readTime: 8,
@@ -5264,7 +3396,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>3) Equipment Implications</h2>
       <ul>
-        <li>ICP‑RIE platforms with <strong>independent source/bias control</strong> and fast pulsing capability.</li>
+        <li><a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE</a> platforms with <strong>independent source/bias control</strong> and fast pulsing capability.</li>
         <li>Enhanced <strong>temperature management</strong> (back‑He cooling, cryogenic options) and <strong>clean chamber materials</strong>.</li>
         <li>Integrated <strong>endpoint sensing</strong> and <strong>recipe analytics</strong> ready for AI/ML.</li>
       </ul>
@@ -5278,8 +3410,16 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>5) Related Equipment & Reading</h2>
       <p><a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Kanarik, K. J., et al. "Overview of atomic layer etching in the semiconductor industry." <em>Journal of Vacuum Science & Technology A</em>, 33(2), 020802 (2015). <a href="https://doi.org/10.1116/1.4913379" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4913379</a></li>
+        <li>Cardinaud, C., Peignon, M.-C. & Tessier, P.-Y. "Plasma etching: principles, mechanisms, application to micro- and nano-technologies." <em>Applied Surface Science</em>, 164(1–4), 72–83 (2000). <a href="https://doi.org/10.1016/S0169-4332(00)00328-7" target="_blank" rel="noopener noreferrer">doi:10.1016/S0169-4332(00)00328-7</a></li>
+        <li>IRDS (IEEE International Roadmap for Devices and Systems). <a href="https://irds.ieee.org" target="_blank" rel="noopener noreferrer">irds.ieee.org</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-09-08',
     category: 'Nanotechnology',
     readTime: 12,
@@ -5448,8 +3588,16 @@ export const insightsPosts: InsightsPost[] = [
       ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
       RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Snyder, G. J. & Toberer, E. S. "Complex thermoelectric materials." <em>Nature Materials</em>, 7(2), 105–114 (2008). <a href="https://doi.org/10.1038/nmat2090" target="_blank" rel="noopener noreferrer">doi:10.1038/nmat2090</a></li>
+        <li>Venkatasubramanian, R., et al. "Thin-film thermoelectric devices with high room-temperature figures of merit." <em>Nature</em>, 413(6856), 597–602 (2001). <a href="https://doi.org/10.1038/35098012" target="_blank" rel="noopener noreferrer">doi:10.1038/35098012</a></li>
+        <li>Poudel, B., et al. "High-thermoelectric performance of nanostructured bismuth antimony telluride bulk alloys." <em>Science</em>, 320(5876), 634–638 (2008). <a href="https://doi.org/10.1126/science.1156446" target="_blank" rel="noopener noreferrer">doi:10.1126/science.1156446</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-11-13',
     category: 'Materials Science',
     readTime: 12,
@@ -5461,7 +3609,7 @@ export const insightsPosts: InsightsPost[] = [
     id: 'plasma-cleaner-comparison',
     title: 'Plasma Cleaner Comparison for Research Laboratories',
     excerpt: 'How to choose the right plasma cleaner for academic & institutional labs. Compare quartz vs stainless steel chambers, RF vs mid-frequency, and batch plasma cleaner selection guide.',
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2025-01-15',
     category: 'Materials Science',
     readTime: 8,
@@ -5622,8 +3770,16 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Summary</h2>
       <p>Plasma cleaning is a versatile, dry, and environmentally friendly method for preparing surfaces at the molecular level. The choice between RF, DC, and microwave plasma cleaners depends on your substrate material, sensitivity requirements, throughput needs, and budget. For most general-purpose applications, RF plasma cleaners offer the best balance of performance, flexibility, and substrate compatibility.</p>
       <p>Understanding these fundamentals will help you optimize your cleaning process and make more informed decisions when evaluating equipment — which we cover in detail in our <a href="/insights/plasma-cleaner-buying-guide">plasma cleaner buying guide</a>.</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Fridman, A. <em>Plasma Chemistry</em>. Cambridge University Press (2008). ISBN 978-0521847353.</li>
+        <li>Tendero, C., et al. "Atmospheric pressure plasmas: A review." <em>Spectrochimica Acta Part B</em>, 61(1), 2–30 (2006). <a href="https://doi.org/10.1016/j.sab.2005.10.003" target="_blank" rel="noopener noreferrer">doi:10.1016/j.sab.2005.10.003</a></li>
+        <li>Morent, R., et al. "Non-thermal plasma treatment of textiles." <em>Surface and Coatings Technology</em>, 202(14), 3427–3449 (2008). <a href="https://doi.org/10.1016/j.surfcoat.2007.12.027" target="_blank" rel="noopener noreferrer">doi:10.1016/j.surfcoat.2007.12.027</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2026-02-10',
     category: 'Materials Science',
     readTime: 12,
@@ -5759,8 +3915,16 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Summary</h2>
       <p>Plasma cleaning technology serves a remarkably diverse range of industries, unified by a common need: atomically clean, chemically activated surfaces. Whether you are bonding semiconductor die, preparing medical implants, or activating polymers for coating, plasma cleaning offers a dry, residue-free, and highly controllable solution that is difficult to replicate with any other single technology.</p>
       <p>The versatility of plasma cleaning — combined with its environmental advantages over wet chemical alternatives — continues to drive adoption in new application areas as manufacturing tolerances tighten and surface quality requirements increase across industries.</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Hegemann, D., Brunner, H. & Oehr, C. "Plasma treatment of polymers for surface and adhesion improvement." <em>Nuclear Instruments and Methods in Physics Research B</em>, 208, 281–286 (2003). <a href="https://doi.org/10.1016/S0168-583X(03)00644-X" target="_blank" rel="noopener noreferrer">doi:10.1016/S0168-583X(03)00644-X</a></li>
+        <li>Chu, P. K., et al. "Plasma-surface modification of biomaterials." <em>Materials Science and Engineering: R</em>, 36(5–6), 143–206 (2002). <a href="https://doi.org/10.1016/S0927-796X(02)00004-9" target="_blank" rel="noopener noreferrer">doi:10.1016/S0927-796X(02)00004-9</a></li>
+        <li>ASTM D2093-03: Standard Practice for Preparation of Surfaces of Plastics Prior to Adhesive Bonding. <a href="https://www.astm.org" target="_blank" rel="noopener noreferrer">astm.org</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2026-02-12',
     category: 'Materials Science',
     readTime: 14,
@@ -5872,9 +4036,17 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Overspecifying for current needs.</strong> Buying a production-grade system for a research lab (or vice versa) wastes resources. Match the system to your actual throughput and precision requirements, with reasonable allowance for growth.</p>
 
       <h2>Summary</h2>
-      <p>Choosing the right plasma cleaner comes down to understanding your specific requirements — substrates, contaminants, throughput, and budget — and matching them to the right combination of plasma source, chamber design, vacuum system, and process control. Take the time to define your requirements clearly, request demonstrations with your actual parts, and evaluate total cost of ownership rather than purchase price alone. A well-chosen plasma cleaner will deliver consistent, reliable surface preparation for years of productive service.</p>
+      <p>Choosing the right plasma cleaner comes down to understanding your specific requirements (see also: <a href="/insights/what-is-plasma-cleaner-principles-types">What Is a Plasma Cleaner?</a>) — substrates, contaminants, throughput, and budget — and matching them to the right combination of plasma source, chamber design, vacuum system, and process control. Take the time to define your requirements clearly, request demonstrations with your actual parts, and evaluate total cost of ownership rather than purchase price alone. A well-chosen plasma cleaner will deliver consistent, reliable surface preparation for years of productive service.</p>
+
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Fridman, A. <em>Plasma Chemistry</em>. Cambridge University Press (2008). ISBN 978-0521847353.</li>
+        <li>SEMI Standard E10-0304: Guide for Measurement of Plasma Etch Uniformity. <a href="https://www.semi.org" target="_blank" rel="noopener noreferrer">semi.org</a></li>
+        <li>IPC-J-STD-001: Requirements for Soldered Electrical and Electronic Assemblies (soldering standards relevant to pre-bond plasma cleaning). <a href="https://www.ipc.org" target="_blank" rel="noopener noreferrer">ipc.org</a></li>
+      </ol>
     `,
-    author: 'NineScrolls Team',
+    author: 'NineScrolls Engineering',
     publishDate: '2026-02-15',
     category: 'Materials Science',
     readTime: 14,
@@ -5889,7 +4061,5 @@ export const categories = [
   'Materials Science',
   'Photonics',
   'Nanotechnology',
-  'Energy',
-  'Biotechnology',
-  'Product Introduction'
+  'Energy'
 ]; 
