@@ -109,7 +109,7 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '21',
-    title: 'Deep Reactive Ion Etching (DRIE) – The Bosch Process Explained',
+    title: '<a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive Ion Etching (DRIE)</a> – The Bosch Process Explained',
     excerpt: 'DRIE fundamentals, Bosch cycles (etch–passivation), applications in MEMS/TSV, common defects and mitigations, and ICP‑DRIE equipment notes.',
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
