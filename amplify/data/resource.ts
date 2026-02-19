@@ -47,26 +47,6 @@ const schema = a.schema({
       manufacturerCount: a.integer(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-
-  InsightsPost: a
-    .model({
-      id: a.id().required(),
-      slug: a.string().required(),
-      title: a.string().required(),
-      content: a.string(),
-      excerpt: a.string(),
-      author: a.string().required(),
-      publishDate: a.string().required(),
-      category: a.string().required(),
-      readTime: a.integer().required(),
-      imageUrl: a.string().required(),
-      tags: a.string().array(),
-      relatedProducts: a.json(),
-      heroImages: a.json(),
-      isStandaloneComponent: a.boolean(),
-    })
-    .authorization((allow) => [allow.publicApiKey()])
-    .secondaryIndexes((index) => [index('slug')]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
