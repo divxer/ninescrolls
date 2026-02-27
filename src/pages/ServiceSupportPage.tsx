@@ -1,24 +1,90 @@
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import '../styles/ServiceSupportPage.css';
+
+const serviceStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Equipment Service & Support",
+  "provider": {
+    "@type": "Organization",
+    "name": "NineScrolls LLC",
+    "url": "https://ninescrolls.com",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "San Diego",
+      "addressRegion": "CA",
+      "addressCountry": "US"
+    }
+  },
+  "description": "Comprehensive warranty, preventive maintenance, and annual maintenance contract (AMC) service packages for plasma processing and thin film deposition equipment.",
+  "areaServed": {
+    "@type": "Country",
+    "name": "United States"
+  },
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "AMC Service Packages",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "name": "Basic AMC",
+        "description": "2 PM visits, priority support, 15% parts discount, remote diagnostics",
+        "priceCurrency": "USD",
+        "price": "12000",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "12000",
+          "priceCurrency": "USD",
+          "billingDuration": "P1Y"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium AMC",
+        "description": "4 PM visits, 48-hour on-site response, 25% parts discount, software updates, 24/7 voicemail for critical issues",
+        "priceCurrency": "USD",
+        "price": "25000",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "25000",
+          "priceCurrency": "USD",
+          "billingDuration": "P1Y"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "Custom AMC",
+        "description": "Tailored service package with dedicated support team, flexible terms, and multi-site support"
+      }
+    ]
+  }
+};
 
 export function ServiceSupportPage() {
   useScrollToTop();
 
   return (
     <>
-      <SEO 
-        title="Warranty & Service Support | NineScrolls - Comprehensive Equipment Maintenance"
-        description="Comprehensive warranty and service support for semiconductor equipment. Standard warranty included with purchase, preventive maintenance, and optional annual service contracts. Expert technical support and cost-effective solutions."
-        keywords="warranty, service support, equipment maintenance, AMC, preventive maintenance, technical support, semiconductor equipment"
+      <SEO
+        title="Warranty & Service Support"
+        description="NineScrolls provides 2-year standard warranty, preventive maintenance, and annual maintenance contract (AMC) packages for plasma processing and thin film deposition equipment. Currently serving the continental United States."
+        keywords="warranty, service support, equipment maintenance, AMC, annual maintenance contract, preventive maintenance, technical support, semiconductor equipment service"
         url="/service-support"
       />
-      
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(serviceStructuredData)}
+        </script>
+      </Helmet>
+
       <section className="service-hero">
         <div className="container">
           <h1>Warranty & Service Support</h1>
           <p>Comprehensive service solutions designed to maximize your equipment performance and minimize downtime</p>
+          <p className="service-region-note">Currently serving customers across the continental United States. Remote technical support available worldwide.</p>
         </div>
       </section>
 
@@ -26,7 +92,7 @@ export function ServiceSupportPage() {
       <section className="warranty-overview">
         <div className="container">
           <h2>Standard Warranty Coverage</h2>
-          <p className="warranty-intro">Comprehensive warranty and service solutions designed to maximize your equipment performance and minimize downtime.</p>
+          <p className="warranty-intro">Every NineScrolls system includes a 2-year standard warranty — double the industry norm — with parts, labor, and technical support at no extra cost.</p>
           
           <div className="warranty-blocks">
             <div className="warranty-block">
@@ -172,6 +238,7 @@ export function ServiceSupportPage() {
           </div>
           
 
+          <p className="comparison-footnote">*Response times apply to continental U.S. locations. Competitor data reflects typical published terms from major semiconductor equipment manufacturers.</p>
           <div className="comparison-cta">
             <Link to="/contact?topic=compare" className="btn btn-primary">Get Detailed Comparison</Link>
           </div>
@@ -182,7 +249,7 @@ export function ServiceSupportPage() {
       <section className="tco-section">
         <div className="container">
           <h2>Total Cost of Ownership (5-Year)</h2>
-          <p className="tco-intro">A realistic view of where budgets go helps optimize long-term planning and uptime.</p>
+          <p className="tco-intro">A realistic view of where budgets go helps optimize long-term planning and uptime. With an AMC in place, NineScrolls customers typically see lower maintenance and downtime costs compared to industry averages.</p>
           <div className="tco-content">
             <div className="tco-chart">
               <div className="donut-container">
@@ -263,6 +330,7 @@ export function ServiceSupportPage() {
                 <span className="legend-color" style={{backgroundColor: '#f59e0b'}}></span>
                 <span className="legend-text">Downtime Impact – 10%</span>
               </div>
+              <p className="tco-note">*Based on industry averages for research-grade plasma processing and thin film deposition equipment.</p>
               <div className="tco-cta">
                 <Link to="/contact?topic=tco" className="btn btn-primary">Request a TCO Report</Link>
                 <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
@@ -280,7 +348,8 @@ export function ServiceSupportPage() {
           <div className="amc-plans">
             <div className="amc-plan">
               <div className="plan-badge">Basic AMC</div>
-              <div className="plan-price">$12,000<span className="price-unit"> / year (billed annually)</span></div>
+              <p className="plan-fit">Ideal for benchtop and small-footprint systems</p>
+              <div className="plan-price">Starting from $12,000<span className="price-unit"> / year (billed annually)</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>2 preventive maintenance visits</li>
                 <li><span className="feature-check">✓</span>Priority technical support</li>
@@ -294,10 +363,11 @@ export function ServiceSupportPage() {
             <div className="amc-plan featured">
               <div className="popular-badge">Most Popular</div>
               <div className="plan-badge">Premium AMC</div>
-              <div className="plan-price">$25,000<span className="price-unit"> / year (billed annually)</span></div>
+              <p className="plan-fit">Recommended for production-scale and multi-chamber systems</p>
+              <div className="plan-price">Starting from $25,000<span className="price-unit"> / year (billed annually)</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>4 preventive maintenance visits</li>
-                <li><span className="feature-check">✓</span>48-hour on-site response</li>
+                <li><span className="feature-check">✓</span>48-hour on-site response*</li>
                 <li><span className="feature-check">✓</span>Parts discount (25%)</li>
                 <li><span className="feature-check">✓</span>Software updates included</li>
                 <li><span className="feature-check">✓</span>Voicemail available 24/7 for critical issues</li>
@@ -309,6 +379,7 @@ export function ServiceSupportPage() {
             </div>
             <div className="amc-plan">
               <div className="plan-badge">Custom AMC</div>
+              <p className="plan-fit">Tailored for unique configurations or multi-site deployments</p>
               <div className="plan-price">Tailored<span className="price-unit"> / quote</span></div>
               <ul className="plan-features">
                 <li><span className="feature-check">✓</span>Dedicated support team</li>
@@ -321,9 +392,8 @@ export function ServiceSupportPage() {
               <Link to="/contact?topic=amc" className="plan-cta secondary">Talk to Sales</Link>
             </div>
           </div>
-          <div className="amc-cta">
-            <Link to="/contact?topic=amc" className="btn btn-primary">Get AMC Pricing</Link>
-            <p className="amc-note">Special discounts available for universities and research institutes — contact us for details.</p>
+          <div className="amc-footer">
+            <p className="amc-note">*Pricing and on-site response times apply to continental U.S. locations. Special discounts available for universities and research institutes — <Link to="/contact?topic=amc">contact us</Link> for details.</p>
           </div>
         </div>
       </section>
@@ -338,7 +408,7 @@ export function ServiceSupportPage() {
               <div className="step-icon">🔍</div>
               <div className="step-content">
                 <h3>Initial Assessment</h3>
-                <p>Comprehensive evaluation of your equipment and requirements</p>
+                <p>We review your equipment model, usage profile, and facility environment — typically completed within 1 business day via remote consultation.</p>
               </div>
               <div className="step-arrow">→</div>
             </div>
@@ -346,7 +416,7 @@ export function ServiceSupportPage() {
               <div className="step-icon">📝</div>
               <div className="step-content">
                 <h3>Service Planning</h3>
-                <p>Customized service plan tailored to your operational needs</p>
+                <p>Our engineers recommend a warranty extension or AMC tier based on your equipment type, PM frequency needs, and uptime goals.</p>
               </div>
               <div className="step-arrow">→</div>
             </div>
@@ -354,7 +424,7 @@ export function ServiceSupportPage() {
               <div className="step-icon">⚙️</div>
               <div className="step-content">
                 <h3>Implementation</h3>
-                <p>Professional installation and configuration of service solutions</p>
+                <p>On-site or remote service begins per the agreed schedule. We handle parts, calibration, and software updates with minimal disruption to your workflow.</p>
               </div>
               <div className="step-arrow">→</div>
             </div>
@@ -362,7 +432,7 @@ export function ServiceSupportPage() {
               <div className="step-icon">🔄</div>
               <div className="step-content">
                 <h3>Ongoing Support</h3>
-                <p>Continuous monitoring and proactive maintenance services</p>
+                <p>Regular check-ins, proactive PM reminders, and priority access to our technical team. Annual reviews ensure your service plan evolves with your needs.</p>
               </div>
             </div>
           </div>

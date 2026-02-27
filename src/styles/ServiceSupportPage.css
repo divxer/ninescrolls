@@ -19,6 +19,16 @@
     opacity: 0.9;
 }
 
+.service-region-note {
+    font-size: 0.95rem !important;
+    opacity: 0.8 !important;
+    margin-top: 1rem !important;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: inline-block;
+}
+
 /* Warranty Overview Section */
 .warranty-overview {
     padding: 2.5rem 0;
@@ -46,6 +56,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
+    align-items: stretch;
 }
 
 .warranty-block {
@@ -54,6 +65,12 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.warranty-block .block-content {
+    flex: 1;
 }
 
 .warranty-block:hover {
@@ -344,6 +361,14 @@
     color: #1e293b;
 }
 
+.comparison-footnote {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+}
+
 .comparison-cta {
     text-align: center;
     margin-top: 2.5rem;
@@ -481,6 +506,13 @@
     font-weight: 700;
 }
 
+.tco-note {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin-top: 1.5rem;
+}
+
 .tco-cta {
     margin-top: 2rem;
     display: flex;
@@ -518,6 +550,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
+    align-items: stretch;
 }
 
 .amc-plan {
@@ -530,6 +563,12 @@
     border: 2px solid transparent;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.amc-plan .plan-features {
+    flex: 1;
 }
 
 .amc-plan::before {
@@ -571,6 +610,18 @@
     font-weight: 600;
     margin-bottom: 1rem;
     border: 1px solid rgba(0, 102, 204, 0.2);
+}
+
+.plan-fit {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0 0 1rem;
+    padding: 0.4rem 0.8rem;
+    background: #f0f9ff;
+    border-radius: 6px;
+    border-left: 3px solid #93c5fd;
+    text-align: left;
+    line-height: 1.4;
 }
 
 .plan-price {
@@ -656,18 +707,24 @@
     z-index: 10;
 }
 
-/* AMC CTA */
-.amc-cta {
+/* AMC Footer */
+.amc-footer {
+    margin-top: 1.5rem;
     text-align: center;
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
 }
 
-.amc-cta .btn {
-    min-width: 200px;
+.amc-footer .amc-note {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-style: italic;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.amc-footer .amc-note a {
+    color: var(--primary-color);
+    text-decoration: underline;
 }
 
 /* Process CTA */
@@ -891,13 +948,15 @@
         max-width: 300px;
     }
     
-    .amc-cta,
+    .amc-footer {
+        padding: 0 1rem;
+    }
+
     .process-cta {
         flex-direction: column;
         align-items: center;
     }
-    
-    .amc-cta .btn,
+
     .process-cta .btn {
         min-width: auto;
         width: 100%;
