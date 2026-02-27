@@ -143,7 +143,7 @@ const persistOrder = async (session: Stripe.Checkout.Session): Promise<'created'
 };
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
   // Get raw body for signature verification
   // API Gateway v2 may base64 encode the body

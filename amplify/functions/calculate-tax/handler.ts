@@ -142,7 +142,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-01-28.clover' });
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
     const body = event.body ? (JSON.parse(event.body) as Partial<TaxRequestBody>) : {};
     const { items, shippingAddress } = body;
