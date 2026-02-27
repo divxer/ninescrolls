@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
@@ -36,10 +37,33 @@ export function ICPEtcher() {
     document.body.style.overflow = 'auto';
   };
 
-
+  const structuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "@id": "https://ninescrolls.com/products/icp-etcher#product",
+    "name": "ICP Etcher Series",
+    "description": "Inductively Coupled Plasma etching system for high-aspect-ratio and advanced etching applications in semiconductor research.",
+    "image": ["https://ninescrolls.com/assets/images/products/icp-etcher/main.jpg"],
+    "sku": "icp-etcher",
+    "brand": { "@type": "Brand", "name": "NineScrolls LLC" },
+    "category": "Semiconductor Manufacturing Equipment",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "priceCurrency": "USD",
+      "price": "0",
+      "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": "https://ninescrolls.com/products/icp-etcher",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" }
+    }
+  };
 
   return (
     <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      </Helmet>
       <section className="product-detail-hero">
         <div className="container">
           <Breadcrumbs items={[

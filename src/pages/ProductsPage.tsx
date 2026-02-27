@@ -22,25 +22,24 @@ export function ProductsPage() {
   const schema = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "Plasma Etching Systems",
+    "name": "Plasma Etching & Thin-Film Systems",
     "itemListElement": [
-      { "@type": "Product", "name": "ICP‑RIE Etcher", "url": "https://ninescrolls.com/products/icp-etcher" },
-      { "@type": "Product", "name": "RIE Etcher", "url": "https://ninescrolls.com/products/rie-etcher" },
-      { "@type": "Product", "name": "Compact RIE Etcher (SV-RIE)", "url": "https://ninescrolls.com/products/compact-rie" },
-      { "@type": "Product", "name": "DRIE Etcher (Bosch)", "url": "https://ninescrolls.com/products/rie-etcher#drie" },
-      { "@type": "Product", "name": "HDP‑CVD System", "url": "https://ninescrolls.com/products/hdp-cvd" },
-      { "@type": "Product", "name": "PECVD System", "url": "https://ninescrolls.com/products/pecvd" },
-      { "@type": "Product", "name": "ALD System", "url": "https://ninescrolls.com/products/ald" },
-      { "@type": "Product", "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
-      { "@type": "Product", "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
-      { "@type": "Product", "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
-      { "@type": "Product", "name": "HY-20L", "url": "https://ninescrolls.com/products/hy-20l" },
-      { "@type": "Product", "name": "HY-4L", "url": "https://ninescrolls.com/products/hy-4l" },
-      { "@type": "Product", "name": "HY-20LRF", "url": "https://ninescrolls.com/products/hy-20lrf" },
-      { "@type": "Product", "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
-      { "@type": "Product", "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
-      { "@type": "Product", "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" },
-      { "@type": "Product", "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
+      { "@type": "ListItem", "position": 1, "name": "ICP‑RIE Etcher", "url": "https://ninescrolls.com/products/icp-etcher" },
+      { "@type": "ListItem", "position": 2, "name": "RIE Etcher", "url": "https://ninescrolls.com/products/rie-etcher" },
+      { "@type": "ListItem", "position": 3, "name": "Compact RIE Etcher (SV-RIE)", "url": "https://ninescrolls.com/products/compact-rie" },
+      { "@type": "ListItem", "position": 4, "name": "HDP‑CVD System", "url": "https://ninescrolls.com/products/hdp-cvd" },
+      { "@type": "ListItem", "position": 5, "name": "PECVD System", "url": "https://ninescrolls.com/products/pecvd" },
+      { "@type": "ListItem", "position": 6, "name": "ALD System", "url": "https://ninescrolls.com/products/ald" },
+      { "@type": "ListItem", "position": 7, "name": "Sputter System", "url": "https://ninescrolls.com/products/sputter" },
+      { "@type": "ListItem", "position": 8, "name": "IBE/RIBE System", "url": "https://ninescrolls.com/products/ibe-ribe" },
+      { "@type": "ListItem", "position": 9, "name": "Striper System", "url": "https://ninescrolls.com/products/striper" },
+      { "@type": "ListItem", "position": 10, "name": "HY-20L", "url": "https://ninescrolls.com/products/hy-20l" },
+      { "@type": "ListItem", "position": 11, "name": "HY-4L", "url": "https://ninescrolls.com/products/hy-4l" },
+      { "@type": "ListItem", "position": 12, "name": "HY-20LRF", "url": "https://ninescrolls.com/products/hy-20lrf" },
+      { "@type": "ListItem", "position": 13, "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
+      { "@type": "ListItem", "position": 14, "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
+      { "@type": "ListItem", "position": 15, "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" },
+      { "@type": "ListItem", "position": 16, "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
     ]
   }), []);
 
