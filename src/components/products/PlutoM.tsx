@@ -139,6 +139,38 @@ export function PlutoM() {
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Who is PLUTO-M designed for?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-M is designed for labs that need mid-capacity batch plasma cleaning with recipe management. At $12,999, it is ideal for university research labs, materials characterization facilities, MEMS/micro-fab labs, and multi-user core facilities that process multiple samples per run."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the difference between PLUTO-M and PLUTO-F?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-M has a ~8L chamber with 200W RF power, while PLUTO-F ($15,999) offers a larger ~14.5L aluminum alloy chamber and 500W RF power \u2014 2.5x more power for aggressive ashing and deep surface activation. PLUTO-F also includes advanced recipe management for multi-user labs. Choose PLUTO-M for standard cleaning and PLUTO-F for high-power or large-batch applications."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I upgrade from oil pump to dry pump?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. The standard oil-sealed mechanical pump works well for most research applications. The dry pump upgrade (+$2,500) is recommended for cleanroom environments, contamination-sensitive processes, or facilities that prefer oil-free operation. Contact us to discuss which option is best for your lab."
+                }
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}
@@ -738,6 +770,39 @@ export function PlutoM() {
                 <span>Responsive support before & after delivery</span>
               </li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: Who is PLUTO-M designed for?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PLUTO-M is designed for labs that need mid-capacity batch plasma cleaning with recipe management. At $12,999, it is ideal for university research labs, materials characterization facilities, MEMS/micro-fab labs, and multi-user core facilities that process multiple samples per run.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What is the difference between PLUTO-M and PLUTO-F?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PLUTO-M has a ~8L chamber with 200W RF power, while PLUTO-F ($15,999) offers a larger ~14.5L aluminum alloy chamber and 500W RF power — 2.5x more power for aggressive ashing and deep surface activation. PLUTO-F also includes advanced recipe management for multi-user labs. Choose PLUTO-M for standard cleaning and PLUTO-F for high-power or large-batch applications.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: Can I upgrade from oil pump to dry pump?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: Yes. The standard oil-sealed mechanical pump works well for most research applications. The dry pump upgrade (+$2,500) is recommended for cleanroom environments, contamination-sensitive processes, or facilities that prefer oil-free operation. Contact us to discuss which option is best for your lab.
+              </p>
+            </div>
           </div>
         </div>
       </section>

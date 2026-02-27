@@ -145,6 +145,46 @@ export function PlutoF() {
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Who is PLUTO-F designed for?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-F is designed for labs that need more capability than compact desktop plasma cleaners can provide. If your work involves aggressive ashing, deep surface activation, large-batch processing, or multi-step recipe sequences — and you need reproducible, documented results across multiple users — PLUTO-F provides the RF power, chamber volume, and automation to handle it."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Why would I choose PLUTO-F over HY-20LRF?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-F delivers 3.3x the RF power (500W vs 150W) for only $1,500 more ($15,999 vs $14,499). If your processes benefit from higher RF power — more aggressive cleaning, deeper surface activation, or faster processing — PLUTO-F is the clear upgrade. The advanced recipe management is also a significant advantage for multi-user labs."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Should I upgrade to the dry pump option?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The standard oil-sealed mechanical pump works well for most research applications. We recommend the dry pump upgrade (+$2,500) for cleanroom environments, contamination-sensitive processes, or facilities that prefer oil-free operation."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What gases can I use with PLUTO-F?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-F supports O₂, N₂, Ar, and mixed-gas processes with 2 gas lines. The system is designed for flexible gas configuration to support a wide range of surface treatment applications."
+                }
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

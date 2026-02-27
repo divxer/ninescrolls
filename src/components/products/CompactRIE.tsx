@@ -71,6 +71,36 @@ export function CompactRIE() {
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What makes the Compact RIE different from a standard RIE system?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Compact RIE (SV-RIE) has a 50% smaller footprint (630mm x 600mm) compared to standard RIE systems while maintaining full process capability. It is available in three RF power options (300W, 500W, and 1000W) and supports wafer sizes from 4 to 12 inches with fully automated touchscreen operation."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What can I etch with the Compact RIE?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Compact RIE processes Si, SiO2, SiNx, SiC, photoresist (PR), PMMA, HMDS, organic polymers, and compound semiconductors. It achieves minimum line widths of 300nm and sidewall verticality above 89 degrees, making it suitable for photoresist removal, failure analysis, passivation layer removal, and rapid R&D prototyping."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is the Compact RIE suitable for a small research lab?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, it is specifically designed for space-constrained labs. Its compact footprint fits on a standard lab bench, and the touchscreen interface makes it accessible for multi-user environments. The modular design means you can choose the RF power level (300W/500W/1000W) that matches your process needs and budget."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
 
       {/* Hero Section - Strong Information Hero with Positioning */}
@@ -597,6 +627,39 @@ export function CompactRIE() {
               Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
               All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What makes the Compact RIE different from a standard RIE system?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The Compact RIE (SV-RIE) has a 50% smaller footprint (630mm x 600mm) compared to standard RIE systems while maintaining full process capability. It is available in three RF power options (300W, 500W, and 1000W) and supports wafer sizes from 4 to 12 inches with fully automated touchscreen operation.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What can I etch with the Compact RIE?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The Compact RIE processes Si, SiO2, SiNx, SiC, photoresist (PR), PMMA, HMDS, organic polymers, and compound semiconductors. It achieves minimum line widths of 300nm and sidewall verticality above 89 degrees, making it suitable for photoresist removal, failure analysis, passivation layer removal, and rapid R&D prototyping.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: Is the Compact RIE suitable for a small research lab?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: Yes, it is specifically designed for space-constrained labs. Its compact footprint fits on a standard lab bench, and the touchscreen interface makes it accessible for multi-user environments. The modular design means you can choose the RF power level (300W/500W/1000W) that matches your process needs and budget.
+              </p>
+            </div>
           </div>
         </div>
       </section>

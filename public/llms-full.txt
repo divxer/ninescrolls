@@ -1,0 +1,251 @@
+# NineScrolls — Extended Content for LLMs
+
+> This file provides structured, machine-readable content about NineScrolls LLC's products, technical articles, and company information. It is designed for AI systems to accurately understand and cite our content.
+
+Canonical host: https://ninescrolls.com/
+Contact: info@ninescrolls.com | sales@ninescrolls.com | +1-858-879-8898
+Address: 12546 Cabezon Pl, San Diego, CA 92129, USA
+
+---
+
+## Company Overview
+
+NineScrolls LLC is a semiconductor equipment provider based in San Diego, California. We design and supply research-grade plasma etching systems (RIE, ICP-RIE, DRIE, IBE/RIBE), thin-film deposition systems (ALD, PECVD, HDP-CVD, Sputter), photolithography equipment (coater/developer), and plasma cleaners for surface preparation.
+
+Our customers include universities, national labs, research institutes, and corporate R&D labs worldwide. We offer standard warranty, annual maintenance contracts (AMC), and a startup package with discounted pricing for new faculty.
+
+---
+
+## Product Catalog
+
+### Etching Systems
+
+#### ICP Etcher — Inductively Coupled Plasma Etching
+URL: https://ninescrolls.com/products/icp-etcher
+Wafer size: 4"–12" | Source RF: 1000–3000W | Bias RF: 300–1000W | Stage temp: -70°C to 200°C | Gas lines: 5 + He backside | Vacuum: TMP + mech pump | Uniformity: <±5%
+Materials: Si, SiO2, SiNx, SiC, GaN, GaAs, InP, Ga2O3, 2D materials, metals, diamond
+Best for: High-aspect-ratio etching, deep silicon etching, III-V compound semiconductors, MEMS
+
+#### RIE Etcher — Reactive Ion Etching
+URL: https://ninescrolls.com/products/rie-etcher
+Wafer size: 4"–12" | RF: up to 600W @ 13.56 MHz | Temp: 20–80°C | Gas lines: 4 | Base pressure: ≤5×10⁻⁶ Torr
+Materials: Si, SiO2, SiNx, metals, polymers
+Best for: General-purpose dry etching, dielectric patterning, polymer removal, R&D
+
+#### Compact RIE (SV-RIE)
+URL: https://ninescrolls.com/products/compact-rie
+Models: SHL100SV-RIE (300W) / SHL150SV-RIE (500W) / SHL200SV-RIE (1000W)
+Wafer size: 4"–12" | RF: 300–1000W | Footprint: 630mm × 600mm (50% smaller than standard RIE)
+Materials: Si, SiO2, SiNx, SiC, PR, PMMA, compound semiconductors
+Best for: Space-constrained labs, failure analysis, PR removal, rapid prototyping
+
+#### IBE/RIBE — Ion Beam Etching
+URL: https://ninescrolls.com/products/ibe-ribe
+Ion source: Kaufman (≤6") or RF (≤12") | Tilt: 0°–90° | Rotation: 1–10 rpm | Base pressure: <7×10⁻⁷ Torr
+Materials: NiFe, CoFe, Au, Pt, Cu, glass, quartz, 2D/quantum materials
+Best for: Magnetic materials, optical devices, precise pattern transfer on difficult-to-etch materials
+
+#### Striper — Plasma Photoresist Stripping
+URL: https://ninescrolls.com/products/striper
+Wafer size: 4"–12" | RF: 300–1000W | Temp: 5–200°C | Endpoint detection: automated
+Materials: PR, PMMA, PS nanospheres, 2D materials, organic contaminants
+Best for: Photoresist removal, post-etch residue cleaning, surface activation
+
+### Deposition Systems
+
+#### ALD — Atomic Layer Deposition
+URL: https://ninescrolls.com/products/ald
+Wafer size: 4"–12" | Wafer temp: 20–400°C | Growth rate: 0.5–2 Å/cycle | Uniformity: <1% (Al2O3) | Step coverage: >98% | Precursor lines: 2–6 | Optional remote plasma: 300–1000W
+Materials: Al2O3, HfO2, SiO2, TiO2, ZnO, TiN, TaN, AlN, Pt, Pd, W, Ru
+Best for: Gate dielectrics, passivation, encapsulation, conformal coating on 3D structures
+
+#### PECVD — Plasma-Enhanced CVD
+URL: https://ninescrolls.com/products/pecvd
+Wafer size: 4"–12" | RF: 500–2000W (13.56 MHz / 400 kHz) | Temp: 20–400°C | Gas lines: up to 6 | Uniformity: <5%
+Materials: a-Si:H, SiO2, SiNx, SiC, SiON, DLC
+Best for: Dielectric films, passivation layers, anti-reflection coatings, protective films
+
+#### HDP-CVD — High-Density Plasma CVD
+URL: https://ninescrolls.com/products/hdp-cvd
+Wafer size: 4"–12" | Source RF: 1000–3000W | Bias RF: 300–1000W | Temp: 20–200°C | Gas lines: 6 | Uniformity: <5%
+Materials: SiO2, Si3N4, SiON, SiC, low-k dielectrics, BSG, PSG, BPSG
+Best for: Gap-fill in high-aspect-ratio trenches, IMD, STI, PMD, advanced packaging
+
+#### Sputter — PVD Magnetron Sputtering
+URL: https://ninescrolls.com/products/sputter
+Wafer size: 4"–12" | Targets: 2–6 independently configurable | Substrate temp: water-cooled to 1200°C | Base pressure: <5×10⁻⁷ Torr | Uniformity: <1%
+Materials: Pt, Pd, W, Ru, Al2O3, TiO2, ZnO, TiN, TaN, AlN, magnetic alloys
+Best for: Metal and dielectric thin films, magnetic materials, optical coatings
+
+### Lithography
+
+#### Coater/Developer — Photolithography Track
+URL: https://ninescrolls.com/products/coater-developer
+Wafer size: pieces to 12" | Spin speed: up to 8000 rpm ±1 rpm | Film uniformity: <0.5% (3σ) | Hotplate: RT–200°C | Dispense: 2 resist lines + 2 developer lines + DI
+Best for: Photoresist coating, HMDS priming, development, lift-off, thick film processing
+
+### Plasma Cleaners
+
+#### PLUTO-T — Compact RF Plasma Cleaner
+URL: https://ninescrolls.com/products/pluto-t
+Price: $9,999 | Chamber: ~4.3L stainless steel | RF: 200W @ 13.56 MHz | Gas: 1–2 lines (O2/N2/Ar) | Control: touchscreen | Vacuum: oil pump (dry pump +$2,500)
+Best for: Single-sample cleaning, surface activation, small-lab entry point
+
+#### PLUTO-M — Mid-Capacity RF Plasma Cleaner
+URL: https://ninescrolls.com/products/pluto-m
+Price: $12,999 | Chamber: ~8L stainless steel | RF: 200W @ 13.56 MHz | Gas: 2 lines | Control: touchscreen with recipe storage | Vacuum: two-stage oil pump (dry pump +$2,500)
+Best for: Multi-sample batches, polymer treatment, photoresist ashing
+
+#### PLUTO-F — Flagship RF Plasma Cleaner
+URL: https://ninescrolls.com/products/pluto-f
+Price: $15,999 | Chamber: ~14.5L aluminum alloy | RF: 500W @ 13.56 MHz | Gas: 2 lines | Control: touchscreen with advanced recipe management | Vacuum: oil pump (dry pump +$2,500)
+Best for: High-power cleaning, large batches, multi-user core facilities, advanced recipe sequences
+
+#### HY-4L — Compact Plasma Cleaner
+URL: https://ninescrolls.com/products/hy-4l
+Price: RF $7,999 / MF $6,499 | Chamber: ~4L | RF: 150W @ 13.56 MHz or MF: 300W @ 40 kHz | Gas: 2 channels | Control: PLC + touchscreen
+Best for: Compact cleaning, surface activation, education, process development
+
+#### HY-20L — Batch Plasma Processing System
+URL: https://ninescrolls.com/products/hy-20l
+Price: RF $14,999 / MF $11,999 | Chamber: 20L stainless steel | RF: 150W or MF: 300W | Gas: 2 channels | Control: PLC + touchscreen
+Best for: Batch plasma cleaning, photoresist ashing, multi-sample preparation
+
+#### HY-20LRF — Research-Grade Batch Plasma Cleaner
+URL: https://ninescrolls.com/products/hy-20lrf
+Price: $14,499 | Chamber: 20L | RF: 300W @ 13.56 MHz | Gas: 2 lines | 4-layer sample tray | Control: PLC + touchscreen
+Best for: Academic research requiring documented, repeatable plasma processing
+
+Plasma Cleaner Comparison: https://ninescrolls.com/products/plasma-cleaner/compare
+
+---
+
+## Technical Articles
+
+### Etching Technology
+
+**Reactive Ion Etching (RIE) Guide**
+URL: https://ninescrolls.com/insights/reactive-ion-etching-guide
+Summary: Complete guide to RIE covering working principles (RF plasma + ion bombardment), process parameters (pressure, RF power, gas flow, temperature), system types (CCP-RIE, ICP-RIE, DRIE), applications (MEMS, TSV, photonics), and equipment selection criteria.
+
+**Deep Reactive Ion Etching (DRIE) – Bosch Process**
+URL: https://ninescrolls.com/insights/deep-reactive-ion-etching-bosch-process
+Summary: DRIE uses alternating passivation (C4F8 polymer) and etching (SF6 plasma) cycles to achieve >50:1 aspect ratio features in silicon. Covers Bosch cycle mechanics, common defects (scalloping, notching, ARDE), mitigations, and ICP-DRIE equipment considerations.
+
+**ICP-RIE Technology**
+URL: https://ninescrolls.com/insights/icp-rie-technology-advanced-etching
+Summary: ICP-RIE decouples plasma generation from ion energy control, enabling higher plasma density at lower pressure. Benefits include higher etch rates, better uniformity, and superior profile control for SiC, GaN, and high-AR structures.
+
+**RIE vs. Ion Milling**
+URL: https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling
+Summary: Decision guide comparing RIE (chemical + physical, material-selective) vs. ion milling (purely physical, material-agnostic). RIE offers higher throughput and selectivity; ion milling provides universal material compatibility and precise angle control.
+
+**Semiconductor Etchers Overview**
+URL: https://ninescrolls.com/insights/semiconductor-etchers-overview
+Summary: How to choose between RIE, ICP, DRIE, IBE, and wet etching for your lab. Covers research vs. production considerations, decision framework tables, and NineScrolls product recommendations by application.
+
+**PE vs. RIE vs. ICP-RIE Comparison**
+URL: https://ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching
+Summary: Compares three plasma etching modes — barrel/downstream PE (isotropic, gentle), RIE (moderate anisotropy, versatile), and ICP-RIE (high-density, high-AR capable). Selection criteria include feature size, aspect ratio, material sensitivity, and throughput.
+
+**Plasma Etching Fundamentals**
+URL: https://ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications
+Summary: From basics to applications — covers ion etching, chemical plasma etching, and reactive ion etching mechanisms, selectivity, anisotropy, and applications in semiconductor manufacturing.
+
+**Plasma Non-Uniformity Solutions**
+URL: https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions
+Summary: Why plasma is non-uniform in etch chambers (gas flow patterns, electromagnetic asymmetry, chamber geometry) and how to solve it (pressure/gas tuning, hardware symmetry, electrode design).
+
+**Future of Plasma Etching**
+URL: https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics
+Summary: Emerging trends including atomic layer etching (ALE), pulsed plasmas, low-damage etch for EUV resist removal, cryogenic/variable-temperature processes, and AI-assisted process control.
+
+**Dry Etching of Thermoelectric Films**
+URL: https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization
+Summary: Systematic investigation of CH4/H2/Ar plasma etching for n-type Bi2Te2.7Se0.3 films, revealing synergistic gas roles and optimal parameters for high-AR thermoelectric device fabrication.
+
+### Deposition & Materials
+
+**HDP-CVD In-Depth Guide**
+URL: https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook
+Summary: Comprehensive handbook covering HDP-CVD technology for superior gap-fill in high-AR trenches, comparison with PECVD and ALD, process optimization, and equipment selection for semiconductor manufacturing.
+
+**Advanced Materials Processing**
+URL: https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy
+Summary: How thin film deposition, plasma etching, and surface modification enable breakthroughs in materials science, nanotechnology, and energy applications.
+
+**Nanofabrication Techniques**
+URL: https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future
+Summary: Electron beam lithography, nanoimprint, self-assembly techniques, and their applications in semiconductors, photonics, and biomedical devices.
+
+**Photonics Manufacturing**
+URL: https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering
+Summary: Precision manufacturing for optical devices — optical coatings, waveguide fabrication, photonic crystal patterning, and integrated photonic device production.
+
+### Plasma Cleaning
+
+**What Is a Plasma Cleaner?**
+URL: https://ninescrolls.com/insights/what-is-plasma-cleaner-principles-types
+Summary: How plasma cleaning works via three mechanisms — chemical etching (reactive species remove organics), physical sputtering (ion bombardment), and UV photodissociation. Compares RF, DC, and microwave plasma cleaners.
+
+**Plasma Cleaner Applications**
+URL: https://ninescrolls.com/insights/plasma-cleaner-applications-guide
+Summary: Application areas including semiconductor fabrication (wire bonding prep, die attach), biomedical devices (PDMS bonding, surface functionalization), optics, automotive, aerospace, and TEM sample preparation.
+
+**Plasma Cleaner Buying Guide**
+URL: https://ninescrolls.com/insights/plasma-cleaner-buying-guide
+Summary: Step-by-step selection guide covering cleaning requirements, plasma source types (RF vs MF vs DC), chamber sizing, vacuum systems (oil vs dry pump), process control, and total cost of ownership analysis.
+
+**Plasma Cleaner Comparison for Research Labs**
+URL: https://ninescrolls.com/insights/plasma-cleaner-comparison-research-labs
+Summary: Compares quartz vs stainless steel chambers, RF vs mid-frequency sources, and reviews competing brands (Harrick, SPI, Diener, Gatan, Plasma Etch, YES, PVA TePla) vs NineScrolls.
+
+### Energy Applications
+
+**Solar Cell Manufacturing**
+URL: https://ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy
+Summary: Silicon wafer processing and thin film deposition techniques for perovskite and multi-junction solar cells, including precision etching for next-generation photovoltaics.
+
+**Fuel Cell Technology**
+URL: https://ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy
+Summary: MEA fabrication, catalyst deposition, bipolar plate processing, and how thin film/etching equipment supports hydrogen economy R&D.
+
+---
+
+## Frequently Asked Questions
+
+### About Plasma Etching Equipment
+
+Q: What is plasma etching equipment?
+A: Plasma etching equipment uses ionized gas (plasma) to remove material from substrates with precise control. Systems include reactive ion etching (RIE) and inductively coupled plasma (ICP) etching for semiconductor manufacturing and research.
+
+Q: How do plasma etching processes work?
+A: Plasma is created from process gases using RF power. Reactive species chemically react with the substrate while ions provide physical bombardment for directional (anisotropic) etching, achieving precise etch rates and material selectivity.
+
+Q: What are the advantages of plasma etching over wet etching?
+A: Plasma (dry) etching provides superior anisotropy, better etch rate control, reduced chemical waste, and compatibility with photoresist masks compared to wet etching.
+
+Q: What is the difference between RIE and ICP-RIE?
+A: RIE uses a single RF source for both plasma generation and ion acceleration. ICP-RIE adds a separate inductively coupled source, enabling higher plasma density and independent control of ion energy — resulting in higher etch rates and better profile control for demanding applications.
+
+### About Plasma Cleaners
+
+Q: What is a plasma cleaner used for?
+A: Plasma cleaners remove organic contamination, activate surfaces for improved adhesion, and prepare samples for downstream processes like wire bonding, coating, and microscopy.
+
+Q: What is the difference between RF and mid-frequency plasma cleaners?
+A: RF plasma cleaners (13.56 MHz) produce higher-density plasma for more effective cleaning and activation. Mid-frequency systems (40 kHz) are more affordable and sufficient for basic cleaning applications.
+
+Q: Which plasma cleaner should I choose for my research lab?
+A: For basic cleaning: HY-4L ($6,499–$7,999). For batch processing: HY-20L ($11,999–$14,999) or HY-20LRF ($14,499). For high-power applications: PLUTO-F ($15,999). See our buying guide: https://ninescrolls.com/insights/plasma-cleaner-buying-guide
+
+### About NineScrolls
+
+Q: Where is NineScrolls located?
+A: San Diego, California, USA. We ship equipment worldwide.
+
+Q: Does NineScrolls offer warranty and service?
+A: Yes. We provide standard warranty with all equipment, plus optional Annual Maintenance Contracts (AMC) that include preventive maintenance visits and priority technical support. Details: https://ninescrolls.com/service-support
+
+Q: Does NineScrolls offer discounts for new faculty?
+A: Yes. Our Startup Package provides discounted pricing for new faculty members setting up their first labs. Details: https://ninescrolls.com/startup-package

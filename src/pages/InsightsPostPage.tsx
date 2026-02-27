@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
@@ -118,37 +119,44 @@ export const InsightsPostPage: React.FC = () => {
         url={`/insights/${post.slug}`}
         type="article"
       />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          "headline": post.title,
-          "description": post.excerpt || post.title,
-          "image": `https://ninescrolls.com${post.imageUrl}`,
-          "author": {
-            "@type": "Organization",
-            "name": "NineScrolls",
-            "url": "https://ninescrolls.com/about"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "NineScrolls",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://ninescrolls.com/assets/images/logo.png"
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": post.title,
+            "description": post.excerpt || post.title,
+            "image": `https://ninescrolls.com${post.imageUrl}`,
+            "author": {
+              "@type": "Organization",
+              "name": "NineScrolls Engineering",
+              "url": "https://ninescrolls.com/about",
+              "knowsAbout": ["semiconductor manufacturing", "plasma etching", "thin film deposition", "plasma cleaning", "surface preparation"]
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "NineScrolls",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://ninescrolls.com/assets/images/logo.png"
+              }
+            },
+            "datePublished": post.publishDate,
+            "dateModified": post.lastModifiedDate || post.publishDate,
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://ninescrolls.com/insights/${post.slug}`
+            },
+            "keywords": post.tags?.join(', ') || '',
+            "articleSection": post.category,
+            "timeRequired": `PT${post.readTime}M`,
+            "speakable": {
+              "@type": "SpeakableSpecification",
+              "cssSelector": [".insights-post-title", ".insights-post-meta"]
             }
-          },
-          "datePublished": post.publishDate,
-          "dateModified": post.publishDate,
-          "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": `https://ninescrolls.com/insights/${post.slug}`
-          },
-          "keywords": post.tags?.join(', ') || '',
-          "articleSection": post.category,
-          "timeRequired": `PT${post.readTime}M`
-        })}
-      </script>
+          })}
+        </script>
+      </Helmet>
       <div className="insights-post-page">
         {/* Hero Section */}
         <section className="insights-post-hero">

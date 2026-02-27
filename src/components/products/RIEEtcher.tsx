@@ -63,6 +63,36 @@ export function RIEEtcher() {
     <>
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What materials can the RIE etcher process?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The RIE etcher processes a wide range of materials including silicon (Si), silicon dioxide (SiO2), silicon nitride (SiNx), metals, and polymers. Common applications include dielectric patterning, metal etching, polymer removal, and photoresist stripping for semiconductor and MEMS fabrication."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "When should I choose RIE over ICP-RIE?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "RIE is the right choice for standard-depth etching with moderate aspect ratios, general-purpose dielectric and polymer processing, and applications where cost-effectiveness is a priority. Choose ICP-RIE when you need high-aspect-ratio features, higher etch rates, or independent control of plasma density and ion energy for advanced materials like SiC or GaN."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What process control features does the RIE etcher include?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The RIE etcher includes automated process control with endpoint detection, 4 process gas lines with mass flow controllers (MFCs), temperature control from 20°C to 80°C, and RF power up to 600W at 13.56 MHz. The system supports both open-load and load-lock configurations."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
       <section className="product-detail-hero">
         <div className="container">
@@ -330,6 +360,39 @@ export function RIEEtcher() {
               <p>Practical guidance and applications for plasma etching technology.</p>
               <span className="related-card-link">Read Article &rarr;</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What materials can the RIE etcher process?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The RIE etcher processes a wide range of materials including silicon (Si), silicon dioxide (SiO2), silicon nitride (SiNx), metals, and polymers. Common applications include dielectric patterning, metal etching, polymer removal, and photoresist stripping for semiconductor and MEMS fabrication.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: When should I choose RIE over ICP-RIE?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: RIE is the right choice for standard-depth etching with moderate aspect ratios, general-purpose dielectric and polymer processing, and applications where cost-effectiveness is a priority. Choose ICP-RIE when you need high-aspect-ratio features, higher etch rates, or independent control of plasma density and ion energy for advanced materials like SiC or GaN.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What process control features does the RIE etcher include?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The RIE etcher includes automated process control with endpoint detection, 4 process gas lines with mass flow controllers (MFCs), temperature control from 20°C to 80°C, and RF power up to 600W at 13.56 MHz. The system supports both open-load and load-lock configurations.
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import '../styles/NotFoundPage.css';
@@ -62,13 +63,16 @@ export const NotFoundPage: React.FC = () => {
 
   return (
     <>
-      <SEO 
+      <SEO
         title="404 - Page Not Found"
         description="The page you're looking for doesn't exist. Explore our semiconductor equipment products, insights, and contact information."
         keywords="404, page not found, semiconductor equipment, thin film deposition, etching systems"
         url="/404"
         type="website"
       />
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       
       <div className="not-found-page">
         <div className="container">

@@ -62,6 +62,36 @@ export function PECVDSystem() {
     <>
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What films can the PECVD system deposit?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The PECVD system deposits a range of dielectric and semiconductor films including amorphous silicon (a-Si:H), silicon dioxide (SiO2), silicon nitride (SiNx), silicon carbide (SiC), silicon oxynitride (SiON), and diamond-like carbon (DLC). The dual-frequency RF system (13.56 MHz and/or 400 kHz) enables fine-tuned film stress and composition control."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is the advantage of PECVD over thermal CVD?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "PECVD uses plasma energy to enable film deposition at significantly lower substrate temperatures (20-400\u00b0C vs. 600-900\u00b0C for thermal CVD). This makes PECVD compatible with temperature-sensitive substrates, metals, and polymers while still achieving high-quality dielectric films suitable for passivation, anti-reflection coatings, and encapsulation."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What RF power configurations are available?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The PECVD system offers dual-frequency capability with 13.56 MHz and/or 400 kHz RF at 500-2000W. The dual-frequency option enables independent control of ion bombardment energy and plasma density, which is critical for tuning film stress from compressive to tensile \u2014 essential for applications like MEMS membranes and optical coatings."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
       <section className="product-detail-hero">
         <div className="container">
@@ -304,6 +334,39 @@ export function PECVDSystem() {
               <p>Downstream steps and integration notes for etch/deposition workflows.</p>
               <span className="related-card-link">Read Article &rarr;</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What films can the PECVD system deposit?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The PECVD system deposits a range of dielectric and semiconductor films including amorphous silicon (a-Si:H), silicon dioxide (SiO2), silicon nitride (SiNx), silicon carbide (SiC), silicon oxynitride (SiON), and diamond-like carbon (DLC). The dual-frequency RF system (13.56 MHz and/or 400 kHz) enables fine-tuned film stress and composition control.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What is the advantage of PECVD over thermal CVD?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PECVD uses plasma energy to enable film deposition at significantly lower substrate temperatures (20-400°C vs. 600-900°C for thermal CVD). This makes PECVD compatible with temperature-sensitive substrates, metals, and polymers while still achieving high-quality dielectric films suitable for passivation, anti-reflection coatings, and encapsulation.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What RF power configurations are available?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The PECVD system offers dual-frequency capability with 13.56 MHz and/or 400 kHz RF at 500-2000W. The dual-frequency option enables independent control of ion bombardment energy and plasma density, which is critical for tuning film stress from compressive to tensile — essential for applications like MEMS membranes and optical coatings.
+              </p>
+            </div>
           </div>
         </div>
       </section>
