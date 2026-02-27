@@ -133,6 +133,12 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     pageStartTimeRef.current = Date.now();
     currentPathRef.current = location.pathname;
 
+    // Skip tracking for trailing-slash paths — RedirectHandler will normalize
+    // them and we'll track the canonical (no trailing slash) path instead
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+      return;
+    }
+
     // Track page views with Segment and IP analysis (merged into single call)
     if (typeof window !== 'undefined' && window.analytics) {
       // Single call that handles both page event and IP analysis
