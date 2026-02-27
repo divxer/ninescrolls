@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 
+# LLM-readable content files
+Allow: /llms.txt
+Allow: /llms-full.txt
+
 # Disallow PDF files from being indexed to prevent duplicate content issues
 Disallow: /docs/*.pdf
 
@@ -10,5 +14,27 @@ Allow: /NineScrolls-Equipment-Guide.pdf
 Allow: /equipment-guide.pdf
 Allow: /docs/NineScrolls_Service_Process_Guide.pdf
 
+# AI bot access — allow all AI crawlers to index our content
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
 # Sitemap location
-Sitemap: https://ninescrolls.com/sitemap.xml 
+Sitemap: https://ninescrolls.com/sitemap.xml

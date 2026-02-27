@@ -145,6 +145,38 @@ export function HY20LRF() {
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is the HY-20LRF suitable for delicate samples?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Plasma is a dry process; users can tune gas, power, and time for gentle activation. The PLC control system allows precise parameter adjustment to minimize sample damage while achieving desired surface modification."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What gases can I use with the HY-20LRF?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Common choices include O₂, N₂, Ar, and mixed gases (with 2 gas lines). The system supports flexible gas configurations for various surface treatment applications."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is the HY-20LRF repeatable for research data?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. PLC + touchscreen control supports stable, repeatable operation across runs. Process parameters can be saved and recalled, ensuring consistent results for research documentation and publication."
+                }
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

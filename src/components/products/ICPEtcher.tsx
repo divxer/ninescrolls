@@ -63,6 +63,36 @@ export function ICPEtcher() {
     <>
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What applications is the ICP etcher best suited for?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The ICP etcher is ideal for high-aspect-ratio etching, deep silicon etching (DRIE/Bosch process), III-V compound semiconductor processing (GaN, GaAs, InP, SiC), MEMS fabrication, photonic device patterning, and 2D materials research. The independent source and bias power control enables precise profile tuning for demanding applications."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is the difference between ICP etching and RIE etching?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ICP etching uses a separate inductively coupled plasma source (1000-3000W) to generate high-density plasma, while a separate bias RF controls ion energy. This decoupled design enables higher etch rates, better uniformity, and independent control of plasma density vs. ion bombardment energy. Standard RIE uses a single RF source for both, which limits process flexibility for advanced applications."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What wafer sizes does the ICP etcher support?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The ICP etcher supports wafer sizes from 4 inches to 12 inches, with optional multi-wafer configurations. The system can be configured with either open-load or load-lock sample loading to match your lab workflow requirements."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
       <section className="product-detail-hero">
         <div className="container">
@@ -409,6 +439,39 @@ export function ICPEtcher() {
               <p>Trends in ALE, pulsed plasma, and EUV resist removal technologies.</p>
               <span className="related-card-link">Read Article &rarr;</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What applications is the ICP etcher best suited for?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The ICP etcher is ideal for high-aspect-ratio etching, deep silicon etching (DRIE/Bosch process), III-V compound semiconductor processing (GaN, GaAs, InP, SiC), MEMS fabrication, photonic device patterning, and 2D materials research. The independent source and bias power control enables precise profile tuning for demanding applications.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What is the difference between ICP etching and RIE etching?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: ICP etching uses a separate inductively coupled plasma source (1000–3000W) to generate high-density plasma, while a separate bias RF controls ion energy. This decoupled design enables higher etch rates, better uniformity, and independent control of plasma density vs. ion bombardment energy. Standard RIE uses a single RF source for both, which limits process flexibility for advanced applications.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What wafer sizes does the ICP etcher support?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The ICP etcher supports wafer sizes from 4 inches to 12 inches, with optional multi-wafer configurations. The system can be configured with either open-load or load-lock sample loading to match your lab workflow requirements.
+              </p>
+            </div>
           </div>
         </div>
       </section>

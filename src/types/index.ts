@@ -38,6 +38,7 @@ export interface InsightsPost {
   excerpt?: string;
   author: string;
   publishDate: string;
+  lastModifiedDate?: string;
   category: string;
   readTime: number;
   imageUrl: string;

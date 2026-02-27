@@ -62,6 +62,36 @@ export function ALDSystem() {
     <>
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is atomic layer deposition (ALD) and how does it work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ALD is a thin-film deposition technique that builds films one atomic layer at a time through sequential, self-limiting surface reactions. Each cycle deposits a precise monolayer (typically 0.5-2 angstroms), enabling exceptional thickness control, conformality (>98% step coverage), and uniformity (<1% for Al2O3). This makes ALD ideal for gate dielectrics, passivation, and conformal coatings on 3D structures."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What materials can the ALD system deposit?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The ALD system supports oxides (Al2O3, HfO2, SiO2, TiO2, Ga2O3, ZnO), nitrides (TiN, TaN, SiNx, AlN, GaN), metals (Pt, Pd, W, Ru), and complex oxides. With the optional remote plasma source (300-1000W), plasma-enhanced ALD (PEALD) enables lower-temperature deposition and access to additional materials."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What temperature range does the ALD system support?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The wafer temperature range is 20°C to 400°C (higher temperatures available as an option). Source temperatures range from 20°C to 150°C standard, with up to 200°C optional for high-vapor-pressure precursors. The system supports 2 to 6 customizable precursor lines."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
       <section className="product-detail-hero">
         <div className="container">
@@ -305,6 +335,39 @@ export function ALDSystem() {
               <p>Terminology and concepts useful for ALD/CVD integration workflows.</p>
               <span className="related-card-link">Read Article &rarr;</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What is atomic layer deposition (ALD) and how does it work?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: ALD is a thin-film deposition technique that builds films one atomic layer at a time through sequential, self-limiting surface reactions. Each cycle deposits a precise monolayer (typically 0.5-2 angstroms), enabling exceptional thickness control, conformality ({'>'}98% step coverage), and uniformity ({'<'}1% for Al2O3). This makes ALD ideal for gate dielectrics, passivation, and conformal coatings on 3D structures.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What materials can the ALD system deposit?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The ALD system supports oxides (Al2O3, HfO2, SiO2, TiO2, Ga2O3, ZnO), nitrides (TiN, TaN, SiNx, AlN, GaN), metals (Pt, Pd, W, Ru), and complex oxides. With the optional remote plasma source (300-1000W), plasma-enhanced ALD (PEALD) enables lower-temperature deposition and access to additional materials.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What temperature range does the ALD system support?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: The wafer temperature range is 20°C to 400°C (higher temperatures available as an option). Source temperatures range from 20°C to 150°C standard, with up to 200°C optional for high-vapor-pressure precursors. The system supports 2 to 6 customizable precursor lines.
+              </p>
+            </div>
           </div>
         </div>
       </section>

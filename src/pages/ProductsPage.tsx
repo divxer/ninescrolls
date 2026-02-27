@@ -677,6 +677,36 @@ export function ProductsPage() {
       {/* JSON‑LD Schema */}
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is plasma etching equipment?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Plasma etching equipment uses ionized gas (plasma) to remove material from substrates with precise control. Our plasma etching systems include reactive ion etching (RIE) and inductively coupled plasma etching technologies for semiconductor manufacturing and research applications."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do plasma etching processes work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Plasma etching processes work by creating a plasma from process gases using RF power. The plasma contains reactive species that chemically react with the substrate material, while ions provide physical bombardment for directional etching, achieving optimized etch rates and superior material selectivity."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What are the advantages of plasma etching over wet etching?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Plasma etching offers superior anisotropy (directional control), better etch rate control, reduced chemical waste, and compatibility with photoresist masks. Our plasma treatment solutions provide both wet etching and dry etching capabilities for maximum process flexibility."
+              }
+            }
+          ]
+        })}</script>
       </Helmet>
 
       <DownloadGateModal 

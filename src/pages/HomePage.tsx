@@ -21,28 +21,58 @@ export function HomePage() {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "url": "https://ninescrolls.com",
-    "name": "NineScrolls LLC",
-    "description": "Leading provider of advanced semiconductor manufacturing equipment. Specializing in thin film deposition, etching, and surface treatment solutions.",
-    "logo": "https://ninescrolls.com/assets/images/logo.png",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "12546 Cabezon Pl",
-      "addressLocality": "San Diego",
-      "addressRegion": "CA",
-      "postalCode": "92129",
-      "addressCountry": "US"
-    },
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": "+1-858-879-8898",
-      "contactType": "sales",
-      "email": "sales@ninescrolls.com",
-      "availableLanguage": ["English", "Chinese"]
-    },
-    "sameAs": [
-      "https://www.linkedin.com/company/nine-scrolls-technology"
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://ninescrolls.com/#organization",
+        "url": "https://ninescrolls.com",
+        "name": "NineScrolls LLC",
+        "description": "Research-grade semiconductor equipment provider specializing in plasma etching systems (RIE, ICP-RIE), thin-film deposition systems (ALD, PECVD, HDP-CVD), and plasma cleaners for surface preparation.",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ninescrolls.com/assets/images/logo.png"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "12546 Cabezon Pl",
+          "addressLocality": "San Diego",
+          "addressRegion": "CA",
+          "postalCode": "92129",
+          "addressCountry": "US"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+1-858-879-8898",
+          "contactType": "sales",
+          "email": "sales@ninescrolls.com",
+          "availableLanguage": ["English", "Chinese"]
+        },
+        "sameAs": [
+          "https://www.linkedin.com/company/nine-scrolls-technology"
+        ],
+        "knowsAbout": [
+          "plasma etching",
+          "reactive ion etching",
+          "inductively coupled plasma etching",
+          "atomic layer deposition",
+          "plasma-enhanced chemical vapor deposition",
+          "high-density plasma CVD",
+          "magnetron sputtering",
+          "ion beam etching",
+          "plasma cleaning",
+          "thin film deposition",
+          "semiconductor manufacturing equipment"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://ninescrolls.com/#website",
+        "url": "https://ninescrolls.com",
+        "name": "NineScrolls",
+        "publisher": {
+          "@id": "https://ninescrolls.com/#organization"
+        }
+      }
     ]
   };
 

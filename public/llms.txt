@@ -1,46 +1,85 @@
 # NineScrolls
 
-> Research‑grade semiconductor equipment provider. We build plasma etching systems (RIE/ICP) and thin‑film deposition systems (ALD, PECVD, HDP‑CVD), with documentation, service & warranty information. This file gives LLMs a concise, linkable map of high‑value resources.
+> Research-grade semiconductor equipment provider. We build plasma etching systems (RIE/ICP) and thin-film deposition systems (ALD, PECVD, HDP-CVD), plus plasma cleaners for surface preparation. This file gives LLMs a concise, linkable map of high-value resources.
 
-NineScrolls serves universities, institutes, and corporate R&D labs. For questions or corrections, contact info@ninescrolls.com. Canonical host is https://ninescrolls.com/.
+NineScrolls serves universities, research institutes, and corporate R&D labs worldwide. For questions or corrections, contact info@ninescrolls.com. Canonical host is https://ninescrolls.com/.
 
 ## Docs
 
-- [Sitemap](https://ninescrolls.com/sitemap.xml): Index of public pages
+- [Sitemap](https://ninescrolls.com/sitemap.xml): Index of all public pages
 - [Robots](https://ninescrolls.com/robots.txt): Crawl rules
+- [Full content for LLMs](https://ninescrolls.com/llms-full.txt): Extended machine-readable content with product specs, article summaries, and FAQs
 - [Service Process Guide (PDF)](https://ninescrolls.com/docs/NineScrolls_Service_Process_Guide.pdf): Warranty / service overview
 
-## Products
+## Products — Etching Systems
 
-- [Products overview](https://ninescrolls.com/products/): Equipment categories and links
-- [RIE Etcher](https://ninescrolls.com/products/rie-etcher): Reactive ion etching systems
-- [ICP Etcher](https://ninescrolls.com/products/icp-etcher): Inductively coupled plasma etching
-- [ALD Systems](https://ninescrolls.com/products/ald): Atomic layer deposition
-- [PECVD Systems](https://ninescrolls.com/products/pecvd): Plasma‑enhanced CVD
-- [HDP‑CVD Systems](https://ninescrolls.com/products/hdp-cvd): High‑density plasma CVD
-- [IBE/RIBE Systems](https://ninescrolls.com/products/ibe-ribe): Ion/Reactive ion beam etching
-- [Sputter Systems](https://ninescrolls.com/products/sputter): PVD sputtering
-- [Striper Systems](https://ninescrolls.com/products/striper): Photoresist removal
-- [Coater/Developer](https://ninescrolls.com/products/coater-developer): Photolithography track
-- [Plasma Cleaners Overview](https://ninescrolls.com/products/plasma-cleaner): HY and PLUTO series plasma cleaners
-- [HY-4L](https://ninescrolls.com/products/hy-4l): Compact RF/MF plasma cleaner (~4L)
-- [HY-20L](https://ninescrolls.com/products/hy-20l): Research-grade batch plasma cleaner (20L)
-- [HY-20LRF](https://ninescrolls.com/products/hy-20lrf): Integrated RF vacuum plasma cleaner (20L)
-- [PLUTO-T](https://ninescrolls.com/products/pluto-t): 200W RF plasma cleaner (~4.3L)
-- [PLUTO-M](https://ninescrolls.com/products/pluto-m): 200W RF plasma cleaner (~8L)
-- [PLUTO-F](https://ninescrolls.com/products/pluto-f): 500W RF flagship plasma cleaner (~14.5L)
+- [RIE Etcher](https://ninescrolls.com/products/rie-etcher): Reactive ion etching systems for Si, SiO2, SiNx, polymers
+- [ICP Etcher](https://ninescrolls.com/products/icp-etcher): Inductively coupled plasma etching for high-aspect-ratio features
+- [Compact RIE](https://ninescrolls.com/products/compact-rie): Space-efficient RIE for smaller labs
+- [IBE/RIBE Systems](https://ninescrolls.com/products/ibe-ribe): Ion/reactive ion beam etching for metals and complex materials
+- [Striper Systems](https://ninescrolls.com/products/striper): Photoresist removal / ashing
 
-## Insights
+## Products — Deposition Systems
 
-- [Plasma etching fundamentals](https://ninescrolls.com/insights/plasma-etching): Overview & key terms
-- [Plasma cleaning](https://ninescrolls.com/insights/plasma-cleaning-precision-surface-preparation): Surface preparation
+- [ALD Systems](https://ninescrolls.com/products/ald): Atomic layer deposition for conformal thin films
+- [PECVD Systems](https://ninescrolls.com/products/pecvd): Plasma-enhanced chemical vapor deposition
+- [HDP-CVD Systems](https://ninescrolls.com/products/hdp-cvd): High-density plasma CVD for gap-fill applications
+- [Sputter Systems](https://ninescrolls.com/products/sputter): PVD sputtering for metal and dielectric films
+
+## Products — Lithography
+
+- [Coater/Developer](https://ninescrolls.com/products/coater-developer): Photolithography track equipment
+
+## Products — Plasma Cleaners
+
+- [Plasma Cleaners Overview](https://ninescrolls.com/products/plasma-cleaner): HY and PLUTO series overview
+- [Plasma Cleaner Comparison](https://ninescrolls.com/products/plasma-cleaner/compare): Side-by-side spec comparison
+- [HY-4L](https://ninescrolls.com/products/hy-4l): Compact RF/MF plasma cleaner (~4L), from $6,499
+- [HY-20L](https://ninescrolls.com/products/hy-20l): Research-grade batch plasma cleaner (20L), from $11,999
+- [HY-20LRF](https://ninescrolls.com/products/hy-20lrf): Integrated RF vacuum plasma cleaner (20L), from $14,499
+- [PLUTO-T](https://ninescrolls.com/products/pluto-t): 200W RF plasma cleaner (~4.3L), $9,999
+- [PLUTO-M](https://ninescrolls.com/products/pluto-m): 200W RF plasma cleaner (~8L), $12,999
+- [PLUTO-F](https://ninescrolls.com/products/pluto-f): 500W RF flagship plasma cleaner (~14.5L), $15,999
+
+## Insights — Etching Guides
+
+- [Reactive Ion Etching (RIE) Guide](https://ninescrolls.com/insights/reactive-ion-etching-guide): Complete guide to RIE principles, process control, system types, and equipment selection
+- [Deep Reactive Ion Etching (DRIE) – Bosch Process](https://ninescrolls.com/insights/deep-reactive-ion-etching-bosch-process): DRIE fundamentals, Bosch cycles, MEMS/TSV applications
+- [ICP-RIE Technology](https://ninescrolls.com/insights/icp-rie-technology-advanced-etching): How ICP differs from conventional RIE, benefits for deep/high-AR etching
+- [RIE vs. Ion Milling](https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling): Decision guide comparing two dry etching techniques
+- [Semiconductor Etchers Overview](https://ninescrolls.com/insights/semiconductor-etchers-overview): How to choose the right etcher for your lab
+- [PE vs. RIE vs. ICP-RIE](https://ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching): Comparison of three plasma etching modes
+- [Plasma Etching Fundamentals](https://ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications): From basics to applications in semiconductor manufacturing
+- [Plasma Non-Uniformity Solutions](https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions): Causes and fixes for non-uniform plasma in etch chambers
+- [Future of Plasma Etching](https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics): ALE, pulsed plasmas, cryogenic processes, AI-assisted control
+- [Dry Etching Thermoelectric Films](https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization): CH4/H2/Ar plasma optimization for Bi2Te3 microstructures
+
+## Insights — Deposition & Materials
+
+- [HDP-CVD In-Depth Guide](https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook): Comprehensive HDP-CVD handbook for research and manufacturing
+- [Advanced Materials Processing](https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy): Thin film deposition and plasma etching for materials science
+- [Nanofabrication Techniques](https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future): E-beam lithography, nanoimprint, self-assembly
+- [Photonics Manufacturing](https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering): Precision engineering for optical devices
+
+## Insights — Plasma Cleaning
+
+- [What Is a Plasma Cleaner?](https://ninescrolls.com/insights/what-is-plasma-cleaner-principles-types): Principles, types (RF/DC/microwave), and how plasma cleaning works
+- [Plasma Cleaner Applications](https://ninescrolls.com/insights/plasma-cleaner-applications-guide): Semiconductor, biomedical, optics, automotive, and materials science use cases
+- [Plasma Cleaner Buying Guide](https://ninescrolls.com/insights/plasma-cleaner-buying-guide): Step-by-step selection guide covering chamber sizing, vacuum systems, and TCO
+- [Plasma Cleaner Comparison](https://ninescrolls.com/insights/plasma-cleaner-comparison-research-labs): Quartz vs stainless steel, RF vs mid-frequency, brand comparison
+
+## Insights — Energy
+
+- [Solar Cell Manufacturing](https://ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy): Silicon wafer processing and thin film deposition for photovoltaics
+- [Fuel Cell Technology](https://ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy): MEA fabrication, catalyst deposition, and hydrogen economy R&D
 
 ## Service & Company
 
-- [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, process
+- [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, service process
+- [Startup Package](https://ninescrolls.com/startup-package): Discounted equipment program for new faculty
 - [Contact](https://ninescrolls.com/contact): Quotes and technical questions
 - [About](https://ninescrolls.com/about): Company information
 
 ## Optional
 
-- [Equipment Guide (PDF)](https://ninescrolls.com/equipment-guide.pdf): Downloadable brochure
+- [Equipment Guide (PDF)](https://ninescrolls.com/equipment-guide.pdf): Downloadable product brochure

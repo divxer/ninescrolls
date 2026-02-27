@@ -137,6 +137,38 @@ export function PlutoT() {
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Who is PLUTO-T designed for?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-T is designed as an entry-level research-grade plasma cleaner for labs that need reliable RF plasma cleaning without a large investment. At $9,999, it is ideal for university cleanrooms, materials science labs, biomedical research, and semiconductor R&D where single-sample or small-batch processing is sufficient."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the difference between PLUTO-T and PLUTO-M?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-T has a smaller chamber (~4.3L vs ~8L) and a single standard gas line (optional 2nd line). PLUTO-M ($12,999) offers nearly double the chamber volume for batch processing, 2 gas lines standard, a perforated gas-shower electrode for better plasma distribution, and recipe storage capability. Choose PLUTO-T for single-sample work and PLUTO-M for multi-sample batches."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What gases can I use with PLUTO-T?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "PLUTO-T supports O2, N2, Ar, and mixed-gas processes. It comes with 1 gas line standard, with an optional 2nd gas line available. The system uses 13.56 MHz RF at 0-200W with automatic impedance matching."
+                }
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}
@@ -709,6 +741,39 @@ export function PlutoT() {
                 <span>Responsive support before & after delivery</span>
               </li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="product-functions-section">
+        <div className="container">
+          <h2 className="section-title">Frequently Asked Questions</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: Who is PLUTO-T designed for?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PLUTO-T is designed as an entry-level research-grade plasma cleaner for labs that need reliable RF plasma cleaning without a large investment. At $9,999, it is ideal for university cleanrooms, materials science labs, biomedical research, and semiconductor R&D where single-sample or small-batch processing is sufficient.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What is the difference between PLUTO-T and PLUTO-M?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PLUTO-T has a smaller chamber (~4.3L vs ~8L) and a single standard gas line (optional 2nd line). PLUTO-M ($12,999) offers nearly double the chamber volume for batch processing, 2 gas lines standard, a perforated gas-shower electrode for better plasma distribution, and recipe storage capability. Choose PLUTO-T for single-sample work and PLUTO-M for multi-sample batches.
+              </p>
+            </div>
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+                Q: What gases can I use with PLUTO-T?
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+                A: PLUTO-T supports O2, N2, Ar, and mixed-gas processes. It comes with 1 gas line standard, with an optional 2nd gas line available. The system uses 13.56 MHz RF at 0-200W with automatic impedance matching.
+              </p>
+            </div>
           </div>
         </div>
       </section>
