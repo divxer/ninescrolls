@@ -21,6 +21,11 @@ export const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({
   }, [measurementId]);
 
   useEffect(() => {
+    // Skip tracking for trailing-slash paths — RedirectHandler will normalize
+    // them and we'll track the canonical (no trailing slash) path instead
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+      return;
+    }
     // Track page views
     if (measurementId) {
       analytics.trackPageView(location.pathname, document.title);

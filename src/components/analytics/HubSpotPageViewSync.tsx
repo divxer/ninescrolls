@@ -51,6 +51,12 @@ function syncPageView(location: { pathname: string; search: string }) {
     return;
   }
 
+  // Skip tracking for trailing-slash paths — RedirectHandler will normalize
+  // them and we'll track the canonical (no trailing slash) path instead
+  if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+    return;
+  }
+
   // Build the full path including query string
   const path = location.pathname + location.search;
 
