@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-// import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
@@ -36,8 +36,33 @@ export function ALDSystem() {
     document.body.style.overflow = 'auto';
   };
 
+  const structuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "@id": "https://ninescrolls.com/products/ald#product",
+    "name": "ALD System Series",
+    "description": "Atomic Layer Deposition system offering atomic-level precision with compact uni-body design for thin film growth.",
+    "image": ["https://ninescrolls.com/assets/images/products/ald/main.jpg"],
+    "sku": "ald",
+    "brand": { "@type": "Brand", "name": "NineScrolls LLC" },
+    "category": "Semiconductor Manufacturing Equipment",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "priceCurrency": "USD",
+      "price": "0",
+      "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": "https://ninescrolls.com/products/ald",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" }
+    }
+  };
+
   return (
     <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      </Helmet>
       <section className="product-detail-hero">
         <div className="container">
           <Breadcrumbs items={[

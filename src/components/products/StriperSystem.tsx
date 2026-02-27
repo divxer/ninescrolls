@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
-// import { ContactFormModal } from '../common/ContactFormModal';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
@@ -37,10 +37,33 @@ export function StriperSystem() {
     document.body.style.overflow = 'auto';
   };
 
-
+  const structuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "@id": "https://ninescrolls.com/products/striper#product",
+    "name": "Stripping System Series",
+    "description": "Advanced photoresist stripping and surface cleaning system with compact uni-body design.",
+    "image": ["https://ninescrolls.com/assets/images/products/striper/main.jpg"],
+    "sku": "striper",
+    "brand": { "@type": "Brand", "name": "NineScrolls LLC" },
+    "category": "Semiconductor Manufacturing Equipment",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "priceCurrency": "USD",
+      "price": "0",
+      "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "url": "https://ninescrolls.com/products/striper",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" }
+    }
+  };
 
   return (
     <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      </Helmet>
       <section className="product-detail-hero">
         <div className="container">
           <Breadcrumbs items={[
