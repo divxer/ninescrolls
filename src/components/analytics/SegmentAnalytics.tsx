@@ -120,10 +120,11 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       });
 
       // Use first-party proxy to avoid network-level blocking of cdn.segment.com / api.segment.io
+      // The proxy Lambda rewrites the settings response to point apiHost at our proxy,
+      // so all tracking data flows through our domain instead of api.segment.io
       const proxyBase = getSegmentProxyBase();
-      const apiHost = proxyBase.replace(/^https?:\/\//, '') + '/seg/v1';
 
-      analytics.load = (key: string, options?: { integrations?: Record<string, unknown> }) => {
+      analytics.load = (key: string) => {
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.async = true;
@@ -131,23 +132,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         script.src = `${proxyBase}/seg/cdn/analytics.js/v1/${key}/analytics.min.js`;
         const firstScript = document.getElementsByTagName('script')[0];
         firstScript?.parentNode?.insertBefore(script, firstScript);
-        // Queue the load call so the real SDK replays it with options after loading
-        analytics.push(['load' as unknown, key, options]);
       };
 
       analytics._writeKey = writeKey;
       analytics.SNIPPET_VERSION = '5.2.0';
-      // Set custom CDN base so the real SDK uses our proxy for any further CDN requests
+      // Set custom CDN base so the real SDK fetches settings from our proxy
+      // The proxy rewrites the settings JSON to redirect tracking calls through our domain
       (analytics as Record<string, unknown>)._cdn = `${proxyBase}/seg/cdn`;
 
-      analytics.load(writeKey, {
-        integrations: {
-          'Segment.io': {
-            apiHost,
-            protocol: 'https',
-          },
-        },
-      });
+      analytics.load(writeKey);
     }
   }, [writeKey]);
 
