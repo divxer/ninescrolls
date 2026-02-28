@@ -2,6 +2,21 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { segmentAnalytics } from '../../services/segmentAnalytics';
 import { behaviorAnalytics } from '../../services/behaviorAnalytics';
+import outputs from '../../../amplify_outputs.json';
+
+/**
+ * Get API Gateway endpoint for Segment proxy.
+ * Follows the same pattern as stripeService.ts getApiEndpoint().
+ */
+function getSegmentProxyBase(): string {
+  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
+    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
+  }
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  return 'https://api.ninescrolls.com';
+}
 
 interface SegmentAnalyticsProps {
   writeKey?: string;
@@ -21,7 +36,7 @@ type SegmentAnalyticsStub = SegmentAnalyticsClient & {
   invoked?: boolean;
   methods?: string[];
   factory?: (method: string) => (...args: unknown[]) => void;
-  load?: (key: string, options?: Record<string, unknown>) => void;
+  load?: (key: string, options?: { integrations?: Record<string, unknown> }) => void;
   _writeKey?: string;
   SNIPPET_VERSION?: string;
   push: (args: unknown[]) => number;
@@ -104,19 +119,35 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         (analytics as Record<string, unknown>)[method] = analytics.factory?.(method);
       });
 
-      analytics.load = (key: string) => {
+      // Use first-party proxy to avoid network-level blocking of cdn.segment.com / api.segment.io
+      const proxyBase = getSegmentProxyBase();
+      const apiHost = proxyBase.replace(/^https?:\/\//, '') + '/seg/v1';
+
+      analytics.load = (key: string, options?: { integrations?: Record<string, unknown> }) => {
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.async = true;
         script.setAttribute('data-global-segment-analytics-key', 'analytics');
-        script.src = `https://cdn.segment.com/analytics.js/v1/${key}/analytics.min.js`;
+        script.src = `${proxyBase}/seg/cdn/analytics.js/v1/${key}/analytics.min.js`;
         const firstScript = document.getElementsByTagName('script')[0];
         firstScript?.parentNode?.insertBefore(script, firstScript);
+        // Queue the load call so the real SDK replays it with options after loading
+        analytics.push(['load' as unknown, key, options]);
       };
 
       analytics._writeKey = writeKey;
       analytics.SNIPPET_VERSION = '5.2.0';
-      analytics.load(writeKey);
+      // Set custom CDN base so the real SDK uses our proxy for any further CDN requests
+      (analytics as Record<string, unknown>)._cdn = `${proxyBase}/seg/cdn`;
+
+      analytics.load(writeKey, {
+        integrations: {
+          'Segment.io': {
+            apiHost,
+            protocol: 'https',
+          },
+        },
+      });
     }
   }, [writeKey]);
 
