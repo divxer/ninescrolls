@@ -18,6 +18,62 @@ function getSegmentProxyBase(): string {
   return 'https://api.ninescrolls.com';
 }
 
+/**
+ * Intercept fetch / XMLHttpRequest / sendBeacon to redirect all Segment requests
+ * through our first-party proxy. This works regardless of analytics.js version
+ * and catches all network calls to Segment domains.
+ */
+let _proxyInterceptInstalled = false;
+function installSegmentProxyIntercept(proxyBase: string) {
+  if (_proxyInterceptInstalled) return;
+  _proxyInterceptInstalled = true;
+
+  const rewriteUrl = (url: string): string => {
+    if (url.includes('api.segment.io')) {
+      return url.replace('https://api.segment.io', `${proxyBase}/seg`);
+    }
+    if (url.includes('cdn.segment.com')) {
+      return url.replace('https://cdn.segment.com', `${proxyBase}/seg/cdn`);
+    }
+    return url;
+  };
+
+  // Intercept fetch
+  const originalFetch = window.fetch;
+  window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
+    if (typeof input === 'string') {
+      input = rewriteUrl(input);
+    } else if (input instanceof Request) {
+      const rewritten = rewriteUrl(input.url);
+      if (rewritten !== input.url) {
+        input = new Request(rewritten, input);
+      }
+    }
+    return originalFetch.call(window, input, init);
+  };
+
+  // Intercept XMLHttpRequest
+  const originalXHROpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (
+    method: string,
+    url: string | URL,
+    ...rest: unknown[]
+  ) {
+    const urlStr = typeof url === 'string' ? url : url.toString();
+    const rewritten = rewriteUrl(urlStr);
+    return originalXHROpen.apply(this, [method, rewritten, ...rest] as Parameters<typeof originalXHROpen>);
+  };
+
+  // Intercept sendBeacon
+  if (navigator.sendBeacon) {
+    const originalSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url: string | URL, data?: BodyInit | null) {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+      return originalSendBeacon(rewriteUrl(urlStr), data);
+    };
+  }
+}
+
 interface SegmentAnalyticsProps {
   writeKey?: string;
 }
@@ -120,9 +176,9 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       });
 
       // Use first-party proxy to avoid network-level blocking of cdn.segment.com / api.segment.io
-      // The proxy Lambda rewrites the settings response to point apiHost at our proxy,
-      // so all tracking data flows through our domain instead of api.segment.io
+      // Intercept all network requests to Segment domains and redirect through our proxy
       const proxyBase = getSegmentProxyBase();
+      installSegmentProxyIntercept(proxyBase);
 
       analytics.load = (key: string) => {
         const script = document.createElement('script');
