@@ -18,6 +18,25 @@ const getCorsHeaders = (origin?: string) => {
     };
 };
 
+/**
+ * Rewrite the Segment settings response to replace api.segment.io with our proxy host.
+ * analytics.js fetches settings from /v1/projects/{writeKey}/settings during initialization
+ * and uses the apiHost from the response to send tracking data. By rewriting this, we ensure
+ * all tracking calls go through our proxy without relying on client-side load options.
+ */
+function rewriteSettingsApiHost(settingsJson: string, proxyApiHost: string): string {
+    try {
+        const settings = JSON.parse(settingsJson);
+        if (settings?.integrations?.['Segment.io']) {
+            settings.integrations['Segment.io'].apiHost = proxyApiHost;
+        }
+        return JSON.stringify(settings);
+    } catch {
+        // If parsing fails, return original response
+        return settingsJson;
+    }
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
     const requestOrigin = event.headers?.origin || event.headers?.Origin;
     const corsHeaders = getCorsHeaders(requestOrigin);
@@ -81,7 +100,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             body,
         });
 
-        const responseBody = await upstreamResponse.text();
+        let responseBody = await upstreamResponse.text();
 
         const responseHeaders: Record<string, string> = {
             ...corsHeaders,
@@ -92,8 +111,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             responseHeaders['Content-Type'] = contentType;
         }
 
-        // Cache CDN responses (analytics.js script)
-        if (isCdnRequest) {
+        // For CDN settings requests, rewrite apiHost so tracking data goes through our proxy
+        // analytics.js fetches: /v1/projects/{writeKey}/settings
+        if (isCdnRequest && /^v1\/projects\/[^/]+\/settings/.test(proxyPath)) {
+            const host = event.headers?.Host || event.headers?.host || '';
+            const stage = event.requestContext?.stage || 'prod';
+            const proxyApiHost = `${host}/${stage}/seg/v1`;
+            responseBody = rewriteSettingsApiHost(responseBody, proxyApiHost);
+            responseHeaders['Content-Type'] = 'application/json';
+            // Short cache for settings so apiHost changes propagate quickly
+            responseHeaders['Cache-Control'] = 'public, max-age=300, s-maxage=3600';
+        } else if (isCdnRequest) {
+            // Cache other CDN responses (analytics.js script) longer
             responseHeaders['Cache-Control'] = 'public, max-age=3600, s-maxage=86400';
         }
 
