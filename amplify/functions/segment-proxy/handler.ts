@@ -1,4 +1,4 @@
-import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import type { APIGatewayProxyHandler } from 'aws-lambda';
 
 const SEGMENT_CDN_HOST = 'https://cdn.segment.com';
 const SEGMENT_API_HOST = 'https://api.segment.io';
@@ -18,17 +18,12 @@ const getCorsHeaders = (origin?: string) => {
     };
 };
 
-type LegacyHttpEvent = { httpMethod?: string };
-
-export const handler: APIGatewayProxyHandlerV2 = async (event) => {
-    const requestOrigin = event.headers?.origin;
+export const handler: APIGatewayProxyHandler = async (event) => {
+    const requestOrigin = event.headers?.origin || event.headers?.Origin;
     const corsHeaders = getCorsHeaders(requestOrigin);
 
-    const legacyEvent = event as LegacyHttpEvent;
-    const method = event.requestContext?.http?.method || legacyEvent.httpMethod;
-
     // Handle CORS preflight
-    if (method === 'OPTIONS') {
+    if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
             headers: corsHeaders,
@@ -37,39 +32,39 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     try {
+        // REST API v1: event.path = full path, event.resource = route pattern
+        // event.pathParameters.proxy = captured wildcard portion
+        const fullPath = event.path || '';
         const proxyPath = event.pathParameters?.proxy || '';
-        const rawPath = event.rawPath || event.requestContext?.http?.path || '';
 
         let upstreamUrl: string;
         let isCdnRequest: boolean;
 
         // Route: /seg/cdn/{proxy+} -> cdn.segment.com/{proxy}
-        if (rawPath.includes('/seg/cdn/') || proxyPath.startsWith('cdn/')) {
-            const cdnPath = proxyPath.startsWith('cdn/') ? proxyPath.slice(4) : proxyPath;
-            upstreamUrl = `${SEGMENT_CDN_HOST}/${cdnPath}`;
+        if (fullPath.includes('/seg/cdn/')) {
+            upstreamUrl = `${SEGMENT_CDN_HOST}/${proxyPath}`;
             isCdnRequest = true;
         }
         // Route: /seg/v1/{proxy+} -> api.segment.io/v1/{proxy}
-        else if (rawPath.includes('/seg/v1/') || proxyPath.startsWith('v1/')) {
-            const apiPath = proxyPath.startsWith('v1/') ? proxyPath.slice(3) : proxyPath;
-            upstreamUrl = `${SEGMENT_API_HOST}/v1/${apiPath}`;
+        else if (fullPath.includes('/seg/v1/')) {
+            upstreamUrl = `${SEGMENT_API_HOST}/v1/${proxyPath}`;
             isCdnRequest = false;
         }
         else {
             return {
                 statusCode: 404,
                 headers: corsHeaders,
-                body: JSON.stringify({ error: 'Not found' }),
+                body: JSON.stringify({ error: 'Not found', path: fullPath }),
             };
         }
 
         // Build upstream request headers
         const upstreamHeaders: Record<string, string> = {
-            'User-Agent': event.headers?.['user-agent'] || 'NineScrolls-Segment-Proxy/1.0',
+            'User-Agent': event.headers?.['user-agent'] || event.headers?.['User-Agent'] || 'NineScrolls-Segment-Proxy/1.0',
         };
 
-        if (!isCdnRequest && event.headers?.['content-type']) {
-            upstreamHeaders['Content-Type'] = event.headers['content-type'];
+        if (!isCdnRequest && (event.headers?.['content-type'] || event.headers?.['Content-Type'])) {
+            upstreamHeaders['Content-Type'] = event.headers['content-type'] || event.headers['Content-Type'] || 'application/json';
         }
 
         // Forward request body for non-GET requests
@@ -81,7 +76,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         const upstreamResponse = await fetch(upstreamUrl, {
-            method: isCdnRequest ? 'GET' : (method || 'POST'),
+            method: isCdnRequest ? 'GET' : event.httpMethod,
             headers: upstreamHeaders,
             body,
         });
