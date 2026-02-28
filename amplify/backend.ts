@@ -6,6 +6,7 @@ import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
 import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { segmentProxy } from './functions/segment-proxy/resource';
+import { ipLookup } from './functions/ip-lookup/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -19,6 +20,7 @@ const backend = defineBackend({
     calculateTax,
     subscribeNewsletter,
     segmentProxy,
+    ipLookup,
 });
 
 // Create a fixed stage name
@@ -102,6 +104,19 @@ const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'Newsletter
 
 newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
 backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
+
+// Create /ip-lookup resource for server-side IP geolocation and target customer analysis
+// Moves IP lookups from frontend (CORS issues, rate limits) to Lambda (no restrictions)
+const ipLookupResource = restApi.root.addResource('ip-lookup');
+const ipLookupIntegration = new LambdaIntegration(backend.ipLookup.resources.lambda, {
+    proxy: true,
+});
+
+// Add GET method for IP lookup
+ipLookupResource.addMethod('GET', ipLookupIntegration);
+
+// Add OPTIONS method for CORS preflight
+ipLookupResource.addMethod('OPTIONS', ipLookupIntegration);
 
 // Create /seg resource for Segment analytics proxy
 // Proxies requests to cdn.segment.com and api.segment.io through first-party domain
