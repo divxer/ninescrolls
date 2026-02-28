@@ -5,6 +5,7 @@ import { createCheckoutSession } from './functions/create-checkout-session/resou
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
 import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
+import { segmentProxy } from './functions/segment-proxy/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -17,6 +18,7 @@ const backend = defineBackend({
     stripeWebhook,
     calculateTax,
     subscribeNewsletter,
+    segmentProxy,
 });
 
 // Create a fixed stage name
@@ -100,6 +102,28 @@ const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'Newsletter
 
 newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
 backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
+
+// Create /seg resource for Segment analytics proxy
+// Proxies requests to cdn.segment.com and api.segment.io through first-party domain
+// to avoid network-level blocking by government/enterprise firewalls
+const segResource = restApi.root.addResource('seg');
+const segmentProxyIntegration = new LambdaIntegration(backend.segmentProxy.resources.lambda, {
+    proxy: true,
+});
+
+// CDN proxy: /seg/cdn/{proxy+} -> cdn.segment.com/{proxy}
+const segCdnResource = segResource.addResource('cdn');
+segCdnResource.addProxy({
+    defaultIntegration: segmentProxyIntegration,
+    anyMethod: true,
+});
+
+// API proxy: /seg/v1/{proxy+} -> api.segment.io/v1/{proxy}
+const segV1Resource = segResource.addResource('v1');
+segV1Resource.addProxy({
+    defaultIntegration: segmentProxyIntegration,
+    anyMethod: true,
+});
 
 // Create /stripe/webhook resource for Stripe Webhook
 // Note: Webhook endpoint should NOT have wide CORS - security is handled by signature verification
