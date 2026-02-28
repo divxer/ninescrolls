@@ -68,26 +68,23 @@ class IPAnalyticsService {
     }
 
     try {
-          // Use multiple IP query services for better accuracy, add timeout control
-    const timeout = 5000; // 5 second timeout
-      
+      // Query two distinct IP services in parallel (avoid duplicates that trigger rate limits)
+      // ipinfo.io provides the most complete data (privacy, company info)
+      // ipapi.co provides reliable geolocation as fallback
+      const timeout = 5000;
+
       const responses = await Promise.allSettled([
-        this.fetchWithTimeout(this.fetchFromIPAPI(), timeout),
         this.fetchWithTimeout(this.fetchFromIPInfo(), timeout),
-        this.fetchWithTimeout(this.fetchFromIPGeolocation(), timeout),
-        this.fetchWithTimeout(this.fetchFromIPify(), timeout),
-        this.fetchWithTimeout(this.fetchFromIPAPI2(), timeout)
+        this.fetchWithTimeout(this.fetchFromIPAPI(), timeout),
       ]);
 
-      // Select the most reliable response
       const successfulResponses = responses
-        .filter((response): response is PromiseFulfilledResult<Partial<IPInfo> | null> => 
+        .filter((response): response is PromiseFulfilledResult<Partial<IPInfo> | null> =>
           response.status === 'fulfilled' && response.value !== null
         )
         .map(response => response.value)
         .filter((response): response is Partial<IPInfo> => response !== null);
 
-      // Only log in development mode to reduce console noise
       if (import.meta.env.DEV) {
         console.debug(`IP query result: ${successfulResponses.length}/${responses.length} services successful`);
       }
@@ -97,7 +94,6 @@ class IPAnalyticsService {
         return this.ipInfo;
       }
 
-      // Silently fail in production, only warn in development
       if (import.meta.env.DEV) {
         console.warn('All IP query services failed');
       }
