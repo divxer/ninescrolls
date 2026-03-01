@@ -105,7 +105,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             : event.body || '{}';
         const body = JSON.parse(bodyStr);
 
-        const { type, anonymousId, userId, name, event: trackEvent, properties, traits, messageId } = body;
+        const {
+            type, anonymousId, userId, name,
+            event: trackEvent, properties, traits, messageId,
+            context: clientContext,
+        } = body;
 
         if (!type || !['page', 'track', 'identify'].includes(type)) {
             return {
@@ -129,29 +133,28 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         const visitorIp = xForwardedFor ? xForwardedFor.split(',')[0].trim() : sourceIp;
         const userAgent = event.headers?.['User-Agent'] || event.headers?.['user-agent'] || '';
 
-        // Build Segment payload with server-side context
+        // Merge frontend browser context with server-side data (IP, userAgent).
+        // The frontend collects the same fields analytics.js auto-populates:
+        // locale, page, screen, timezone, campaign (UTM params).
+        // The server adds: ip and userAgent (only available server-side).
+        const context: Record<string, unknown> = {
+            ...(clientContext || {}),
+            ip: visitorIp,
+            userAgent,
+            library: {
+                name: 'analytics.js',
+                version: '5.2.0',
+            },
+        };
+
+        // Build Segment payload — structure matches analytics.js format
         const payload: SegmentPayload = {
             type,
             anonymousId,
             userId,
             messageId,
             timestamp: new Date().toISOString(),
-            context: {
-                ip: visitorIp,
-                userAgent,
-                library: {
-                    name: 'ninescrolls-server',
-                    version: '1.0.0',
-                },
-                // Pass original page context
-                page: properties ? {
-                    path: properties.pathname || properties.path,
-                    title: properties.title,
-                    url: properties.url,
-                    search: properties.search,
-                    referrer: properties.referrer,
-                } : undefined,
-            },
+            context,
         };
 
         // Set type-specific fields
