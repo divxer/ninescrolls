@@ -66,14 +66,16 @@ function getAnonymousId(): string {
 }
 
 /**
- * Send an event to the server-side /d endpoint (fire-and-forget).
- * This guarantees delivery even when analytics.js is blocked.
+ * Send an event to the server-side /d endpoint as a FALLBACK.
  *
- * Uses fetch with keepalive (NOT sendBeacon) because ad blockers specifically
- * target "ping" type requests. The endpoint path "/d" is deliberately short
- * and non-obvious to avoid filter list pattern matching on common analytics
- * paths like /track, /collect, /event, /beacon.
+ * Smart deduplication: waits a few seconds for analytics.js to initialize.
+ * - If analytics.js loads successfully → skip (client-side handles it)
+ * - If analytics.js is blocked → send via server-side /d endpoint
+ *
+ * This avoids duplicate events while guaranteeing delivery for blocked users.
  */
+const SERVER_FALLBACK_DELAY_MS = 4000;
+
 function sendServerSideEvent(payload: {
   type: 'page' | 'track' | 'identify';
   anonymousId: string;
@@ -82,18 +84,28 @@ function sendServerSideEvent(payload: {
   properties?: Record<string, unknown>;
   traits?: Record<string, unknown>;
 }): void {
-  const apiEndpoint = getApiEndpoint();
-  const url = `${apiEndpoint}/d`;
+  setTimeout(() => {
+    // Check if client-side analytics.js successfully initialized
+    const analytics = window.analytics as Record<string, unknown> | undefined;
+    if (analytics?.initialized) {
+      // Client-side SDK is working — no need for server-side fallback
+      if (import.meta.env.DEV) {
+        console.debug('Server-side tracking skipped: analytics.js initialized');
+      }
+      return;
+    }
 
-  // Always use fetch (not sendBeacon) to avoid "ping" request type detection
-  fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    keepalive: true,  // Survives page unload like sendBeacon
-  }).catch(() => {
-    // Silently fail - best-effort server-side tracking
-  });
+    // analytics.js blocked or failed to load — send via server-side
+    const apiEndpoint = getApiEndpoint();
+    fetch(`${apiEndpoint}/d`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {
+      // Silently fail — best-effort
+    });
+  }, SERVER_FALLBACK_DELAY_MS);
 }
 
 class SegmentAnalyticsService {
