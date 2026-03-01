@@ -1,9 +1,11 @@
 // Segment Analytics Service
 // This service provides a unified interface for tracking events with Segment
+// Includes server-side tracking fallback for visitors with ad blockers
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 import { behaviorAnalytics } from './behaviorAnalytics';
+import outputs from '../../amplify_outputs.json';
 
 type SegmentAnalyticsClient = {
   track: (event: string, properties?: Record<string, unknown>) => void;
@@ -18,6 +20,84 @@ declare global {
   interface Window {
     analytics?: SegmentAnalyticsClient;
   }
+}
+
+// ─── Server-side tracking helpers ────────────────────────────────────────────
+
+function getApiEndpoint(): string {
+  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
+    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
+  }
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  return 'https://api.ninescrolls.com';
+}
+
+/**
+ * Get or generate a stable anonymous ID.
+ * Tries Segment's cookie first, then localStorage, then generates a new UUID.
+ */
+function getAnonymousId(): string {
+  // Try Segment's ajs_anonymous_id cookie
+  try {
+    const match = document.cookie.match(/ajs_anonymous_id=([^;]+)/);
+    if (match?.[1]) {
+      const decoded = decodeURIComponent(match[1]).replace(/^"|"$/g, '');
+      if (decoded) return decoded;
+    }
+  } catch { /* ignore */ }
+
+  // Try localStorage (Segment also stores it there)
+  try {
+    const stored = localStorage.getItem('ajs_anonymous_id');
+    if (stored) {
+      const cleaned = stored.replace(/^"|"$/g, '');
+      if (cleaned) return cleaned;
+    }
+  } catch { /* ignore */ }
+
+  // Generate a new UUID and persist it
+  const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  try {
+    localStorage.setItem('ajs_anonymous_id', JSON.stringify(id));
+  } catch { /* ignore */ }
+  return id;
+}
+
+/**
+ * Send an event to the server-side /track endpoint (fire-and-forget).
+ * This guarantees delivery even when analytics.js is blocked.
+ */
+function sendServerSideEvent(payload: {
+  type: 'page' | 'track' | 'identify';
+  anonymousId: string;
+  name?: string;
+  event?: string;
+  properties?: Record<string, unknown>;
+  traits?: Record<string, unknown>;
+}): void {
+  const apiEndpoint = getApiEndpoint();
+  const url = `${apiEndpoint}/track`;
+
+  // Use sendBeacon for page events (survives page unload), fetch for others
+  const body = JSON.stringify(payload);
+
+  if (payload.type === 'page' && navigator.sendBeacon) {
+    const blob = new Blob([body], { type: 'application/json' });
+    navigator.sendBeacon(url, blob);
+    return;
+  }
+
+  // Fire-and-forget fetch
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    keepalive: true,
+  }).catch(() => {
+    // Silently fail - best-effort server-side tracking
+  });
 }
 
 class SegmentAnalyticsService {
@@ -300,28 +380,38 @@ class SegmentAnalyticsService {
       // Send to Segment with enhanced properties
       this.track(event, enhancedProperties);
 
+      // Server-side tracking: guarantee delivery even when analytics.js is blocked
+      if (typeof window !== 'undefined') {
+        sendServerSideEvent({
+          type: 'track',
+          anonymousId: getAnonymousId(),
+          event,
+          properties: enhancedProperties,
+        });
+      }
+
       // If it's a target customer, send additional event (not duplicate)
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
           // Event context
           originalEvent: event,
           timestamp: new Date().toISOString(),
-          
+
           // Organization information
           organizationType: analysis?.organizationType || 'unknown',
           orgName: analysis?.details.orgName || 'Unknown',
           orgType: analysis?.details.orgType || 'Unknown',
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
-          
+
           // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
           confidenceBreakdown: analysis?.confidenceBreakdown,
-          
+
           // Lead qualification
           leadTier: finalLeadTier || 'C',
-          
+
           // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
@@ -332,7 +422,7 @@ class SegmentAnalyticsService {
             returnVisits: behaviorScore.returnVisits,
             isPaidTraffic: behaviorScore.isPaidTraffic
           },
-          
+
           // IP information (for sales team context)
           ipInfo: ipInfo ? {
             ip: ipInfo.ip,
@@ -344,7 +434,7 @@ class SegmentAnalyticsService {
             privacy: ipInfo.privacy,
             company: ipInfo.company
           } : null,
-          
+
           // Page context
           pagePath: properties?.pathname || properties?.pagePath || 'unknown',
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
@@ -490,6 +580,18 @@ class SegmentAnalyticsService {
       if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
         window.analytics.page(pageName, enhancedProperties);
         console.log('Segment Page View with IP + Behavior analysis:', enhancedProperties);
+      }
+
+      // Server-side tracking: send the same page event via our /track endpoint.
+      // This guarantees delivery even when analytics.js is blocked by ad blockers.
+      // Segment deduplicates by anonymousId + timestamp proximity.
+      if (typeof window !== 'undefined') {
+        sendServerSideEvent({
+          type: 'page',
+          anonymousId: getAnonymousId(),
+          name: pageName,
+          properties: enhancedProperties,
+        });
       }
 
       // If it's a target customer, send additional TRACK event with enhanced data

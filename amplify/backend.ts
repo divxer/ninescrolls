@@ -7,6 +7,7 @@ import { calculateTax } from './functions/calculate-tax/resource';
 import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { segmentProxy } from './functions/segment-proxy/resource';
 import { ipLookup } from './functions/ip-lookup/resource';
+import { serverTrack } from './functions/server-track/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -21,6 +22,7 @@ const backend = defineBackend({
     subscribeNewsletter,
     segmentProxy,
     ipLookup,
+    serverTrack,
 });
 
 // Create a fixed stage name
@@ -117,6 +119,22 @@ ipLookupResource.addMethod('GET', ipLookupIntegration);
 
 // Add OPTIONS method for CORS preflight
 ipLookupResource.addMethod('OPTIONS', ipLookupIntegration);
+
+// Create /track resource for server-side Segment event tracking
+// Guarantees event delivery even when analytics.js is blocked by ad blockers
+const trackResource = restApi.root.addResource('track');
+const serverTrackIntegration = new LambdaIntegration(backend.serverTrack.resources.lambda, {
+    proxy: true,
+});
+
+// Add POST method for tracking events
+trackResource.addMethod('POST', serverTrackIntegration);
+
+// Add OPTIONS method for CORS preflight
+trackResource.addMethod('OPTIONS', serverTrackIntegration);
+
+// Pass the Segment write key to the server-track Lambda
+backend.serverTrack.addEnvironment('SEGMENT_WRITE_KEY', 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU');
 
 // Create /seg resource for Segment analytics proxy
 // Proxies requests to cdn.segment.com and api.segment.io through first-party domain
