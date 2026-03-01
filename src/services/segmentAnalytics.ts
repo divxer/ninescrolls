@@ -66,8 +66,13 @@ function getAnonymousId(): string {
 }
 
 /**
- * Send an event to the server-side /track endpoint (fire-and-forget).
+ * Send an event to the server-side /d endpoint (fire-and-forget).
  * This guarantees delivery even when analytics.js is blocked.
+ *
+ * Uses fetch with keepalive (NOT sendBeacon) because ad blockers specifically
+ * target "ping" type requests. The endpoint path "/d" is deliberately short
+ * and non-obvious to avoid filter list pattern matching on common analytics
+ * paths like /track, /collect, /event, /beacon.
  */
 function sendServerSideEvent(payload: {
   type: 'page' | 'track' | 'identify';
@@ -78,23 +83,14 @@ function sendServerSideEvent(payload: {
   traits?: Record<string, unknown>;
 }): void {
   const apiEndpoint = getApiEndpoint();
-  const url = `${apiEndpoint}/track`;
+  const url = `${apiEndpoint}/d`;
 
-  // Use sendBeacon for page events (survives page unload), fetch for others
-  const body = JSON.stringify(payload);
-
-  if (payload.type === 'page' && navigator.sendBeacon) {
-    const blob = new Blob([body], { type: 'application/json' });
-    navigator.sendBeacon(url, blob);
-    return;
-  }
-
-  // Fire-and-forget fetch
+  // Always use fetch (not sendBeacon) to avoid "ping" request type detection
   fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body,
-    keepalive: true,
+    body: JSON.stringify(payload),
+    keepalive: true,  // Survives page unload like sendBeacon
   }).catch(() => {
     // Silently fail - best-effort server-side tracking
   });

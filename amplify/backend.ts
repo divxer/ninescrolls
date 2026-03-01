@@ -120,18 +120,19 @@ ipLookupResource.addMethod('GET', ipLookupIntegration);
 // Add OPTIONS method for CORS preflight
 ipLookupResource.addMethod('OPTIONS', ipLookupIntegration);
 
-// Create /track resource for server-side Segment event tracking
-// Guarantees event delivery even when analytics.js is blocked by ad blockers
-const trackResource = restApi.root.addResource('track');
+// Create /d resource for server-side Segment event tracking
+// Path deliberately non-obvious to avoid ad blocker filter lists that match
+// common analytics paths like /track, /collect, /event, /beacon, /analytics
+const dResource = restApi.root.addResource('d');
 const serverTrackIntegration = new LambdaIntegration(backend.serverTrack.resources.lambda, {
     proxy: true,
 });
 
 // Add POST method for tracking events
-trackResource.addMethod('POST', serverTrackIntegration);
+dResource.addMethod('POST', serverTrackIntegration);
 
 // Add OPTIONS method for CORS preflight
-trackResource.addMethod('OPTIONS', serverTrackIntegration);
+dResource.addMethod('OPTIONS', serverTrackIntegration);
 
 // Pass the Segment write key to the server-track Lambda
 backend.serverTrack.addEnvironment('SEGMENT_WRITE_KEY', 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU');
