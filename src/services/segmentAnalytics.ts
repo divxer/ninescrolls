@@ -66,6 +66,52 @@ function getAnonymousId(): string {
 }
 
 /**
+ * Collect browser context that analytics.js would normally auto-populate.
+ * This ensures server-side events have the same context structure.
+ */
+function collectBrowserContext(): Record<string, unknown> {
+  return {
+    locale: navigator.language || '',
+    page: {
+      path: window.location.pathname,
+      referrer: document.referrer || '',
+      search: window.location.search || '',
+      title: document.title || '',
+      url: window.location.href,
+    },
+    screen: {
+      width: window.screen?.width,
+      height: window.screen?.height,
+      density: window.devicePixelRatio || 1,
+    },
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    campaign: parseCampaignParams(),
+  };
+}
+
+/**
+ * Parse UTM campaign parameters from the current URL.
+ */
+function parseCampaignParams(): Record<string, string> | undefined {
+  const params = new URLSearchParams(window.location.search);
+  const campaign: Record<string, string> = {};
+  const utmMap: Record<string, string> = {
+    utm_source: 'source',
+    utm_medium: 'medium',
+    utm_campaign: 'name',
+    utm_term: 'term',
+    utm_content: 'content',
+  };
+
+  for (const [param, key] of Object.entries(utmMap)) {
+    const value = params.get(param);
+    if (value) campaign[key] = value;
+  }
+
+  return Object.keys(campaign).length > 0 ? campaign : undefined;
+}
+
+/**
  * Send an event to the server-side /d endpoint as a FALLBACK.
  *
  * Smart deduplication: waits a few seconds for analytics.js to initialize.
@@ -73,6 +119,7 @@ function getAnonymousId(): string {
  * - If analytics.js is blocked → send via server-side /d endpoint
  *
  * This avoids duplicate events while guaranteeing delivery for blocked users.
+ * Includes full browser context to match analytics.js event format.
  */
 const SERVER_FALLBACK_DELAY_MS = 4000;
 
@@ -84,11 +131,13 @@ function sendServerSideEvent(payload: {
   properties?: Record<string, unknown>;
   traits?: Record<string, unknown>;
 }): void {
+  // Capture browser context NOW (before the timeout, in case user navigates)
+  const context = collectBrowserContext();
+
   setTimeout(() => {
     // Check if client-side analytics.js successfully initialized
     const analytics = window.analytics as Record<string, unknown> | undefined;
     if (analytics?.initialized) {
-      // Client-side SDK is working — no need for server-side fallback
       if (import.meta.env.DEV) {
         console.debug('Server-side tracking skipped: analytics.js initialized');
       }
@@ -100,7 +149,7 @@ function sendServerSideEvent(payload: {
     fetch(`${apiEndpoint}/d`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, context }),
       keepalive: true,
     }).catch(() => {
       // Silently fail — best-effort
