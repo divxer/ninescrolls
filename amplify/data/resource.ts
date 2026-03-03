@@ -70,6 +70,51 @@ const schema = a.schema({
       allow.authenticated(),
     ])
     .secondaryIndexes((index) => [index('slug')]),
+
+  AnalyticsEvent: a
+    .model({
+      id: a.id().required(),
+      eventName: a.string().required(),
+      eventType: a.string().required(),
+      timestamp: a.datetime().required(),
+
+      ip: a.string(),
+      country: a.string(),
+      region: a.string(),
+      city: a.string(),
+      org: a.string(),
+      isp: a.string(),
+
+      isTargetCustomer: a.boolean(),
+      organizationType: a.string(),
+      orgName: a.string(),
+      confidence: a.float(),
+      finalConfidence: a.float(),
+      leadTier: a.string(),
+
+      behaviorScore: a.float(),
+      productPagesViewed: a.integer(),
+      timeOnSite: a.integer(),
+      pdfDownloads: a.integer(),
+      returnVisits: a.integer(),
+      isPaidTraffic: a.boolean(),
+
+      pathname: a.string(),
+      pageTitle: a.string(),
+      productId: a.string(),
+      productName: a.string(),
+      referrer: a.string(),
+
+      properties: a.json(),
+    })
+    .authorization((allow) => [
+      allow.publicApiKey().to(['create']),
+      allow.authenticated(),
+    ])
+    .secondaryIndexes((index) => [
+      index('eventType').sortKeys(['timestamp']),
+      index('leadTier').sortKeys(['timestamp']),
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
