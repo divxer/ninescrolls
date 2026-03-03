@@ -4102,8 +4102,8 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-02',
-    category: 'Nanotechnology',
+    publishDate: '2026-02-28',
+    category: 'Publication Spotlight',
     readTime: 6,
     imageUrl: '/assets/images/insights/rie150-soft-actuator-cover.png',
     slug: 'rie150-nanoforest-soft-actuator',
@@ -4187,8 +4187,8 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-02',
-    category: 'Photonics',
+    publishDate: '2026-02-28',
+    category: 'Publication Spotlight',
     readTime: 7,
     imageUrl: '/assets/images/insights/pecvd-icp-photodetector-cover.png',
     slug: 'pecvd-icp-ptse2-photodetector',

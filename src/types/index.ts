@@ -54,5 +54,6 @@ export const categories = [
   'Materials Science',
   'Photonics',
   'Nanotechnology',
-  'Energy'
+  'Energy',
+  'Publication Spotlight'
 ];
