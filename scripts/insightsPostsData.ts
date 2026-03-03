@@ -4193,5 +4193,187 @@ export const insightsPosts: InsightsPost[] = [
     imageUrl: '/assets/images/insights/pecvd-icp-photodetector-cover.png',
     slug: 'pecvd-icp-ptse2-photodetector',
     tags: ['PECVD-150LL', 'ICP-100', 'photodetector', 'PtSe2', 'broadband', 'polarization', 'Applied Surface Science', 'publication spotlight']
+  },
+  {
+    id: '33',
+    title: 'RIE-150A Enables On-Chip Metasurface Color Router',
+    excerpt: 'Published in Light: Science & Applications (Nature portfolio, 2026): RIE-150A precision etching enables an on-chip q-BIC metasurface color router with near-unity energy utilization efficiency and ~20 nm narrowband extraction.',
+    content: `
+      <p style="display:inline-block;background:#2563eb;color:#fff;font-size:0.85em;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px;">PUBLICATION SPOTLIGHT</p>
+
+      <h2>Highlights</h2>
+      <ul>
+        <li>Published in <strong>Light: Science &amp; Applications</strong> (Nature portfolio), 2026</li>
+        <li>RIE-150A performed precision Cr-to-Si pattern transfer using SF₆/CHF₃/O₂ gas chemistry</li>
+        <li>The on-chip q-BIC metasurface achieves wavelength-selective color routing with near-unity energy utilization efficiency</li>
+        <li>Applications in WDM, wearable displays, and integrated photonic systems</li>
+      </ul>
+
+      <h2>The Research</h2>
+      <p>A team from <strong>Wuhan University</strong> has published a study in <strong>Light: Science &amp; Applications</strong> — one of the highest-impact optics journals in the Nature portfolio — demonstrating an <strong>on-chip nonlocal metasurface color router</strong> that overcomes the fundamental energy-loss limitation of conventional spatial-multiplexing approaches.</p>
+      <p>By leveraging symmetry-broken <strong>quasi-bound states in the continuum (q-BICs)</strong>, the researchers achieved wavelength-selective extraction and routing of guided waves into free space. Through precise engineering of on-chip meta-diatom pairs with controlled scaling and asymmetry, they simultaneously modulated both extraction intensity and narrowband spectral extraction (~20 nm bandwidth). The result is a cascading multiplexing scheme that achieves near-unity energy utilization efficiency (EUE), far exceeding the ~33% theoretical limit of conventional free-space spatial multiplexing.</p>
+      <p><strong>Reference:</strong><br/>
+      Shi, Y. et al., "On-chip nonlocal metasurface for color router: conquering efficiency-loss from spatial-multiplexing," <em>Light: Science &amp; Applications</em> 15, 66 (2026).<br/>
+      DOI: <a href="https://doi.org/10.1038/s41377-025-02146-9" target="_blank" rel="noopener noreferrer">10.1038/s41377-025-02146-9</a></p>
+
+      <h2>The Role of Plasma Etching</h2>
+      <p>The <strong>RIE-150A Reactive Ion Etcher</strong> (Beijing Zhongke Tailong Electronics Co., Ltd.) was used in a critical fabrication step to define the metasurface nanostructures.</p>
+
+      <h3>Process Details</h3>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Parameter</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Equipment</td><td style="padding:8px;border:1px solid #e2e8f0;">RIE-150A</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Process</td><td style="padding:8px;border:1px solid #e2e8f0;">Cr pattern transfer to α-Si layer</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Gas Chemistry</td><td style="padding:8px;border:1px solid #e2e8f0;">SF₆ / CHF₃ / O₂ mixture</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Target Material</td><td style="padding:8px;border:1px solid #e2e8f0;">380 nm amorphous silicon (α-Si)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Fabrication Flow</h3>
+      <p>The metasurface consists of pairs of tilted α-Si nanoblocks (height: 380 nm) on a Si₃N₄ planar waveguide (220 nm) atop a SiO₂ substrate. The fabrication process included:</p>
+      <ol>
+        <li>PECVD deposition of Si₃N₄ waveguide and α-Si layers</li>
+        <li>Electron beam lithography to define meta-diatom patterns in PMMA resist</li>
+        <li>Cr mask deposition and lift-off</li>
+        <li><strong>RIE-150A etching</strong> — SF₆/CHF₃/O₂ gas mixture transferred the Cr patterns into the α-Si layer with high fidelity</li>
+        <li>Cr mask removal with chemical etchant</li>
+      </ol>
+      <p>The RIE-150A\\'s role was critical because the metasurface\\'s optical performance depends directly on the precision of the nanoscale etching. The tilting angle θ and scaling factor S of the meta-diatom pairs must be accurately reproduced to achieve the designed q-BIC resonance conditions and spectral selectivity.</p>
+
+      <h2>Key Results</h2>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Narrowband extraction</td><td style="padding:8px;border:1px solid #e2e8f0;">~20 nm average linewidth</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Wavelength tunability</td><td style="padding:8px;border:1px solid #e2e8f0;">Full visible spectrum via meta-diatom dimension control</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Energy utilization efficiency</td><td style="padding:8px;border:1px solid #e2e8f0;">Near-unity (cascading multiplexing)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Background suppression</td><td style="padding:8px;border:1px solid #e2e8f0;">Zero-order eliminated via on-chip propagation</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Demonstrated Applications</h2>
+      <ul>
+        <li><strong>On-chip wavelength-division multiplexing (WDM)</strong> — selective routing of different wavelengths to distinct spatial positions</li>
+        <li><strong>Multicolor meta-displays</strong> — vibrant color arrays encoding both spectral and intensity information</li>
+        <li><strong>Cascading color routers</strong> — multiple q-BIC pixels cascaded along a waveguide for complex routing</li>
+      </ul>
+
+      <h2>Equipment Used</h2>
+      <ul>
+        <li><strong>RIE-150A</strong> — Reactive Ion Etcher for α-Si nanostructure patterning</li>
+        <li>Manufacturer: Beijing Zhongke Tailong Electronics Co., Ltd.</li>
+        <li>Available through NineScrolls: <a href="/products/rie-etcher">View RIE Etcher Series →</a></li>
+      </ul>
+
+      <h2>Takeaway</h2>
+      <p>Publication in <strong>Light: Science &amp; Applications</strong> (Nature portfolio, Impact Factor ~20) represents the highest tier of visibility in optics and photonics. This work demonstrates the RIE-150A\\'s capability to deliver the nanoscale pattern fidelity required for advanced metasurface devices where sub-nanometer dimensional control directly determines optical performance.</p>
+      <p><em>Interested in our RIE systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Shi, Y. et al., "On-chip nonlocal metasurface for color router: conquering efficiency-loss from spatial-multiplexing," <em>Light: Science &amp; Applications</em> 15, 66 (2026). <a href="https://doi.org/10.1038/s41377-025-02146-9" target="_blank" rel="noopener noreferrer">doi:10.1038/s41377-025-02146-9</a></li>
+      </ol>
+    `,
+    author: 'NineScrolls Engineering',
+    publishDate: '2026-03-02',
+    category: 'Publication Spotlight',
+    readTime: 6,
+    imageUrl: '/assets/images/insights/rie150a-color-router-cover.png',
+    slug: 'rie150a-metasurface-color-router',
+    tags: ['RIE-150A', 'reactive ion etching', 'metasurface', 'color router', 'q-BIC', 'photonics', 'Light Science Applications', 'publication spotlight']
+  },
+  {
+    id: '34',
+    title: 'ICP-200 Powers Metasurface Flow Visualization',
+    excerpt: 'Published in Light: Science & Applications (Nature portfolio, 2025, 3 citations): ICP-200 fabricates silicon nanopillars enabling the first fully non-invasive 2D quantitative visualization of transparent flow fields.',
+    content: `
+      <p style="display:inline-block;background:#2563eb;color:#fff;font-size:0.85em;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px;">PUBLICATION SPOTLIGHT</p>
+
+      <h2>Highlights</h2>
+      <ul>
+        <li>Published in <strong>Light: Science &amp; Applications</strong> (Nature portfolio), 2025 — already 3 citations</li>
+        <li>ICP-200 fabricated silicon nanopillars using C₄F₈/SF₆ at 500 W ICP power with precise etch control</li>
+        <li>First fully non-invasive, two-dimensional quantitative visualization of transparent flow fields using metasurfaces</li>
+        <li>Applications in fluid physics, industrial design, gas leak detection, and 3D morphology reconstruction</li>
+      </ul>
+
+      <h2>The Research</h2>
+      <p>A team from <strong>Nanjing University</strong> has published a study in <strong>Light: Science &amp; Applications</strong> presenting the first <strong>non-invasive, fully two-dimensional quantitative visualization</strong> of transparent flow fields using photonic spin-decoupled metasurfaces.</p>
+      <p>Transparent flow fields — such as airflow around aerodynamic structures or gas plumes — are invisible to conventional cameras. Existing visualization methods either disturb the flow (particle tracers) or provide only one-dimensional information. This metasurface-based approach captures density gradient information in both horizontal and vertical dimensions simultaneously, enabling real-time quantitative derivation of multiple physical parameters from a single measurement.</p>
+      <p>The researchers demonstrated the system across diverse scenarios including temperature field mapping, gas leak detection, visualization of fluid physical phenomena (laminar flow, turbulence, vortices), and 3D morphological reconstruction of transparent phase objects.</p>
+      <p><strong>Reference:</strong><br/>
+      Fan, Q. et al., "Non-invasive and fully two-dimensional quantitative visualization of transparent flow fields enabled by photonic spin-decoupled metasurfaces," <em>Light: Science &amp; Applications</em> 14, 113 (2025).<br/>
+      DOI: <a href="https://doi.org/10.1038/s41377-025-01793-2" target="_blank" rel="noopener noreferrer">10.1038/s41377-025-01793-2</a></p>
+
+      <h2>The Role of Plasma Etching</h2>
+      <p>The <strong>ICP-200 Inductively Coupled Plasma Etching System</strong> (Tailong Electronics) was used to fabricate the silicon nanopillar arrays that form the photonic spin-decoupled metasurface.</p>
+
+      <h3>Process Parameters</h3>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Parameter</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Equipment</td><td style="padding:8px;border:1px solid #e2e8f0;">ICP-200 (Tailong Electronics)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Process</td><td style="padding:8px;border:1px solid #e2e8f0;">Silicon nanopillar dry etching</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Gas Chemistry</td><td style="padding:8px;border:1px solid #e2e8f0;">C₄F₈ / SF₆ (ratio 2.5:1)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">ICP Power</td><td style="padding:8px;border:1px solid #e2e8f0;">500 W</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Bias RF Power</td><td style="padding:8px;border:1px solid #e2e8f0;">40 W</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Chamber Pressure</td><td style="padding:8px;border:1px solid #e2e8f0;">13 mTorr</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Why These Parameters Matter</h3>
+      <p>The metasurface requires silicon nanopillars with precisely controlled height (<em>h</em>) and period (<em>P</em>) to achieve the designed Jones matrix response for photonic spin-decoupling. The ICP-200\\'s high-density plasma (500 W ICP) combined with low bias power (40 W) enables:</p>
+      <ul>
+        <li><strong>High-aspect-ratio etching</strong> of silicon nanopillars with vertical sidewalls</li>
+        <li><strong>Minimal substrate damage</strong> from the low bias power, preserving the optical quality of the underlying Si₃N₄ substrate</li>
+        <li><strong>Uniform etch profiles</strong> across the entire metasurface array — critical for consistent optical phase control</li>
+      </ul>
+      <p>The C₄F₈/SF₆ chemistry at 2.5:1 ratio provides a balanced etch/passivation process: SF₆ drives the silicon etch while C₄F₈ provides sidewall passivation to maintain vertical profiles.</p>
+
+      <h2>Key Results</h2>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Visualization dimensions</td><td style="padding:8px;border:1px solid #e2e8f0;">Simultaneous 2D (horizontal + vertical gradients)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Measurement mode</td><td style="padding:8px;border:1px solid #e2e8f0;">Real-time quantitative, single acquisition</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Invasiveness</td><td style="padding:8px;border:1px solid #e2e8f0;">Fully non-invasive (no tracers/particles)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Citations</td><td style="padding:8px;border:1px solid #e2e8f0;">3 (since 2025 publication)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Demonstrated Applications</h2>
+      <ul>
+        <li><strong>Temperature field mapping</strong> — real-time visualization of thermal plumes and heat sources</li>
+        <li><strong>Gas leak detection</strong> — spatial identification and quantification of gas releases</li>
+        <li><strong>Fluid dynamics research</strong> — visualization of laminar flow, turbulence, and vortex structures</li>
+        <li><strong>3D reconstruction</strong> — morphological imaging of transparent objects (e.g., optical lenses)</li>
+        <li><strong>Industrial inspection</strong> — non-contact quality control and flow monitoring</li>
+      </ul>
+
+      <h2>Equipment Used</h2>
+      <ul>
+        <li><strong>ICP-200</strong> — Inductively Coupled Plasma Etching System for silicon nanopillar fabrication</li>
+        <li>Manufacturer: Beijing Zhongke Tailong Electronics Co., Ltd.</li>
+        <li>Available through NineScrolls: <a href="/products/icp-etcher">View ICP Etcher Series →</a></li>
+      </ul>
+
+      <h2>Takeaway</h2>
+      <p>This work — already accumulating citations since its 2025 publication — demonstrates the ICP-200\\'s ability to fabricate demanding high-aspect-ratio silicon nanostructures with the precision required for advanced metasurface optics. The combination of high ICP power and low bias enables the vertical sidewall profiles essential for polarization-sensitive metasurfaces.</p>
+      <p>Together with the color router paper (also in <em>Light: Science &amp; Applications</em>), this represents <strong>two Nature-portfolio publications</strong> in rapid succession featuring Tailong Electronics etching systems — a strong endorsement of equipment performance for the nanophotonics community.</p>
+      <p><em>Interested in our ICP systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Fan, Q. et al., "Non-invasive and fully two-dimensional quantitative visualization of transparent flow fields enabled by photonic spin-decoupled metasurfaces," <em>Light: Science &amp; Applications</em> 14, 113 (2025). <a href="https://doi.org/10.1038/s41377-025-01793-2" target="_blank" rel="noopener noreferrer">doi:10.1038/s41377-025-01793-2</a></li>
+      </ol>
+    `,
+    author: 'NineScrolls Engineering',
+    publishDate: '2026-03-02',
+    category: 'Publication Spotlight',
+    readTime: 6,
+    imageUrl: '/assets/images/insights/icp200-flow-visualization-cover.png',
+    slug: 'icp200-metasurface-flow-visualization',
+    tags: ['ICP-200', 'ICP etching', 'metasurface', 'flow visualization', 'silicon nanopillars', 'photonics', 'Light Science Applications', 'publication spotlight']
   }
 ];
