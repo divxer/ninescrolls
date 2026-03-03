@@ -119,6 +119,18 @@ const RELATED_PRODUCTS_MAP: Record<string, RelatedProduct[]> = {
     { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
     { href: '/products/sputter', label: 'Sputter Systems' },
   ],
+  'rie150a-metasurface-color-router': [
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/pecvd', label: 'PECVD Systems' },
+    { href: '/products/sputter', label: 'Sputter Systems' },
+  ],
+  'icp200-metasurface-flow-visualization': [
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/pecvd', label: 'PECVD Systems' },
+    { href: '/products/sputter', label: 'Sputter Systems' },
+  ],
 };
 
 // Default related products for articles not in the map
@@ -145,6 +157,8 @@ const HERO_IMAGES_MAP: Record<string, HeroImageConfig> = {
   'plasma-cleaner-comparison-research-labs': { prefix: 'plasma-cleaner-comparison-cover', fallbackExt: 'png' },
   'rie150-nanoforest-soft-actuator': { prefix: 'rie150-soft-actuator-cover', fallbackExt: 'png' },
   'pecvd-icp-ptse2-photodetector': { prefix: 'pecvd-icp-photodetector-cover', fallbackExt: 'png' },
+  'rie150a-metasurface-color-router': { prefix: 'rie150a-color-router-cover', fallbackExt: 'png' },
+  'icp200-metasurface-flow-visualization': { prefix: 'icp200-flow-visualization-cover', fallbackExt: 'png' },
 };
 
 // ─── Standalone Component Articles ───────────────────────────────────────────
