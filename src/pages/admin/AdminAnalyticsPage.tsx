@@ -690,7 +690,7 @@ export function AdminAnalyticsPage() {
       </div>
 
       {/* World Map — click markers to view org detail */}
-      <VisitorMap organizations={organizations} onSelectOrg={setSelectedOrg} />
+      <VisitorMap organizations={filteredOrgs} onSelectOrg={setSelectedOrg} />
 
       {/* Bot Toggle */}
       <div className="analytics-controls-row">
