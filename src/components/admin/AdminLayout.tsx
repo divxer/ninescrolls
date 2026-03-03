@@ -24,6 +24,9 @@ export function AdminLayout() {
           <Link to="/admin/insights/new" className={isActive('/admin/insights/new')}>
             New Article
           </Link>
+          <Link to="/admin/analytics" className={isActive('/admin/analytics')}>
+            Analytics
+          </Link>
         </nav>
         <div className="admin-header-right">
           <span className="admin-user-email">{user?.signInDetails?.loginId}</span>

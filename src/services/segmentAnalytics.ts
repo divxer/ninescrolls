@@ -6,6 +6,23 @@ import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnaly
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 import { behaviorAnalytics } from './behaviorAnalytics';
 import outputs from '../../amplify_outputs.json';
+import { storeAnalyticsEvent } from './analyticsStorageService';
+
+function eventNameToType(event: string): string {
+  const map: Record<string, string> = {
+    'Page Viewed': 'page_view',
+    'Product Viewed': 'product_view',
+    'Product Downloaded': 'pdf_download',
+    'Datasheet Downloaded': 'pdf_download',
+    'Contact Form Submitted': 'contact_form',
+    'Search Performed': 'search',
+    'Product Added to Cart': 'add_to_cart',
+    'Purchase Completed': 'purchase',
+    'Target Customer Detected': 'target_customer',
+    'Simple Target Customer Detected': 'target_customer',
+  };
+  return map[event] || 'other';
+}
 
 type SegmentAnalyticsClient = {
   track: (event: string, properties?: Record<string, unknown>) => void;
@@ -210,6 +227,20 @@ class SegmentAnalyticsService {
       window.analytics.track(event, properties);
       this.lastTrackedEvents.set(eventKey, now);
       console.log('Segment Track Event:', event, properties);
+
+      // Dual-write to DynamoDB (fire-and-forget)
+      storeAnalyticsEvent({
+        eventName: event,
+        eventType: eventNameToType(event),
+        context: {
+          pathname: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          pageTitle: typeof window !== 'undefined' ? document.title : undefined,
+          productId: properties?.productId as string | undefined,
+          productName: properties?.productName as string | undefined,
+          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+        },
+        properties,
+      });
     }
 
     // Clean up old entries (older than 5 minutes)
@@ -447,6 +478,37 @@ class SegmentAnalyticsService {
         });
       }
 
+      // Dual-write to DynamoDB (fire-and-forget)
+      storeAnalyticsEvent({
+        eventName: event,
+        eventType: eventNameToType(event),
+        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp } : null,
+        targetAnalysis: analysis ? {
+          isTargetCustomer,
+          organizationType: analysis.organizationType,
+          orgName: analysis.details.orgName,
+          confidence: analysis.confidence,
+          finalConfidence,
+          leadTier: finalLeadTier,
+        } : null,
+        behaviorScore: {
+          behaviorScore: behaviorScore.behaviorScore,
+          productPagesViewed: behaviorScore.productPagesViewed,
+          timeOnSite: behaviorScore.timeOnSite,
+          pdfDownloads: behaviorScore.pdfDownloads,
+          returnVisits: behaviorScore.returnVisits,
+          isPaidTraffic: behaviorScore.isPaidTraffic,
+        },
+        context: {
+          pathname: (properties?.pathname || properties?.pagePath || '') as string,
+          pageTitle: typeof window !== 'undefined' ? document.title : undefined,
+          productId: properties?.productId as string | undefined,
+          productName: properties?.productName as string | undefined,
+          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+        },
+        properties,
+      });
+
       // If it's a target customer, send additional event (not duplicate)
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
@@ -650,6 +712,34 @@ class SegmentAnalyticsService {
           properties: enhancedProperties,
         });
       }
+
+      // Dual-write page view to DynamoDB (fire-and-forget)
+      storeAnalyticsEvent({
+        eventName: 'Page Viewed',
+        eventType: 'page_view',
+        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp } : null,
+        targetAnalysis: analysis ? {
+          isTargetCustomer,
+          organizationType: analysis.organizationType,
+          orgName: analysis.details.orgName,
+          confidence: analysis.confidence,
+          finalConfidence,
+          leadTier: finalLeadTier,
+        } : null,
+        behaviorScore: {
+          behaviorScore: behaviorScore.behaviorScore,
+          productPagesViewed: behaviorScore.productPagesViewed,
+          timeOnSite: behaviorScore.timeOnSite,
+          pdfDownloads: behaviorScore.pdfDownloads,
+          returnVisits: behaviorScore.returnVisits,
+          isPaidTraffic: behaviorScore.isPaidTraffic,
+        },
+        context: {
+          pathname: pathname as string,
+          pageTitle: typeof window !== 'undefined' ? document.title : undefined,
+          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+        },
+      });
 
       // If it's a target customer, send additional TRACK event with enhanced data
       if (isTargetCustomer) {
