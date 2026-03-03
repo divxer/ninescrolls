@@ -107,6 +107,18 @@ const RELATED_PRODUCTS_MAP: Record<string, RelatedProduct[]> = {
     { href: '/products/hy-20l', label: 'HY-20L' },
     { href: '/products/hy-20lrf', label: 'HY-20LRF' },
   ],
+  'rie150-nanoforest-soft-actuator': [
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/sputter', label: 'Sputter Systems' },
+    { href: '/products/pecvd', label: 'PECVD Systems' },
+  ],
+  'pecvd-icp-ptse2-photodetector': [
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/pecvd', label: 'PECVD Systems' },
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/sputter', label: 'Sputter Systems' },
+  ],
 };
 
 // Default related products for articles not in the map
@@ -131,6 +143,8 @@ const HERO_IMAGES_MAP: Record<string, HeroImageConfig> = {
   'reactive-ion-etching-vs-ion-milling': { prefix: 'rie-vs-milling-cover', fallbackExt: 'png' },
   'semiconductor-etchers-overview': { prefix: 'etchers-overview-cover', fallbackExt: 'png' },
   'plasma-cleaner-comparison-research-labs': { prefix: 'plasma-cleaner-comparison-cover', fallbackExt: 'png' },
+  'rie150-nanoforest-soft-actuator': { prefix: 'rie150-soft-actuator-cover', fallbackExt: 'png' },
+  'pecvd-icp-ptse2-photodetector': { prefix: 'pecvd-icp-photodetector-cover', fallbackExt: 'png' },
 };
 
 // ─── Standalone Component Articles ───────────────────────────────────────────

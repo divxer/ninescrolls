@@ -4019,5 +4019,179 @@ export const insightsPosts: InsightsPost[] = [
     imageUrl: '/assets/images/insights/plasma-cleaner-buying-guide-cover.svg',
     slug: 'plasma-cleaner-buying-guide',
     tags: ['plasma cleaner', 'buying guide', 'plasma cleaner selection', 'vacuum system', 'RF plasma cleaner', 'chamber size', 'process control', 'total cost of ownership']
+  },
+  {
+    id: '31',
+    title: 'RIE-150 Enables Nanoforest Fabrication for Environment-Powered Soft Actuators',
+    excerpt: 'Published in ACS Applied Nano Materials (Feb 2026): RIE-150 oxygen plasma etching creates nanoforest structures enabling dual-mode soft actuators with record humidity response (23.06°/s) and 85% broadband absorption.',
+    content: `
+      <p style="display:inline-block;background:#2563eb;color:#fff;font-size:0.85em;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px;">PUBLICATION SPOTLIGHT</p>
+
+      <h2>Highlights</h2>
+      <ul>
+        <li>Published in <strong>ACS Applied Nano Materials</strong> (American Chemical Society), February 2026</li>
+        <li>RIE-150 oxygen plasma etching generated nanoforest structures critical to dual-mode soft actuator performance</li>
+        <li>The actuator achieves record-level response rates and outperforms existing soft actuators in thermal sensitivity</li>
+        <li>Demonstrated applications include biomimetic flowers, miniaturized cranes, and intelligent switches</li>
+      </ul>
+
+      <h2>The Research</h2>
+      <p>A collaborative team from the <strong>Institute of Microelectronics at the Chinese Academy of Sciences</strong> and <strong>Fudan University</strong> has published a study demonstrating a novel environment-powered soft actuator that can be driven by both humidity and light — without any external power source.</p>
+      <p>The actuator is built on a composite nanofilm comprising aluminum-coated nanoforests (Al@NFs), uniaxially oriented Nylon-6 (PA6), and aluminum. By harvesting ambient humidity and light energy from the environment, the device achieves rapid, reversible, and programmable deformation — a significant advance over conventional single-mode soft actuators.</p>
+      <p><strong>Reference:</strong><br/>
+      Li, H. et al., "An Environment-Powered Soft Actuator Enabled by Water and Light Highly Absorptive Nanoforests," <em>ACS Applied Nano Materials</em>, 2026.<br/>
+      DOI: <a href="https://doi.org/10.1021/acsanm.5c05598" target="_blank" rel="noopener noreferrer">10.1021/acsanm.5c05598</a></p>
+
+      <h2>The Role of Plasma Etching</h2>
+      <p>The nanoforest structures at the heart of this actuator were fabricated using <strong>oxygen plasma etching</strong> performed with the <strong>RIE-150 Reactive Ion Etching system</strong> (Beijing Zhongke Tailong Electronics Co., Ltd.).</p>
+
+      <h3>Process Parameters</h3>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Parameter</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Pressure</td><td style="padding:8px;border:1px solid #e2e8f0;">8.3 mTorr</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">RF Power</td><td style="padding:8px;border:1px solid #e2e8f0;">174 W</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Etching Time</td><td style="padding:8px;border:1px solid #e2e8f0;">20 min</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Gas</td><td style="padding:8px;border:1px solid #e2e8f0;">Oxygen plasma</td></tr>
+        </tbody>
+      </table>
+      <p>The RIE-150 transformed a flat polyimide-coated PA6 surface into dense, high-aspect-ratio <strong>nanofiber forests</strong> (~3 μm height) uniformly distributed across the film. These nanoforests were subsequently coated with aluminum nanoparticles via magnetron sputtering, yielding the final Al@NFs composite structure.</p>
+
+      <h3>Why the Nanoforests Matter</h3>
+      <p><strong>1. Superhydrophilicity for humidity-driven actuation</strong><br/>
+      The nanoforest structure reduces the water contact angle from 63° (bare PA6) to just 8° (Al@NFs-modified surface), with complete water spreading achieved within 0.2 seconds. This dramatically enhances moisture absorption and accelerates humidity-driven deformation.</p>
+      <p><strong>2. Broadband light absorption for photothermal actuation</strong><br/>
+      The Al@NFs composite achieves an average light absorption of 85% across visible to infrared wavelengths (400–1100 nm) — a 16.87× improvement over unprocessed PA6 film. This broadband absorption is enabled by multiple hybrid surface plasmon resonance modes and light trapping effects within the nanoforest architecture.</p>
+
+      <h2>Key Performance Results</h2>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Humidity response rate</td><td style="padding:8px;border:1px solid #e2e8f0;">23.06°/s</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Light response rate</td><td style="padding:8px;border:1px solid #e2e8f0;">4.02°/s (310 mW cm⁻²)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Thermal response time</td><td style="padding:8px;border:1px solid #e2e8f0;">~4 s</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Bending angle temperature coefficient</td><td style="padding:8px;border:1px solid #e2e8f0;">3.607°/K</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Cycling stability</td><td style="padding:8px;border:1px solid #e2e8f0;">&gt;100 cycles, no degradation</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Broadband absorption</td><td style="padding:8px;border:1px solid #e2e8f0;">85% average (400–1100 nm)</td></tr>
+        </tbody>
+      </table>
+      <p>These results outperform previously reported soft actuators in both thermal response time and bending sensitivity.</p>
+
+      <h2>Demonstrated Applications</h2>
+      <ul>
+        <li><strong>Biomimetic <em>Telosma cordata</em> flower</strong> — blooms under humidity, closes under light, mimicking the natural behavior of night-blooming flowers</li>
+        <li><strong>Miniaturized crane</strong> — lifts objects several times its own weight using humidity-driven actuation</li>
+        <li><strong>Dual-controlled intelligent switch</strong> — controls LED on/off states adaptively based on environmental humidity and light conditions, with potential applications in smart agriculture</li>
+      </ul>
+
+      <h2>Equipment Used</h2>
+      <ul>
+        <li><strong>RIE-150</strong> — Reactive Ion Etching system for oxygen plasma nanoforest generation</li>
+        <li>Manufacturer: Beijing Zhongke Tailong Electronics Co., Ltd.</li>
+        <li>Available through NineScrolls: <a href="/products/rie-etcher">View RIE Etcher Series →</a></li>
+      </ul>
+
+      <h2>Takeaway</h2>
+      <p>This publication demonstrates that precise oxygen plasma etching — enabled by the RIE-150 — can create nanostructured surfaces with exceptional hydrophilicity and light absorption properties. These capabilities open new pathways for environment-powered soft robotics, biomimetics, and smart material systems.</p>
+      <p>For researchers working on nanostructured surfaces, soft actuators, or environmental energy harvesting, the RIE-150 offers the process control and reproducibility required to achieve publication-grade results.</p>
+      <p><em>Interested in learning more about our RIE systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Li, H. et al., "An Environment-Powered Soft Actuator Enabled by Water and Light Highly Absorptive Nanoforests," <em>ACS Applied Nano Materials</em>, 2026. <a href="https://doi.org/10.1021/acsanm.5c05598" target="_blank" rel="noopener noreferrer">doi:10.1021/acsanm.5c05598</a></li>
+      </ol>
+    `,
+    author: 'NineScrolls Engineering',
+    publishDate: '2026-03-02',
+    category: 'Nanotechnology',
+    readTime: 6,
+    imageUrl: '/assets/images/insights/rie150-soft-actuator-cover.png',
+    slug: 'rie150-nanoforest-soft-actuator',
+    tags: ['RIE-150', 'reactive ion etching', 'nanoforest', 'soft actuator', 'humidity sensor', 'photothermal', 'ACS Applied Nano Materials', 'publication spotlight']
+  },
+  {
+    id: '32',
+    title: 'PECVD-150LL & ICP-100 Enable Record-Speed PtSe₂/Si Photodetector',
+    excerpt: 'Published in Applied Surface Science (Feb 2026): PECVD-150LL and ICP-100 enable a CMOS-compatible PtSe₂/Si photodetector with record 260 kHz bandwidth, 80 dB dynamic range, and polarization-encoded optical communication.',
+    content: `
+      <p style="display:inline-block;background:#2563eb;color:#fff;font-size:0.85em;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px;">PUBLICATION SPOTLIGHT</p>
+
+      <h2>Highlights</h2>
+      <ul>
+        <li>Published in <strong>Applied Surface Science</strong> (Elsevier), February 2026</li>
+        <li>PECVD-150LL deposited critical SiO₂ passivation layers; ICP-100 performed precision device patterning</li>
+        <li>The photodetector achieves 260 kHz 3-dB bandwidth — the fastest reported for any PtSe₂/Si detector</li>
+        <li>Successfully demonstrated polarization-encoded optical communication at telecom wavelengths</li>
+      </ul>
+
+      <h2>The Research</h2>
+      <p>A team from <strong>Minnan Normal University</strong>, <strong>Fuzhou University</strong>, and <strong>Chalmers University of Technology</strong> (Sweden) has developed a CMOS-compatible <strong>p-PtSe₂/n⁻-Si/n⁺-Si PIN photodetector</strong> that establishes new performance benchmarks for two-dimensional material-based optoelectronic devices.</p>
+      <p>By integrating a highly oriented, near-stoichiometric PtSe₂ thin film (~32 nm) with a silicon PIN architecture, the researchers achieved self-driven broadband photodetection from 532 nm to 2200 nm, record-high 3-dB bandwidth, and the ability to decode polarization-encoded optical signals — key capabilities for next-generation optical communications and infrared imaging.</p>
+      <p><strong>Reference:</strong><br/>
+      Xu, X. et al., "Broadband and high-speed micro-scale PtSe₂/Si 2D-3D PIN photodetector for on-chip polarization-encoded communication and imaging," <em>Applied Surface Science</em> 730 (2026) 166329.<br/>
+      DOI: <a href="https://doi.org/10.1016/j.apsusc.2026.166329" target="_blank" rel="noopener noreferrer">10.1016/j.apsusc.2026.166329</a></p>
+
+      <h2>The Role of Plasma Processing Equipment</h2>
+      <p>Two plasma processing systems were essential to the CMOS-compatible fabrication flow described in this work.</p>
+
+      <h3>PECVD-150LL — SiO₂ Passivation Layer Deposition</h3>
+      <p>After transferring the PtSe₂ film onto the n⁻-Si/n⁺-Si substrate, a <strong>20 nm SiO₂ protective layer</strong> was deposited over the entire PtSe₂/n⁻-Si/n⁺-Si stack using <strong>plasma-enhanced chemical vapor deposition (PECVD-150LL)</strong>.</p>
+      <p>This passivation step is critical because subsequent fabrication steps — including oxygen plasma descumming for photoresist removal — would otherwise oxidize and degrade the PtSe₂ surface. The PECVD-150LL deposited a uniform, pinhole-free SiO₂ layer that preserved the 2D material\\'s integrity throughout the entire downstream CMOS process flow.</p>
+
+      <h3>ICP-100 — Precision Device Patterning</h3>
+      <p>The <strong>ICP-100 inductively coupled plasma etcher</strong> was used in combination with RIE processing to define the device\\'s critical features:</p>
+      <ul>
+        <li><strong>Ring-shaped electrode contact windows</strong> (annular width: 10 μm) were etched through the SiO₂ layer to expose the PtSe₂ surface, enabling robust ohmic contact with subsequent metal electrodes</li>
+        <li><strong>Interconnect patterns</strong> for the 8 × 8 device array were precisely defined</li>
+      </ul>
+      <p>The ICP-100\\'s high-density plasma and precise etch control ensured accurate pattern transfer without damaging the underlying PtSe₂ thin film — a challenge that requires careful tuning of etch chemistry and power in 2D material device fabrication.</p>
+
+      <h2>Key Performance Results</h2>
+      <table style="width:100%;border-collapse:collapse;margin:1em 0;">
+        <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">3-dB bandwidth</td><td style="padding:8px;border:1px solid #e2e8f0;"><strong>260 kHz</strong> (record for PtSe₂/Si detectors)</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Linear dynamic range (LDR)</td><td style="padding:8px;border:1px solid #e2e8f0;"><strong>80 dB</strong></td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Spectral range</td><td style="padding:8px;border:1px solid #e2e8f0;">532 nm – 2200 nm</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Rise / fall time (at 100 kHz)</td><td style="padding:8px;border:1px solid #e2e8f0;">0.5 μs / 5.4 μs</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Peak responsivity (532 nm, −2V)</td><td style="padding:8px;border:1px solid #e2e8f0;">76.7 mA/W</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Peak detectivity (532 nm, −2V)</td><td style="padding:8px;border:1px solid #e2e8f0;">1.45 × 10¹⁰ Jones</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Self-driven operation</td><td style="padding:8px;border:1px solid #e2e8f0;">Isc = 4.85 μA, Voc = 0.28 V</td></tr>
+          <tr><td style="padding:8px;border:1px solid #e2e8f0;">Extinction ratio (polarization)</td><td style="padding:8px;border:1px solid #e2e8f0;">4.91 (532 nm), 11.4 (1310 nm), 4.56 (1550 nm)</td></tr>
+        </tbody>
+      </table>
+      <p>The 260 kHz bandwidth significantly exceeds all previously reported PtSe₂-based 2D/3D photodetectors, attributed to the PtSe₂ film\\'s high crystallinity and the strong built-in electric field of the PIN architecture.</p>
+
+      <h2>Demonstrated Applications</h2>
+      <h3>Polarization-Resolved Infrared Imaging</h3>
+      <p>The photodetector successfully captured polarization-dependent current mapping images at wavelengths from 1310 nm to 2200 nm, with clearly distinguishable patterns across varying polarization angles.</p>
+      <h3>Polarization-Encoded Optical Communication</h3>
+      <p>Using a dual-mapping framework at telecom wavelengths (1310 nm and 1550 nm), the researchers demonstrated a polarization-angle-encoded communication system that successfully decoded all 26 letters of the alphabet — enabling secure free-space optical data transmission.</p>
+
+      <h2>Equipment Used</h2>
+      <ul>
+        <li><strong>PECVD-150LL</strong> — Plasma-Enhanced Chemical Vapor Deposition system for SiO₂ passivation</li>
+        <li><strong>ICP-100</strong> — Inductively Coupled Plasma etcher for precision device patterning</li>
+        <li>Manufacturer: Beijing Zhongke Tailong Electronics Co., Ltd.</li>
+        <li>Available through NineScrolls: <a href="/products/icp-etcher">View ICP Etcher Series →</a> | <a href="/products/pecvd">View PECVD Systems →</a></li>
+      </ul>
+
+      <h2>Takeaway</h2>
+      <p>This work validates that 2D transition metal dichalcogenides like PtSe₂ can be integrated into standard silicon CMOS fabrication flows to produce high-performance optoelectronic devices. The PECVD-150LL and ICP-100 played indispensable roles in this process — providing the precise thin-film deposition and plasma etching capabilities required to protect and pattern delicate 2D materials without compromising device performance.</p>
+      <p>As the field of 2D/Si heterojunction optoelectronics moves toward scalable manufacturing, reliable plasma processing tools like these become foundational to bridging the gap between lab-scale innovation and production-ready devices.</p>
+      <p><em>Interested in learning more about our PECVD and ICP systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Xu, X. et al., "Broadband and high-speed micro-scale PtSe₂/Si 2D-3D PIN photodetector for on-chip polarization-encoded communication and imaging," <em>Applied Surface Science</em> 730 (2026) 166329. <a href="https://doi.org/10.1016/j.apsusc.2026.166329" target="_blank" rel="noopener noreferrer">doi:10.1016/j.apsusc.2026.166329</a></li>
+      </ol>
+    `,
+    author: 'NineScrolls Engineering',
+    publishDate: '2026-03-02',
+    category: 'Photonics',
+    readTime: 7,
+    imageUrl: '/assets/images/insights/pecvd-icp-photodetector-cover.png',
+    slug: 'pecvd-icp-ptse2-photodetector',
+    tags: ['PECVD-150LL', 'ICP-100', 'photodetector', 'PtSe2', 'broadband', 'polarization', 'Applied Surface Science', 'publication spotlight']
   }
 ];
