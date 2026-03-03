@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 declare global {
@@ -12,23 +12,36 @@ type HubSpotCommand =
   | ['trackPageView']
   | ['trackEvent', { id: string; value: string }];
 
+const HUBSPOT_SCRIPT_ID = 'hs-script-loader';
+const HUBSPOT_SRC = '//js-na2.hs-scripts.com/241965345.js';
+
 /**
  * HubSpot Page View Sync Component
- * 
- * Syncs React Router route changes with HubSpot tracking.
- * HubSpot's default tracking code only fires on initial page load,
- * so we need to manually send pageview events on route changes.
- * 
- * This component listens to route changes and sends the correct path
- * to HubSpot using the _hsq API.
+ *
+ * Dynamically loads the HubSpot tracking script and syncs React Router
+ * route changes with HubSpot tracking. Only rendered on public routes
+ * so the tracking script never loads on admin pages.
  */
 export const HubSpotPageViewSync: React.FC = () => {
   const location = useLocation();
+  const scriptLoaded = useRef(false);
+
+  // Load HubSpot script dynamically (once)
+  useEffect(() => {
+    if (scriptLoaded.current || document.getElementById(HUBSPOT_SCRIPT_ID)) {
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = HUBSPOT_SCRIPT_ID;
+    script.src = HUBSPOT_SRC;
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+    scriptLoaded.current = true;
+  }, []);
 
   useEffect(() => {
-    // Wait for HubSpot script to load
     if (typeof window === 'undefined' || !window._hsq) {
-      // HubSpot script not loaded yet, try again after a short delay
       const timeoutId = setTimeout(() => {
         if (window._hsq) {
           syncPageView(location);
