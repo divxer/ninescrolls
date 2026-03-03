@@ -65,7 +65,10 @@ const schema = a.schema({
       heroImages: a.json(),
       isStandaloneComponent: a.boolean(),
     })
-    .authorization((allow) => [allow.publicApiKey()])
+    .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.authenticated(),
+    ])
     .secondaryIndexes((index) => [index('slug')]),
 });
 
