@@ -1,4 +1,5 @@
 import { generateClient } from 'aws-amplify/data';
+import { isbot } from 'isbot';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
@@ -10,6 +11,8 @@ interface IPInfoInput {
   city?: string;
   org?: string;
   isp?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface TargetAnalysisInput {
@@ -49,11 +52,18 @@ export interface StoreAnalyticsEventParams {
 }
 
 export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+
   // Fire-and-forget: don't await, don't block UI
   client.models.AnalyticsEvent.create({
     eventName: params.eventName,
     eventType: params.eventType,
     timestamp: new Date().toISOString(),
+
+    userAgent: ua,
+    isBot: ua ? isbot(ua) : undefined,
+    latitude: params.ipInfo?.latitude,
+    longitude: params.ipInfo?.longitude,
 
     ip: params.ipInfo?.ip,
     country: params.ipInfo?.country,
