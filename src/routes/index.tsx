@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminRoute } from '../components/admin/AdminRoute';
 import { AdminInsightsListPage } from '../pages/admin/AdminInsightsListPage';
 import { AdminInsightsFormPage } from '../pages/admin/AdminInsightsFormPage';
+import { AdminAnalyticsPage } from '../pages/admin/AdminAnalyticsPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -98,6 +99,7 @@ export function AdminRoutes() {
         <Route path="insights" element={<AdminInsightsListPage />} />
         <Route path="insights/new" element={<AdminInsightsFormPage />} />
         <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
+        <Route path="analytics" element={<AdminAnalyticsPage />} />
       </Route>
     </Routes>
   );
