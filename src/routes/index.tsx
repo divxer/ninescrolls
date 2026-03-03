@@ -1,4 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AdminRoute } from '../components/admin/AdminRoute';
+import { AdminInsightsListPage } from '../pages/admin/AdminInsightsListPage';
+import { AdminInsightsFormPage } from '../pages/admin/AdminInsightsFormPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -83,6 +86,19 @@ export function AppRoutes() {
           <Route path="/products/pluto-m" element={<PlutoM />} />
           <Route path="/products/pluto-f" element={<PlutoF />} />
           <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
+
+export function AdminRoutes() {
+  return (
+    <Routes>
+      <Route path="/admin" element={<AdminRoute />}>
+        <Route index element={<Navigate to="insights" replace />} />
+        <Route path="insights" element={<AdminInsightsListPage />} />
+        <Route path="insights/new" element={<AdminInsightsFormPage />} />
+        <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
+      </Route>
     </Routes>
   );
 } 

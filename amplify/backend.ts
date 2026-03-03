@@ -1,4 +1,5 @@
 import { defineBackend } from '@aws-amplify/backend';
+import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
@@ -14,6 +15,7 @@ import { Stack } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 
 const backend = defineBackend({
+    auth,
     data,
     sendEmail,
     createCheckoutSession,
