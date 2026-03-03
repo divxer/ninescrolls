@@ -95,7 +95,7 @@ export function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<AdminRoute />}>
-        <Route index element={<Navigate to="insights" replace />} />
+        <Route index element={<Navigate to="analytics" replace />} />
         <Route path="insights" element={<AdminInsightsListPage />} />
         <Route path="insights/new" element={<AdminInsightsFormPage />} />
         <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
