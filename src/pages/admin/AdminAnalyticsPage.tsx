@@ -52,6 +52,28 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'all', label: 'All Time' },
 ];
 
+// Known bot / crawler organizations — filtered alongside isBot
+const BOT_ORG_PATTERNS = [
+  'google', 'googlebot', 'bing', 'microsoft', 'msn',
+  'ahrefs', 'semrush', 'moz.com', 'majestic',
+  'yandex', 'baidu', 'bytedance', 'bytespider',
+  'facebook', 'meta platforms', 'twitter',
+  'apple', 'applebot',
+  'amazon', 'amazonaws',
+  'cloudflare', 'fastly',
+  'datadome', 'imperva', 'sucuri',
+  'censys', 'shodan', 'netcraft',
+  'pingdom', 'uptimerobot', 'statuscake',
+  'petalbot', 'sogou', 'duckduckgo',
+  'archive.org', 'ia_archiver',
+  'zayo bandwidth',
+];
+
+function isKnownBotOrg(orgName: string): boolean {
+  const lower = orgName.toLowerCase();
+  return BOT_ORG_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getDateBounds(range: DateRange): { start: Date; end: Date } {
@@ -527,13 +549,24 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [dateRange]);
 
-  // Filter bots
+  // Filter bots — by isBot flag OR known bot org name
   const filteredEvents = useMemo(() => {
     if (showBots) return allEvents;
-    return allEvents.filter((e) => !e.isBot);
+    return allEvents.filter((e) => {
+      if (e.isBot) return false;
+      const orgKey = e.orgName || e.org || '';
+      if (orgKey && isKnownBotOrg(orgKey)) return false;
+      return true;
+    });
   }, [allEvents, showBots]);
 
-  const botCount = useMemo(() => allEvents.filter((e) => e.isBot).length, [allEvents]);
+  const botCount = useMemo(() => {
+    return allEvents.filter((e) => {
+      if (e.isBot) return true;
+      const orgKey = e.orgName || e.org || '';
+      return orgKey ? isKnownBotOrg(orgKey) : false;
+    }).length;
+  }, [allEvents]);
 
   // Aggregate by organization
   const organizations = useMemo(() => aggregateByOrg(filteredEvents), [filteredEvents]);
