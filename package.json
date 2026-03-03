@@ -19,6 +19,7 @@
     "@types/react-lazy-load-image-component": "^1.6.4",
     "aws-amplify": "^6.0.17",
     "gtag": "^1.0.1",
+    "isbot": "^5.1.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.5",
@@ -26,6 +27,7 @@
     "react-quill-new": "^3.8.3",
     "react-router": "^6.22.1",
     "react-router-dom": "^6.22.1",
+    "react-simple-maps": "^3.0.0",
     "sharp": "^0.33.5",
     "stripe": "^20.2.0"
   },
@@ -35,6 +37,7 @@
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
+    "@types/react-simple-maps": "^3.0.6",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "@vitejs/plugin-react": "^4.2.1",

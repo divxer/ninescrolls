@@ -1,253 +1,817 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  Marker,
+  ZoomableGroup,
+} from 'react-simple-maps';
 import type { Schema } from '../../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
 
-const EVENT_TYPES = [
-  { value: 'all', label: 'All Events' },
-  { value: 'page_view', label: 'Page Views' },
-  { value: 'product_view', label: 'Product Views' },
-  { value: 'contact_form', label: 'Contact Forms' },
-  { value: 'pdf_download', label: 'PDF Downloads' },
-  { value: 'purchase', label: 'Purchases' },
-  { value: 'target_customer', label: 'Target Customers' },
-  { value: 'add_to_cart', label: 'Add to Cart' },
-  { value: 'search', label: 'Searches' },
-  { value: 'other', label: 'Other' },
+const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface OrganizationRecord {
+  key: string;
+  orgName: string;
+  organizationType: string;
+  country: string;
+  region: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  leadTier: string | null;
+  isTargetCustomer: boolean;
+  totalEvents: number;
+  uniquePages: number;
+  productsViewed: string[];
+  totalTimeOnSite: number;
+  pdfDownloads: number;
+  returnVisits: number;
+  lastVisit: string;
+  firstVisit: string;
+  maxConfidence: number;
+  events: AnalyticsEvent[];
+}
+
+type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all';
+type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
+type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning';
+
+const DATE_RANGES: { value: DateRange; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7', label: 'Last 7 Days' },
+  { value: 'last30', label: 'Last 30 Days' },
+  { value: 'all', label: 'All Time' },
 ];
 
-const LEAD_TIERS = [
-  { value: 'all', label: 'All Tiers' },
-  { value: 'A', label: 'Tier A' },
-  { value: 'B', label: 'Tier B' },
-  { value: 'C', label: 'Tier C' },
-];
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-export function AdminAnalyticsPage() {
-  const [events, setEvents] = useState<AnalyticsEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [eventTypeFilter, setEventTypeFilter] = useState('all');
-  const [leadTierFilter, setLeadTierFilter] = useState('all');
-  const [nextToken, setNextToken] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+function getDateBounds(range: DateRange): { start: Date; end: Date } {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
 
-  useEffect(() => {
-    loadEvents();
-  }, [eventTypeFilter, leadTierFilter]);
-
-  async function loadEvents(token?: string) {
-    if (token) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-      setEvents([]);
+  switch (range) {
+    case 'today':
+      return { start: todayStart, end: todayEnd };
+    case 'yesterday': {
+      const ydayStart = new Date(todayStart.getTime() - 86400000);
+      return { start: ydayStart, end: todayStart };
     }
-    setError('');
+    case 'last7':
+      return { start: new Date(todayStart.getTime() - 7 * 86400000), end: todayEnd };
+    case 'last30':
+      return { start: new Date(todayStart.getTime() - 30 * 86400000), end: todayEnd };
+    case 'all':
+      return { start: new Date(0), end: todayEnd };
+  }
+}
 
-    try {
-      let result;
+function tierRank(tier: string | null): number {
+  if (tier === 'A') return 3;
+  if (tier === 'B') return 2;
+  if (tier === 'C') return 1;
+  return 0;
+}
 
-      if (leadTierFilter !== 'all') {
-        result = await client.models.AnalyticsEvent
-          .listAnalyticsEventByLeadTierAndTimestamp(
-            { leadTier: leadTierFilter },
-            {
-              authMode: 'userPool',
-              sortDirection: 'DESC',
-              limit: 50,
-              nextToken: token || undefined,
-            }
-          );
-      } else if (eventTypeFilter !== 'all') {
-        result = await client.models.AnalyticsEvent
-          .listAnalyticsEventByEventTypeAndTimestamp(
-            { eventType: eventTypeFilter },
-            {
-              authMode: 'userPool',
-              sortDirection: 'DESC',
-              limit: 50,
-              nextToken: token || undefined,
-            }
-          );
-      } else {
-        result = await client.models.AnalyticsEvent.list({
-          authMode: 'userPool',
-          limit: 50,
-          nextToken: token || undefined,
-        });
-      }
+function tierColor(tier: string | null): string {
+  switch (tier) {
+    case 'A': return '#2e7d32';
+    case 'B': return '#f57c00';
+    case 'C': return '#9e9e9e';
+    default: return '#90caf9';
+  }
+}
 
-      const newEvents = (result.data || []) as AnalyticsEvent[];
-      if (token) {
-        setEvents((prev) => [...prev, ...newEvents]);
-      } else {
-        setEvents(newEvents);
-      }
-      setNextToken(result.nextToken || null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load events');
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// ─── Aggregation ────────────────────────────────────────────────────────────
+
+function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
+  const groups = new Map<string, AnalyticsEvent[]>();
+
+  for (const e of events) {
+    const key = e.orgName || e.org || e.ip || 'Unknown';
+    const group = groups.get(key);
+    if (group) {
+      group.push(e);
+    } else {
+      groups.set(key, [e]);
     }
   }
 
-  // Sort events by timestamp descending (client-side for non-index queries)
-  const sortedEvents = useMemo(() => {
-    return [...events].sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  const records: OrganizationRecord[] = [];
+
+  for (const [key, group] of groups) {
+    const pages = new Set<string>();
+    const products = new Set<string>();
+    let totalTime = 0;
+    let maxConf = 0;
+    let bestTier: string | null = null;
+    let isTarget = false;
+    let maxPdfDownloads = 0;
+    let maxReturnVisits = 0;
+
+    for (const e of group) {
+      if (e.pathname) pages.add(e.pathname);
+      if (e.productName) products.add(e.productName);
+      if (e.timeOnSite) totalTime = Math.max(totalTime, e.timeOnSite);
+      if (e.finalConfidence != null && e.finalConfidence > maxConf) {
+        maxConf = e.finalConfidence;
+      }
+      if (e.leadTier && tierRank(e.leadTier) > tierRank(bestTier)) {
+        bestTier = e.leadTier;
+      }
+      if (e.isTargetCustomer) isTarget = true;
+      if (e.pdfDownloads != null && e.pdfDownloads > maxPdfDownloads) {
+        maxPdfDownloads = e.pdfDownloads;
+      }
+      if (e.returnVisits != null && e.returnVisits > maxReturnVisits) {
+        maxReturnVisits = e.returnVisits;
+      }
+    }
+
+    // Use the first event with valid lat/lng
+    const geoEvent = group.find((e) => e.latitude != null && e.longitude != null) || group[0];
+    const sorted = group.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    records.push({
+      key,
+      orgName: key,
+      organizationType: geoEvent.organizationType || '',
+      country: geoEvent.country || '',
+      region: geoEvent.region || '',
+      city: geoEvent.city || '',
+      latitude: geoEvent.latitude ?? null,
+      longitude: geoEvent.longitude ?? null,
+      leadTier: bestTier,
+      isTargetCustomer: isTarget,
+      totalEvents: group.length,
+      uniquePages: pages.size,
+      productsViewed: Array.from(products),
+      totalTimeOnSite: totalTime,
+      pdfDownloads: maxPdfDownloads,
+      returnVisits: maxReturnVisits,
+      lastVisit: sorted[0].timestamp,
+      firstVisit: sorted[sorted.length - 1].timestamp,
+      maxConfidence: maxConf,
+      events: sorted,
+    });
+  }
+
+  return records;
+}
+
+// ─── Map Component ──────────────────────────────────────────────────────────
+
+function VisitorMap({
+  organizations,
+  onSelectOrg,
+}: {
+  organizations: OrganizationRecord[];
+  onSelectOrg: (org: OrganizationRecord) => void;
+}) {
+  const [tooltip, setTooltip] = useState<OrganizationRecord | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  const markers = useMemo(
+    () => organizations.filter((o) => o.latitude != null && o.longitude != null),
+    [organizations]
+  );
+
+  const handleMouseEnter = useCallback((org: OrganizationRecord, e: React.MouseEvent) => {
+    setTooltip(org);
+    setTooltipPos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTooltip(null);
+  }, []);
+
+  if (markers.length === 0) {
+    return (
+      <div className="analytics-map-container">
+        <h2 className="analytics-section-header">Visitor Map</h2>
+        <div className="analytics-map-empty">
+          No geo-coordinates available yet. New events will appear on the map.
+        </div>
+      </div>
     );
-  }, [events]);
+  }
 
-  // Basic stats
-  const stats = useMemo(() => {
-    const total = events.length;
-    const targetCustomers = events.filter((e) => e.isTargetCustomer).length;
-    const tierA = events.filter((e) => e.leadTier === 'A').length;
-    const tierB = events.filter((e) => e.leadTier === 'B').length;
-    const tierC = events.filter((e) => e.leadTier === 'C').length;
-    const uniqueOrgs = new Set(events.filter((e) => e.orgName).map((e) => e.orgName)).size;
-    return { total, targetCustomers, tierA, tierB, tierC, uniqueOrgs };
-  }, [events]);
+  return (
+    <div className="analytics-map-container">
+      <h2 className="analytics-section-header">Visitor Map</h2>
+      <ComposableMap
+        projectionConfig={{ rotate: [-10, 0, 0], scale: 147 }}
+        style={{ width: '100%', height: 'auto' }}
+      >
+        <ZoomableGroup>
+          <Geographies geography={GEO_URL}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="#e8eaed"
+                  stroke="#fff"
+                  strokeWidth={0.5}
+                  style={{
+                    default: { outline: 'none' },
+                    hover: { fill: '#d5d8dc', outline: 'none' },
+                    pressed: { outline: 'none' },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
+          {markers.map((org) => (
+            <Marker
+              key={org.key}
+              coordinates={[org.longitude!, org.latitude!]}
+              onMouseEnter={(e) => handleMouseEnter(org, e as unknown as React.MouseEvent)}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => onSelectOrg(org)}
+            >
+              <circle
+                r={Math.max(4, Math.min(12, org.totalEvents * 1.5))}
+                fill={tierColor(org.leadTier)}
+                fillOpacity={0.7}
+                stroke="#fff"
+                strokeWidth={1}
+                style={{ cursor: 'pointer' }}
+              />
+            </Marker>
+          ))}
+        </ZoomableGroup>
+      </ComposableMap>
+      {tooltip && (
+        <div
+          className="analytics-map-tooltip"
+          style={{ left: tooltipPos.x + 12, top: tooltipPos.y - 40 }}
+        >
+          <strong>{tooltip.orgName}</strong>
+          <div>
+            {[tooltip.city, tooltip.region, tooltip.country].filter(Boolean).join(', ')}
+          </div>
+          {tooltip.leadTier && <div>Lead Tier: {tooltip.leadTier}</div>}
+          <div>{tooltip.totalEvents} events</div>
+          {tooltip.isTargetCustomer && <div className="analytics-tooltip-target">Target Customer</div>}
+        </div>
+      )}
+    </div>
+  );
+}
 
-  function formatTimestamp(ts: string) {
-    return new Date(ts).toLocaleString();
+// ─── Organization Detail (Intelligence Dossier) ─────────────────────────────
+
+function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
+  const visitedContactPage = org.events.some((e) =>
+    e.pathname?.includes('/contact') || e.eventName === 'Contact Form Submitted'
+  );
+  const downloadedPDF = org.events.some((e) =>
+    e.eventType === 'pdf_download' || e.eventName === 'Product Downloaded' || e.eventName === 'Datasheet Downloaded'
+  );
+  const contactFormSubmitted = org.events.some((e) => e.eventType === 'contact_form');
+  const uniqueProductPages = new Set(
+    org.events.filter((e) => e.eventType === 'product_view' || e.pathname?.includes('/products/')).map((e) => e.pathname)
+  );
+
+  // Group events by date
+  const eventsByDate = new Map<string, AnalyticsEvent[]>();
+  for (const e of org.events) {
+    const dateKey = new Date(e.timestamp).toLocaleDateString();
+    const existing = eventsByDate.get(dateKey);
+    if (existing) {
+      existing.push(e);
+    } else {
+      eventsByDate.set(dateKey, [e]);
+    }
+  }
+
+  return (
+    <div className="org-detail">
+      {/* Header */}
+      <div className="org-detail-header">
+        <button className="org-detail-back" onClick={onBack}>&larr; Back to list</button>
+      </div>
+
+      <div className="org-detail-title-row">
+        <div>
+          <h1 className="org-detail-name">{org.orgName}</h1>
+          <div className="org-detail-subtitle">
+            {org.organizationType && (
+              <span className={`analytics-type-badge analytics-type-${org.organizationType}`}>
+                {org.organizationType}
+              </span>
+            )}
+            <span className="org-detail-location">
+              {[org.city, org.region, org.country].filter(Boolean).join(', ')}
+            </span>
+            {org.leadTier && (
+              <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
+                Tier {org.leadTier}
+              </span>
+            )}
+          </div>
+        </div>
+        {org.maxConfidence > 0 && (
+          <div className="org-detail-score">
+            <div className="org-detail-score-value">{(org.maxConfidence * 100).toFixed(0)}%</div>
+            <div className="org-detail-score-label">Confidence</div>
+          </div>
+        )}
+      </div>
+
+      {/* Overview Cards */}
+      <div className="org-detail-overview">
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{new Date(org.firstVisit).toLocaleDateString()}</div>
+          <div className="org-detail-card-label">First Seen</div>
+        </div>
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{formatRelativeTime(org.lastVisit)}</div>
+          <div className="org-detail-card-label">Last Seen</div>
+        </div>
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{org.totalEvents}</div>
+          <div className="org-detail-card-label">Total Events</div>
+        </div>
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{org.uniquePages}</div>
+          <div className="org-detail-card-label">Pages Viewed</div>
+        </div>
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '-'}</div>
+          <div className="org-detail-card-label">Time on Site</div>
+        </div>
+        <div className="org-detail-card">
+          <div className="org-detail-card-value">{org.returnVisits}</div>
+          <div className="org-detail-card-label">Return Visits</div>
+        </div>
+      </div>
+
+      {/* Behavior Signals */}
+      <div className="org-detail-section">
+        <h2 className="analytics-section-header">Behavior Analysis</h2>
+        <div className="org-detail-signals">
+          {org.isTargetCustomer && (
+            <div className="org-signal org-signal-hot">Target Customer Identified</div>
+          )}
+          {downloadedPDF && (
+            <div className="org-signal org-signal-hot">Downloaded PDF / Spec Sheet</div>
+          )}
+          {visitedContactPage && (
+            <div className="org-signal org-signal-hot">Visited Contact Page</div>
+          )}
+          {contactFormSubmitted && (
+            <div className="org-signal org-signal-hot">Submitted Contact Form</div>
+          )}
+          {uniqueProductPages.size >= 3 && (
+            <div className="org-signal org-signal-warm">Viewed {uniqueProductPages.size} product pages — comparing solutions</div>
+          )}
+          {org.returnVisits >= 3 && (
+            <div className="org-signal org-signal-warm">Returning visitor ({org.returnVisits} return visits)</div>
+          )}
+          {org.productsViewed.length > 0 && (
+            <div className="org-signal org-signal-info">
+              Products of interest: {org.productsViewed.join(', ')}
+            </div>
+          )}
+          {org.pdfDownloads > 0 && (
+            <div className="org-signal org-signal-info">{org.pdfDownloads} PDF download(s)</div>
+          )}
+        </div>
+      </div>
+
+      {/* Visit Timeline */}
+      <div className="org-detail-section">
+        <h2 className="analytics-section-header">Visit Timeline</h2>
+        <div className="org-detail-timeline">
+          {Array.from(eventsByDate.entries()).map(([date, events]) => (
+            <div key={date} className="timeline-day">
+              <div className="timeline-date">{date}</div>
+              {events.map((e) => (
+                <div key={e.id} className="timeline-event">
+                  <span className="timeline-time">
+                    {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <span className={`analytics-badge analytics-badge-${e.eventType}`}>
+                    {e.eventType}
+                  </span>
+                  <span className="timeline-path">{e.pathname || e.eventName}</span>
+                  {e.productName && (
+                    <span className="timeline-product">{e.productName}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
+
+export function AdminAnalyticsPage() {
+  const [allEvents, setAllEvents] = useState<AnalyticsEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>('last7');
+  const [showBots, setShowBots] = useState(false);
+  const [sortCol, setSortCol] = useState<SortColumn>('lastVisit');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
+  const [kpiFilter, setKpiFilter] = useState<KpiFilter>('all');
+
+  // Load all events within date range
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAllEvents() {
+      setLoading(true);
+      setError('');
+      setAllEvents([]);
+      setLoadProgress(0);
+
+      const { start, end } = getDateBounds(dateRange);
+
+      try {
+        const collected: AnalyticsEvent[] = [];
+        let nextToken: string | undefined;
+        const MAX_EVENTS = 2000;
+
+        do {
+          const result = await client.models.AnalyticsEvent.list({
+            authMode: 'userPool',
+            limit: 200,
+            nextToken,
+          });
+
+          if (cancelled) return;
+
+          const events = (result.data || []) as AnalyticsEvent[];
+
+          for (const e of events) {
+            const ts = new Date(e.timestamp).getTime();
+            if (ts >= start.getTime() && ts <= end.getTime()) {
+              collected.push(e);
+            }
+          }
+
+          setLoadProgress(collected.length);
+          nextToken = result.nextToken || undefined;
+        } while (nextToken && collected.length < MAX_EVENTS);
+
+        if (!cancelled) {
+          setAllEvents(collected);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load events');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAllEvents();
+    return () => { cancelled = true; };
+  }, [dateRange]);
+
+  // Filter bots
+  const filteredEvents = useMemo(() => {
+    if (showBots) return allEvents;
+    return allEvents.filter((e) => !e.isBot);
+  }, [allEvents, showBots]);
+
+  const botCount = useMemo(() => allEvents.filter((e) => e.isBot).length, [allEvents]);
+
+  // Aggregate by organization
+  const organizations = useMemo(() => aggregateByOrg(filteredEvents), [filteredEvents]);
+
+  // Apply KPI filter
+  const filteredOrgs = useMemo(() => {
+    switch (kpiFilter) {
+      case 'target':
+        return organizations.filter((o) => o.isTargetCustomer);
+      case 'university':
+        return organizations.filter((o) =>
+          o.organizationType === 'university' || o.organizationType === 'research_institute'
+        );
+      case 'enterprise':
+        return organizations.filter((o) => o.organizationType === 'enterprise');
+      case 'hotLead':
+        return organizations.filter((o) => o.leadTier === 'A');
+      case 'returning':
+        return organizations.filter((o) => o.returnVisits > 0);
+      default:
+        return organizations;
+    }
+  }, [organizations, kpiFilter]);
+
+  // Sort organizations
+  const sortedOrgs = useMemo(() => {
+    return [...filteredOrgs].sort((a, b) => {
+      let cmp = 0;
+      switch (sortCol) {
+        case 'orgName':
+          cmp = a.orgName.localeCompare(b.orgName);
+          break;
+        case 'organizationType':
+          cmp = a.organizationType.localeCompare(b.organizationType);
+          break;
+        case 'country':
+          cmp = (a.city + a.country).localeCompare(b.city + b.country);
+          break;
+        case 'totalEvents':
+          cmp = a.totalEvents - b.totalEvents;
+          break;
+        case 'uniquePages':
+          cmp = a.uniquePages - b.uniquePages;
+          break;
+        case 'totalTimeOnSite':
+          cmp = a.totalTimeOnSite - b.totalTimeOnSite;
+          break;
+        case 'leadTier':
+          cmp = tierRank(a.leadTier) - tierRank(b.leadTier);
+          break;
+        case 'maxConfidence':
+          cmp = a.maxConfidence - b.maxConfidence;
+          break;
+        case 'lastVisit':
+          cmp = new Date(a.lastVisit).getTime() - new Date(b.lastVisit).getTime();
+          break;
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+  }, [filteredOrgs, sortCol, sortDir]);
+
+  // KPI stats
+  const kpis = useMemo(() => {
+    const uniqueVisitors = organizations.length;
+    const targetCustomers = organizations.filter((o) => o.isTargetCustomer).length;
+    const universities = organizations.filter((o) =>
+      o.organizationType === 'university' || o.organizationType === 'research_institute'
+    ).length;
+    const hotLeads = organizations.filter((o) => o.leadTier === 'A').length;
+    const returning = organizations.filter((o) => o.returnVisits > 0).length;
+    const companies = organizations.filter((o) => o.organizationType === 'enterprise').length;
+    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies };
+  }, [organizations]);
+
+  function handleSort(col: SortColumn) {
+    if (sortCol === col) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortCol(col);
+      setSortDir('desc');
+    }
+  }
+
+  function sortIndicator(col: SortColumn) {
+    if (sortCol !== col) return '';
+    return sortDir === 'desc' ? ' \u25BC' : ' \u25B2';
   }
 
   if (loading) {
-    return <div className="admin-loading">Loading analytics...</div>;
+    return (
+      <div className="admin-loading">
+        Loading analytics...{loadProgress > 0 ? ` (${loadProgress} events)` : ''}
+      </div>
+    );
+  }
+
+  // Show detail view if an org is selected
+  if (selectedOrg) {
+    return (
+      <div className="admin-analytics">
+        <OrgDetail org={selectedOrg} onBack={() => setSelectedOrg(null)} />
+      </div>
+    );
   }
 
   return (
     <div className="admin-analytics">
       <div className="admin-list-header">
-        <h1>Analytics Events ({stats.total})</h1>
+        <h1>Market Intelligence</h1>
       </div>
 
-      {/* Stats cards */}
-      <div className="analytics-stats-grid">
-        <div className="analytics-stat-card">
-          <div className="analytics-stat-value">{stats.total}</div>
-          <div className="analytics-stat-label">Total Events</div>
-        </div>
-        <div className="analytics-stat-card analytics-stat-highlight">
-          <div className="analytics-stat-value">{stats.targetCustomers}</div>
-          <div className="analytics-stat-label">Target Customers</div>
-        </div>
-        <div className="analytics-stat-card">
-          <div className="analytics-stat-value">{stats.uniqueOrgs}</div>
-          <div className="analytics-stat-label">Unique Orgs</div>
-        </div>
-        <div className="analytics-stat-card analytics-stat-tier-a">
-          <div className="analytics-stat-value">{stats.tierA}</div>
-          <div className="analytics-stat-label">Tier A</div>
-        </div>
-        <div className="analytics-stat-card analytics-stat-tier-b">
-          <div className="analytics-stat-value">{stats.tierB}</div>
-          <div className="analytics-stat-label">Tier B</div>
-        </div>
-        <div className="analytics-stat-card analytics-stat-tier-c">
-          <div className="analytics-stat-value">{stats.tierC}</div>
-          <div className="analytics-stat-label">Tier C</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="admin-list-filters">
-        <select
-          value={eventTypeFilter}
-          onChange={(e) => { setEventTypeFilter(e.target.value); setLeadTierFilter('all'); }}
-          className="admin-filter-select"
-        >
-          {EVENT_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        <select
-          value={leadTierFilter}
-          onChange={(e) => { setLeadTierFilter(e.target.value); setEventTypeFilter('all'); }}
-          className="admin-filter-select"
-        >
-          {LEAD_TIERS.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
+      {/* Date Range Selector */}
+      <div className="analytics-date-range">
+        {DATE_RANGES.map((r) => (
+          <button
+            key={r.value}
+            className={`analytics-date-btn ${dateRange === r.value ? 'active' : ''}`}
+            onClick={() => setDateRange(r.value)}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
 
       {error && <div className="admin-error">{error}</div>}
 
-      {/* Events table */}
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Event</th>
-            <th>Type</th>
-            <th>Path</th>
-            <th>IP / Org</th>
-            <th>Lead Tier</th>
-            <th>Confidence</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedEvents.map((event) => (
-            <tr key={event.id} className={event.isTargetCustomer ? 'analytics-target-row' : ''}>
-              <td className="analytics-timestamp">{formatTimestamp(event.timestamp)}</td>
-              <td>{event.eventName}</td>
-              <td>
-                <span className={`analytics-badge analytics-badge-${event.eventType}`}>
-                  {event.eventType}
-                </span>
-              </td>
-              <td className="analytics-path">{event.pathname || '-'}</td>
-              <td>
-                <div>{event.org || event.isp || '-'}</div>
-                {event.orgName && event.orgName !== event.org && (
-                  <div className="analytics-org-name">{event.orgName}</div>
-                )}
-                {event.country && (
-                  <div className="analytics-geo">{event.city}{event.city && event.country ? ', ' : ''}{event.country}</div>
-                )}
-              </td>
-              <td>
-                {event.leadTier ? (
-                  <span className={`analytics-tier analytics-tier-${event.leadTier}`}>
-                    {event.leadTier}
-                  </span>
-                ) : '-'}
-              </td>
-              <td>
-                {event.finalConfidence != null ? (
-                  <span>{(event.finalConfidence * 100).toFixed(0)}%</span>
-                ) : '-'}
-              </td>
-            </tr>
-          ))}
-          {sortedEvents.length === 0 && (
-            <tr>
-              <td colSpan={7} className="admin-no-results">
-                No events found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {nextToken && (
-        <div className="analytics-load-more">
-          <button
-            onClick={() => loadEvents(nextToken)}
-            disabled={loadingMore}
-            className="admin-btn-primary"
-          >
-            {loadingMore ? 'Loading...' : 'Load More'}
-          </button>
+      {/* KPI Cards — click to filter table */}
+      <div className="analytics-stats-grid">
+        <div
+          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'all' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter('all')}
+        >
+          <div className="analytics-stat-value">{kpis.uniqueVisitors}</div>
+          <div className="analytics-stat-label">Unique Visitors</div>
         </div>
-      )}
+        <div
+          className={`analytics-stat-card analytics-stat-highlight analytics-stat-clickable ${kpiFilter === 'target' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'target' ? 'all' : 'target')}
+        >
+          <div className="analytics-stat-value">{kpis.targetCustomers}</div>
+          <div className="analytics-stat-label">Target Customers</div>
+        </div>
+        <div
+          className={`analytics-stat-card analytics-stat-tier-a analytics-stat-clickable ${kpiFilter === 'university' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'university' ? 'all' : 'university')}
+        >
+          <div className="analytics-stat-value">{kpis.universities}</div>
+          <div className="analytics-stat-label">Universities / Labs</div>
+        </div>
+        <div
+          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'enterprise' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'enterprise' ? 'all' : 'enterprise')}
+        >
+          <div className="analytics-stat-value">{kpis.companies}</div>
+          <div className="analytics-stat-label">Companies</div>
+        </div>
+        <div
+          className={`analytics-stat-card analytics-stat-tier-b analytics-stat-clickable ${kpiFilter === 'hotLead' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'hotLead' ? 'all' : 'hotLead')}
+        >
+          <div className="analytics-stat-value">{kpis.hotLeads}</div>
+          <div className="analytics-stat-label">Hot Leads (A)</div>
+        </div>
+        <div
+          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'returning' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'returning' ? 'all' : 'returning')}
+        >
+          <div className="analytics-stat-value">{kpis.returning}</div>
+          <div className="analytics-stat-label">Returning Visitors</div>
+        </div>
+      </div>
+
+      {/* World Map — click markers to view org detail */}
+      <VisitorMap organizations={organizations} onSelectOrg={setSelectedOrg} />
+
+      {/* Bot Toggle */}
+      <div className="analytics-controls-row">
+        <label className="analytics-bot-toggle">
+          <input
+            type="checkbox"
+            checked={showBots}
+            onChange={(e) => setShowBots(e.target.checked)}
+          />
+          Show bot traffic ({botCount} events)
+        </label>
+        <span className="analytics-event-count">
+          {filteredEvents.length} events from {organizations.length} visitors
+        </span>
+      </div>
+
+      {/* Organization Table */}
+      <h2 className="analytics-section-header">
+        Visitor Organizations
+        {kpiFilter !== 'all' && (
+          <span className="analytics-filter-badge">
+            Filtered
+            <button className="analytics-filter-clear" onClick={() => setKpiFilter('all')}>
+              &times;
+            </button>
+          </span>
+        )}
+      </h2>
+      <div className="analytics-table-wrapper">
+        <table className="admin-table analytics-org-table">
+          <thead>
+            <tr>
+              <th onClick={() => handleSort('orgName')}>
+                Organization{sortIndicator('orgName')}
+              </th>
+              <th onClick={() => handleSort('organizationType')}>
+                Type{sortIndicator('organizationType')}
+              </th>
+              <th onClick={() => handleSort('country')}>
+                Location{sortIndicator('country')}
+              </th>
+              <th>Products</th>
+              <th onClick={() => handleSort('uniquePages')}>
+                Pages{sortIndicator('uniquePages')}
+              </th>
+              <th onClick={() => handleSort('totalTimeOnSite')}>
+                Time{sortIndicator('totalTimeOnSite')}
+              </th>
+              <th onClick={() => handleSort('totalEvents')}>
+                Events{sortIndicator('totalEvents')}
+              </th>
+              <th onClick={() => handleSort('leadTier')}>
+                Tier{sortIndicator('leadTier')}
+              </th>
+              <th onClick={() => handleSort('maxConfidence')}>
+                Confidence{sortIndicator('maxConfidence')}
+              </th>
+              <th onClick={() => handleSort('lastVisit')}>
+                Last Visit{sortIndicator('lastVisit')}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedOrgs.map((org) => (
+              <tr
+                key={org.key}
+                className={`analytics-org-row ${org.isTargetCustomer ? 'analytics-target-row' : ''} ${
+                  org.leadTier ? `tier-border-${org.leadTier}` : ''
+                }`}
+                onClick={() => setSelectedOrg(org)}
+              >
+                <td>
+                  <div className="analytics-org-primary">{org.orgName}</div>
+                </td>
+                <td>
+                  {org.organizationType ? (
+                    <span className={`analytics-type-badge analytics-type-${org.organizationType}`}>
+                      {org.organizationType}
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </td>
+                <td className="analytics-geo">
+                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || '-'}
+                </td>
+                <td>
+                  {org.productsViewed.length > 0
+                    ? org.productsViewed.join(', ')
+                    : '-'}
+                </td>
+                <td>{org.uniquePages}</td>
+                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '-'}</td>
+                <td>{org.totalEvents}</td>
+                <td>
+                  {org.leadTier ? (
+                    <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
+                      {org.leadTier}
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </td>
+                <td>
+                  {org.maxConfidence > 0
+                    ? `${(org.maxConfidence * 100).toFixed(0)}%`
+                    : '-'}
+                </td>
+                <td className="analytics-timestamp">{formatRelativeTime(org.lastVisit)}</td>
+              </tr>
+            ))}
+            {sortedOrgs.length === 0 && (
+              <tr>
+                <td colSpan={10} className="admin-no-results">
+                  No visitor data for this period.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
