@@ -453,6 +453,23 @@ export function AdminAnalyticsPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('all');
 
+  // Select org with browser history support
+  const selectOrg = useCallback((org: OrganizationRecord | null) => {
+    if (org) {
+      window.history.pushState({ orgDetail: true }, '');
+    }
+    setSelectedOrg(org);
+  }, []);
+
+  // Browser back button → close dossier
+  useEffect(() => {
+    function handlePopState() {
+      setSelectedOrg(null);
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Load all events within date range
   useEffect(() => {
     let cancelled = false;
@@ -617,7 +634,7 @@ export function AdminAnalyticsPage() {
   if (selectedOrg) {
     return (
       <div className="admin-analytics">
-        <OrgDetail org={selectedOrg} onBack={() => setSelectedOrg(null)} />
+        <OrgDetail org={selectedOrg} onBack={() => history.back()} />
       </div>
     );
   }
@@ -690,7 +707,7 @@ export function AdminAnalyticsPage() {
       </div>
 
       {/* World Map — click markers to view org detail */}
-      <VisitorMap organizations={filteredOrgs} onSelectOrg={setSelectedOrg} />
+      <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} />
 
       {/* Bot Toggle */}
       <div className="analytics-controls-row">
@@ -760,7 +777,7 @@ export function AdminAnalyticsPage() {
                 className={`analytics-org-row ${org.isTargetCustomer ? 'analytics-target-row' : ''} ${
                   org.leadTier ? `tier-border-${org.leadTier}` : ''
                 }`}
-                onClick={() => setSelectedOrg(org)}
+                onClick={() => selectOrg(org)}
               >
                 <td>
                   <div className="analytics-org-primary">{org.orgName}</div>
