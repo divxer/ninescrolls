@@ -40,7 +40,7 @@ interface OrganizationRecord {
   events: AnalyticsEvent[];
 }
 
-type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all';
+type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
 type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning';
 
@@ -50,6 +50,7 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'last7', label: 'Last 7 Days' },
   { value: 'last30', label: 'Last 30 Days' },
   { value: 'all', label: 'All Time' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 // Known bot / crawler organizations — filtered alongside isBot
@@ -76,7 +77,7 @@ function isKnownBotOrg(orgName: string): boolean {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function getDateBounds(range: DateRange): { start: Date; end: Date } {
+function getDateBounds(range: DateRange, customStart?: string, customEnd?: string): { start: Date; end: Date } {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart.getTime() + 86400000);
@@ -92,6 +93,11 @@ function getDateBounds(range: DateRange): { start: Date; end: Date } {
       return { start: new Date(todayStart.getTime() - 7 * 86400000), end: todayEnd };
     case 'last30':
       return { start: new Date(todayStart.getTime() - 30 * 86400000), end: todayEnd };
+    case 'custom': {
+      const s = customStart ? new Date(customStart) : new Date(todayStart.getTime() - 7 * 86400000);
+      const e = customEnd ? new Date(new Date(customEnd).getTime() + 86400000) : todayEnd;
+      return { start: s, end: e };
+    }
     case 'all':
       return { start: new Date(0), end: todayEnd };
   }
@@ -215,9 +221,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
 function VisitorMap({
   organizations,
   onSelectOrg,
+  resetKey,
 }: {
   organizations: OrganizationRecord[];
   onSelectOrg: (org: OrganizationRecord) => void;
+  resetKey: string;
 }) {
   const [tooltip, setTooltip] = useState<OrganizationRecord | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -254,7 +262,7 @@ function VisitorMap({
         projectionConfig={{ rotate: [-10, 0, 0], scale: 147 }}
         style={{ width: '100%', height: 'auto' }}
       >
-        <ZoomableGroup>
+        <ZoomableGroup key={resetKey}>
           <Geographies geography={GEO_URL}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -432,6 +440,64 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         </div>
       </div>
 
+      {/* Pages Visited */}
+      {(() => {
+        const pageEvents = org.events.filter((e) => e.pathname);
+        const uniquePages = new Map<string, { title: string | null; count: number }>();
+        for (const e of pageEvents) {
+          const existing = uniquePages.get(e.pathname!);
+          if (existing) {
+            existing.count++;
+            if (!existing.title && e.pageTitle) existing.title = e.pageTitle;
+          } else {
+            uniquePages.set(e.pathname!, { title: e.pageTitle || null, count: 1 });
+          }
+        }
+        return uniquePages.size > 0 ? (
+          <div className="org-detail-section">
+            <h2 className="analytics-section-header">Pages Visited</h2>
+            <div className="org-detail-pages-list">
+              {Array.from(uniquePages.entries()).map(([path, info]) => (
+                <div key={path} className="org-detail-page-item">
+                  <span className="org-detail-page-title">{info.title || path}</span>
+                  {info.title && <span className="org-detail-page-path">{path}</span>}
+                  <span className="org-detail-page-count">{info.count}x</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Referrer Sources */}
+      {(() => {
+        const referrers = new Map<string, number>();
+        for (const e of org.events) {
+          if (e.referrer) {
+            try {
+              const host = new URL(e.referrer).hostname;
+              referrers.set(host, (referrers.get(host) || 0) + 1);
+            } catch {
+              referrers.set(e.referrer, (referrers.get(e.referrer) || 0) + 1);
+            }
+          }
+        }
+        return referrers.size > 0 ? (
+          <div className="org-detail-section">
+            <h2 className="analytics-section-header">Traffic Sources</h2>
+            <div className="org-detail-signals">
+              {Array.from(referrers.entries())
+                .sort((a, b) => b[1] - a[1])
+                .map(([host, count]) => (
+                  <div key={host} className="org-signal org-signal-info">
+                    {host} ({count} visit{count > 1 ? 's' : ''})
+                  </div>
+                ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {/* Visit Timeline */}
       <div className="org-detail-section">
         <h2 className="analytics-section-header">Visit Timeline</h2>
@@ -442,14 +508,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               {events.map((e) => (
                 <div key={e.id} className="timeline-event">
                   <span className="timeline-time">
-                    {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
                   <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                     {e.eventType}
                   </span>
-                  <span className="timeline-path">{e.pathname || e.eventName}</span>
+                  <span className="timeline-path">{e.pageTitle || e.pathname || e.eventName}</span>
                   {e.productName && (
                     <span className="timeline-product">{e.productName}</span>
+                  )}
+                  {e.timeOnSite != null && e.timeOnSite > 0 && (
+                    <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
                   )}
                 </div>
               ))}
@@ -469,11 +538,14 @@ export function AdminAnalyticsPage() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState<DateRange>('last7');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [showBots, setShowBots] = useState(false);
   const [sortCol, setSortCol] = useState<SortColumn>('lastVisit');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Select org with browser history support
   const selectOrg = useCallback((org: OrganizationRecord | null) => {
@@ -502,7 +574,7 @@ export function AdminAnalyticsPage() {
       setAllEvents([]);
       setLoadProgress(0);
 
-      const { start, end } = getDateBounds(dateRange);
+      const { start, end } = getDateBounds(dateRange, customStart, customEnd);
 
       try {
         const collected: AnalyticsEvent[] = [];
@@ -547,7 +619,7 @@ export function AdminAnalyticsPage() {
 
     loadAllEvents();
     return () => { cancelled = true; };
-  }, [dateRange]);
+  }, [dateRange, customStart, customEnd]);
 
   // Filter bots — by isBot flag OR known bot org name
   const filteredEvents = useMemo(() => {
@@ -591,9 +663,22 @@ export function AdminAnalyticsPage() {
     }
   }, [organizations, kpiFilter]);
 
+  // Apply search filter
+  const searchedOrgs = useMemo(() => {
+    if (!searchQuery.trim()) return filteredOrgs;
+    const q = searchQuery.toLowerCase();
+    return filteredOrgs.filter((o) =>
+      o.orgName.toLowerCase().includes(q) ||
+      o.organizationType.toLowerCase().includes(q) ||
+      o.city.toLowerCase().includes(q) ||
+      o.country.toLowerCase().includes(q) ||
+      o.productsViewed.some((p) => p.toLowerCase().includes(q))
+    );
+  }, [filteredOrgs, searchQuery]);
+
   // Sort organizations
   const sortedOrgs = useMemo(() => {
-    return [...filteredOrgs].sort((a, b) => {
+    return [...searchedOrgs].sort((a, b) => {
       let cmp = 0;
       switch (sortCol) {
         case 'orgName':
@@ -626,9 +711,9 @@ export function AdminAnalyticsPage() {
       }
       return sortDir === 'desc' ? -cmp : cmp;
     });
-  }, [filteredOrgs, sortCol, sortDir]);
+  }, [searchedOrgs, sortCol, sortDir]);
 
-  // KPI stats
+  // KPI stats with trend (compare first half vs second half of period)
   const kpis = useMemo(() => {
     const uniqueVisitors = organizations.length;
     const targetCustomers = organizations.filter((o) => o.isTargetCustomer).length;
@@ -638,8 +723,46 @@ export function AdminAnalyticsPage() {
     const hotLeads = organizations.filter((o) => o.leadTier === 'A').length;
     const returning = organizations.filter((o) => o.returnVisits > 0).length;
     const companies = organizations.filter((o) => o.organizationType === 'enterprise').length;
-    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies };
-  }, [organizations]);
+
+    // Compute trend: split filtered events by midpoint of date range
+    const { start, end } = getDateBounds(dateRange, customStart, customEnd);
+    const mid = new Date((start.getTime() + end.getTime()) / 2);
+    const firstHalf = filteredEvents.filter((e) => new Date(e.timestamp).getTime() < mid.getTime());
+    const secondHalf = filteredEvents.filter((e) => new Date(e.timestamp).getTime() >= mid.getTime());
+    const firstOrgs = new Set(firstHalf.map((e) => e.orgName || e.org || e.ip));
+    const secondOrgs = new Set(secondHalf.map((e) => e.orgName || e.org || e.ip));
+    const prevVisitors = firstOrgs.size;
+    const currVisitors = secondOrgs.size;
+    const visitorTrend = prevVisitors > 0
+      ? Math.round(((currVisitors - prevVisitors) / prevVisitors) * 100)
+      : currVisitors > 0 ? 100 : 0;
+
+    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, visitorTrend };
+  }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
+
+  function exportCSV() {
+    const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Time (s)', 'Events', 'Tier', 'Confidence', 'Last Visit'];
+    const rows = sortedOrgs.map((o) => [
+      o.orgName,
+      o.organizationType || '',
+      [o.city, o.region, o.country].filter(Boolean).join(', '),
+      o.productsViewed.join('; '),
+      o.uniquePages,
+      o.totalTimeOnSite,
+      o.totalEvents,
+      o.leadTier || '',
+      o.maxConfidence > 0 ? `${(o.maxConfidence * 100).toFixed(0)}%` : '',
+      o.lastVisit,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function handleSort(col: SortColumn) {
     if (sortCol === col) {
@@ -678,7 +801,7 @@ export function AdminAnalyticsPage() {
         <h1>Market Intelligence</h1>
       </div>
 
-      {/* Date Range Selector */}
+      {/* Date Range Selector + Bot Toggle */}
       <div className="analytics-date-range">
         {DATE_RANGES.map((r) => (
           <button
@@ -689,6 +812,32 @@ export function AdminAnalyticsPage() {
             {r.label}
           </button>
         ))}
+        {dateRange === 'custom' && (
+          <div className="analytics-custom-dates">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="analytics-date-input"
+            />
+            <span className="analytics-date-separator">to</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="analytics-date-input"
+            />
+          </div>
+        )}
+        <label className="analytics-toggle">
+          <input
+            type="checkbox"
+            checked={showBots}
+            onChange={(e) => setShowBots(e.target.checked)}
+          />
+          <span className="analytics-toggle-slider" />
+          <span className="analytics-toggle-label">Bots ({botCount})</span>
+        </label>
       </div>
 
       {error && <div className="admin-error">{error}</div>}
@@ -701,6 +850,11 @@ export function AdminAnalyticsPage() {
         >
           <div className="analytics-stat-value">{kpis.uniqueVisitors}</div>
           <div className="analytics-stat-label">Unique Visitors</div>
+          {dateRange !== 'all' && kpis.visitorTrend !== 0 && (
+            <div className={`analytics-stat-trend ${kpis.visitorTrend > 0 ? 'trend-up' : 'trend-down'}`}>
+              {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs prev
+            </div>
+          )}
         </div>
         <div
           className={`analytics-stat-card analytics-stat-highlight analytics-stat-clickable ${kpiFilter === 'target' ? 'analytics-stat-active' : ''}`}
@@ -740,21 +894,27 @@ export function AdminAnalyticsPage() {
       </div>
 
       {/* World Map — click markers to view org detail */}
-      <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} />
+      <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} resetKey={kpiFilter} />
 
-      {/* Bot Toggle */}
+      {/* Event Count */}
       <div className="analytics-controls-row">
-        <label className="analytics-bot-toggle">
-          <input
-            type="checkbox"
-            checked={showBots}
-            onChange={(e) => setShowBots(e.target.checked)}
-          />
-          Show bot traffic ({botCount} events)
-        </label>
         <span className="analytics-event-count">
           {filteredEvents.length} events from {organizations.length} visitors
         </span>
+      </div>
+
+      {/* Search & Export */}
+      <div className="analytics-toolbar">
+        <input
+          type="text"
+          className="analytics-search"
+          placeholder="Search organizations..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <button className="analytics-export-btn" onClick={exportCSV}>
+          Export CSV
+        </button>
       </div>
 
       {/* Organization Table */}
@@ -821,19 +981,19 @@ export function AdminAnalyticsPage() {
                       {org.organizationType}
                     </span>
                   ) : (
-                    '-'
+                    <span className="analytics-na">N/A</span>
                   )}
                 </td>
                 <td className="analytics-geo">
-                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || '-'}
+                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || <span className="analytics-na">N/A</span>}
                 </td>
                 <td>
                   {org.productsViewed.length > 0
                     ? org.productsViewed.join(', ')
-                    : '-'}
+                    : <span className="analytics-na">N/A</span>}
                 </td>
                 <td>{org.uniquePages}</td>
-                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '-'}</td>
+                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="analytics-na">N/A</span>}</td>
                 <td>{org.totalEvents}</td>
                 <td>
                   {org.leadTier ? (
@@ -841,13 +1001,13 @@ export function AdminAnalyticsPage() {
                       {org.leadTier}
                     </span>
                   ) : (
-                    '-'
+                    <span className="analytics-na">N/A</span>
                   )}
                 </td>
                 <td>
                   {org.maxConfidence > 0
                     ? `${(org.maxConfidence * 100).toFixed(0)}%`
-                    : '-'}
+                    : <span className="analytics-na">N/A</span>}
                 </td>
                 <td className="analytics-timestamp">{formatRelativeTime(org.lastVisit)}</td>
               </tr>

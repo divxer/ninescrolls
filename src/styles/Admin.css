@@ -91,6 +91,25 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Hamburger menu — hidden on desktop */
+.admin-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
 .admin-main {
   max-width: 1400px;
   margin: 0 auto;
@@ -467,6 +486,29 @@
   border-color: #1a73e8;
 }
 
+.analytics-custom-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.analytics-date-input {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.analytics-date-input:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+
+.analytics-date-separator {
+  font-size: 0.8rem;
+  color: #888;
+}
+
 /* KPI Stats Grid */
 .analytics-stats-grid {
   display: grid;
@@ -496,7 +538,10 @@
 
 .analytics-stat-active {
   border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+  border-width: 2px;
+  background: #e8f0fe;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+  transform: translateY(-2px);
 }
 
 .analytics-stat-value {
@@ -509,6 +554,20 @@
   font-size: 0.8rem;
   color: #888;
   margin-top: 0.25rem;
+}
+
+.analytics-stat-trend {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.trend-up {
+  color: #2e7d32;
+}
+
+.trend-down {
+  color: #c62828;
 }
 
 .analytics-stat-highlight .analytics-stat-value {
@@ -627,22 +686,98 @@
   gap: 0.75rem;
 }
 
-.analytics-bot-toggle {
+/* Toggle switch */
+.analytics-toggle {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  color: #666;
+  gap: 0.5rem;
   cursor: pointer;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
-.analytics-bot-toggle input[type="checkbox"] {
-  cursor: pointer;
+.analytics-toggle input {
+  display: none;
+}
+
+.analytics-toggle-slider {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 10px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.analytics-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.analytics-toggle input:checked + .analytics-toggle-slider {
+  background: #1a73e8;
+}
+
+.analytics-toggle input:checked + .analytics-toggle-slider::after {
+  transform: translateX(16px);
+}
+
+.analytics-toggle-label {
+  font-size: 0.85rem;
+  color: #555;
 }
 
 .analytics-event-count {
   font-size: 0.85rem;
   color: #999;
+}
+
+/* Search & Export Toolbar */
+.analytics-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.analytics-search {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  max-width: 320px;
+}
+
+.analytics-search:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.analytics-export-btn {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.analytics-export-btn:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
 }
 
 /* Organization Table */
@@ -680,6 +815,11 @@
 .analytics-type-research_institute { background: #e0f2f1; color: #00695c; }
 .analytics-type-enterprise { background: #fce4ec; color: #880e4f; }
 .analytics-type-unknown { background: #f5f5f5; color: #9e9e9e; }
+
+.analytics-na {
+  color: #bbb;
+  font-size: 0.8rem;
+}
 
 .analytics-target-row {
   background: #e8f5e9 !important;
@@ -855,6 +995,53 @@
   color: #0d47a1;
 }
 
+/* Pages visited list */
+.org-detail-pages-list {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.org-detail-page-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+}
+
+.org-detail-page-item:last-child {
+  border-bottom: none;
+}
+
+.org-detail-page-title {
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-detail-page-path {
+  color: #999;
+  font-size: 0.75rem;
+  font-family: monospace;
+  flex-shrink: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-detail-page-count {
+  color: #1a73e8;
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
 /* Visit timeline */
 .org-detail-timeline {
   background: #fff;
@@ -898,7 +1085,7 @@
   color: #999;
   font-family: monospace;
   flex-shrink: 0;
-  width: 50px;
+  width: 70px;
 }
 
 .timeline-path {
@@ -915,6 +1102,16 @@
   padding: 0.1rem 0.4rem;
   border-radius: 3px;
   flex-shrink: 0;
+}
+
+.timeline-duration {
+  font-size: 0.7rem;
+  color: #888;
+  background: #f5f5f5;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-family: monospace;
 }
 
 /* Event type badges (used in timeline) */
@@ -952,9 +1149,36 @@
     gap: 0.5rem;
   }
 
+  .admin-hamburger {
+    display: flex;
+    margin-left: auto;
+  }
+
+  .admin-nav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .admin-nav.admin-nav-open {
+    display: flex;
+  }
+
+  .admin-nav-link {
+    padding: 0.6rem 0.75rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
   .admin-header-right {
+    display: none;
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .admin-header-right.admin-nav-open {
+    display: flex;
   }
 
   .analytics-stats-grid {
@@ -968,5 +1192,28 @@
   .analytics-org-table th,
   .analytics-org-table td {
     padding: 0.5rem 0.6rem;
+  }
+
+  /* Sticky Organization column on mobile */
+  .analytics-org-table th:first-child,
+  .analytics-org-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .analytics-org-table th:first-child {
+    background: #fafafa;
+    z-index: 3;
+  }
+
+  .analytics-org-row:hover td:first-child {
+    background: #e3f2fd !important;
+  }
+
+  .analytics-target-row td:first-child {
+    background: #e8f5e9 !important;
   }
 }
