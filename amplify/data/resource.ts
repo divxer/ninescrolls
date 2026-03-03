@@ -110,6 +110,10 @@ const schema = a.schema({
       latitude: a.float(),
       longitude: a.float(),
 
+      aiOrganizationType: a.string(),
+      aiConfidence: a.float(),
+      aiReason: a.string(),
+
       properties: a.json(),
     })
     .authorization((allow) => [

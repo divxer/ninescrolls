@@ -33,6 +33,12 @@ interface BehaviorScoreInput {
   isPaidTraffic?: boolean;
 }
 
+interface AIClassificationInput {
+  aiOrganizationType?: string;
+  aiConfidence?: number;
+  aiReason?: string;
+}
+
 interface EventContext {
   pathname?: string;
   pageTitle?: string;
@@ -48,6 +54,7 @@ export interface StoreAnalyticsEventParams {
   targetAnalysis?: TargetAnalysisInput | null;
   behaviorScore?: BehaviorScoreInput | null;
   context?: EventContext | null;
+  aiClassification?: AIClassificationInput | null;
   properties?: Record<string, unknown>;
 }
 
@@ -85,6 +92,10 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     pdfDownloads: params.behaviorScore?.pdfDownloads,
     returnVisits: params.behaviorScore?.returnVisits,
     isPaidTraffic: params.behaviorScore?.isPaidTraffic,
+
+    aiOrganizationType: params.aiClassification?.aiOrganizationType,
+    aiConfidence: params.aiClassification?.aiConfidence,
+    aiReason: params.aiClassification?.aiReason,
 
     pathname: params.context?.pathname,
     pageTitle: params.context?.pageTitle,

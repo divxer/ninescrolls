@@ -9,6 +9,7 @@ import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { segmentProxy } from './functions/segment-proxy/resource';
 import { ipLookup } from './functions/ip-lookup/resource';
 import { serverTrack } from './functions/server-track/resource';
+import { classifyOrg } from './functions/classify-org/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -25,6 +26,7 @@ const backend = defineBackend({
     segmentProxy,
     ipLookup,
     serverTrack,
+    classifyOrg,
 });
 
 // Create a fixed stage name
@@ -213,6 +215,29 @@ const taxRateLimitTable = new Table(taxFunctionStack, 'TaxRateLimit', {
 });
 taxRateLimitTable.grantReadWriteData(backend.calculateTax.resources.lambda);
 backend.calculateTax.addEnvironment('TAX_RATE_LIMIT_TABLE', taxRateLimitTable.tableName);
+
+// Create /classify-org resource for AI-powered organization classification
+const classifyOrgResource = restApi.root.addResource('classify-org');
+const classifyOrgIntegration = new LambdaIntegration(backend.classifyOrg.resources.lambda, {
+    proxy: true,
+});
+
+// Add POST method for org classification
+classifyOrgResource.addMethod('POST', classifyOrgIntegration);
+
+// Add OPTIONS method for CORS preflight
+classifyOrgResource.addMethod('OPTIONS', classifyOrgIntegration);
+
+// Create DynamoDB table for caching AI org classifications
+const classifyOrgFunctionStack = Stack.of(backend.classifyOrg.resources.lambda);
+const orgClassificationTable = new Table(classifyOrgFunctionStack, 'OrgClassification', {
+    partitionKey: { name: 'orgName', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+    timeToLiveAttribute: 'ttl',
+});
+
+orgClassificationTable.grantReadWriteData(backend.classifyOrg.resources.lambda);
+backend.classifyOrg.addEnvironment('ORG_CLASSIFICATION_TABLE', orgClassificationTable.tableName);
 
 // Add outputs
 backend.addOutput({

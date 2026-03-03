@@ -1,0 +1,11 @@
+import { defineFunction, secret } from '@aws-amplify/backend';
+
+export const classifyOrg = defineFunction({
+    name: 'classify-org',
+    entry: './handler.ts',
+    runtime: 22,
+    timeoutSeconds: 30,
+    environment: {
+        ANTHROPIC_API_KEY: secret('ANTHROPIC_API_KEY'),
+    },
+});
