@@ -129,7 +129,7 @@ Rules:
             'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-            model: 'claude-haiku-4-20250414',
+            model: process.env.CLAUDE_MODEL || 'claude-haiku-4-5-latest',
             max_tokens: 256,
             messages: [{ role: 'user', content: prompt }],
         }),
@@ -205,11 +205,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         };
 
     } catch (error) {
-        console.error('Classification error:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error('Classification error:', errMsg, error);
         return {
             statusCode: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Classification failed' }),
+            body: JSON.stringify({ error: 'Classification failed', detail: errMsg }),
         };
     }
 };

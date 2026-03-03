@@ -7,5 +7,6 @@ export const classifyOrg = defineFunction({
     timeoutSeconds: 30,
     environment: {
         ANTHROPIC_API_KEY: secret('ANTHROPIC_API_KEY'),
+        CLAUDE_MODEL: 'claude-haiku-4-5-latest',
     },
 });
