@@ -4094,7 +4094,7 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Takeaway</h2>
       <p>This publication demonstrates that precise oxygen plasma etching — enabled by the RIE-150 — can create nanostructured surfaces with exceptional hydrophilicity and light absorption properties. These capabilities open new pathways for environment-powered soft robotics, biomimetics, and smart material systems.</p>
       <p>For researchers working on nanostructured surfaces, soft actuators, or environmental energy harvesting, the RIE-150 offers the process control and reproducibility required to achieve publication-grade results.</p>
-      <p><em>Interested in learning more about our RIE systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+      <p><em>Interested in learning more about our RIE systems? <a href="/contact">Request a Quote →</a></em></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
@@ -4179,7 +4179,7 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Takeaway</h2>
       <p>This work validates that 2D transition metal dichalcogenides like PtSe₂ can be integrated into standard silicon CMOS fabrication flows to produce high-performance optoelectronic devices. The PECVD-150LL and ICP-100 played indispensable roles in this process — providing the precise thin-film deposition and plasma etching capabilities required to protect and pattern delicate 2D materials without compromising device performance.</p>
       <p>As the field of 2D/Si heterojunction optoelectronics moves toward scalable manufacturing, reliable plasma processing tools like these become foundational to bridging the gap between lab-scale innovation and production-ready devices.</p>
-      <p><em>Interested in learning more about our PECVD and ICP systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+      <p><em>Interested in learning more about our PECVD and ICP systems? <a href="/contact">Request a Quote →</a></em></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
@@ -4268,7 +4268,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>Takeaway</h2>
       <p>Publication in <strong>Light: Science &amp; Applications</strong> (Nature portfolio, Impact Factor ~20) represents the highest tier of visibility in optics and photonics. This work demonstrates the RIE-150A\\'s capability to deliver the nanoscale pattern fidelity required for advanced metasurface devices where sub-nanometer dimensional control directly determines optical performance.</p>
-      <p><em>Interested in our RIE systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+      <p><em>Interested in our RIE systems? <a href="/contact">Request a Quote →</a></em></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
@@ -4361,7 +4361,7 @@ export const insightsPosts: InsightsPost[] = [
       <h2>Takeaway</h2>
       <p>This work — already accumulating citations since its 2025 publication — demonstrates the ICP-200\\'s ability to fabricate demanding high-aspect-ratio silicon nanostructures with the precision required for advanced metasurface optics. The combination of high ICP power and low bias enables the vertical sidewall profiles essential for polarization-sensitive metasurfaces.</p>
       <p>Together with the color router paper (also in <em>Light: Science &amp; Applications</em>), this represents <strong>two Nature-portfolio publications</strong> in rapid succession featuring Tailong Electronics etching systems — a strong endorsement of equipment performance for the nanophotonics community.</p>
-      <p><em>Interested in our ICP systems? <a href="/request-a-quote">Request a Quote →</a></em></p>
+      <p><em>Interested in our ICP systems? <a href="/contact">Request a Quote →</a></em></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
