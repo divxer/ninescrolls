@@ -478,6 +478,9 @@ class SegmentAnalyticsService {
         });
       }
 
+      // Get AI classification if available (non-blocking)
+      const aiResult = ipAnalytics.getAIClassification();
+
       // Dual-write to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({
         eventName: event,
@@ -499,6 +502,11 @@ class SegmentAnalyticsService {
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
         },
+        aiClassification: aiResult ? {
+          aiOrganizationType: aiResult.organizationType,
+          aiConfidence: aiResult.confidence,
+          aiReason: aiResult.reason,
+        } : null,
         context: {
           pathname: (properties?.pathname || properties?.pagePath || '') as string,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined,
@@ -713,6 +721,9 @@ class SegmentAnalyticsService {
         });
       }
 
+      // Get AI classification if available (non-blocking)
+      const aiResultPage = ipAnalytics.getAIClassification();
+
       // Dual-write page view to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({
         eventName: 'Page Viewed',
@@ -734,6 +745,11 @@ class SegmentAnalyticsService {
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
         },
+        aiClassification: aiResultPage ? {
+          aiOrganizationType: aiResultPage.organizationType,
+          aiConfidence: aiResultPage.confidence,
+          aiReason: aiResultPage.reason,
+        } : null,
         context: {
           pathname: pathname as string,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined,

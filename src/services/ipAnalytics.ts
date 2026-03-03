@@ -3,6 +3,7 @@
 // Server-side lookups avoid CORS restrictions and rate limits on third-party IP services
 
 import outputs from '../../amplify_outputs.json';
+import { classifyOrganization, type AIClassification } from './aiClassificationService';
 
 interface IPInfo {
   ip: string;
@@ -67,7 +68,9 @@ class IPAnalyticsService {
   private static instance: IPAnalyticsService;
   private ipInfo: IPInfo | null = null;
   private analysis: TargetCustomerAnalysis | null = null;
+  private aiClassification: AIClassification | null = null;
   private fetchPromise: Promise<void> | null = null;
+  private aiPromise: Promise<void> | null = null;
 
   private constructor() {}
 
@@ -111,6 +114,11 @@ class IPAnalyticsService {
         if (data.analysis) {
           this.analysis = data.analysis;
         }
+
+        // Fire off AI classification in parallel (non-blocking)
+        if (this.ipInfo?.org) {
+          this.aiPromise = this.fetchAIClassification();
+        }
       } catch (error) {
         if (import.meta.env.DEV) {
           console.warn('IP lookup API error:', error);
@@ -127,6 +135,79 @@ class IPAnalyticsService {
         this.fetchPromise = null;
       }
     }
+  }
+
+  /**
+   * Fetch AI classification from the classify-org Lambda.
+   * Updates this.analysis with AI-enhanced results when available.
+   */
+  private async fetchAIClassification(): Promise<void> {
+    if (!this.ipInfo?.org) return;
+
+    try {
+      const result = await classifyOrganization(
+        this.ipInfo.org,
+        this.ipInfo.country,
+        this.ipInfo.city,
+        this.ipInfo.isp
+      );
+
+      if (result) {
+        this.aiClassification = result;
+
+        // Enrich the existing analysis with AI results if AI is more confident
+        if (this.analysis && result.confidence > this.analysis.confidence) {
+          this.analysis = {
+            ...this.analysis,
+            isTargetCustomer: result.isTargetCustomer,
+            organizationType: result.organizationType as TargetCustomerAnalysis['organizationType'],
+            confidence: result.confidence,
+            // Recompute lead tier based on AI confidence
+            leadTier: this.computeLeadTier(result.confidence, result.organizationType),
+            details: {
+              ...this.analysis.details,
+              orgType: result.organizationType,
+              keywords: [result.reason],
+            },
+          };
+        }
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('AI classification failed:', error);
+      }
+      // Silently fail — keyword-based analysis remains
+    }
+  }
+
+  private computeLeadTier(confidence: number, orgType: string): 'A' | 'B' | 'C' | undefined {
+    const isResearchOrg = orgType === 'university' || orgType === 'research_institute';
+    if (confidence >= 0.7 && isResearchOrg) return 'A';
+    if (confidence >= 0.9) return 'A'; // Any org type with very high confidence
+    if (confidence >= 0.5 && orgType !== 'unknown') return 'B';
+    if (confidence >= 0.3) return 'C';
+    return undefined;
+  }
+
+  // Get AI classification result (may be null if not yet completed)
+  getAIClassification(): AIClassification | null {
+    return this.aiClassification;
+  }
+
+  // Wait for AI classification to complete (with timeout)
+  async waitForAIClassification(timeoutMs = 5000): Promise<AIClassification | null> {
+    if (this.aiClassification) return this.aiClassification;
+    if (!this.aiPromise) return null;
+
+    try {
+      await Promise.race([
+        this.aiPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
+      ]);
+    } catch {
+      // Timeout or error — return whatever we have
+    }
+    return this.aiClassification;
   }
 
   // Get user IP address and geolocation information
@@ -174,9 +255,11 @@ class IPAnalyticsService {
   reset(): void {
     this.ipInfo = null;
     this.analysis = null;
+    this.aiClassification = null;
     this.fetchPromise = null;
+    this.aiPromise = null;
   }
 }
 
 export const ipAnalytics = IPAnalyticsService.getInstance();
-export type { IPInfo, TargetCustomerAnalysis };
+export type { IPInfo, TargetCustomerAnalysis, AIClassification };
