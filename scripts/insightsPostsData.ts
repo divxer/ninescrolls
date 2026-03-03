@@ -4276,7 +4276,7 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-02',
+    publishDate: '2026-01-12',
     category: 'Publication Spotlight',
     readTime: 6,
     imageUrl: '/assets/images/insights/rie150a-color-router-cover.png',
@@ -4369,7 +4369,7 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-02',
+    publishDate: '2025-03-05',
     category: 'Publication Spotlight',
     readTime: 6,
     imageUrl: '/assets/images/insights/icp200-flow-visualization-cover.png',
