@@ -9,10 +9,11 @@ interface ClassifyRequest {
     country?: string;
     city?: string;
     isp?: string;
+    force?: boolean;
 }
 
 interface ClassifyResult {
-    organizationType: 'university' | 'research_institute' | 'enterprise' | 'government' | 'hospital' | 'unknown';
+    organizationType: 'university' | 'research_institute' | 'enterprise' | 'government' | 'hospital' | 'telecom_isp' | 'unknown';
     isTargetCustomer: boolean;
     confidence: number;
     reason: string;
@@ -104,22 +105,28 @@ ISP/Network: ${input.isp || 'Unknown'}
 
 Respond with ONLY valid JSON (no markdown, no explanation):
 {
-  "organizationType": "university" | "research_institute" | "enterprise" | "government" | "hospital" | "unknown",
+  "organizationType": "university" | "research_institute" | "enterprise" | "government" | "hospital" | "telecom_isp" | "unknown",
   "isTargetCustomer": true/false,
   "confidence": 0.0 to 1.0,
   "reason": "brief explanation (max 50 words)"
 }
 
-Rules:
+Classification rules:
 - "university": Educational institutions (universities, colleges, polytechnics)
 - "research_institute": National labs, research centers, academies of science
-- "enterprise": Companies with R&D/manufacturing that may use scientific equipment
+- "enterprise": ONLY companies that do R&D or manufacturing in fields like semiconductor, biotech, materials science, chemistry, pharma, advanced manufacturing, optics, etc.
 - "government": Government agencies
 - "hospital": Medical centers, hospitals
-- "unknown": ISPs, telecom, cloud providers, unidentifiable orgs
-- isTargetCustomer = true if they might reasonably purchase scientific research equipment
-- ISPs, cloud providers, CDNs, and consumer telecom are NOT target customers
-- Tech companies ARE potential targets if they do R&D (semiconductor, biotech, materials, etc.)`;
+- "telecom_isp": Telecom operators, mobile carriers, ISPs, broadband providers, CDNs, cloud/hosting providers, VPN services
+- "unknown": Unidentifiable organizations or those not fitting above categories
+
+CRITICAL — these are NEVER target customers (isTargetCustomer = false):
+- Telecom/mobile carriers: China Mobile, China Telecom, China Unicom, AT&T, Verizon, Vodafone, T-Mobile, and ALL regional/provincial branches (e.g. "HeiLongJiang Mobile Communication Company", "Guangdong Unicom")
+- Any org name containing: Mobile, Telecom, Communication Company, Broadband, 移动, 联通, 电信
+- ISPs and hosting: Comcast, Spectrum, Google Fiber, DigitalOcean, AWS, Azure, Cloudflare, Akamai
+- Web crawlers/bots: Google, Bing, Ahrefs, SEMrush
+
+isTargetCustomer = true ONLY if the organization would reasonably purchase scientific research equipment (microscopes, spectrometers, nanofab tools, etc.)`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -129,7 +136,7 @@ Rules:
             'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-            model: process.env.CLAUDE_MODEL || 'claude-haiku-4-5-latest',
+            model: process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001',
             max_tokens: 256,
             messages: [{ role: 'user', content: prompt }],
         }),
@@ -182,8 +189,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             };
         }
 
-        // Check DynamoDB cache first
-        const cached = await getCachedClassification(body.orgName);
+        // Check DynamoDB cache first (skip if force=true)
+        const cached = body.force ? null : await getCachedClassification(body.orgName);
         if (cached) {
             return {
                 statusCode: 200,
