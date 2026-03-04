@@ -280,7 +280,9 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
         };
     }
 
-    const orgName = ipInfo.org || ipInfo.isp || 'Unknown';
+    const orgNameRaw = ipInfo.org || ipInfo.isp || 'Unknown';
+    // Strip ASN prefix (e.g. "AS12093 University of Waterloo" → "University of Waterloo")
+    const orgName = orgNameRaw.replace(/^AS\d+\s+/i, '').trim() || orgNameRaw;
     const orgLower = orgName.toLowerCase();
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
 

@@ -156,7 +156,9 @@ class IPAnalyticsService {
         this.aiClassification = result;
 
         // Enrich the existing analysis with AI results if AI is more confident
-        if (this.analysis && result.confidence > this.analysis.confidence) {
+        // Never override backend L0 rejects (confidence 0, isTargetCustomer false)
+        const isL0Reject = this.analysis && this.analysis.confidence === 0 && !this.analysis.isTargetCustomer;
+        if (this.analysis && !isL0Reject && result.confidence > this.analysis.confidence) {
           this.analysis = {
             ...this.analysis,
             isTargetCustomer: result.isTargetCustomer,
