@@ -162,8 +162,8 @@ class IPAnalyticsService {
             isTargetCustomer: result.isTargetCustomer,
             organizationType: result.organizationType as TargetCustomerAnalysis['organizationType'],
             confidence: result.confidence,
-            // Recompute lead tier based on AI confidence
-            leadTier: this.computeLeadTier(result.confidence, result.organizationType),
+            // Recompute lead tier based on AI confidence and target customer status
+            leadTier: this.computeLeadTier(result.confidence, result.organizationType, result.isTargetCustomer),
             details: {
               ...this.analysis.details,
               orgType: result.organizationType,
@@ -180,7 +180,9 @@ class IPAnalyticsService {
     }
   }
 
-  private computeLeadTier(confidence: number, orgType: string): 'A' | 'B' | 'C' | undefined {
+  private computeLeadTier(confidence: number, orgType: string, isTargetCustomer?: boolean): 'A' | 'B' | 'C' | undefined {
+    // Non-target customers should never get a lead tier
+    if (isTargetCustomer === false) return undefined;
     const isResearchOrg = orgType === 'university' || orgType === 'research_institute';
     if (confidence >= 0.7 && isResearchOrg) return 'A';
     if (confidence >= 0.9) return 'A'; // Any org type with very high confidence
