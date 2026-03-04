@@ -126,44 +126,6 @@ function formatDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
-function friendlyPageName(pathname: string): string {
-  if (!pathname || pathname === '/') return 'Home';
-  // Strip leading/trailing slashes and split
-  const parts = pathname.replace(/^\/|\/$/g, '').split('/');
-  // Map known prefixes
-  const prefix = parts[0];
-  const rest = parts.slice(1).join(' / ');
-  const prefixMap: Record<string, string> = {
-    products: 'Product',
-    about: 'About Us',
-    contact: 'Contact',
-    insights: 'Insights',
-    manufacturers: 'Manufacturer',
-    categories: 'Categories',
-    admin: 'Admin',
-    'startup-package': 'Startup Package',
-    'plasma-cleaner': 'Plasma Cleaners',
-    privacy: 'Privacy Policy',
-    terms: 'Terms of Service',
-  };
-  const label = prefixMap[prefix] || prefix.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  if (rest) {
-    const detail = rest.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    return `${label}: ${detail}`;
-  }
-  return label;
-}
-
-/** pageTitle may be polluted by live-chat widgets, e.g. "(1) New message - Site" */
-function isCleanPageTitle(title: string | null | undefined): boolean {
-  if (!title) return false;
-  if (/^\(\d+\)\s/.test(title)) return false;           // "(1) New message..."
-  if (/new\s*message/i.test(title)) return false;        // "New Message - Site"
-  if (/unread/i.test(title)) return false;               // "3 unread - Site"
-  if (/chat\s*with/i.test(title)) return false;          // "Chat with support"
-  if (/[\u{1F4AC}\u{1F514}\u{1F525}]/u.test(title)) return false; // emoji spam
-  return true;
-}
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -482,25 +444,18 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       {/* Pages Visited */}
       {(() => {
         const pageEvents = org.events.filter((e) => e.pathname);
-        const uniquePages = new Map<string, { title: string | null; count: number }>();
+        const uniquePages = new Map<string, number>();
         for (const e of pageEvents) {
-          const existing = uniquePages.get(e.pathname!);
-          if (existing) {
-            existing.count++;
-            if (!existing.title && isCleanPageTitle(e.pageTitle)) existing.title = e.pageTitle!;
-          } else {
-            uniquePages.set(e.pathname!, { title: isCleanPageTitle(e.pageTitle) ? e.pageTitle! : null, count: 1 });
-          }
+          uniquePages.set(e.pathname!, (uniquePages.get(e.pathname!) || 0) + 1);
         }
         return uniquePages.size > 0 ? (
           <div className="org-detail-section">
             <h2 className="analytics-section-header">Pages Visited</h2>
             <div className="org-detail-pages-list">
-              {Array.from(uniquePages.entries()).map(([path, info]) => (
+              {Array.from(uniquePages.entries()).map(([path, count]) => (
                 <div key={path} className="org-detail-page-item">
-                  <span className="org-detail-page-title">{info.title || friendlyPageName(path)}</span>
-                  <span className="org-detail-page-path">{path}</span>
-                  <span className="org-detail-page-count">{info.count}x</span>
+                  <span className="org-detail-page-title">{path}</span>
+                  <span className="org-detail-page-count">{count}x</span>
                 </div>
               ))}
             </div>
@@ -552,12 +507,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                     {e.eventType}
                   </span>
-                  <span className="timeline-path">
-                    {e.pathname ? friendlyPageName(e.pathname) : e.eventName}
-                  </span>
-                  {e.pathname && (
-                    <span className="timeline-raw-path">{e.pathname}</span>
-                  )}
+                  <span className="timeline-path">{e.pathname || e.eventName}</span>
                   {e.productName && (
                     <span className="timeline-product">{e.productName}</span>
                   )}
