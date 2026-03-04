@@ -735,6 +735,34 @@
   color: #555;
 }
 
+.analytics-refresh-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.analytics-refresh-btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+}
+
+.analytics-refresh-btn:hover {
+  background: #e8f0fe;
+  color: #1a73e8;
+  border-color: #1a73e8;
+}
+
 .analytics-event-count {
   font-size: 0.85rem;
   color: #999;

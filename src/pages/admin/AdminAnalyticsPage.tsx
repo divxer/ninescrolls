@@ -570,6 +570,8 @@ export function AdminAnalyticsPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Select org with browser history support
   const selectOrg = useCallback((org: OrganizationRecord | null) => {
@@ -643,7 +645,14 @@ export function AdminAnalyticsPage() {
 
     loadAllEvents();
     return () => { cancelled = true; };
-  }, [dateRange, customStart, customEnd]);
+  }, [dateRange, customStart, customEnd, refreshKey]);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = setInterval(() => setRefreshKey((k) => k + 1), 30000);
+    return () => clearInterval(timer);
+  }, [autoRefresh]);
 
   // Filter bots — by isBot flag OR known bot org name
   const filteredEvents = useMemo(() => {
@@ -862,6 +871,24 @@ export function AdminAnalyticsPage() {
           <span className="analytics-toggle-slider" />
           <span className="analytics-toggle-label">Bots ({botCount})</span>
         </label>
+        <div className="analytics-refresh-group">
+          <button
+            className="analytics-refresh-btn"
+            onClick={() => setRefreshKey((k) => k + 1)}
+            title="Refresh data"
+          >
+            ↻
+          </button>
+          <label className="analytics-toggle">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+            />
+            <span className="analytics-toggle-slider" />
+            <span className="analytics-toggle-label">Auto 30s</span>
+          </label>
+        </div>
       </div>
 
       {error && <div className="admin-error">{error}</div>}
