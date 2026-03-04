@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -685,6 +685,10 @@ export function AdminAnalyticsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
+  const prevDateRange = useRef(dateRange);
+  const prevCustomStart = useRef(customStart);
+  const prevCustomEnd = useRef(customEnd);
 
   // Select org with browser history support
   const selectOrg = useCallback((org: OrganizationRecord | null) => {
@@ -703,15 +707,29 @@ export function AdminAnalyticsPage() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Load all events within date range
+  // Load all events within date range.
+  // Date range change → full loading spinner. Refresh key bump → soft background update.
   useEffect(() => {
     let cancelled = false;
+    const dateChanged = dateRange !== prevDateRange.current
+      || customStart !== prevCustomStart.current
+      || customEnd !== prevCustomEnd.current;
+    prevDateRange.current = dateRange;
+    prevCustomStart.current = customStart;
+    prevCustomEnd.current = customEnd;
+
+    // Soft refresh: keep existing data visible when only refreshKey changed
+    const isSoftRefresh = !dateChanged && allEvents.length > 0;
 
     async function loadAllEvents() {
-      setLoading(true);
+      if (isSoftRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+        setAllEvents([]);
+        setLoadProgress(0);
+      }
       setError('');
-      setAllEvents([]);
-      setLoadProgress(0);
 
       const { start, end } = getDateBounds(dateRange, customStart, customEnd);
 
@@ -738,7 +756,7 @@ export function AdminAnalyticsPage() {
             }
           }
 
-          setLoadProgress(collected.length);
+          if (!isSoftRefresh) setLoadProgress(collected.length);
           nextToken = result.nextToken || undefined;
         } while (nextToken && collected.length < MAX_EVENTS);
 
@@ -752,12 +770,14 @@ export function AdminAnalyticsPage() {
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setRefreshing(false);
         }
       }
     }
 
     loadAllEvents();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, customStart, customEnd, refreshKey]);
 
   // Auto-refresh every 30s
@@ -986,9 +1006,10 @@ export function AdminAnalyticsPage() {
         </label>
         <div className="analytics-refresh-group">
           <button
-            className="analytics-refresh-btn"
+            className={`analytics-refresh-btn ${refreshing ? 'refreshing' : ''}`}
             onClick={() => setRefreshKey((k) => k + 1)}
             title="Refresh data"
+            disabled={refreshing}
           >
             ↻
           </button>
