@@ -102,7 +102,7 @@ class BehaviorAnalyticsService {
 
   // Track time on page
   trackTimeOnPage(pagePath: string, seconds: number) {
-    if (seconds > 90) {  // Only track significant time
+    if (seconds > 5) {  // Track any meaningful visit (>5s filters bots/misclicks)
       this.trackSignal('time_on_page', seconds, { pagePath });
     }
   }

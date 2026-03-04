@@ -1,8 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { segmentAnalytics } from '../../services/segmentAnalytics';
 import { behaviorAnalytics } from '../../services/behaviorAnalytics';
 import outputs from '../../../amplify_outputs.json';
+
+// ─── Time tracking constants ─────────────────────────────────────────────────
+const MIN_TRACK_SECONDS = 5;       // Minimum seconds to track (filters bots/misclicks)
+const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes idle → pause timer
+const HEARTBEAT_INTERVAL_MS = 30_000;  // Save progress every 30s
+const CHECKPOINT_KEY = 'ns_page_time_checkpoint';
 
 /**
  * Get API Gateway endpoint for Segment proxy.
@@ -104,12 +110,20 @@ declare global {
   }
 }
 
-export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({ 
+export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   writeKey = 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU'
 }) => {
   const location = useLocation();
+
+  // ─── Time tracking refs ──────────────────────────────────────────────────
   const pageStartTimeRef = useRef<number>(Date.now());
   const currentPathRef = useRef<string>(location.pathname);
+  const accumulatedIdleRef = useRef<number>(0);   // Total idle ms for current page
+  const idleStartRef = useRef<number | null>(null); // When user became idle (null = active)
+  const lastActivityRef = useRef<number>(Date.now());
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasTrackedUnloadRef = useRef<boolean>(false); // Prevent double-counting
 
   useEffect(() => {
     // Load Segment script if not already loaded
@@ -200,17 +214,123 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     }
   }, [writeKey]);
 
+  // ─── Helper: calculate active time on current page ────────────────────────
+  const getActiveSeconds = useCallback((): number => {
+    const elapsed = Date.now() - pageStartTimeRef.current;
+    let idleMs = accumulatedIdleRef.current;
+    // If currently idle, add the ongoing idle period
+    if (idleStartRef.current !== null) {
+      idleMs += Date.now() - idleStartRef.current;
+    }
+    return Math.max(0, Math.floor((elapsed - idleMs) / 1000));
+  }, []);
+
+  // ─── Helper: track time + send beacon + clear checkpoint ─────────────────
+  const trackAndSend = useCallback((path: string, seconds: number) => {
+    if (seconds <= MIN_TRACK_SECONDS) return;
+    behaviorAnalytics.trackTimeOnPage(path, seconds);
+    const score = behaviorAnalytics.calculateBehaviorScore();
+    segmentAnalytics.sendTimeBeacon(path, seconds, score.timeOnSite);
+    try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+  }, []);
+
+  // ─── Helper: reset all timers for a new page ────────────────────────────
+  const resetTimers = useCallback(() => {
+    pageStartTimeRef.current = Date.now();
+    accumulatedIdleRef.current = 0;
+    idleStartRef.current = null;
+    lastActivityRef.current = Date.now();
+    hasTrackedUnloadRef.current = false;
+  }, []);
+
+  // ─── Recover crashed checkpoint on mount ─────────────────────────────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CHECKPOINT_KEY);
+      if (raw) {
+        const cp = JSON.parse(raw) as { path: string; activeTime: number; timestamp: number };
+        // Only recover if checkpoint is less than 10 minutes old
+        if (Date.now() - cp.timestamp < 10 * 60 * 1000 && cp.activeTime > MIN_TRACK_SECONDS) {
+          behaviorAnalytics.trackTimeOnPage(cp.path, cp.activeTime);
+        }
+        localStorage.removeItem(CHECKPOINT_KEY);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // ─── Idle detection ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const markActive = () => {
+      const now = Date.now();
+      // Throttle: ignore activity events within 1s of last one
+      if (now - lastActivityRef.current < 1000) return;
+      lastActivityRef.current = now;
+
+      // If we were idle, accumulate the idle time and resume
+      if (idleStartRef.current !== null) {
+        accumulatedIdleRef.current += now - idleStartRef.current;
+        idleStartRef.current = null;
+      }
+
+      // Reset the idle countdown
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        // User has been inactive for IDLE_TIMEOUT_MS → mark idle
+        idleStartRef.current = Date.now();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    // Start the initial idle countdown
+    idleTimerRef.current = setTimeout(() => {
+      idleStartRef.current = Date.now();
+    }, IDLE_TIMEOUT_MS);
+
+    const events = ['mousemove', 'keydown', 'scroll', 'touchstart'] as const;
+    events.forEach(evt => window.addEventListener(evt, markActive, { passive: true }));
+
+    return () => {
+      events.forEach(evt => window.removeEventListener(evt, markActive));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  // ─── Heartbeat: save progress to localStorage every 30s ─────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    heartbeatRef.current = setInterval(() => {
+      const activeTime = getActiveSeconds();
+      if (activeTime > MIN_TRACK_SECONDS) {
+        try {
+          localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
+            path: currentPathRef.current,
+            activeTime,
+            timestamp: Date.now(),
+          }));
+        } catch { /* ignore */ }
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    };
+  }, [getActiveSeconds]);
+
+  // ─── Route change tracking ───────────────────────────────────────────────
   useEffect(() => {
     // Track time spent on previous page before route change
     if (currentPathRef.current !== location.pathname) {
-      const timeOnPreviousPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-      if (timeOnPreviousPage > 90) {
-        behaviorAnalytics.trackTimeOnPage(currentPathRef.current, timeOnPreviousPage);
+      const activeTime = getActiveSeconds();
+      if (activeTime > MIN_TRACK_SECONDS) {
+        behaviorAnalytics.trackTimeOnPage(currentPathRef.current, activeTime);
+        try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
       }
     }
 
     // Reset timer for new page
-    pageStartTimeRef.current = Date.now();
+    resetTimers();
     currentPathRef.current = location.pathname;
 
     // Skip tracking for trailing-slash paths — RedirectHandler will normalize
@@ -221,7 +341,6 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
 
     // Track page views with Segment and IP analysis (merged into single call)
     if (typeof window !== 'undefined' && window.analytics) {
-      // Single call that handles both page event and IP analysis
       segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
         pathname: location.pathname,
         search: location.search,
@@ -235,7 +354,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const utmSource = urlParams.get('utm_source');
       const utmMedium = urlParams.get('utm_medium');
       const utmCampaign = urlParams.get('utm_campaign');
-      
+
       if (utmSource || utmMedium || document.referrer) {
         behaviorAnalytics.trackTrafficSource(
           utmSource || document.referrer || 'direct',
@@ -244,39 +363,46 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         );
       }
     }
-  }, [location.pathname, location.search, location.hash]);
+  }, [location.pathname, location.search, location.hash, getActiveSeconds, resetTimers]);
 
-  // Track time on page when user leaves the site
+  // ─── Unload / visibility tracking (with duplicate prevention) ────────────
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-      if (timeOnPage > 90) {
-        behaviorAnalytics.trackTimeOnPage(currentPathRef.current, timeOnPage);
-      }
+    if (typeof window === 'undefined') return;
+
+    const handleUnload = () => {
+      if (hasTrackedUnloadRef.current) return;
+      hasTrackedUnloadRef.current = true;
+      const activeTime = getActiveSeconds();
+      trackAndSend(currentPathRef.current, activeTime);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-        if (timeOnPage > 90) {
-          behaviorAnalytics.trackTimeOnPage(currentPathRef.current, timeOnPage);
-        }
+        if (hasTrackedUnloadRef.current) return;
+        hasTrackedUnloadRef.current = true;
+        const activeTime = getActiveSeconds();
+        trackAndSend(currentPathRef.current, activeTime);
       } else if (document.visibilityState === 'visible') {
-        // Reset timer when page becomes visible again
+        // Tab returned — reset for continued tracking
+        hasTrackedUnloadRef.current = false;
         pageStartTimeRef.current = Date.now();
+        accumulatedIdleRef.current = 0;
+        idleStartRef.current = null;
+        lastActivityRef.current = Date.now();
       }
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      
-      return () => {
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-    }
-  }, []);
+    window.addEventListener('beforeunload', handleUnload);
+    // pagehide is more reliable than beforeunload on mobile
+    window.addEventListener('pagehide', handleUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [getActiveSeconds, trackAndSend]);
 
   return null; // This component doesn't render anything
 };
