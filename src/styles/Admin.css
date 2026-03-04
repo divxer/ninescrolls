@@ -1069,11 +1069,12 @@
 
 .timeline-event {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.6rem;
-  padding: 0.4rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
-  border-bottom: 1px solid #f8f8f8;
+  border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
 }
 
 .timeline-event:last-child {
@@ -1089,10 +1090,21 @@
 }
 
 .timeline-path {
-  color: #333;
+  color: #1a1a1a;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.timeline-raw-path {
+  font-size: 0.72rem;
+  color: #999;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .timeline-product {
