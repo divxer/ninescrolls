@@ -995,6 +995,43 @@
   color: #0d47a1;
 }
 
+/* AI Classification */
+.org-detail-ai-classification {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.org-ai-row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+}
+
+.org-ai-row:last-child {
+  border-bottom: none;
+}
+
+.org-ai-label {
+  color: #888;
+  flex-shrink: 0;
+  width: 80px;
+  font-weight: 500;
+}
+
+.org-ai-value {
+  color: #333;
+}
+
+.org-ai-reason {
+  font-size: 0.8rem;
+  color: #555;
+  line-height: 1.4;
+}
+
 /* Pages visited list */
 .org-detail-pages-list {
   background: #fff;
