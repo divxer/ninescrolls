@@ -1213,6 +1213,13 @@
   margin-left: auto;
 }
 
+.timeline-visitor-vid {
+  font-size: 0.65rem;
+  color: #bbb;
+  font-family: monospace;
+  cursor: help;
+}
+
 /* Visit timeline */
 .org-detail-timeline {
   background: #fff;

@@ -634,6 +634,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     )}
                     {shortUA && <span className="timeline-visitor-ua">{shortUA}</span>}
                     <span className="timeline-visitor-count">{events.length} events</span>
+                    {vKey && !vKey.includes('.') && <span className="timeline-visitor-vid" title={vKey}>{vKey.slice(0, 8)}</span>}
                   </div>
                   {Array.from(visitorDateGroups.entries()).map(([date, devts]) => (
                     <div key={date} className="timeline-day">
