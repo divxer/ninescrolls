@@ -416,15 +416,18 @@ class SegmentAnalyticsService {
         finalLeadTier = 'C';
       }
       
+      // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
+      const ipRejected = analysis && analysis.isTargetCustomer === false;
+
       // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 && 
-                        (analysis.organizationType === 'university' || 
-                         analysis.organizationType === 'research_institute' || 
+      const threshold = (analysis && analysis.confidence >= 0.5 &&
+                        (analysis.organizationType === 'university' ||
+                         analysis.organizationType === 'research_institute' ||
                          analysis.organizationType === 'enterprise'))
         ? 0.25  // Lower threshold for target organizations with high IP confidence
         : 0.3;  // Standard threshold
-      
-      const isTargetCustomer = finalConfidence > threshold;
+
+      const isTargetCustomer = !ipRejected && finalConfidence > threshold;
 
       // Merge event properties
       const enhancedProperties = {
@@ -647,15 +650,18 @@ class SegmentAnalyticsService {
         finalLeadTier = 'C';
       }
       
+      // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
+      const ipRejected = analysis && analysis.isTargetCustomer === false;
+
       // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 && 
-                        (analysis.organizationType === 'university' || 
-                         analysis.organizationType === 'research_institute' || 
+      const threshold = (analysis && analysis.confidence >= 0.5 &&
+                        (analysis.organizationType === 'university' ||
+                         analysis.organizationType === 'research_institute' ||
                          analysis.organizationType === 'enterprise'))
         ? 0.25  // Lower threshold for target organizations with high IP confidence
         : 0.3;  // Standard threshold
-      
-      const isTargetCustomer = finalConfidence > threshold;
+
+      const isTargetCustomer = !ipRejected && finalConfidence > threshold;
 
       // Merge event properties with IP info and behavior
       const pathname = properties?.pathname || pageName || '';
