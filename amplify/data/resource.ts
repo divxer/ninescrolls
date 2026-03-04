@@ -105,6 +105,8 @@ const schema = a.schema({
       productName: a.string(),
       referrer: a.string(),
 
+      visitorId: a.string(),
+
       userAgent: a.string(),
       isBot: a.boolean(),
       latitude: a.float(),

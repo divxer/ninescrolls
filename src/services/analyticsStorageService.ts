@@ -4,6 +4,31 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
+// ─── Visitor ID ─────────────────────────────────────────────────────────────
+const VISITOR_ID_KEY = 'ns_visitor_id';
+
+/**
+ * Get or create a persistent visitor ID stored in localStorage.
+ * This allows us to track individual visitors across sessions,
+ * even if their IP address changes (e.g. mobile networks, VPNs).
+ */
+export function getVisitorId(): string {
+  try {
+    const existing = localStorage.getItem(VISITOR_ID_KEY);
+    if (existing) return existing;
+  } catch { /* localStorage unavailable */ }
+
+  const id = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  try {
+    localStorage.setItem(VISITOR_ID_KEY, id);
+  } catch { /* localStorage unavailable */ }
+
+  return id;
+}
+
 interface IPInfoInput {
   ip?: string;
   country?: string;
@@ -66,6 +91,8 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     eventName: params.eventName,
     eventType: params.eventType,
     timestamp: new Date().toISOString(),
+
+    visitorId: getVisitorId(),
 
     userAgent: ua,
     isBot: ua ? isbot(ua) : undefined,
