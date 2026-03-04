@@ -441,6 +441,36 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         </div>
       </div>
 
+      {/* AI Classification */}
+      {(() => {
+        const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
+        return aiEvent ? (
+          <div className="org-detail-section">
+            <h2 className="analytics-section-header">AI Classification</h2>
+            <div className="org-detail-ai-classification">
+              {aiEvent.aiOrganizationType && (
+                <div className="org-ai-row">
+                  <span className="org-ai-label">Type</span>
+                  <span className="org-ai-value">{aiEvent.aiOrganizationType}</span>
+                </div>
+              )}
+              {aiEvent.aiConfidence != null && (
+                <div className="org-ai-row">
+                  <span className="org-ai-label">Confidence</span>
+                  <span className="org-ai-value">{(aiEvent.aiConfidence * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              {aiEvent.aiReason && (
+                <div className="org-ai-row">
+                  <span className="org-ai-label">Reason</span>
+                  <span className="org-ai-value org-ai-reason">{aiEvent.aiReason}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {/* Pages Visited */}
       {(() => {
         const pageEvents = org.events.filter((e) => e.pathname);
