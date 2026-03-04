@@ -337,10 +337,13 @@ function maskIP(ip: string): string {
 function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
   const [showFullIP, setShowFullIP] = useState(false);
 
-  // Collect unique IPs, ISPs, User Agents
+  // Collect unique IPs, ISPs, User Agents, and visitor IDs
   const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
   const uniqueISPs = Array.from(new Set(org.events.map((e) => e.isp).filter(Boolean))) as string[];
   const uniqueUAs = Array.from(new Set(org.events.map((e) => e.userAgent).filter(Boolean))) as string[];
+  // visitorId is the preferred grouping key; fall back to IP for legacy events
+  const visitorKey = (e: AnalyticsEvent) => (e as Record<string, unknown>).visitorId as string || e.ip || 'unknown';
+  const uniqueVisitors = Array.from(new Set(org.events.map(visitorKey).filter((v) => v !== 'unknown')));
 
   const visitedContactPage = org.events.some((e) =>
     e.pathname?.includes('/contact') || e.eventName === 'Contact Form Submitted'
@@ -567,24 +570,24 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         ) : null;
       })()}
 
-      {/* Visit Timeline — grouped by visitor (IP) */}
+      {/* Visit Timeline — grouped by visitor (visitorId → IP fallback) */}
       <div className="org-detail-section">
         <h2 className="analytics-section-header">
           Visit Timeline
-          {uniqueIPs.length > 1 && <span className="analytics-filter-badge">{uniqueIPs.length} visitors</span>}
+          {uniqueVisitors.length > 1 && <span className="analytics-filter-badge">{uniqueVisitors.length} visitors</span>}
         </h2>
         <div className="org-detail-timeline">
           {(() => {
-            // Group events by IP
-            const byIP = new Map<string, AnalyticsEvent[]>();
+            // Group events by visitorId (preferred) → IP (fallback for legacy events)
+            const byVisitor = new Map<string, AnalyticsEvent[]>();
             for (const e of org.events) {
-              const ip = e.ip || 'unknown';
-              const group = byIP.get(ip);
+              const key = visitorKey(e);
+              const group = byVisitor.get(key);
               if (group) group.push(e);
-              else byIP.set(ip, [e]);
+              else byVisitor.set(key, [e]);
             }
-            // If only 1 IP, no need for visitor headers — just show by date
-            if (byIP.size <= 1) {
+            // If only 1 visitor, no need for visitor headers — just show by date
+            if (byVisitor.size <= 1) {
               return Array.from(eventsByDate.entries()).map(([date, events]) => (
                 <div key={date} className="timeline-day">
                   <div className="timeline-date">{date}</div>
@@ -608,8 +611,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 </div>
               ));
             }
-            // Multiple IPs — group by visitor
-            return Array.from(byIP.entries()).map(([ip, events], idx) => {
+            // Multiple visitors — group by visitor
+            return Array.from(byVisitor.entries()).map(([vKey, events], idx) => {
+              const ip = events.find((e) => e.ip)?.ip || '';
               const ua = events.find((e) => e.userAgent)?.userAgent || '';
               const shortUA = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : ua.split('/')[0] || '';
               const visitorDateGroups = new Map<string, AnalyticsEvent[]>();
@@ -620,12 +624,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 else visitorDateGroups.set(dk, [e]);
               }
               return (
-                <div key={ip} className="timeline-visitor">
+                <div key={vKey} className="timeline-visitor">
                   <div className="timeline-visitor-header">
                     <span className="timeline-visitor-label">Visitor {idx + 1}</span>
-                    <span className="timeline-visitor-ip" onClick={() => setShowFullIP((v) => !v)}>
-                      {showFullIP ? ip : maskIP(ip)}
-                    </span>
+                    {ip && (
+                      <span className="timeline-visitor-ip" onClick={() => setShowFullIP((v) => !v)}>
+                        {showFullIP ? ip : maskIP(ip)}
+                      </span>
+                    )}
                     {shortUA && <span className="timeline-visitor-ua">{shortUA}</span>}
                     <span className="timeline-visitor-count">{events.length} events</span>
                   </div>
