@@ -763,6 +763,19 @@
   border-color: #1a73e8;
 }
 
+.analytics-refresh-btn.refreshing {
+  animation: spin 0.8s linear infinite;
+  color: #1a73e8;
+  border-color: #1a73e8;
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .analytics-event-count {
   font-size: 0.85rem;
   color: #999;
