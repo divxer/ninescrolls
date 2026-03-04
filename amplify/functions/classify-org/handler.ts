@@ -95,11 +95,13 @@ async function classifyWithClaude(input: ClassifyRequest): Promise<ClassifyResul
     }
 
     const location = [input.city, input.country].filter(Boolean).join(', ');
+    // Strip ASN prefix so Claude sees the actual org name
+    const cleanOrgName = input.orgName.replace(/^AS\d+\s+/i, '').trim() || input.orgName;
     const prompt = `You are classifying organizations that visit NineScrolls, a scientific equipment company selling advanced research instruments (electron microscopes, spectrometers, nanofabrication tools, etc.) to universities, research labs, and R&D departments.
 
 Given this organization info, classify it:
 
-Organization name: ${input.orgName}
+Organization name: ${cleanOrgName}
 Location: ${location || 'Unknown'}
 ISP/Network: ${input.isp || 'Unknown'}
 
@@ -121,6 +123,7 @@ Classification rules:
 - "unknown": Unidentifiable organizations or those not fitting above categories
 
 CRITICAL — these are NEVER target customers (isTargetCustomer = false):
+- Names that are just geographic descriptions (e.g. "JINHUA, ZHEJIANG Province, P.R.China.") with no identifiable organization — classify as "unknown".
 - Telecom/mobile carriers: China Mobile, China Telecom, China Unicom, AT&T, Verizon, Vodafone, T-Mobile, and ALL regional/provincial branches (e.g. "HeiLongJiang Mobile Communication Company", "Guangdong Unicom")
 - Any org name containing: Mobile, Telecom, Communication Company, Broadband, 移动, 联通, 电信
 - ISPs and hosting: Comcast, Spectrum, Google Fiber, DigitalOcean, AWS, Azure, Cloudflare, Akamai
