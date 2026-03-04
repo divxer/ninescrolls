@@ -322,7 +322,26 @@ function VisitorMap({
 
 // ─── Organization Detail (Intelligence Dossier) ─────────────────────────────
 
+function maskIP(ip: string): string {
+  if (ip.includes(':')) {
+    // IPv6: show first 2 groups
+    const parts = ip.split(':');
+    return parts.slice(0, 2).join(':') + ':***';
+  }
+  // IPv4: mask 3rd octet
+  const parts = ip.split('.');
+  if (parts.length === 4) return `${parts[0]}.${parts[1]}.***.${parts[3]}`;
+  return ip;
+}
+
 function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
+  const [showFullIP, setShowFullIP] = useState(false);
+
+  // Collect unique IPs, ISPs, User Agents
+  const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
+  const uniqueISPs = Array.from(new Set(org.events.map((e) => e.isp).filter(Boolean))) as string[];
+  const uniqueUAs = Array.from(new Set(org.events.map((e) => e.userAgent).filter(Boolean))) as string[];
+
   const visitedContactPage = org.events.some((e) =>
     e.pathname?.includes('/contact') || e.eventName === 'Contact Form Submitted'
   );
@@ -369,6 +388,20 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
                 Tier {org.leadTier}
               </span>
+            )}
+            {uniqueIPs.length > 0 && (
+              <span
+                className="org-detail-ip"
+                onClick={() => setShowFullIP((v) => !v)}
+                title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+              >
+                {showFullIP
+                  ? uniqueIPs.join(', ')
+                  : uniqueIPs.map(maskIP).join(', ')}
+              </span>
+            )}
+            {uniqueISPs.length > 0 && (
+              <span className="org-detail-isp">{uniqueISPs.join(', ')}</span>
             )}
           </div>
         </div>
@@ -471,6 +504,18 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         ) : null;
       })()}
 
+      {/* User Agent */}
+      {uniqueUAs.length > 0 && (
+        <div className="org-detail-section">
+          <h2 className="analytics-section-header">User Agent</h2>
+          <div className="org-detail-ua-list">
+            {uniqueUAs.map((ua) => (
+              <div key={ua} className="org-detail-ua-item">{ua}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pages Visited */}
       {(() => {
         const pageEvents = org.events.filter((e) => e.pathname);
@@ -522,32 +567,94 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         ) : null;
       })()}
 
-      {/* Visit Timeline */}
+      {/* Visit Timeline — grouped by visitor (IP) */}
       <div className="org-detail-section">
-        <h2 className="analytics-section-header">Visit Timeline</h2>
+        <h2 className="analytics-section-header">
+          Visit Timeline
+          {uniqueIPs.length > 1 && <span className="analytics-filter-badge">{uniqueIPs.length} visitors</span>}
+        </h2>
         <div className="org-detail-timeline">
-          {Array.from(eventsByDate.entries()).map(([date, events]) => (
-            <div key={date} className="timeline-day">
-              <div className="timeline-date">{date}</div>
-              {events.map((e) => (
-                <div key={e.id} className="timeline-event">
-                  <span className="timeline-time">
-                    {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                  <span className={`analytics-badge analytics-badge-${e.eventType}`}>
-                    {e.eventType}
-                  </span>
-                  <span className="timeline-path">{e.pathname || e.eventName}</span>
-                  {e.productName && (
-                    <span className="timeline-product">{e.productName}</span>
-                  )}
-                  {e.timeOnSite != null && e.timeOnSite > 0 && (
-                    <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
-                  )}
+          {(() => {
+            // Group events by IP
+            const byIP = new Map<string, AnalyticsEvent[]>();
+            for (const e of org.events) {
+              const ip = e.ip || 'unknown';
+              const group = byIP.get(ip);
+              if (group) group.push(e);
+              else byIP.set(ip, [e]);
+            }
+            // If only 1 IP, no need for visitor headers — just show by date
+            if (byIP.size <= 1) {
+              return Array.from(eventsByDate.entries()).map(([date, events]) => (
+                <div key={date} className="timeline-day">
+                  <div className="timeline-date">{date}</div>
+                  {events.map((e) => (
+                    <div key={e.id} className="timeline-event">
+                      <span className="timeline-time">
+                        {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                      <span className={`analytics-badge analytics-badge-${e.eventType}`}>
+                        {e.eventType}
+                      </span>
+                      <span className="timeline-path">{e.pathname || e.eventName}</span>
+                      {e.productName && (
+                        <span className="timeline-product">{e.productName}</span>
+                      )}
+                      {e.timeOnSite != null && e.timeOnSite > 0 && (
+                        <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ))}
+              ));
+            }
+            // Multiple IPs — group by visitor
+            return Array.from(byIP.entries()).map(([ip, events], idx) => {
+              const ua = events.find((e) => e.userAgent)?.userAgent || '';
+              const shortUA = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : ua.split('/')[0] || '';
+              const visitorDateGroups = new Map<string, AnalyticsEvent[]>();
+              for (const e of events) {
+                const dk = new Date(e.timestamp).toLocaleDateString();
+                const g = visitorDateGroups.get(dk);
+                if (g) g.push(e);
+                else visitorDateGroups.set(dk, [e]);
+              }
+              return (
+                <div key={ip} className="timeline-visitor">
+                  <div className="timeline-visitor-header">
+                    <span className="timeline-visitor-label">Visitor {idx + 1}</span>
+                    <span className="timeline-visitor-ip" onClick={() => setShowFullIP((v) => !v)}>
+                      {showFullIP ? ip : maskIP(ip)}
+                    </span>
+                    {shortUA && <span className="timeline-visitor-ua">{shortUA}</span>}
+                    <span className="timeline-visitor-count">{events.length} events</span>
+                  </div>
+                  {Array.from(visitorDateGroups.entries()).map(([date, devts]) => (
+                    <div key={date} className="timeline-day">
+                      <div className="timeline-date">{date}</div>
+                      {devts.map((e) => (
+                        <div key={e.id} className="timeline-event">
+                          <span className="timeline-time">
+                            {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                          <span className={`analytics-badge analytics-badge-${e.eventType}`}>
+                            {e.eventType}
+                          </span>
+                          <span className="timeline-path">{e.pathname || e.eventName}</span>
+                          {e.productName && (
+                            <span className="timeline-product">{e.productName}</span>
+                          )}
+                          {e.timeOnSite != null && e.timeOnSite > 0 && (
+                            <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
     </div>
