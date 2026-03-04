@@ -932,6 +932,47 @@ class SegmentAnalyticsService {
   async getSimpleTargetCustomerAnalysis(): Promise<SimpleTargetCustomerAnalysis | null> {
     return await simpleIPAnalytics.analyzeTargetCustomer();
   }
+
+  /**
+   * Send time-on-page data via sendBeacon (guaranteed delivery on page unload).
+   * Falls back to fetch+keepalive if sendBeacon is unavailable.
+   */
+  sendTimeBeacon(pagePath: string, timeOnPage: number, totalTimeOnSite: number): void {
+    try {
+      const apiEndpoint = getApiEndpoint();
+      const payload = JSON.stringify({
+        type: 'track',
+        event: 'Time on Page',
+        anonymousId: getAnonymousId(),
+        properties: {
+          pagePath,
+          timeOnPage,
+          totalTimeOnSite,
+          url: window.location.href,
+          title: document.title,
+        },
+        context: collectBrowserContext(),
+      });
+
+      const url = `${apiEndpoint}/d`;
+
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' });
+        const sent = navigator.sendBeacon(url, blob);
+        if (sent) return;
+      }
+
+      // Fallback: fetch with keepalive
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      }).catch(() => { /* best-effort */ });
+    } catch {
+      // Silently fail — this runs during page unload
+    }
+  }
 }
 
 export const segmentAnalytics = SegmentAnalyticsService.getInstance(); 
