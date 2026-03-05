@@ -371,6 +371,38 @@
   margin-top: 0.25rem;
 }
 
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.form-label-row label {
+  margin-bottom: 0;
+}
+
+.ai-generate-btn {
+  padding: 0.25rem 0.6rem;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .admin-submit-btn {
   width: 100%;
   padding: 0.7rem;
