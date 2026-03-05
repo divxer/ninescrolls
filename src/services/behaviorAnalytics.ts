@@ -292,4 +292,4 @@ class BehaviorAnalyticsService {
 }
 
 export const behaviorAnalytics = BehaviorAnalyticsService.getInstance();
-export type { BehaviorSignal, BehaviorScore, TrafficChannel };
+export type { BehaviorSignal, BehaviorScore };
