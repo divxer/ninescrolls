@@ -927,23 +927,21 @@ export function AdminAnalyticsPage() {
       try {
         const collected: AnalyticsEvent[] = [];
         let nextToken: string | undefined;
-        // Scan the full table to avoid missing events that appear later
-        // in the DynamoDB scan order. Cap total scanned items (not matched
-        // events) to prevent runaway reads on very large tables.
-        const MAX_SCAN_ITEMS = 10000;
-        let totalScanned = 0;
 
+        // Scan the entire table — no early stopping.
+        // DynamoDB Scan is paginated; we iterate every page and filter
+        // by date client-side.  For tables with thousands of events this
+        // completes in a few seconds (each page ≈ 1 MB / ~500 items).
         do {
           const result = await client.models.AnalyticsEvent.list({
             authMode: 'userPool',
-            limit: 200,
+            limit: 500,
             nextToken,
           });
 
           if (cancelled) return;
 
           const events = (result.data || []) as AnalyticsEvent[];
-          totalScanned += events.length;
 
           for (const e of events) {
             const ts = new Date(e.timestamp).getTime();
@@ -954,7 +952,7 @@ export function AdminAnalyticsPage() {
 
           if (!isSoftRefresh) setLoadProgress(collected.length);
           nextToken = result.nextToken || undefined;
-        } while (nextToken && totalScanned < MAX_SCAN_ITEMS);
+        } while (nextToken);
 
         if (!cancelled) {
           setAllEvents(collected);
