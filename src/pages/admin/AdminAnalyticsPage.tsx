@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { getOrgOverride, setOrgOverride, undoOrgOverride, type OrgOverride } from '../../services/adminClassificationService';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -365,6 +366,52 @@ function maskIP(ip: string): string {
 
 function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
   const [showFullIP, setShowFullIP] = useState(false);
+  const [override, setOverride] = useState<OrgOverride | null>(null);
+  const [overrideLoading, setOverrideLoading] = useState(true);
+  const [overrideMsg, setOverrideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setOverrideLoading(true);
+    getOrgOverride(org.orgName).then((result) => {
+      if (!cancelled) setOverride(result);
+    }).catch(() => {
+      if (!cancelled) setOverride(null);
+    }).finally(() => {
+      if (!cancelled) setOverrideLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [org.orgName]);
+
+  async function handleOverride(isTarget: boolean) {
+    setOverrideLoading(true);
+    setOverrideMsg(null);
+    try {
+      const result = await setOrgOverride(org.orgName, isTarget);
+      setOverride(result);
+      setOverrideMsg({ type: 'success', text: `Marked as ${isTarget ? 'target' : 'non-target'} customer` });
+    } catch {
+      setOverrideMsg({ type: 'error', text: 'Failed to save override' });
+    } finally {
+      setOverrideLoading(false);
+    }
+  }
+
+  async function handleUndoOverride() {
+    setOverrideLoading(true);
+    setOverrideMsg(null);
+    try {
+      await undoOrgOverride(org.orgName);
+      // Re-fetch to get restored state
+      const fresh = await getOrgOverride(org.orgName);
+      setOverride(fresh);
+      setOverrideMsg({ type: 'success', text: 'Override removed' });
+    } catch {
+      setOverrideMsg({ type: 'error', text: 'Failed to undo override' });
+    } finally {
+      setOverrideLoading(false);
+    }
+  }
 
   // Collect unique IPs, ISPs, User Agents, and visitor IDs
   const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
@@ -534,6 +581,74 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             </div>
           </div>
         ) : null;
+      })()}
+
+      {/* Classification Override */}
+      {(() => {
+        const isManual = override?.found && override?.source === 'manual';
+        const currentIsTarget = isManual ? override?.isTargetCustomer : org.isTargetCustomer;
+        const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
+        const hasConflict = isManual && aiEvent?.aiConfidence != null &&
+          override?.isTargetCustomer !== (aiEvent.aiConfidence >= 0.5);
+
+        return (
+          <div className="org-detail-section">
+            <h2 className="analytics-section-header">Classification Override</h2>
+
+            <div className="org-override-status">
+              {isManual ? (
+                <span className="org-override-badge org-override-manual">Manual Override</span>
+              ) : override?.found ? (
+                <span className="org-override-badge org-override-ai">AI Classified</span>
+              ) : (
+                <span className="org-override-badge org-override-ai">Auto Classified</span>
+              )}
+              <span className="org-override-target">
+                {currentIsTarget ? 'Target Customer' : 'Not Target'}
+              </span>
+            </div>
+
+            {hasConflict && (
+              <div className="org-override-warning">
+                Manual classification conflicts with AI — AI says{' '}
+                {aiEvent!.aiConfidence! >= 0.5 ? 'target' : 'not target'} ({(aiEvent!.aiConfidence! * 100).toFixed(0)}% confidence)
+              </div>
+            )}
+
+            <div className="org-override-actions">
+              {currentIsTarget ? (
+                <button
+                  className="org-override-btn org-override-btn-reject"
+                  onClick={() => handleOverride(false)}
+                  disabled={overrideLoading}
+                >
+                  Mark as Not Target
+                </button>
+              ) : (
+                <button
+                  className="org-override-btn org-override-btn-approve"
+                  onClick={() => handleOverride(true)}
+                  disabled={overrideLoading}
+                >
+                  Mark as Target
+                </button>
+              )}
+              {isManual && (
+                <button
+                  className="org-override-btn org-override-btn-undo"
+                  onClick={handleUndoOverride}
+                  disabled={overrideLoading}
+                >
+                  Undo Override
+                </button>
+              )}
+            </div>
+
+            {overrideMsg && (
+              <div className={`org-override-${overrideMsg.type}`}>{overrideMsg.text}</div>
+            )}
+          </div>
+        );
       })()}
 
       {/* User Agent */}
