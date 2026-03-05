@@ -156,9 +156,13 @@ class IPAnalyticsService {
         this.aiClassification = result;
 
         // Enrich the existing analysis with AI results if AI is more confident
-        // Never override backend L0 rejects (confidence 0, isTargetCustomer false)
-        const isL0Reject = this.analysis && this.analysis.confidence === 0 && !this.analysis.isTargetCustomer;
-        if (this.analysis && !isL0Reject && result.confidence > this.analysis.confidence) {
+        // Guard 1: Never override backend L0 rejects (confidence 0) or explicit rejections
+        const isBackendRejected = this.analysis && !this.analysis.isTargetCustomer;
+        // Guard 2: AI can only UPGRADE if backend had minimum confidence (not a noise/unknown org)
+        const backendHasSignal = this.analysis && this.analysis.confidence >= 0.2;
+
+        if (this.analysis && !isBackendRejected && backendHasSignal && result.confidence > this.analysis.confidence) {
+          // AI agrees with backend direction — enrich with higher confidence
           this.analysis = {
             ...this.analysis,
             isTargetCustomer: result.isTargetCustomer,
@@ -166,6 +170,25 @@ class IPAnalyticsService {
             confidence: result.confidence,
             // Recompute lead tier based on AI confidence and target customer status
             leadTier: this.computeLeadTier(result.confidence, result.organizationType, result.isTargetCustomer),
+            details: {
+              ...this.analysis.details,
+              orgType: result.organizationType,
+              keywords: [result.reason],
+            },
+          };
+        } else if (this.analysis && isBackendRejected && result.isTargetCustomer && result.confidence >= 0.9) {
+          // AI strongly disagrees with backend rejection — allow override ONLY with very high AI confidence
+          // This handles cases where keyword matching misses legitimate orgs (e.g. org names in non-English)
+          // but prevents VPN/datacenter false positives
+          if (import.meta.env.DEV) {
+            console.info(`[IPAnalytics] AI override of backend rejection for ${this.ipInfo?.org}: AI confidence ${result.confidence}`);
+          }
+          this.analysis = {
+            ...this.analysis,
+            isTargetCustomer: result.isTargetCustomer,
+            organizationType: result.organizationType as TargetCustomerAnalysis['organizationType'],
+            confidence: result.confidence * 0.7, // Discount AI confidence when overriding backend rejection
+            leadTier: this.computeLeadTier(result.confidence * 0.7, result.organizationType, result.isTargetCustomer),
             details: {
               ...this.analysis.details,
               orgType: result.organizationType,
