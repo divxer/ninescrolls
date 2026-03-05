@@ -465,7 +465,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               {[org.city, org.region, org.country].filter(Boolean).join(', ')}
             </span>
             {org.leadTier && (
-              <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
+              <span
+                className={`analytics-tier analytics-tier-${org.leadTier}`}
+                style={override?.found && override?.source === 'manual' && !override?.isTargetCustomer
+                  ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}
+              >
                 Tier {org.leadTier}
               </span>
             )}
@@ -608,6 +612,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 {currentIsTarget ? 'Target Customer' : 'Not Target'}
               </span>
             </div>
+
+            {/* Reason display */}
+            {(override?.reason || aiEvent?.aiReason) && (
+              <div style={{ fontSize: '0.85rem', color: '#666', margin: '0.4rem 0' }}>
+                {isManual && override?.reason
+                  ? <>Reason: {override.reason}</>
+                  : aiEvent?.aiReason
+                    ? <>AI: {aiEvent.aiReason}</>
+                    : null}
+              </div>
+            )}
 
             {hasConflict && (
               <div className="org-override-warning">
