@@ -98,6 +98,7 @@ const schema = a.schema({
       pdfDownloads: a.integer(),
       returnVisits: a.integer(),
       isPaidTraffic: a.boolean(),
+      trafficChannel: a.string(),
 
       pathname: a.string(),
       pageTitle: a.string(),

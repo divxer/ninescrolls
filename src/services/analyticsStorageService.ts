@@ -56,6 +56,7 @@ interface BehaviorScoreInput {
   pdfDownloads?: number;
   returnVisits?: number;
   isPaidTraffic?: boolean;
+  trafficChannel?: string;
 }
 
 interface AIClassificationInput {
@@ -119,6 +120,7 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     pdfDownloads: params.behaviorScore?.pdfDownloads,
     returnVisits: params.behaviorScore?.returnVisits,
     isPaidTraffic: params.behaviorScore?.isPaidTraffic,
+    trafficChannel: params.behaviorScore?.trafficChannel,
 
     aiOrganizationType: params.aiClassification?.aiOrganizationType,
     aiConfidence: params.aiClassification?.aiConfidence,

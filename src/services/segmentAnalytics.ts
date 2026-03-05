@@ -464,6 +464,7 @@ class SegmentAnalyticsService {
           pdfDownloads: behaviorScore.pdfDownloads,
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
+          trafficChannel: behaviorScore.trafficChannel,
           behaviorScore: behaviorScore.behaviorScore
         }
       };
@@ -504,6 +505,7 @@ class SegmentAnalyticsService {
           pdfDownloads: behaviorScore.pdfDownloads,
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
+          trafficChannel: behaviorScore.trafficChannel,
         },
         aiClassification: aiResult ? {
           aiOrganizationType: aiResult.organizationType,
@@ -550,7 +552,8 @@ class SegmentAnalyticsService {
             timeOnSite: behaviorScore.timeOnSite,
             pdfDownloads: behaviorScore.pdfDownloads,
             returnVisits: behaviorScore.returnVisits,
-            isPaidTraffic: behaviorScore.isPaidTraffic
+            isPaidTraffic: behaviorScore.isPaidTraffic,
+            trafficChannel: behaviorScore.trafficChannel
           },
 
           // IP information (for sales team context)
@@ -705,6 +708,7 @@ class SegmentAnalyticsService {
           pdfDownloads: behaviorScore.pdfDownloads,
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
+          trafficChannel: behaviorScore.trafficChannel,
           behaviorScore: behaviorScore.behaviorScore
         }
       };
@@ -750,6 +754,7 @@ class SegmentAnalyticsService {
           pdfDownloads: behaviorScore.pdfDownloads,
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
+          trafficChannel: behaviorScore.trafficChannel,
         },
         aiClassification: aiResultPage ? {
           aiOrganizationType: aiResultPage.organizationType,
@@ -793,7 +798,8 @@ class SegmentAnalyticsService {
             timeOnSite: behaviorScore.timeOnSite,
             pdfDownloads: behaviorScore.pdfDownloads,
             returnVisits: behaviorScore.returnVisits,
-            isPaidTraffic: behaviorScore.isPaidTraffic
+            isPaidTraffic: behaviorScore.isPaidTraffic,
+            trafficChannel: behaviorScore.trafficChannel
           },
           
           // IP information (for sales team context)
