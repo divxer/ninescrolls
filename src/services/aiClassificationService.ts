@@ -13,7 +13,7 @@ export interface AIClassification {
 }
 
 const CACHE_KEY = 'ninescrolls_ai_classifications';
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const REQUEST_TIMEOUT_MS = 8000; // 8 seconds
 
 function getApiEndpoint(): string {

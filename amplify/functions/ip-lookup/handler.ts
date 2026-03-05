@@ -182,9 +182,10 @@ const noiseOrgs = [
     'cloudflare', 'amazon', 'aws', 'google', 'microsoft', 'oracle',
     'azure', 'gcp', 'digitalocean', 'linode', 'vultr', 'ovh',
     'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn',
-    // Data centers and Colocation
+    // Data centers, Colocation, and VPN providers
     'colo', 'colocation', 'datacenter', 'data center', 'whitelabel',
     'whitelabelcolo', 'server', 'hosting', 'host', 'dedicated',
+    'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
     // Other non-target industries
     'real estate', 'construction', 'logistics', 'shipping', 'transportation',
 ];
@@ -194,6 +195,7 @@ const highPriorityNoise = [
     'hosting', 'host', 'server', 'dedicated',
     'cloudflare', 'amazon', 'aws', 'azure', 'gcp',
     'comcast', 'verizon', 'at&t', 't-mobile', 'isp',
+    'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
 ];
 
 const whitelist = [

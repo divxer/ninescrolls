@@ -41,7 +41,7 @@ const getCorsHeaders = (origin?: string) => {
 
 const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const TABLE_NAME = process.env.ORG_CLASSIFICATION_TABLE || '';
-const CACHE_TTL_DAYS = 30;
+const CACHE_TTL_DAYS = 7;
 
 async function getCachedClassification(orgName: string): Promise<ClassifyResult | null> {
     if (!TABLE_NAME) return null;
