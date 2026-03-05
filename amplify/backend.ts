@@ -10,6 +10,7 @@ import { segmentProxy } from './functions/segment-proxy/resource';
 import { ipLookup } from './functions/ip-lookup/resource';
 import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
+import { generateArticleMeta } from './functions/generate-article-meta/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -27,6 +28,7 @@ const backend = defineBackend({
     ipLookup,
     serverTrack,
     classifyOrg,
+    generateArticleMeta,
 });
 
 // Create a fixed stage name
@@ -238,6 +240,18 @@ const orgClassificationTable = new Table(classifyOrgFunctionStack, 'OrgClassific
 
 orgClassificationTable.grantReadWriteData(backend.classifyOrg.resources.lambda);
 backend.classifyOrg.addEnvironment('ORG_CLASSIFICATION_TABLE', orgClassificationTable.tableName);
+
+// Create /generate-article-meta resource for AI-powered article excerpt & tags generation
+const generateArticleMetaResource = restApi.root.addResource('generate-article-meta');
+const generateArticleMetaIntegration = new LambdaIntegration(backend.generateArticleMeta.resources.lambda, {
+    proxy: true,
+});
+
+// Add POST method for article meta generation
+generateArticleMetaResource.addMethod('POST', generateArticleMetaIntegration);
+
+// Add OPTIONS method for CORS preflight
+generateArticleMetaResource.addMethod('OPTIONS', generateArticleMetaIntegration);
 
 // Add outputs
 backend.addOutput({

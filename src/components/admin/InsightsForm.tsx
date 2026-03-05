@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RichTextEditor } from './RichTextEditor';
 import type { InsightsPost } from '../../types';
+import { generateArticleMeta } from '../../services/insightsAIService';
 
 const CATEGORIES = ['Materials Science', 'Photonics', 'Nanotechnology', 'Energy'];
 
@@ -9,6 +10,17 @@ function generateSlug(title: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+function stripHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+}
+
+function estimateReadTime(html: string): number {
+  const text = stripHtml(html);
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
 }
 
 function todayISO(): string {
@@ -43,15 +55,20 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
+  const [excerptManuallyEdited, setExcerptManuallyEdited] = useState(false);
   const [author, setAuthor] = useState('NineScrolls Team');
   const [publishDate, setPublishDate] = useState(todayISO());
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [readTime, setReadTime] = useState(5);
+  const [readTimeManuallyEdited, setReadTimeManuallyEdited] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [imageUrlManuallyEdited, setImageUrlManuallyEdited] = useState(false);
   const [tagsStr, setTagsStr] = useState('');
   const [relatedProducts, setRelatedProducts] = useState('');
   const [heroImages, setHeroImages] = useState('');
+  const [heroImagesManuallyEdited, setHeroImagesManuallyEdited] = useState(false);
   const [isStandaloneComponent, setIsStandaloneComponent] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -61,11 +78,14 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setSlugManuallyEdited(true);
       setContent(initialData.content || '');
       setExcerpt(initialData.excerpt || '');
+      setExcerptManuallyEdited(true);
       setAuthor(initialData.author);
       setPublishDate(initialData.publishDate);
       setCategory(initialData.category);
       setReadTime(initialData.readTime);
+      setReadTimeManuallyEdited(true);
       setImageUrl(initialData.imageUrl);
+      setImageUrlManuallyEdited(true);
       setTagsStr(initialData.tags?.join(', ') || '');
       setRelatedProducts(
         initialData.relatedProducts ? JSON.stringify(initialData.relatedProducts, null, 2) : ''
@@ -73,6 +93,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setHeroImages(
         initialData.heroImages ? JSON.stringify(initialData.heroImages, null, 2) : ''
       );
+      setHeroImagesManuallyEdited(true);
       setIsStandaloneComponent(initialData.isStandaloneComponent || false);
     }
   }, [initialData]);
@@ -82,6 +103,50 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setSlug(generateSlug(title));
     }
   }, [title, slugManuallyEdited]);
+
+  // Auto-calculate read time from content
+  useEffect(() => {
+    if (!readTimeManuallyEdited && content) {
+      setReadTime(estimateReadTime(content));
+    }
+  }, [content, readTimeManuallyEdited]);
+
+  // Auto-extract excerpt from content
+  useEffect(() => {
+    if (!excerptManuallyEdited && content) {
+      setExcerpt(stripHtml(content).slice(0, 160));
+    }
+  }, [content, excerptManuallyEdited]);
+
+  // Auto-fill image URL from slug
+  useEffect(() => {
+    if (!imageUrlManuallyEdited && slug) {
+      setImageUrl(`/assets/images/insights/${slug}`);
+    }
+  }, [slug, imageUrlManuallyEdited]);
+
+  // Auto-fill hero images JSON from slug
+  useEffect(() => {
+    if (!heroImagesManuallyEdited && slug) {
+      setHeroImages(JSON.stringify({ prefix: slug, fallbackExt: 'png' }, null, 2));
+    }
+  }, [slug, heroImagesManuallyEdited]);
+
+  async function handleAIGenerate() {
+    if (!stripHtml(content).trim() || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const result = await generateArticleMeta(title, stripHtml(content), category);
+      setExcerpt(result.excerpt);
+      setExcerptManuallyEdited(true);
+      setTagsStr(result.tags.join(', '));
+    } catch (err) {
+      console.error('AI generation failed:', err);
+      setErrors((prev) => ({ ...prev, ai: 'AI generation failed. Please try again.' }));
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -170,14 +235,28 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
           </div>
 
           <div className="form-field">
-            <label htmlFor="excerpt">Excerpt</label>
+            <div className="form-label-row">
+              <label htmlFor="excerpt">Excerpt</label>
+              <button
+                type="button"
+                className="ai-generate-btn"
+                onClick={handleAIGenerate}
+                disabled={!stripHtml(content).trim() || isGenerating}
+              >
+                {isGenerating ? 'Generating...' : 'AI Generate'}
+              </button>
+            </div>
             <textarea
               id="excerpt"
               value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
+              onChange={(e) => {
+                setExcerpt(e.target.value);
+                setExcerptManuallyEdited(true);
+              }}
               placeholder="Short description for article cards"
               rows={3}
             />
+            {errors.ai && <span className="field-error">{errors.ai}</span>}
           </div>
 
           <div className="form-field">
@@ -236,7 +315,10 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               type="number"
               min={1}
               value={readTime}
-              onChange={(e) => setReadTime(Number(e.target.value))}
+              onChange={(e) => {
+                setReadTime(Number(e.target.value));
+                setReadTimeManuallyEdited(true);
+              }}
             />
             {errors.readTime && <span className="field-error">{errors.readTime}</span>}
           </div>
@@ -247,7 +329,10 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               id="imageUrl"
               type="text"
               value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                setImageUrlManuallyEdited(true);
+              }}
               placeholder="/assets/images/insights/..."
             />
             {errors.imageUrl && <span className="field-error">{errors.imageUrl}</span>}
@@ -283,7 +368,10 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
             <textarea
               id="heroImages"
               value={heroImages}
-              onChange={(e) => setHeroImages(e.target.value)}
+              onChange={(e) => {
+                setHeroImages(e.target.value);
+                setHeroImagesManuallyEdited(true);
+              }}
               placeholder='{"prefix": "cover-name", "fallbackExt": "png"}'
               rows={3}
             />
