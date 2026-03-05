@@ -927,7 +927,11 @@ export function AdminAnalyticsPage() {
       try {
         const collected: AnalyticsEvent[] = [];
         let nextToken: string | undefined;
-        const MAX_EVENTS = 2000;
+        // Scan the full table to avoid missing events that appear later
+        // in the DynamoDB scan order. Cap total scanned items (not matched
+        // events) to prevent runaway reads on very large tables.
+        const MAX_SCAN_ITEMS = 10000;
+        let totalScanned = 0;
 
         do {
           const result = await client.models.AnalyticsEvent.list({
@@ -939,6 +943,7 @@ export function AdminAnalyticsPage() {
           if (cancelled) return;
 
           const events = (result.data || []) as AnalyticsEvent[];
+          totalScanned += events.length;
 
           for (const e of events) {
             const ts = new Date(e.timestamp).getTime();
@@ -949,7 +954,7 @@ export function AdminAnalyticsPage() {
 
           if (!isSoftRefresh) setLoadProgress(collected.length);
           nextToken = result.nextToken || undefined;
-        } while (nextToken && collected.length < MAX_EVENTS);
+        } while (nextToken && totalScanned < MAX_SCAN_ITEMS);
 
         if (!cancelled) {
           setAllEvents(collected);
