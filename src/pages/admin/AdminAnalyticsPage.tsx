@@ -121,9 +121,38 @@ function tierColor(tier: string | null): string {
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  }
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (mins > 0) return `${hours}h ${mins}m`;
+  return `${hours}h`;
+}
+
+/**
+ * Compute per-page duration from cumulative timeOnSite values.
+ * Events with timeOnSite store a running total; this returns the delta
+ * (time spent on that specific page) for each event.
+ */
+function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
+  const result = new Map<string, number>();
+  // Sort chronologically (oldest first) to compute deltas
+  const sorted = [...events]
+    .filter((e) => e.timeOnSite != null && e.timeOnSite > 0)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  let prevCumulative = 0;
+  for (const e of sorted) {
+    const cumulative = e.timeOnSite!;
+    // If cumulative < prev, the counter was reset (e.g. cleared localStorage)
+    const delta = cumulative >= prevCumulative ? cumulative - prevCumulative : cumulative;
+    if (delta > 0) result.set(e.id, delta);
+    prevCumulative = cumulative;
+  }
+  return result;
 }
 
 
@@ -578,6 +607,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         </h2>
         <div className="org-detail-timeline">
           {(() => {
+            // Pre-compute per-page durations (delta from cumulative timeOnSite)
+            const perPageDurations = computePerPageDuration(org.events);
+
             // Group events by visitorId (preferred) → IP (fallback for legacy events)
             const byVisitor = new Map<string, AnalyticsEvent[]>();
             for (const e of org.events) {
@@ -591,7 +623,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               return Array.from(eventsByDate.entries()).map(([date, events]) => (
                 <div key={date} className="timeline-day">
                   <div className="timeline-date">{date}</div>
-                  {events.map((e) => (
+                  {events.map((e) => {
+                    const pageDuration = perPageDurations.get(e.id);
+                    return (
                     <div key={e.id} className="timeline-event">
                       <span className="timeline-time">
                         {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -603,11 +637,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       {e.productName && (
                         <span className="timeline-product">{e.productName}</span>
                       )}
-                      {e.timeOnSite != null && e.timeOnSite > 0 && (
-                        <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
+                      {pageDuration != null && pageDuration > 0 && (
+                        <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ));
             }
@@ -639,7 +674,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   {Array.from(visitorDateGroups.entries()).map(([date, devts]) => (
                     <div key={date} className="timeline-day">
                       <div className="timeline-date">{date}</div>
-                      {devts.map((e) => (
+                      {devts.map((e) => {
+                        const pageDuration = perPageDurations.get(e.id);
+                        return (
                         <div key={e.id} className="timeline-event">
                           <span className="timeline-time">
                             {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -651,11 +688,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           {e.productName && (
                             <span className="timeline-product">{e.productName}</span>
                           )}
-                          {e.timeOnSite != null && e.timeOnSite > 0 && (
-                            <span className="timeline-duration">{formatDuration(e.timeOnSite)}</span>
+                          {pageDuration != null && pageDuration > 0 && (
+                            <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
