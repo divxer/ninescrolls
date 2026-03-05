@@ -145,7 +145,7 @@ async function getManualCorrections(): Promise<typeof manualCorrectionsCache> {
             Limit: 50, // Scan limit (may return fewer due to filter)
         }));
 
-        manualCorrectionsCache = (result.Items || []).slice(0, 20).map(item => ({
+        manualCorrectionsCache = (result.Items || []).slice(0, 20).map((item: Record<string, unknown>) => ({
             orgName: item.orgName as string,
             organizationType: item.organizationType as string,
             isTargetCustomer: item.isTargetCustomer as boolean,
