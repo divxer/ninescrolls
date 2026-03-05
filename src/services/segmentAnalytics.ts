@@ -6,7 +6,7 @@ import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnaly
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 import { behaviorAnalytics } from './behaviorAnalytics';
 import outputs from '../../amplify_outputs.json';
-import { storeAnalyticsEvent } from './analyticsStorageService';
+import { storeAnalyticsEvent, getVisitorId } from './analyticsStorageService';
 
 function eventNameToType(event: string): string {
   const map: Record<string, string> = {
@@ -937,7 +937,7 @@ class SegmentAnalyticsService {
    * Send time-on-page data via sendBeacon (guaranteed delivery on page unload).
    * Falls back to fetch+keepalive if sendBeacon is unavailable.
    */
-  sendTimeBeacon(pagePath: string, timeOnPage: number, totalTimeOnSite: number): void {
+  sendTimeBeacon(pagePath: string, timeOnPage: number, totalTimeOnSite: number, pageTitle?: string): void {
     try {
       const apiEndpoint = getApiEndpoint();
       const payload = JSON.stringify({
@@ -945,11 +945,12 @@ class SegmentAnalyticsService {
         event: 'Time on Page',
         anonymousId: getAnonymousId(),
         properties: {
-          pagePath,
+          pathname: pagePath,
           timeOnPage,
           totalTimeOnSite,
-          url: window.location.href,
-          title: document.title,
+          url: window.location.origin + pagePath,
+          title: pageTitle || document.title,
+          visitorId: getVisitorId(),
         },
         context: collectBrowserContext(),
       });
