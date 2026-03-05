@@ -204,8 +204,10 @@ class SegmentAnalyticsService {
     this.isInitialized = true;
   }
 
-  // Track custom events with debouncing to prevent duplicates
-  track(event: string, properties?: Record<string, unknown>) {
+  // Track custom events with debouncing to prevent duplicates.
+  // skipDynamoDB: when true, skip the DynamoDB dual-write (used when the
+  // caller already stored a richer record via storeAnalyticsEvent directly).
+  track(event: string, properties?: Record<string, unknown>, { skipDynamoDB = false }: { skipDynamoDB?: boolean } = {}) {
     if (!this.isInitialized) {
       console.warn('Segment Analytics not initialized');
       return;
@@ -222,13 +224,17 @@ class SegmentAnalyticsService {
       return;
     }
 
-    // Track the event
+    this.lastTrackedEvents.set(eventKey, now);
+
+    // Send to Segment (if analytics.js is loaded)
     if (typeof window !== 'undefined' && window.analytics && window.analytics.track) {
       window.analytics.track(event, properties);
-      this.lastTrackedEvents.set(eventKey, now);
       console.log('Segment Track Event:', event, properties);
+    }
 
-      // Dual-write to DynamoDB (fire-and-forget)
+    // Always dual-write to DynamoDB regardless of analytics.js availability,
+    // unless the caller already stored the event (skipDynamoDB).
+    if (!skipDynamoDB) {
       storeAnalyticsEvent({
         eventName: event,
         eventType: eventNameToType(event),
@@ -522,7 +528,10 @@ class SegmentAnalyticsService {
         properties,
       });
 
-      // If it's a target customer, send additional event (not duplicate)
+      // If it's a target customer, send Segment-only event (skipDynamoDB because
+      // the full event was already stored above via storeAnalyticsEvent with
+      // complete IP/org fields — the track() dual-write would create a duplicate
+      // record missing top-level org data, causing dashboard grouping issues).
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
           // Event context
@@ -572,7 +581,7 @@ class SegmentAnalyticsService {
           pagePath: properties?.pathname || properties?.pagePath || 'unknown',
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined
-        });
+        }, { skipDynamoDB: true });
       }
 
       console.log('Event tracked with IP analysis:', {
@@ -768,28 +777,29 @@ class SegmentAnalyticsService {
         },
       });
 
-      // If it's a target customer, send additional TRACK event with enhanced data
+      // If it's a target customer, send Segment-only event (skipDynamoDB because
+      // the full page view was already stored above with complete IP/org fields).
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
           // Event context
           originalEvent: 'Page Viewed',
           timestamp: new Date().toISOString(),
-          
+
           // Organization information
           organizationType: analysis?.organizationType || 'unknown',
           orgName: analysis?.details.orgName || 'Unknown',
           orgType: analysis?.details.orgType || 'Unknown',
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
-          
+
           // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
           confidenceBreakdown: analysis?.confidenceBreakdown,
-          
+
           // Lead qualification
           leadTier: finalLeadTier || 'C',
-          
+
           // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
@@ -801,7 +811,7 @@ class SegmentAnalyticsService {
             isPaidTraffic: behaviorScore.isPaidTraffic,
             trafficChannel: behaviorScore.trafficChannel
           },
-          
+
           // IP information (for sales team context)
           ipInfo: ipInfo ? {
             ip: ipInfo.ip,
@@ -813,12 +823,12 @@ class SegmentAnalyticsService {
             privacy: ipInfo.privacy,
             company: ipInfo.company
           } : null,
-          
+
           // Page context
           pagePath: properties?.pathname || pageName || 'unknown',
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined
-        });
+        }, { skipDynamoDB: true });
       }
 
     } catch (error) {
