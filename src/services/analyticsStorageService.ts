@@ -87,8 +87,7 @@ export interface StoreAnalyticsEventParams {
 export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
 
-  // Fire-and-forget: don't await, don't block UI
-  client.models.AnalyticsEvent.create({
+  const payload = {
     eventName: params.eventName,
     eventType: params.eventType,
     timestamp: new Date().toISOString(),
@@ -133,7 +132,29 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     referrer: params.context?.referrer,
 
     properties: params.properties,
-  }).catch((err) => {
-    console.error('[AnalyticsStorage] Failed to store event:', err);
+  };
+
+  // Fire-and-forget: don't await, don't block UI.
+  // Amplify Data returns { data, errors } — GraphQL errors are in the
+  // response, NOT thrown.  We must check both paths.
+  const attempt = () =>
+    client.models.AnalyticsEvent.create(payload).then((result) => {
+      if (result.errors && result.errors.length > 0) {
+        console.error(
+          '[AnalyticsStorage] GraphQL errors storing event:',
+          params.eventName,
+          result.errors,
+        );
+      }
+    });
+
+  attempt().catch((err) => {
+    console.error('[AnalyticsStorage] Failed to store event:', params.eventName, err);
+    // Retry once after 2s for transient network failures
+    setTimeout(() => {
+      attempt().catch((retryErr) => {
+        console.error('[AnalyticsStorage] Retry also failed:', params.eventName, retryErr);
+      });
+    }, 2000);
   });
 }
