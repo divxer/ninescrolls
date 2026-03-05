@@ -118,6 +118,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   // ─── Time tracking refs ──────────────────────────────────────────────────
   const pageStartTimeRef = useRef<number>(Date.now());
   const currentPathRef = useRef<string>(location.pathname);
+  const pageTitleRef = useRef<string>(document.title);  // Capture title at page load (before SPA nav changes it)
   const accumulatedIdleRef = useRef<number>(0);   // Total idle ms for current page
   const idleStartRef = useRef<number | null>(null); // When user became idle (null = active)
   const lastActivityRef = useRef<number>(Date.now());
@@ -226,11 +227,11 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   }, []);
 
   // ─── Helper: track time + send beacon + clear checkpoint ─────────────────
-  const trackAndSend = useCallback((path: string, seconds: number) => {
+  const trackAndSend = useCallback((path: string, seconds: number, title: string) => {
     if (seconds <= MIN_TRACK_SECONDS) return;
     behaviorAnalytics.trackTimeOnPage(path, seconds);
     const score = behaviorAnalytics.calculateBehaviorScore();
-    segmentAnalytics.sendTimeBeacon(path, seconds, score.timeOnSite);
+    segmentAnalytics.sendTimeBeacon(path, seconds, score.timeOnSite, title);
     try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
   }, []);
 
@@ -241,6 +242,8 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     idleStartRef.current = null;
     lastActivityRef.current = Date.now();
     hasTrackedUnloadRef.current = false;
+    // Capture title after a microtask so React/Helmet has time to update it
+    queueMicrotask(() => { pageTitleRef.current = document.title; });
   }, []);
 
   // ─── Recover crashed checkpoint on mount ─────────────────────────────────
@@ -373,7 +376,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       if (hasTrackedUnloadRef.current) return;
       hasTrackedUnloadRef.current = true;
       const activeTime = getActiveSeconds();
-      trackAndSend(currentPathRef.current, activeTime);
+      trackAndSend(currentPathRef.current, activeTime, pageTitleRef.current);
     };
 
     const handleVisibilityChange = () => {
@@ -381,7 +384,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         if (hasTrackedUnloadRef.current) return;
         hasTrackedUnloadRef.current = true;
         const activeTime = getActiveSeconds();
-        trackAndSend(currentPathRef.current, activeTime);
+        trackAndSend(currentPathRef.current, activeTime, pageTitleRef.current);
       } else if (document.visibilityState === 'visible') {
         // Tab returned — reset for continued tracking
         hasTrackedUnloadRef.current = false;
