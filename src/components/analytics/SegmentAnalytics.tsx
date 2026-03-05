@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { segmentAnalytics } from '../../services/segmentAnalytics';
-import { behaviorAnalytics } from '../../services/behaviorAnalytics';
+import { behaviorAnalytics, classifyTrafficChannel } from '../../services/behaviorAnalytics';
 import outputs from '../../../amplify_outputs.json';
 
 // ─── Time tracking constants ─────────────────────────────────────────────────
@@ -357,12 +357,20 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const utmSource = urlParams.get('utm_source');
       const utmMedium = urlParams.get('utm_medium');
       const utmCampaign = urlParams.get('utm_campaign');
+      const gclid = urlParams.get('gclid');
+      const msclkid = urlParams.get('msclkid');
 
-      if (utmSource || utmMedium || document.referrer) {
+      if (utmSource || utmMedium || gclid || msclkid || document.referrer) {
+        const channel = classifyTrafficChannel({
+          utmSource, utmMedium, utmCampaign,
+          referrer: document.referrer,
+          gclid, msclkid,
+        });
         behaviorAnalytics.trackTrafficSource(
           utmSource || document.referrer || 'direct',
           utmMedium || 'direct',
-          utmCampaign || undefined
+          utmCampaign || undefined,
+          channel
         );
       }
     }

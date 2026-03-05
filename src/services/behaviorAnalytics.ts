@@ -1,6 +1,87 @@
 // Behavior Analytics Service
 // Tracks user behavior signals for intent scoring
 
+// --- Traffic Channel Classification ---
+
+export type TrafficChannel =
+  | 'paid_search'
+  | 'organic_search'
+  | 'paid_social'
+  | 'organic_social'
+  | 'email'
+  | 'referral'
+  | 'direct';
+
+const SEARCH_ENGINE_DOMAINS = [
+  'google.', 'bing.com', 'yahoo.', 'baidu.com', 'yandex.',
+  'duckduckgo.com', 'ecosia.org', 'ask.com', 'naver.com', 'sogou.com',
+];
+
+const SOCIAL_PLATFORM_DOMAINS = [
+  'facebook.com', 'fb.com', 'instagram.com', 'twitter.com', 'x.com',
+  'linkedin.com', 'youtube.com', 'reddit.com', 'pinterest.com',
+  'tiktok.com', 'wechat.com', 'weibo.com', 't.co',
+];
+
+export function classifyTrafficChannel(params: {
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  referrer?: string;
+  gclid?: string | null;
+  msclkid?: string | null;
+}): TrafficChannel {
+  const { utmSource, utmMedium, utmCampaign, referrer, gclid, msclkid } = params;
+  const medium = (utmMedium || '').toLowerCase();
+  const source = (utmSource || '').toLowerCase();
+
+  // 1. Paid search: gclid/msclkid present, or medium is cpc/ppc
+  if (gclid || msclkid || medium === 'cpc' || medium === 'ppc') {
+    return 'paid_search';
+  }
+
+  // 2. Email
+  if (medium === 'email' || source === 'email') {
+    return 'email';
+  }
+
+  // Parse referrer hostname
+  let referrerHost = '';
+  if (referrer) {
+    try { referrerHost = new URL(referrer).hostname.toLowerCase(); } catch { /* ignore */ }
+  }
+
+  const isPaidMedium = medium.includes('paid') ||
+    (utmCampaign || '').toLowerCase().includes('ads');
+  const isSearchReferrer = SEARCH_ENGINE_DOMAINS.some(d => referrerHost.includes(d));
+  const isSocialReferrer = SOCIAL_PLATFORM_DOMAINS.some(d => referrerHost.includes(d));
+
+  // 3. Paid social
+  if (isPaidMedium && (isSocialReferrer || SOCIAL_PLATFORM_DOMAINS.some(d => source.includes(d.split('.')[0])))) {
+    return 'paid_social';
+  }
+
+  // 4. Organic social
+  if (isSocialReferrer) {
+    return 'organic_social';
+  }
+
+  // 5. Organic search
+  if (isSearchReferrer) {
+    return 'organic_search';
+  }
+
+  // 6. Referral (has referrer or UTM source)
+  if (referrerHost || utmSource) {
+    return 'referral';
+  }
+
+  // 7. Direct
+  return 'direct';
+}
+
+// --- Behavior Signals ---
+
 interface BehaviorSignal {
   event: string;
   timestamp: number;
@@ -14,7 +95,8 @@ interface BehaviorScore {
   timeOnSite: number;              // 总停留时间（秒）
   pdfDownloads: number;            // PDF 下载次数
   returnVisits: number;            // 回访次数（7天内）
-  isPaidTraffic: boolean;          // 是否来自付费广告
+  isPaidTraffic: boolean;          // 是否来自付费广告（向后兼容）
+  trafficChannel: TrafficChannel;  // 流量渠道分类
   behaviorScore: number;            // 综合行为得分 (0-1)
 }
 
@@ -108,15 +190,16 @@ class BehaviorAnalyticsService {
   }
 
   // Track traffic source
-  trackTrafficSource(source: string, medium: string, campaign?: string) {
-    const isPaid = medium === 'cpc' || medium === 'paid' || 
-                   (campaign && campaign.toLowerCase().includes('ads'));
-    
+  trackTrafficSource(source: string, medium: string, campaign?: string, trafficChannel?: TrafficChannel) {
+    const channel = trafficChannel || 'direct';
+    const isPaid = channel === 'paid_search' || channel === 'paid_social';
+
     this.trackSignal('traffic_source', isPaid ? 1 : 0, {
       source,
       medium,
       campaign,
-      isPaid
+      isPaid,
+      trafficChannel: channel,
     });
   }
 
@@ -140,8 +223,9 @@ class BehaviorAnalyticsService {
     ).size;
     const returnVisits = uniqueDays > 1 ? uniqueDays - 1 : 0;
     
-    // Check if paid traffic
-    const isPaidTraffic = trafficSignals.some(s => s.metadata?.isPaid === true);
+    // Determine traffic channel and paid status
+    const trafficChannel = (trafficSignals[0]?.metadata?.trafficChannel as TrafficChannel) || 'direct';
+    const isPaidTraffic = trafficChannel === 'paid_search' || trafficChannel === 'paid_social';
     
     // Calculate behavior score (weighted)
     let behaviorScore = 0;
@@ -190,6 +274,7 @@ class BehaviorAnalyticsService {
       pdfDownloads: pdfDownloads.length,
       returnVisits,
       isPaidTraffic,
+      trafficChannel,
       behaviorScore
     };
   }
@@ -207,4 +292,4 @@ class BehaviorAnalyticsService {
 }
 
 export const behaviorAnalytics = BehaviorAnalyticsService.getInstance();
-export type { BehaviorSignal, BehaviorScore };
+export type { BehaviorSignal, BehaviorScore, TrafficChannel };

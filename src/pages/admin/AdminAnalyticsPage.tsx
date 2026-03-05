@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, type OrgOverride } from '../../services/adminClassificationService';
+import { classifyTrafficChannel, type TrafficChannel } from '../../services/behaviorAnalytics';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -685,30 +686,51 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         ) : null;
       })()}
 
-      {/* Referrer Sources */}
+      {/* Traffic Sources with Channel Classification */}
       {(() => {
-        const referrers = new Map<string, number>();
+        const channelColors: Record<TrafficChannel, { bg: string; color: string; label: string }> = {
+          paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
+          organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
+          paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
+          organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
+          email:          { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
+          referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
+          direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
+        };
+        const sources = new Map<string, { count: number; channel: TrafficChannel }>();
         for (const e of org.events) {
-          if (e.referrer) {
-            try {
-              const host = new URL(e.referrer).hostname;
-              referrers.set(host, (referrers.get(host) || 0) + 1);
-            } catch {
-              referrers.set(e.referrer, (referrers.get(e.referrer) || 0) + 1);
-            }
+          const channel: TrafficChannel = (e.trafficChannel as TrafficChannel) ||
+            classifyTrafficChannel({ referrer: e.referrer || undefined });
+          const label = e.referrer
+            ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
+            : channelColors[channel].label;
+          const existing = sources.get(label);
+          if (existing) {
+            existing.count += 1;
+          } else {
+            sources.set(label, { count: 1, channel });
           }
         }
-        return referrers.size > 0 ? (
+        return sources.size > 0 ? (
           <div className="org-detail-section">
             <h2 className="analytics-section-header">Traffic Sources</h2>
             <div className="org-detail-signals">
-              {Array.from(referrers.entries())
-                .sort((a, b) => b[1] - a[1])
-                .map(([host, count]) => (
-                  <div key={host} className="org-signal org-signal-info">
-                    {host} ({count} visit{count > 1 ? 's' : ''})
-                  </div>
-                ))}
+              {Array.from(sources.entries())
+                .sort((a, b) => b[1].count - a[1].count)
+                .map(([label, { count, channel }]) => {
+                  const style = channelColors[channel];
+                  return (
+                    <div key={label} className="org-signal org-signal-info">
+                      <span
+                        className="analytics-badge"
+                        style={{ background: style.bg, color: style.color, marginRight: '0.5rem', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '3px' }}
+                      >
+                        {style.label}
+                      </span>
+                      {label} ({count} visit{count > 1 ? 's' : ''})
+                    </div>
+                  );
+                })}
             </div>
           </div>
         ) : null;
