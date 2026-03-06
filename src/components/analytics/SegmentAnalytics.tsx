@@ -359,12 +359,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const utmCampaign = urlParams.get('utm_campaign');
       const gclid = urlParams.get('gclid');
       const msclkid = urlParams.get('msclkid');
+      const gadSource = urlParams.get('gad_source');
+      const gbraid = urlParams.get('gbraid');
+      const wbraid = urlParams.get('wbraid');
 
-      if (utmSource || utmMedium || gclid || msclkid || document.referrer) {
+      if (utmSource || utmMedium || gclid || msclkid || gadSource || gbraid || wbraid || document.referrer) {
         const channel = classifyTrafficChannel({
           utmSource, utmMedium, utmCampaign,
           referrer: document.referrer,
-          gclid, msclkid,
+          gclid, msclkid, gadSource, gbraid, wbraid,
         });
         behaviorAnalytics.trackTrafficSource(
           utmSource || document.referrer || 'direct',

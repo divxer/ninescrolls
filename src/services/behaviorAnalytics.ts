@@ -30,13 +30,16 @@ export function classifyTrafficChannel(params: {
   referrer?: string;
   gclid?: string | null;
   msclkid?: string | null;
+  gadSource?: string | null;
+  gbraid?: string | null;
+  wbraid?: string | null;
 }): TrafficChannel {
-  const { utmSource, utmMedium, utmCampaign, referrer, gclid, msclkid } = params;
+  const { utmSource, utmMedium, utmCampaign, referrer, gclid, msclkid, gadSource, gbraid, wbraid } = params;
   const medium = (utmMedium || '').toLowerCase();
   const source = (utmSource || '').toLowerCase();
 
-  // 1. Paid search: gclid/msclkid present, or medium is cpc/ppc
-  if (gclid || msclkid || medium === 'cpc' || medium === 'ppc') {
+  // 1. Paid search: gclid/msclkid/gad_source/gbraid/wbraid present, or medium is cpc/ppc
+  if (gclid || msclkid || gadSource || gbraid || wbraid || medium === 'cpc' || medium === 'ppc') {
     return 'paid_search';
   }
 
