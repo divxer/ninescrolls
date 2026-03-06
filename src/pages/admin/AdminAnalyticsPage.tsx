@@ -781,6 +781,15 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
               direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
             };
+            // Check if an event has an external referrer (not self-referrer)
+            const hasExternalReferrer = (e: AnalyticsEvent): boolean => {
+              if (!e.referrer) return false;
+              try {
+                const host = new URL(e.referrer).hostname.toLowerCase();
+                // Filter out self-referrers (own site)
+                return !host.includes('ninescrolls') && !host.includes('localhost') && !host.includes('127.0.0.1');
+              } catch { return false; }
+            };
             const referrerBadge = (e: AnalyticsEvent) => {
               const channel: TrafficChannel = (e.trafficChannel as TrafficChannel) ||
                 classifyTrafficChannel({ referrer: e.referrer || undefined });
@@ -803,11 +812,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             };
 
             if (byVisitor.size <= 1) {
-              // Find the earliest event id to mark with referrer
-              const allEventsFlat = Array.from(eventsByDate.values()).flat();
-              const firstEventId = allEventsFlat.length > 0
-                ? allEventsFlat.reduce((a, b) => new Date(a.timestamp) < new Date(b.timestamp) ? a : b).id
-                : null;
               return Array.from(eventsByDate.entries()).map(([date, events]) => (
                 <div key={date} className="timeline-day">
                   <div className="timeline-date">{date}</div>
@@ -828,7 +832,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       {pageDuration != null && pageDuration > 0 && (
                         <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                       )}
-                      {e.id === firstEventId && referrerBadge(e)}
+                      {hasExternalReferrer(e) && referrerBadge(e)}
                     </div>
                     );
                   })}
@@ -847,8 +851,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 if (g) g.push(e);
                 else visitorDateGroups.set(dk, [e]);
               }
-              // Find earliest event for this visitor to attach referrer badge
-              const firstVisitorEventId = events.reduce((a, b) => new Date(a.timestamp) < new Date(b.timestamp) ? a : b).id;
               return (
                 <div key={vKey} className="timeline-visitor">
                   <div className="timeline-visitor-header">
@@ -882,7 +884,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           {pageDuration != null && pageDuration > 0 && (
                             <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                           )}
-                          {e.id === firstVisitorEventId && referrerBadge(e)}
+                          {hasExternalReferrer(e) && referrerBadge(e)}
                         </div>
                         );
                       })}
