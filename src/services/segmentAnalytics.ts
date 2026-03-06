@@ -244,6 +244,7 @@ class SegmentAnalyticsService {
           productId: properties?.productId as string | undefined,
           productName: properties?.productName as string | undefined,
           referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+          utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
         },
         properties,
       });
@@ -524,6 +525,7 @@ class SegmentAnalyticsService {
           productId: properties?.productId as string | undefined,
           productName: properties?.productName as string | undefined,
           referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+          utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
         },
         properties,
       });
@@ -774,6 +776,7 @@ class SegmentAnalyticsService {
           pathname: pathname as string,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined,
           referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+          utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
         },
       });
 
