@@ -789,9 +789,16 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
                 : style.label;
               return (
-                <span className="timeline-referrer" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
-                  {label}
-                </span>
+                <>
+                  <span className="timeline-referrer" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                    {label}
+                  </span>
+                  {e.utmTerm && (
+                    <span className="timeline-keyword" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                      🔍 {e.utmTerm}
+                    </span>
+                  )}
+                </>
               );
             };
 

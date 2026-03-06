@@ -99,6 +99,7 @@ const schema = a.schema({
       returnVisits: a.integer(),
       isPaidTraffic: a.boolean(),
       trafficChannel: a.string(),
+      utmTerm: a.string(),
 
       pathname: a.string(),
       pageTitle: a.string(),
