@@ -714,8 +714,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         };
         const sources = new Map<string, { count: number; channel: TrafficChannel }>();
         for (const e of org.events) {
-          const channel: TrafficChannel = (e.trafficChannel as TrafficChannel) ||
-            classifyTrafficChannel({ referrer: e.referrer || undefined });
+          const storedCh = e.trafficChannel as TrafficChannel | undefined;
+          const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
+          // Don't trust stored 'direct' when referrer suggests otherwise (fixes historical misclassification)
+          const channel: TrafficChannel = (storedCh && storedCh !== 'direct') ? storedCh : derivedCh;
           const label = e.referrer
             ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
             : channelColors[channel].label;
