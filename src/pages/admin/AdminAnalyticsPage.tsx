@@ -712,20 +712,23 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
           direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
         };
-        const sources = new Map<string, { count: number; channel: TrafficChannel }>();
+        const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
         for (const e of org.events) {
           const storedCh = e.trafficChannel as TrafficChannel | undefined;
           const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
           // Don't trust stored 'direct' when referrer suggests otherwise (fixes historical misclassification)
           const channel: TrafficChannel = (storedCh && storedCh !== 'direct') ? storedCh : derivedCh;
-          const label = e.referrer
+          const hostname = e.referrer
             ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
-            : channelColors[channel].label;
-          const existing = sources.get(label);
+            : '';
+          // Group by channel + hostname so paid vs organic from the same domain are separate
+          const groupKey = hostname ? `${channel}::${hostname}` : channel;
+          const displayLabel = hostname || channelColors[channel].label;
+          const existing = sources.get(groupKey);
           if (existing) {
             existing.count += 1;
           } else {
-            sources.set(label, { count: 1, channel });
+            sources.set(groupKey, { count: 1, channel, label: displayLabel });
           }
         }
         return sources.size > 0 ? (
@@ -734,17 +737,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             <div className="org-detail-signals">
               {Array.from(sources.entries())
                 .sort((a, b) => b[1].count - a[1].count)
-                .map(([label, { count, channel }]) => {
+                .map(([groupKey, { count, channel, label: displayLabel }]) => {
                   const style = channelColors[channel];
                   return (
-                    <div key={label} className="org-signal org-signal-info">
+                    <div key={groupKey} className="org-signal org-signal-info">
                       <span
                         className="analytics-badge"
                         style={{ background: style.bg, color: style.color, marginRight: '0.5rem', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '3px' }}
                       >
                         {style.label}
                       </span>
-                      {label} ({count} visit{count > 1 ? 's' : ''})
+                      {displayLabel} ({count} visit{count > 1 ? 's' : ''})
                     </div>
                   );
                 })}
