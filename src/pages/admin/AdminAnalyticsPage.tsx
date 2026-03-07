@@ -227,6 +227,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const geoEvent = group.find((e) => e.latitude != null && e.longitude != null) || group[0];
     const sorted = group.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+    // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
+    if (!isTarget) bestTier = null;
+
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
