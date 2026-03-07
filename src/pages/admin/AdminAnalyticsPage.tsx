@@ -239,6 +239,16 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       maxConf = aiEvent.aiConfidence;
     }
 
+    // Compute tier from AI data when events have no tier
+    const isTargetAIType = effectiveOrgType === 'university' || effectiveOrgType === 'research_institute' || effectiveOrgType === 'enterprise';
+    if (!bestTier && isTargetAIType && maxConf > 0) {
+      const isResearch = effectiveOrgType === 'university' || effectiveOrgType === 'research_institute';
+      if (maxConf >= 0.7 && isResearch) bestTier = 'A';
+      else if (maxConf >= 0.9) bestTier = 'A';
+      else if (maxConf >= 0.5) bestTier = 'B';
+      else if (maxConf >= 0.3) bestTier = 'C';
+    }
+
     // Anonymous high-intent: unidentified org but strong behavioral signals
     // Exclude orgs already identified by AI classification
     const isAnonymousHighIntent = !isTarget && !bestTier && !aiEvent &&
