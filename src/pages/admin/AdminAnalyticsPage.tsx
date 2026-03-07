@@ -227,18 +227,27 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const geoEvent = group.find((e) => e.latitude != null && e.longitude != null) || group[0];
     const sorted = group.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    // Anonymous high-intent: unidentified org but strong behavioral signals
-    // Exclude orgs already identified by AI classification
-    const aiIdentified = group.some((e) =>
+    // Promote AI classification when IP-based org type is unknown
+    const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
     );
-    const isAnonymousHighIntent = !isTarget && !bestTier && !aiIdentified &&
+    const ipOrgType = geoEvent.organizationType || '';
+    const effectiveOrgType = (ipOrgType && ipOrgType !== 'unknown') ? ipOrgType : (aiEvent?.aiOrganizationType || ipOrgType);
+
+    // Promote AI confidence when it's higher than IP-based confidence
+    if (aiEvent?.aiConfidence != null && aiEvent.aiConfidence > maxConf) {
+      maxConf = aiEvent.aiConfidence;
+    }
+
+    // Anonymous high-intent: unidentified org but strong behavioral signals
+    // Exclude orgs already identified by AI classification
+    const isAnonymousHighIntent = !isTarget && !bestTier && !aiEvent &&
       maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2);
 
     records.push({
       key,
       orgName: key,
-      organizationType: geoEvent.organizationType || '',
+      organizationType: effectiveOrgType,
       country: geoEvent.country || '',
       region: geoEvent.region || '',
       city: geoEvent.city || '',
