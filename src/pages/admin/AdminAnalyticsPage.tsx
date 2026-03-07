@@ -567,6 +567,26 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       {/* Behavior Signals */}
       <div className="org-detail-section">
         <h2 className="analytics-section-header">Behavior Analysis</h2>
+        {org.maxBehaviorScore > 0 && (
+          <div className="org-behavior-score">
+            <span className="org-behavior-score-label">Behavior Score</span>
+            <span className="org-behavior-score-bar">
+              <span
+                className="org-behavior-score-fill"
+                style={{
+                  width: `${Math.min(org.maxBehaviorScore * 100, 100)}%`,
+                  backgroundColor: org.maxBehaviorScore >= 0.3 ? '#7b1fa2' : '#bdbdbd',
+                }}
+              />
+            </span>
+            <span className={`org-behavior-score-value${org.maxBehaviorScore >= 0.3 ? ' org-behavior-score-high' : ''}`}>
+              {(org.maxBehaviorScore * 100).toFixed(0)}%
+            </span>
+            {org.maxBehaviorScore < 0.3 && (
+              <span className="org-behavior-score-hint">below 30% intent threshold</span>
+            )}
+          </div>
+        )}
         <div className="org-detail-signals">
           {org.isTargetCustomer && (
             <div className="org-signal org-signal-hot">Target Customer Identified</div>
