@@ -5,7 +5,7 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, DeleteComm
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface ClassifyRequest {
-    action?: 'classify' | 'override' | 'undo' | 'get-override';
+    action?: 'classify' | 'override' | 'undo' | 'get-override' | 'list-overrides';
     orgName: string;
     country?: string;
     city?: string;
@@ -425,6 +425,67 @@ async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<stri
     };
 }
 
+async function handleListOverrides(body: ClassifyRequest, corsHeaders: Record<string, string>) {
+    if (!verifyAdminToken(body.adminToken)) {
+        return {
+            statusCode: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'Unauthorized' }),
+        };
+    }
+
+    if (!TABLE_NAME) {
+        return {
+            statusCode: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ overrides: [] }),
+        };
+    }
+
+    try {
+        const items: CachedItem[] = [];
+        let lastKey: Record<string, unknown> | undefined;
+
+        // Paginated scan for all manual overrides
+        do {
+            const result = await ddbClient.send(new ScanCommand({
+                TableName: TABLE_NAME,
+                FilterExpression: '#src = :manual',
+                ExpressionAttributeNames: { '#src': 'source' },
+                ExpressionAttributeValues: { ':manual': 'manual' },
+                ExclusiveStartKey: lastKey,
+            }));
+            if (result.Items) {
+                items.push(...(result.Items as CachedItem[]));
+            }
+            lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+        } while (lastKey);
+
+        const overrides = items.map((item) => ({
+            orgName: item.orgName,
+            organizationType: item.organizationType,
+            isTargetCustomer: item.isTargetCustomer,
+            confidence: item.confidence,
+            reason: item.reason,
+            source: 'manual' as const,
+            classifiedAt: item.classifiedAt,
+        }));
+
+        return {
+            statusCode: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ overrides }),
+        };
+    } catch (err) {
+        console.error('Failed to list overrides:', err);
+        return {
+            statusCode: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'Failed to list overrides' }),
+        };
+    }
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -438,6 +499,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     try {
         const body: ClassifyRequest = JSON.parse(event.body || '{}');
+
+        // list-overrides does not require orgName
+        if (body.action === 'list-overrides') return handleListOverrides(body, corsHeaders);
 
         if (!body.orgName || body.orgName.length < 2) {
             return {
