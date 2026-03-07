@@ -85,3 +85,21 @@ export async function undoOrgOverride(orgName: string): Promise<OrgOverride> {
   const result = await callClassifyOrg({ action: 'undo', orgName });
   return { found: true, ...(result as object) } as OrgOverride;
 }
+
+export interface OrgOverrideSummary {
+  orgName: string;
+  organizationType: string;
+  isTargetCustomer: boolean;
+  confidence: number;
+  reason: string;
+  source: 'manual';
+  classifiedAt?: string;
+}
+
+/**
+ * List all manual overrides (batch fetch).
+ */
+export async function listOrgOverrides(): Promise<OrgOverrideSummary[]> {
+  const result = await callClassifyOrg({ action: 'list-overrides', orgName: '' });
+  return ((result as { overrides?: OrgOverrideSummary[] }).overrides) || [];
+}

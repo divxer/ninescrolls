@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getOrgOverride, setOrgOverride, undoOrgOverride, type OrgOverride } from '../../services/adminClassificationService';
+import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { classifyTrafficChannel, type TrafficChannel } from '../../services/behaviorAnalytics';
 import { generateClient } from 'aws-amplify/data';
 import {
@@ -962,6 +962,7 @@ export function AdminAnalyticsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
+  const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const prevDateRange = useRef(dateRange);
   const prevCustomStart = useRef(customStart);
   const prevCustomEnd = useRef(customEnd);
@@ -1059,6 +1060,15 @@ export function AdminAnalyticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, customStart, customEnd, refreshKey]);
 
+  // Load manual overrides from classify-org Lambda
+  useEffect(() => {
+    let cancelled = false;
+    listOrgOverrides()
+      .then((overrides) => { if (!cancelled) setOrgOverrides(overrides); })
+      .catch((err) => console.warn('Failed to load overrides:', err));
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
   // Auto-refresh every 30s
   useEffect(() => {
     if (!autoRefresh) return;
@@ -1085,8 +1095,47 @@ export function AdminAnalyticsPage() {
     }).length;
   }, [allEvents]);
 
-  // Aggregate by organization
-  const organizations = useMemo(() => aggregateByOrg(filteredEvents), [filteredEvents]);
+  // Aggregate by organization, then apply manual overrides
+  const organizations = useMemo(() => {
+    const orgs = aggregateByOrg(filteredEvents);
+    if (orgOverrides.length === 0) return orgs;
+
+    // Build lookup map for O(1) override matching
+    const overrideMap = new Map<string, OrgOverrideSummary>();
+    for (const ov of orgOverrides) {
+      overrideMap.set(ov.orgName, ov);
+    }
+
+    for (const org of orgs) {
+      const ov = overrideMap.get(org.orgName);
+      if (!ov) continue;
+
+      // Apply manual override data
+      org.isTargetCustomer = ov.isTargetCustomer;
+      if (ov.organizationType && ov.organizationType !== 'unknown') {
+        org.organizationType = ov.organizationType;
+      }
+      if (ov.confidence > org.maxConfidence) {
+        org.maxConfidence = ov.confidence;
+      }
+
+      // Compute tier for manually-marked target customers
+      if (ov.isTargetCustomer && !org.leadTier) {
+        const conf = Math.max(org.maxConfidence, ov.confidence);
+        const isResearch = org.organizationType === 'university' || org.organizationType === 'research_institute';
+        if (conf >= 0.7 && isResearch) org.leadTier = 'A';
+        else if (conf >= 0.9) org.leadTier = 'A';
+        else if (conf >= 0.5) org.leadTier = 'B';
+        else if (conf >= 0.3) org.leadTier = 'C';
+        else org.leadTier = 'B'; // Manual override defaults to at least B
+      }
+
+      // Clear anonymous intent — manually classified orgs are not anonymous
+      org.isAnonymousHighIntent = false;
+    }
+
+    return orgs;
+  }, [filteredEvents, orgOverrides]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
