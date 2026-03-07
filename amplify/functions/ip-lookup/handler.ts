@@ -385,18 +385,21 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     // Dynamic threshold based on geography
     const threshold = isTargetGeo ? 0.3 : 0.5;
 
-    // Determine lead tier
+    // Determine lead tier (only for target customers)
+    const isTargetCustomer = breakdown.total > threshold;
     let leadTier: 'A' | 'B' | 'C' | undefined;
-    if (breakdown.total >= 0.7 && (organizationType === 'university' || organizationType === 'research_institute')) {
-        leadTier = 'A';
-    } else if (breakdown.total >= 0.5 && organizationType !== 'unknown') {
-        leadTier = 'B';
-    } else if (breakdown.total >= threshold) {
-        leadTier = 'C';
+    if (isTargetCustomer) {
+        if (breakdown.total >= 0.7 && (organizationType === 'university' || organizationType === 'research_institute')) {
+            leadTier = 'A';
+        } else if (breakdown.total >= 0.5 && organizationType !== 'unknown') {
+            leadTier = 'B';
+        } else {
+            leadTier = 'C';
+        }
     }
 
     return {
-        isTargetCustomer: breakdown.total > threshold,
+        isTargetCustomer,
         organizationType,
         confidence: breakdown.total,
         confidenceBreakdown: breakdown,
