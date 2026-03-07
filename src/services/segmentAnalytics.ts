@@ -368,28 +368,31 @@ class SegmentAnalyticsService {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
-      
+
       // Get behavior score
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
-      
+
       // Calculate final confidence with smart weighting
       // For first-time visitors with high IP confidence, rely more on IP analysis
       // For returning visitors with behavior data, use balanced weighting
       let finalConfidence: number;
-      
+
       if (analysis) {
         const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = analysis.organizationType === 'university' || 
+        const isTargetOrgType = analysis.organizationType === 'university' ||
                                 analysis.organizationType === 'research_institute' ||
                                 analysis.organizationType === 'enterprise';
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
         // Check if organization is whitelisted (high whitelist score indicates whitelist match)
         const isWhitelisted = analysis.confidenceBreakdown?.whitelist && analysis.confidenceBreakdown.whitelist >= 0.85;
-        
+
         if (isHighConfidenceIP && (isTargetOrgType || isWhitelisted) && !hasBehaviorData) {
           // First-time visitor from high-confidence target organization OR whitelisted organization
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
+        } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {
+          // ISP/unknown org with no meaningful IP signal — let behavior fully drive confidence
+          finalConfidence = behaviorScore.behaviorScore;
         } else if (hasBehaviorData) {
           // Returning visitor with behavior data - use balanced weighting
           finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
@@ -401,28 +404,7 @@ class SegmentAnalyticsService {
         // No IP analysis - rely on behavior only
         finalConfidence = behaviorScore.behaviorScore;
       }
-      
-      // Determine final lead tier with behavior
-      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
-      
-      // Tier A: High confidence + University/Research Institute
-      if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
-        finalLeadTier = 'A';
-      } 
-      // Tier A: Very high IP confidence (>= 0.9) for any target org type
-      else if (analysis && analysis.confidence >= 0.9 && 
-               (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
-        finalLeadTier = 'A';
-      }
-      // Tier B: Medium-high confidence + any target org type
-      else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
-        finalLeadTier = 'B';
-      } 
-      // Tier C: Lower confidence but still target customer
-      else if (finalConfidence >= 0.3) {
-        finalLeadTier = 'C';
-      }
-      
+
       // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
       const ipRejected = analysis && analysis.isTargetCustomer === false;
 
@@ -435,6 +417,23 @@ class SegmentAnalyticsService {
         : 0.3;  // Standard threshold
 
       const isTargetCustomer = !ipRejected && finalConfidence > threshold;
+
+      // Determine final lead tier (only for target customers)
+      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      if (isTargetCustomer) {
+        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+          finalLeadTier = 'A';
+        } else if (analysis && analysis.confidence >= 0.9 &&
+                   (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+          finalLeadTier = 'A';
+        } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+          finalLeadTier = 'B';
+        } else {
+          finalLeadTier = 'C';
+        }
+      } else {
+        finalLeadTier = undefined;
+      }
 
       // Merge event properties
       const enhancedProperties = {
@@ -609,28 +608,31 @@ class SegmentAnalyticsService {
       // Get IP information and analysis results
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
-      
+
       // Get behavior score (includes timeOnSite)
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
-      
+
       // Calculate final confidence with smart weighting
       // For first-time visitors with high IP confidence, rely more on IP analysis
       // For returning visitors with behavior data, use balanced weighting
       let finalConfidence: number;
-      
+
       if (analysis) {
         const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = analysis.organizationType === 'university' || 
+        const isTargetOrgType = analysis.organizationType === 'university' ||
                                 analysis.organizationType === 'research_institute' ||
                                 analysis.organizationType === 'enterprise';
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
         // Check if organization is whitelisted (high whitelist score indicates whitelist match)
         const isWhitelisted = analysis.confidenceBreakdown?.whitelist && analysis.confidenceBreakdown.whitelist >= 0.85;
-        
+
         if (isHighConfidenceIP && (isTargetOrgType || isWhitelisted) && !hasBehaviorData) {
           // First-time visitor from high-confidence target organization OR whitelisted organization
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
+        } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {
+          // ISP/unknown org with no meaningful IP signal — let behavior fully drive confidence
+          finalConfidence = behaviorScore.behaviorScore;
         } else if (hasBehaviorData) {
           // Returning visitor with behavior data - use balanced weighting
           finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
@@ -642,28 +644,7 @@ class SegmentAnalyticsService {
         // No IP analysis - rely on behavior only
         finalConfidence = behaviorScore.behaviorScore;
       }
-      
-      // Determine final lead tier with behavior
-      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
-      
-      // Tier A: High confidence + University/Research Institute
-      if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
-        finalLeadTier = 'A';
-      } 
-      // Tier A: Very high IP confidence (>= 0.9) for any target org type
-      else if (analysis && analysis.confidence >= 0.9 && 
-               (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
-        finalLeadTier = 'A';
-      }
-      // Tier B: Medium-high confidence + any target org type
-      else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
-        finalLeadTier = 'B';
-      } 
-      // Tier C: Lower confidence but still target customer
-      else if (finalConfidence >= 0.3) {
-        finalLeadTier = 'C';
-      }
-      
+
       // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
       const ipRejected = analysis && analysis.isTargetCustomer === false;
 
@@ -676,6 +657,23 @@ class SegmentAnalyticsService {
         : 0.3;  // Standard threshold
 
       const isTargetCustomer = !ipRejected && finalConfidence > threshold;
+
+      // Determine final lead tier (only for target customers)
+      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
+      if (isTargetCustomer) {
+        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+          finalLeadTier = 'A';
+        } else if (analysis && analysis.confidence >= 0.9 &&
+                   (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+          finalLeadTier = 'A';
+        } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+          finalLeadTier = 'B';
+        } else {
+          finalLeadTier = 'C';
+        }
+      } else {
+        finalLeadTier = undefined;
+      }
 
       // Merge event properties with IP info and behavior
       const pathname = properties?.pathname || pageName || '';
