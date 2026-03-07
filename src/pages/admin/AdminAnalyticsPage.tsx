@@ -228,7 +228,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const sorted = group.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     // Anonymous high-intent: unidentified org but strong behavioral signals
-    const isAnonymousHighIntent = !isTarget && !bestTier &&
+    // Exclude orgs already identified by AI classification
+    const aiIdentified = group.some((e) =>
+      e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
+    );
+    const isAnonymousHighIntent = !isTarget && !bestTier && !aiIdentified &&
       maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2);
 
     records.push({
@@ -544,7 +548,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           {org.isTargetCustomer && (
             <div className="org-signal org-signal-hot">Target Customer Identified</div>
           )}
-          {org.isAnonymousHighIntent && (
+          {org.isAnonymousHighIntent && !(override?.found && override?.isTargetCustomer) && (
             <div className="org-signal org-signal-intent">Unknown company with high purchase intent — consider targeted engagement</div>
           )}
           {downloadedPDF && (
