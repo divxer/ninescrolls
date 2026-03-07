@@ -253,8 +253,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
 
     // Anonymous high-intent: unidentified org but strong behavioral signals
-    // Exclude orgs already identified by AI classification
-    const isAnonymousHighIntent = !isTarget && !bestTier && !aiEvent &&
+    // Exclude orgs identified by AI as a real organization (not ISP/unknown)
+    const aiIdentifiedRealOrg = aiEvent && aiEvent.aiOrganizationType !== 'telecom_isp';
+    const isAnonymousHighIntent = !isTarget && !bestTier && !aiIdentifiedRealOrg &&
       maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2);
 
     records.push({
