@@ -39,12 +39,14 @@ interface OrganizationRecord {
   lastVisit: string;
   firstVisit: string;
   maxConfidence: number;
+  maxBehaviorScore: number;
+  isAnonymousHighIntent: boolean;
   events: AnalyticsEvent[];
 }
 
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
-type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning';
+type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning' | 'anonymousIntent';
 
 const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -197,6 +199,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let isTarget = false;
     let maxPdfDownloads = 0;
     let maxReturnVisits = 0;
+    let maxBehaviorScore = 0;
 
     for (const e of group) {
       if (e.pathname) pages.add(e.pathname);
@@ -215,11 +218,18 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       if (e.returnVisits != null && e.returnVisits > maxReturnVisits) {
         maxReturnVisits = e.returnVisits;
       }
+      if (e.behaviorScore != null && e.behaviorScore > maxBehaviorScore) {
+        maxBehaviorScore = e.behaviorScore;
+      }
     }
 
     // Use the first event with valid lat/lng
     const geoEvent = group.find((e) => e.latitude != null && e.longitude != null) || group[0];
     const sorted = group.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    // Anonymous high-intent: unidentified org but strong behavioral signals
+    const isAnonymousHighIntent = !isTarget && !bestTier &&
+      maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2);
 
     records.push({
       key,
@@ -241,6 +251,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       lastVisit: sorted[0].timestamp,
       firstVisit: sorted[sorted.length - 1].timestamp,
       maxConfidence: maxConf,
+      maxBehaviorScore,
+      isAnonymousHighIntent,
       events: sorted,
     });
   }
@@ -531,6 +543,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         <div className="org-detail-signals">
           {org.isTargetCustomer && (
             <div className="org-signal org-signal-hot">Target Customer Identified</div>
+          )}
+          {org.isAnonymousHighIntent && (
+            <div className="org-signal org-signal-intent">Unknown company with high purchase intent — consider targeted engagement</div>
           )}
           {downloadedPDF && (
             <div className="org-signal org-signal-hot">Downloaded PDF / Spec Sheet</div>
@@ -1065,6 +1080,8 @@ export function AdminAnalyticsPage() {
         return organizations.filter((o) => o.leadTier === 'A');
       case 'returning':
         return organizations.filter((o) => o.returnVisits > 0);
+      case 'anonymousIntent':
+        return organizations.filter((o) => o.isAnonymousHighIntent);
       default:
         return organizations;
     }
@@ -1130,6 +1147,7 @@ export function AdminAnalyticsPage() {
     const hotLeads = organizations.filter((o) => o.leadTier === 'A').length;
     const returning = organizations.filter((o) => o.returnVisits > 0).length;
     const companies = organizations.filter((o) => o.organizationType === 'enterprise').length;
+    const anonymousIntent = organizations.filter((o) => o.isAnonymousHighIntent).length;
 
     // Compute trend: split filtered events by midpoint of date range
     const { start, end } = getDateBounds(dateRange, customStart, customEnd);
@@ -1144,7 +1162,7 @@ export function AdminAnalyticsPage() {
       ? Math.round(((currVisitors - prevVisitors) / prevVisitors) * 100)
       : currVisitors > 0 ? 100 : 0;
 
-    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, visitorTrend };
+    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, anonymousIntent, visitorTrend };
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
@@ -1317,6 +1335,15 @@ export function AdminAnalyticsPage() {
           <div className="analytics-stat-value">{kpis.returning}</div>
           <div className="analytics-stat-label">Returning Visitors</div>
         </div>
+        {kpis.anonymousIntent > 0 && (
+          <div
+            className={`analytics-stat-card analytics-stat-intent analytics-stat-clickable ${kpiFilter === 'anonymousIntent' ? 'analytics-stat-active' : ''}`}
+            onClick={() => setKpiFilter(kpiFilter === 'anonymousIntent' ? 'all' : 'anonymousIntent')}
+          >
+            <div className="analytics-stat-value">{kpis.anonymousIntent}</div>
+            <div className="analytics-stat-label">Anonymous Intent</div>
+          </div>
+        )}
       </div>
 
       {/* World Map — click markers to view org detail */}
@@ -1394,7 +1421,7 @@ export function AdminAnalyticsPage() {
               <tr
                 key={org.key}
                 className={`analytics-org-row ${org.isTargetCustomer ? 'analytics-target-row' : ''} ${
-                  org.leadTier ? `tier-border-${org.leadTier}` : ''
+                  org.leadTier ? `tier-border-${org.leadTier}` : org.isAnonymousHighIntent ? 'tier-border-intent' : ''
                 }`}
                 onClick={() => selectOrg(org)}
               >
@@ -1426,6 +1453,8 @@ export function AdminAnalyticsPage() {
                     <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
                       {org.leadTier}
                     </span>
+                  ) : org.isAnonymousHighIntent ? (
+                    <span className="analytics-tier analytics-tier-intent">Intent</span>
                   ) : (
                     <span className="analytics-na">N/A</span>
                   )}
