@@ -10,9 +10,9 @@ Address: 12546 Cabezon Pl, San Diego, CA 92129, USA
 
 ## Company Overview
 
-NineScrolls LLC is a U.S.-based scientific equipment supplier in San Diego, California, serving universities and research institutions across the United States. We supply research-grade plasma etching systems (RIE, ICP-RIE, DRIE, IBE/RIBE), thin-film deposition systems (ALD, PECVD, HDP-CVD, Sputter), photolithography equipment (coater/developer), and plasma cleaners for surface preparation.
+NineScrolls LLC is a U.S.-based scientific equipment supplier headquartered in San Diego, California. We supply research-grade plasma etching systems (RIE, ICP-RIE, DRIE, IBE/RIBE), thin-film deposition systems (ALD, PECVD, HDP-CVD, Sputter), photolithography equipment (coater/developer), and plasma cleaners for surface preparation.
 
-Our customers include universities, national labs, and research institutes. We offer standard warranty, annual maintenance contracts (AMC), and a startup package with discounted pricing for new faculty.
+Our customers include universities, national labs, research institutes, and corporate R&D labs worldwide. We offer standard warranty, annual maintenance contracts (AMC), and a startup package with discounted pricing for new faculty.
 
 ---
 
@@ -277,7 +277,7 @@ Q: Is NineScrolls hiring?
 A: We are growing and anticipate roles in Sales, Applications/Pre-Sales Engineering, and Field Service/After-Sales Engineering. Visit https://ninescrolls.com/careers or email careers@ninescrolls.com.
 
 Q: Where is NineScrolls located?
-A: San Diego, California, USA. We serve universities and research institutions across the United States.
+A: San Diego, California, USA. We are headquartered in the U.S. and serve research institutions worldwide.
 
 Q: Does NineScrolls offer warranty and service?
 A: Yes. We provide standard warranty with all equipment, plus optional Annual Maintenance Contracts (AMC) that include preventive maintenance visits and priority technical support. Details: https://ninescrolls.com/service-support
