@@ -174,8 +174,21 @@ const enterpriseKeywords = [
 ];
 
 const noiseOrgs = [
-    // ISPs and Telecom
+    // US ISPs and Telecom
     'comcast', 'verizon', 'at&t', 't-mobile', 'tmobile', 'sprint',
+    'charter communications', 'spectrum', 'cox communications',
+    'centurylink', 'lumen technologies', 'frontier communications',
+    'windstream', 'mediacom', 'altice', 'optimum', 'suddenlink',
+    // International ISPs
+    'virgin media', 'british telecom', 'bt group', 'sky broadband',
+    'talktalk', 'plusnet', 'vodafone', 'orange', 'deutsche telekom',
+    'telefonica', 'swisscom', 'proximus', 'kpn', 'telia', 'telenor',
+    'rogers', 'bell canada', 'telus', 'shaw communications',
+    'optus', 'telstra', 'tpg telecom', 'ntt', 'kddi', 'softbank',
+    'china telecom', 'china unicom', 'china mobile',
+    'reliance jio', 'airtel', 'bsnl',
+    'claro', 'telmex', 'uninet',
+    // Generic ISP/Telecom keywords
     'crown castle', 'crowncastle', 'fiber', 'telecom', 'telecommunications',
     'infrastructure', 'tower', 'wireless', 'broadband', 'cable',
     // Cloud providers and Hosting
@@ -195,6 +208,9 @@ const highPriorityNoise = [
     'hosting', 'host', 'server', 'dedicated',
     'cloudflare', 'amazon', 'aws', 'azure', 'gcp',
     'comcast', 'verizon', 'at&t', 't-mobile', 'isp',
+    'virgin media', 'british telecom', 'charter communications', 'spectrum',
+    'vodafone', 'deutsche telekom', 'telefonica', 'rogers', 'bell canada',
+    'china telecom', 'china unicom', 'china mobile',
     'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
 ];
 
