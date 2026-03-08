@@ -167,12 +167,19 @@ class BehaviorAnalyticsService {
     this.saveToStorage();
   }
 
-  // Track product page view
+  // Track product page view (deduplicated within 30s per product)
   trackProductView(productId: string, productName: string) {
+    const recentCutoff = Date.now() - 30000;
+    const alreadyTracked = this.behaviorSignals.some(
+      s => s.event === 'product_view' && s.timestamp > recentCutoff &&
+           (s.metadata as Record<string, unknown>)?.productId === productId
+    );
+    if (alreadyTracked) return;
+
     const isHighValue = productId.includes('hy-20l') ||
                         productId.includes('hy-20lrf') ||
                         productId.includes('compact-rie');
-    
+
     this.trackSignal('product_view', isHighValue ? 1 : 0.5, {
       productId,
       productName,
@@ -262,8 +269,10 @@ class BehaviorAnalyticsService {
       behaviorScore += Math.min(0.25, returnVisits * 0.1);
     }
     
-    // Paid traffic bonus (max +0.1)
+    // Traffic intent bonus (max +0.1)
     if (isPaidTraffic) {
+      behaviorScore += 0.1;
+    } else if (trafficChannel === 'organic_search') {
       behaviorScore += 0.1;
     }
     
