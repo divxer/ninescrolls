@@ -607,6 +607,16 @@ class SegmentAnalyticsService {
       const ipInfo = await ipAnalytics.getIPInfo();
       const analysis = await ipAnalytics.analyzeTargetCustomer();
 
+      // Auto-detect product page visit from pathname so behavior score
+      // reflects product interest even before the product component mounts
+      const pagePath = (properties?.pathname || pageName || '') as string;
+      if (pagePath.startsWith('/products/') && pagePath.length > '/products/'.length) {
+        const productSlug = pagePath.split('/').filter(Boolean).pop() || '';
+        if (productSlug) {
+          behaviorAnalytics.trackProductView(productSlug, productSlug);
+        }
+      }
+
       // Get behavior score (includes timeOnSite)
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
 

@@ -255,8 +255,12 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Anonymous high-intent: unidentified org but strong behavioral signals
     // Exclude orgs identified by AI as a real organization (not ISP/unknown)
     const aiIdentifiedRealOrg = aiEvent && aiEvent.aiOrganizationType !== 'telecom_isp';
+    const hasProductPageVisit = group.some(e => e.pathname?.startsWith('/products/'));
     const isAnonymousHighIntent = !isTarget && !bestTier && !aiIdentifiedRealOrg &&
-      maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2);
+      (
+        (maxBehaviorScore >= 0.3 && (maxReturnVisits > 0 || pages.size >= 2)) ||
+        (maxBehaviorScore >= 0.1 && hasProductPageVisit)
+      );
 
     records.push({
       key,
@@ -582,7 +586,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             <span className={`org-behavior-score-value${org.maxBehaviorScore >= 0.3 ? ' org-behavior-score-high' : ''}`}>
               {(org.maxBehaviorScore * 100).toFixed(0)}%
             </span>
-            {org.maxBehaviorScore < 0.3 && (
+            {org.maxBehaviorScore < 0.3 && !org.isAnonymousHighIntent && (
               <span className="org-behavior-score-hint">below 30% intent threshold</span>
             )}
           </div>
@@ -706,6 +710,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 <div className="org-ai-row">
                   <span className="org-ai-label">Type</span>
                   <span className="org-ai-value">{ipOrgType}</span>
+                </div>
+              </div>
+            ) : org.maxBehaviorScore > 0 ? (
+              <div className="org-detail-ai-classification">
+                <div className="org-ai-row">
+                  <span className="org-ai-label">Behavior Score</span>
+                  <span className="org-ai-value">{(org.maxBehaviorScore * 100).toFixed(0)}%</span>
+                </div>
+                <div className="org-ai-row">
+                  <span className="org-ai-label">Traffic</span>
+                  <span className="org-ai-value">
+                    {org.events.find(e => e.trafficChannel)?.trafficChannel?.replace(/_/g, ' ') || 'unknown'}
+                  </span>
                 </div>
               </div>
             ) : null}
