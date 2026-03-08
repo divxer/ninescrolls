@@ -329,6 +329,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link to="/insights">Technical Insights</Link>
                 <Link to="/service-support">Service &amp; Support</Link>
                 <Link to="/startup-package">Startup Lab Package</Link>
+                <Link to="/careers">Careers</Link>
                 <Link to="/contact">Contact Us</Link>
               </div>
             </div>
