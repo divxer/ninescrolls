@@ -10,9 +10,9 @@ Address: 12546 Cabezon Pl, San Diego, CA 92129, USA
 
 ## Company Overview
 
-NineScrolls LLC is a semiconductor equipment provider based in San Diego, California. We design and supply research-grade plasma etching systems (RIE, ICP-RIE, DRIE, IBE/RIBE), thin-film deposition systems (ALD, PECVD, HDP-CVD, Sputter), photolithography equipment (coater/developer), and plasma cleaners for surface preparation.
+NineScrolls LLC is a U.S.-based scientific equipment supplier in San Diego, California, serving universities and research institutions across the United States. We supply research-grade plasma etching systems (RIE, ICP-RIE, DRIE, IBE/RIBE), thin-film deposition systems (ALD, PECVD, HDP-CVD, Sputter), photolithography equipment (coater/developer), and plasma cleaners for surface preparation.
 
-Our customers include universities, national labs, research institutes, and corporate R&D labs worldwide. We offer standard warranty, annual maintenance contracts (AMC), and a startup package with discounted pricing for new faculty.
+Our customers include universities, national labs, and research institutes. We offer standard warranty, annual maintenance contracts (AMC), and a startup package with discounted pricing for new faculty.
 
 ---
 
@@ -210,6 +210,38 @@ Summary: Silicon wafer processing and thin film deposition techniques for perovs
 URL: https://ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy
 Summary: MEA fabrication, catalyst deposition, bipolar plate processing, and how thin film/etching equipment supports hydrogen economy R&D.
 
+### Publication Spotlights
+
+**RIE-150 Enables Nanoforest Fabrication for Environment-Powered Soft Actuators**
+URL: https://ninescrolls.com/insights/rie150-nanoforest-soft-actuator
+Published: ACS Applied Nano Materials, Feb 2026
+Summary: RIE-150 oxygen plasma etching creates nanoforest structures enabling dual-mode soft actuators with record humidity response (23.06°/s) and 85% broadband absorption.
+
+**PECVD-150LL & ICP-100 Enable Record-Speed PtSe₂/Si Photodetector**
+URL: https://ninescrolls.com/insights/pecvd-icp-ptse2-photodetector
+Published: Applied Surface Science, Feb 2026
+Summary: PECVD-150LL and ICP-100 enable a CMOS-compatible PtSe₂/Si photodetector with record 260 kHz bandwidth, 80 dB dynamic range, and polarization-encoded optical communication.
+
+**RIE-150A Enables On-Chip Metasurface Color Router**
+URL: https://ninescrolls.com/insights/rie150a-metasurface-color-router
+Published: Light: Science & Applications (Nature), 2026
+Summary: RIE-150A precision etching enables an on-chip q-BIC metasurface color router with near-unity energy utilization efficiency and ~20 nm narrowband extraction.
+
+**ICP-200 Powers Metasurface Flow Visualization**
+URL: https://ninescrolls.com/insights/icp200-metasurface-flow-visualization
+Published: Light: Science & Applications (Nature), 2025
+Summary: ICP-200 fabricates silicon nanopillars enabling the first fully non-invasive 2D quantitative visualization of transparent flow fields.
+
+---
+
+## Service & Company Pages
+
+- **Service & Support**: https://ninescrolls.com/service-support — Warranty, AMC packages, service process, emergency support
+- **Startup Package**: https://ninescrolls.com/startup-package — Discounted equipment program for new faculty
+- **Careers**: https://ninescrolls.com/careers — Anticipated roles: Sales, Applications/Pre-Sales Engineer, Field Service/After-Sales Engineer
+- **Contact**: https://ninescrolls.com/contact — Quotes, technical questions, feasibility assessments
+- **About**: https://ninescrolls.com/about — Company information, manufacturer partnership, brand philosophy
+
 ---
 
 ## Frequently Asked Questions
@@ -245,7 +277,7 @@ Q: Is NineScrolls hiring?
 A: We are growing and anticipate roles in Sales, Applications/Pre-Sales Engineering, and Field Service/After-Sales Engineering. Visit https://ninescrolls.com/careers or email careers@ninescrolls.com.
 
 Q: Where is NineScrolls located?
-A: San Diego, California, USA. We ship equipment worldwide.
+A: San Diego, California, USA. We serve universities and research institutions across the United States.
 
 Q: Does NineScrolls offer warranty and service?
 A: Yes. We provide standard warranty with all equipment, plus optional Annual Maintenance Contracts (AMC) that include preventive maintenance visits and priority technical support. Details: https://ninescrolls.com/service-support
