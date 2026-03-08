@@ -842,7 +842,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
       {/* Traffic Sources with Channel Classification */}
       {(() => {
-        const channelColors: Record<TrafficChannel, { bg: string; color: string; label: string }> = {
+        const channelColors: Record<string, { bg: string; color: string; label: string }> = {
           paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
           organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
           paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
@@ -851,6 +851,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
           direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
         };
+        const fallbackStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
         const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
         for (const e of org.events) {
           const storedCh = e.trafficChannel as TrafficChannel | undefined;
@@ -862,7 +863,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             : '';
           // Group by channel + hostname so paid vs organic from the same domain are separate
           const groupKey = hostname ? `${channel}::${hostname}` : channel;
-          const displayLabel = hostname || channelColors[channel].label;
+          const displayLabel = hostname || (channelColors[channel] || fallbackStyle).label;
           const existing = sources.get(groupKey);
           if (existing) {
             existing.count += 1;
@@ -877,7 +878,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               {Array.from(sources.entries())
                 .sort((a, b) => b[1].count - a[1].count)
                 .map(([groupKey, { count, channel, label: displayLabel }]) => {
-                  const style = channelColors[channel];
+                  const style = channelColors[channel] || fallbackStyle;
                   return (
                     <div key={groupKey} className="org-signal org-signal-info">
                       <span
@@ -916,7 +917,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             }
             // If only 1 visitor, no need for visitor headers — just show by date
             // Helper: build referrer badge for the first event of a visitor
-            const channelColorsTimeline: Record<TrafficChannel, { bg: string; color: string; label: string }> = {
+            const channelColorsTimeline: Record<string, { bg: string; color: string; label: string }> = {
               paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
               organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
               paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
@@ -925,6 +926,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
               direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
             };
+            const fallbackChannelStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
             // Check if an event has an external referrer (not self-referrer)
             const hasExternalReferrer = (e: AnalyticsEvent): boolean => {
               if (!e.referrer) return false;
@@ -937,7 +939,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             const referrerBadge = (e: AnalyticsEvent) => {
               const channel: TrafficChannel = (e.trafficChannel as TrafficChannel) ||
                 classifyTrafficChannel({ referrer: e.referrer || undefined });
-              const style = channelColorsTimeline[channel];
+              const style = channelColorsTimeline[channel] || fallbackChannelStyle;
               const label = e.referrer
                 ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
                 : style.label;
