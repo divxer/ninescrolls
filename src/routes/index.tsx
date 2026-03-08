@@ -6,6 +6,7 @@ import { AdminAnalyticsPage } from '../pages/admin/AdminAnalyticsPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { CareersPage } from '../pages/CareersPage';
 import { ContactPage } from '../pages/ContactPage';
 import { ServiceSupportPage } from '../pages/ServiceSupportPage';
 import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
@@ -48,6 +49,7 @@ export function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/products" element={<ProductsPage />} />
+      <Route path="/careers" element={<CareersPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/service-support" element={<ServiceSupportPage />} />
       <Route path="/insights" element={<InsightsPage />} />
