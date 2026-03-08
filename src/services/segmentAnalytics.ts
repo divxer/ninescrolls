@@ -383,11 +383,9 @@ class SegmentAnalyticsService {
                                 analysis.organizationType === 'research_institute' ||
                                 analysis.organizationType === 'enterprise';
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
-        // Check if organization is whitelisted (high whitelist score indicates whitelist match)
-        const isWhitelisted = analysis.confidenceBreakdown?.whitelist && analysis.confidenceBreakdown.whitelist >= 0.85;
 
-        if (isHighConfidenceIP && (isTargetOrgType || isWhitelisted) && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization OR whitelisted organization
+        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
+          // First-time visitor from high-confidence target organization (identified via keywords or AI)
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
         } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {
@@ -623,11 +621,9 @@ class SegmentAnalyticsService {
                                 analysis.organizationType === 'research_institute' ||
                                 analysis.organizationType === 'enterprise';
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
-        // Check if organization is whitelisted (high whitelist score indicates whitelist match)
-        const isWhitelisted = analysis.confidenceBreakdown?.whitelist && analysis.confidenceBreakdown.whitelist >= 0.85;
 
-        if (isHighConfidenceIP && (isTargetOrgType || isWhitelisted) && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization OR whitelisted organization
+        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
+          // First-time visitor from high-confidence target organization (identified via keywords or AI)
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
         } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {

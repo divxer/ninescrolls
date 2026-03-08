@@ -198,26 +198,6 @@ const highPriorityNoise = [
     'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
 ];
 
-const whitelist = [
-    // US Universities
-    'stanford', 'mit', 'massachusetts institute', 'harvard', 'ucsd', 'uc san diego',
-    'ucla', 'uc berkeley', 'caltech', 'california institute', 'princeton',
-    'yale', 'columbia', 'cornell', 'pennsylvania', 'upenn', 'chicago',
-    'northwestern', 'duke', 'johns hopkins', 'carnegie mellon', 'cmu',
-    'university of maryland', 'university of california, los angeles',
-    // Research Institutes
-    'nano3', 'nano', 'national lab', 'argonne', 'oak ridge', 'lawrence',
-    'sandia', 'los alamos', 'brookhaven', 'fermilab',
-    // Chinese Universities
-    'tsinghua', 'peking', 'beijing university', 'fudan', 'shanghai jiao tong',
-    'zhejiang', 'nankai', 'nanjing', 'wuhan', 'huazhong',
-    // Chinese Research Institutes
-    'chinese academy', 'cas', 'academia sinica',
-    // European
-    'eth zurich', 'epfl', 'max planck', 'fraunhofer', 'cnrs',
-    'cambridge', 'oxford', 'imperial college',
-];
-
 const targetCountries = [
     'United States', 'China', 'Japan', 'Germany', 'United Kingdom',
     'France', 'Canada', 'Australia', 'South Korea', 'Netherlands',
@@ -230,21 +210,6 @@ const targetRegions = [
 
 function isTargetLocation(country: string, region: string): boolean {
     return targetCountries.includes(country) || targetRegions.includes(region);
-}
-
-function checkWhitelist(orgName: string): { matched: boolean } {
-    const orgLower = orgName.toLowerCase();
-    return {
-        matched: whitelist.some(keyword => {
-            // Use word-boundary matching for short keywords (≤4 chars)
-            // to avoid false positives like "mit" matching "Limited"
-            if (keyword.length <= 4) {
-                const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-                return regex.test(orgLower);
-            }
-            return orgLower.includes(keyword);
-        }),
-    };
 }
 
 function getOrgTypeName(type: string): string {
@@ -318,14 +283,6 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
         }
     }
 
-    // Check whitelist (only if not a noise org)
-    if (!isNoiseOrg) {
-        const whitelistMatch = checkWhitelist(orgName);
-        if (whitelistMatch.matched) {
-            breakdown.whitelist = Math.max(0.85, breakdown.whitelist);
-        }
-    }
-
     // Analyze organization type
     let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
     let keywords: string[] = [];
@@ -354,7 +311,6 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     // Check enterprise keywords (stricter - need research/tech context)
     const enterpriseMatches = enterpriseKeywords.filter(kw => orgLower.includes(kw));
     if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3 && !isNoiseOrg) {
-        const isWhitelisted = checkWhitelist(orgName).matched;
         const hasResearchTechContext =
             orgLower.includes('semiconductor') || orgLower.includes('technology') ||
             orgLower.includes('research') || orgLower.includes('scientific') ||
@@ -366,7 +322,7 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
             orgLower.includes('systems') || orgLower.includes('software') ||
             orgLower.includes('tech');
 
-        if (hasResearchTechContext || isWhitelisted) {
+        if (hasResearchTechContext) {
             organizationType = 'enterprise';
             breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
             keywords = enterpriseMatches;
@@ -389,7 +345,7 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
 
     // Calculate total confidence
     breakdown.total = Math.max(0, Math.min(0.95,
-        breakdown.orgMatch + breakdown.geo + breakdown.ispPenalty + breakdown.whitelist
+        breakdown.orgMatch + breakdown.geo + breakdown.ispPenalty
     ));
 
     // Dynamic threshold based on geography
