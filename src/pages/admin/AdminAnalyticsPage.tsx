@@ -180,17 +180,23 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   const groups = new Map<string, AnalyticsEvent[]>();
 
   for (const e of events) {
-    // ISP/VPN/hosting visitors (L0_REJECT): group by individual visitor
-    // to prevent unrelated residential users from being lumped under one ISP name.
-    // Conditions: low confidence, unknown org type, has a real ISP name (not "Unknown"),
-    // and not already meaningfully classified by AI.
+    // ISP/VPN/hosting visitors: group by individual visitor to prevent
+    // unrelated residential users from being lumped under one ISP name.
+    // Two detection paths:
+    //   1. L0_REJECT: confidence=0, unknown type, real org name
+    //   2. AI-classified telecom_isp: AI identified it as ISP even if IP lookup missed it
     const orgNameVal = e.orgName || e.org || '';
     const hasRealOrgName = !!orgNameVal && orgNameVal !== 'Unknown';
-    const hasAIClassification = e.aiConfidence != null && e.aiConfidence >= 0.5;
-    const isL0Reject = !e.isTargetCustomer &&
-      (e.confidence == null || e.confidence === 0) &&
-      (!e.organizationType || e.organizationType === 'unknown') &&
-      hasRealOrgName && !hasAIClassification;
+    const isAIClassifiedISP = e.aiOrganizationType === 'telecom_isp';
+    const isL0Reject = hasRealOrgName && (
+      // Path 1: IP lookup rejected as ISP/unknown
+      (!e.isTargetCustomer &&
+        (e.confidence == null || e.confidence === 0) &&
+        (!e.organizationType || e.organizationType === 'unknown') &&
+        !(e.aiConfidence != null && e.aiConfidence >= 0.5 && !isAIClassifiedISP)) ||
+      // Path 2: AI says telecom_isp regardless of IP confidence
+      isAIClassifiedISP
+    );
     const key = isL0Reject
       ? ((e as Record<string, unknown>).visitorId as string || e.ip || orgNameVal || 'Unknown')
       : (e.orgName || e.org || e.ip || 'Unknown');
@@ -280,11 +286,16 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const firstEvent = group[0];
     const ispOrgName = firstEvent.orgName || firstEvent.org || '';
     const hasRealName = !!ispOrgName && ispOrgName !== 'Unknown';
-    const hasAI = firstEvent.aiConfidence != null && firstEvent.aiConfidence >= 0.5;
-    const isISPVisitor = !firstEvent.isTargetCustomer &&
-      (firstEvent.confidence == null || firstEvent.confidence === 0) &&
-      (!firstEvent.organizationType || firstEvent.organizationType === 'unknown') &&
-      hasRealName && !hasAI && key !== ispOrgName;
+    const isAIISP = firstEvent.aiOrganizationType === 'telecom_isp';
+    const isISPVisitor = hasRealName && key !== ispOrgName && (
+      // Path 1: L0_REJECT ISP
+      (!firstEvent.isTargetCustomer &&
+        (firstEvent.confidence == null || firstEvent.confidence === 0) &&
+        (!firstEvent.organizationType || firstEvent.organizationType === 'unknown') &&
+        !(firstEvent.aiConfidence != null && firstEvent.aiConfidence >= 0.5 && !isAIISP)) ||
+      // Path 2: AI-classified telecom_isp
+      isAIISP
+    );
     // Build a human-readable display name for ISP individual visitors
     const displayName = isISPVisitor
       ? `${ispOrgName} · ${[geoEvent.city, geoEvent.region].filter(Boolean).join(', ') || 'Unknown'}`
@@ -574,6 +585,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             )}
             {uniqueISPs.length > 0 && (
               <span className="org-detail-isp">{uniqueISPs.join(', ')}</span>
+            )}
+            {org.isISPVisitor && (
+              <span style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'monospace' }}>
+                ID: {org.key.substring(0, 8)}
+              </span>
             )}
           </div>
         </div>
@@ -1665,7 +1681,9 @@ export function AdminAnalyticsPage() {
                 <td>
                   <div className="analytics-org-primary">{org.orgName}</div>
                   {org.isISPVisitor && (
-                    <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>ISP individual visitor</div>
+                    <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
+                      ISP individual visitor · ID: {org.key.substring(0, 8)}
+                    </div>
                   )}
                 </td>
                 <td>
