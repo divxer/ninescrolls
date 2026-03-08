@@ -234,7 +234,17 @@ function isTargetLocation(country: string, region: string): boolean {
 
 function checkWhitelist(orgName: string): { matched: boolean } {
     const orgLower = orgName.toLowerCase();
-    return { matched: whitelist.some(keyword => orgLower.includes(keyword)) };
+    return {
+        matched: whitelist.some(keyword => {
+            // Use word-boundary matching for short keywords (≤4 chars)
+            // to avoid false positives like "mit" matching "Limited"
+            if (keyword.length <= 4) {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                return regex.test(orgLower);
+            }
+            return orgLower.includes(keyword);
+        }),
+    };
 }
 
 function getOrgTypeName(type: string): string {
