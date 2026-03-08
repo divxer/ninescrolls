@@ -620,34 +620,111 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         </div>
       </div>
 
-      {/* AI Classification */}
+      {/* Detection Details */}
       {(() => {
         const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
-        return aiEvent ? (
+        // Find best IP-based confidence event (before AI enrichment)
+        const ipEvent = org.events.reduce<typeof org.events[0] | null>((best, e) => {
+          if (e.confidence != null && (best == null || (e.confidence ?? 0) > (best.confidence ?? 0))) return e;
+          return best;
+        }, null);
+        const ipConfidence = ipEvent?.confidence ?? 0;
+        const ipOrgType = ipEvent?.organizationType || 'unknown';
+
+        const hasAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
+        const aiUpgraded = hasAI && (aiEvent.aiConfidence ?? 0) > ipConfidence;
+        const aiConfirmed = hasAI && !aiUpgraded && aiEvent.aiOrganizationType !== 'unknown';
+
+        // Determine classification source
+        const source = (() => {
+          if (override?.found && override?.source === 'manual') return 'manual';
+          if (hasAI && (aiEvent.aiConfidence ?? 0) >= 0.5 && aiEvent.aiOrganizationType !== 'unknown') return 'ai';
+          if (ipConfidence > 0 && ipOrgType !== 'unknown') return 'keyword';
+          if (org.isAnonymousHighIntent) return 'behavior';
+          return 'none';
+        })();
+
+        const sourceBadge: Record<string, { label: string; className: string }> = {
+          manual: { label: 'Manual Override', className: 'org-detection-badge-manual' },
+          ai: { label: 'AI Classified', className: 'org-detection-badge-ai' },
+          keyword: { label: 'Keyword Match', className: 'org-detection-badge-keyword' },
+          behavior: { label: 'Behavior-based', className: 'org-detection-badge-behavior' },
+          none: { label: 'Unclassified', className: 'org-detection-badge-none' },
+        };
+        const badge = sourceBadge[source];
+
+        return (
           <div className="org-detail-section">
-            <h2 className="analytics-section-header">AI Classification</h2>
-            <div className="org-detail-ai-classification">
-              {aiEvent.aiOrganizationType && (
+            <h2 className="analytics-section-header">Detection Details</h2>
+
+            {/* Classification source badge */}
+            <div className="org-detection-source">
+              <span className={`org-detection-badge ${badge.className}`}>{badge.label}</span>
+            </div>
+
+            {/* IP vs AI comparison */}
+            {hasAI ? (
+              <div className="org-detection-comparison">
+                <div className="org-detection-col">
+                  <div className="org-detection-col-header">IP Lookup</div>
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Confidence</span>
+                    <span className="org-ai-value">{(ipConfidence * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Type</span>
+                    <span className="org-ai-value">{ipOrgType}</span>
+                  </div>
+                </div>
+                <div className="org-detection-arrow">
+                  {aiUpgraded ? (
+                    <span className="org-detection-upgrade">↑ Upgraded</span>
+                  ) : aiConfirmed ? (
+                    <span className="org-detection-confirmed">✓ Confirmed</span>
+                  ) : (
+                    <span className="org-detection-arrow-icon">→</span>
+                  )}
+                </div>
+                <div className="org-detection-col">
+                  <div className="org-detection-col-header">AI Classification</div>
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Confidence</span>
+                    <span className="org-ai-value">{((aiEvent.aiConfidence ?? 0) * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Type</span>
+                    <span className="org-ai-value">{aiEvent.aiOrganizationType}</span>
+                  </div>
+                </div>
+              </div>
+            ) : ipConfidence > 0 ? (
+              <div className="org-detail-ai-classification">
+                <div className="org-ai-row">
+                  <span className="org-ai-label">IP Confidence</span>
+                  <span className="org-ai-value">{(ipConfidence * 100).toFixed(0)}%</span>
+                </div>
                 <div className="org-ai-row">
                   <span className="org-ai-label">Type</span>
-                  <span className="org-ai-value">{aiEvent.aiOrganizationType}</span>
+                  <span className="org-ai-value">{ipOrgType}</span>
                 </div>
-              )}
-              {aiEvent.aiConfidence != null && (
-                <div className="org-ai-row">
-                  <span className="org-ai-label">Confidence</span>
-                  <span className="org-ai-value">{(aiEvent.aiConfidence * 100).toFixed(0)}%</span>
-                </div>
-              )}
-              {aiEvent.aiReason && (
-                <div className="org-ai-row">
-                  <span className="org-ai-label">Reason</span>
-                  <span className="org-ai-value org-ai-reason">{aiEvent.aiReason}</span>
-                </div>
-              )}
+              </div>
+            ) : null}
+
+            {/* AI reason */}
+            {aiEvent?.aiReason && (
+              <div className="org-detection-reason">
+                <span className="org-ai-label">AI Reason</span>
+                <span className="org-ai-reason">{aiEvent.aiReason}</span>
+              </div>
+            )}
+
+            {/* Final result */}
+            <div className="org-detection-final">
+              Final: {(org.maxConfidence * 100).toFixed(0)}% · {org.organizationType || 'unknown'}
+              {org.isTargetCustomer && <span className="org-detection-target"> · Target</span>}
             </div>
           </div>
-        ) : null;
+        );
       })()}
 
       {/* Classification Override */}
