@@ -77,6 +77,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 
 - [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, service process
 - [Startup Package](https://ninescrolls.com/startup-package): Discounted equipment program for new faculty
+- [Careers](https://ninescrolls.com/careers): Sales, applications engineering, and field service roles
 - [Contact](https://ninescrolls.com/contact): Quotes and technical questions
 - [About](https://ninescrolls.com/about): Company information
 
