@@ -41,6 +41,7 @@ interface OrganizationRecord {
   maxConfidence: number;
   maxBehaviorScore: number;
   isAnonymousHighIntent: boolean;
+  isISPVisitor: boolean;
   events: AnalyticsEvent[];
 }
 
@@ -179,7 +180,20 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   const groups = new Map<string, AnalyticsEvent[]>();
 
   for (const e of events) {
-    const key = e.orgName || e.org || e.ip || 'Unknown';
+    // ISP/VPN/hosting visitors (L0_REJECT): group by individual visitor
+    // to prevent unrelated residential users from being lumped under one ISP name.
+    // Conditions: low confidence, unknown org type, has a real ISP name (not "Unknown"),
+    // and not already meaningfully classified by AI.
+    const orgNameVal = e.orgName || e.org || '';
+    const hasRealOrgName = !!orgNameVal && orgNameVal !== 'Unknown';
+    const hasAIClassification = e.aiConfidence != null && e.aiConfidence >= 0.5;
+    const isL0Reject = !e.isTargetCustomer &&
+      (e.confidence == null || e.confidence === 0) &&
+      (!e.organizationType || e.organizationType === 'unknown') &&
+      hasRealOrgName && !hasAIClassification;
+    const key = isL0Reject
+      ? ((e as Record<string, unknown>).visitorId as string || e.ip || orgNameVal || 'Unknown')
+      : (e.orgName || e.org || e.ip || 'Unknown');
     const group = groups.get(key);
     if (group) {
       group.push(e);
@@ -262,9 +276,23 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         (maxBehaviorScore >= 0.1 && hasProductPageVisit)
       );
 
+    // Detect ISP visitors grouped by individual visitorId/IP
+    const firstEvent = group[0];
+    const ispOrgName = firstEvent.orgName || firstEvent.org || '';
+    const hasRealName = !!ispOrgName && ispOrgName !== 'Unknown';
+    const hasAI = firstEvent.aiConfidence != null && firstEvent.aiConfidence >= 0.5;
+    const isISPVisitor = !firstEvent.isTargetCustomer &&
+      (firstEvent.confidence == null || firstEvent.confidence === 0) &&
+      (!firstEvent.organizationType || firstEvent.organizationType === 'unknown') &&
+      hasRealName && !hasAI && key !== ispOrgName;
+    // Build a human-readable display name for ISP individual visitors
+    const displayName = isISPVisitor
+      ? `${ispOrgName} · ${[geoEvent.city, geoEvent.region].filter(Boolean).join(', ') || 'Unknown'}`
+      : key;
+
     records.push({
       key,
-      orgName: key,
+      orgName: displayName,
       organizationType: effectiveOrgType,
       country: geoEvent.country || '',
       region: geoEvent.region || '',
@@ -284,8 +312,25 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       maxConfidence: maxConf,
       maxBehaviorScore,
       isAnonymousHighIntent,
+      isISPVisitor,
       events: sorted,
     });
+  }
+
+  // Disambiguate ISP visitors with identical display names (same ISP + same city)
+  const nameCounts = new Map<string, number>();
+  for (const r of records) {
+    if (r.isISPVisitor) {
+      nameCounts.set(r.orgName, (nameCounts.get(r.orgName) || 0) + 1);
+    }
+  }
+  const nameIdx = new Map<string, number>();
+  for (const r of records) {
+    if (r.isISPVisitor && (nameCounts.get(r.orgName) || 0) > 1) {
+      const idx = (nameIdx.get(r.orgName) || 0) + 1;
+      nameIdx.set(r.orgName, idx);
+      r.orgName = `${r.orgName} #${idx}`;
+    }
   }
 
   return records;
@@ -1619,6 +1664,9 @@ export function AdminAnalyticsPage() {
               >
                 <td>
                   <div className="analytics-org-primary">{org.orgName}</div>
+                  {org.isISPVisitor && (
+                    <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>ISP individual visitor</div>
+                  )}
                 </td>
                 <td>
                   {org.organizationType ? (
