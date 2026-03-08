@@ -73,6 +73,13 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Solar Cell Manufacturing](https://ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy): Silicon wafer processing and thin film deposition for photovoltaics
 - [Fuel Cell Technology](https://ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy): MEA fabrication, catalyst deposition, and hydrogen economy R&D
 
+## Insights — Publication Spotlights
+
+- [RIE-150 Nanoforest Soft Actuator](https://ninescrolls.com/insights/rie150-nanoforest-soft-actuator): RIE-150 O₂ plasma creates nanoforest structures for humidity-powered soft actuators (ACS Applied Nano Materials, 2026)
+- [PECVD-150LL & ICP-100 PtSe₂ Photodetector](https://ninescrolls.com/insights/pecvd-icp-ptse2-photodetector): PECVD + ICP enable record-speed PtSe₂/Si photodetector with 260 kHz bandwidth (Applied Surface Science, 2026)
+- [RIE-150A Metasurface Color Router](https://ninescrolls.com/insights/rie150a-metasurface-color-router): RIE-150A etching enables on-chip q-BIC metasurface color router with near-unity efficiency (Light: Science & Applications, 2026)
+- [ICP-200 Metasurface Flow Visualization](https://ninescrolls.com/insights/icp200-metasurface-flow-visualization): ICP-200 fabricates Si nanopillars for first fully non-invasive 2D flow visualization (Light: Science & Applications, 2025)
+
 ## Service & Company
 
 - [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, service process
