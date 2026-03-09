@@ -782,7 +782,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 <div className="org-ai-row">
                   <span className="org-ai-label">Traffic</span>
                   <span className="org-ai-value">
-                    {org.events.find(e => e.trafficChannel)?.trafficChannel?.replace(/_/g, ' ') || 'unknown'}
+                    {(() => {
+                      const ev = org.events.find(e => e.trafficChannel || e.referrer);
+                      if (!ev) return 'unknown';
+                      const ch = ev.referrer
+                        ? classifyTrafficChannel({ referrer: ev.referrer })
+                        : (ev.trafficChannel || 'unknown');
+                      return String(ch).replace(/_/g, ' ');
+                    })()}
                   </span>
                 </div>
               </div>
@@ -934,8 +941,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         for (const e of org.events) {
           const storedCh = e.trafficChannel as TrafficChannel | undefined;
           const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
-          // Don't trust stored 'direct' when referrer suggests otherwise (fixes historical misclassification)
-          const channel: TrafficChannel = (storedCh && storedCh !== 'direct') ? storedCh : derivedCh;
+          // Always prefer re-derived channel when referrer is available (fixes historical misclassification from substring matching bug)
+          const channel: TrafficChannel = e.referrer ? derivedCh : (storedCh || derivedCh);
           const hostname = e.referrer
             ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
             : '';
@@ -1015,8 +1022,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               } catch { return false; }
             };
             const referrerBadge = (e: AnalyticsEvent) => {
-              const channel: TrafficChannel = (e.trafficChannel as TrafficChannel) ||
-                classifyTrafficChannel({ referrer: e.referrer || undefined });
+              const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
+              const channel: TrafficChannel = e.referrer ? derivedCh : ((e.trafficChannel as TrafficChannel) || derivedCh);
               const style = channelColorsTimeline[channel] || fallbackChannelStyle;
               const label = e.referrer
                 ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
@@ -1034,6 +1041,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 </>
               );
             };
+
+            // Only show referrer badge on the entry event (earliest per visitor) — in a SPA,
+            // document.referrer persists across client-side navigations so all events carry the same external referrer.
+            const entryEventIds = new Set<string>();
+            for (const [, vEvents] of byVisitor) {
+              const externalEvents = vEvents.filter(hasExternalReferrer);
+              if (externalEvents.length > 0) {
+                const earliest = externalEvents.reduce((a, b) =>
+                  new Date(a.timestamp).getTime() < new Date(b.timestamp).getTime() ? a : b
+                );
+                entryEventIds.add(earliest.id);
+              }
+            }
 
             if (byVisitor.size <= 1) {
               return Array.from(eventsByDate.entries()).map(([date, events]) => (
@@ -1056,7 +1076,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       {pageDuration != null && pageDuration > 0 && (
                         <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                       )}
-                      {hasExternalReferrer(e) && referrerBadge(e)}
+                      {entryEventIds.has(e.id) && referrerBadge(e)}
                     </div>
                     );
                   })}
@@ -1108,7 +1128,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           {pageDuration != null && pageDuration > 0 && (
                             <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                           )}
-                          {hasExternalReferrer(e) && referrerBadge(e)}
+                          {entryEventIds.has(e.id) && referrerBadge(e)}
                         </div>
                         );
                       })}

@@ -23,6 +23,21 @@ const SOCIAL_PLATFORM_DOMAINS = [
   'tiktok.com', 'wechat.com', 'weibo.com', 't.co',
 ];
 
+// Match domain pattern against a hostname precisely:
+// e.g. hostMatchesDomain('www.t.co', 't.co') → true
+//      hostMatchesDomain('www.thomasnet.com', 't.co') → false
+//      hostMatchesDomain('news.google.com', 'google.') → true
+function hostMatchesDomain(host: string, pattern: string): boolean {
+  if (pattern.endsWith('.')) {
+    // Prefix pattern (e.g. 'google.') — host contains pattern as a domain boundary
+    // Match: host === 'google.com' or host includes '.google.'
+    const base = pattern.slice(0, -1); // 'google'
+    return host === base || host.startsWith(base + '.') || host.includes('.' + base + '.');
+  }
+  // Exact domain pattern (e.g. 't.co', 'facebook.com')
+  return host === pattern || host.endsWith('.' + pattern);
+}
+
 export function classifyTrafficChannel(params: {
   utmSource?: string | null;
   utmMedium?: string | null;
@@ -56,8 +71,8 @@ export function classifyTrafficChannel(params: {
 
   const isPaidMedium = medium.includes('paid') ||
     (utmCampaign || '').toLowerCase().includes('ads');
-  const isSearchReferrer = SEARCH_ENGINE_DOMAINS.some(d => referrerHost.includes(d));
-  const isSocialReferrer = SOCIAL_PLATFORM_DOMAINS.some(d => referrerHost.includes(d));
+  const isSearchReferrer = SEARCH_ENGINE_DOMAINS.some(d => hostMatchesDomain(referrerHost, d));
+  const isSocialReferrer = SOCIAL_PLATFORM_DOMAINS.some(d => hostMatchesDomain(referrerHost, d));
 
   // 3. Paid social
   if (isPaidMedium && (isSocialReferrer || SOCIAL_PLATFORM_DOMAINS.some(d => source.includes(d.split('.')[0])))) {
