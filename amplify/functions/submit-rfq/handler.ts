@@ -228,7 +228,7 @@ async function matchOrg(emailDomain: string, _institution: string): Promise<stri
 async function updateLeadScore(orgId: string, data: RfqInput): Promise<void> {
     let points = 8; // Base: RFQ submission
     if (data.fundingStatus === 'funded') points += 5;
-    if (data.timeline === 'urgent') points += 3;
+    if (data.timeline === 'immediate') points += 3;
 
     try {
         await docClient.send(new UpdateCommand({
