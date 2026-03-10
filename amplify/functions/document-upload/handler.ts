@@ -202,7 +202,8 @@ async function handleGetUploadUrl(
         ContentType: req.mimeType,
     });
 
-    const uploadUrl = await getSignedUrl(s3Client, command, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AWS SDK version mismatch between root and function deps
+    const uploadUrl = await getSignedUrl(s3Client as any, command as any, {
         expiresIn: PRESIGNED_URL_EXPIRY,
     });
 
