@@ -152,7 +152,7 @@ function extractEmailDomain(email: string): string {
 // ---------------------------------------------------------------------------
 // Turnstile verification
 // ---------------------------------------------------------------------------
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+async function verifyTurnstile(token: string): Promise<boolean> {
     const secret = TURNSTILE_SECRET();
     if (!secret) {
         console.warn('TURNSTILE_SECRET_KEY not configured, skipping verification');
@@ -165,11 +165,13 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
         body: new URLSearchParams({
             secret,
             response: token,
-            remoteip: ip,
         }),
     });
 
-    const result = await response.json() as { success: boolean };
+    const result = await response.json() as { success: boolean; 'error-codes'?: string[] };
+    if (!result.success) {
+        console.error('Turnstile verification failed:', JSON.stringify(result));
+    }
     return result.success;
 }
 
@@ -365,7 +367,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             };
         }
 
-        const turnstileValid = await verifyTurnstile(turnstileToken, ip);
+        const turnstileValid = await verifyTurnstile(turnstileToken);
         if (!turnstileValid) {
             return {
                 statusCode: 403,
