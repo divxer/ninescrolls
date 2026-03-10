@@ -3,6 +3,11 @@ import { AdminRoute } from '../components/admin/AdminRoute';
 import { AdminInsightsListPage } from '../pages/admin/AdminInsightsListPage';
 import { AdminInsightsFormPage } from '../pages/admin/AdminInsightsFormPage';
 import { AdminAnalyticsPage } from '../pages/admin/AdminAnalyticsPage';
+import { OrderListPage } from '../pages/admin/OrderListPage';
+import { OrderDetailPage } from '../pages/admin/OrderDetailPage';
+import { CreateOrderPage } from '../pages/admin/CreateOrderPage';
+import { RFQListPage } from '../pages/admin/RFQListPage';
+import { RFQDetailPage } from '../pages/admin/RFQDetailPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -102,6 +107,11 @@ export function AdminRoutes() {
         <Route path="insights/new" element={<AdminInsightsFormPage />} />
         <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="orders" element={<OrderListPage />} />
+        <Route path="orders/new" element={<CreateOrderPage />} />
+        <Route path="orders/:orderId" element={<OrderDetailPage />} />
+        <Route path="rfqs" element={<RFQListPage />} />
+        <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
       </Route>
     </Routes>
   );
