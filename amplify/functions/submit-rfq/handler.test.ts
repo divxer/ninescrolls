@@ -238,10 +238,9 @@ describe('submit-rfq handler', () => {
         process.env.INTELLIGENCE_TABLE = 'NineScrolls-Intelligence';
         process.env.DOCUMENTS_BUCKET = 'ninescrolls-order-documents';
         process.env.TURNSTILE_SECRET_KEY = 'test-secret';
-        process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/test';
         process.env.SENDGRID_API_KEY = 'SG.test-key';
 
-        // Default fetch mock: Turnstile passes, SendGrid 202, Slack 200
+        // Default fetch mock: Turnstile passes, SendGrid 202
         mockFetch.mockImplementation((url: string) => {
             if (url.includes('turnstile')) {
                 return Promise.resolve({
@@ -251,9 +250,6 @@ describe('submit-rfq handler', () => {
             }
             if (url.includes('sendgrid')) {
                 return Promise.resolve({ ok: true, status: 202 });
-            }
-            if (url.includes('slack')) {
-                return Promise.resolve({ ok: true, status: 200 });
             }
             return Promise.resolve({ ok: true });
         });
@@ -403,7 +399,7 @@ describe('submit-rfq handler', () => {
         expect(turnstileCall![1].method).toBe('POST');
     });
 
-    it('sends confirmation email and Slack notification', async () => {
+    it('sends confirmation email', async () => {
         const event = makeEvent(VALID_RFQ);
         await handler(event, {} as never, (() => {}) as never);
 
@@ -411,11 +407,6 @@ describe('submit-rfq handler', () => {
             (call: string[]) => call[0].includes('sendgrid')
         );
         expect(sendGridCall).toBeDefined();
-
-        const slackCall = mockFetch.mock.calls.find(
-            (call: string[]) => call[0].includes('slack')
-        );
-        expect(slackCall).toBeDefined();
     });
 
     it('succeeds even if notifications fail', async () => {

@@ -22,6 +22,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
   const [isQuote, setIsQuote] = useState(defaultIsQuote);
   const [form, setForm] = useState({
     product: productName || '',
@@ -39,7 +40,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
   const [token, setToken] = useState<string>('');
   const widgetRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => { if (!isOpen) { setIsSuccess(false); setError(null); } }, [isOpen]);
+  useEffect(() => { if (!isOpen) { setIsSuccess(false); setError(null); setReferenceNumber(null); } }, [isOpen]);
   useEffect(() => { setIsQuote(defaultIsQuote); }, [defaultIsQuote]);
 
   // Load Cloudflare Turnstile if a site key is provided
@@ -90,18 +91,32 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     setIsSubmitting(true);
     try {
       const { address, city, state, zipCode, country, ...rest } = form;
-      const payload = {
-        productName: rest.product || 'Products Inquiry',
-        ...rest,
+      const productLabel = rest.product || productName || 'Products Inquiry';
+      const rfqPayload = {
+        name: rest.name,
+        email: rest.email,
+        phone: rest.phone || undefined,
+        institution: rest.organization || 'Not specified',
+        role: 'Other' as const,
+        equipmentCategory: 'Other' as const,
+        specificModel: productLabel,
+        applicationDescription: rest.message.length >= 10
+          ? rest.message
+          : `${rest.message} — Quick inquiry via product page (${productLabel})`.padEnd(10, '.'),
         turnstileToken: token,
-        inquiryType: isQuote ? 'budgetary' : 'general',
-        ...(isQuote ? { shippingAddress: { address, city, state, zipCode, country } } : {})
+        additionalComments: [
+          `Source: Quote Modal`,
+          `Product: ${productLabel}`,
+          isQuote ? 'Type: Budgetary Quote' : 'Type: General Inquiry',
+          isQuote ? `Shipping: ${address}, ${city}, ${state} ${zipCode}, ${country}` : '',
+        ].filter(Boolean).join('\n'),
       };
-      const res = await fetch('https://api.ninescrolls.com/sendEmail', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      const res = await fetch('https://api.ninescrolls.com/api/rfq', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rfqPayload)
       });
-      const txt = await res.text();
-      if (!res.ok) throw new Error(txt || 'Failed');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'Failed');
+      setReferenceNumber(data?.referenceNumber || null);
       setIsSuccess(true); setIsSubmitting(false);
       // Send to both Google Analytics and Segment
       const inquiryProduct = form.product || productName || 'Products Inquiry';
@@ -198,41 +213,29 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
             <span className="close-button" aria-label="Close" onClick={onClose}>×</span>
             <div className="success-content">
               <span className="success-icon">✓</span>
+              <h3>Thank You for Your Interest!</h3>
               {productName ? (
-                <>
-                  <h3>Thank You for Your Interest!</h3>
-                  <p>Your request about the {productName} has been submitted successfully.</p>
-                  <div className="success-details">
-                    <p>What happens next:</p>
-                    <ul>
-                      <li>You'll receive a confirmation email within the next few minutes</li>
-                      <li>Our sales team will review your request</li>
-                      <li>We'll respond with detailed information within 1–2 business days</li>
-                    </ul>
-                  </div>
-                  <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
-                    <button className="btn btn-secondary" onClick={onDownloadBrochure}>{downloadLabel}</button>
-                    <a href="/products" className="btn btn-secondary">Browse Other Products</a>
-                  </div>
-                </>
+                <p>Your request about the {productName} has been submitted successfully.</p>
               ) : (
-                <>
-                  <h3>Thank You for Your Interest!</h3>
-                  <p>Your request has been submitted successfully.</p>
-                  <div className="success-details">
-                    <p>What happens next:</p>
-                    <ul>
-                      <li>You'll receive a confirmation email within the next few minutes</li>
-                      <li>Our sales team will review your request</li>
-                      <li>We'll respond with detailed information within 1–2 business days</li>
-                    </ul>
-                  </div>
-                  <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
-                    <button className="btn btn-secondary" onClick={onDownloadBrochure}>{downloadLabel}</button>
-                    <a href="/products" className="btn btn-secondary">Browse Other Products</a>
-                  </div>
-                </>
+                <p>Your request has been submitted successfully.</p>
               )}
+              {referenceNumber && (
+                <p style={{ fontSize: '14px', color: '#555', margin: '8px 0' }}>
+                  Reference: <strong>{referenceNumber}</strong>
+                </p>
+              )}
+              <div className="success-details">
+                <p>What happens next:</p>
+                <ul>
+                  <li>You'll receive a confirmation email within the next few minutes</li>
+                  <li>Our sales team will review your request</li>
+                  <li>We'll respond with detailed information within 1–2 business days</li>
+                </ul>
+              </div>
+              <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
+                <button className="btn btn-secondary" onClick={onDownloadBrochure}>{downloadLabel}</button>
+                <a href="/products" className="btn btn-secondary">Browse Other Products</a>
+              </div>
             </div>
           </div>
         )}

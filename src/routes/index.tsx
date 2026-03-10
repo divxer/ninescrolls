@@ -29,6 +29,7 @@ import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
 import { CheckoutSuccessPage } from '../pages/CheckoutSuccessPage';
 import { CheckoutCancelPage } from '../pages/CheckoutCancelPage';
+import { RFQPage } from '../pages/RFQPage';
 import {
   ICPEtcher,
   RIEEtcher,
@@ -56,6 +57,7 @@ export function AppRoutes() {
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/careers" element={<CareersPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/request-quote" element={<RFQPage />} />
       <Route path="/service-support" element={<ServiceSupportPage />} />
       <Route path="/insights" element={<InsightsPage />} />
       <Route path="/insights/:slug" element={<InsightsPostPage />} />
