@@ -10,7 +10,7 @@ export async function listOrders(event: AppSyncEvent) {
         nextToken?: string;
     };
 
-    const effectiveLimit = Math.min(limit, 100);
+    const effectiveLimit = Math.min(Math.max(limit || 20, 1), 100);
     const exclusiveStartKey = nextToken ? JSON.parse(Buffer.from(nextToken, 'base64').toString()) : undefined;
 
     let items: Record<string, unknown>[];
