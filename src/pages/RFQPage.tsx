@@ -103,7 +103,6 @@ interface RFQFormData {
   referralSource: string;
   existingEquipment: string;
   additionalComments: string;
-  privacyConsent: boolean;
 }
 
 interface FieldErrors {
@@ -128,7 +127,6 @@ const initialFormData: RFQFormData = {
   referralSource: '',
   existingEquipment: '',
   additionalComments: '',
-  privacyConsent: false,
 };
 
 // Map product names to equipment categories for pre-fill
@@ -292,9 +290,6 @@ export function RFQPage() {
       case 'quantity':
         if (typeof value === 'number' && (value < 1 || !Number.isInteger(value))) return 'Quantity must be a positive integer';
         return '';
-      case 'privacyConsent':
-        if (!value) return 'You must agree to the privacy policy to submit';
-        return '';
       default:
         return '';
     }
@@ -359,7 +354,7 @@ export function RFQPage() {
   const validateAll = (): boolean => {
     const errors: FieldErrors = {};
     const requiredFields: (keyof RFQFormData)[] = [
-      'name', 'email', 'institution', 'role', 'equipmentCategory', 'applicationDescription', 'quantity', 'privacyConsent',
+      'name', 'email', 'institution', 'role', 'equipmentCategory', 'applicationDescription', 'quantity',
     ];
 
     for (const field of requiredFields) {
@@ -883,22 +878,9 @@ export function RFQPage() {
               </fieldset>
 
               {/* Privacy Consent */}
-              <div className="rfq-consent">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="privacyConsent"
-                    checked={formData.privacyConsent}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    required
-                  />
-                  <span>
-                    I agree that NineScrolls may use this information to prepare a quotation and contact me regarding this inquiry.
-                  </span>
-                </label>
-                {fieldErrors.privacyConsent && <span className="field-error">{fieldErrors.privacyConsent}</span>}
-              </div>
+              <p className="rfq-consent-text">
+                By submitting, you agree that NineScrolls may use this information to prepare a quotation and contact you regarding this inquiry.
+              </p>
 
               {/* Turnstile */}
               {turnstileSiteKey && (
@@ -915,7 +897,7 @@ export function RFQPage() {
                 <button
                   type="submit"
                   className="btn btn-primary rfq-submit-btn"
-                  disabled={isSubmitting || !formData.privacyConsent || (!!turnstileSiteKey && !turnstileToken)}
+                  disabled={isSubmitting || (!!turnstileSiteKey && !turnstileToken)}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>

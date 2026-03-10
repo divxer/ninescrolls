@@ -227,35 +227,13 @@
   opacity: 0.7;
 }
 
-/* Privacy Consent */
-.rfq-consent {
-  margin: 2rem 0 1.5rem;
-  padding: 1.5rem;
-  background: var(--white);
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: #333;
+/* Privacy Consent Text */
+.rfq-consent-text {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 0.85rem;
+  color: #6c757d;
   line-height: 1.5;
-}
-
-.checkbox-label input[type="checkbox"] {
-  margin-top: 0.25rem;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  accent-color: var(--primary-color);
-}
-
-.rfq-consent .field-error {
-  margin-left: 1.75rem;
+  text-align: center;
 }
 
 /* Turnstile Widget */
