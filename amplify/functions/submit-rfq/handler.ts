@@ -30,39 +30,48 @@ const ALLOWED_ORIGINS = [
 ];
 
 const EQUIPMENT_CATEGORIES = [
-    'ICP', 'PECVD', 'Sputter', 'ALD', 'RIE', 'IBE', 'HDP-CVD', 'Other',
+    'ICP', 'PECVD', 'Sputter', 'ALD', 'RIE', 'IBE', 'HDP-CVD', 'Plasma-Cleaner', 'Other',
 ] as const;
 
-const ROLES = ['PI', 'Researcher', 'Procurement', 'Lab Manager', 'Other'] as const;
+const ROLES = [
+    'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
+    'Procurement', 'Lab Manager', 'Business Development', 'Other',
+] as const;
 
 const BUDGET_RANGES = [
-    'Prefer not to say',
-    'Under $100,000',
-    '$100,000 - $200,000',
-    '$200,000 - $500,000',
-    'Over $500,000',
+    'Under $10k',
+    '$10k - $30k',
+    '$30k - $80k',
+    '$80k - $150k',
+    'Over $150k',
+    'Not yet defined',
 ] as const;
 
 const TIMELINES = [
-    'exploring-options',
+    'immediate',
     'within-3-months',
     'within-6-months',
-    'within-12-months',
-    'urgent',
+    '6-plus-months',
+    'budgetary-planning',
 ] as const;
 
 const FUNDING_STATUSES = [
     'funded',
-    'pending-approval',
-    'grant-in-progress',
-    'early-research',
+    'budget-under-review',
+    'grant-pending',
+    'exploring',
+    'prefer-not-to-say',
 ] as const;
 
 const REFERRAL_SOURCES = [
     'web-search',
+    'google-ads',
     'referral',
+    'linkedin',
     'conference',
     'publication',
+    'existing-customer',
+    'direct-outreach',
     'other',
 ] as const;
 
@@ -75,7 +84,7 @@ export const rfqSchema = z.object({
     phone: z.string().max(30).optional(),
     institution: z.string().min(2).max(200),
     department: z.string().max(200).optional(),
-    role: z.enum(ROLES),
+    role: z.enum(ROLES).optional(),
     equipmentCategory: z.enum(EQUIPMENT_CATEGORIES),
     specificModel: z.string().max(100).optional(),
     applicationDescription: z.string().min(10).max(3000),
@@ -90,7 +99,21 @@ export const rfqSchema = z.object({
     turnstileToken: z.string().min(1),
     // S3 keys from presigned URL uploads (temp/ prefix)
     attachmentKeys: z.array(z.string().max(500)).max(3).optional(),
-});
+    // Budgetary quote with shipping address for tax calculation
+    needsBudgetaryQuote: z.boolean().optional(),
+    shippingAddress: z.string().max(300).optional(),
+    shippingCity: z.string().max(100).optional(),
+    shippingState: z.string().max(100).optional(),
+    shippingZipCode: z.string().max(20).optional(),
+    shippingCountry: z.string().max(100).optional(),
+}).refine(
+    (data) => {
+        if (!data.needsBudgetaryQuote) return true;
+        return !!(data.shippingAddress?.trim() && data.shippingCity?.trim() &&
+                  data.shippingState?.trim() && data.shippingZipCode?.trim());
+    },
+    { message: 'Shipping address is required for budgetary quote', path: ['shippingAddress'] },
+);
 
 export type RfqInput = z.infer<typeof rfqSchema>;
 
@@ -315,6 +338,123 @@ or contact us at sales@ninescrolls.com.</p>
     }
 }
 
+/** Send internal notification email to sales team via SendGrid */
+async function sendInternalNotification(data: RfqInput, rfqId: string, referenceNumber: string, attachmentKeys: string[]): Promise<void> {
+    const apiKey = SENDGRID_API_KEY();
+    if (!apiKey) {
+        console.warn('SENDGRID_API_KEY not configured, skipping internal notification');
+        return;
+    }
+
+    const timelineLabels: Record<string, string> = {
+        'immediate': 'Immediate',
+        'within-3-months': 'Within 3 months',
+        'within-6-months': 'Within 6 months',
+        '6-plus-months': '6+ months',
+        'budgetary-planning': 'Budgetary planning',
+    };
+
+    const fundingLabels: Record<string, string> = {
+        'funded': 'Funded',
+        'budget-under-review': 'Budget under review',
+        'grant-pending': 'Grant pending',
+        'exploring': 'Exploring',
+        'prefer-not-to-say': 'Prefer not to say',
+    };
+
+    const optionalRows = [
+        data.phone ? `<tr><td style="padding:4px 8px;font-weight:600;">Phone:</td><td style="padding:4px 8px;">${sanitize(data.phone)}</td></tr>` : '',
+        data.department ? `<tr><td style="padding:4px 8px;font-weight:600;">Department:</td><td style="padding:4px 8px;">${sanitize(data.department)}</td></tr>` : '',
+        data.role ? `<tr><td style="padding:4px 8px;font-weight:600;">Role:</td><td style="padding:4px 8px;">${sanitize(data.role)}</td></tr>` : '',
+        data.specificModel ? `<tr><td style="padding:4px 8px;font-weight:600;">Specific Model:</td><td style="padding:4px 8px;">${sanitize(data.specificModel)}</td></tr>` : '',
+        data.budgetRange ? `<tr><td style="padding:4px 8px;font-weight:600;">Budget Range:</td><td style="padding:4px 8px;">${sanitize(data.budgetRange)}</td></tr>` : '',
+        data.timeline ? `<tr><td style="padding:4px 8px;font-weight:600;">Timeline:</td><td style="padding:4px 8px;">${timelineLabels[data.timeline] ?? data.timeline}</td></tr>` : '',
+        data.fundingStatus ? `<tr><td style="padding:4px 8px;font-weight:600;">Funding Status:</td><td style="padding:4px 8px;">${fundingLabels[data.fundingStatus] ?? data.fundingStatus}</td></tr>` : '',
+        data.keySpecifications ? `<tr><td style="padding:4px 8px;font-weight:600;">Key Specs:</td><td style="padding:4px 8px;">${sanitize(data.keySpecifications)}</td></tr>` : '',
+        data.existingEquipment ? `<tr><td style="padding:4px 8px;font-weight:600;">Existing Equipment:</td><td style="padding:4px 8px;">${sanitize(data.existingEquipment)}</td></tr>` : '',
+        data.additionalComments ? `<tr><td style="padding:4px 8px;font-weight:600;">Additional Comments:</td><td style="padding:4px 8px;">${sanitize(data.additionalComments)}</td></tr>` : '',
+    ].filter(Boolean).join('\n');
+
+    const shippingSection = data.needsBudgetaryQuote ? `
+        <h3 style="margin-top:20px;">Shipping Address (Budgetary Quote)</h3>
+        <p>${[data.shippingAddress, data.shippingCity, data.shippingState, data.shippingZipCode, data.shippingCountry]
+            .filter(Boolean).map(s => sanitize(s!)).join(', ')}</p>
+    ` : '';
+
+    const attachmentSection = attachmentKeys.length > 0 ? `
+        <h3 style="margin-top:20px;">Attachments (${attachmentKeys.length})</h3>
+        <ul>${attachmentKeys.map(k => `<li>${sanitize(k)}</li>`).join('')}</ul>
+    ` : '';
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            personalizations: [{ to: [{ email: 'sales@ninescrolls.com' }] }],
+            from: { email: 'noreply@ninescrolls.com', name: 'NineScrolls RFQ System' },
+            reply_to: { email: data.email, name: data.name },
+            subject: `New RFQ: ${referenceNumber} — ${sanitize(data.equipmentCategory)} — ${sanitize(data.institution)}`,
+            content: [{
+                type: 'text/html',
+                value: `
+<h2>New RFQ Submission</h2>
+<p><strong>Reference:</strong> ${referenceNumber} &nbsp;|&nbsp; <strong>ID:</strong> ${rfqId}</p>
+
+<h3>Contact Information</h3>
+<table style="border-collapse:collapse;">
+  <tr><td style="padding:4px 8px;font-weight:600;">Name:</td><td style="padding:4px 8px;">${sanitize(data.name)}</td></tr>
+  <tr><td style="padding:4px 8px;font-weight:600;">Email:</td><td style="padding:4px 8px;"><a href="mailto:${sanitize(data.email)}">${sanitize(data.email)}</a></td></tr>
+  ${data.phone ? `<tr><td style="padding:4px 8px;font-weight:600;">Phone:</td><td style="padding:4px 8px;">${sanitize(data.phone)}</td></tr>` : ''}
+  <tr><td style="padding:4px 8px;font-weight:600;">Institution:</td><td style="padding:4px 8px;">${sanitize(data.institution)}</td></tr>
+  ${data.department ? `<tr><td style="padding:4px 8px;font-weight:600;">Department:</td><td style="padding:4px 8px;">${sanitize(data.department)}</td></tr>` : ''}
+  ${data.role ? `<tr><td style="padding:4px 8px;font-weight:600;">Role:</td><td style="padding:4px 8px;">${sanitize(data.role)}</td></tr>` : ''}
+</table>
+
+<h3 style="margin-top:20px;">Equipment & Application</h3>
+<table style="border-collapse:collapse;">
+  <tr><td style="padding:4px 8px;font-weight:600;">Category:</td><td style="padding:4px 8px;"><strong>${sanitize(data.equipmentCategory)}</strong></td></tr>
+  ${data.specificModel ? `<tr><td style="padding:4px 8px;font-weight:600;">Specific Model:</td><td style="padding:4px 8px;">${sanitize(data.specificModel)}</td></tr>` : ''}
+  <tr><td style="padding:4px 8px;font-weight:600;">Quantity:</td><td style="padding:4px 8px;">${data.quantity}</td></tr>
+  ${data.budgetRange ? `<tr><td style="padding:4px 8px;font-weight:600;">Budget Range:</td><td style="padding:4px 8px;">${sanitize(data.budgetRange)}</td></tr>` : ''}
+  ${data.timeline ? `<tr><td style="padding:4px 8px;font-weight:600;">Timeline:</td><td style="padding:4px 8px;">${timelineLabels[data.timeline] ?? data.timeline}</td></tr>` : ''}
+  ${data.fundingStatus ? `<tr><td style="padding:4px 8px;font-weight:600;">Funding Status:</td><td style="padding:4px 8px;">${fundingLabels[data.fundingStatus] ?? data.fundingStatus}</td></tr>` : ''}
+  <tr><td style="padding:4px 8px;font-weight:600;">Budgetary Quote:</td><td style="padding:4px 8px;">${data.needsBudgetaryQuote ? 'Yes' : 'No'}</td></tr>
+</table>
+
+<h3 style="margin-top:20px;">Application Description</h3>
+<p style="background:#f8f9fa;padding:12px;border-radius:4px;">${sanitize(data.applicationDescription)}</p>
+
+${data.keySpecifications ? `<h3 style="margin-top:20px;">Key Specifications</h3><p style="background:#f8f9fa;padding:12px;border-radius:4px;">${sanitize(data.keySpecifications)}</p>` : ''}
+
+${data.existingEquipment ? `<h3 style="margin-top:20px;">Existing Equipment</h3><p style="background:#f8f9fa;padding:12px;border-radius:4px;">${sanitize(data.existingEquipment)}</p>` : ''}
+
+${data.additionalComments ? `<h3 style="margin-top:20px;">Additional Comments</h3><p style="background:#f8f9fa;padding:12px;border-radius:4px;">${sanitize(data.additionalComments)}</p>` : ''}
+
+${shippingSection}
+${attachmentSection}
+
+<hr style="margin-top:30px;border:none;border-top:1px solid #e0e0e0;">
+<p style="color:#666;font-size:12px;">This is an automated notification from the NineScrolls RFQ system. Reply directly to respond to the customer.</p>
+                `.trim(),
+            }],
+            tracking_settings: {
+                click_tracking: { enable: false },
+                open_tracking: { enable: false },
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        const errBody = await response.text();
+        console.error(`SendGrid internal notification error ${response.status}: ${errBody}`);
+    } else {
+        console.log(`Internal notification sent to sales@ninescrolls.com for ${referenceNumber}`);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Handler
 // ---------------------------------------------------------------------------
@@ -434,6 +574,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             referralSource: sanitized.referralSource,
             existingEquipment: sanitized.existingEquipment,
             additionalComments: sanitized.additionalComments,
+            // Budgetary quote shipping address
+            needsBudgetaryQuote: sanitized.needsBudgetaryQuote || false,
+            shippingAddress: sanitized.shippingAddress,
+            shippingCity: sanitized.shippingCity,
+            shippingState: sanitized.shippingState,
+            shippingZipCode: sanitized.shippingZipCode,
+            shippingCountry: sanitized.shippingCountry,
             TTL: 0, // No expiry
         };
 
@@ -471,10 +618,18 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             await updateLeadScore(matchedOrgId, data);
         }
 
-        // 9. Send confirmation email (best-effort)
-        await sendConfirmationEmail(data, referenceNumber).catch(err =>
-            console.warn('Confirmation email failed (non-critical):', err)
-        );
+        // 9. Send emails (best-effort, non-blocking)
+        await Promise.allSettled([
+            sendConfirmationEmail(data, referenceNumber),
+            sendInternalNotification(data, rfqId, referenceNumber, attachmentKeys),
+        ]).then(results => {
+            results.forEach((result, i) => {
+                const label = i === 0 ? 'Confirmation email' : 'Internal notification';
+                if (result.status === 'rejected') {
+                    console.warn(`${label} failed (non-critical):`, result.reason);
+                }
+            });
+        });
 
         // 10. Return success — §12.10.3
         return {

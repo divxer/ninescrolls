@@ -41,6 +41,12 @@ export async function getRfq(event: AppSyncEvent) {
         referralSource: item.referralSource || null,
         existingEquipment: item.existingEquipment || null,
         additionalComments: item.additionalComments || null,
+        needsBudgetaryQuote: item.needsBudgetaryQuote || false,
+        shippingAddress: item.shippingAddress || null,
+        shippingCity: item.shippingCity || null,
+        shippingState: item.shippingState || null,
+        shippingZipCode: item.shippingZipCode || null,
+        shippingCountry: item.shippingCountry || null,
         linkedOrderId: item.linkedOrderId || null,
         attachmentKeys: item.attachmentKeys || null,
     };
