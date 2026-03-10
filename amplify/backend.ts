@@ -11,6 +11,10 @@ import { ipLookup } from './functions/ip-lookup/resource';
 import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
 import { generateArticleMeta } from './functions/generate-article-meta/resource';
+import { submitRfq } from './functions/submit-rfq/resource';
+import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
+import { updateOrderStatus } from './functions/update-order-status/resource';
+import { documentUpload } from './functions/document-upload/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -31,6 +35,10 @@ const backend = defineBackend({
     serverTrack,
     classifyOrg,
     generateArticleMeta,
+    submitRfq,
+    convertRfqToOrder,
+    updateOrderStatus,
+    documentUpload,
 });
 
 // Create a fixed stage name
@@ -255,6 +263,44 @@ generateArticleMetaResource.addMethod('POST', generateArticleMetaIntegration);
 // Add OPTIONS method for CORS preflight
 generateArticleMetaResource.addMethod('OPTIONS', generateArticleMetaIntegration);
 
+// Create /api/rfq resource for RFQ submissions
+const apiResource = restApi.root.addResource('api');
+const rfqResource = apiResource.addResource('rfq');
+const submitRfqIntegration = new LambdaIntegration(backend.submitRfq.resources.lambda, {
+    proxy: true,
+});
+
+// Add POST method for RFQ submission
+rfqResource.addMethod('POST', submitRfqIntegration);
+
+// Add OPTIONS method for CORS preflight
+rfqResource.addMethod('OPTIONS', submitRfqIntegration);
+
+// Create /api/rfq/convert resource for converting RFQ to Order
+const rfqConvertResource = rfqResource.addResource('convert');
+const convertRfqIntegration = new LambdaIntegration(backend.convertRfqToOrder.resources.lambda, {
+    proxy: true,
+});
+rfqConvertResource.addMethod('POST', convertRfqIntegration);
+rfqConvertResource.addMethod('OPTIONS', convertRfqIntegration);
+
+// Create /api/orders/status resource for order status updates
+const ordersResource = apiResource.addResource('orders');
+const orderStatusResource = ordersResource.addResource('status');
+const updateOrderStatusIntegration = new LambdaIntegration(backend.updateOrderStatus.resources.lambda, {
+    proxy: true,
+});
+orderStatusResource.addMethod('POST', updateOrderStatusIntegration);
+orderStatusResource.addMethod('OPTIONS', updateOrderStatusIntegration);
+
+// Create /api/documents resource for document upload operations
+const documentsResource = apiResource.addResource('documents');
+const documentUploadIntegration = new LambdaIntegration(backend.documentUpload.resources.lambda, {
+    proxy: true,
+});
+documentsResource.addMethod('POST', documentUploadIntegration);
+documentsResource.addMethod('OPTIONS', documentUploadIntegration);
+
 // =============================================================================
 // NineScrolls-Intelligence: Single-table design for Feedback System
 // Entities: FEEDBACK, ORDER, ORDER_CONTACT, ORDER_LOG, ORDER_DOCUMENT, RFQ_SUBMISSION
@@ -335,6 +381,31 @@ const orderDocumentsBucket = new Bucket(feedbackStack, 'OrderDocumentsBucket', {
         },
     ],
 });
+
+// =============================================================================
+// Grant submit-rfq Lambda access to Intelligence table + S3 bucket
+// =============================================================================
+intelligenceTable.grantReadWriteData(backend.submitRfq.resources.lambda);
+backend.submitRfq.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+orderDocumentsBucket.grantReadWrite(backend.submitRfq.resources.lambda);
+backend.submitRfq.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant convert-rfq-to-order Lambda access
+intelligenceTable.grantReadWriteData(backend.convertRfqToOrder.resources.lambda);
+backend.convertRfqToOrder.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+orderDocumentsBucket.grantReadWrite(backend.convertRfqToOrder.resources.lambda);
+backend.convertRfqToOrder.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant update-order-status Lambda access
+intelligenceTable.grantReadWriteData(backend.updateOrderStatus.resources.lambda);
+backend.updateOrderStatus.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Grant document-upload Lambda access
+intelligenceTable.grantReadWriteData(backend.documentUpload.resources.lambda);
+backend.documentUpload.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+orderDocumentsBucket.grantReadWrite(backend.documentUpload.resources.lambda);
+backend.documentUpload.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
 
 // Add outputs
 backend.addOutput({
