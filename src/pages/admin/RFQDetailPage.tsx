@@ -109,6 +109,19 @@ export function RFQDetailPage() {
         </div>
       </div>
 
+      {rfq.needsBudgetaryQuote && (
+        <div className="admin-panel" style={{ background: '#fffbeb', borderColor: '#f59e0b' }}>
+          <h3>Budgetary Quote Requested</h3>
+          <dl className="admin-dl">
+            <dt>Shipping Address</dt>
+            <dd>
+              {[rfq.shippingAddress, rfq.shippingCity, rfq.shippingState, rfq.shippingZipCode, rfq.shippingCountry]
+                .filter(Boolean).join(', ') || '-'}
+            </dd>
+          </dl>
+        </div>
+      )}
+
       <div className="admin-panel">
         <h3>Project Context</h3>
         <dl className="admin-dl" style={{ columns: 2 }}>
