@@ -15,6 +15,7 @@ import { submitRfq } from './functions/submit-rfq/resource';
 import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
 import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
+import { orderApi } from './functions/order-api/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -39,6 +40,7 @@ const backend = defineBackend({
     convertRfqToOrder,
     updateOrderStatus,
     documentUpload,
+    orderApi,
 });
 
 // Create a fixed stage name
@@ -406,6 +408,12 @@ intelligenceTable.grantReadWriteData(backend.documentUpload.resources.lambda);
 backend.documentUpload.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 orderDocumentsBucket.grantReadWrite(backend.documentUpload.resources.lambda);
 backend.documentUpload.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant order-api Lambda access (AppSync GraphQL resolvers for admin dashboard)
+intelligenceTable.grantReadWriteData(backend.orderApi.resources.lambda);
+backend.orderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+orderDocumentsBucket.grantReadWrite(backend.orderApi.resources.lambda);
+backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
 
 // Add outputs
 backend.addOutput({
