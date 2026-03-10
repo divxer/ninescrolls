@@ -105,7 +105,8 @@ export async function buildDocumentResponse(doc: DocumentItem): Promise<Record<s
                 Bucket: BUCKET_NAME(),
                 Key: doc.s3Key,
             });
-            downloadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AWS SDK version mismatch between root and function deps
+            downloadUrl = await getSignedUrl(s3Client as any, command as any, { expiresIn: 900 });
 
             const previewTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
             if (previewTypes.includes(doc.mimeType)) {
