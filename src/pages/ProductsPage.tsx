@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
-import { QuoteModal } from '../components/common/QuoteModal';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import '../styles/ProductsPage.css';
 
@@ -13,7 +12,6 @@ export function ProductsPage() {
   useScrollToTop();
   const [selected, setSelected] = useState<'All' | 'Etching' | 'Deposition' | 'Coating/Developing' | 'Cleaning/Stripping'>('All');
   const [gateOpen, setGateOpen] = useState(false);
-  const [quoteOpen, setQuoteOpen] = useState(false);
   const [etchingOpen, setEtchingOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
 
@@ -59,7 +57,7 @@ export function ProductsPage() {
           <h1>Plasma Etching & Thin-Film Systems</h1>
           <p><strong>NineScrolls provides ICP‑RIE, RIE, PECVD and ALD systems</strong> for research labs, delivering low‑damage processing, ±3% uniformity, and wide temperature control for 150–200 mm wafers.</p>
           <div className="hero-cta-group">
-            <button type="button" className="btn btn-primary" onClick={() => setQuoteOpen(true)}>Request a Quote</button>
+            <Link to="/request-quote" className="btn btn-primary">Request a Quote</Link>
             <button type="button" className="btn btn-secondary" onClick={() => setGateOpen(true)}>Download Brochure</button>
             <Link to="/contact?topic=expert" className="btn btn-secondary">Talk to an Expert</Link>
           </div>
@@ -639,7 +637,7 @@ export function ProductsPage() {
           <h2>Need Equipment Consultation?</h2>
           <p>Our technical team is ready to help you choose the right equipment for your application.</p>
           <div className="contact-buttons">
-            <button type="button" className="btn btn-primary" onClick={() => setQuoteOpen(true)}>Contact Our Team</button>
+            <Link to="/request-quote" className="btn btn-primary">Contact Our Team</Link>
             <button type="button" className="btn btn-secondary" onClick={() => setGateOpen(true)}>Download Equipment Guide</button>
           </div>
         </div>
@@ -718,20 +716,6 @@ export function ProductsPage() {
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
 
-      <QuoteModal
-        isOpen={quoteOpen}
-        onClose={() => setQuoteOpen(false)}
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={() => {
-          setQuoteOpen(false);
-          const link = document.createElement('a');
-          link.href = '/NineScrolls-Equipment-Guide.pdf';
-          link.download = 'NineScrolls-Equipment-Guide.pdf';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }}
-      />
     </>
   );
 } 

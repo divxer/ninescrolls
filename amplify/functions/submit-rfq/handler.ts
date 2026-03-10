@@ -18,7 +18,6 @@ const s3Client = new S3Client({});
 const TABLE_NAME = () => process.env.INTELLIGENCE_TABLE!;
 const BUCKET_NAME = () => process.env.DOCUMENTS_BUCKET!;
 const TURNSTILE_SECRET = () => process.env.TURNSTILE_SECRET_KEY!;
-const SLACK_WEBHOOK_URL = () => process.env.SLACK_WEBHOOK_URL;
 const SENDGRID_API_KEY = () => process.env.SENDGRID_API_KEY;
 
 // ---------------------------------------------------------------------------
@@ -79,7 +78,7 @@ export const rfqSchema = z.object({
     role: z.enum(ROLES),
     equipmentCategory: z.enum(EQUIPMENT_CATEGORIES),
     specificModel: z.string().max(100).optional(),
-    applicationDescription: z.string().min(20).max(3000),
+    applicationDescription: z.string().min(10).max(3000),
     keySpecifications: z.string().max(3000).optional(),
     quantity: z.number().int().positive().default(1),
     budgetRange: z.enum(BUDGET_RANGES).optional(),
@@ -314,46 +313,6 @@ or contact us at sales@ninescrolls.com.</p>
     }
 }
 
-/** Send Slack notification to #inquiries — §12.10.5 step 9b */
-async function sendSlackNotification(data: RfqInput, referenceNumber: string): Promise<void> {
-    const webhookUrl = SLACK_WEBHOOK_URL();
-    if (!webhookUrl) {
-        console.warn('SLACK_WEBHOOK_URL not configured, skipping Slack notification');
-        return;
-    }
-
-    const budgetLine = data.budgetRange && data.budgetRange !== 'Prefer not to say'
-        ? `Budget: ${data.budgetRange}`
-        : 'Budget: Not specified';
-    const timelineLine = data.timeline
-        ? `Timeline: ${data.timeline.replace(/-/g, ' ')}`
-        : 'Timeline: Not specified';
-    const fundingLine = data.fundingStatus
-        ? `Funding: ${data.fundingStatus.replace(/-/g, ' ')}`
-        : 'Funding: Not specified';
-
-    const text = [
-        `:envelope_with_arrow: *New RFQ: [${data.equipmentCategory}${data.specificModel ? ' — ' + data.specificModel : ''}] from ${data.institution} (${data.name}, ${data.role})*`,
-        `${budgetLine} | ${timelineLine} | ${fundingLine}`,
-        `Ref: ${referenceNumber}`,
-    ].join('\n');
-
-    try {
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-        if (!response.ok) {
-            console.error(`Slack notification failed: ${response.status}`);
-        } else {
-            console.log('Slack notification sent');
-        }
-    } catch (err) {
-        console.warn('Slack notification failed (non-critical):', err);
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Handler
 // ---------------------------------------------------------------------------
@@ -510,11 +469,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             await updateLeadScore(matchedOrgId, data);
         }
 
-        // 9. Notifications (parallel, best-effort)
-        await Promise.allSettled([
-            sendConfirmationEmail(data, referenceNumber),
-            sendSlackNotification(data, referenceNumber),
-        ]);
+        // 9. Send confirmation email (best-effort)
+        await sendConfirmationEmail(data, referenceNumber).catch(err =>
+            console.warn('Confirmation email failed (non-critical):', err)
+        );
 
         // 10. Return success — §12.10.3
         return {

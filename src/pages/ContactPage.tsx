@@ -1,23 +1,29 @@
 import { Helmet } from 'react-helmet-async';
 import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
-type InquiryType = 'budgetary' | 'feasibility' | 'engineer' | null;
+type InquiryType = 'feasibility' | 'engineer' | null;
 
 export function ContactPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const topic = params.get('topic') || undefined;
   const prefillEmail = params.get('email') || undefined;
+  const navigate = useNavigate();
   const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(null);
   const formSectionRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to form section for newsletter or quote topics, otherwise scroll to top
+  // Redirect quote requests to the dedicated RFQ page
+  if (topic === 'quote') {
+    return <Navigate to="/request-quote" replace />;
+  }
+
+  // Scroll to form section for newsletter topic, otherwise scroll to top
   useEffect(() => {
-    if ((topic === 'newsletter' || topic === 'quote') && formSectionRef.current) {
+    if (topic === 'newsletter' && formSectionRef.current) {
       // Small delay to ensure DOM is fully rendered
       setTimeout(() => {
         formSectionRef.current?.scrollIntoView({
@@ -28,13 +34,6 @@ export function ContactPage() {
     } else {
       // Default behavior: scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [topic]);
-
-  // Auto-select budgetary inquiry type when topic=quote
-  useEffect(() => {
-    if (topic === 'quote') {
-      setSelectedInquiryType('budgetary');
     }
   }, [topic]);
 
@@ -180,8 +179,8 @@ export function ContactPage() {
             <div className="inquiry-type-grid">
               <button
                 type="button"
-                onClick={() => setSelectedInquiryType('budgetary')}
-                className={`inquiry-type-btn${selectedInquiryType === 'budgetary' ? ' selected' : ''}`}
+                onClick={() => navigate('/request-quote')}
+                className="inquiry-type-btn"
               >
                 <h3>Request a Budgetary Quote</h3>
                 <p>
@@ -224,7 +223,6 @@ export function ContactPage() {
 
             <h2 className="form-section-title">
               {topic === 'newsletter' && 'Newsletter Subscription Form'}
-              {topic !== 'newsletter' && selectedInquiryType === 'budgetary' && 'Request a Budgetary Quote'}
               {topic !== 'newsletter' && selectedInquiryType === 'feasibility' && 'Technical Feasibility Check'}
               {topic !== 'newsletter' && selectedInquiryType === 'engineer' && 'Talk to an Engineer (No Sales)'}
               {topic !== 'newsletter' && !selectedInquiryType && 'Send Us a Message'}
@@ -235,7 +233,13 @@ export function ContactPage() {
                 : "Fill out the form below and we'll get back to you within 1–2 business days."
               }
             </p>
-            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} onInquiryTypeChange={topic !== 'newsletter' ? setSelectedInquiryType : undefined} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
+            <ContactFormInline topic={topic} inquiryType={selectedInquiryType} onInquiryTypeChange={topic !== 'newsletter' ? (type) => {
+              if (type === 'budgetary') {
+                navigate('/request-quote');
+              } else {
+                setSelectedInquiryType(type);
+              }
+            } : undefined} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
 
             {/* What Happens After You Submit - Trust Block */}
             <div className="trust-block">

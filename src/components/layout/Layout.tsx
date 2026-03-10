@@ -205,7 +205,7 @@ export function Layout({ children }: LayoutProps) {
                     </div>
                     <div className="dropdown-cta">
                       <Link to="/products" className="btn btn-primary" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
-                      <Link to="/contact?topic=quote" className="btn btn-secondary" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
+                      <Link to="/request-quote" className="btn btn-secondary" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
                     </div>
                   </div>
                 ) : (
@@ -239,7 +239,7 @@ export function Layout({ children }: LayoutProps) {
                     </div>
                     <div className="dropdown-cta">
                       <Link to="/products" className="btn btn-primary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products','CTA'); }}>All Products</Link>
-                      <Link to="/contact?topic=quote" className="btn btn-secondary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
+                      <Link to="/request-quote" className="btn btn-secondary" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote','CTA'); }}>Request a Quote</Link>
                     </div>
                   </div>
                 )}
@@ -248,7 +248,7 @@ export function Layout({ children }: LayoutProps) {
             <li><Link to="/startup-package" className={`nav-link ${location.pathname === '/startup-package' || location.pathname === '/solutions/startup-labs' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Startup Package</Link></li>
             <li><Link to="/service-support" className={`nav-link ${location.pathname === '/service-support' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Service & Support</Link></li>
             <li><Link to="/insights" className={`nav-link ${location.pathname === '/insights' ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Insights</Link></li>
-            <li><Link to="/contact?topic=quote" className="nav-cta" onClick={() => setIsMenuOpen(false)}>Request a Quote</Link></li>
+            <li><Link to="/request-quote" className="nav-cta" onClick={() => setIsMenuOpen(false)}>Request a Quote</Link></li>
             <li className="cart-icon-nav"><CartIcon /></li>
           </ul>
         </nav>
