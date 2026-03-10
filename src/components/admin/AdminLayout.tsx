@@ -9,7 +9,7 @@ export function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isActive = (path: string) =>
-    location.pathname === path ? 'admin-nav-link active' : 'admin-nav-link';
+    location.pathname.startsWith(path) ? 'admin-nav-link active' : 'admin-nav-link';
 
   return (
     <div className="admin-layout">
@@ -32,6 +32,12 @@ export function AdminLayout() {
           </Link>
           <Link to="/admin/insights/new" className={isActive('/admin/insights/new')} onClick={() => setMenuOpen(false)}>
             New Article
+          </Link>
+          <Link to="/admin/orders" className={isActive('/admin/orders')} onClick={() => setMenuOpen(false)}>
+            Orders
+          </Link>
+          <Link to="/admin/rfqs" className={isActive('/admin/rfqs')} onClick={() => setMenuOpen(false)}>
+            RFQs
           </Link>
           <Link to="/admin/analytics" className={isActive('/admin/analytics')} onClick={() => setMenuOpen(false)}>
             Analytics
