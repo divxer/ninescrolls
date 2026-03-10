@@ -312,7 +312,6 @@ documentsResource.addMethod('OPTIONS', documentUploadIntegration);
 const feedbackStack = backend.createStack('feedback-system-stack');
 
 const intelligenceTable = new Table(feedbackStack, 'NineScrollsIntelligence', {
-    tableName: 'NineScrolls-Intelligence',
     partitionKey: { name: 'PK', type: AttributeType.STRING },
     sortKey: { name: 'SK', type: AttributeType.STRING },
     billingMode: BillingMode.PAY_PER_REQUEST,
@@ -358,7 +357,6 @@ intelligenceTable.addGlobalSecondaryIndex({
 // =============================================================================
 
 const orderDocumentsBucket = new Bucket(feedbackStack, 'OrderDocumentsBucket', {
-    bucketName: 'ninescrolls-order-documents',
     blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
     encryption: BucketEncryption.S3_MANAGED,
     versioned: true,
