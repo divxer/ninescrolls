@@ -19,8 +19,8 @@ export async function getOrderLogs(event: AppSyncEvent) {
         ScanIndexForward: false, // newest first
     }));
 
-    return (result.Items || []).map((item) => {
-        const log = item as LogItem;
+    return (result.Items || []).map((item: Record<string, unknown>) => {
+        const log = item as unknown as LogItem;
         return {
             action: log.action,
             fromStatus: log.fromStatus || null,
