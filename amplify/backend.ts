@@ -14,7 +14,9 @@ import { generateArticleMeta } from './functions/generate-article-meta/resource'
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
-import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
+import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
+import { Duration } from 'aws-cdk-lib';
 
 const backend = defineBackend({
     auth,
@@ -252,6 +254,87 @@ generateArticleMetaResource.addMethod('POST', generateArticleMetaIntegration);
 
 // Add OPTIONS method for CORS preflight
 generateArticleMetaResource.addMethod('OPTIONS', generateArticleMetaIntegration);
+
+// =============================================================================
+// NineScrolls-Intelligence: Single-table design for Feedback System
+// Entities: FEEDBACK, ORDER, ORDER_CONTACT, ORDER_LOG, ORDER_DOCUMENT, RFQ_SUBMISSION
+// See docs/NineScrolls-Feedback-System-Architecture.md §3.1, §12.3, §12.10.4
+// =============================================================================
+
+const feedbackStack = backend.createStack('feedback-system-stack');
+
+const intelligenceTable = new Table(feedbackStack, 'NineScrollsIntelligence', {
+    tableName: 'NineScrolls-Intelligence',
+    partitionKey: { name: 'PK', type: AttributeType.STRING },
+    sortKey: { name: 'SK', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+    pointInTimeRecovery: true,
+    timeToLiveAttribute: 'TTL',
+});
+
+// GSI1: Type/Status queries
+// - FEEDBACK: GSI1PK=FEEDBACK_TYPE#<type>, GSI1SK=<timestamp>#<feedbackId>
+// - ORDER:    GSI1PK=ORDER_STATUS#<status>, GSI1SK=<quoteDate>#<orderId>
+// - RFQ:      GSI1PK=RFQ_STATUS#<status>, GSI1SK=<submittedAt>#<rfqId>
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI1',
+    partitionKey: { name: 'GSI1PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI1SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
+// GSI2: Organization queries
+// - FEEDBACK: GSI2PK=ORG#<orgId>, GSI2SK=FEEDBACK#<timestamp>
+// - ORDER:    GSI2PK=ORG#<orgId>, GSI2SK=ORDER#<quoteDate>
+// - RFQ:      GSI2PK=ORG#<orgId>, GSI2SK=RFQ#<submittedAt>
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI2',
+    partitionKey: { name: 'GSI2PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI2SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
+// GSI3: Order → Feedback association
+// - FEEDBACK: GSI3PK=ORDER#<orderId>, GSI3SK=FEEDBACK#<timestamp>
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI3',
+    partitionKey: { name: 'GSI3PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI3SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
+// =============================================================================
+// S3 Bucket: Order & RFQ document storage
+// Directory structure: orders/<orderId>/<stage>/, rfqs/<rfqId>/, temp/
+// See docs/NineScrolls-Feedback-System-Architecture.md §12.9.3
+// =============================================================================
+
+const orderDocumentsBucket = new Bucket(feedbackStack, 'OrderDocumentsBucket', {
+    bucketName: 'ninescrolls-order-documents',
+    blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    encryption: BucketEncryption.S3_MANAGED,
+    versioned: true,
+    cors: [
+        {
+            allowedHeaders: ['*'],
+            allowedMethods: [HttpMethods.GET, HttpMethods.PUT, HttpMethods.POST],
+            allowedOrigins: [
+                'https://admin.ninescrolls.com',
+                'http://localhost:5173',
+            ],
+            exposedHeaders: ['ETag'],
+            maxAge: 3600,
+        },
+    ],
+    lifecycleRules: [
+        {
+            id: 'cleanup-temp-uploads',
+            prefix: 'temp/',
+            expiration: Duration.days(1),
+            enabled: true,
+        },
+    ],
+});
 
 // Add outputs
 backend.addOutput({
