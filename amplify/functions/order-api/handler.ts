@@ -49,13 +49,29 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
     convertRfqToOrder,
 };
 
-export const handler: AppSyncResolverHandler<any, any> = async (event) => {
-    console.log(`order-api: ${event.info.parentTypeName}.${event.info.fieldName}`);
+export const handler = async (event: any) => {
+    console.log('order-api event keys:', Object.keys(event));
 
-    const resolver = resolvers[event.info.fieldName];
-    if (!resolver) {
-        throw new Error(`No resolver for field: ${event.info.fieldName}`);
+    // Amplify Gen 2 a.handler.function() sends { typeName, fieldName, arguments, identity, ... }
+    // Standard AppSync sends { info: { fieldName, parentTypeName }, arguments, identity, ... }
+    const fieldName = event.info?.fieldName ?? event.fieldName;
+
+    if (!fieldName) {
+        console.error('order-api: full event:', JSON.stringify(event));
+        throw new Error(`Cannot determine fieldName. Event keys: ${Object.keys(event).join(', ')}`);
     }
 
-    return resolver(event);
+    console.log(`order-api: resolving ${fieldName}`);
+
+    const resolver = resolvers[fieldName];
+    if (!resolver) {
+        throw new Error(`No resolver for field: ${fieldName}`);
+    }
+
+    // Normalize event so resolvers can use event.arguments consistently
+    const normalizedEvent = event.info
+        ? event  // Standard AppSync format
+        : { ...event, info: { fieldName, parentTypeName: event.typeName }, arguments: event.arguments };
+
+    return resolver(normalizedEvent);
 };
