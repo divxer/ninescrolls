@@ -127,6 +127,12 @@ export interface RfqSubmission {
   referralSource?: string | null;
   existingEquipment?: string | null;
   additionalComments?: string | null;
+  needsBudgetaryQuote?: boolean | null;
+  shippingAddress?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  shippingZipCode?: string | null;
+  shippingCountry?: string | null;
   linkedOrderId?: string | null;
   attachmentKeys?: unknown;
 }
