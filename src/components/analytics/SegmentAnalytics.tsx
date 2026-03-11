@@ -101,8 +101,14 @@ function persistCheckpoint(state: ActivePageState, now: number): void {
   localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(cp));
 }
 
-// ─── Anomaly dedup: only report each anomaly type once per pageViewId ────────
+// ─── Anomaly reporting with dedup + sampling to prevent DDB flooding ─────────
+// Layer 1: per-pageViewId dedup (same anomaly type on same page → skip)
+// Layer 2: session-scoped sampling (after ANOMALY_FREE_QUOTA writes,
+//          only 1-in-ANOMALY_SAMPLE_RATE are persisted to DDB)
 const reportedAnomalies = new Set<string>();
+let anomalyWriteCount = 0;
+const ANOMALY_FREE_QUOTA = 5;     // first N anomalies per session always written
+const ANOMALY_SAMPLE_RATE = 10;   // after quota, write 1 in every N
 
 function reportAnomaly(
   pageViewId: string,
@@ -113,11 +119,19 @@ function reportAnomaly(
   if (reportedAnomalies.has(key)) return;
   reportedAnomalies.add(key);
 
+  // Always log to console for local debugging
   console.warn(`[Anomaly] ${anomalyType}`, details);
+
+  // Sampling: after free quota, probabilistically drop writes
+  anomalyWriteCount++;
+  if (anomalyWriteCount > ANOMALY_FREE_QUOTA) {
+    if (anomalyWriteCount % ANOMALY_SAMPLE_RATE !== 0) return;
+  }
+
   storeAnalyticsEvent({
     eventName: `Anomaly: ${anomalyType}`,
     eventType: 'anomaly',
-    properties: { anomalyType, pageViewId, ...details },
+    properties: { anomalyType, pageViewId, sampled: anomalyWriteCount > ANOMALY_FREE_QUOTA, ...details },
   });
 }
 
