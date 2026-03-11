@@ -13,9 +13,31 @@ import outputs from '../../../amplify_outputs.json';
 
 // ─── Time tracking constants ─────────────────────────────────────────────────
 const MIN_TRACK_SECONDS = 5;       // Minimum seconds to track (filters bots/misclicks)
-const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes idle → pause timer
+const DEFAULT_IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes idle → pause timer
 const HEARTBEAT_INTERVAL_MS = 30_000;  // Save progress every 30s
 const CHECKPOINT_KEY = 'ns_page_time_checkpoint';
+
+// ─── Page-type-aware idle threshold ─────────────────────────────────────────
+function getIdleTimeoutForPath(path: string): number {
+  // RFQ form — users spend a long time filling it out
+  if (path === '/request-a-quote' || path.startsWith('/request-a-quote/')) {
+    return 10 * 60 * 1000; // 10 minutes
+  }
+  // Product detail pages — users read specs, compare features
+  if (path.startsWith('/products/') && path.split('/').length > 2) {
+    return 5 * 60 * 1000; // 5 minutes
+  }
+  // Insights/blog — users read articles
+  if (path.startsWith('/insights/') && path.split('/').length > 2) {
+    return 5 * 60 * 1000; // 5 minutes
+  }
+  // Contact page — users may compose messages
+  if (path === '/contact' || path.startsWith('/contact/')) {
+    return 8 * 60 * 1000; // 8 minutes
+  }
+  // Default for homepage, category pages, etc.
+  return DEFAULT_IDLE_TIMEOUT_MS;
+}
 
 // ─── Active page state (per-tab, in-memory) ─────────────────────────────────
 interface ActivePageState {
@@ -30,6 +52,7 @@ interface ActivePageState {
   idleAccumulatedMs: number;
   flushSequence: number;
   isFinalized: boolean;
+  idleTimeoutMs: number;      // page-type-specific idle threshold
 }
 
 /**
@@ -320,6 +343,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       idleAccumulatedMs: 0,
       flushSequence: 0,
       isFinalized: false,
+      idleTimeoutMs: getIdleTimeoutForPath(path),
     };
   }, []);
 
@@ -331,6 +355,8 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         const cp = JSON.parse(raw) as {
           path: string; activeTime: number; timestamp: number;
           pageViewId?: string; sessionId?: string; tabId?: string;
+          flushSequence?: number; idleSeconds?: number;
+          wallClockSeconds?: number; enteredAt?: number;
         };
         // Only recover if checkpoint is less than 10 minutes old
         if (Date.now() - cp.timestamp < 10 * 60 * 1000 && cp.activeTime > MIN_TRACK_SECONDS) {
@@ -338,6 +364,9 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
 
           // If checkpoint has structured IDs, write a recovery flush to DynamoDB
           if (cp.pageViewId && cp.sessionId && cp.tabId) {
+            // Use flushSequence + 1 so the deterministic ID (ptf-{pvId}-{seq})
+            // won't collide with any already-written flush for this pageView.
+            const recoverySeq = (cp.flushSequence ?? 0) + 1;
             storePageTimeFlush({
               sessionId: cp.sessionId,
               tabId: cp.tabId,
@@ -345,12 +374,12 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
               path: cp.path,
               title: '',  // unknown at recovery time
               activeSeconds: cp.activeTime,
-              idleSeconds: 0,
-              wallClockSeconds: cp.activeTime, // best estimate
+              idleSeconds: cp.idleSeconds ?? 0,
+              wallClockSeconds: cp.wallClockSeconds ?? cp.activeTime,
               flushReason: 'recovery',
               isFinal: true,
-              sequence: 1,
-              startedAt: cp.timestamp - cp.activeTime * 1000,
+              sequence: recoverySeq,
+              startedAt: cp.enteredAt ?? (cp.timestamp - (cp.wallClockSeconds ?? cp.activeTime) * 1000),
               endedAt: cp.timestamp,
             });
           }
@@ -380,15 +409,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       }
       state.lastActiveAt = now;
 
-      // Reset the idle countdown
+      // Reset the idle countdown (using page-specific threshold)
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      const timeout = pageStateRef.current?.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
       idleTimerRef.current = setTimeout(() => {
-        // User has been inactive for IDLE_TIMEOUT_MS → mark idle
         const s = pageStateRef.current;
         if (s && !s.isFinalized) {
           s.idleStartedAt = Date.now();
         }
-      }, IDLE_TIMEOUT_MS);
+      }, timeout);
     };
 
     // Start the initial idle countdown
@@ -397,7 +426,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       if (s && !s.isFinalized) {
         s.idleStartedAt = Date.now();
       }
-    }, IDLE_TIMEOUT_MS);
+    }, pageStateRef.current?.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS);
 
     const events = ['mousemove', 'keydown', 'scroll', 'touchstart'] as const;
     events.forEach(evt => window.addEventListener(evt, markActive, { passive: true }));
@@ -416,16 +445,24 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const state = pageStateRef.current;
       if (!state || state.isFinalized) return;
 
+      const now = Date.now();
       const activeTime = getActiveSeconds();
       if (activeTime > MIN_TRACK_SECONDS) {
+        const wallClockMs = now - state.enteredAt;
+        let idleMs = state.idleAccumulatedMs;
+        if (state.idleStartedAt !== null) idleMs += now - state.idleStartedAt;
         try {
           localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
             path: state.path,
             activeTime,
-            timestamp: Date.now(),
+            idleSeconds: Math.floor(idleMs / 1000),
+            wallClockSeconds: Math.floor(wallClockMs / 1000),
+            timestamp: now,
             pageViewId: state.pageViewId,
             sessionId: state.sessionId,
             tabId: state.tabId,
+            flushSequence: state.flushSequence,
+            enteredAt: state.enteredAt,
           }));
         } catch { /* ignore */ }
       }

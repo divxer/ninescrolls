@@ -137,6 +137,65 @@ function formatDuration(seconds: number): string {
   return `${hours}h`;
 }
 
+// ─── Multi-tab dedup ─────────────────────────────────────────────────────────
+
+interface PageViewFlushInfo {
+  activeSeconds: number;
+  wallClockSeconds: number;
+  endMs: number;
+  tabId: string;
+}
+
+/**
+ * Deduplicate active time from concurrent tabs. A user can only be active
+ * in one tab at a time, so overlapping wall-clock intervals from different
+ * tabs should not be double-counted.
+ *
+ * For non-overlapping intervals, full active time is summed.
+ * For overlapping intervals, only the non-overlapping extension portion
+ * is credited (using that interval's active ratio).
+ */
+function deduplicateMultiTabTime(pvInfoMap: Map<string, PageViewFlushInfo>): number {
+  const intervals = [...pvInfoMap.values()].filter(
+    (pv) => pv.wallClockSeconds > 0 && pv.endMs > 0
+  );
+
+  if (intervals.length === 0) return 0;
+
+  // Single tab — no overlap possible
+  const tabIds = new Set(intervals.map((i) => i.tabId).filter(Boolean));
+  if (tabIds.size <= 1) {
+    return intervals.reduce((sum, i) => sum + i.activeSeconds, 0);
+  }
+
+  // Sort by derived start time
+  const sorted = intervals
+    .map((i) => ({
+      startMs: i.endMs - i.wallClockSeconds * 1000,
+      endMs: i.endMs,
+      activeSeconds: i.activeSeconds,
+      activeRatio: i.activeSeconds / Math.max(1, i.wallClockSeconds),
+    }))
+    .sort((a, b) => a.startMs - b.startMs);
+
+  let total = 0;
+  let currentEnd = 0;
+
+  for (const seg of sorted) {
+    if (seg.startMs >= currentEnd) {
+      // No overlap — full active time
+      total += seg.activeSeconds;
+    } else {
+      // Overlap — only credit the extension beyond the current merged end
+      const extensionMs = Math.max(0, seg.endMs - currentEnd);
+      total += Math.floor((extensionMs / 1000) * seg.activeRatio);
+    }
+    currentEnd = Math.max(currentEnd, seg.endMs);
+  }
+
+  return total;
+}
+
 /**
  * Compute per-page duration from page_time_flush events (authoritative)
  * with fallback to legacy cumulative timeOnSite deltas.
@@ -267,8 +326,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Aggregate authoritative time from page_time_flush events.
     // Each flush reports cumulative active time for its pageViewId, so we
     // always take the MAX per pageViewId (later flushes ≥ earlier ones).
+    // Multi-tab dedup prevents double-counting overlapping tab intervals.
     // Falls back to legacy timeOnSite snapshot if no flush events exist.
-    const pageViewFinalTimes = new Map<string, number>(); // pageViewId → best activeSeconds
+    const pageViewFlushMap = new Map<string, PageViewFlushInfo>(); // pageViewId → best flush info
     let hasFlushEvents = false;
 
     for (const e of group) {
@@ -278,9 +338,16 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       if (e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0) {
         hasFlushEvents = true;
         const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
-        const existing = pageViewFinalTimes.get(pvId) || 0;
+        const existing = pageViewFlushMap.get(pvId);
         // Always take max — cumulative reporting means later flushes ≥ earlier
-        pageViewFinalTimes.set(pvId, Math.max(existing, e.activeSeconds));
+        if (!existing || e.activeSeconds > existing.activeSeconds) {
+          pageViewFlushMap.set(pvId, {
+            activeSeconds: e.activeSeconds,
+            wallClockSeconds: ((e as Record<string, unknown>).wallClockSeconds as number) || 0,
+            endMs: new Date(e.timestamp).getTime(),
+            tabId: ((e as Record<string, unknown>).tabId as string) || '',
+          });
+        }
       }
 
       if (e.finalConfidence != null && e.finalConfidence > maxConf) {
@@ -308,10 +375,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
 
     // Prefer authoritative page_time_flush aggregation over legacy snapshot
     if (hasFlushEvents) {
-      totalTime = 0;
-      for (const seconds of pageViewFinalTimes.values()) {
-        totalTime += seconds;
-      }
+      totalTime = deduplicateMultiTabTime(pageViewFlushMap);
     }
 
     // Use the first event with valid lat/lng
