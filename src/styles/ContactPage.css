@@ -96,10 +96,23 @@
     margin-right: 0.5rem;
 }
 
+/* Context Hint for topic-based entries */
+.context-hint {
+    text-align: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #e7f3ff;
+    border: 1px solid #93b4f5;
+    border-radius: 6px;
+    color: #333;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
 /* Contact Form Section */
 .contact-form-section {
     padding: 4rem 0;
     background: var(--white);
+    scroll-margin-top: 80px;
 }
 
 .contact-form-section h2 {
@@ -211,7 +224,7 @@
     cursor: not-allowed;
 }
 
-/* Hero Cost-Efficiency Card */
+/* Hero Cross-Link Card */
 .hero-card {
     margin-top: 2rem;
     padding: 1.5rem;
@@ -223,12 +236,19 @@
     margin-right: auto;
 }
 
-.hero-card .hero-card-title {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.1rem;
-    color: #EAEAEA;
-    font-weight: 600;
-    text-align: center;
+.hero-card a {
+    color: #93b4f5;
+    text-decoration: underline;
+}
+
+.hero-card a:hover {
+    color: #b8d0ff;
+}
+
+.hero-subline {
+    margin-top: 0.5rem;
+    font-size: 1rem !important;
+    opacity: 0.8;
 }
 
 /* Screen-reader only heading for accessibility */

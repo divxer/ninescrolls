@@ -5,17 +5,14 @@ import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 interface ContactFormInlineProps {
   className?: string;
   topic?: string;
-  inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null;
-  onInquiryTypeChange?: (type: 'budgetary' | 'feasibility' | 'engineer' | null) => void;
+  inquiryType?: 'feasibility' | 'engineer' | null;
+  onInquiryTypeChange?: (type: 'feasibility' | 'engineer' | null) => void;
   prefillEmail?: string;
   onSuccess?: () => void;
 }
 
-function getPrefillMessage(topic?: string, inquiryType?: 'budgetary' | 'feasibility' | 'engineer' | null): string {
+function getPrefillMessage(topic?: string, inquiryType?: 'feasibility' | 'engineer' | null): string {
   // Priority: inquiryType > topic
-  if (inquiryType === 'budgetary') {
-    return '[Budgetary Quote Request]\n\n';
-  }
   if (inquiryType === 'feasibility') {
     return '[Technical Feasibility Check]\n\n';
   }
@@ -53,11 +50,6 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     organization: '',
     message: getPrefillMessage(topic, inquiryType),
     website: '', // honeypot
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'United States'
   });
   const [isSuccess, setIsSuccess] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
@@ -96,7 +88,7 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     setError(null);
 
     try {
-      const { website: _honeypot, address, city, state, zipCode, country, ...submitData } = formData;
+      const { website: _honeypot, ...submitData } = formData;
       const response = await fetch('https://api.ninescrolls.com/sendEmail', {
         method: 'POST',
         headers: {
@@ -107,7 +99,6 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
           productName: 'General Inquiry',
           topic: topic || 'general',
           inquiryType: inquiryType || 'general',
-          ...(inquiryType === 'budgetary' ? { shippingAddress: { address, city, state, zipCode, country } } : {})
         })
       });
 
@@ -123,19 +114,13 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
         organization: '',
         message: '',
         website: '',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: 'United States'
       });
 
       // Notify parent of success (e.g., to reset inquiry type)
       onSuccess?.();
 
       // Send form_submit event to Google Analytics and Segment
-      const inquiryTypeLabel = inquiryType === 'budgetary' ? 'Budgetary Quote Request' :
-                               inquiryType === 'feasibility' ? 'Technical Feasibility Check' :
+      const inquiryTypeLabel = inquiryType === 'feasibility' ? 'Technical Feasibility Check' :
                                inquiryType === 'engineer' ? 'Talk to an Engineer' :
                                topic === 'newsletter' ? 'Newsletter Subscription' :
                                topic === 'service' ? 'Service Planning' :

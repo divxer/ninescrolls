@@ -7,14 +7,9 @@ interface FormData {
   organization: string;
   message: string;
   website: string; // honeypot field
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
 }
 
-type InquiryType = 'budgetary' | 'feasibility' | 'engineer' | null;
+type InquiryType = 'feasibility' | 'engineer' | null;
 
 interface ContactFormContentProps {
   formData: FormData;
@@ -28,7 +23,6 @@ interface ContactFormContentProps {
 }
 
 const INQUIRY_TYPE_LABELS: Record<string, string> = {
-  budgetary: 'Request a Budgetary Quote',
   feasibility: 'Technical Feasibility Check',
   engineer: 'Talk to an Engineer',
 };
@@ -176,108 +170,6 @@ export function ContactFormContent({
           onChange={(e) => handleChange('organization', e.target.value)}
         />
       </div>
-
-      {inquiryType === 'budgetary' && (
-        <div className="quote-address-fields" style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
-          <p style={{ fontSize: '13px', color: '#555', marginBottom: '12px' }}>Shipping address is required for tax calculation on budgetary quotes.</p>
-          <div className="form-group">
-            <label htmlFor="address">Address *</label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              autoComplete="street-address"
-              placeholder="Street address"
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              required
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-group">
-              <label htmlFor="city">City *</label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                autoComplete="address-level2"
-                placeholder="City"
-                value={formData.city}
-                onChange={(e) => handleChange('city', e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="state">State/Province *</label>
-              <input
-                type="text"
-                id="state"
-                name="state"
-                autoComplete="address-level1"
-                placeholder="State"
-                value={formData.state}
-                onChange={(e) => handleChange('state', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-group">
-              <label htmlFor="zipCode">ZIP/Postal Code *</label>
-              <input
-                type="text"
-                id="zipCode"
-                name="zipCode"
-                autoComplete="postal-code"
-                placeholder="ZIP Code"
-                value={formData.zipCode}
-                onChange={(e) => handleChange('zipCode', e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="country">Country *</label>
-              <select
-                id="country"
-                name="country"
-                autoComplete="country-name"
-                value={formData.country}
-                onChange={(e) => handleChange('country', e.target.value)}
-                required
-              >
-                <option value="United States">United States</option>
-                <option value="Canada">Canada</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="Australia">Australia</option>
-                <option value="Germany">Germany</option>
-                <option value="France">France</option>
-                <option value="Japan">Japan</option>
-                <option value="South Korea">South Korea</option>
-                <option value="Singapore">Singapore</option>
-                <option value="Netherlands">Netherlands</option>
-                <option value="Switzerland">Switzerland</option>
-                <option value="Sweden">Sweden</option>
-                <option value="Norway">Norway</option>
-                <option value="Denmark">Denmark</option>
-                <option value="Finland">Finland</option>
-                <option value="Belgium">Belgium</option>
-                <option value="Austria">Austria</option>
-                <option value="Italy">Italy</option>
-                <option value="Spain">Spain</option>
-                <option value="Ireland">Ireland</option>
-                <option value="New Zealand">New Zealand</option>
-                <option value="Israel">Israel</option>
-                <option value="Taiwan">Taiwan</option>
-                <option value="Hong Kong">Hong Kong</option>
-                <option value="China">China</option>
-                <option value="India">India</option>
-                <option value="Brazil">Brazil</option>
-                <option value="Mexico">Mexico</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="form-group">
         <label htmlFor="message">Message</label>

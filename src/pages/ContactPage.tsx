@@ -1,29 +1,65 @@
 import { Helmet } from 'react-helmet-async';
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { useLocation, Navigate, Link } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
 import '../styles/ContactPage.css';
 
 type InquiryType = 'feasibility' | 'engineer' | null;
 
+// Known topics that are valid entry points
+const KNOWN_TOPICS = ['expert', 'application', 'service', 'amc', 'tco', 'compare', 'newsletter', 'quote'];
+
+// Map URL topic param to inquiry type for auto-selection
+function topicToInquiryType(topic?: string): InquiryType {
+  switch (topic) {
+    case 'expert':
+      return 'engineer';
+    case 'application':
+      return 'feasibility';
+    default:
+      return null;
+  }
+}
+
+// Display labels for context hints (topics that don't map to inquiry types)
+const TOPIC_CONTEXT_LABELS: Record<string, string> = {
+  service: 'Service Support',
+  amc: 'Annual Maintenance Inquiry',
+  tco: 'TCO Report',
+  compare: 'Product Comparison',
+};
+
 export function ContactPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const topic = params.get('topic') || undefined;
   const prefillEmail = params.get('email') || undefined;
-  const navigate = useNavigate();
-  const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(null);
+  const [selectedInquiryType, setSelectedInquiryType] = useState<InquiryType>(
+    topicToInquiryType(topic)
+  );
   const formSectionRef = useRef<HTMLDivElement>(null);
+  const userHasManuallySelected = useRef(false);
+  const lastSyncedTopic = useRef(topic);
 
   // Redirect quote requests to the dedicated RFQ page
   if (topic === 'quote') {
     return <Navigate to="/request-quote" replace />;
   }
 
-  // Scroll to form section for newsletter topic, otherwise scroll to top
+  // Sync inquiry type when topic URL actually changes (browser back/forward)
   useEffect(() => {
-    if (topic === 'newsletter' && formSectionRef.current) {
+    if (topic !== lastSyncedTopic.current) {
+      lastSyncedTopic.current = topic;
+      userHasManuallySelected.current = false;
+      setSelectedInquiryType(topicToInquiryType(topic));
+    }
+  }, [topic]);
+
+  // Auto-scroll to form section for known topics, otherwise scroll to top
+  useEffect(() => {
+    const isKnownTopic = topic && KNOWN_TOPICS.includes(topic);
+    if (isKnownTopic && formSectionRef.current) {
       // Small delay to ensure DOM is fully rendered
       setTimeout(() => {
         formSectionRef.current?.scrollIntoView({
@@ -32,20 +68,26 @@ export function ContactPage() {
         });
       }, 100);
     } else {
-      // Default behavior: scroll to top
+      // Default behavior: scroll to top (including unknown topics)
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [topic]);
 
   const handleFormSuccess = () => {
     setSelectedInquiryType(null);
+    userHasManuallySelected.current = false;
+  };
+
+  const handleInquiryTypeClick = (type: InquiryType) => {
+    userHasManuallySelected.current = true;
+    setSelectedInquiryType(type);
   };
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     "name": "Contact NineScrolls LLC",
-    "description": "Contact NineScrolls LLC for a budgetary quote, technical feasibility check, or to talk directly with an engineer.",
+    "description": "Contact NineScrolls LLC for technical support, feasibility checks, or to consult directly with an engineer.",
     "mainEntity": {
       "@type": "Organization",
       "name": "NineScrolls LLC",
@@ -81,8 +123,8 @@ export function ContactPage() {
     <>
       <SEO
         title="Contact Us"
-        description="Contact NineScrolls LLC for a budgetary quote, technical feasibility check, or to talk directly with an engineer. We respond within 1–2 business days."
-        keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, sales contact, customer service, budgetary quote, technical consultation"
+        description="Contact NineScrolls LLC for technical support, feasibility checks, or to consult directly with an engineer. We respond within 1–2 business days."
+        keywords="contact Nine Scrolls, semiconductor equipment inquiry, technical support, engineering consultation, customer service, application feasibility, service support"
         url="/contact"
       />
       <Helmet>
@@ -92,14 +134,15 @@ export function ContactPage() {
       </Helmet>
       <section className="contact-hero">
         <div className="container">
-          <h1>Request a Budgetary Quote or Technical Consultation</h1>
-          <p>No obligation · No PO required · 1–2 business day response</p>
+          <h1>Technical Support & Expert Consultation</h1>
+          <p>Talk with our engineers about technical feasibility, application fit, or service support</p>
+          <p className="hero-subline">1–2 business day response · NDA available upon request</p>
 
-          {/* Cost-Efficiency Hero Card */}
+          {/* Cross-link to RFQ page */}
           <div className="hero-card">
-            <p className="hero-card-title">Cost-efficient, research-grade configurations</p>
             <p>
-              We specialize in helping research labs balance performance and budget — delivering essential capabilities without unnecessary industrial features.
+              Looking for a budgetary quote?{' '}
+              <Link to="/request-quote">Use our Request for Quote form</Link>
             </p>
           </div>
         </div>
@@ -171,29 +214,22 @@ export function ContactPage() {
                 </p>
               </div>
             ) : (
-              <h2 className="form-section-title">Choose Your Inquiry Type</h2>
+              <h2 className="form-section-title">How Can We Help?</h2>
             )}
 
-            {/* Three Entry Points - Interactive (hidden for newsletter subscription) */}
+            {/* Context hint for topics that don't map to an inquiry type */}
+            {topic && TOPIC_CONTEXT_LABELS[topic] && (
+              <div className="context-hint">
+                We've prepared your message for: <strong>{TOPIC_CONTEXT_LABELS[topic]}</strong>
+              </div>
+            )}
+
+            {/* Two Entry Points - Interactive (hidden for newsletter subscription) */}
             {topic !== 'newsletter' && (
             <div className="inquiry-type-grid">
               <button
                 type="button"
-                onClick={() => navigate('/request-quote')}
-                className="inquiry-type-btn"
-              >
-                <h3>Request a Budgetary Quote</h3>
-                <p>
-                  Used for internal evaluation, budgeting, or proposal planning.
-                </p>
-                <p className="ideal-for">
-                  Ideal for: PI, Lab manager, Proposal / grant stage
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedInquiryType('feasibility')}
+                onClick={() => handleInquiryTypeClick('feasibility')}
                 className={`inquiry-type-btn${selectedInquiryType === 'feasibility' ? ' selected' : ''}`}
               >
                 <h3>Technical Feasibility Check</h3>
@@ -207,7 +243,7 @@ export function ContactPage() {
 
               <button
                 type="button"
-                onClick={() => setSelectedInquiryType('engineer')}
+                onClick={() => handleInquiryTypeClick('engineer')}
                 className={`inquiry-type-btn${selectedInquiryType === 'engineer' ? ' selected' : ''}`}
               >
                 <h3>Talk to an Engineer</h3>
@@ -234,11 +270,8 @@ export function ContactPage() {
               }
             </p>
             <ContactFormInline topic={topic} inquiryType={selectedInquiryType} onInquiryTypeChange={topic !== 'newsletter' ? (type) => {
-              if (type === 'budgetary') {
-                navigate('/request-quote');
-              } else {
-                setSelectedInquiryType(type);
-              }
+              userHasManuallySelected.current = true;
+              setSelectedInquiryType(type);
             } : undefined} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
 
             {/* What Happens After You Submit - Trust Block */}
