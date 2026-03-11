@@ -133,7 +133,7 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     referrer: params.context?.referrer,
     utmTerm: params.context?.utmTerm,
 
-    properties: params.properties,
+    properties: params.properties ? JSON.stringify(params.properties) : undefined,
   };
 
   // Fire-and-forget: don't await, don't block UI.
