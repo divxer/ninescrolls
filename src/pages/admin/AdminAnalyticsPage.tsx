@@ -1231,14 +1231,38 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                         {e.eventType}
                       </span>
-                      <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
-                      {e.productName && (
-                        <span className="timeline-product">{e.productName}</span>
+                      {e.eventType === 'page_time_flush' ? (
+                        <>
+                          <span className="timeline-path">{e.pathname || '/'}</span>
+                          {e.activeSeconds != null && (
+                            <span className="timeline-flush-detail" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
+                              {formatDuration(e.activeSeconds)} active
+                              {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
+                              {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
+                            </span>
+                          )}
+                          {(e as Record<string, unknown>).isFinal && (
+                            <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>final</span>
+                          )}
+                          {(e as Record<string, unknown>).isFinal === false && (
+                            <span style={{ background: '#fff3e0', color: '#e65100', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>partial</span>
+                          )}
+                          {e.flushReason && (
+                            <span style={{ fontSize: '10px', color: '#999', marginLeft: '4px' }}>{e.flushReason}</span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
+                          {e.productName && (
+                            <span className="timeline-product">{e.productName}</span>
+                          )}
+                          {pageDuration != null && pageDuration > 0 && (
+                            <span className="timeline-duration">{formatDuration(pageDuration)}</span>
+                          )}
+                          {entryEventIds.has(e.id) && referrerBadge(e)}
+                        </>
                       )}
-                      {pageDuration != null && pageDuration > 0 && (
-                        <span className="timeline-duration">{formatDuration(pageDuration)}</span>
-                      )}
-                      {entryEventIds.has(e.id) && referrerBadge(e)}
                     </div>
                     );
                   })}
