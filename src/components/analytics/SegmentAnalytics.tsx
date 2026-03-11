@@ -7,6 +7,7 @@ import {
   getTabId,
   createPageViewId,
   storePageTimeFlush,
+  storeAnalyticsEvent,
   type FlushReason,
 } from '../../services/analyticsStorageService';
 import outputs from '../../../amplify_outputs.json';
@@ -98,6 +99,26 @@ function persistCheckpoint(state: ActivePageState, now: number): void {
   localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(cp));
 }
 
+// ─── Anomaly dedup: only report each anomaly type once per pageViewId ────────
+const reportedAnomalies = new Set<string>();
+
+function reportAnomaly(
+  pageViewId: string,
+  anomalyType: string,
+  details: Record<string, unknown>,
+) {
+  const key = `${pageViewId}:${anomalyType}`;
+  if (reportedAnomalies.has(key)) return;
+  reportedAnomalies.add(key);
+
+  console.warn(`[Anomaly] ${anomalyType}`, details);
+  storeAnalyticsEvent({
+    eventName: `Anomaly: ${anomalyType}`,
+    eventType: 'anomaly',
+    properties: { anomalyType, pageViewId, ...details },
+  });
+}
+
 // ─── Active page state (per-tab, in-memory) — spec §6 ──────────────────────
 interface ActivePageState {
   sessionId: string;
@@ -117,6 +138,7 @@ interface ActivePageState {
   flushSequence: number;          // most recently assigned sequence
   isFinalized: boolean;
   idleTimeoutMs: number;          // page-type-specific idle threshold
+  maxFlushedActiveSeconds: number; // highest activeSeconds written so far (for anomaly detection)
 }
 
 /**
@@ -325,9 +347,33 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   // ─── Core: flush page time to DynamoDB + Segment (spec §18) ────────────────
   const flushPageTime = useCallback((reason: FlushReason, isFinal: boolean) => {
     const state = pageStateRef.current;
-    if (!state || state.isFinalized) return;  // spec §11 finalize guard
+    if (!state) return;
+
+    // Spec §11 finalize guard — detect duplicate finals as anomaly
+    if (state.isFinalized) {
+      if (isFinal) {
+        reportAnomaly(state.pageViewId, 'duplicate_final', {
+          reason, path: state.path, flushSequence: state.flushSequence,
+        });
+      }
+      return;
+    }
 
     const now = Date.now();
+
+    // Detect dual timer anomaly: both idle and hidden running simultaneously.
+    // This shouldn't happen (hidden-priority else-if prevents it), but if it
+    // does, self-heal by settling idle (hidden takes priority).
+    if (state.hiddenStartedAt !== null && state.idleStartedAt !== null) {
+      reportAnomaly(state.pageViewId, 'dual_timer', {
+        path: state.path,
+        idleStartedAt: state.idleStartedAt,
+        hiddenStartedAt: state.hiddenStartedAt,
+      });
+      // Self-heal: settle idle into accumulated, hidden takes priority
+      state.idleAccumulatedMs += now - state.idleStartedAt;
+      state.idleStartedAt = null;
+    }
 
     // 1. Compute cumulative time (spec §9.1: hidden-priority else-if)
     let effectiveIdleMs = state.idleAccumulatedMs;
@@ -381,7 +427,18 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       idleTimeoutMsUsed: state.idleTimeoutMs,
     });
 
-    // 7. Update state (spec §9.2 / §9.3)
+    // 7. Detect final < partial anomaly (cumulative model should never regress)
+    if (isFinal && state.maxFlushedActiveSeconds > 0 && activeSeconds < state.maxFlushedActiveSeconds) {
+      reportAnomaly(state.pageViewId, 'final_lt_partial', {
+        path: state.path,
+        finalActiveSeconds: activeSeconds,
+        maxPartialActiveSeconds: state.maxFlushedActiveSeconds,
+        reason,
+      });
+    }
+    state.maxFlushedActiveSeconds = Math.max(state.maxFlushedActiveSeconds, activeSeconds);
+
+    // 8. Update state (spec §9.2 / §9.3)
     state.lastFlushAt = now;
     if (isFinal) {
       state.isFinalized = true;
@@ -411,6 +468,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       flushSequence: 0,
       isFinalized: false,
       idleTimeoutMs: getIdleTimeoutForPath(path),
+      maxFlushedActiveSeconds: 0,
     };
   }, []);
 
