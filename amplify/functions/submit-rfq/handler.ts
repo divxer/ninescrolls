@@ -285,7 +285,7 @@ async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<strin
 // Notifications
 // ---------------------------------------------------------------------------
 
-/** Human-readable labels for equipment category values */
+/** Human-readable labels for equipment category values (used in Request Summary) */
 const equipmentCategoryLabels: Record<string, string> = {
     'ICP': 'ICP Etching System',
     'PECVD': 'PECVD System',
@@ -296,6 +296,18 @@ const equipmentCategoryLabels: Record<string, string> = {
     'HDP-CVD': 'HDP-CVD System',
     'Plasma-Cleaner': 'Plasma Cleaner',
     'Other': 'Other / Need Recommendation',
+};
+
+/** Short product-family phrase for the greeting line (no trailing "system/systems") */
+const equipmentGreetingPhrase: Record<string, string> = {
+    'ICP': 'ICP etching',
+    'PECVD': 'PECVD',
+    'Sputter': 'sputter deposition',
+    'ALD': 'ALD',
+    'RIE': 'RIE',
+    'IBE': 'ion beam etching',
+    'HDP-CVD': 'HDP-CVD',
+    'Plasma-Cleaner': 'plasma cleaner',
 };
 
 /** Send confirmation email to customer via SendGrid — §12.10.9 */
@@ -335,7 +347,7 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
 
 <p>Dear ${sanitize(data.name)},</p>
 
-<p>Thank you for your interest in our ${sanitize(equipmentLabel.toLowerCase())} systems.</p>
+<p>Thank you for your interest in our ${equipmentGreetingPhrase[data.equipmentCategory] ? sanitize(equipmentGreetingPhrase[data.equipmentCategory]) + ' systems' : 'plasma processing systems'}.</p>
 
 <p>Your request has been logged under reference number <strong>${referenceNumber}</strong>. Our sales and technical team will review the submitted requirements and respond with the appropriate recommendation and quotation within 1–2 business days.</p>
 
