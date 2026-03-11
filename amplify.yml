@@ -22,6 +22,17 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+  customRules:
+    # Strip trailing slashes at the CDN edge (301) before the SPA loads.
+    # This eliminates the client-side redirect that creates noise analytics events.
+    # Pattern: any path ending with / (except root /) → same path without /
+    - source: '/<*>/'
+      target: '/<*>'
+      status: '301'
+    # SPA fallback: serve index.html for all non-file routes
+    - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp|avif)$)([^.]+$)/>'
+      target: '/index.html'
+      status: '200'
   customHeaders:
     - pattern: '**/*'
       headers:
