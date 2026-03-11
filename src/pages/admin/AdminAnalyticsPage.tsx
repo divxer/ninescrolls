@@ -137,89 +137,58 @@ function formatDuration(seconds: number): string {
   return `${hours}h`;
 }
 
-// ─── Multi-tab dedup ─────────────────────────────────────────────────────────
+// ─── Flush selection helpers ─────────────────────────────────────────────────
 
 interface PageViewFlushInfo {
   activeSeconds: number;
-  wallClockSeconds: number;
-  endMs: number;
-  tabId: string;
+  isFinal: boolean;
 }
 
 /**
- * Deduplicate active time from concurrent tabs. A user can only be active
- * in one tab at a time, so overlapping wall-clock intervals from different
- * tabs should not be double-counted.
+ * Select the best flush for a pageViewId using "final-preferred, MAX fallback":
+ * 1. If any isFinal=true flush exists, take the one with the highest activeSeconds.
+ * 2. Otherwise fall back to the flush with the highest activeSeconds (partial).
  *
- * For non-overlapping intervals, full active time is summed.
- * For overlapping intervals, only the non-overlapping extension portion
- * is credited (using that interval's active ratio).
+ * This prevents a late-arriving partial from overriding a proper final flush.
  */
-function deduplicateMultiTabTime(pvInfoMap: Map<string, PageViewFlushInfo>): number {
-  const intervals = [...pvInfoMap.values()].filter(
-    (pv) => pv.wallClockSeconds > 0 && pv.endMs > 0
-  );
+function selectBestFlush(
+  existing: PageViewFlushInfo | undefined,
+  candidate: { activeSeconds: number; isFinal: boolean },
+): PageViewFlushInfo {
+  if (!existing) return { activeSeconds: candidate.activeSeconds, isFinal: candidate.isFinal };
 
-  if (intervals.length === 0) return 0;
-
-  // Single tab — no overlap possible
-  const tabIds = new Set(intervals.map((i) => i.tabId).filter(Boolean));
-  if (tabIds.size <= 1) {
-    return intervals.reduce((sum, i) => sum + i.activeSeconds, 0);
-  }
-
-  // Sort by derived start time
-  const sorted = intervals
-    .map((i) => ({
-      startMs: i.endMs - i.wallClockSeconds * 1000,
-      endMs: i.endMs,
-      activeSeconds: i.activeSeconds,
-      activeRatio: i.activeSeconds / Math.max(1, i.wallClockSeconds),
-    }))
-    .sort((a, b) => a.startMs - b.startMs);
-
-  let total = 0;
-  let currentEnd = 0;
-
-  for (const seg of sorted) {
-    if (seg.startMs >= currentEnd) {
-      // No overlap — full active time
-      total += seg.activeSeconds;
-    } else {
-      // Overlap — only credit the extension beyond the current merged end
-      const extensionMs = Math.max(0, seg.endMs - currentEnd);
-      total += Math.floor((extensionMs / 1000) * seg.activeRatio);
-    }
-    currentEnd = Math.max(currentEnd, seg.endMs);
-  }
-
-  return total;
+  // Final always beats non-final; among same finality, take MAX
+  if (candidate.isFinal && !existing.isFinal) return { activeSeconds: candidate.activeSeconds, isFinal: true };
+  if (!candidate.isFinal && existing.isFinal) return existing;
+  // Same finality — take higher activeSeconds
+  if (candidate.activeSeconds > existing.activeSeconds) return { activeSeconds: candidate.activeSeconds, isFinal: candidate.isFinal };
+  return existing;
 }
 
 /**
  * Compute per-page duration from page_time_flush events (authoritative)
  * with fallback to legacy cumulative timeOnSite deltas.
  *
- * Flush events report cumulative active time per pageViewId, so we group
- * by pageViewId and take the MAX, then map to the corresponding page_view.
+ * Flush events report cumulative active time per pageViewId.
+ * Selection: final-preferred, MAX fallback (see selectBestFlush).
  */
 function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
   const result = new Map<string, number>();
 
-  // 1. Authoritative: group flush events by pageViewId, take max activeSeconds
+  // 1. Authoritative: group flush events by pageViewId, select best
   const flushEvents = events.filter(
     (e) => e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0
   );
 
   if (flushEvents.length > 0) {
-    // Group by pageViewId → max activeSeconds + pathname
-    const pvBest = new Map<string, { seconds: number; pathname: string }>();
+    const pvBest = new Map<string, { seconds: number; pathname: string; isFinal: boolean }>();
     for (const flush of flushEvents) {
       const pvId = (flush as Record<string, unknown>).pageViewId as string || flush.id;
+      const isFinal = !!((flush as Record<string, unknown>).isFinal);
       const existing = pvBest.get(pvId);
-      if (!existing || flush.activeSeconds! > existing.seconds) {
-        pvBest.set(pvId, { seconds: flush.activeSeconds!, pathname: flush.pathname || '' });
-      }
+      const existingFlush = existing ? { activeSeconds: existing.seconds, isFinal: existing.isFinal } : undefined;
+      const best = selectBestFlush(existingFlush, { activeSeconds: flush.activeSeconds!, isFinal });
+      pvBest.set(pvId, { seconds: best.activeSeconds, pathname: flush.pathname || '', isFinal: best.isFinal });
     }
 
     // Map each pageViewId's best time to a corresponding page_view event
@@ -239,7 +208,6 @@ function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
         }
       }
       if (!attached) {
-        // No matching page_view — use a synthetic key
         result.set(`flush-${pathname}-${seconds}`, seconds);
       }
     }
@@ -252,7 +220,7 @@ function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
 
   let prevCumulative = 0;
   for (const e of legacySorted) {
-    if (result.has(e.id)) continue; // Already has authoritative duration
+    if (result.has(e.id)) continue;
     const cumulative = e.timeOnSite!;
     const delta = cumulative >= prevCumulative ? cumulative - prevCumulative : cumulative;
     if (delta > 0) result.set(e.id, delta);
@@ -324,11 +292,10 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let maxBehaviorScore = 0;
 
     // Aggregate authoritative time from page_time_flush events.
-    // Each flush reports cumulative active time for its pageViewId, so we
-    // always take the MAX per pageViewId (later flushes ≥ earlier ones).
-    // Multi-tab dedup prevents double-counting overlapping tab intervals.
+    // Selection: final-preferred, MAX fallback per pageViewId.
+    // Org total = simple sum of per-pageView best active seconds.
     // Falls back to legacy timeOnSite snapshot if no flush events exist.
-    const pageViewFlushMap = new Map<string, PageViewFlushInfo>(); // pageViewId → best flush info
+    const pageViewFlushMap = new Map<string, PageViewFlushInfo>(); // pageViewId → best flush
     let hasFlushEvents = false;
 
     for (const e of group) {
@@ -338,16 +305,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       if (e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0) {
         hasFlushEvents = true;
         const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
+        const isFinal = !!((e as Record<string, unknown>).isFinal);
         const existing = pageViewFlushMap.get(pvId);
-        // Always take max — cumulative reporting means later flushes ≥ earlier
-        if (!existing || e.activeSeconds > existing.activeSeconds) {
-          pageViewFlushMap.set(pvId, {
-            activeSeconds: e.activeSeconds,
-            wallClockSeconds: ((e as Record<string, unknown>).wallClockSeconds as number) || 0,
-            endMs: new Date(e.timestamp).getTime(),
-            tabId: ((e as Record<string, unknown>).tabId as string) || '',
-          });
-        }
+        pageViewFlushMap.set(pvId, selectBestFlush(existing, { activeSeconds: e.activeSeconds, isFinal }));
       }
 
       if (e.finalConfidence != null && e.finalConfidence > maxConf) {
@@ -373,9 +333,13 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       }
     }
 
-    // Prefer authoritative page_time_flush aggregation over legacy snapshot
+    // Prefer authoritative page_time_flush aggregation over legacy snapshot.
+    // Simple sum of per-pageView best active seconds.
     if (hasFlushEvents) {
-      totalTime = deduplicateMultiTabTime(pageViewFlushMap);
+      totalTime = 0;
+      for (const pv of pageViewFlushMap.values()) {
+        totalTime += pv.activeSeconds;
+      }
     }
 
     // Use the first event with valid lat/lng
@@ -1345,40 +1309,46 @@ export function AdminAnalyticsPage() {
       setError('');
 
       const { start, end } = getDateBounds(dateRange, customStart, customEnd);
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
 
-      try {
-        const collected: AnalyticsEvent[] = [];
+      // All known event types — one GSI query per type, run in parallel.
+      // Uses the eventType+timestamp GSI instead of a full table scan.
+      const EVENT_TYPES = [
+        'page_view', 'page_time_flush', 'product_view', 'pdf_download',
+        'contact_form', 'target_customer', 'search', 'add_to_cart',
+        'purchase', 'rfq_step', 'other', 'anomaly',
+      ];
+
+      async function queryByType(eventType: string): Promise<AnalyticsEvent[]> {
+        const results: AnalyticsEvent[] = [];
         let nextToken: string | undefined;
 
-        // Scan the entire table — no early stopping.
-        // DynamoDB Scan is paginated; we iterate every page and filter
-        // by date client-side.  For tables with thousands of events this
-        // completes in a few seconds (each page ≈ 1 MB / ~500 items).
         do {
-          const result = await client.models.AnalyticsEvent.list({
-            authMode: 'userPool',
-            limit: 500,
-            nextToken,
-          });
+          if (cancelled) return results;
 
-          if (cancelled) return;
+          const result = await (client.models.AnalyticsEvent as any)
+            .listAnalyticsEventByEventType(
+              { eventType, timestamp: { between: [startISO, endISO] } },
+              { authMode: 'userPool', limit: 500, nextToken },
+            );
 
           const events = (result.data || []) as AnalyticsEvent[];
-
-          for (const e of events) {
-            const ts = new Date(e.timestamp).getTime();
-            if (ts >= start.getTime() && ts <= end.getTime()) {
-              collected.push(e);
-            }
-          }
-
-          if (!isSoftRefresh) setLoadProgress(collected.length);
+          results.push(...events);
           nextToken = result.nextToken || undefined;
         } while (nextToken);
 
-        if (!cancelled) {
-          setAllEvents(collected);
-        }
+        return results;
+      }
+
+      try {
+        const perType = await Promise.all(EVENT_TYPES.map(queryByType));
+
+        if (cancelled) return;
+
+        const collected = perType.flat();
+        if (!isSoftRefresh) setLoadProgress(collected.length);
+        setAllEvents(collected);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load events');
@@ -1808,7 +1778,7 @@ export function AdminAnalyticsPage() {
                 Pages{sortIndicator('uniquePages')}
               </th>
               <th onClick={() => handleSort('totalTimeOnSite')}>
-                Time{sortIndicator('totalTimeOnSite')}
+                Active Time{sortIndicator('totalTimeOnSite')}
               </th>
               <th onClick={() => handleSort('totalEvents')}>
                 Events{sortIndicator('totalEvents')}

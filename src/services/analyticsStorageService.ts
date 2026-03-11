@@ -34,20 +34,39 @@ export function getVisitorId(): string {
   return id;
 }
 
-// ─── Session ID (sessionStorage – one per browser tab lifetime) ─────────────
+// ─── Session ID (localStorage – shared across tabs, 30-min idle timeout) ────
 const SESSION_ID_KEY = 'ns_session_id';
+const SESSION_TOUCH_KEY = 'ns_session_touch';
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
+/**
+ * Get or create a session ID stored in localStorage.
+ * A session expires after 30 minutes of inactivity (no calls to getSessionId).
+ * This gives a true "session" semantic: shared across tabs, expires on idle.
+ */
 export function getSessionId(): string {
   try {
-    const existing = sessionStorage.getItem(SESSION_ID_KEY);
-    if (existing) return existing;
-  } catch { /* sessionStorage unavailable */ }
+    const existingId = localStorage.getItem(SESSION_ID_KEY);
+    const lastTouch = localStorage.getItem(SESSION_TOUCH_KEY);
+    const now = Date.now();
+
+    if (existingId && lastTouch) {
+      const elapsed = now - Number(lastTouch);
+      if (elapsed < SESSION_TIMEOUT_MS) {
+        // Session still active — touch and return
+        localStorage.setItem(SESSION_TOUCH_KEY, String(now));
+        return existingId;
+      }
+      // Session expired — fall through to create new one
+    }
+  } catch { /* localStorage unavailable */ }
 
   const id = generateUUID();
 
   try {
-    sessionStorage.setItem(SESSION_ID_KEY, id);
-  } catch { /* sessionStorage unavailable */ }
+    localStorage.setItem(SESSION_ID_KEY, id);
+    localStorage.setItem(SESSION_TOUCH_KEY, String(Date.now()));
+  } catch { /* localStorage unavailable */ }
 
   return id;
 }
@@ -220,12 +239,14 @@ export interface PageTimeFlushParams {
   title: string;
   activeSeconds: number;
   idleSeconds: number;
+  hiddenSeconds: number;
   wallClockSeconds: number;
   flushReason: FlushReason;
   isFinal: boolean;
   sequence: number;
   startedAt: number;  // epoch ms
   endedAt: number;    // epoch ms
+  idleTimeoutMsUsed: number;
 }
 
 export function storePageTimeFlush(params: PageTimeFlushParams): void {
@@ -248,10 +269,12 @@ export function storePageTimeFlush(params: PageTimeFlushParams): void {
 
     activeSeconds: params.activeSeconds,
     idleSeconds: params.idleSeconds,
+    hiddenSeconds: params.hiddenSeconds,
     wallClockSeconds: params.wallClockSeconds,
     flushReason: params.flushReason,
     isFinal: params.isFinal,
     flushSequence: params.sequence,
+    idleTimeoutMsUsed: params.idleTimeoutMsUsed,
 
     userAgent: ua,
     isBot: ua ? isbot(ua) : undefined,
