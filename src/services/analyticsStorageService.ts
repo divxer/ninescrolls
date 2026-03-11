@@ -1,6 +1,7 @@
 import { generateClient } from 'aws-amplify/data';
 import { isbot } from 'isbot';
 import type { Schema } from '../../amplify/data/resource';
+import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
 
 const client = generateClient<Schema>();
 
@@ -295,4 +296,57 @@ export function storePageTimeFlush(params: PageTimeFlushParams): void {
       });
     }, 2000);
   });
+}
+
+// ─── Beacon-friendly page_time_flush (pagehide path) ────────────────────────
+// Uses sendBeacon to /d, which fans out to Segment ('Time on Page') + DynamoDB.
+// This is the only reliable transport during page unload — GraphQL fetch
+// may be killed by the browser before completing.
+
+export function storePageTimeFlushViaBeacon(params: PageTimeFlushParams): void {
+  try {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+    const payload = JSON.stringify({
+      type: 'track',
+      event: 'page_time_flush',
+      anonymousId: getAnonymousId(),
+      properties: {
+        pageViewId: params.pageViewId,
+        sessionId: params.sessionId,
+        tabId: params.tabId,
+        path: params.path,
+        title: params.title,
+        visitorId: getVisitorId(),
+        activeSeconds: params.activeSeconds,
+        idleSeconds: params.idleSeconds,
+        hiddenSeconds: params.hiddenSeconds,
+        wallClockSeconds: params.wallClockSeconds,
+        flushReason: params.flushReason,
+        isFinal: params.isFinal,
+        flushSequence: params.sequence,
+        startedAt: params.startedAt,
+        endedAt: params.endedAt,
+        idleTimeoutMsUsed: params.idleTimeoutMsUsed,
+        isBot: ua ? isbot(ua) : false,
+      },
+      context: collectBrowserContext(),
+    });
+
+    const url = `${getApiEndpoint()}/d`;
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) return;
+    }
+
+    // Fallback: fetch with keepalive (also survives page unload in most browsers)
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => { /* best-effort during unload */ });
+  } catch {
+    // Silent — runs during page unload, no UI to show errors
+  }
 }

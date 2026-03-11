@@ -155,6 +155,15 @@ dResource.addMethod('OPTIONS', serverTrackIntegration);
 // Pass the Segment write key to the server-track Lambda
 backend.serverTrack.addEnvironment('SEGMENT_WRITE_KEY', 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU');
 
+// Grant server-track Lambda write access to AnalyticsEvent table for pagehide flush.
+// During page unload, the frontend sends page_time_flush via sendBeacon to /d;
+// the Lambda writes to DynamoDB as the authoritative store alongside Segment.
+const analyticsEventTable = backend.data.resources.tables['AnalyticsEvent'];
+analyticsEventTable.grantReadWriteData(backend.serverTrack.resources.lambda);
+backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
+// Feature flag: set to 'false' to disable DDB writes without code rollback
+backend.serverTrack.addEnvironment('ENABLE_PTF_DDB_WRITE', 'true');
+
 // Create /seg resource for Segment analytics proxy
 // Proxies requests to cdn.segment.com and api.segment.io through first-party domain
 // to avoid network-level blocking by government/enterprise firewalls
