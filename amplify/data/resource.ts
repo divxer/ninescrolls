@@ -492,6 +492,15 @@ const schema = a.schema({
     .handler(a.handler.function(orderApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  revertRfqToPending: a
+    .mutation()
+    .arguments({
+      rfqId: a.id().required(),
+    })
+    .returns(a.ref('RfqSubmission').required())
+    .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   convertRfqToOrder: a
     .mutation()
     .arguments({
