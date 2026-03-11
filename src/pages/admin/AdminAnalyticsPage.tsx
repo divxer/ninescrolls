@@ -138,25 +138,63 @@ function formatDuration(seconds: number): string {
 }
 
 /**
- * Compute per-page duration from cumulative timeOnSite values.
- * Events with timeOnSite store a running total; this returns the delta
- * (time spent on that specific page) for each event.
+ * Compute per-page duration from page_time_flush events (authoritative)
+ * with fallback to legacy cumulative timeOnSite deltas.
+ *
+ * For page_time_flush events: use activeSeconds directly (keyed by the flush event ID).
+ * For legacy events: compute deltas from the running timeOnSite total.
  */
 function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
   const result = new Map<string, number>();
-  // Sort chronologically (oldest first) to compute deltas
-  const sorted = [...events]
-    .filter((e) => e.timeOnSite != null && e.timeOnSite > 0)
+
+  // 1. Authoritative: page_time_flush events have direct activeSeconds
+  const flushEvents = events.filter(
+    (e) => e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0
+  );
+
+  if (flushEvents.length > 0) {
+    // Map flush events to their corresponding page_view events by matching
+    // pageViewId (flush) → closest preceding page_view with same path
+    const pageViews = events
+      .filter((e) => e.eventType === 'page_view')
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    for (const flush of flushEvents) {
+      const flushPvId = (flush as Record<string, unknown>).pageViewId as string | undefined;
+
+      // Try to attach duration to the page_view event that shares the pageViewId
+      let attached = false;
+      if (flushPvId) {
+        // Find page_view event with same path that precedes this flush
+        for (const pv of pageViews) {
+          if (pv.pathname === flush.pathname && !result.has(pv.id)) {
+            result.set(pv.id, flush.activeSeconds!);
+            attached = true;
+            break;
+          }
+        }
+      }
+      // If no matching page_view found, store under the flush event itself
+      if (!attached) {
+        result.set(flush.id, flush.activeSeconds!);
+      }
+    }
+  }
+
+  // 2. Legacy fallback: compute deltas from cumulative timeOnSite
+  const legacySorted = [...events]
+    .filter((e) => e.eventType !== 'page_time_flush' && e.timeOnSite != null && e.timeOnSite > 0)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   let prevCumulative = 0;
-  for (const e of sorted) {
+  for (const e of legacySorted) {
+    if (result.has(e.id)) continue; // Already has authoritative duration
     const cumulative = e.timeOnSite!;
-    // If cumulative < prev, the counter was reset (e.g. cleared localStorage)
     const delta = cumulative >= prevCumulative ? cumulative - prevCumulative : cumulative;
     if (delta > 0) result.set(e.id, delta);
     prevCumulative = cumulative;
   }
+
   return result;
 }
 
@@ -221,10 +259,30 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let maxReturnVisits = 0;
     let maxBehaviorScore = 0;
 
+    // Aggregate authoritative time from page_time_flush events.
+    // Use isFinal flushes per pageViewId to avoid double-counting partial+final.
+    // Falls back to legacy timeOnSite snapshot if no flush events exist.
+    const pageViewFinalTimes = new Map<string, number>(); // pageViewId → best activeSeconds
+    let hasFlushEvents = false;
+
     for (const e of group) {
       if (e.pathname) pages.add(e.pathname);
       if (e.productName) products.add(e.productName);
-      if (e.timeOnSite) totalTime = Math.max(totalTime, e.timeOnSite);
+
+      if (e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0) {
+        hasFlushEvents = true;
+        const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
+        const existing = pageViewFinalTimes.get(pvId) || 0;
+        // For same pageViewId: if isFinal exists, prefer it; otherwise sum partials
+        if ((e as Record<string, unknown>).isFinal) {
+          // Final flush — take the max (in case of duplicates)
+          pageViewFinalTimes.set(pvId, Math.max(existing, e.activeSeconds));
+        } else if (!pageViewFinalTimes.has(pvId)) {
+          // Partial flush — use as initial value, may be replaced by final
+          pageViewFinalTimes.set(pvId, e.activeSeconds);
+        }
+      }
+
       if (e.finalConfidence != null && e.finalConfidence > maxConf) {
         maxConf = e.finalConfidence;
       }
@@ -240,6 +298,19 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       }
       if (e.behaviorScore != null && e.behaviorScore > maxBehaviorScore) {
         maxBehaviorScore = e.behaviorScore;
+      }
+
+      // Legacy fallback: use timeOnSite snapshot from page_view / track events
+      if (!hasFlushEvents && e.timeOnSite) {
+        totalTime = Math.max(totalTime, e.timeOnSite);
+      }
+    }
+
+    // Prefer authoritative page_time_flush aggregation over legacy snapshot
+    if (hasFlushEvents) {
+      totalTime = 0;
+      for (const seconds of pageViewFinalTimes.values()) {
+        totalTime += seconds;
       }
     }
 
@@ -620,8 +691,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           <div className="org-detail-card-label">Pages Viewed</div>
         </div>
         <div className="org-detail-card">
-          <div className="org-detail-card-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '-'}</div>
-          <div className="org-detail-card-label">Time on Site</div>
+          <div className="org-detail-card-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : 'Pending'}</div>
+          <div className="org-detail-card-label">Active Time</div>
         </div>
         <div className="org-detail-card">
           <div className="org-detail-card-value">{org.returnVisits}</div>
@@ -1439,7 +1510,7 @@ export function AdminAnalyticsPage() {
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
-    const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Time (s)', 'Events', 'Tier', 'Confidence', 'Last Visit'];
+    const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Active Time (s)', 'Events', 'Tier', 'Confidence', 'Last Visit'];
     const rows = sortedOrgs.map((o) => [
       o.orgName,
       o.organizationType || '',
@@ -1724,7 +1795,7 @@ export function AdminAnalyticsPage() {
                     : <span className="analytics-na">N/A</span>}
                 </td>
                 <td>{org.uniquePages}</td>
-                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="analytics-na">N/A</span>}</td>
+                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="analytics-na" title="No time data yet — visitor may still be on site">Pending</span>}</td>
                 <td>{org.totalEvents}</td>
                 <td>
                   {org.leadTier ? (
