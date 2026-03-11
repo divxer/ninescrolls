@@ -517,6 +517,13 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const state = pageStateRef.current;
       if (!state || state.isFinalized) return;
 
+      // Touch session while user is actively engaged (not idle, not hidden).
+      // Without this, a user reading one page for 40+ minutes gets a session
+      // expiry because getSessionId() is only called on route change.
+      if (state.idleStartedAt === null && state.hiddenStartedAt === null) {
+        getSessionId(); // touches SESSION_TOUCH_KEY in localStorage
+      }
+
       // Checkpoint is a recovery mechanism, not an analysis event —
       // always persist if state exists, regardless of active time.
       const now = Date.now();
