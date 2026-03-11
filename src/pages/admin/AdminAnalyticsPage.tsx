@@ -1317,7 +1317,7 @@ export function AdminAnalyticsPage() {
       const EVENT_TYPES = [
         'page_view', 'page_time_flush', 'product_view', 'pdf_download',
         'contact_form', 'target_customer', 'search', 'add_to_cart',
-        'purchase', 'rfq_step', 'other',
+        'purchase', 'rfq_step', 'other', 'anomaly',
       ];
 
       async function queryByType(eventType: string): Promise<AnalyticsEvent[]> {
