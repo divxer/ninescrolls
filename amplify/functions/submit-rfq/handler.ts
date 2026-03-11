@@ -327,7 +327,7 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
         `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Institution:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.institution)}</td></tr>`,
         data.applicationDescription ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Application:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.applicationDescription.length > 120 ? data.applicationDescription.slice(0, 120) + '…' : data.applicationDescription)}</td></tr>` : '',
         data.keySpecifications ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Key Specs:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.keySpecifications.length > 120 ? data.keySpecifications.slice(0, 120) + '…' : data.keySpecifications)}</td></tr>` : '',
-        data.needsBudgetaryQuote && data.shippingCountry ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Ship to:</td><td style="padding:6px 0;vertical-align:top;">${[data.shippingState, data.shippingCountry].filter(Boolean).map(s => sanitize(s!)).join(', ')}</td></tr>` : '',
+        data.needsBudgetaryQuote && data.shippingCountry ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Shipping Location:</td><td style="padding:6px 0;vertical-align:top;">${[data.shippingState, data.shippingCountry].filter(Boolean).map(s => sanitize(s!)).join(', ')}</td></tr>` : '',
     ].filter(Boolean).join('\n');
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -356,7 +356,7 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
 ${summaryRows}
 </table>
 
-<p style="margin-top:20px;">If you need to add any specifications or supporting documents, simply reply to this email or contact us at <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>.</p>
+<p style="margin-top:20px;">If you need to add any specifications or supporting documents, simply reply to this email or contact us at <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>. Please reference <strong>${referenceNumber}</strong> in any future communications regarding this request.</p>
 
 <p style="color:#888;font-size:13px;margin-top:20px;">This is an automated acknowledgment of your request. A member of our team will follow up shortly.</p>
 
