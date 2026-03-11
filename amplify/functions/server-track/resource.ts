@@ -5,4 +5,5 @@ export const serverTrack = defineFunction({
     entry: './handler.ts',
     runtime: 22,
     timeoutSeconds: 15,
+    resourceGroupName: 'data',
 });
