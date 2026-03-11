@@ -231,7 +231,7 @@ export function RFQPage() {
   // Effects
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    analytics.trackCustomEvent('RFQ Form Step Viewed', { step: 1, stepName: 'Your Information' });
+    analytics.trackCustomEvent('RFQ Step 1: Your Information', { step: 1 });
   }, []);
 
   useEffect(() => {
@@ -382,9 +382,8 @@ export function RFQPage() {
       requestAnimationFrame(() => {
         stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-      analytics.trackCustomEvent('RFQ Form Step Viewed', {
+      analytics.trackCustomEvent('RFQ Step 2: Project Details', {
         step: 2,
-        stepName: 'Project Details',
         equipmentCategory: formData.equipmentCategory,
       });
     } else {
