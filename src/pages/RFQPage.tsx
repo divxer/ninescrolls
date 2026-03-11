@@ -271,7 +271,7 @@ export function RFQPage() {
       const t = getTurnstile();
       if (turnstileWidgetId.current && t) { t.remove(turnstileWidgetId.current); turnstileWidgetId.current = null; }
     };
-  }, [turnstileSiteKey, isSuccess]);
+  }, [turnstileSiteKey, isSuccess, currentStep]);
 
   // ---------------------------------------------------------------------------
   // Handlers
