@@ -621,9 +621,19 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   useEffect(() => {
     const prevState = pageStateRef.current;
 
-    // Finalize previous page on route change
-    if (prevState && prevState.path !== location.pathname && !prevState.isFinalized) {
+    // Finalize previous page on route change.
+    // Skip flush for trailing-slash paths — they are ephemeral redirects
+    // (e.g. /products/ → /products) that produce 0s noise events.
+    const prevIsTrailingSlash = prevState && prevState.path !== '/' && prevState.path.endsWith('/');
+    if (prevState && prevState.path !== location.pathname && !prevState.isFinalized && !prevIsTrailingSlash) {
       flushPageTime('route_change', true);
+    }
+
+    // Skip trailing-slash paths entirely — RedirectHandler will normalize
+    // them to canonical (no trailing slash) and we'll track that path instead.
+    // Don't even create page state, to avoid pagehide/hidden flushes during redirect.
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+      return;
     }
 
     // Initialize new page state
@@ -636,12 +646,6 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         newState.title = document.title;
       }
     });
-
-    // Skip tracking for trailing-slash paths — RedirectHandler will normalize
-    // them and we'll track the canonical (no trailing slash) path instead
-    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
-      return;
-    }
 
     // Track page views with Segment and IP analysis (merged into single call)
     if (typeof window !== 'undefined' && window.analytics) {
