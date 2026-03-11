@@ -299,13 +299,10 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     state.flushSequence = nextSequence;
     if (isFinal) {
       state.isFinalized = true;
-    } else {
-      // Partial flush: reset counters for next slice within the same pageView
-      state.enteredAt = now;
-      state.idleAccumulatedMs = 0;
-      state.idleStartedAt = null;
-      state.lastActiveAt = now;
     }
+    // Partial flush: do NOT reset counters — report cumulative time.
+    // Each successive flush for the same pageViewId reports total active time
+    // from enteredAt. Dashboard takes MAX per pageViewId.
   }, []);
 
   // ─── Helper: create new page state ────────────────────────────────────────
@@ -515,14 +512,20 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       if (document.visibilityState === 'hidden') {
         // Tab hidden → partial flush (user may come back)
         flushPageTime('hidden', false);
+        // Start idle period to account for hidden time in cumulative tracking
+        const state = pageStateRef.current;
+        if (state && !state.isFinalized && state.idleStartedAt === null) {
+          state.idleStartedAt = Date.now();
+        }
       } else if (document.visibilityState === 'visible') {
-        // Tab returned — if previous flush was partial, the state already
-        // has reset counters (enteredAt = now, idle = 0). Just ensure
-        // we resume tracking.
+        // Tab returned — accumulate the hidden idle period, then resume
         const state = pageStateRef.current;
         if (state && !state.isFinalized) {
+          if (state.idleStartedAt !== null) {
+            state.idleAccumulatedMs += Date.now() - state.idleStartedAt;
+            state.idleStartedAt = null;
+          }
           state.lastActiveAt = Date.now();
-          state.idleStartedAt = null;
           lastActivityRef.current = Date.now();
         }
       }

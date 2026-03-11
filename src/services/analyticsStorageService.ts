@@ -232,6 +232,8 @@ export function storePageTimeFlush(params: PageTimeFlushParams): void {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
 
   const payload = {
+    // Deterministic ID → idempotent writes (retries won't create duplicates)
+    id: `ptf-${params.pageViewId}-${params.sequence}`,
     eventName: 'Page Time Flush',
     eventType: 'page_time_flush',
     timestamp: new Date(params.endedAt).toISOString(),
