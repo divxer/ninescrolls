@@ -83,8 +83,8 @@ async function sendToSegment(payload: SegmentPayload): Promise<{ status: number;
 
 // ─── DynamoDB: lazy init (only created when page_time_flush arrives) ────────
 
-let docClient: DynamoDBDocumentClient | null = null;
-function getDynamoClient(): DynamoDBDocumentClient {
+let docClient: ReturnType<typeof DynamoDBDocumentClient.from> | null = null;
+function getDynamoClient() {
     if (!docClient) {
         docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
     }
