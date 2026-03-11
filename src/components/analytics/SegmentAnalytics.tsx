@@ -7,8 +7,10 @@ import {
   getTabId,
   createPageViewId,
   storePageTimeFlush,
+  storePageTimeFlushViaBeacon,
   storeAnalyticsEvent,
   type FlushReason,
+  type PageTimeFlushParams,
 } from '../../services/analyticsStorageService';
 import outputs from '../../../amplify_outputs.json';
 
@@ -401,15 +403,11 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     const nextSequence = state.flushSequence + 1;
     state.flushSequence = nextSequence;
 
-    // 4. Update localStorage behavior signals (heuristic, for lead scoring)
+    // 4. Update localStorage behavior signals (kept for ALL branches — sync, safe during unload)
     behaviorAnalytics.trackTimeOnPage(state.path, activeSeconds);
 
-    // 5. Send to Segment via sendBeacon (backward-compatible)
-    const score = behaviorAnalytics.calculateBehaviorScore();
-    segmentAnalytics.sendTimeBeacon(state.path, activeSeconds, score.timeOnSite, state.title);
-
-    // 6. Write authoritative page_time_flush to DynamoDB
-    storePageTimeFlush({
+    // 5-6. Write to targets (transport varies by flush reason)
+    const flushParams: PageTimeFlushParams = {
       sessionId: state.sessionId,
       tabId: state.tabId,
       pageViewId: state.pageViewId,
@@ -425,7 +423,19 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       startedAt: state.enteredAt,
       endedAt: now,
       idleTimeoutMsUsed: state.idleTimeoutMs,
-    });
+    };
+
+    if (reason === 'pagehide') {
+      // Single beacon transport → Lambda fans out to Segment ('Time on Page') + DynamoDB.
+      // sendBeacon is reliable during page unload; GraphQL fetch may be killed by the browser.
+      storePageTimeFlushViaBeacon(flushParams);
+    } else {
+      // Segment via sendBeacon (backward-compatible heuristic path)
+      const score = behaviorAnalytics.calculateBehaviorScore();
+      segmentAnalytics.sendTimeBeacon(state.path, activeSeconds, score.timeOnSite, state.title);
+      // Authoritative DynamoDB via GraphQL (safe — not in unload context)
+      storePageTimeFlush(flushParams);
+    }
 
     // 7. Detect final < partial anomaly (cumulative model should never regress)
     if (isFinal && state.maxFlushedActiveSeconds > 0 && activeSeconds < state.maxFlushedActiveSeconds) {

@@ -1328,7 +1328,7 @@ export function AdminAnalyticsPage() {
           if (cancelled) return results;
 
           const result = await (client.models.AnalyticsEvent as any)
-            .listAnalyticsEventByEventType(
+            .listAnalyticsEventByEventTypeAndTimestamp(
               { eventType, timestamp: { between: [startISO, endISO] } },
               { authMode: 'userPool', limit: 500, nextToken },
             );
