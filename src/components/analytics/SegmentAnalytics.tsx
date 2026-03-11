@@ -670,7 +670,13 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Guard: both beforeunload and pagehide fire on desktop Chrome.
+    // Without a guard, the second event triggers a duplicate_final anomaly.
+    let unloadFlushed = false;
+
     const handleUnload = () => {
+      if (unloadFlushed) return;
+      unloadFlushed = true;
       // pagehide/beforeunload → final flush
       flushPageTime('pagehide', true);
     };
