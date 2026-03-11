@@ -1778,7 +1778,7 @@ export function AdminAnalyticsPage() {
                 Pages{sortIndicator('uniquePages')}
               </th>
               <th onClick={() => handleSort('totalTimeOnSite')}>
-                Time{sortIndicator('totalTimeOnSite')}
+                Active Time{sortIndicator('totalTimeOnSite')}
               </th>
               <th onClick={() => handleSort('totalEvents')}>
                 Events{sortIndicator('totalEvents')}
