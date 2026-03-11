@@ -147,6 +147,8 @@ const schema = a.schema({
     .secondaryIndexes((index) => [
       index('eventType').sortKeys(['timestamp']),
       index('leadTier').sortKeys(['timestamp']),
+      index('sessionId').sortKeys(['timestamp']),
+      index('pageViewId'),
     ]),
 
   // =========================================================================

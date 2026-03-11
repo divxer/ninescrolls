@@ -141,42 +141,47 @@ function formatDuration(seconds: number): string {
  * Compute per-page duration from page_time_flush events (authoritative)
  * with fallback to legacy cumulative timeOnSite deltas.
  *
- * For page_time_flush events: use activeSeconds directly (keyed by the flush event ID).
- * For legacy events: compute deltas from the running timeOnSite total.
+ * Flush events report cumulative active time per pageViewId, so we group
+ * by pageViewId and take the MAX, then map to the corresponding page_view.
  */
 function computePerPageDuration(events: AnalyticsEvent[]): Map<string, number> {
   const result = new Map<string, number>();
 
-  // 1. Authoritative: page_time_flush events have direct activeSeconds
+  // 1. Authoritative: group flush events by pageViewId, take max activeSeconds
   const flushEvents = events.filter(
     (e) => e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0
   );
 
   if (flushEvents.length > 0) {
-    // Map flush events to their corresponding page_view events by matching
-    // pageViewId (flush) → closest preceding page_view with same path
+    // Group by pageViewId → max activeSeconds + pathname
+    const pvBest = new Map<string, { seconds: number; pathname: string }>();
+    for (const flush of flushEvents) {
+      const pvId = (flush as Record<string, unknown>).pageViewId as string || flush.id;
+      const existing = pvBest.get(pvId);
+      if (!existing || flush.activeSeconds! > existing.seconds) {
+        pvBest.set(pvId, { seconds: flush.activeSeconds!, pathname: flush.pathname || '' });
+      }
+    }
+
+    // Map each pageViewId's best time to a corresponding page_view event
     const pageViews = events
       .filter((e) => e.eventType === 'page_view')
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    for (const flush of flushEvents) {
-      const flushPvId = (flush as Record<string, unknown>).pageViewId as string | undefined;
-
-      // Try to attach duration to the page_view event that shares the pageViewId
+    const usedPageViews = new Set<string>();
+    for (const [, { seconds, pathname }] of pvBest) {
       let attached = false;
-      if (flushPvId) {
-        // Find page_view event with same path that precedes this flush
-        for (const pv of pageViews) {
-          if (pv.pathname === flush.pathname && !result.has(pv.id)) {
-            result.set(pv.id, flush.activeSeconds!);
-            attached = true;
-            break;
-          }
+      for (const pv of pageViews) {
+        if (pv.pathname === pathname && !usedPageViews.has(pv.id)) {
+          result.set(pv.id, seconds);
+          usedPageViews.add(pv.id);
+          attached = true;
+          break;
         }
       }
-      // If no matching page_view found, store under the flush event itself
       if (!attached) {
-        result.set(flush.id, flush.activeSeconds!);
+        // No matching page_view — use a synthetic key
+        result.set(`flush-${pathname}-${seconds}`, seconds);
       }
     }
   }
@@ -260,7 +265,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let maxBehaviorScore = 0;
 
     // Aggregate authoritative time from page_time_flush events.
-    // Use isFinal flushes per pageViewId to avoid double-counting partial+final.
+    // Each flush reports cumulative active time for its pageViewId, so we
+    // always take the MAX per pageViewId (later flushes ≥ earlier ones).
     // Falls back to legacy timeOnSite snapshot if no flush events exist.
     const pageViewFinalTimes = new Map<string, number>(); // pageViewId → best activeSeconds
     let hasFlushEvents = false;
@@ -273,14 +279,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         hasFlushEvents = true;
         const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
         const existing = pageViewFinalTimes.get(pvId) || 0;
-        // For same pageViewId: if isFinal exists, prefer it; otherwise sum partials
-        if ((e as Record<string, unknown>).isFinal) {
-          // Final flush — take the max (in case of duplicates)
-          pageViewFinalTimes.set(pvId, Math.max(existing, e.activeSeconds));
-        } else if (!pageViewFinalTimes.has(pvId)) {
-          // Partial flush — use as initial value, may be replaced by final
-          pageViewFinalTimes.set(pvId, e.activeSeconds);
-        }
+        // Always take max — cumulative reporting means later flushes ≥ earlier
+        pageViewFinalTimes.set(pvId, Math.max(existing, e.activeSeconds));
       }
 
       if (e.finalConfidence != null && e.finalConfidence > maxConf) {
