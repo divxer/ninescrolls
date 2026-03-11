@@ -247,29 +247,92 @@ function formatRelativeTime(dateStr: string): string {
 // ─── Aggregation ────────────────────────────────────────────────────────────
 
 function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
+  // ── Pre-pass: build visitorId → org metadata from events that carry org data ──
+  // page_time_flush events lack ip/org/orgName/country etc. We inherit those
+  // from other events (page_view, product_view, etc.) sharing the same visitorId.
+  const visitorOrgMap = new Map<string, {
+    ip: string; org: string; orgName: string;
+    country: string; region: string; city: string;
+    organizationType: string; confidence: number | null; finalConfidence: number | null;
+    isTargetCustomer: boolean; leadTier: string | null;
+    aiOrganizationType: string | null; aiConfidence: number | null;
+    latitude: number | null; longitude: number | null; isp: string;
+  }>();
+
+  for (const e of events) {
+    // Only learn from events that actually carry org-identifying fields
+    if (!e.ip && !e.org && !e.orgName) continue;
+    const vid = (e as Record<string, unknown>).visitorId as string;
+    if (!vid) continue;
+
+    const existing = visitorOrgMap.get(vid);
+    // Keep the entry with the highest finalConfidence (most enriched analysis)
+    const candidateConf = e.finalConfidence ?? e.confidence ?? 0;
+    const existingConf = existing ? (existing.finalConfidence ?? existing.confidence ?? 0) : -1;
+
+    if (candidateConf > existingConf) {
+      visitorOrgMap.set(vid, {
+        ip: e.ip || existing?.ip || '',
+        org: e.org || existing?.org || '',
+        orgName: e.orgName || existing?.orgName || '',
+        country: e.country || existing?.country || '',
+        region: e.region || existing?.region || '',
+        city: e.city || existing?.city || '',
+        organizationType: e.organizationType || existing?.organizationType || '',
+        confidence: e.confidence ?? existing?.confidence ?? null,
+        finalConfidence: e.finalConfidence ?? existing?.finalConfidence ?? null,
+        isTargetCustomer: e.isTargetCustomer || existing?.isTargetCustomer || false,
+        leadTier: e.leadTier || existing?.leadTier || null,
+        aiOrganizationType: e.aiOrganizationType || existing?.aiOrganizationType || null,
+        aiConfidence: e.aiConfidence ?? existing?.aiConfidence ?? null,
+        latitude: e.latitude ?? existing?.latitude ?? null,
+        longitude: e.longitude ?? existing?.longitude ?? null,
+        isp: e.isp || existing?.isp || '',
+      });
+    }
+  }
+
   const groups = new Map<string, AnalyticsEvent[]>();
 
   for (const e of events) {
+    // ── Inherit org metadata for events missing it (e.g. page_time_flush) ──
+    const vid = (e as Record<string, unknown>).visitorId as string;
+    const needsInheritance = !e.ip && !e.org && !e.orgName;
+    const inherited = (needsInheritance && vid) ? visitorOrgMap.get(vid) : undefined;
+
+    // Effective org fields: event's own data → inherited → default
+    const effOrgName = e.orgName || inherited?.orgName || '';
+    const effOrg = e.org || inherited?.org || '';
+    const effIp = e.ip || inherited?.ip || '';
+    const effOrgType = e.organizationType || inherited?.organizationType || '';
+    const effConfidence = e.confidence ?? inherited?.confidence ?? null;
+    const effIsTarget = e.isTargetCustomer || inherited?.isTargetCustomer || false;
+    const effAiOrgType = e.aiOrganizationType || inherited?.aiOrganizationType || null;
+    const effAiConf = e.aiConfidence ?? inherited?.aiConfidence ?? null;
+
     // ISP/VPN/hosting visitors: group by individual visitor to prevent
     // unrelated residential users from being lumped under one ISP name.
     // Two detection paths:
     //   1. L0_REJECT: confidence=0, unknown type, real org name
     //   2. AI-classified telecom_isp: AI identified it as ISP even if IP lookup missed it
-    const orgNameVal = e.orgName || e.org || '';
+    const orgNameVal = effOrgName || effOrg || '';
     const hasRealOrgName = !!orgNameVal && orgNameVal !== 'Unknown';
-    const isAIClassifiedISP = e.aiOrganizationType === 'telecom_isp';
+    const isAIClassifiedISP = effAiOrgType === 'telecom_isp';
     const isL0Reject = hasRealOrgName && (
       // Path 1: IP lookup rejected as ISP/unknown
-      (!e.isTargetCustomer &&
-        (e.confidence == null || e.confidence === 0) &&
-        (!e.organizationType || e.organizationType === 'unknown') &&
-        !(e.aiConfidence != null && e.aiConfidence >= 0.5 && !isAIClassifiedISP)) ||
+      (!effIsTarget &&
+        (effConfidence == null || effConfidence === 0) &&
+        (!effOrgType || effOrgType === 'unknown') &&
+        !(effAiConf != null && effAiConf >= 0.5 && !isAIClassifiedISP)) ||
       // Path 2: AI says telecom_isp regardless of IP confidence
       isAIClassifiedISP
     );
     const key = isL0Reject
-      ? ((e as Record<string, unknown>).visitorId as string || e.ip || orgNameVal || 'Unknown')
-      : (e.orgName || e.org || e.ip || 'Unknown');
+      ? (vid || effIp || orgNameVal || 'Unknown')
+      : (effOrgName || effOrg || effIp || vid || 'Unknown');
+    //   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //   Key change: when org fields are all empty and no inheritance was possible,
+    //   fall back to visitorId instead of 'Unknown' — ensures per-visitor separation.
     const group = groups.get(key);
     if (group) {
       group.push(e);
