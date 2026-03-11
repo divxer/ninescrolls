@@ -362,7 +362,13 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let hasFlushEvents = false;
 
     for (const e of group) {
-      if (e.pathname) pages.add(e.pathname);
+      if (e.pathname) {
+        // Normalize trailing slash to canonical path (e.g. /products/ → /products)
+        const normalizedPath = e.pathname !== '/' && e.pathname.endsWith('/')
+          ? e.pathname.slice(0, -1)
+          : e.pathname;
+        pages.add(normalizedPath);
+      }
       if (e.productName) products.add(e.productName);
 
       if (e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0) {
