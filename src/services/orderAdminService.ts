@@ -179,6 +179,12 @@ export async function declineRfq(rfqId: string, reason?: string) {
   return data;
 }
 
+export async function revertRfqToPending(rfqId: string) {
+  const { data, errors } = await client.mutations.revertRfqToPending({ rfqId } as any, AUTH);
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data;
+}
+
 export async function convertRfqToOrder(rfqId: string, overrides?: {
   productModel?: string;
   productName?: string;

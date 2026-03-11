@@ -13,6 +13,7 @@ export function RFQDetailPage() {
   const { rfq, loading, error, refresh } = useRfq(rfqId);
   const [showConvert, setShowConvert] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
+  const [reverting, setReverting] = useState(false);
 
   if (loading) return <div className="admin-loading">Loading RFQ...</div>;
   if (error) return <div className="admin-error">Error: {error.message}</div>;
@@ -40,6 +41,19 @@ export function RFQDetailPage() {
     refresh();
   }
 
+  async function handleRevert() {
+    if (!confirm('Are you sure you want to revert this RFQ back to Pending?')) return;
+    setReverting(true);
+    try {
+      await svc.revertRfqToPending(rfq!.rfqId);
+      refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to revert');
+    } finally {
+      setReverting(false);
+    }
+  }
+
   return (
     <div className="admin-detail-page">
       <div className="admin-detail-header">
@@ -62,6 +76,11 @@ export function RFQDetailPage() {
               Decline
             </button>
           </div>
+        )}
+        {rfq.status === 'declined' && (
+          <button className="admin-btn-sm admin-btn-outline" onClick={handleRevert} disabled={reverting}>
+            {reverting ? 'Reverting...' : 'Revert to Pending'}
+          </button>
         )}
       </div>
 

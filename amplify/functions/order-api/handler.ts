@@ -23,6 +23,7 @@ import { updateDocument } from './resolvers/updateDocument.js';
 import { deleteDocument } from './resolvers/deleteDocument.js';
 import { declineRfq } from './resolvers/declineRfq.js';
 import { convertRfqToOrder } from './resolvers/convertRfqToOrder.js';
+import { revertRfqToPending } from './resolvers/revertRfqToPending.js';
 
 const resolvers: Record<string, (event: any) => Promise<any>> = {
     // Queries
@@ -47,6 +48,7 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
     deleteDocument,
     declineRfq,
     convertRfqToOrder,
+    revertRfqToPending,
 };
 
 export const handler = async (event: any) => {
