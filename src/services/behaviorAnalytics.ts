@@ -42,6 +42,7 @@ export function classifyTrafficChannel(params: {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  utmTerm?: string | null;
   referrer?: string;
   gclid?: string | null;
   msclkid?: string | null;
@@ -49,7 +50,7 @@ export function classifyTrafficChannel(params: {
   gbraid?: string | null;
   wbraid?: string | null;
 }): TrafficChannel {
-  const { utmSource, utmMedium, utmCampaign, referrer, gclid, msclkid, gadSource, gbraid, wbraid } = params;
+  const { utmSource, utmMedium, utmCampaign, utmTerm, referrer, gclid, msclkid, gadSource, gbraid, wbraid } = params;
   const medium = (utmMedium || '').toLowerCase();
   const source = (utmSource || '').toLowerCase();
 
@@ -84,7 +85,14 @@ export function classifyTrafficChannel(params: {
     return 'organic_social';
   }
 
-  // 5. Organic search
+  // 5. Paid search (utm_term + search engine referrer):
+  //    Google organic search stopped passing search queries to sites in 2011 (HTTPS).
+  //    If utm_term is present with a search engine referrer, it's from paid ads.
+  if (utmTerm && isSearchReferrer) {
+    return 'paid_search';
+  }
+
+  // 6. Organic search
   if (isSearchReferrer) {
     return 'organic_search';
   }
