@@ -1309,40 +1309,46 @@ export function AdminAnalyticsPage() {
       setError('');
 
       const { start, end } = getDateBounds(dateRange, customStart, customEnd);
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
 
-      try {
-        const collected: AnalyticsEvent[] = [];
+      // All known event types — one GSI query per type, run in parallel.
+      // Uses the eventType+timestamp GSI instead of a full table scan.
+      const EVENT_TYPES = [
+        'page_view', 'page_time_flush', 'product_view', 'pdf_download',
+        'contact_form', 'target_customer', 'search', 'add_to_cart',
+        'purchase', 'rfq_step', 'other',
+      ];
+
+      async function queryByType(eventType: string): Promise<AnalyticsEvent[]> {
+        const results: AnalyticsEvent[] = [];
         let nextToken: string | undefined;
 
-        // Scan the entire table — no early stopping.
-        // DynamoDB Scan is paginated; we iterate every page and filter
-        // by date client-side.  For tables with thousands of events this
-        // completes in a few seconds (each page ≈ 1 MB / ~500 items).
         do {
-          const result = await client.models.AnalyticsEvent.list({
-            authMode: 'userPool',
-            limit: 500,
-            nextToken,
-          });
+          if (cancelled) return results;
 
-          if (cancelled) return;
+          const result = await (client.models.AnalyticsEvent as any)
+            .listAnalyticsEventByEventType(
+              { eventType, timestamp: { between: [startISO, endISO] } },
+              { authMode: 'userPool', limit: 500, nextToken },
+            );
 
           const events = (result.data || []) as AnalyticsEvent[];
-
-          for (const e of events) {
-            const ts = new Date(e.timestamp).getTime();
-            if (ts >= start.getTime() && ts <= end.getTime()) {
-              collected.push(e);
-            }
-          }
-
-          if (!isSoftRefresh) setLoadProgress(collected.length);
+          results.push(...events);
           nextToken = result.nextToken || undefined;
         } while (nextToken);
 
-        if (!cancelled) {
-          setAllEvents(collected);
-        }
+        return results;
+      }
+
+      try {
+        const perType = await Promise.all(EVENT_TYPES.map(queryByType));
+
+        if (cancelled) return;
+
+        const collected = perType.flat();
+        if (!isSoftRefresh) setLoadProgress(collected.length);
+        setAllEvents(collected);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load events');
