@@ -24,11 +24,6 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
     organization: '',
     message: '',
     website: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'United States'
   });
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -61,11 +56,6 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
         organization: '',
         message: '',
         website: '',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: 'United States'
       });
       onClose?.();
     } catch (error) {
