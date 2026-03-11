@@ -285,6 +285,19 @@ async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<strin
 // Notifications
 // ---------------------------------------------------------------------------
 
+/** Human-readable labels for equipment category values */
+const equipmentCategoryLabels: Record<string, string> = {
+    'ICP': 'ICP Etching System',
+    'PECVD': 'PECVD System',
+    'Sputter': 'Sputter Deposition System',
+    'ALD': 'ALD System',
+    'RIE': 'RIE System',
+    'IBE': 'Ion Beam Etching System',
+    'HDP-CVD': 'HDP-CVD System',
+    'Plasma-Cleaner': 'Plasma Cleaner',
+    'Other': 'Other / Need Recommendation',
+};
+
 /** Send confirmation email to customer via SendGrid — §12.10.9 */
 async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): Promise<void> {
     const apiKey = SENDGRID_API_KEY();
@@ -292,6 +305,18 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
         console.warn('SENDGRID_API_KEY not configured, skipping confirmation email');
         return;
     }
+
+    const equipmentLabel = equipmentCategoryLabels[data.equipmentCategory] ?? data.equipmentCategory;
+
+    // Build summary rows — only include fields that have values
+    const summaryRows = [
+        `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Equipment:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(equipmentLabel)}${data.specificModel ? ' — ' + sanitize(data.specificModel) : ''}</td></tr>`,
+        `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Quantity:</td><td style="padding:6px 0;vertical-align:top;">${data.quantity}</td></tr>`,
+        `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Institution:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.institution)}</td></tr>`,
+        data.applicationDescription ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Application:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.applicationDescription.length > 120 ? data.applicationDescription.slice(0, 120) + '…' : data.applicationDescription)}</td></tr>` : '',
+        data.keySpecifications ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Key Specs:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.keySpecifications.length > 120 ? data.keySpecifications.slice(0, 120) + '…' : data.keySpecifications)}</td></tr>` : '',
+        data.needsBudgetaryQuote && data.shippingCountry ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Ship to:</td><td style="padding:6px 0;vertical-align:top;">${[data.shippingState, data.shippingCountry].filter(Boolean).map(s => sanitize(s!)).join(', ')}</td></tr>` : '',
+    ].filter(Boolean).join('\n');
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
@@ -301,32 +326,42 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
         },
         body: JSON.stringify({
             personalizations: [{ to: [{ email: data.email }] }],
-            from: { email: 'noreply@ninescrolls.com', name: 'NineScrolls Technology' },
-            subject: `We've received your quote request — Reference ${referenceNumber}`,
+            from: { email: 'noreply@ninescrolls.com', name: 'NineScrolls Sales Team' },
+            subject: `Quote Request Received – ${referenceNumber}`,
             content: [{
                 type: 'text/html',
                 value: `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; line-height: 1.6; max-width: 600px;">
+
 <p>Dear ${sanitize(data.name)},</p>
 
-<p>Thank you for your interest in NineScrolls ${sanitize(data.equipmentCategory)} systems.</p>
+<p>Thank you for your interest in our ${sanitize(equipmentLabel.toLowerCase())} systems.</p>
 
-<p>We've received your quote request and assigned it reference number
-<strong>${referenceNumber}</strong>. Our engineering team will review your requirements
-and respond within 1-2 business days.</p>
+<p>Your request has been logged under reference number <strong>${referenceNumber}</strong>. Our sales and technical team will review the submitted requirements and respond with the appropriate recommendation and quotation within 1–2 business days.</p>
 
-<p><strong>Your Request Summary:</strong></p>
-<ul>
-  <li>Equipment: ${sanitize(data.equipmentCategory)}${data.specificModel ? ' — ' + sanitize(data.specificModel) : ''}</li>
-  <li>Institution: ${sanitize(data.institution)}</li>
-</ul>
+<p style="font-weight:600;margin-bottom:8px;">Request Summary</p>
+<table style="border-collapse:collapse;font-size:14px;">
+${summaryRows}
+</table>
 
-<p>If you have any questions in the meantime, please reply to this email
-or contact us at sales@ninescrolls.com.</p>
+<p style="margin-top:20px;">If you need to add any specifications or supporting documents, simply reply to this email or contact us at <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>.</p>
 
-<p>Best regards,<br>NineScrolls Technology LLC</p>
+<p style="color:#888;font-size:13px;margin-top:20px;">This is an automated acknowledgment of your request. A member of our team will follow up shortly.</p>
+
+<hr style="border:none;border-top:1px solid #e0e0e0;margin:24px 0 16px;">
+<p style="font-size:13px;color:#666;margin:0;">
+  Best regards,<br>
+  <strong>NineScrolls Sales Team</strong><br>
+  NineScrolls LLC<br>
+  <a href="mailto:sales@ninescrolls.com" style="color:#1a73e8;text-decoration:none;">sales@ninescrolls.com</a>
+  &nbsp;·&nbsp;
+  <a href="https://ninescrolls.com" style="color:#1a73e8;text-decoration:none;">ninescrolls.com</a>
+</p>
+
+</div>
                 `.trim(),
             }],
-            reply_to: { email: 'sales@ninescrolls.com', name: 'NineScrolls Sales' },
+            reply_to: { email: 'sales@ninescrolls.com', name: 'NineScrolls Sales Team' },
         }),
     });
 
@@ -396,7 +431,7 @@ async function sendInternalNotification(data: RfqInput, rfqId: string, reference
             personalizations: [{ to: [{ email: 'sales@ninescrolls.com' }] }],
             from: { email: 'noreply@ninescrolls.com', name: 'NineScrolls RFQ System' },
             reply_to: { email: data.email, name: data.name },
-            subject: `New RFQ: ${referenceNumber} — ${sanitize(data.equipmentCategory)} — ${sanitize(data.institution)}`,
+            subject: `New RFQ: ${referenceNumber} — ${equipmentCategoryLabels[data.equipmentCategory] ?? data.equipmentCategory} — ${sanitize(data.institution)}`,
             content: [{
                 type: 'text/html',
                 value: `
@@ -415,7 +450,7 @@ async function sendInternalNotification(data: RfqInput, rfqId: string, reference
 
 <h3 style="margin-top:20px;">Equipment & Application</h3>
 <table style="border-collapse:collapse;">
-  <tr><td style="padding:4px 8px;font-weight:600;">Category:</td><td style="padding:4px 8px;"><strong>${sanitize(data.equipmentCategory)}</strong></td></tr>
+  <tr><td style="padding:4px 8px;font-weight:600;">Category:</td><td style="padding:4px 8px;"><strong>${sanitize(equipmentCategoryLabels[data.equipmentCategory] ?? data.equipmentCategory)}</strong></td></tr>
   ${data.specificModel ? `<tr><td style="padding:4px 8px;font-weight:600;">Specific Model:</td><td style="padding:4px 8px;">${sanitize(data.specificModel)}</td></tr>` : ''}
   <tr><td style="padding:4px 8px;font-weight:600;">Quantity:</td><td style="padding:4px 8px;">${data.quantity}</td></tr>
   ${data.budgetRange ? `<tr><td style="padding:4px 8px;font-weight:600;">Budget Range:</td><td style="padding:4px 8px;">${sanitize(data.budgetRange)}</td></tr>` : ''}
