@@ -20,6 +20,8 @@ function eventNameToType(event: string): string {
     'Purchase Completed': 'purchase',
     'Target Customer Detected': 'target_customer',
     'Simple Target Customer Detected': 'target_customer',
+    'RFQ Step 1: Your Information': 'rfq_step',
+    'RFQ Step 2: Project Details': 'rfq_step',
   };
   return map[event] || 'other';
 }

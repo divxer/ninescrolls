@@ -1069,7 +1069,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                         {e.eventType}
                       </span>
-                      <span className="timeline-path">{e.pathname || e.eventName}</span>
+                      <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
                       {e.productName && (
                         <span className="timeline-product">{e.productName}</span>
                       )}
@@ -1121,7 +1121,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                             {e.eventType}
                           </span>
-                          <span className="timeline-path">{e.pathname || e.eventName}</span>
+                          <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
                           {e.productName && (
                             <span className="timeline-product">{e.productName}</span>
                           )}
