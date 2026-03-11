@@ -4,7 +4,14 @@ import type { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-// ─── Visitor ID ─────────────────────────────────────────────────────────────
+// ─── UUID helper ────────────────────────────────────────────────────────────
+function generateUUID(): string {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// ─── Visitor ID (localStorage – persists across sessions) ───────────────────
 const VISITOR_ID_KEY = 'ns_visitor_id';
 
 /**
@@ -18,15 +25,55 @@ export function getVisitorId(): string {
     if (existing) return existing;
   } catch { /* localStorage unavailable */ }
 
-  const id = typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const id = generateUUID();
 
   try {
     localStorage.setItem(VISITOR_ID_KEY, id);
   } catch { /* localStorage unavailable */ }
 
   return id;
+}
+
+// ─── Session ID (sessionStorage – one per browser tab lifetime) ─────────────
+const SESSION_ID_KEY = 'ns_session_id';
+
+export function getSessionId(): string {
+  try {
+    const existing = sessionStorage.getItem(SESSION_ID_KEY);
+    if (existing) return existing;
+  } catch { /* sessionStorage unavailable */ }
+
+  const id = generateUUID();
+
+  try {
+    sessionStorage.setItem(SESSION_ID_KEY, id);
+  } catch { /* sessionStorage unavailable */ }
+
+  return id;
+}
+
+// ─── Tab ID (sessionStorage – unique per tab, never shared) ─────────────────
+const TAB_ID_KEY = 'ns_tab_id';
+
+export function getTabId(): string {
+  try {
+    const existing = sessionStorage.getItem(TAB_ID_KEY);
+    if (existing) return existing;
+  } catch { /* sessionStorage unavailable */ }
+
+  const id = generateUUID();
+
+  try {
+    sessionStorage.setItem(TAB_ID_KEY, id);
+  } catch { /* sessionStorage unavailable */ }
+
+  return id;
+}
+
+// ─── Page View ID (generated fresh per page navigation) ─────────────────────
+
+export function createPageViewId(): string {
+  return generateUUID();
 }
 
 interface IPInfoInput {
@@ -156,6 +203,70 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     setTimeout(() => {
       attempt().catch((retryErr) => {
         console.error('[AnalyticsStorage] Retry also failed:', params.eventName, retryErr);
+      });
+    }, 2000);
+  });
+}
+
+// ─── Page Time Flush: authoritative per-page active time ────────────────────
+
+export type FlushReason = 'route_change' | 'pagehide' | 'hidden' | 'heartbeat' | 'recovery';
+
+export interface PageTimeFlushParams {
+  sessionId: string;
+  tabId: string;
+  pageViewId: string;
+  path: string;
+  title: string;
+  activeSeconds: number;
+  idleSeconds: number;
+  wallClockSeconds: number;
+  flushReason: FlushReason;
+  isFinal: boolean;
+  sequence: number;
+  startedAt: number;  // epoch ms
+  endedAt: number;    // epoch ms
+}
+
+export function storePageTimeFlush(params: PageTimeFlushParams): void {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+
+  const payload = {
+    eventName: 'Page Time Flush',
+    eventType: 'page_time_flush',
+    timestamp: new Date(params.endedAt).toISOString(),
+
+    visitorId: getVisitorId(),
+    pageViewId: params.pageViewId,
+    sessionId: params.sessionId,
+    tabId: params.tabId,
+
+    pathname: params.path,
+    pageTitle: params.title,
+
+    activeSeconds: params.activeSeconds,
+    idleSeconds: params.idleSeconds,
+    wallClockSeconds: params.wallClockSeconds,
+    flushReason: params.flushReason,
+    isFinal: params.isFinal,
+    flushSequence: params.sequence,
+
+    userAgent: ua,
+    isBot: ua ? isbot(ua) : undefined,
+  };
+
+  const attempt = () =>
+    client.models.AnalyticsEvent.create(payload).then((result) => {
+      if (result.errors && result.errors.length > 0) {
+        console.error('[AnalyticsStorage] GraphQL errors storing page_time_flush:', result.errors);
+      }
+    });
+
+  attempt().catch((err) => {
+    console.error('[AnalyticsStorage] Failed to store page_time_flush:', err);
+    setTimeout(() => {
+      attempt().catch((retryErr) => {
+        console.error('[AnalyticsStorage] Retry also failed (page_time_flush):', retryErr);
       });
     }, 2000);
   });

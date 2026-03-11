@@ -118,6 +118,17 @@ const schema = a.schema({
 
       visitorId: a.string(),
 
+      // ─── Page time flush fields ─────────────────────────────────────────
+      pageViewId: a.string(),
+      sessionId: a.string(),
+      tabId: a.string(),
+      activeSeconds: a.integer(),
+      idleSeconds: a.integer(),
+      wallClockSeconds: a.integer(),
+      flushReason: a.string(),
+      isFinal: a.boolean(),
+      flushSequence: a.integer(),
+
       userAgent: a.string(),
       isBot: a.boolean(),
       latitude: a.float(),

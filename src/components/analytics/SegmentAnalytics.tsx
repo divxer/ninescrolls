@@ -2,6 +2,13 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { segmentAnalytics } from '../../services/segmentAnalytics';
 import { behaviorAnalytics, classifyTrafficChannel } from '../../services/behaviorAnalytics';
+import {
+  getSessionId,
+  getTabId,
+  createPageViewId,
+  storePageTimeFlush,
+  type FlushReason,
+} from '../../services/analyticsStorageService';
 import outputs from '../../../amplify_outputs.json';
 
 // ─── Time tracking constants ─────────────────────────────────────────────────
@@ -9,6 +16,21 @@ const MIN_TRACK_SECONDS = 5;       // Minimum seconds to track (filters bots/mis
 const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes idle → pause timer
 const HEARTBEAT_INTERVAL_MS = 30_000;  // Save progress every 30s
 const CHECKPOINT_KEY = 'ns_page_time_checkpoint';
+
+// ─── Active page state (per-tab, in-memory) ─────────────────────────────────
+interface ActivePageState {
+  sessionId: string;
+  tabId: string;
+  pageViewId: string;
+  path: string;
+  title: string;
+  enteredAt: number;          // epoch ms
+  lastActiveAt: number;       // epoch ms
+  idleStartedAt: number | null;
+  idleAccumulatedMs: number;
+  flushSequence: number;
+  isFinalized: boolean;
+}
 
 /**
  * Get API Gateway endpoint for Segment proxy.
@@ -115,17 +137,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
 }) => {
   const location = useLocation();
 
-  // ─── Time tracking refs ──────────────────────────────────────────────────
-  const pageStartTimeRef = useRef<number>(Date.now());
-  const currentPathRef = useRef<string>(location.pathname);
-  const pageTitleRef = useRef<string>(document.title);  // Capture title at page load (before SPA nav changes it)
-  const accumulatedIdleRef = useRef<number>(0);   // Total idle ms for current page
-  const idleStartRef = useRef<number | null>(null); // When user became idle (null = active)
-  const lastActivityRef = useRef<number>(Date.now());
+  // ─── Page state ref (replaces scattered refs) ─────────────────────────────
+  const pageStateRef = useRef<ActivePageState | null>(null);
+
+  // ─── Idle detection refs ──────────────────────────────────────────────────
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hasTrackedUnloadRef = useRef<boolean>(false); // Prevent double-counting
+  const lastActivityRef = useRef<number>(Date.now());
 
+  // ─── Segment script loading ───────────────────────────────────────────────
   useEffect(() => {
     // Load Segment script if not already loaded
     if (typeof window !== 'undefined' && !window.analytics) {
@@ -215,53 +235,135 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     }
   }, [writeKey]);
 
-  // ─── Helper: calculate active time on current page ────────────────────────
+  // ─── Helper: calculate active seconds from current page state ─────────────
   const getActiveSeconds = useCallback((): number => {
-    const elapsed = Date.now() - pageStartTimeRef.current;
-    let idleMs = accumulatedIdleRef.current;
-    // If currently idle, add the ongoing idle period
-    if (idleStartRef.current !== null) {
-      idleMs += Date.now() - idleStartRef.current;
+    const state = pageStateRef.current;
+    if (!state) return 0;
+    const now = Date.now();
+    const wallClockMs = now - state.enteredAt;
+    let idleMs = state.idleAccumulatedMs;
+    if (state.idleStartedAt !== null) {
+      idleMs += now - state.idleStartedAt;
     }
-    return Math.max(0, Math.floor((elapsed - idleMs) / 1000));
+    return Math.max(0, Math.floor((wallClockMs - idleMs) / 1000));
   }, []);
 
-  // ─── Helper: track time + send beacon + clear checkpoint ─────────────────
-  const trackAndSend = useCallback((path: string, seconds: number, title: string) => {
-    if (seconds <= MIN_TRACK_SECONDS) return;
-    behaviorAnalytics.trackTimeOnPage(path, seconds);
+  // ─── Core: flush page time to DynamoDB + Segment ──────────────────────────
+  const flushPageTime = useCallback((reason: FlushReason, isFinal: boolean) => {
+    const state = pageStateRef.current;
+    if (!state || state.isFinalized) return;
+
+    const now = Date.now();
+    const wallClockMs = now - state.enteredAt;
+    let idleMs = state.idleAccumulatedMs;
+    if (state.idleStartedAt !== null) {
+      idleMs += now - state.idleStartedAt;
+    }
+    const activeMs = Math.max(0, wallClockMs - idleMs);
+    const activeSeconds = Math.floor(activeMs / 1000);
+    const idleSeconds = Math.floor(idleMs / 1000);
+    const wallClockSeconds = Math.floor(wallClockMs / 1000);
+
+    if (activeSeconds <= MIN_TRACK_SECONDS) return;
+
+    const nextSequence = state.flushSequence + 1;
+
+    // 1. Update localStorage behavior signals (heuristic, for lead scoring)
+    behaviorAnalytics.trackTimeOnPage(state.path, activeSeconds);
+
+    // 2. Send to Segment via sendBeacon (backward-compatible)
     const score = behaviorAnalytics.calculateBehaviorScore();
-    segmentAnalytics.sendTimeBeacon(path, seconds, score.timeOnSite, title);
+    segmentAnalytics.sendTimeBeacon(state.path, activeSeconds, score.timeOnSite, state.title);
+
+    // 3. Write authoritative page_time_flush to DynamoDB
+    storePageTimeFlush({
+      sessionId: state.sessionId,
+      tabId: state.tabId,
+      pageViewId: state.pageViewId,
+      path: state.path,
+      title: state.title,
+      activeSeconds,
+      idleSeconds,
+      wallClockSeconds,
+      flushReason: reason,
+      isFinal,
+      sequence: nextSequence,
+      startedAt: state.enteredAt,
+      endedAt: now,
+    });
+
+    // 4. Clear checkpoint
     try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+
+    // 5. Update state
+    state.flushSequence = nextSequence;
+    if (isFinal) {
+      state.isFinalized = true;
+    } else {
+      // Partial flush: reset counters for next slice within the same pageView
+      state.enteredAt = now;
+      state.idleAccumulatedMs = 0;
+      state.idleStartedAt = null;
+      state.lastActiveAt = now;
+    }
   }, []);
 
-  // ─── Helper: reset all timers for a new page ────────────────────────────
-  const resetTimers = useCallback(() => {
-    pageStartTimeRef.current = Date.now();
-    accumulatedIdleRef.current = 0;
-    idleStartRef.current = null;
-    lastActivityRef.current = Date.now();
-    hasTrackedUnloadRef.current = false;
-    // Capture title after a microtask so React/Helmet has time to update it
-    queueMicrotask(() => { pageTitleRef.current = document.title; });
+  // ─── Helper: create new page state ────────────────────────────────────────
+  const initPageState = useCallback((path: string): ActivePageState => {
+    const now = Date.now();
+    return {
+      sessionId: getSessionId(),
+      tabId: getTabId(),
+      pageViewId: createPageViewId(),
+      path,
+      title: document.title,
+      enteredAt: now,
+      lastActiveAt: now,
+      idleStartedAt: null,
+      idleAccumulatedMs: 0,
+      flushSequence: 0,
+      isFinalized: false,
+    };
   }, []);
 
-  // ─── Recover crashed checkpoint on mount ─────────────────────────────────
+  // ─── Recover crashed checkpoint on mount ──────────────────────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CHECKPOINT_KEY);
       if (raw) {
-        const cp = JSON.parse(raw) as { path: string; activeTime: number; timestamp: number };
+        const cp = JSON.parse(raw) as {
+          path: string; activeTime: number; timestamp: number;
+          pageViewId?: string; sessionId?: string; tabId?: string;
+        };
         // Only recover if checkpoint is less than 10 minutes old
         if (Date.now() - cp.timestamp < 10 * 60 * 1000 && cp.activeTime > MIN_TRACK_SECONDS) {
           behaviorAnalytics.trackTimeOnPage(cp.path, cp.activeTime);
+
+          // If checkpoint has structured IDs, write a recovery flush to DynamoDB
+          if (cp.pageViewId && cp.sessionId && cp.tabId) {
+            storePageTimeFlush({
+              sessionId: cp.sessionId,
+              tabId: cp.tabId,
+              pageViewId: cp.pageViewId,
+              path: cp.path,
+              title: '',  // unknown at recovery time
+              activeSeconds: cp.activeTime,
+              idleSeconds: 0,
+              wallClockSeconds: cp.activeTime, // best estimate
+              flushReason: 'recovery',
+              isFinal: true,
+              sequence: 1,
+              startedAt: cp.timestamp - cp.activeTime * 1000,
+              endedAt: cp.timestamp,
+            });
+          }
         }
         localStorage.removeItem(CHECKPOINT_KEY);
       }
     } catch { /* ignore */ }
   }, []);
 
-  // ─── Idle detection ──────────────────────────────────────────────────────
+  // ─── Idle detection ───────────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -271,23 +373,33 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       if (now - lastActivityRef.current < 1000) return;
       lastActivityRef.current = now;
 
+      const state = pageStateRef.current;
+      if (!state || state.isFinalized) return;
+
       // If we were idle, accumulate the idle time and resume
-      if (idleStartRef.current !== null) {
-        accumulatedIdleRef.current += now - idleStartRef.current;
-        idleStartRef.current = null;
+      if (state.idleStartedAt !== null) {
+        state.idleAccumulatedMs += now - state.idleStartedAt;
+        state.idleStartedAt = null;
       }
+      state.lastActiveAt = now;
 
       // Reset the idle countdown
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       idleTimerRef.current = setTimeout(() => {
         // User has been inactive for IDLE_TIMEOUT_MS → mark idle
-        idleStartRef.current = Date.now();
+        const s = pageStateRef.current;
+        if (s && !s.isFinalized) {
+          s.idleStartedAt = Date.now();
+        }
       }, IDLE_TIMEOUT_MS);
     };
 
     // Start the initial idle countdown
     idleTimerRef.current = setTimeout(() => {
-      idleStartRef.current = Date.now();
+      const s = pageStateRef.current;
+      if (s && !s.isFinalized) {
+        s.idleStartedAt = Date.now();
+      }
     }, IDLE_TIMEOUT_MS);
 
     const events = ['mousemove', 'keydown', 'scroll', 'touchstart'] as const;
@@ -299,18 +411,24 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     };
   }, []);
 
-  // ─── Heartbeat: save progress to localStorage every 30s ─────────────────
+  // ─── Heartbeat: save progress to localStorage every 30s ──────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     heartbeatRef.current = setInterval(() => {
+      const state = pageStateRef.current;
+      if (!state || state.isFinalized) return;
+
       const activeTime = getActiveSeconds();
       if (activeTime > MIN_TRACK_SECONDS) {
         try {
           localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
-            path: currentPathRef.current,
+            path: state.path,
             activeTime,
             timestamp: Date.now(),
+            pageViewId: state.pageViewId,
+            sessionId: state.sessionId,
+            tabId: state.tabId,
           }));
         } catch { /* ignore */ }
       }
@@ -321,20 +439,25 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     };
   }, [getActiveSeconds]);
 
-  // ─── Route change tracking ───────────────────────────────────────────────
+  // ─── Route change tracking ────────────────────────────────────────────────
   useEffect(() => {
-    // Track time spent on previous page before route change
-    if (currentPathRef.current !== location.pathname) {
-      const activeTime = getActiveSeconds();
-      if (activeTime > MIN_TRACK_SECONDS) {
-        behaviorAnalytics.trackTimeOnPage(currentPathRef.current, activeTime);
-        try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
-      }
+    const prevState = pageStateRef.current;
+
+    // Finalize previous page on route change
+    if (prevState && prevState.path !== location.pathname && !prevState.isFinalized) {
+      flushPageTime('route_change', true);
     }
 
-    // Reset timer for new page
-    resetTimers();
-    currentPathRef.current = location.pathname;
+    // Initialize new page state
+    const newState = initPageState(location.pathname);
+    pageStateRef.current = newState;
+    lastActivityRef.current = Date.now();
+    // Capture title after a microtask so React/Helmet has time to update it
+    queueMicrotask(() => {
+      if (pageStateRef.current === newState) {
+        newState.title = document.title;
+      }
+    });
 
     // Skip tracking for trailing-slash paths — RedirectHandler will normalize
     // them and we'll track the canonical (no trailing slash) path instead
@@ -377,32 +500,31 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         );
       }
     }
-  }, [location.pathname, location.search, location.hash, getActiveSeconds, resetTimers]);
+  }, [location.pathname, location.search, location.hash, flushPageTime, initPageState]);
 
-  // ─── Unload / visibility tracking (with duplicate prevention) ────────────
+  // ─── Unload / visibility tracking ─────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleUnload = () => {
-      if (hasTrackedUnloadRef.current) return;
-      hasTrackedUnloadRef.current = true;
-      const activeTime = getActiveSeconds();
-      trackAndSend(currentPathRef.current, activeTime, pageTitleRef.current);
+      // pagehide/beforeunload → final flush
+      flushPageTime('pagehide', true);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        if (hasTrackedUnloadRef.current) return;
-        hasTrackedUnloadRef.current = true;
-        const activeTime = getActiveSeconds();
-        trackAndSend(currentPathRef.current, activeTime, pageTitleRef.current);
+        // Tab hidden → partial flush (user may come back)
+        flushPageTime('hidden', false);
       } else if (document.visibilityState === 'visible') {
-        // Tab returned — reset for continued tracking
-        hasTrackedUnloadRef.current = false;
-        pageStartTimeRef.current = Date.now();
-        accumulatedIdleRef.current = 0;
-        idleStartRef.current = null;
-        lastActivityRef.current = Date.now();
+        // Tab returned — if previous flush was partial, the state already
+        // has reset counters (enteredAt = now, idle = 0). Just ensure
+        // we resume tracking.
+        const state = pageStateRef.current;
+        if (state && !state.isFinalized) {
+          state.lastActiveAt = Date.now();
+          state.idleStartedAt = null;
+          lastActivityRef.current = Date.now();
+        }
       }
     };
 
@@ -416,7 +538,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       window.removeEventListener('pagehide', handleUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [getActiveSeconds, trackAndSend]);
+  }, [flushPageTime]);
 
   return null; // This component doesn't render anything
 };
