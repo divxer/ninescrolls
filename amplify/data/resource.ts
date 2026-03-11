@@ -124,10 +124,12 @@ const schema = a.schema({
       tabId: a.string(),
       activeSeconds: a.integer(),
       idleSeconds: a.integer(),
+      hiddenSeconds: a.integer(),
       wallClockSeconds: a.integer(),
       flushReason: a.string(),
       isFinal: a.boolean(),
       flushSequence: a.integer(),
+      idleTimeoutMsUsed: a.integer(),
 
       userAgent: a.string(),
       isBot: a.boolean(),
