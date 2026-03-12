@@ -485,17 +485,19 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                 <div className="draft-indicator">Draft</div>
               )}
               <div className="sidebar-actions-row">
+                {(!initialData || isDraft) && (
+                  <button
+                    type="button"
+                    className="admin-btn-outline sidebar-btn-half"
+                    disabled={isSubmitting}
+                    onClick={(e) => handleSubmit(e as any, true)}
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="admin-btn-outline sidebar-btn-half"
-                  disabled={isSubmitting}
-                  onClick={(e) => handleSubmit(e as any, true)}
-                >
-                  {isSubmitting ? 'Saving...' : 'Save as Draft'}
-                </button>
-                <button
-                  type="button"
-                  className="admin-submit-btn sidebar-btn-half"
+                  className={`admin-submit-btn ${!initialData || isDraft ? 'sidebar-btn-half' : 'sidebar-btn-full'}`}
                   disabled={isSubmitting}
                   onClick={(e) => handleSubmit(e as any, false)}
                 >
