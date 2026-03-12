@@ -111,6 +111,7 @@ const schema = a.schema({
       isPaidTraffic: a.boolean(),
       trafficChannel: a.string(),
       utmTerm: a.string(),
+      searchQuery: a.string(),
 
       pathname: a.string(),
       pageTitle: a.string(),
