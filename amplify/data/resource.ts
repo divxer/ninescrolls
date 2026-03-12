@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { orderApi } from '../functions/order-api/resource';
+import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 
 // =============================================================================
 // Schema: Existing models + Order Tracker / RFQ GraphQL API
@@ -73,6 +74,7 @@ const schema = a.schema({
       relatedProducts: a.json(),
       heroImages: a.json(),
       isStandaloneComponent: a.boolean(),
+      isDraft: a.boolean().default(false),
     })
     .authorization((allow) => [
       allow.publicApiKey().to(['read']),
@@ -270,6 +272,31 @@ const schema = a.schema({
     expiresAt: a.datetime().required(),
   }),
 
+  InsightsImageUpload: a.customType({
+    uploadUrl: a.string().required(),
+    s3Key: a.string().required(),
+    expiresAt: a.datetime().required(),
+  }),
+
+  ContentImageUpload: a.customType({
+    uploadUrl: a.string().required(),
+    s3Key: a.string().required(),
+    cdnUrl: a.string().required(),
+  }),
+
+  InsightsImageResult: a.customType({
+    cdnBaseUrl: a.string().required(),
+    heroPrefix: a.string().required(),
+    fallbackExt: a.string().required(),
+    files: a.string().array().required(),
+    error: a.string(),
+  }),
+
+  DeleteImagesResult: a.customType({
+    deletedCount: a.integer().required(),
+    error: a.string(),
+  }),
+
   RfqSubmission: a.customType({
     rfqId: a.id().required(),
     referenceNumber: a.string(),
@@ -380,6 +407,51 @@ const schema = a.schema({
     .arguments({ rfqId: a.id().required() })
     .returns(a.ref('RfqSubmission'))
     .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  // =========================================================================
+  // Insights Image Upload — queries & mutations
+  // =========================================================================
+
+  getInsightsImageUploadUrl: a
+    .query()
+    .arguments({
+      slug: a.string().required(),
+      fileName: a.string().required(),
+      mimeType: a.string().required(),
+    })
+    .returns(a.ref('InsightsImageUpload').required())
+    .handler(a.handler.function(optimizeInsightsImage))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getContentImageUploadUrl: a
+    .query()
+    .arguments({
+      slug: a.string().required(),
+      fileName: a.string().required(),
+      mimeType: a.string().required(),
+    })
+    .returns(a.ref('ContentImageUpload').required())
+    .handler(a.handler.function(optimizeInsightsImage))
+    .authorization((allow) => [allow.authenticated()]),
+
+  processInsightsImage: a
+    .mutation()
+    .arguments({
+      s3Key: a.string().required(),
+      slug: a.string().required(),
+    })
+    .returns(a.ref('InsightsImageResult').required())
+    .handler(a.handler.function(optimizeInsightsImage))
+    .authorization((allow) => [allow.authenticated()]),
+
+  deleteInsightsImages: a
+    .mutation()
+    .arguments({
+      slug: a.string().required(),
+    })
+    .returns(a.ref('DeleteImagesResult').required())
+    .handler(a.handler.function(optimizeInsightsImage))
     .authorization((allow) => [allow.authenticated()]),
 
   // =========================================================================

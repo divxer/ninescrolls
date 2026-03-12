@@ -1,14 +1,21 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useInsightsPosts } from '../../hooks/useInsightsPosts';
 import { deleteInsightsPost } from '../../services/insightsAdminService';
+import { deleteInsightsImages } from '../../services/insightsImageService';
 
 const CATEGORIES = ['All', 'Materials Science', 'Photonics', 'Nanotechnology', 'Energy'];
+const STATUS_FILTERS = ['All', 'Published', 'Drafts'] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+const INCLUDE_DRAFTS = { includeDrafts: true };
 
 export function AdminInsightsListPage() {
-  const { posts, loading, error } = useInsightsPosts();
+  const { posts, loading, error } = useInsightsPosts(INCLUDE_DRAFTS);
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
 
@@ -16,6 +23,12 @@ export function AdminInsightsListPage() {
     let result = [...posts].sort(
       (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
     );
+
+    if (statusFilter === 'Published') {
+      result = result.filter((p) => !p.isDraft);
+    } else if (statusFilter === 'Drafts') {
+      result = result.filter((p) => p.isDraft);
+    }
 
     if (categoryFilter !== 'All') {
       result = result.filter((p) => p.category === categoryFilter);
@@ -32,15 +45,19 @@ export function AdminInsightsListPage() {
     }
 
     return result;
-  }, [posts, search, categoryFilter]);
+  }, [posts, search, categoryFilter, statusFilter]);
 
-  async function handleDelete(id: string, title: string) {
+  async function handleDelete(id: string, title: string, slug: string) {
     if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
 
     setDeleting(id);
     setDeleteError('');
     try {
       await deleteInsightsPost(id);
+      // Best-effort cleanup of S3 images (don't block on failure)
+      deleteInsightsImages(slug).catch((err) =>
+        console.warn('Failed to cleanup S3 images:', err)
+      );
       window.location.reload();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete');
@@ -64,6 +81,23 @@ export function AdminInsightsListPage() {
         <Link to="/admin/insights/new" className="admin-btn-primary">
           + New Article
         </Link>
+      </div>
+
+      <div className="admin-status-tabs">
+        {STATUS_FILTERS.map((status) => (
+          <button
+            key={status}
+            className={`admin-status-tab ${statusFilter === status ? 'admin-status-tab-active' : ''}`}
+            onClick={() => setStatusFilter(status)}
+          >
+            {status}
+            {status === 'Drafts' && (
+              <span className="admin-status-tab-count">
+                {posts.filter((p) => p.isDraft).length}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       <div className="admin-list-filters">
@@ -103,7 +137,10 @@ export function AdminInsightsListPage() {
           {filteredPosts.map((post) => (
             <tr key={post.id}>
               <td>
-                <div className="admin-post-title">{post.title}</div>
+                <div className="admin-post-title">
+                  {post.title}
+                  {post.isDraft && <span className="draft-badge">Draft</span>}
+                </div>
                 <div className="admin-post-slug">/{post.slug}</div>
               </td>
               <td>{post.category}</td>
@@ -116,6 +153,12 @@ export function AdminInsightsListPage() {
                 >
                   Edit
                 </Link>
+                <button
+                  onClick={() => navigate(`/admin/insights/new?from=${post.id}`)}
+                  className="admin-btn-sm admin-btn-outline"
+                >
+                  Duplicate
+                </button>
                 <a
                   href={`/insights/${post.slug}`}
                   target="_blank"
@@ -125,7 +168,7 @@ export function AdminInsightsListPage() {
                   View
                 </a>
                 <button
-                  onClick={() => handleDelete(post.id, post.title)}
+                  onClick={() => handleDelete(post.id, post.title, post.slug)}
                   disabled={deleting === post.id}
                   className="admin-btn-sm admin-btn-danger"
                 >

@@ -17,6 +17,7 @@ export interface CreateInsightsPostInput {
   relatedProducts?: string | null;
   heroImages?: string | null;
   isStandaloneComponent?: boolean;
+  isDraft?: boolean;
 }
 
 export interface UpdateInsightsPostInput extends CreateInsightsPostInput {
