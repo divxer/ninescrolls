@@ -23,6 +23,11 @@ import { Stack } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
+import { LayerVersion, Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import type { ILocalBundling } from 'aws-cdk-lib';
+import { execSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import {
     Distribution, ViewerProtocolPolicy, CachePolicy, OriginAccessIdentity,
     AllowedMethods, CachedMethods, HttpVersion,
@@ -494,6 +499,50 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
 insightsAssetsBucket.grantReadWrite(backend.optimizeInsightsImage.resources.lambda);
 backend.optimizeInsightsImage.addEnvironment('INSIGHTS_ASSETS_BUCKET', insightsAssetsBucket.bucketName);
 backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', `https://${insightsAssetsCdn.distributionDomainName}`);
+
+// =============================================================================
+// Lambda Layer: Sharp image processing library (linux-x64)
+// Local bundling installs sharp for Linux even on macOS dev machines.
+// Falls back to Docker bundling if local npm fails.
+// =============================================================================
+
+class SharpLocalBundling implements ILocalBundling {
+    tryBundle(outputDir: string): boolean {
+        try {
+            const njDir = join(outputDir, 'nodejs');
+            mkdirSync(njDir, { recursive: true });
+            execSync(
+                `cd "${njDir}" && npm init -y --silent && npm install --production --platform=linux --arch=x64 sharp@0.33.5`,
+                { stdio: 'pipe' },
+            );
+            return true;
+        } catch (err) {
+            console.warn('Local sharp layer bundling failed, falling back to Docker:', err);
+            return false;
+        }
+    }
+}
+
+const sharpLayer = new LayerVersion(insightsAssetsStack, 'SharpLayer', {
+    code: Code.fromAsset('amplify/layers/sharp', {
+        bundling: {
+            local: new SharpLocalBundling(),
+            image: Runtime.NODEJS_22_X.bundlingImage,
+            command: [
+                'bash', '-c',
+                'mkdir -p /asset-output/nodejs && cd /asset-output/nodejs && npm init -y && npm install --production sharp@0.33.5',
+            ],
+        },
+    }),
+    compatibleRuntimes: [Runtime.NODEJS_22_X],
+    description: 'Sharp image processing library for Lambda (linux-x64)',
+});
+
+// Override the placeholder layer ARN from defineFunction with the real layer
+const cfnFunction = backend.optimizeInsightsImage.resources.lambda.node.defaultChild;
+if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
+    (cfnFunction as any).addPropertyOverride('Layers', [sharpLayer.layerVersionArn]);
+}
 
 // Add outputs
 backend.addOutput({
