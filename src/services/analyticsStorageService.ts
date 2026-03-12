@@ -139,6 +139,7 @@ interface EventContext {
   productName?: string;
   referrer?: string;
   utmTerm?: string;
+  searchQuery?: string;
 }
 
 export interface StoreAnalyticsEventParams {
@@ -199,6 +200,7 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     productName: params.context?.productName,
     referrer: params.context?.referrer,
     utmTerm: params.context?.utmTerm,
+    searchQuery: params.context?.searchQuery,
 
     properties: params.properties ? JSON.stringify(params.properties) : undefined,
   };
