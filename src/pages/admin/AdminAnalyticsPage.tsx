@@ -451,16 +451,17 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       );
 
     // Detect ISP visitors grouped by individual visitorId/IP
-    const firstEvent = group[0];
-    const ispOrgName = firstEvent.orgName || firstEvent.org || '';
+    // Use an event with org data (group may be sorted with a flush event first)
+    const orgEvent = group.find((e) => e.orgName || e.org) || group[0];
+    const ispOrgName = orgEvent.orgName || orgEvent.org || '';
     const hasRealName = !!ispOrgName && ispOrgName !== 'Unknown';
-    const isAIISP = firstEvent.aiOrganizationType === 'telecom_isp';
+    const isAIISP = (aiEvent?.aiOrganizationType || orgEvent.aiOrganizationType) === 'telecom_isp';
     const isISPVisitor = hasRealName && key !== ispOrgName && (
       // Path 1: L0_REJECT ISP
-      (!firstEvent.isTargetCustomer &&
-        (firstEvent.confidence == null || firstEvent.confidence === 0) &&
-        (!firstEvent.organizationType || firstEvent.organizationType === 'unknown') &&
-        !(firstEvent.aiConfidence != null && firstEvent.aiConfidence >= 0.5 && !isAIISP)) ||
+      (!orgEvent.isTargetCustomer &&
+        (orgEvent.confidence == null || orgEvent.confidence === 0) &&
+        (!orgEvent.organizationType || orgEvent.organizationType === 'unknown') &&
+        !(orgEvent.aiConfidence != null && orgEvent.aiConfidence >= 0.5 && !isAIISP)) ||
       // Path 2: AI-classified telecom_isp
       isAIISP
     );
