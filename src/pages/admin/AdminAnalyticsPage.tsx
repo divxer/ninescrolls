@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
-import { classifyTrafficChannel, type TrafficChannel } from '../../services/behaviorAnalytics';
+import { classifyTrafficChannel, extractSearchQuery, type TrafficChannel } from '../../services/behaviorAnalytics';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -14,6 +14,11 @@ import type { Schema } from '../../../amplify/data/resource';
 const client = generateClient<Schema>();
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
+
+/** Get search query for an event — uses stored field, falls back to extracting from referrer for old records */
+function getSearchQuery(e: AnalyticsEvent): string | undefined {
+  return e.searchQuery || extractSearchQuery(e.referrer || undefined) || undefined;
+}
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
@@ -1197,14 +1202,15 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               const label = e.referrer
                 ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
                 : style.label;
+              const sq = getSearchQuery(e);
               return (
                 <>
                   <span className="timeline-referrer" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
                     {label}
                   </span>
-                  {e.utmTerm && (
+                  {(sq || e.utmTerm) && (
                     <span className="timeline-keyword" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
-                      🔍 {e.utmTerm}
+                      🔍 {sq || e.utmTerm}
                     </span>
                   )}
                 </>

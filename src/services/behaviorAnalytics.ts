@@ -1,6 +1,45 @@
 // Behavior Analytics Service
 // Tracks user behavior signals for intent scoring
 
+// --- Search Query Extraction from Referrer ---
+
+// Different search engines use different query parameters
+const SEARCH_QUERY_PARAMS: Record<string, string[]> = {
+  'google.': ['q'],
+  'bing.com': ['q'],
+  'yahoo.': ['p'],
+  'baidu.com': ['wd', 'word'],
+  'yandex.': ['text'],
+  'duckduckgo.com': ['q'],
+  'ecosia.org': ['q'],
+  'ask.com': ['q'],
+  'naver.com': ['query'],
+  'sogou.com': ['query'],
+};
+
+/**
+ * Extract search query from a referrer URL if it contains query parameters.
+ * Normally Google strips the query from the referrer (since 2011 HTTPS switch),
+ * but some enterprise proxies (e.g. Menlo Security) leak the full referrer URL.
+ */
+export function extractSearchQuery(referrer: string | undefined): string | undefined {
+  if (!referrer) return undefined;
+  try {
+    const url = new URL(referrer);
+    const host = url.hostname.toLowerCase();
+    for (const [domain, params] of Object.entries(SEARCH_QUERY_PARAMS)) {
+      if (hostMatchesDomain(host, domain)) {
+        for (const param of params) {
+          const value = url.searchParams.get(param);
+          if (value) return value;
+        }
+        return undefined;
+      }
+    }
+  } catch { /* invalid URL */ }
+  return undefined;
+}
+
 // --- Traffic Channel Classification ---
 
 export type TrafficChannel =

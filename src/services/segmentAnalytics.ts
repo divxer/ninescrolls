@@ -4,7 +4,7 @@
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
-import { behaviorAnalytics } from './behaviorAnalytics';
+import { behaviorAnalytics, extractSearchQuery } from './behaviorAnalytics';
 import { storeAnalyticsEvent, getVisitorId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
 
@@ -598,6 +598,10 @@ class SegmentAnalyticsService {
         finalLeadTier = undefined;
       }
 
+      // Extract search query from referrer (available when enterprise proxies leak full URL)
+      const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
+      const searchQuery = extractSearchQuery(referrer);
+
       // Merge event properties with IP info and behavior
       const pathname = properties?.pathname || pageName || '';
       const enhancedProperties = {
@@ -642,7 +646,8 @@ class SegmentAnalyticsService {
           isPaidTraffic: behaviorScore.isPaidTraffic,
           trafficChannel: behaviorScore.trafficChannel,
           behaviorScore: behaviorScore.behaviorScore
-        }
+        },
+        ...(searchQuery ? { searchQuery } : {}),
       };
 
       // Send PAGE event with enhanced properties (instead of TRACK event)
@@ -698,6 +703,7 @@ class SegmentAnalyticsService {
           pageTitle: typeof window !== 'undefined' ? document.title : undefined,
           referrer: typeof document !== 'undefined' ? document.referrer : undefined,
           utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
+          searchQuery,
         },
       });
 
