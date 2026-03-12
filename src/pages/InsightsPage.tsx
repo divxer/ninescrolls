@@ -7,6 +7,14 @@ import { categories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
+function resolveCardImage(url: string): string {
+  if (!url) return '';
+  // If URL already has an image extension, use as-is
+  if (/\.(png|jpe?g|webp|gif)$/i.test(url)) return url;
+  // Otherwise append .webp (handles both CDN and local extensionless paths)
+  return `${url}.webp`;
+}
+
 export const InsightsPage: React.FC = () => {
   const { posts: rawPosts, loading } = useInsightsPosts();
   const posts = useMemo(
@@ -124,7 +132,7 @@ export const InsightsPage: React.FC = () => {
               {filteredPosts.map(post => (
                 <article key={post.id} className="insights-card">
                   <div className="insights-card-image">
-                    <img src={post.imageUrl} alt={post.title} loading="lazy" decoding="async" />
+                    <img src={resolveCardImage(post.imageUrl)} alt={post.title} loading="lazy" decoding="async" />
                   </div>
                   <div className="insights-card-content">
                     <div className="insights-card-meta">
@@ -156,7 +164,7 @@ export const InsightsPage: React.FC = () => {
               {recommended.map(post => (
                 <article key={post.id} className="insights-card">
                   <div className="insights-card-image">
-                    <img src={post.imageUrl} alt={post.title} />
+                    <img src={resolveCardImage(post.imageUrl)} alt={post.title} />
                   </div>
                   <div className="insights-card-content">
                     <div className="insights-card-meta">

@@ -35,6 +35,10 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   // Convert regular image path to WebP
   const getWebPPath = (path: string) => {
+    // If path has no image extension (CDN URLs), just append .webp
+    if (!/\.(png|jpe?g|webp|gif)$/i.test(path)) {
+      return `${path}.webp`;
+    }
     const parts = path.split('.');
     parts.pop(); // Remove extension
     return `${parts.join('.')}.webp`;
