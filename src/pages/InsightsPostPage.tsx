@@ -18,19 +18,24 @@ const ARTICLE_REDIRECTS: Record<string, string> = {
 // ─── Helper Components ───────────────────────────────────────────────────────
 
 function InsightsHeroImage({ post }: { post: InsightsPost }) {
-  if (post.heroImages) {
-    const { prefix, fallbackExt } = post.heroImages;
+  const url = post.imageUrl;
+
+  // CDN URLs (e.g. https://cdn/insights/slug/cover-lg): render responsive <picture>
+  if (url.startsWith('http') && url.endsWith('-lg')) {
+    const base = url.slice(0, -3); // strip "-lg"
     return (
       <picture>
-        <source srcSet={`/assets/images/insights/${prefix}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-lg.webp`} media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-md.webp`} media="(min-width: 768px)" type="image/webp" />
-        <source srcSet={`/assets/images/insights/${prefix}-sm.webp`} media="(max-width: 767px)" type="image/webp" />
-        <img src={`/assets/images/insights/${prefix}-lg.${fallbackExt}`} alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+        <source srcSet={`${base}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet={`${base}-lg.webp`} media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet={`${base}-md.webp`} media="(min-width: 768px)" type="image/webp" />
+        <source srcSet={`${base}-sm.webp`} media="(max-width: 767px)" type="image/webp" />
+        <img src={`${base}-lg.webp`} alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
       </picture>
     );
   }
-  return <img src={post.imageUrl} alt={post.title} loading="eager" fetchPriority="high" />;
+
+  // Local paths: use imageUrl directly
+  return <img src={url} alt={post.title} loading="eager" fetchPriority="high" />;
 }
 
 function RelatedProductsSidebar({ products }: { products?: RelatedProduct[] }) {

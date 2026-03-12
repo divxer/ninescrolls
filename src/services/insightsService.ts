@@ -26,16 +26,25 @@ function mapToInsightsPost(item: DynamoInsightsPost): InsightsPost {
       ? JSON.parse(typeof item.heroImages === 'string' ? item.heroImages : JSON.stringify(item.heroImages))
       : undefined,
     isStandaloneComponent: item.isStandaloneComponent ?? undefined,
+    isDraft: item.isDraft ?? undefined,
   };
 }
 
-export async function fetchAllInsightsPosts(): Promise<InsightsPost[]> {
-  const firstPage = await client.models.InsightsPost.list({ limit: 100 });
+export async function fetchAllInsightsPosts(options?: { includeDrafts?: boolean }): Promise<InsightsPost[]> {
+  const filter = options?.includeDrafts ? undefined : { isDraft: { ne: true } };
+  const firstPage = await client.models.InsightsPost.list({
+    limit: 100,
+    ...(filter ? { filter } : {}),
+  });
   const allPosts: InsightsPost[] = firstPage.data.map(mapToInsightsPost);
   let cursor = firstPage.nextToken;
 
   while (cursor) {
-    const page = await client.models.InsightsPost.list({ limit: 100, nextToken: cursor });
+    const page = await client.models.InsightsPost.list({
+      limit: 100,
+      nextToken: cursor,
+      ...(filter ? { filter } : {}),
+    });
     allPosts.push(...page.data.map(mapToInsightsPost));
     cursor = page.nextToken;
   }

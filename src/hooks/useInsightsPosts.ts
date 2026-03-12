@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { InsightsPost } from '../types';
 import { fetchAllInsightsPosts, fetchInsightsPostBySlug } from '../services/insightsService';
 
-export function useInsightsPosts() {
+export function useInsightsPosts(options?: { includeDrafts?: boolean }) {
   const [posts, setPosts] = useState<InsightsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -10,7 +10,7 @@ export function useInsightsPosts() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchAllInsightsPosts()
+    fetchAllInsightsPosts(options)
       .then((data) => {
         if (!cancelled) {
           setPosts(data);
