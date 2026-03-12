@@ -10,7 +10,7 @@ import '../styles/InsightsPage.css';
 function resolveCardImage(url: string): string {
   if (!url) return '';
   // If URL already has an image extension, use as-is
-  if (/\.(png|jpe?g|webp|gif)$/i.test(url)) return url;
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url)) return url;
   // Otherwise append .webp (handles both CDN and local extensionless paths)
   return `${url}.webp`;
 }
