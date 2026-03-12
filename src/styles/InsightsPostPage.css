@@ -196,6 +196,7 @@
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 0; /* Prevent grid child from overflowing when content has non-breaking spaces */
 }
 
 .post-content {
@@ -367,6 +368,13 @@
 
 .product-callout-buttons a.secondary:hover {
   background: #f0f4ff;
+}
+
+.post-content img,
+.post-content table,
+.post-content pre,
+.post-content iframe {
+  max-width: 100%;
 }
 
 .post-content p {
