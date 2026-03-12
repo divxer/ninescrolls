@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { InsightsForm, type InsightsFormData } from '../../components/admin/InsightsForm';
 import {
   createInsightsPost,
@@ -11,11 +11,13 @@ import type { InsightsPost } from '../../types';
 
 export function AdminInsightsFormPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const fromId = searchParams.get('from');
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
   const [initialData, setInitialData] = useState<InsightsPost | null>(null);
-  const [loading, setLoading] = useState(isEdit);
+  const [loading, setLoading] = useState(isEdit || Boolean(fromId));
   const [loadError, setLoadError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -52,14 +54,8 @@ export function AdminInsightsFormPage() {
                   : JSON.stringify(data.relatedProducts)
               )
             : undefined,
-          heroImages: data.heroImages
-            ? JSON.parse(
-                typeof data.heroImages === 'string'
-                  ? data.heroImages
-                  : JSON.stringify(data.heroImages)
-              )
-            : undefined,
           isStandaloneComponent: data.isStandaloneComponent ?? undefined,
+          isDraft: data.isDraft ?? undefined,
         });
       } catch (err) {
         if (!cancelled) {
@@ -75,6 +71,53 @@ export function AdminInsightsFormPage() {
       cancelled = true;
     };
   }, [id]);
+
+  // Duplicate article: load source and prepare as new
+  useEffect(() => {
+    if (!fromId || isEdit) return;
+    let cancelled = false;
+
+    async function loadSource() {
+      setLoading(true);
+      try {
+        const data = await fetchInsightsPostById(fromId!);
+        if (cancelled || !data) return;
+
+        const today = new Date().toISOString().split('T')[0];
+        setInitialData({
+          id: '', // not editing — will create new
+          slug: `${data.slug}-copy`,
+          title: data.title,
+          content: data.content ?? undefined,
+          excerpt: data.excerpt ?? undefined,
+          author: data.author,
+          publishDate: today,
+          category: data.category,
+          readTime: data.readTime,
+          imageUrl: data.imageUrl,
+          tags: (data.tags as string[]) ?? [],
+          relatedProducts: data.relatedProducts
+            ? JSON.parse(
+                typeof data.relatedProducts === 'string'
+                  ? data.relatedProducts
+                  : JSON.stringify(data.relatedProducts)
+              )
+            : undefined,
+          isStandaloneComponent: data.isStandaloneComponent ?? undefined,
+          isDraft: true, // duplicates start as drafts
+        });
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : 'Failed to load source article');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadSource();
+    return () => { cancelled = true; };
+  }, [fromId, isEdit]);
 
   async function handleSubmit(formData: InsightsFormData) {
     setIsSubmitting(true);
@@ -103,8 +146,8 @@ export function AdminInsightsFormPage() {
         imageUrl: formData.imageUrl,
         tags: formData.tags,
         relatedProducts: formData.relatedProducts || null,
-        heroImages: formData.heroImages || null,
         isStandaloneComponent: formData.isStandaloneComponent,
+        isDraft: formData.isDraft,
       };
 
       if (isEdit && id) {
@@ -131,7 +174,7 @@ export function AdminInsightsFormPage() {
 
   return (
     <div className="admin-insights-form-page">
-      <h1>{isEdit ? 'Edit Article' : 'New Article'}</h1>
+      <h1>{isEdit ? 'Edit Article' : fromId ? 'Duplicate Article' : 'New Article'}</h1>
       {submitError && <div className="admin-error">{submitError}</div>}
       <InsightsForm
         initialData={initialData}

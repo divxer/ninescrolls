@@ -47,6 +47,7 @@ export interface InsightsPost {
   relatedProducts?: RelatedProduct[];
   heroImages?: HeroImageConfig;
   isStandaloneComponent?: boolean;
+  isDraft?: boolean;
 }
 
 export const categories = [

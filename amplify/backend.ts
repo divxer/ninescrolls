@@ -16,12 +16,18 @@ import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
 import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
+import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
+import {
+    Distribution, ViewerProtocolPolicy, CachePolicy, OriginAccessIdentity,
+    AllowedMethods, CachedMethods, HttpVersion,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 const backend = defineBackend({
     auth,
@@ -41,6 +47,7 @@ const backend = defineBackend({
     updateOrderStatus,
     documentUpload,
     orderApi,
+    optimizeInsightsImage,
 });
 
 // Create a fixed stage name
@@ -421,6 +428,72 @@ intelligenceTable.grantReadWriteData(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 orderDocumentsBucket.grantReadWrite(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// =============================================================================
+// S3 Bucket: Insights article image assets
+// Directory structure: insights/<slug>/<prefix>-<size>.<ext>, temp/<slug>/
+// =============================================================================
+
+const insightsAssetsStack = backend.createStack('insights-assets-stack');
+
+const insightsAssetsBucket = new Bucket(insightsAssetsStack, 'InsightsAssetsBucket', {
+    blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    encryption: BucketEncryption.S3_MANAGED,
+    versioned: true,
+    cors: [
+        {
+            allowedHeaders: ['*'],
+            allowedMethods: [HttpMethods.GET, HttpMethods.PUT, HttpMethods.POST],
+            allowedOrigins: [
+                'https://admin.ninescrolls.com',
+                'https://ninescrolls.com',
+                'http://localhost:5173',
+            ],
+            exposedHeaders: ['ETag'],
+            maxAge: 3600,
+        },
+    ],
+    lifecycleRules: [
+        {
+            id: 'cleanup-temp-uploads',
+            prefix: 'temp/',
+            expiration: Duration.days(1),
+            enabled: true,
+        },
+    ],
+});
+
+// =============================================================================
+// CloudFront: CDN for insights image assets
+// Serves optimized images publicly via OAI (Origin Access Identity)
+// =============================================================================
+
+const oai = new OriginAccessIdentity(insightsAssetsStack, 'InsightsAssetsOAI', {
+    comment: 'OAI for NineScrolls insights image assets',
+});
+
+insightsAssetsBucket.grantRead(oai);
+
+const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsCdn', {
+    defaultBehavior: {
+        origin: new S3Origin(insightsAssetsBucket, { originAccessIdentity: oai }),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+        cachedMethods: CachedMethods.CACHE_GET_HEAD,
+        cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        compress: true,
+    },
+    httpVersion: HttpVersion.HTTP2_AND_3,
+    comment: 'NineScrolls insights image assets CDN',
+});
+
+// =============================================================================
+// Grant optimize-insights-image Lambda access to S3 bucket
+// =============================================================================
+
+insightsAssetsBucket.grantReadWrite(backend.optimizeInsightsImage.resources.lambda);
+backend.optimizeInsightsImage.addEnvironment('INSIGHTS_ASSETS_BUCKET', insightsAssetsBucket.bucketName);
+backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', `https://${insightsAssetsCdn.distributionDomainName}`);
 
 // Add outputs
 backend.addOutput({
