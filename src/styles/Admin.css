@@ -2832,4 +2832,158 @@
   .keyword-section {
     padding: 0.75rem;
   }
+
+  .page-analytics-section {
+    padding: 0.75rem;
+  }
+}
+
+/* ─── Page Analytics Section ──────────────────────────────────────────────── */
+
+.page-analytics-section {
+  margin: 1.5rem 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+/* Product card grid */
+.product-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.product-card {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: box-shadow 0.15s;
+}
+
+.product-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.15rem;
+}
+
+.product-card-path {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 0.75rem;
+}
+
+.product-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.product-card-metric {
+  text-align: center;
+}
+
+.product-metric-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1565c0;
+}
+
+.product-metric-label {
+  display: block;
+  font-size: 0.68rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.product-card-conversion {
+  margin-top: 0.5rem;
+}
+
+.product-conversion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #666;
+  margin-bottom: 0.3rem;
+}
+
+.product-conversion-value {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.product-conversion-bar-track {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.product-conversion-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.product-card-time {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+/* Bounce rate cell */
+.bounce-rate-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bounce-rate-value {
+  font-weight: 600;
+  font-size: 0.85rem;
+  min-width: 35px;
+}
+
+.bounce-rate-bar-track {
+  flex: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.bounce-rate-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Row highlight for product pages in top pages table */
+.row-highlight-blue {
+  background: #f0f7ff !important;
+}
+
+@media (max-width: 768px) {
+  .product-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
