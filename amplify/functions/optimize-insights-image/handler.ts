@@ -346,7 +346,7 @@ export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandl
 // Routes to the correct handler based on event.fieldName
 // ---------------------------------------------------------------------------
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const resolvers: Record<string, (event: any) => Promise<any>> = {
+const resolvers: Record<string, (...args: any[]) => any> = {
     getInsightsImageUploadUrl,
     getContentImageUploadUrl,
     processInsightsImage,
