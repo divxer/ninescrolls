@@ -633,14 +633,6 @@ function maskIP(ip: string): string {
   return ip;
 }
 
-/** Human-readable name for display — resolves raw UUIDs to "Unknown · location" */
-function getOrgDisplayName(org: OrganizationRecord): string {
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(org.orgName);
-  if (!isUUID) return org.orgName;
-  const location = [org.city, org.region].filter(Boolean).join(', ');
-  return location ? `Unknown · ${location}` : `Unknown · ${org.orgName.substring(0, 8)}`;
-}
-
 function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
   const [showFullIP, setShowFullIP] = useState(false);
   const [override, setOverride] = useState<OrgOverride | null>(null);
@@ -730,7 +722,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
       <div className="org-detail-title-row">
         <div>
-          <h1 className="org-detail-name">{getOrgDisplayName(org)}</h1>
+          <h1 className="org-detail-name">{org.orgName}</h1>
           <div className="org-detail-subtitle">
             {org.organizationType && (
               <span className={`analytics-type-badge analytics-type-${org.organizationType}`}>
@@ -1906,7 +1898,7 @@ export function AdminAnalyticsPage() {
                 onClick={() => selectOrg(org)}
               >
                 <td>
-                  <div className="analytics-org-primary">{getOrgDisplayName(org)}</div>
+                  <div className="analytics-org-primary">{org.orgName}</div>
                   {org.isISPVisitor && (
                     <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
                       ISP individual visitor · ID: {org.key.substring(0, 8)}
