@@ -494,9 +494,10 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                   {isSubmitting ? 'Saving...' : 'Save as Draft'}
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="admin-submit-btn sidebar-btn-half"
                   disabled={isSubmitting}
+                  onClick={(e) => handleSubmit(e as any, false)}
                 >
                   {isSubmitting ? 'Publishing...' : initialData && !isDraft ? 'Update' : 'Publish'}
                 </button>
