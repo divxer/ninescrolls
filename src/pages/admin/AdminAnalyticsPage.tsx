@@ -53,6 +53,16 @@ interface OrganizationRecord {
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
 type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning' | 'anonymousIntent';
+type KeywordSourceFilter = 'all' | 'external' | 'internal';
+
+interface KeywordEntry {
+  keyword: string;
+  count: number;
+  source: 'organic' | 'paid' | 'internal';
+  searchEngine?: string;
+  organizations: string[];
+  lastSeen: string;
+}
 
 const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -83,6 +93,110 @@ const BOT_ORG_PATTERNS = [
 function isKnownBotOrg(orgName: string): boolean {
   const lower = orgName.toLowerCase();
   return BOT_ORG_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
+const SEARCH_ENGINE_NAMES: Record<string, string> = {
+  'google.': 'Google',
+  'bing.com': 'Bing',
+  'yahoo.': 'Yahoo',
+  'baidu.com': 'Baidu',
+  'yandex.': 'Yandex',
+  'duckduckgo.com': 'DuckDuckGo',
+  'ecosia.org': 'Ecosia',
+  'ask.com': 'Ask',
+  'naver.com': 'Naver',
+  'sogou.com': 'Sogou',
+};
+
+function extractSearchEngineName(referrer: string | undefined | null): string | undefined {
+  if (!referrer) return undefined;
+  try {
+    const host = new URL(referrer).hostname.toLowerCase();
+    for (const [pattern, name] of Object.entries(SEARCH_ENGINE_NAMES)) {
+      if (pattern.endsWith('.')) {
+        const base = pattern.slice(0, -1);
+        if (host === base || host.startsWith(base + '.') || host.includes('.' + base + '.')) return name;
+      } else {
+        if (host === pattern || host.endsWith('.' + pattern)) return name;
+      }
+    }
+  } catch { /* invalid URL */ }
+  return undefined;
+}
+
+function aggregateKeywords(events: AnalyticsEvent[]): KeywordEntry[] {
+  const map = new Map<string, KeywordEntry>();
+
+  for (const e of events) {
+    const orgName = e.orgName || e.org || '';
+
+    // 1. External organic: searchQuery field (from referrer)
+    const sq = e.searchQuery || extractSearchQuery(e.referrer || undefined);
+    if (sq) {
+      const key = `organic:${sq.toLowerCase().trim()}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+        if (orgName && !existing.organizations.includes(orgName)) existing.organizations.push(orgName);
+        if (e.timestamp > existing.lastSeen) existing.lastSeen = e.timestamp;
+      } else {
+        map.set(key, {
+          keyword: sq.trim(),
+          count: 1,
+          source: 'organic',
+          searchEngine: extractSearchEngineName(e.referrer),
+          organizations: orgName ? [orgName] : [],
+          lastSeen: e.timestamp,
+        });
+      }
+    }
+
+    // 2. Paid: utmTerm field
+    if (e.utmTerm) {
+      const key = `paid:${e.utmTerm.toLowerCase().trim()}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+        if (orgName && !existing.organizations.includes(orgName)) existing.organizations.push(orgName);
+        if (e.timestamp > existing.lastSeen) existing.lastSeen = e.timestamp;
+      } else {
+        map.set(key, {
+          keyword: e.utmTerm.trim(),
+          count: 1,
+          source: 'paid',
+          organizations: orgName ? [orgName] : [],
+          lastSeen: e.timestamp,
+        });
+      }
+    }
+
+    // 3. Internal site search: eventType=search, searchTerm in properties
+    if (e.eventType === 'search' && e.properties) {
+      try {
+        const props = typeof e.properties === 'string' ? JSON.parse(e.properties) : e.properties;
+        const term = props?.searchTerm;
+        if (term && typeof term === 'string') {
+          const key = `internal:${term.toLowerCase().trim()}`;
+          const existing = map.get(key);
+          if (existing) {
+            existing.count++;
+            if (orgName && !existing.organizations.includes(orgName)) existing.organizations.push(orgName);
+            if (e.timestamp > existing.lastSeen) existing.lastSeen = e.timestamp;
+          } else {
+            map.set(key, {
+              keyword: term.trim(),
+              count: 1,
+              source: 'internal',
+              organizations: orgName ? [orgName] : [],
+              lastSeen: e.timestamp,
+            });
+          }
+        }
+      } catch { /* invalid JSON */ }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -1363,6 +1477,8 @@ export function AdminAnalyticsPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
+  const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
+  const [keywordSectionOpen, setKeywordSectionOpen] = useState(true);
   const prevDateRange = useRef(dateRange);
   const prevCustomStart = useRef(customStart);
   const prevCustomEnd = useRef(customEnd);
@@ -1615,6 +1731,14 @@ export function AdminAnalyticsPage() {
     });
   }, [searchedOrgs, sortCol, sortDir]);
 
+  // ─── Search Keywords aggregation ───────────────────────────────────────────
+  const allKeywords = useMemo(() => aggregateKeywords(filteredEvents), [filteredEvents]);
+  const displayedKeywords = useMemo(() => {
+    if (keywordSourceFilter === 'all') return allKeywords;
+    if (keywordSourceFilter === 'external') return allKeywords.filter(k => k.source === 'organic' || k.source === 'paid');
+    return allKeywords.filter(k => k.source === 'internal');
+  }, [allKeywords, keywordSourceFilter]);
+
   // KPI stats with trend (compare first half vs second half of period)
   const kpis = useMemo(() => {
     const uniqueVisitors = organizations.length;
@@ -1826,6 +1950,127 @@ export function AdminAnalyticsPage() {
 
       {/* World Map — click markers to view org detail */}
       <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} resetKey={kpiFilter} />
+
+      {/* ─── Search Keywords Section ────────────────────────────────────────── */}
+      {allKeywords.length > 0 && (
+        <div className="keyword-section">
+          <h2
+            className="analytics-section-header keyword-section-header"
+            onClick={() => setKeywordSectionOpen(!keywordSectionOpen)}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+          >
+            <span className="keyword-toggle-icon">{keywordSectionOpen ? '▼' : '▶'}</span>
+            {' '}Search Keywords
+            <span className="keyword-count-badge">{allKeywords.length}</span>
+          </h2>
+
+          {keywordSectionOpen && (
+            <>
+              {/* Source filter tabs */}
+              <div className="keyword-filter-tabs">
+                {([['all', 'All'], ['external', 'External'], ['internal', 'Internal']] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    className={`keyword-filter-tab ${keywordSourceFilter === val ? 'active' : ''}`}
+                    onClick={() => setKeywordSourceFilter(val)}
+                  >
+                    {label}
+                    <span className="keyword-filter-count">
+                      {val === 'all'
+                        ? allKeywords.length
+                        : val === 'external'
+                          ? allKeywords.filter(k => k.source === 'organic' || k.source === 'paid').length
+                          : allKeywords.filter(k => k.source === 'internal').length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Top 10 bar chart */}
+              {displayedKeywords.length > 0 && (() => {
+                const top10 = displayedKeywords.slice(0, 10);
+                const maxCount = top10[0]?.count || 1;
+                return (
+                  <div className="keyword-bar-chart">
+                    {top10.map((kw, i) => (
+                      <div key={`${kw.source}-${kw.keyword}-${i}`} className="keyword-bar-row">
+                        <span className="keyword-bar-label" title={kw.keyword}>
+                          {kw.keyword.length > 30 ? kw.keyword.slice(0, 30) + '...' : kw.keyword}
+                        </span>
+                        <div className="keyword-bar-track">
+                          <div
+                            className={`keyword-bar-fill keyword-bar-fill-${kw.source}`}
+                            style={{ width: `${Math.max((kw.count / maxCount) * 100, 4)}%` }}
+                          />
+                        </div>
+                        <span className="keyword-bar-count">{kw.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Keywords table */}
+              <div className="analytics-table-wrapper" style={{ marginTop: '1rem' }}>
+                <table className="admin-table keyword-table">
+                  <thead>
+                    <tr>
+                      <th>Keyword</th>
+                      <th>Count</th>
+                      <th>Source</th>
+                      <th>Engine / Page</th>
+                      <th>Organizations</th>
+                      <th>Last Seen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedKeywords.slice(0, 50).map((kw, i) => (
+                      <tr key={`${kw.source}-${kw.keyword}-${i}`}>
+                        <td className="keyword-cell-keyword">{kw.keyword}</td>
+                        <td style={{ textAlign: 'center' }}>{kw.count}</td>
+                        <td>
+                          <span className={`keyword-source-badge keyword-source-${kw.source}`}>
+                            {kw.source === 'organic' ? 'Organic' : kw.source === 'paid' ? 'Paid' : 'Internal'}
+                          </span>
+                        </td>
+                        <td>{kw.searchEngine || (kw.source === 'internal' ? 'Site Search' : '—')}</td>
+                        <td>
+                          <div className="keyword-org-chips">
+                            {kw.organizations.slice(0, 2).map(org => (
+                              <button
+                                key={org}
+                                className="keyword-org-chip"
+                                onClick={() => {
+                                  const match = organizations.find(o => o.orgName === org);
+                                  if (match) selectOrg(match);
+                                }}
+                                title={org}
+                              >
+                                {org.length > 20 ? org.slice(0, 20) + '...' : org}
+                              </button>
+                            ))}
+                            {kw.organizations.length > 2 && (
+                              <span className="keyword-org-more">+{kw.organizations.length - 2}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="keyword-cell-date">
+                          {new Date(kw.lastSeen).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {displayedKeywords.length > 50 && (
+                  <div style={{ textAlign: 'center', padding: '0.5rem', color: '#666', fontSize: '0.85rem' }}>
+                    Showing top 50 of {displayedKeywords.length} keywords
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Event Count */}
       <div className="analytics-controls-row">
