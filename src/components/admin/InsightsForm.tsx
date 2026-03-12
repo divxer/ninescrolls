@@ -615,7 +615,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                   {imageUrl && (
                     <div className="image-preview">
                       <img
-                        src={imageUrl.endsWith('.png') || imageUrl.endsWith('.jpg') || imageUrl.endsWith('.webp') ? imageUrl : `${imageUrl}.webp`}
+                        src={imageUrl.endsWith('.png') || imageUrl.endsWith('.jpg') || imageUrl.endsWith('.webp') || imageUrl.endsWith('.svg') ? imageUrl : `${imageUrl}.webp`}
                         alt="Preview"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
