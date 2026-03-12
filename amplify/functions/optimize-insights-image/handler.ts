@@ -340,3 +340,34 @@ export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandl
 
         return { deletedCount, error: null };
     };
+
+// ---------------------------------------------------------------------------
+// Main dispatcher — Amplify Gen 2 AppSync resolver entry point
+// Routes to the correct handler based on event.fieldName
+// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const resolvers: Record<string, (event: any) => Promise<any>> = {
+    getInsightsImageUploadUrl,
+    getContentImageUploadUrl,
+    processInsightsImage,
+    deleteInsightsImages,
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const handler = async (event: any) => {
+    const fieldName = event.info?.fieldName ?? event.fieldName;
+
+    if (!fieldName) {
+        console.error('optimize-insights-image: full event:', JSON.stringify(event));
+        throw new Error(`Cannot determine fieldName. Event keys: ${Object.keys(event).join(', ')}`);
+    }
+
+    console.log(`optimize-insights-image: resolving ${fieldName}`);
+
+    const resolver = resolvers[fieldName];
+    if (!resolver) {
+        throw new Error(`No resolver for field: ${fieldName}`);
+    }
+
+    return resolver(event);
+};
