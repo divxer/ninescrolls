@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { RichTextEditor } from './RichTextEditor';
 import type { InsightsPost, RelatedProduct } from '../../types';
 import { generateArticleMeta } from '../../services/insightsAIService';
@@ -7,6 +7,7 @@ import {
   uploadImageToS3,
   processImage,
 } from '../../services/insightsImageService';
+import { InsightsPostPreview } from '../../pages/InsightsPostPage';
 
 const CATEGORIES = ['Materials Science', 'Photonics', 'Nanotechnology', 'Energy'];
 const AUTHORS = ['NineScrolls Team', 'Dr. Wei Chen', 'Dr. Sarah Kim'];
@@ -86,6 +87,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
   const [isGenerating, setIsGenerating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [draftSaved, setDraftSaved] = useState(false);
   const [useCustomUrl, setUseCustomUrl] = useState(false);
   const [imageUploadState, setImageUploadState] = useState<ImageUploadState>('idle');
@@ -95,6 +97,22 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const authorRef = useRef<HTMLDivElement>(null);
+
+  // Construct a temporary InsightsPost for the real preview component
+  const previewPost = useMemo<InsightsPost>(() => ({
+    id: '',
+    slug,
+    title: title || 'Untitled Article',
+    content: (content || '').replace(/&nbsp;/g, ' '),
+    excerpt: excerpt || '',
+    author,
+    publishDate,
+    category,
+    readTime,
+    imageUrl: imagePreviewUrl || imageUrl,
+    tags,
+    relatedProducts: relatedProducts.filter(p => p.href.trim() || p.label.trim()),
+  }), [slug, title, content, excerpt, author, publishDate, category, readTime, imageUrl, imagePreviewUrl, tags, relatedProducts]);
 
   // Close author dropdown on outside click
   useEffect(() => {
@@ -127,13 +145,19 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setRelatedProducts(initialData.relatedProducts || []);
       setIsStandaloneComponent(initialData.isStandaloneComponent || false);
       setIsDraft(initialData.isDraft || false);
-      // If editing an article with a CDN image URL, show it as preview
-      if (initialData.imageUrl && !initialData.imageUrl.startsWith('/assets/')) {
-        setUseCustomUrl(true);
-        setImageUploadState('done');
-        // Try to construct preview URL from CDN
-        const url = initialData.imageUrl;
-        setImagePreviewUrl(url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') ? url : `${url}-lg.webp`);
+      // Show cover image preview when editing an existing article
+      if (initialData.imageUrl) {
+        if (!initialData.imageUrl.startsWith('/assets/')) {
+          // CDN image URL
+          setUseCustomUrl(true);
+          setImageUploadState('done');
+          const url = initialData.imageUrl;
+          setImagePreviewUrl(url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') ? url : `${url}-lg.webp`);
+        } else {
+          // Local image path
+          setImageUploadState('done');
+          setImagePreviewUrl(initialData.imageUrl);
+        }
       }
     }
   }, [initialData]);
@@ -795,31 +819,28 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
           <div className="admin-modal admin-modal-wide" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h2>Article Preview</h2>
+              <div className="article-preview-device-toggle">
+                <button
+                  type="button"
+                  className={`admin-btn-sm${previewMode === 'desktop' ? ' active' : ''}`}
+                  onClick={() => setPreviewMode('desktop')}
+                >
+                  Desktop
+                </button>
+                <button
+                  type="button"
+                  className={`admin-btn-sm${previewMode === 'mobile' ? ' active' : ''}`}
+                  onClick={() => setPreviewMode('mobile')}
+                >
+                  Mobile
+                </button>
+              </div>
               <button className="admin-modal-close" onClick={() => setShowPreview(false)}>
                 &times;
               </button>
             </div>
-            <div className="admin-modal-body article-preview">
-              <div className="article-preview-meta">
-                <span className="article-preview-category">{category}</span>
-                <span className="article-preview-date">{publishDate}</span>
-                <span className="article-preview-readtime">{readTime} min read</span>
-              </div>
-              <h1 className="article-preview-title">{title || 'Untitled Article'}</h1>
-              {excerpt && <p className="article-preview-excerpt">{excerpt}</p>}
-              <p className="article-preview-author">By {author}</p>
-              {tags.length > 0 && (
-                <div className="article-preview-tags">
-                  {tags.map((tag, i) => (
-                    <span key={i} className="article-preview-tag">{tag}</span>
-                  ))}
-                </div>
-              )}
-              <hr />
-              <div
-                className="article-preview-content"
-                dangerouslySetInnerHTML={{ __html: content || '<p style="color:#999">No content yet.</p>' }}
-              />
+            <div className={`admin-modal-body admin-preview-frame${previewMode === 'mobile' ? ' admin-preview-mobile' : ''}`}>
+              <InsightsPostPreview post={previewPost} />
             </div>
           </div>
         </div>

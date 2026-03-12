@@ -245,3 +245,62 @@ export const InsightsPostPage: React.FC = () => {
 };
 
 export default InsightsPostPage;
+
+/**
+ * Standalone preview component reusing the real article layout.
+ * Used by the admin edit form's Preview modal.
+ */
+export function InsightsPostPreview({ post }: { post: InsightsPost }) {
+  return (
+    <div className="insights-post-page">
+      <section className="insights-post-hero">
+        <div className="container">
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1 className="insights-post-title">{post.title || 'Untitled Article'}</h1>
+              <div className="insights-post-meta">
+                <span className="author">{post.author}</span>
+                <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
+                <span className="category">{post.category}</span>
+                <span className="read-time">{post.readTime} min read</span>
+              </div>
+            </div>
+            <div className="hero-image">
+              <InsightsHeroImage post={post} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="insights-post-content">
+        <div className="content-wrapper">
+          <div className="main-content">
+            {post.content ? (
+              <div
+                className="post-content"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
+            ) : (
+              <p style={{ color: '#999' }}>No content yet.</p>
+            )}
+
+            {post.tags && post.tags.length > 0 && (
+              <div className="post-tags">
+                <h3>Tags:</h3>
+                <div className="tags">
+                  {post.tags.map(tag => (
+                    <span key={tag} className="tag">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar">
+            <RelatedProductsSidebar products={post.relatedProducts} />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
