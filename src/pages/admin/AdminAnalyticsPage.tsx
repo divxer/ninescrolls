@@ -1802,26 +1802,35 @@ export function AdminAnalyticsPage() {
         // ── Enrich orphaned page_time_flush events ──────────────────────
         // When a visit spans midnight, the page_view falls outside the date
         // filter while the page_time_flush is inside.  Fetch the missing
-        // page_view events by pageViewId so aggregation has full org/geo data.
-        const pageViewIds = new Set(
-          collected.filter((e) => e.eventType === 'page_view' && e.pageViewId).map((e) => e.pageViewId!),
-        );
-        const orphanPvIds = new Set<string>();
+        // page_view events via the sessionId GSI so aggregation has full
+        // org/geo data.
+        const existingIds = new Set(collected.map((e) => e.id));
+        const hasPageView = new Set<string>();   // visitorId/IP keys that already have a page_view
+        const orphanSessionIds = new Set<string>();
         for (const e of collected) {
-          if (e.eventType === 'page_time_flush' && e.pageViewId && !pageViewIds.has(e.pageViewId)) {
-            orphanPvIds.add(e.pageViewId);
+          if (e.eventType === 'page_view') {
+            hasPageView.add(e.visitorId || e.ip || '');
           }
         }
-        if (orphanPvIds.size > 0 && !cancelled) {
-          const lookups = Array.from(orphanPvIds).map(async (pvId) => {
+        for (const e of collected) {
+          if (
+            e.eventType === 'page_time_flush' &&
+            e.sessionId &&
+            !hasPageView.has(e.visitorId || e.ip || '')
+          ) {
+            orphanSessionIds.add(e.sessionId);
+          }
+        }
+        if (orphanSessionIds.size > 0 && !cancelled) {
+          const lookups = Array.from(orphanSessionIds).map(async (sid) => {
             try {
               const res = await (client.models.AnalyticsEvent as any)
-                .listAnalyticsEventByPageViewId(
-                  { pageViewId: pvId },
-                  { authMode: 'userPool', limit: 10 },
+                .listAnalyticsEventBySessionIdAndTimestamp(
+                  { sessionId: sid },
+                  { authMode: 'userPool', limit: 20 },
                 );
               return ((res.data || []) as AnalyticsEvent[]).filter(
-                (e: AnalyticsEvent) => e.eventType === 'page_view',
+                (e: AnalyticsEvent) => e.eventType === 'page_view' && !existingIds.has(e.id),
               );
             } catch { return []; }
           });
