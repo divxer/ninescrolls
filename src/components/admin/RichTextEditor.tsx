@@ -23,6 +23,7 @@ import 'tinymce/plugins/insertdatetime';
 import 'tinymce/plugins/media';
 import 'tinymce/plugins/table';
 import 'tinymce/plugins/wordcount';
+import 'tinymce/plugins/autoresize';
 
 // Import skin CSS directly (avoids needing static file copy)
 import 'tinymce/skins/ui/oxide/skin.min.css';
@@ -140,7 +141,8 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               pre { background: #f4f4f4; padding: 1em; border-radius: 4px; overflow-x: auto; }
             `,
 
-            height: 600,
+            min_height: 600,
+            autoresize_bottom_margin: 50,
             menubar: false,
             placeholder: placeholder || '',
 
@@ -153,7 +155,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               'advlist', 'autolink', 'lists', 'link', 'image',
               'charmap', 'preview', 'anchor', 'searchreplace',
               'visualblocks', 'code', 'fullscreen',
-              'insertdatetime', 'media', 'table', 'wordcount',
+              'insertdatetime', 'media', 'table', 'wordcount', 'autoresize',
             ],
 
             toolbar:
