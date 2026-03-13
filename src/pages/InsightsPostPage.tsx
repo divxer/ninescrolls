@@ -205,7 +205,7 @@ export const InsightsPostPage: React.FC = () => {
                 {post.content ? (
                   <div
                     className="post-content"
-                    dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;/g, ' ') }}
+                    dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;|\u00a0/g, ' ') }}
                   />
                 ) : null}
 
@@ -278,7 +278,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
             {post.content ? (
               <div
                 className="post-content"
-                dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;/g, ' ') }}
+                dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;|\u00a0/g, ' ') }}
               />
             ) : (
               <p style={{ color: '#999' }}>No content yet.</p>
