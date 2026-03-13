@@ -1117,6 +1117,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 ID: {org.key.substring(0, 8)}
               </span>
             )}
+            {uniqueVisitors.filter((v) => !v.includes('.')).length > 0 && (
+              <span style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'monospace' }}>
+                {uniqueVisitors.filter((v) => !v.includes('.')).map((v) => v.slice(0, 8)).join(', ')}
+              </span>
+            )}
           </div>
         </div>
         {org.maxConfidence > 0 && (
