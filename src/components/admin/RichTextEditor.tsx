@@ -111,7 +111,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          rows={20}
+          style={{ minHeight: '600px' }}
         />
       ) : (
         <Editor

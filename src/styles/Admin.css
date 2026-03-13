@@ -991,7 +991,8 @@
 
 .html-source-editor {
   width: 100%;
-  min-height: 300px;
+  min-height: 600px;
+  field-sizing: content;
   padding: 0.75rem;
   border: none;
   font-family: 'Roboto Mono', monospace;
