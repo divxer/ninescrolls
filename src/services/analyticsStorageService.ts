@@ -2,6 +2,7 @@ import { generateClient } from 'aws-amplify/data';
 import { isbot } from 'isbot';
 import type { Schema } from '../../amplify/data/resource';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
+import { ipAnalytics } from './ipAnalytics';
 
 const client = generateClient<Schema>();
 
@@ -230,6 +231,34 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
   });
 }
 
+// ─── Cached IP/org/geo enrichment for page_time_flush events ────────────────
+// Re-use the IP analysis already fetched during page_view so that
+// page_time_flush events carry the same org/geo metadata — critical for
+// quick bounces where the page_view async request never completes.
+function getCachedIPEnrichment(): Record<string, unknown> {
+  const ipInfo = ipAnalytics.getIPInfoSync();
+  const analysis = ipAnalytics.getAnalysis();
+  if (!ipInfo && !analysis) return {};
+  return {
+    ...(ipInfo && {
+      ip: ipInfo.ip,
+      country: ipInfo.country,
+      region: ipInfo.region,
+      city: ipInfo.city,
+      org: ipInfo.org,
+      isp: ipInfo.isp,
+      latitude: ipInfo.latitude,
+      longitude: ipInfo.longitude,
+    }),
+    ...(analysis && {
+      orgName: analysis.details?.orgName,
+      organizationType: analysis.organizationType,
+      isTargetCustomer: analysis.isTargetCustomer,
+      confidence: analysis.confidence,
+    }),
+  };
+}
+
 // ─── Page Time Flush: authoritative per-page active time ────────────────────
 
 export type FlushReason = 'route_change' | 'pagehide' | 'hidden' | 'heartbeat' | 'recovery';
@@ -281,6 +310,7 @@ export function storePageTimeFlush(params: PageTimeFlushParams): void {
 
     userAgent: ua,
     isBot: ua ? isbot(ua) : undefined,
+    ...getCachedIPEnrichment(),
   };
 
   const attempt = () =>
@@ -330,6 +360,7 @@ export function storePageTimeFlushViaBeacon(params: PageTimeFlushParams): void {
         endedAt: params.endedAt,
         idleTimeoutMsUsed: params.idleTimeoutMsUsed,
         isBot: ua ? isbot(ua) : false,
+        ...getCachedIPEnrichment(),
       },
       context: collectBrowserContext(),
     });
