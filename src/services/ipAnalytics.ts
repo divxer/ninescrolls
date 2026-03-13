@@ -278,6 +278,11 @@ class IPAnalyticsService {
     return this.analysis;
   }
 
+  // Get cached IP info synchronously (for page_time_flush enrichment)
+  getIPInfoSync(): IPInfo | null {
+    return this.ipInfo;
+  }
+
   // Reset analysis result
   reset(): void {
     this.ipInfo = null;

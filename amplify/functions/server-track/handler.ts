@@ -130,6 +130,7 @@ function validatePageTimeFlush(p: Record<string, unknown>): string | null {
 async function writePageTimeFlush(
     props: Record<string, unknown>,
     userAgent: string,
+    visitorIp?: string,
 ): Promise<void> {
     const tableName = process.env.ANALYTICS_EVENT_TABLE;
     if (!tableName) {
@@ -171,6 +172,20 @@ async function writePageTimeFlush(
 
             userAgent,
             isBot: props.isBot === true,               // frontend passes isbot() result
+
+            // IP/org/geo enrichment — carried from cached page_view analysis
+            ip: (props.ip as string) || visitorIp || undefined,
+            country: props.country || undefined,
+            region: props.region || undefined,
+            city: props.city || undefined,
+            org: props.org || undefined,
+            isp: props.isp || undefined,
+            latitude: props.latitude || undefined,
+            longitude: props.longitude || undefined,
+            orgName: props.orgName || undefined,
+            organizationType: props.organizationType || undefined,
+            isTargetCustomer: props.isTargetCustomer === true || undefined,
+            confidence: props.confidence || undefined,
 
             createdAt: now,
             updatedAt: now,
@@ -300,7 +315,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
             const [segResult, dbResult] = await Promise.allSettled([
                 sendToSegment(segmentPayload),
-                writePageTimeFlush(properties, userAgent),
+                writePageTimeFlush(properties, userAgent, visitorIp),
             ]);
 
             const segOk = segResult.status === 'fulfilled' && segResult.value.status < 400;
