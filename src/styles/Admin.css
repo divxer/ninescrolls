@@ -974,13 +974,10 @@
   background: #f0f0f0;
 }
 
-.rich-text-editor .ql-container {
-  min-height: 300px;
-  font-size: 0.95rem;
-}
-
-.rich-text-editor .ql-editor {
-  min-height: 300px;
+/* TinyMCE integration — remove its own border since .rich-text-editor provides it */
+.rich-text-editor .tox-tinymce {
+  border: none !important;
+  border-radius: 0 !important;
 }
 
 .editor-upload-indicator {
