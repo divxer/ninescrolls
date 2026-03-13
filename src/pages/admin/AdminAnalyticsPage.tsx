@@ -1496,6 +1496,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           {uniqueVisitors.length > 1 && <span className="analytics-filter-badge">{uniqueVisitors.length} visitors</span>}
         </h2>
         <div className="org-detail-timeline">
+          {/* Hint: visit started before the selected date range */}
+          {org.events.length > 0 && org.events.every((e) => e.eventType === 'page_time_flush') && (
+            <div style={{ background: '#fff8e1', color: '#8d6e00', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '8px', lineHeight: 1.6 }}>
+              Page opened before selected date range — only the unload event is within the current filter.
+              {(org.orgName || org.country) && (
+                <span style={{ display: 'block', marginTop: '2px', fontWeight: 500 }}>
+                  {org.orgName && org.orgName !== org.key && <>{org.orgName}</>}
+                  {org.city && <>{org.orgName && org.orgName !== org.key ? ' · ' : ''}{org.city}{org.region ? `, ${org.region}` : ''}</>}
+                  {org.country && <>{(org.orgName && org.orgName !== org.key) || org.city ? ' · ' : ''}{org.country}</>}
+                </span>
+              )}
+            </div>
+          )}
           {(() => {
             // Pre-compute per-page durations (delta from cumulative timeOnSite)
             const perPageDurations = computePerPageDuration(org.events);
@@ -1785,6 +1798,39 @@ export function AdminAnalyticsPage() {
         if (cancelled) return;
 
         const collected = perType.flat();
+
+        // ── Enrich orphaned page_time_flush events ──────────────────────
+        // When a visit spans midnight, the page_view falls outside the date
+        // filter while the page_time_flush is inside.  Fetch the missing
+        // page_view events by pageViewId so aggregation has full org/geo data.
+        const pageViewIds = new Set(
+          collected.filter((e) => e.eventType === 'page_view' && e.pageViewId).map((e) => e.pageViewId!),
+        );
+        const orphanPvIds = new Set<string>();
+        for (const e of collected) {
+          if (e.eventType === 'page_time_flush' && e.pageViewId && !pageViewIds.has(e.pageViewId)) {
+            orphanPvIds.add(e.pageViewId);
+          }
+        }
+        if (orphanPvIds.size > 0 && !cancelled) {
+          const lookups = Array.from(orphanPvIds).map(async (pvId) => {
+            try {
+              const res = await (client.models.AnalyticsEvent as any)
+                .listAnalyticsEventByPageViewId(
+                  { pageViewId: pvId },
+                  { authMode: 'userPool', limit: 10 },
+                );
+              return ((res.data || []) as AnalyticsEvent[]).filter(
+                (e: AnalyticsEvent) => e.eventType === 'page_view',
+              );
+            } catch { return []; }
+          });
+          const enriched = (await Promise.all(lookups)).flat();
+          if (enriched.length > 0 && !cancelled) {
+            collected.push(...enriched);
+          }
+        }
+
         if (!isSoftRefresh) setLoadProgress(collected.length);
         setAllEvents(collected);
       } catch (err) {
