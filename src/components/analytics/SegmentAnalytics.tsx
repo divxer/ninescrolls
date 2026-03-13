@@ -568,7 +568,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       const timeout = pageStateRef.current?.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
       idleTimerRef.current = setTimeout(() => {
         const s = pageStateRef.current;
-        if (s && !s.isFinalized) {
+        if (s && !s.isFinalized && s.hiddenStartedAt === null) {
           s.idleStartedAt = Date.now();
         }
       }, timeout);
@@ -577,7 +577,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     // Start the initial idle countdown
     idleTimerRef.current = setTimeout(() => {
       const s = pageStateRef.current;
-      if (s && !s.isFinalized) {
+      if (s && !s.isFinalized && s.hiddenStartedAt === null) {
         s.idleStartedAt = Date.now();
       }
     }, pageStateRef.current?.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS);
@@ -713,6 +713,12 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
             state.idleAccumulatedMs += Date.now() - state.idleStartedAt;
             state.idleStartedAt = null;
           }
+          // Cancel pending idle timeout so it can't fire while hidden
+          // and create a dual_timer (both hiddenStartedAt & idleStartedAt set)
+          if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+            idleTimerRef.current = null;
+          }
         }
       } else if (document.visibilityState === 'visible') {
         // Tab returned — accumulate hidden period, then resume
@@ -724,6 +730,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
           }
           state.lastInteractionAt = Date.now();
           lastActivityRef.current = Date.now();
+          // Restart idle countdown — was cancelled when tab went hidden
+          if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+          const timeout = state.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
+          idleTimerRef.current = setTimeout(() => {
+            const s = pageStateRef.current;
+            if (s && !s.isFinalized) {
+              s.idleStartedAt = Date.now();
+            }
+          }, timeout);
         }
       }
     };
