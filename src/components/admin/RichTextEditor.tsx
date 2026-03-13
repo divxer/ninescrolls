@@ -1,6 +1,32 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { useState, useRef, useCallback } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
+
+// Self-hosted TinyMCE: import core, theme, model, icons, and plugins
+import 'tinymce/tinymce';
+import 'tinymce/themes/silver';
+import 'tinymce/models/dom';
+import 'tinymce/icons/default';
+
+import 'tinymce/plugins/advlist';
+import 'tinymce/plugins/autolink';
+import 'tinymce/plugins/lists';
+import 'tinymce/plugins/link';
+import 'tinymce/plugins/image';
+import 'tinymce/plugins/charmap';
+import 'tinymce/plugins/preview';
+import 'tinymce/plugins/anchor';
+import 'tinymce/plugins/searchreplace';
+import 'tinymce/plugins/visualblocks';
+import 'tinymce/plugins/code';
+import 'tinymce/plugins/fullscreen';
+import 'tinymce/plugins/insertdatetime';
+import 'tinymce/plugins/media';
+import 'tinymce/plugins/table';
+import 'tinymce/plugins/wordcount';
+
+// Import skin CSS directly (avoids needing static file copy)
+import 'tinymce/skins/ui/oxide/skin.min.css';
+
 import { getContentImageUploadUrl, uploadImageToS3 } from '../../services/insightsImageService';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -16,67 +42,47 @@ interface RichTextEditorProps {
 export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextEditorProps) {
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const quillRef = useRef<ReactQuill>(null);
+  const editorRef = useRef<any>(null);
 
-  const imageHandler = useCallback(() => {
-    if (!slug) {
-      alert('Please set the article slug before uploading images.');
-      return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = ALLOWED_IMAGE_TYPES.join(',');
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        alert(`Unsupported file type. Allowed: JPEG, PNG, WebP`);
+  const handleImageUpload = useCallback(
+    (cb: (url: string, meta?: Record<string, string>) => void) => {
+      if (!slug) {
+        alert('Please set the article slug before uploading images.');
         return;
       }
 
-      if (file.size > MAX_IMAGE_SIZE) {
-        alert(`File too large (max 10MB)`);
-        return;
-      }
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = ALLOWED_IMAGE_TYPES.join(',');
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
 
-      const quill = quillRef.current?.getEditor();
-      if (!quill) return;
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          alert('Unsupported file type. Allowed: JPEG, PNG, WebP');
+          return;
+        }
 
-      setUploading(true);
-      try {
-        const { uploadUrl, cdnUrl } = await getContentImageUploadUrl(slug, file.name, file.type);
-        await uploadImageToS3(uploadUrl, file);
+        if (file.size > MAX_IMAGE_SIZE) {
+          alert('File too large (max 10MB)');
+          return;
+        }
 
-        const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'image', cdnUrl);
-        quill.setSelection(range.index + 1, 0);
-      } catch (err) {
-        alert(`Image upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        setUploading(false);
-      }
-    };
-    input.click();
-  }, [slug]);
-
-  const modules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ header: [1, 2, 3, 4, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'code-block'],
-        ['link', 'image'],
-        [{ align: [] }],
-        ['clean'],
-      ],
-      handlers: {
-        image: imageHandler,
-      },
+        setUploading(true);
+        try {
+          const { uploadUrl, cdnUrl } = await getContentImageUploadUrl(slug, file.name, file.type);
+          await uploadImageToS3(uploadUrl, file);
+          cb(cdnUrl, { alt: file.name });
+        } catch (err) {
+          alert(`Image upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+          setUploading(false);
+        }
+      };
+      input.click();
     },
-  }), [imageHandler]);
+    [slug],
+  );
 
   return (
     <div className="rich-text-editor">
@@ -108,13 +114,80 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
           rows={20}
         />
       ) : (
-        <ReactQuill
-          ref={quillRef}
-          theme="snow"
+        <Editor
+          onInit={(_evt, editor) => {
+            editorRef.current = editor;
+          }}
           value={value}
-          onChange={onChange}
-          modules={modules}
-          placeholder={placeholder}
+          onEditorChange={(newValue) => onChange(newValue)}
+          init={{
+            skin: false,
+            content_css: false,
+            content_style: `
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 0.95rem;
+                line-height: 1.6;
+                padding: 8px 12px;
+                margin: 0;
+                color: #333;
+              }
+              table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+              table td, table th { border: 1px solid #ccc; padding: 8px 10px; }
+              table th { background: #f5f5f5; font-weight: 600; }
+              img { max-width: 100%; height: auto; }
+              blockquote { border-left: 3px solid #ccc; margin: 1em 0; padding: 0.5em 1em; color: #666; }
+              pre { background: #f4f4f4; padding: 1em; border-radius: 4px; overflow-x: auto; }
+            `,
+
+            height: 400,
+            menubar: false,
+            placeholder: placeholder || '',
+
+            // Resolve relative image paths inside the editor iframe
+            document_base_url: window.location.origin + '/',
+            relative_urls: false,
+            convert_urls: false,
+
+            plugins: [
+              'advlist', 'autolink', 'lists', 'link', 'image',
+              'charmap', 'preview', 'anchor', 'searchreplace',
+              'visualblocks', 'code', 'fullscreen',
+              'insertdatetime', 'media', 'table', 'wordcount',
+            ],
+
+            toolbar:
+              'blocks | bold italic underline strikethrough | ' +
+              'alignleft aligncenter alignright alignjustify | ' +
+              'bullist numlist | blockquote code | ' +
+              'link image table | removeformat',
+
+            block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
+
+            // Prevent &nbsp; between words
+            entity_encoding: 'raw' as const,
+
+            // Preserve all HTML elements and attributes (tables, th, inline styles)
+            valid_elements: '*[*]',
+            extended_valid_elements: 'th[*],td[*],tr[*],thead[*],tbody[*],table[*]',
+
+            // Image upload
+            file_picker_types: 'image',
+            file_picker_callback: handleImageUpload,
+
+            // Table defaults
+            table_default_attributes: {
+              border: '1',
+            },
+            table_default_styles: {
+              'border-collapse': 'collapse',
+              'width': '100%',
+            },
+
+            forced_root_block: 'p' as const,
+            branding: false,
+            promotion: false,
+          }}
         />
       )}
     </div>
