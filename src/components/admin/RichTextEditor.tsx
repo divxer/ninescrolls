@@ -140,7 +140,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               pre { background: #f4f4f4; padding: 1em; border-radius: 4px; overflow-x: auto; }
             `,
 
-            height: 400,
+            height: 600,
             menubar: false,
             placeholder: placeholder || '',
 
