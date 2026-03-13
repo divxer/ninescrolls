@@ -2,6 +2,21 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 
+/** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
+function isPrivateIP(ip: string): boolean {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some(isNaN)) return false;
+    const [a, b] = parts;
+    return (
+        a === 10 ||                          // 10.0.0.0/8
+        (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+        (a === 192 && b === 168) ||          // 192.168.0.0/16
+        a === 127 ||                          // 127.0.0.0/8  loopback
+        (a === 169 && b === 254) ||          // 169.254.0.0/16 link-local
+        (a === 100 && b >= 64 && b <= 127)   // 100.64.0.0/10 CGNAT
+    );
+}
+
 /**
  * Server-side Segment tracking Lambda.
  *
@@ -254,7 +269,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         // Extract visitor IP and User-Agent from request headers
         const xForwardedFor = event.headers?.['X-Forwarded-For'] || event.headers?.['x-forwarded-for'];
         const sourceIp = event.requestContext?.identity?.sourceIp;
-        const visitorIp = xForwardedFor ? xForwardedFor.split(',')[0].trim() : sourceIp;
+        const visitorIp = xForwardedFor
+            ? (() => { const ips = xForwardedFor.split(',').map((s: string) => s.trim()); return ips.find((ip: string) => !isPrivateIP(ip)) || ips[0]; })()
+            : sourceIp;
         const userAgent = event.headers?.['User-Agent'] || event.headers?.['user-agent'] || '';
 
         // Merge frontend browser context with server-side data (IP, userAgent).
