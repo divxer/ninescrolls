@@ -1,5 +1,22 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
+function isPrivateIP(ip: string): boolean {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some(isNaN)) return false;
+    const [a, b] = parts;
+    return (
+        a === 10 ||                          // 10.0.0.0/8
+        (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+        (a === 192 && b === 168) ||          // 192.168.0.0/16
+        a === 127 ||                          // 127.0.0.0/8  loopback
+        (a === 169 && b === 254) ||          // 169.254.0.0/16 link-local
+        (a === 100 && b >= 64 && b <= 127)   // 100.64.0.0/10 CGNAT
+    );
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface IPInfo {
@@ -403,14 +420,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     try {
         // Extract visitor IP from request headers
-        // API Gateway sets X-Forwarded-For: <client>, <cloudfront>, ...
+        // X-Forwarded-For chain: <client>, [<proxy>...], <cloudfront>
+        // When a corporate proxy/VPN prepends a private IP, the first entry
+        // is unusable for geo-lookup.  Walk the chain and pick the first
+        // *public* IP instead.
         const xForwardedFor = event.headers?.['X-Forwarded-For'] || event.headers?.['x-forwarded-for'];
         const sourceIp = event.requestContext?.identity?.sourceIp;
 
         let visitorIp: string | undefined;
         if (xForwardedFor) {
-            // First IP in X-Forwarded-For is the original client IP
-            visitorIp = xForwardedFor.split(',')[0].trim();
+            const ips = xForwardedFor.split(',').map((s: string) => s.trim());
+            visitorIp = ips.find((ip: string) => !isPrivateIP(ip)) || ips[0];
         } else if (sourceIp) {
             visitorIp = sourceIp;
         }
