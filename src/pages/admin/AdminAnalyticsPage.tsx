@@ -1719,6 +1719,7 @@ export function AdminAnalyticsPage() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [showBots, setShowBots] = useState(false);
+  const [hideSelf, setHideSelf] = useState(true);
   const [sortCol, setSortCol] = useState<SortColumn>('lastVisit');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
@@ -1893,16 +1894,27 @@ export function AdminAnalyticsPage() {
     return () => clearInterval(timer);
   }, [autoRefresh]);
 
+  // Own visitorId for self-exclusion
+  const selfVisitorId = useMemo(() => {
+    try { return localStorage.getItem('ns_visitor_id') || ''; } catch { return ''; }
+  }, []);
+
   // Filter bots — by isBot flag OR known bot org name
   const filteredEvents = useMemo(() => {
-    if (showBots) return allEvents;
-    return allEvents.filter((e) => {
-      if (e.isBot) return false;
-      const orgKey = e.orgName || e.org || '';
-      if (orgKey && isKnownBotOrg(orgKey)) return false;
-      return true;
-    });
-  }, [allEvents, showBots]);
+    let events = allEvents;
+    if (!showBots) {
+      events = events.filter((e) => {
+        if (e.isBot) return false;
+        const orgKey = e.orgName || e.org || '';
+        if (orgKey && isKnownBotOrg(orgKey)) return false;
+        return true;
+      });
+    }
+    if (hideSelf && selfVisitorId) {
+      events = events.filter((e) => (e as Record<string, unknown>).visitorId !== selfVisitorId);
+    }
+    return events;
+  }, [allEvents, showBots, hideSelf, selfVisitorId]);
 
   const botCount = useMemo(() => {
     return allEvents.filter((e) => {
@@ -1911,6 +1923,11 @@ export function AdminAnalyticsPage() {
       return orgKey ? isKnownBotOrg(orgKey) : false;
     }).length;
   }, [allEvents]);
+
+  const selfCount = useMemo(() => {
+    if (!selfVisitorId) return 0;
+    return allEvents.filter((e) => (e as Record<string, unknown>).visitorId === selfVisitorId).length;
+  }, [allEvents, selfVisitorId]);
 
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
@@ -2164,6 +2181,15 @@ export function AdminAnalyticsPage() {
           />
           <span className="analytics-toggle-slider" />
           <span className="analytics-toggle-label">Bots ({botCount})</span>
+        </label>
+        <label className="analytics-toggle">
+          <input
+            type="checkbox"
+            checked={hideSelf}
+            onChange={(e) => setHideSelf(e.target.checked)}
+          />
+          <span className="analytics-toggle-slider" />
+          <span className="analytics-toggle-label">Hide Me ({selfCount})</span>
         </label>
         <div className="analytics-refresh-group">
           <button
