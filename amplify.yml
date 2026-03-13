@@ -23,6 +23,41 @@ frontend:
     paths:
       - node_modules/**/*
   customRules:
+    # Plasma cleaner product rename redirects (NS-Plasma → HY Series)
+    - source: '/products/plasma-systems'
+      target: '/products/plasma-cleaner'
+      status: '301'
+    - source: '/products/plasma-systems/compare'
+      target: '/products/plasma-cleaner/compare'
+      status: '301'
+    - source: '/products/ns-plasma-4r'
+      target: '/products/hy-4l'
+      status: '301'
+    - source: '/products/ns-plasma-4r-rf'
+      target: '/products/hy-4l-rf'
+      status: '301'
+    - source: '/products/ns-plasma-4r-mf'
+      target: '/products/hy-4l-mf'
+      status: '301'
+    - source: '/products/ns-plasma-20r'
+      target: '/products/hy-20l'
+      status: '301'
+    - source: '/products/ns-plasma-20r-i'
+      target: '/products/hy-20lrf'
+      status: '301'
+    # Legacy route redirects for SEO
+    - source: '/product'
+      target: '/products'
+      status: '301'
+    - source: '/blog'
+      target: '/insights'
+      status: '301'
+    - source: '/about-us'
+      target: '/about'
+      status: '301'
+    - source: '/contact-us'
+      target: '/contact'
+      status: '301'
     # Strip trailing slashes at the CDN edge (301) before the SPA loads.
     # This eliminates the client-side redirect that creates noise analytics events.
     # Pattern: any path ending with / (except root /) → same path without /
