@@ -1904,6 +1904,26 @@ export function AdminAnalyticsPage() {
     try { return localStorage.getItem('ns_visitor_id') || ''; } catch { return ''; }
   }, []);
 
+  // Collect all visitorIds that share an org with the admin's current visitorId.
+  // This catches historical visitorIds (cleared localStorage, different sessions)
+  // that were grouped into the same organization by IP/org lookup.
+  const selfVisitorIds = useMemo(() => {
+    if (!selfVisitorId) return new Set<string>();
+    // First, aggregate orgs to find which org contains selfVisitorId
+    const orgs = aggregateByOrg(allEvents);
+    const selfOrg = orgs.find((o) =>
+      o.events.some((e) => (e as Record<string, unknown>).visitorId === selfVisitorId)
+    );
+    if (!selfOrg) return new Set([selfVisitorId]);
+    // Collect all visitorIds from that org
+    const ids = new Set<string>();
+    for (const e of selfOrg.events) {
+      const vid = (e as Record<string, unknown>).visitorId as string;
+      if (vid) ids.add(vid);
+    }
+    return ids;
+  }, [allEvents, selfVisitorId]);
+
   // Filter bots — by isBot flag OR known bot org name
   const filteredEvents = useMemo(() => {
     let events = allEvents;
@@ -1915,11 +1935,11 @@ export function AdminAnalyticsPage() {
         return true;
       });
     }
-    if (hideSelf && selfVisitorId) {
-      events = events.filter((e) => (e as Record<string, unknown>).visitorId !== selfVisitorId);
+    if (hideSelf && selfVisitorIds.size > 0) {
+      events = events.filter((e) => !selfVisitorIds.has((e as Record<string, unknown>).visitorId as string));
     }
     return events;
-  }, [allEvents, showBots, hideSelf, selfVisitorId]);
+  }, [allEvents, showBots, hideSelf, selfVisitorIds]);
 
   const botCount = useMemo(() => {
     return allEvents.filter((e) => {
@@ -1930,9 +1950,9 @@ export function AdminAnalyticsPage() {
   }, [allEvents]);
 
   const selfCount = useMemo(() => {
-    if (!selfVisitorId) return 0;
-    return allEvents.filter((e) => (e as Record<string, unknown>).visitorId === selfVisitorId).length;
-  }, [allEvents, selfVisitorId]);
+    if (selfVisitorIds.size === 0) return 0;
+    return allEvents.filter((e) => selfVisitorIds.has((e as Record<string, unknown>).visitorId as string)).length;
+  }, [allEvents, selfVisitorIds]);
 
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
