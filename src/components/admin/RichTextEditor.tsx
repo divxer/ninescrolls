@@ -107,11 +107,21 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
       )}
       {isSourceMode ? (
         <textarea
+          ref={(el) => {
+            if (el) {
+              el.style.height = 'auto';
+              el.style.height = Math.max(600, el.scrollHeight) + 'px';
+            }
+          }}
           className="html-source-editor"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const el = e.target;
+            el.style.height = 'auto';
+            el.style.height = Math.max(600, el.scrollHeight) + 'px';
+            onChange(el.value);
+          }}
           placeholder={placeholder}
-          style={{ minHeight: '600px' }}
         />
       ) : (
         <Editor
