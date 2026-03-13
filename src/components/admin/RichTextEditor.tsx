@@ -22,7 +22,6 @@ import 'tinymce/plugins/fullscreen';
 import 'tinymce/plugins/insertdatetime';
 import 'tinymce/plugins/media';
 import 'tinymce/plugins/table';
-import 'tinymce/plugins/wordcount';
 import 'tinymce/plugins/autoresize';
 
 // Import skin CSS directly (avoids needing static file copy)
@@ -155,7 +154,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               'advlist', 'autolink', 'lists', 'link', 'image',
               'charmap', 'preview', 'anchor', 'searchreplace',
               'visualblocks', 'code', 'fullscreen',
-              'insertdatetime', 'media', 'table', 'wordcount', 'autoresize',
+              'insertdatetime', 'media', 'table', 'autoresize',
             ],
 
             toolbar:
