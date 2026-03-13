@@ -680,6 +680,24 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
   }
 
+  // ── Merge ISP-individual groups back into their parent org ───────────
+  // Different IPs from the same org may have varying classification
+  // confidence.  Low-confidence events are L0_REJECT-keyed by visitorId/IP
+  // while high-confidence ones are keyed by org name.  Merge them so the
+  // same organization doesn't appear as multiple entries.
+  const mergeKeys: string[] = [];
+  for (const [key, group] of groups) {
+    const orgEvent = group.find((e) => e.orgName || e.org);
+    const baseOrgName = orgEvent?.orgName || orgEvent?.org || '';
+    if (baseOrgName && baseOrgName !== 'Unknown' && baseOrgName !== key && groups.has(baseOrgName)) {
+      groups.get(baseOrgName)!.push(...group);
+      mergeKeys.push(key);
+    }
+  }
+  for (const key of mergeKeys) {
+    groups.delete(key);
+  }
+
   const records: OrganizationRecord[] = [];
 
   for (const [key, group] of groups) {
