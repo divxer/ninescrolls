@@ -129,7 +129,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
             editorRef.current = editor;
           }}
           value={value}
-          onEditorChange={(newValue) => onChange(newValue)}
+          onEditorChange={(newValue) => onChange(newValue.replace(/\u00a0/g, ' '))}
           init={{
             skin: false,
             content_css: false,
