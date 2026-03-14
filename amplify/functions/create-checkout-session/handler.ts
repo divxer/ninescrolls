@@ -44,10 +44,26 @@ const ddbClient = checkoutRateLimitTable
   ? DynamoDBDocumentClient.from(new DynamoDBClient({}))
   : null;
 
+/** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
+function isPrivateIP(ip: string): boolean {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return false;
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 100 && b >= 64 && b <= 127)
+  );
+}
+
 const getClientIp = (event: Parameters<APIGatewayProxyHandlerV2>[0]): string => {
   const forwarded = event.headers?.['x-forwarded-for'] || event.headers?.['X-Forwarded-For'];
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const ips = forwarded.split(',').map((s: string) => s.trim());
+    return ips.find((ip: string) => !isPrivateIP(ip)) || ips[0];
   }
   return event.requestContext?.http?.sourceIp || 'unknown';
 };

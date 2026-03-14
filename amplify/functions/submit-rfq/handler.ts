@@ -541,9 +541,22 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         // 1. Validate Turnstile CAPTCHA
-        const ip = event.requestContext?.http?.sourceIp
-            || (event.headers?.['x-forwarded-for']?.split(',')[0]?.trim())
-            || '0.0.0.0';
+        const isPrivateIP = (addr: string): boolean => {
+            const parts = addr.split('.').map(Number);
+            if (parts.length !== 4 || parts.some(isNaN)) return false;
+            const [a, b] = parts;
+            return a === 10 || (a === 172 && b >= 16 && b <= 31) ||
+                (a === 192 && b === 168) || a === 127 ||
+                (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127);
+        };
+        const xff = event.headers?.['x-forwarded-for'];
+        const ip = (() => {
+            if (xff) {
+                const ips = xff.split(',').map((s: string) => s.trim());
+                return ips.find((addr: string) => !isPrivateIP(addr)) || ips[0];
+            }
+            return event.requestContext?.http?.sourceIp || '0.0.0.0';
+        })();
 
         const turnstileToken = (rawBody as Record<string, unknown>).turnstileToken as string;
         if (!turnstileToken) {
