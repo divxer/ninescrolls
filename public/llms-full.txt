@@ -160,6 +160,10 @@ Summary: Why plasma is non-uniform in etch chambers (gas flow patterns, electrom
 URL: https://ninescrolls.com/insights/atomic-layer-etching-practical-guide
 Summary: Comprehensive guide to ALE — a cyclic, self-limiting etch process removing material one atomic layer at a time (~0.5–2 Å/cycle). Covers the two-step mechanism (surface modification + low-energy ion removal), the ALE energy window (15–50 eV), core chemistries for Si, SiO₂, III-V semiconductors (GaN, GaAs, InP), metals (W, Co, Ru), and high-k dielectrics (HfO₂). Includes practical guidance on implementing ALE on ICP-RIE systems, gas switching optimization, ion energy calibration, chamber conditioning, and quasi-ALE behavior. Applications span FinFET/GAA gate etch, photonic waveguides, 2D material thinning, and MEMS. Covers emerging frontiers: hybrid ALE, cryogenic ALE (−80°C to −120°C), area-selective ALE, multi-step ALE for complex stacks, and directional ALE for 3D architectures.
 
+**Cryogenic Plasma Etching vs. Bosch Process**
+URL: https://ninescrolls.com/insights/cryogenic-etching-vs-bosch-process
+Summary: Head-to-head comparison of cryogenic plasma etching and the Bosch (time-multiplexed DRIE) process for high-aspect-ratio silicon etching. Cryogenic etching (SF6/O2 at -80 to -120 C) produces smooth sidewalls (< 10 nm roughness) via volatile SiOxFy passivation, while the Bosch process (SF6 + C4F8 cycling) achieves higher aspect ratios (> 30:1) but with 50-200 nm scalloping. Covers case studies in silicon photonics (4x waveguide loss reduction), MEMS gyroscopes (Q-factor improvement from 50K to 120K), microfluidics, and superconducting qubit fabrication (78% Q improvement). Includes ICP-RIE retrofit guide with cost estimates ($20K-$105K), emerging hybrid cryo-Bosch approaches, and practical recommendations for labs starting cryogenic etching.
+
 **Future of Plasma Etching**
 URL: https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics
 Summary: Emerging trends including atomic layer etching (ALE), pulsed plasmas, low-damage etch for EUV resist removal, cryogenic/variable-temperature processes, and AI-assisted process control.
