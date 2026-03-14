@@ -131,6 +131,12 @@ const RELATED_PRODUCTS_MAP: Record<string, RelatedProduct[]> = {
     { href: '/products/pecvd', label: 'PECVD Systems' },
     { href: '/products/sputter', label: 'Sputter Systems' },
   ],
+  'cryogenic-etching-vs-bosch-process': [
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems' },
+    { href: '/products/striper', label: 'Striper Systems' },
+  ],
   'atomic-layer-etching-practical-guide': [
     { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
     { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
@@ -166,6 +172,7 @@ const HERO_IMAGES_MAP: Record<string, HeroImageConfig> = {
   'rie150a-metasurface-color-router': { prefix: 'rie150a-color-router-cover', fallbackExt: 'png' },
   'icp200-metasurface-flow-visualization': { prefix: 'icp200-flow-visualization-cover', fallbackExt: 'png' },
   'atomic-layer-etching-practical-guide': { prefix: 'ale-guide-cover', fallbackExt: 'png' },
+  'cryogenic-etching-vs-bosch-process': { prefix: 'cryo-vs-bosch-cover', fallbackExt: 'png' },
 };
 
 // ─── Standalone Component Articles ───────────────────────────────────────────
