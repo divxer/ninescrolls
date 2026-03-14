@@ -599,6 +599,20 @@ function computeOrgLifecycleStage(group: AnalyticsEvent[], productsViewed: Set<s
   return 'awareness';
 }
 
+// ─── Private IP Detection ───────────────────────────────────────────────────
+
+function isPrivateIP(ip: string): boolean {
+  // IPv4 private/reserved ranges
+  if (/^10\./.test(ip)) return true;                            // 10.0.0.0/8
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;    // 172.16.0.0/12 (Docker etc.)
+  if (/^192\.168\./.test(ip)) return true;                      // 192.168.0.0/16
+  if (/^127\./.test(ip)) return true;                           // 127.0.0.0/8 (loopback)
+  if (/^169\.254\./.test(ip)) return true;                      // 169.254.0.0/16 (link-local)
+  if (/^100\.(6[4-9]|[7-9]\d|1[0-2]\d)\./.test(ip)) return true; // 100.64.0.0/10 (CGNAT)
+  if (ip === '0.0.0.0' || ip === '::1' || ip === '::') return true;
+  return false;
+}
+
 // ─── Aggregation ────────────────────────────────────────────────────────────
 
 function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
@@ -658,7 +672,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Effective org fields: event's own data → inherited → default
     const effOrgName = e.orgName || inherited?.orgName || '';
     const effOrg = e.org || inherited?.org || '';
-    const effIp = e.ip || inherited?.ip || '';
+    const rawIp = e.ip || inherited?.ip || '';
+    const effIp = (rawIp && !isPrivateIP(rawIp)) ? rawIp : '';
     const effOrgType = e.organizationType || inherited?.organizationType || '';
     const effConfidence = e.confidence ?? inherited?.confidence ?? null;
     const effIsTarget = e.isTargetCustomer || inherited?.isTargetCustomer || false;
