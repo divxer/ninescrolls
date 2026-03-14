@@ -2067,7 +2067,11 @@ export function AdminAnalyticsPage() {
 
     if (channelFilter !== 'all') {
       result = result.filter((o) =>
-        o.events.some((e) => e.trafficChannel === channelFilter)
+        o.events.some((e) => {
+          const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
+          const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
+          return ch === channelFilter;
+        })
       );
     }
 
