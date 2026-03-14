@@ -53,6 +53,7 @@ function eventNameToType(event: string): string {
     'Simple Target Customer Detected': 'target_customer',
     'RFQ Step 1: Your Information': 'rfq_step',
     'RFQ Step 2: Project Details': 'rfq_step',
+    'RFQ Submitted': 'rfq_submission',
   };
   return map[event] || 'other';
 }
@@ -273,6 +274,14 @@ class SegmentAnalyticsService {
       productId,
       productName,
       formName: 'contact_form'
+    });
+  }
+
+  trackRFQSubmission(productId?: string, productName?: string) {
+    this.track('RFQ Submitted', {
+      productId,
+      productName,
+      formName: 'rfq_submission'
     });
   }
 
@@ -832,6 +841,15 @@ class SegmentAnalyticsService {
       productId,
       productName,
       formName: 'contact_form'
+    });
+  }
+
+  // Perform IP analysis on RFQ submission
+  async trackRFQSubmissionWithAnalysis(productId?: string, productName?: string) {
+    await this.trackWithIPAnalysis('RFQ Submitted', {
+      productId,
+      productName,
+      formName: 'rfq_submission'
     });
   }
 

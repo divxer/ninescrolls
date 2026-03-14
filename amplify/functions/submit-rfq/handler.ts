@@ -140,7 +140,7 @@ function sanitize(value: string): string {
 }
 
 /** Sanitize all string fields in an object (shallow). */
-function sanitizeStrings<T extends Record<string, unknown>>(obj: T): T {
+function _sanitizeStrings<T extends Record<string, unknown>>(obj: T): T {
     const result = { ...obj };
     for (const [key, value] of Object.entries(result)) {
         if (typeof value === 'string') {
@@ -592,10 +592,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
         const data = parseResult.data;
 
-        // 3. Sanitize input (XSS)
-        const sanitized = sanitizeStrings(data);
-
-        // 4. Generate IDs
+        // 3. Generate IDs
         const rfqId = generateRfqId();
         const referenceNumber = generateReferenceNumber(rfqId);
         const submittedAt = new Date().toISOString();
@@ -616,31 +613,31 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             status: 'pending',
             submittedAt,
             ipHash: ipHashed,
-            // All form fields (sanitized)
-            name: sanitized.name,
-            email: sanitized.email,
-            phone: sanitized.phone,
-            institution: sanitized.institution,
-            department: sanitized.department,
-            role: sanitized.role,
-            equipmentCategory: sanitized.equipmentCategory,
-            specificModel: sanitized.specificModel,
-            applicationDescription: sanitized.applicationDescription,
-            keySpecifications: sanitized.keySpecifications,
-            quantity: sanitized.quantity,
-            budgetRange: sanitized.budgetRange,
-            timeline: sanitized.timeline,
-            fundingStatus: sanitized.fundingStatus,
-            referralSource: sanitized.referralSource,
-            existingEquipment: sanitized.existingEquipment,
-            additionalComments: sanitized.additionalComments,
+            // All form fields (stored raw; sanitize() is applied inline in email templates)
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            institution: data.institution,
+            department: data.department,
+            role: data.role,
+            equipmentCategory: data.equipmentCategory,
+            specificModel: data.specificModel,
+            applicationDescription: data.applicationDescription,
+            keySpecifications: data.keySpecifications,
+            quantity: data.quantity,
+            budgetRange: data.budgetRange,
+            timeline: data.timeline,
+            fundingStatus: data.fundingStatus,
+            referralSource: data.referralSource,
+            existingEquipment: data.existingEquipment,
+            additionalComments: data.additionalComments,
             // Budgetary quote shipping address
-            needsBudgetaryQuote: sanitized.needsBudgetaryQuote || false,
-            shippingAddress: sanitized.shippingAddress,
-            shippingCity: sanitized.shippingCity,
-            shippingState: sanitized.shippingState,
-            shippingZipCode: sanitized.shippingZipCode,
-            shippingCountry: sanitized.shippingCountry,
+            needsBudgetaryQuote: data.needsBudgetaryQuote || false,
+            shippingAddress: data.shippingAddress,
+            shippingCity: data.shippingCity,
+            shippingState: data.shippingState,
+            shippingZipCode: data.shippingZipCode,
+            shippingCountry: data.shippingCountry,
             TTL: 0, // No expiry
         };
 

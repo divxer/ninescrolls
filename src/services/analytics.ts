@@ -1,7 +1,8 @@
 // Analytics event types
-export type EventCategory = 
+export type EventCategory =
   | 'Product'
   | 'Contact'
+  | 'RFQ'
   | 'Navigation'
   | 'Download'
   | 'User';
@@ -173,6 +174,24 @@ class Analytics {
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'form_submit', {
         form_name: 'contact_form',
+        item_id: productId,
+        item_name: productName
+      });
+    }
+  }
+
+  // RFQ submission events
+  trackRFQSubmission(productId?: string, productName?: string) {
+    this.trackEvent({
+      category: 'RFQ',
+      action: 'Submit',
+      label: productName,
+      productId
+    });
+
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'form_submit', {
+        form_name: 'rfq_submission',
         item_id: productId,
         item_name: productName
       });

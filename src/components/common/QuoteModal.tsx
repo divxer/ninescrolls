@@ -120,8 +120,8 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
       setIsSuccess(true); setIsSubmitting(false);
       // Send to both Google Analytics and Segment
       const inquiryProduct = form.product || productName || 'Products Inquiry';
-      analytics.trackContactFormSubmit(inquiryProduct, inquiryProduct);
-      analytics.segment.trackContactFormSubmitWithAnalysis(inquiryProduct, inquiryProduct);
+      analytics.trackRFQSubmission(inquiryProduct, inquiryProduct);
+      analytics.segment.trackRFQSubmissionWithAnalysis(inquiryProduct, inquiryProduct);
     } catch (err) {
       setIsSubmitting(false);
       setError(err instanceof Error ? err.message : 'Failed to submit form.');

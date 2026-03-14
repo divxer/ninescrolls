@@ -52,6 +52,12 @@ export const useCombinedAnalytics = () => {
       gaAnalytics.trackContactFormSubmit(productId, productName);
     },
 
+    // RFQ submission tracking
+    trackRFQSubmission: (productId?: string, productName?: string) => {
+      // Google Analytics only — Segment handled via trackRFQSubmissionWithAnalysis
+      gaAnalytics.trackRFQSubmission(productId, productName);
+    },
+
     // Datasheet download tracking
     trackDatasheetDownload: (productId: string, productName: string) => {
       // Google Analytics
@@ -100,6 +106,7 @@ export const useCombinedAnalytics = () => {
       trackWithIPAnalysis: segmentAnalyticsHook.trackWithIPAnalysis,
       trackProductViewWithAnalysis: segmentAnalyticsHook.trackProductViewWithAnalysis,
       trackContactFormSubmitWithAnalysis: segmentAnalyticsHook.trackContactFormSubmitWithAnalysis,
+      trackRFQSubmissionWithAnalysis: segmentAnalyticsHook.trackRFQSubmissionWithAnalysis,
       getCurrentIPInfo: segmentAnalyticsHook.getCurrentIPInfo,
       getTargetCustomerAnalysis: segmentAnalyticsHook.getTargetCustomerAnalysis,
       // Simple IP Analysis methods
@@ -114,6 +121,7 @@ export const useCombinedAnalytics = () => {
       trackProductView: gaAnalytics.trackProductView,
       trackProductDownload: gaAnalytics.trackProductDownload,
       trackContactFormSubmit: gaAnalytics.trackContactFormSubmit,
+      trackRFQSubmission: gaAnalytics.trackRFQSubmission,
       trackDatasheetDownload: gaAnalytics.trackDatasheetDownload,
       trackSearch: gaAnalytics.trackSearch,
       identifyUser: gaAnalytics.identifyUser,

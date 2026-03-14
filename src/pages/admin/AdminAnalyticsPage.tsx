@@ -323,7 +323,7 @@ function aggregateProductStats(pageStats: PageStats[], events: AnalyticsEvent[])
     if (e.eventType === 'pdf_download' && e.productName) {
       pdfCounts.set(e.productName, (pdfCounts.get(e.productName) || 0) + 1);
     }
-    if (e.eventType === 'contact_form' && (e.productId || e.productName)) {
+    if ((e.eventType === 'contact_form' || e.eventType === 'rfq_submission') && (e.productId || e.productName)) {
       const key = e.productName || e.productId || '';
       contactCounts.set(key, (contactCounts.get(key) || 0) + 1);
     }
@@ -588,10 +588,10 @@ function formatRelativeTime(dateStr: string): string {
 // ─── Lifecycle Stage (derived from org event history) ─────────────────────
 
 function computeOrgLifecycleStage(group: AnalyticsEvent[], productsViewed: Set<string>, pdfDownloads: number, returnVisits: number): LifecycleStage {
-  const hasRFQ = group.some(e => e.eventType === 'rfq_step' || e.eventType === 'rfq_submission');
-  if (hasRFQ) return 'intent';
+  const hasRFQSubmission = group.some(e => e.eventType === 'rfq_submission');
+  if (hasRFQSubmission) return 'intent';
 
-  const hasContactForm = group.some(e => e.eventType === 'contact_form');
+  const hasContactForm = group.some(e => e.eventType === 'contact_form' || e.eventType === 'rfq_step');
   if (pdfDownloads > 0 || hasContactForm) return 'consideration';
 
   if (productsViewed.size > 0 || returnVisits > 0) return 'interest';
@@ -1086,6 +1086,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     e.eventType === 'pdf_download' || e.eventName === 'Product Downloaded' || e.eventName === 'Datasheet Downloaded'
   );
   const contactFormSubmitted = org.events.some((e) => e.eventType === 'contact_form');
+  const rfqSubmitted = org.events.some((e) => e.eventType === 'rfq_submission');
   const uniqueProductPages = new Set(
     org.events.filter((e) => e.eventType === 'product_view' || e.pathname?.includes('/products/')).map((e) => e.pathname)
   );
@@ -1233,7 +1234,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           {visitedContactPage && (
             <div className="org-signal org-signal-hot">Visited Contact Page</div>
           )}
-          {contactFormSubmitted && (
+          {rfqSubmitted && (
+            <div className="org-signal org-signal-hot">Submitted RFQ</div>
+          )}
+          {contactFormSubmitted && !rfqSubmitted && (
             <div className="org-signal org-signal-hot">Submitted Contact Form</div>
           )}
           {uniqueProductPages.size >= 3 && (
@@ -1837,7 +1841,7 @@ export function AdminAnalyticsPage() {
       const EVENT_TYPES = [
         'page_view', 'page_time_flush', 'product_view', 'pdf_download',
         'contact_form', 'target_customer', 'search', 'add_to_cart',
-        'purchase', 'rfq_step', 'other', 'anomaly',
+        'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
       ];
 
       async function queryByType(eventType: string): Promise<AnalyticsEvent[]> {

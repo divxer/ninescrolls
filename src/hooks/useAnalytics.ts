@@ -19,6 +19,9 @@ export const useAnalytics = () => {
     trackContactFormSubmit: (productId?: string, productName?: string) => {
       analytics.trackContactFormSubmit(productId, productName);
     },
+    trackRFQSubmission: (productId?: string, productName?: string) => {
+      analytics.trackRFQSubmission(productId, productName);
+    },
     trackDatasheetDownload: (productId: string, productName: string) => {
       analytics.trackDatasheetDownload(productId, productName);
     },

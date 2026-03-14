@@ -45,6 +45,9 @@ export const useSegmentAnalytics = () => {
     trackContactFormSubmitWithAnalysis: async (productId?: string, productName?: string) => {
       await segmentAnalytics.trackContactFormSubmitWithAnalysis(productId, productName);
     },
+    trackRFQSubmissionWithAnalysis: async (productId?: string, productName?: string) => {
+      await segmentAnalytics.trackRFQSubmissionWithAnalysis(productId, productName);
+    },
     getCurrentIPInfo: async () => {
       return await segmentAnalytics.getCurrentIPInfo();
     },
