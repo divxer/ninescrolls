@@ -420,15 +420,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     try {
         // Extract visitor IP from request headers
-        // X-Forwarded-For chain: <client>, [<proxy>...], <cloudfront>
-        // When a corporate proxy/VPN prepends a private IP, the first entry
-        // is unusable for geo-lookup.  Walk the chain and pick the first
-        // *public* IP instead.
+        // Priority: CloudFront-Viewer-Address (unforgeable, set by CloudFront from TCP connection)
+        //         > X-Forwarded-For (first public IP in the chain)
+        //         > API Gateway sourceIp (fallback)
+        const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
         const xForwardedFor = event.headers?.['X-Forwarded-For'] || event.headers?.['x-forwarded-for'];
         const sourceIp = event.requestContext?.identity?.sourceIp;
 
         let visitorIp: string | undefined;
-        if (xForwardedFor) {
+        if (cfViewerAddr) {
+            // Format is "ip:port" — strip the port
+            visitorIp = cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+        } else if (xForwardedFor) {
             const ips = xForwardedFor.split(',').map((s: string) => s.trim());
             visitorIp = ips.find((ip: string) => !isPrivateIP(ip)) || ips[0];
         } else if (sourceIp) {

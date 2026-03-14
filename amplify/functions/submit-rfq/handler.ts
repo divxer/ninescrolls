@@ -549,8 +549,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 (a === 192 && b === 168) || a === 127 ||
                 (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127);
         };
+        const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
         const xff = event.headers?.['x-forwarded-for'];
         const ip = (() => {
+            if (cfViewerAddr) {
+                return cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+            }
             if (xff) {
                 const ips = xff.split(',').map((s: string) => s.trim());
                 return ips.find((addr: string) => !isPrivateIP(addr)) || ips[0];
