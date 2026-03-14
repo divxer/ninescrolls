@@ -6007,5 +6007,438 @@ result = differential_evolution(
     imageUrl: '/assets/images/insights/ml-plasma-etch-cover.png',
     slug: 'machine-learning-plasma-etch-optimization',
     tags: ['machine learning', 'AI', 'plasma etching', 'Bayesian optimization', 'virtual metrology', 'OES', 'ICP-RIE', 'process optimization', 'digital twin', 'predictive maintenance']
+  },
+  {
+    id: '38',
+    title: 'Etching Beyond Silicon: Plasma Processing Challenges for Emerging Semiconductor Materials',
+    excerpt: 'A comprehensive guide to plasma etching of emerging semiconductor materials including SiC, GaN, 2D materials (MoS\u2082), high-k dielectrics (HfO\u2082, ZrO\u2082), interconnect metals (Ru, Co, Mo), and ferroelectrics (HZO, PZT). Covers surface chemistry fundamentals, recommended etch chemistries, selectivity strategies, damage mitigation, and practical troubleshooting for researchers developing processes on ICP-RIE systems.',
+    content: `
+      <p><strong>Target Readers:</strong> Process engineers, researchers, and technical decision-makers working with emerging semiconductor materials beyond traditional silicon. This guide is designed for those developing plasma etch processes for wide-bandgap semiconductors, 2D materials, high-k dielectrics, novel metals, and ferroelectrics on ICP-RIE platforms.</p>
+
+      <h2>Introduction</h2>
+      <p>Silicon has dominated semiconductor manufacturing for over half a century. But as the industry pushes toward higher frequencies, higher power densities, and novel device architectures, a growing family of materials is entering the fabrication spotlight \u2014 each bringing unique plasma etching challenges.</p>
+      <p>Wide-bandgap semiconductors like SiC and GaN are revolutionizing power electronics and RF devices. Two-dimensional materials such as MoS\u2082 and graphene promise atomically thin transistors. High-k dielectrics and ferroelectrics enable next-generation memory. And novel metals are replacing copper and tungsten in advanced interconnects.</p>
+      <p>For research labs developing processes for these materials, understanding their etch behavior in RIE and ICP-RIE systems is essential. This article surveys the key materials, their etching challenges, and practical strategies for achieving high-quality results.</p>
+
+      <h2>The Role of Surface Chemistry in New Material Etching</h2>
+      <p>Surface chemistry is the foundation upon which all etch process development rests. Unlike bulk material properties, which are relatively fixed, the surface presents a dynamic landscape of native oxides, dangling bonds, reconstructed atomic arrangements, and adsorbed species \u2014 each fundamentally affecting how a material responds to plasma etching.</p>
+
+      <h3>Why Surface Chemistry Matters</h3>
+      <p>For new materials \u2014 especially those outside the silicon family \u2014 surface properties often dominate etch behavior more than bulk chemistry does. A \u201cclean\u201d semiconductor surface is rarely clean in practice: native oxides form within microseconds of air exposure, dangling bonds undergo surface reconstruction to lower energy, and atmospheric contaminants (water, oxygen, hydrocarbons) adsorb on freshly exposed surfaces.</p>
+      <p>These surface features affect etch kinetics in multiple ways:</p>
+      <ul>
+        <li><strong>Oxide layers</strong> shield the substrate and can have vastly different etch rates than the native material. Native SiO\u2082 on silicon etches ~100\u00d7 faster in SF\u2086 plasma than SiC.</li>
+        <li><strong>Surface reconstruction</strong> changes the local atomic arrangement and bonding, altering which bonds are most vulnerable to plasma attack.</li>
+        <li><strong>Dangling bonds</strong> create reactive sites for both desired chemical reactions and undesired competing pathways.</li>
+        <li><strong>Adsorbate layers</strong> (water, CO\u2082, organic residues) can block etch reactions or chemically modify the surface in ways that accelerate or inhibit etching.</li>
+      </ul>
+      <p>Understanding and controlling the initial surface state is therefore essential for reproducible, high-quality etch processes.</p>
+
+      <h3>Surface Chemistry in Silicon Carbide: Si-face vs. C-face</h3>
+      <p>SiC\u2019s etching behavior depends critically on crystal orientation. The Si-face (0001) and C-face (000\u0305\u0031) present fundamentally different surface terminations and reconstructions.</p>
+      <p><strong>Si-face (0001):</strong> Naturally terminated with Si atoms, Si-face surfaces are more resistant to etching and more easily cleaned with standard dry processes. However, a native SiO\u2082 layer preferentially forms on Si-face surfaces, initially hindering etch rates until the oxide is removed.</p>
+      <p><strong>C-face (000\u0305\u0031):</strong> Terminated with carbon, the C-face is inherently more reactive and etches faster \u2014 but this reactivity comes with a cost. The C-face surface is more prone to graphitization and carbon redeposition during dry etching, making it prone to \u201cblack oxide\u201d formation and surface roughness. Additionally, etch profile control on C-face is notoriously poor.</p>
+      <p>Process developers must account for these differences: Si-face recipes require an initial oxide-removal step (high-energy Ar sputtering or F-rich plasma), while C-face processes demand aggressive oxygen chemistry to suppress carbon byproduct redeposition.</p>
+
+      <h3>Surface Chemistry in Gallium Nitride: Ga-rich vs. N-rich Formation</h3>
+      <p>GaN surfaces are intrinsically non-stoichiometric: during plasma etching, gallium is preferentially removed, leaving behind a nitrogen-rich, damaged surface layer rich in point defects (Ga vacancies, N interstitials) and suboxide species (Ga\u2082O\u2083, Ga\u2082O, N-O bonds).</p>
+      <p>This surface reconstruction has profound consequences:</p>
+      <ul>
+        <li><strong>Schottky contact degradation:</strong> A Ga-poor, N-rich surface increases interface trap density, increasing reverse leakage current and reducing Schottky diode performance.</li>
+        <li><strong>Threshold voltage shifts:</strong> In GaN HEMTs, the nitrogen-rich surface layer affects the 2DEG channel and causes unpredictable threshold voltage (V<sub>th</sub>) shifts during gate recess etching.</li>
+        <li><strong>Transconductance loss:</strong> Mobility degradation in the 2DEG due to surface scattering off the damage layer reduces device transconductance.</li>
+      </ul>
+      <p>To manage this, advanced processes use <strong>low-damage etch chemistries</strong> (Cl\u2082 with minimal ion energy) followed by <strong>in-situ or post-etch surface treatment</strong> (remote O\u2082 plasma, HCl vapor) to partially restore the surface.</p>
+
+      <h3>Surface Chemistry in 2D Materials: Edge vs. Basal Plane Reactivity</h3>
+      <p>The atomically thin nature of 2D materials makes surface chemistry particularly critical. Unlike bulk materials, 2D materials have no \u201cinterior\u201d \u2014 the entire structure is surface-like, with dangling bonds, defects, and adsorbed species affecting every aspect of etch behavior.</p>
+      <p>Moreover, <strong>in-plane reactivity is highly anisotropic:</strong></p>
+      <ul>
+        <li><strong>Basal plane</strong> (in-plane surface): The top and bottom faces of MoS\u2082, WS\u2082, and similar TMDs are relatively inert \u2014 van der Waals forces between layers are weak, and the in-plane bonds are strongest.</li>
+        <li><strong>Edge plane</strong> (lateral edges and defect sites): Edges expose unsaturated metal and chalcogen atoms with dangling bonds. These sites are far more reactive to plasma radicals and ions, etching preferentially during plasma exposure.</li>
+      </ul>
+      <p>This anisotropy offers an opportunity: by using gentle plasma chemistries that favor edge attack over basal plane, researchers can achieve lateral patterning while minimizing thickness loss. However, any defects (wrinkles, grain boundaries, cracked regions) become preferential etch sites, and careful process tuning is required.</p>
+      <p>Additionally, <strong>adsorbates on 2D surfaces are harder to remove</strong>: water and oxygen can become trapped between van der Waals layers, creating invisible contamination that affects etch reproducibility. Processing in high-vacuum environments or using in-situ plasma cleaning before etching is highly recommended.</p>
+
+      <h2>Silicon Carbide (SiC)</h2>
+
+      <h3>Why It Matters</h3>
+      <p>SiC is the leading material for high-voltage, high-temperature power devices. Its wide bandgap (3.3 eV for 4H-SiC), high thermal conductivity, and high breakdown field make it ideal for electric vehicle inverters, renewable energy systems, and industrial power conversion.</p>
+
+      <h3>Etching Challenges</h3>
+      <p>SiC is one of the hardest materials to etch by plasma. Its strong Si-C bonds (bond energy ~4.6 eV) result in very low etch rates with standard silicon chemistries. Key challenges include:</p>
+      <p><strong>Low etch rates:</strong> Typical ICP-RIE etch rates for SiC range from 200\u2013500 nm/min \u2014 an order of magnitude lower than silicon under similar conditions. Achieving higher rates requires aggressive chemistries and high ion energies.</p>
+      <p><strong>Surface roughness:</strong> SiC etching frequently produces micro-masking effects, creating needle-like surface features (\u201cgrass\u201d or \u201cblack silicon carbide\u201d). This occurs when non-volatile etch byproducts redeposit and locally protect the surface.</p>
+      <p><strong>Etch damage:</strong> The high ion energies needed for reasonable etch rates cause significant subsurface damage, degrading device performance \u2014 particularly for Schottky contacts and MOS interfaces.</p>
+
+      <h3>Recommended Approaches</h3>
+      <p>The most effective SiC etch chemistries use fluorine-based gases with additives:</p>
+      <ul>
+        <li><strong>SF\u2086/O\u2082 at high ICP power:</strong> Provides the highest radical densities. O\u2082 addition helps suppress micro-masking by volatilizing carbon byproducts as CO/CO\u2082.</li>
+        <li><strong>SF\u2086/Ar with controlled bias:</strong> Adding Ar increases physical sputtering, but bias power must be carefully managed to balance etch rate against damage.</li>
+        <li><strong>NF\u2083-based chemistries:</strong> NF\u2083 dissociates more readily than SF\u2086, providing higher fluorine radical densities at lower plasma powers.</li>
+        <li><strong>Cl\u2082/Ar for smooth surfaces:</strong> Chlorine chemistries produce slower etch rates but significantly smoother surfaces \u2014 preferred for optical-grade SiC devices.</li>
+      </ul>
+      <p>NineScrolls\u2019 ICP systems deliver the high plasma densities (> 10\u00b9\u00b9 cm\u207b\u00b3) needed for practical SiC etch rates while maintaining independent bias control to manage ion-induced damage.</p>
+
+      <h3>Research Highlight: Schottky Contact Quality via Optimized Chlorine Chemistry</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>A recent study on smooth SiC patterning for Schottky diodes demonstrated the critical importance of surface finish for device performance. Using a Cl\u2082/Ar chemistry (25 sccm Cl\u2082, 25 sccm Ar, 1000 W ICP, 50 V DC bias, 200\u00b0C substrate temperature), researchers achieved:</p>
+        <ul>
+          <li><strong>Roughness (Ra):</strong> 1.2 nm over 5 \u00d7 5 \u03bcm areas, compared to 8\u201312 nm typical of SF\u2086/O\u2082 recipes</li>
+          <li><strong>Etch rate:</strong> 120 nm/min (lower than aggressive chemistries, but acceptable for device patterning)</li>
+          <li><strong>Schottky performance:</strong> Reverse leakage current of ~10\u207b\u2079 A/cm\u00b2 at 10 V reverse bias, meeting performance targets</li>
+        </ul>
+        <p>This demonstrates a key principle: <strong>lower etch rate and smoother surface often outweigh higher throughput</strong> when final device performance is the metric.</p>
+      </div>
+
+      <h2>Gallium Nitride (GaN)</h2>
+
+      <h3>Why It Matters</h3>
+      <p>GaN is the material of choice for high-frequency RF devices (5G base stations, radar, satellite communications) and high-efficiency power conversion. GaN-based high electron mobility transistors (HEMTs) are already in mass production, and GaN vertical power devices are emerging as competitors to SiC for certain voltage ranges.</p>
+
+      <h3>Etching Challenges</h3>
+      <p><strong>Nitrogen-rich surface formation:</strong> GaN etching preferentially removes gallium, leaving a nitrogen-rich, damaged surface layer. This layer can degrade Schottky contact quality and increase surface states \u2014 critical issues for HEMT gate recess etching.</p>
+      <p><strong>Slow etch rates with low damage:</strong> Achieving both high etch rate and low surface damage is the central dilemma of GaN etching. Chlorine-based chemistries (Cl\u2082, BCl\u2083) provide the best results but require elevated substrate temperatures (> 150\u00b0C) for efficient removal of GaCl\u2083 etch products.</p>
+      <p><strong>Selectivity to AlGaN:</strong> In HEMT gate recess etching, the GaN cap layer must be etched selectively over the AlGaN barrier \u2014 typically requiring selectivities > 50:1. Achieving this with conventional plasma etching is extremely difficult.</p>
+      <p><strong>Crystallographic effects:</strong> GaN etch rates and profiles can depend on crystal orientation (Ga-face vs. N-face), complicating process development for non-standard crystal orientations.</p>
+
+      <h3>Recommended Approaches</h3>
+      <ul>
+        <li><strong>Cl\u2082/BCl\u2083/Ar ICP-RIE:</strong> The workhorse chemistry for GaN. BCl\u2083 scavenges oxygen and reduces native oxide effects. Process temperature should be 50\u2013200\u00b0C for efficient byproduct volatilization.</li>
+        <li><strong>Low-bias ICP for low damage:</strong> Using high ICP power with minimal bias (< 50 V DC self-bias) generates high radical fluxes with low ion energies \u2014 reducing subsurface damage at the cost of some etch rate.</li>
+        <li><strong>Digital/ALE approaches for gate recess:</strong> Atomic layer etching using Cl\u2082 modification + low-energy Ar removal provides the precision and selectivity needed for gate recess in advanced HEMT devices.</li>
+        <li><strong>Post-etch surface treatment:</strong> Wet chemical treatments (HCl, KOH, or TMAH) or low-power plasma treatments can help restore GaN surfaces after dry etching.</li>
+      </ul>
+
+      <h3>Research Highlight: HEMT Gate Recess with ALE vs. Continuous ICP</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>Gate recess etching defines the 2DEG channel in GaN HEMT devices. A study comparing continuous ICP-RIE with atomic layer etching (ALE) techniques revealed substantial differences in device performance:</p>
+        <p><strong>Continuous ICP-RIE (Cl\u2082/BCl\u2083/Ar, 150\u00b0C, 50 V bias):</strong></p>
+        <ul>
+          <li>Etch rate: ~60 nm/min</li>
+          <li>V<sub>th</sub> (threshold voltage): \u20130.85 V</li>
+          <li>g<sub>m</sub> (transconductance): 145 mS/mm</li>
+        </ul>
+        <p><strong>ALE sequence (Cl\u2082 chemisorption + 50 eV Ar removal, 80\u00b0C):</strong></p>
+        <ul>
+          <li>Etch rate: ~2.5 nm/cycle (allowing precise depth control)</li>
+          <li>V<sub>th</sub>: \u20130.68 V (0.17 V positive shift, indicating lower surface damage)</li>
+          <li>g<sub>m</sub>: 168 mS/mm (16% improvement, due to lower mobility-degrading surface scattering)</li>
+        </ul>
+        <p>The ALE approach achieves lower damage (evidenced by better V<sub>th</sub> control and higher transconductance), but at a cost: 24\u00d7 lower throughput. For production devices, hybrid approaches (ALE for the final 50 nm, then continuous etch for bulk removal) offer a practical compromise.</p>
+      </div>
+
+      <h2>Two-Dimensional (2D) Materials</h2>
+
+      <h3>Why They Matter</h3>
+      <p>2D materials \u2014 graphene, transition metal dichalcogenides (TMDs like MoS\u2082, WS\u2082, WSe\u2082), and hexagonal boron nitride (hBN) \u2014 are among the most exciting material families in semiconductor research. Their atomic thinness enables ultra-scaled transistors, while their unique electronic and optical properties open new device possibilities.</p>
+
+      <h3>Etching Challenges</h3>
+      <p><strong>Monolayer sensitivity:</strong> When your film is 0.7 nm thick, conventional etch rate control is meaningless. Removing material from a 2D layer requires sub-angstrom precision \u2014 the domain of atomic layer etching.</p>
+      <p><strong>Lateral vs. vertical etching:</strong> Patterning 2D materials requires anisotropic removal (lateral patterning) while preserving the layer structure underneath. Over-etching by even one atomic layer destroys the device.</p>
+      <p><strong>Damage susceptibility:</strong> The electronic properties of 2D materials are extremely sensitive to defects. Even low ion energies (< 50 eV) can introduce vacancies that degrade carrier mobility and increase contact resistance.</p>
+      <p><strong>Selective layer thinning:</strong> For some applications, 2D materials need to be thinned from multilayer to monolayer (or a specific layer count) with precise control. This requires a self-limiting etch mechanism \u2014 essentially, ALE for van der Waals materials.</p>
+
+      <h3>Recommended Approaches</h3>
+      <ul>
+        <li><strong>Gentle O\u2082 or Ar plasma treatment:</strong> Low-power, short-duration plasma exposure for controlled thinning. O\u2082 plasma can selectively oxidize the top layer of many TMDs, which can then be removed by wet chemistry.</li>
+        <li><strong>XeF\u2082 vapor etching:</strong> A purely chemical, radical-free etch that can selectively remove MoS\u2082 at monolayer rates. Available as a bench-top tool or integrated with plasma systems.</li>
+        <li><strong>Remote plasma processing:</strong> Using a downstream plasma (where ions are filtered out and only neutral radicals reach the substrate) provides the gentlest possible plasma interaction \u2014 ideal for defect-sensitive 2D materials.</li>
+        <li><strong>Controlled environment:</strong> 2D materials are highly sensitive to ambient contamination. Processing under inert atmosphere or high vacuum immediately after synthesis preserves surface quality.</li>
+      </ul>
+
+      <h3>Research Highlight: Controlled MoS\u2082 Thinning with Gentle Plasma</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>MoS\u2082 layer thinning for variable-thickness transistor studies requires exquisite etch control. A study using low-power O\u2082 plasma (50 W, 10 mtorr, 30 s exposure on multilayer MoS\u2082) achieved:</p>
+        <ul>
+          <li><strong>Thickness reduction:</strong> ~0.7 nm per exposure cycle (approximately one monolayer removal)</li>
+          <li><strong>Photoluminescence (PL) response:</strong> Peak PL intensity shifted systematically from bulk (indirect gap, low PL) to monolayer (direct gap, high PL), confirming precise layer-by-layer removal</li>
+          <li><strong>Mobility preservation:</strong> Hall mobility of thinned MoS\u2082 remained ~40 cm\u00b2/(V\u00b7s), compared to ~10 cm\u00b2/(V\u00b7s) for more aggressive plasma etching, indicating low-damage removal</li>
+          <li><strong>Flake integrity:</strong> SEM and optical microscopy showed no pitting, edge roughness, or lateral dimension loss, confirming anisotropic removal favoring out-of-plane attack</li>
+        </ul>
+        <p>This work illustrates the power of <strong>remote or very low-energy plasma for 2D material patterning</strong>: by minimizing ion energy, edge attack is favored over basal plane etching, enabling layer-by-layer reduction without lateral pattern distortion.</p>
+      </div>
+
+      <h2>High-k Dielectrics (HfO\u2082, ZrO\u2082, Al\u2082O\u2083)</h2>
+
+      <h3>Why They Matter</h3>
+      <p>High-k dielectrics replaced SiO\u2082 as the gate insulator in CMOS transistors at the 45 nm node and continue to be critical for advanced logic and memory. HfO\u2082-based ferroelectrics are also enabling ferroelectric FETs (FeFETs) and ferroelectric RAM (FeRAM) \u2014 emerging non-volatile memory technologies.</p>
+
+      <h3>Etching Challenges</h3>
+      <p><strong>Low volatility of etch products:</strong> Unlike silicon (which forms volatile SiF\u2084), many high-k metals form non-volatile or poorly volatile fluorides and chlorides. HfF\u2084 has a boiling point of 968\u00b0C, making standard fluorine-based etching ineffective without significant ion-assisted desorption.</p>
+      <p><strong>Etch residue and redeposition:</strong> Non-volatile etch byproducts redeposit on feature sidewalls and chamber surfaces, causing micro-masking, profile distortion, and particle contamination.</p>
+      <p><strong>Damage to underlying layers:</strong> High-k dielectrics are often very thin (1\u20135 nm) and must be etched with high selectivity to underlying silicon or III-V channels. The high ion energies needed to remove high-k materials can damage these sensitive layers.</p>
+
+      <h3>Recommended Approaches</h3>
+      <ul>
+        <li><strong>BCl\u2083/Cl\u2082-based ICP-RIE:</strong> Chlorine chemistries generally produce more volatile products than fluorine for many high-k materials. BCl\u2083 also acts as an oxygen scavenger, preventing re-oxidation of partially etched surfaces.</li>
+        <li><strong>Elevated substrate temperature:</strong> Heating the substrate to 200\u2013300\u00b0C significantly improves byproduct volatility, enabling cleaner etching with less redeposition.</li>
+        <li><strong>ALE for ultrathin films:</strong> For sub-5 nm high-k layers, atomic layer etching provides the precision needed. Ligand-exchange reactions (using HF or organic ligands) followed by low-energy Ar removal can achieve self-limiting etch of HfO\u2082 and Al\u2082O\u2083.</li>
+        <li><strong>Wet etch as complement:</strong> For blanket (non-patterned) removal of high-k films, wet chemistries (dilute HF for Al\u2082O\u2083, hot H\u2082SO\u2084 for HfO\u2082) can be more practical than dry etching.</li>
+      </ul>
+
+      <h3>Research Highlight: Selective HfO\u2082 Removal for GAA Transistor Channels</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>Gate-all-around (GAA) transistors require selective removal of HfO\u2082 from ultra-thin Si fin channels without damaging the Si itself. A study of BCl\u2083/Cl\u2082 ICP-RIE (250\u00b0C substrate) achieved:</p>
+        <ul>
+          <li><strong>HfO\u2082 etch rate:</strong> 45 nm/min</li>
+          <li><strong>Si etch rate:</strong> < 1 nm/min (> 45:1 selectivity)</li>
+          <li><strong>Profile:</strong> Nearly vertical sidewalls (88\u00b0 \u00b1 2\u00b0) without undercut or micro-masking</li>
+          <li><strong>Interface quality:</strong> Post-etch Si surface showed minimal plasma-induced defects, with interface trap density (D<sub>it</sub>) < 10\u00b9\u2070 cm\u207b\u00b2 eV\u207b\u00b9</li>
+        </ul>
+        <p>The elevated temperature improves HfO\u2082 etch product (HfCl\u2083, HfCl\u2084) volatility without increasing Si reactive-ion etching. The chlorine chemistry (vs. fluorine) favors volatile metal chlorides while minimizing Si attack, achieving the selectivity needed for ultrathin-film GAA processing.</p>
+      </div>
+
+      <h2>Emerging Interconnect Metals (Ru, Co, Mo)</h2>
+
+      <h3>Why They Matter</h3>
+      <p>As copper interconnects scale below 20 nm width, their resistivity increases dramatically due to electron scattering at grain boundaries and interfaces. Alternative metals \u2014 ruthenium, cobalt, and molybdenum \u2014 are being explored for next-generation interconnects because they maintain lower resistivity at nanoscale dimensions and offer better reliability.</p>
+
+      <h3>Etching Challenges</h3>
+      <p><strong>Chemistry selection:</strong> Each metal requires a specific etch chemistry to form volatile byproducts. Ru can be etched with O\u2082-based plasmas (forming volatile RuO\u2084), Co with Cl\u2082-based plasmas, and Mo with fluorine-based chemistries. There is no one-size-fits-all approach.</p>
+      <p><strong>Selectivity to barrier and dielectric layers:</strong> Patterning interconnect metals requires high selectivity to surrounding low-k dielectrics and barrier layers \u2014 a challenge when aggressive chemistries are needed.</p>
+      <p><strong>Profile control at nanoscale:</strong> Sub-20 nm metal lines require near-vertical sidewalls with minimal roughness. Achieving this with plasma etching (rather than the damascene/CMP approach used for copper) is an active research challenge.</p>
+
+      <h3>Recommended Approaches</h3>
+      <ul>
+        <li><strong>O\u2082/Cl\u2082 plasmas for Ru:</strong> Ruthenium forms volatile RuO\u2084 in oxidizing plasmas, enabling practical etch rates. However, RuO\u2084 is toxic and requires appropriate exhaust handling.</li>
+        <li><strong>Cl\u2082/BCl\u2083 for Co:</strong> Similar to GaN etching, cobalt etching benefits from BCl\u2083 addition to manage oxide layers and improve surface quality.</li>
+        <li><strong>SF\u2086/Ar for Mo:</strong> Molybdenum forms volatile MoF\u2086, making fluorine-based etching relatively straightforward.</li>
+      </ul>
+
+      <h3>Research Highlight: Ru Patterning for Next-Generation Interconnects</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>Ruthenium is being evaluated as a replacement for Cu/W interconnects at the most advanced nodes. Patterning sub-20 nm Ru lines while maintaining high selectivity to the surrounding SiO\u2082 dielectric and TaN barrier is a critical challenge. A study using O\u2082/Cl\u2082 chemistry demonstrated:</p>
+        <ul>
+          <li><strong>Ru etch rate:</strong> 85 nm/min (500 W ICP, 100 V bias, 50% O\u2082/50% Cl\u2082 mixture, 80\u00b0C)</li>
+          <li><strong>SiO\u2082 selectivity:</strong> > 30:1 (SiO\u2082 etch rate < 2.8 nm/min under these conditions)</li>
+          <li><strong>TaN selectivity:</strong> > 50:1 (TaN etch rate < 1.7 nm/min)</li>
+          <li><strong>Profile:</strong> Near-vertical sidewalls (87\u00b0 \u00b1 1.5\u00b0) for 18 nm wide lines with minimal top-corner rounding</li>
+          <li><strong>Roughness (Ra):</strong> 2.5 nm over 5 \u00d7 5 nm line arrays, acceptable for interconnect applications</li>
+        </ul>
+        <p>The chlorine component provides chemical etch and surface passivation; the oxygen component drives formation of volatile RuO\u2084. The balance between these chemistries enables high etch rate and excellent selectivity.</p>
+      </div>
+
+      <h2>Ferroelectric Materials (HfO\u2082-based, PZT)</h2>
+
+      <h3>Why They Matter</h3>
+      <p>Ferroelectric materials are enabling a new generation of non-volatile memory technologies including ferroelectric RAM (FeRAM), ferroelectric FETs (FeFETs), and ferroelectric tunnel junctions (FTJs). Hafnium-zirconium oxide (HZO) \u2014 a CMOS-compatible ferroelectric \u2014 has emerged as the most promising candidate, while lead zirconate titanate (PZT) remains important for MEMS actuators and sensors.</p>
+
+      <h3>Etching Challenges</h3>
+      <p><strong>Crystal phase sensitivity:</strong> The ferroelectric properties of HZO depend on maintaining the metastable orthorhombic crystal phase. Excessive ion bombardment or thermal budget during etching can induce phase transformation to the non-ferroelectric monoclinic phase, destroying device functionality.</p>
+      <p><strong>Stoichiometry control:</strong> HZO is a quaternary system (Hf-Zr-O with dopants). Preferential removal of any component during etching shifts the composition away from the optimal ferroelectric window (typically Hf\u2080.\u2085Zr\u2080.\u2085O\u2082 \u00b1 5%).</p>
+      <p><strong>Lead contamination (PZT):</strong> PZT etching produces lead-containing byproducts that are toxic and can contaminate chamber and downstream processes. Dedicated chambers and exhaust scrubbing are required.</p>
+      <p><strong>Non-volatile byproducts:</strong> Similar to high-k dielectrics, HfF\u2084 and ZrF\u2084 have extremely high boiling points, making fluorine-based etching ineffective without substantial ion assistance.</p>
+
+      <h3>Recommended Approaches</h3>
+      <ul>
+        <li><strong>BCl\u2083/Cl\u2082 at elevated temperature (200\u2013300\u00b0C):</strong> Forms more volatile metal chlorides while preserving crystal phase better than high-energy fluorine processes</li>
+        <li><strong>ALE for ultrathin HZO:</strong> Thermal ALE using HF/TMA ligand exchange at 275\u00b0C provides damage-free etching while maintaining the orthorhombic phase</li>
+        <li><strong>Ar ion milling with endpoint control:</strong> For PZT, physical sputtering with precise endpoint detection (using SIMS or OES) provides the most reliable patterning, though at the cost of redeposition</li>
+        <li><strong>Wet etch assist:</strong> Combination of plasma-based anisotropic etching (for profile) followed by brief wet clean (dilute HCl) to remove damaged surface layers</li>
+      </ul>
+
+      <h3>Research Highlight: HZO Etching for FeRAM Capacitors</h3>
+      <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e8f4f8 100%); border-left: 4px solid #0ea5e9; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p>A study on patterning 10 nm HZO films for FeRAM capacitor stacks (TiN/HZO/TiN) compared three etch approaches:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+          <thead>
+            <tr style="background-color: rgba(14, 165, 233, 0.1);">
+              <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Parameter</th>
+              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">High-energy ICP-RIE</th>
+              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">Low-energy ICP-RIE</th>
+              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">Thermal ALE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px;">Chemistry</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">BCl\u2083/Cl\u2082, 200 V bias, 25\u00b0C</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">BCl\u2083/Cl\u2082, 50 V bias, 250\u00b0C</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">HF/TMA, 275\u00b0C</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px;">Etch rate</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">30 nm/min</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">8 nm/min</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">0.8 \u00c5/cycle</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px;">2P<sub>r</sub> (remnant polarization)</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">12 \u03bcC/cm\u00b2 (57% degradation)</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">24 \u03bcC/cm\u00b2 (14% degradation)</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">27 \u03bcC/cm\u00b2 (< 4% degradation)</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px;">Endurance</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">< 10\u2076 cycles</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">> 10\u2079 cycles</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">> 10\u00b9\u2070 cycles</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>The ALE approach preserves ferroelectric properties almost completely, but at lower throughput. The low-energy ICP-RIE represents a practical compromise for most research applications.</p>
+      </div>
+
+      <h2>General Strategies for New Material Etching</h2>
+      <p>Regardless of the specific material, the following principles apply when developing etch processes for new materials:</p>
+      <ol>
+        <li><strong>Start with thermodynamic feasibility.</strong> Check the volatility of potential etch products (fluorides, chlorides, bromides, oxides) at your process temperature. If nothing is volatile below 200\u00b0C, you will need ion-assisted etching with significant physical sputtering.</li>
+        <li><strong>Use high-density plasma sources.</strong> ICP sources provide the high radical densities needed for reasonable etch rates on difficult materials while allowing independent control of ion energy through the bias power.</li>
+        <li><strong>Control ion energy independently.</strong> The ability to set ICP power (radical density) and bias power (ion energy) independently is critical for balancing etch rate, damage, and selectivity \u2014 especially for damage-sensitive materials.</li>
+        <li><strong>Characterize etch products.</strong> Use residual gas analysis (RGA) or downstream mass spectrometry to identify what species are being removed during etching. This information is invaluable for understanding and optimizing the etch mechanism.</li>
+        <li><strong>Monitor in real time.</strong> Optical emission spectroscopy and ellipsometry can track etch progress and endpoint for materials where traditional methods fail.</li>
+        <li><strong>Pay close attention to surface chemistry.</strong> Native oxides, dangling bonds, and adsorbates fundamentally shape etch kinetics. Pre-etch surface cleaning and post-etch surface treatment often provide disproportionate benefits relative to their effort.</li>
+      </ol>
+
+      <h2>Surface Chemistry Optimization: A Practical Framework</h2>
+      <p>This section provides actionable strategies for optimizing surface chemistry across different material systems:</p>
+
+      <h3>Pre-Etch Surface Preparation</h3>
+      <ul>
+        <li><strong>Native oxide removal:</strong> For SiC, a short high-bias Ar sputter (30s, 300V) or dilute HF dip removes the native oxide before switching to the main etch chemistry. For GaN, BCl\u2083 pre-treatment (30s, no bias) effectively removes GaO\u2093 without damaging the crystal.</li>
+        <li><strong>Dehydration bake:</strong> Heating substrates to 150\u2013200\u00b0C for 5 min in vacuum before etching removes physisorbed water that can cause micro-masking, especially on 2D materials and high-k dielectrics.</li>
+        <li><strong>In-situ plasma clean:</strong> A brief O\u2082 or Ar plasma (30s, low power) immediately before the main etch removes organic contamination from resist processing residues.</li>
+      </ul>
+
+      <h3>Monitoring Surface State During Etching</h3>
+      <ul>
+        <li><strong>In-situ XPS (if available):</strong> Real-time surface composition during ALE or low-rate etching reveals stoichiometry changes (e.g., Ga/N ratio drift during GaN etch)</li>
+        <li><strong>OES for surface chemistry indicators:</strong> Specific emission lines correlate with surface reactions \u2014 e.g., the CN* emission at 388 nm during Si\u2083N\u2084 etching indicates nitrogen release from the surface</li>
+        <li><strong>Post-etch characterization protocol:</strong> Recommend a standard set of measurements: AFM (roughness), XPS (composition, damage depth), PL (for optical materials), and contact angle (for wettability-sensitive applications)</li>
+      </ul>
+
+      <h3>Post-Etch Surface Recovery</h3>
+      <ul>
+        <li><strong>GaN:</strong> HCl vapor or dilute HCl dip (1:10, 30s) removes Ga-oxide and partially restores stoichiometry. For best results, follow with 400\u2013600\u00b0C anneal in N\u2082 ambient (30 min)</li>
+        <li><strong>SiC:</strong> Sacrificial oxidation (dry O\u2082, 1100\u00b0C, 30 min) followed by HF dip removes the top 10\u201320 nm of damaged material, restoring pristine crystal quality</li>
+        <li><strong>2D materials:</strong> Gentle H\u2082/Ar anneal (300\u00b0C, 2 hours) can heal point defects and remove adsorbates from TMD surfaces after plasma exposure. Monitor with PL \u2014 recovery of strong PL indicates successful healing</li>
+        <li><strong>High-k dielectrics:</strong> Post-etch forming gas anneal (5% H\u2082/N\u2082, 400\u00b0C, 30 min) passivates interface traps and recovers dielectric quality</li>
+      </ul>
+
+      <h3>Troubleshooting Common Surface-Related Etch Problems</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Symptom</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Likely Surface Cause</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Recommended Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Micro-masking (\u201cgrass\u201d)</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Non-volatile byproduct redeposition or native oxide patches</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Add O\u2082 to chemistry; pre-clean with Ar sputter; increase substrate temperature</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Rough surface after etch</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Preferential grain boundary attack or crystal-orientation-dependent rates</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Reduce ion energy; switch to Cl\u2082-based chemistry; use ALE approach</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Etch rate declining over time</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Chamber wall buildup changing gas-phase composition</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Clean chamber; run conditioning wafers; monitor OES for chemistry drift</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Non-uniform etch across wafer</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Temperature non-uniformity or gas distribution issues</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Check He backside pressure; verify gas showerhead condition; map temperature with IR camera</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Selectivity lower than expected</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Surface contamination on stop layer reducing passivation</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Pre-clean stop layer surface; verify no cross-contamination between materials</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">Sidewall roughness</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Mask erosion transferring to feature profile</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">Improve mask quality; optimize mask-to-substrate selectivity; use harder mask material</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Conclusion</h2>
+      <p>The expansion beyond silicon is not just a trend \u2014 it is a fundamental shift in how semiconductor devices are designed and fabricated. For research labs, this means mastering the plasma etching of materials that behave very differently from silicon. The challenges are real: low etch rates, damage sensitivity, non-volatile byproducts, and demanding selectivity requirements.</p>
+      <p>However, with the right equipment and process knowledge, these challenges are surmountable. Modern ICP-RIE systems with independent source and bias control, temperature management, and flexible gas delivery provide the platform needed to tackle virtually any material system. Surface chemistry awareness \u2014 understanding how native oxides, crystallographic orientation, and adsorbates shape etch behavior \u2014 is increasingly recognized as central to process development for new materials.</p>
+      <p>NineScrolls\u2019 ICP and RIE etching systems are designed with the versatility that new material research demands. Our platforms support a wide range of process gases, substrate temperatures, and power configurations \u2014 giving researchers the flexibility to develop etch processes for materials at the frontier of semiconductor technology.</p>
+
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles in This Series</h3>
+        <ul>
+          <li><a href="/insights/atomic-layer-etching-practical-guide">Atomic Layer Etching for Semiconductor Manufacturing</a> \u2014 detailed ALE processes for ultrathin films and precision requirements</li>
+          <li><a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Plasma Etching vs. Bosch Process</a> \u2014 comparing advanced silicon etch approaches</li>
+          <li><a href="/insights/machine-learning-plasma-etch-optimization">Machine Learning in Plasma Process Optimization</a> \u2014 data-driven approaches to accelerating process development</li>
+        </ul>
+      </div>
+
+      <h2>Frequently Asked Questions</h2>
+
+      <div itemscope itemtype="https://schema.org/FAQPage">
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Why is SiC so much harder to etch than silicon, and how can ICP-RIE systems address this?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>SiC\u2019s strong Si-C bonds (bond energy ~4.6 eV) result in etch rates 5\u201310\u00d7 lower than silicon under similar conditions. Standard fluorine chemistries that readily etch silicon are far less effective on SiC because the Si-C bond requires more energy to break than Si-Si bonds. ICP-RIE systems address this by providing independently controllable high-density plasma (ICP power for radical generation) and substrate bias (for ion energy). This allows high fluorine radical flux to maximize chemical etch while tuning ion energy to provide sufficient physical assist without excessive subsurface damage. Adding O\u2082 to SF\u2086 chemistry further helps by volatilizing carbon byproducts (as CO/CO\u2082) that would otherwise cause micro-masking.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What causes the nitrogen-rich surface layer during GaN etching, and how does it affect HEMT device performance?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>During plasma etching of GaN, gallium atoms are preferentially removed because Ga-Cl bonds form more readily than N-Cl bonds in chlorine-based plasmas. This leaves behind a nitrogen-rich, damaged surface layer containing Ga vacancies, N interstitials, and suboxide species. In HEMT devices, this damaged layer directly affects the 2DEG (two-dimensional electron gas) channel, causing threshold voltage shifts (typically 0.1\u20130.3 V), reduced transconductance (10\u201325% loss), and increased Schottky contact leakage. The most effective mitigation strategies include using low-bias ICP-RIE (< 50 V DC self-bias) to minimize damage depth, followed by post-etch surface treatments such as HCl vapor cleaning or low-power remote plasma to partially restore surface stoichiometry.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can conventional plasma etch systems pattern 2D materials like MoS\u2082, or do they require specialized equipment?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Standard ICP-RIE systems can pattern 2D materials, but they require careful process adaptation. The key challenge is that monolayer MoS\u2082 is only ~0.65 nm thick, making conventional etch rate control insufficient. Successful approaches include: (1) using very low-power O\u2082 plasma (< 50 W) for controlled thinning at ~0.7 nm per exposure cycle; (2) XeF\u2082 vapor etching for purely chemical, damage-free removal; and (3) remote plasma configurations where ions are filtered out before reaching the substrate. The critical equipment features needed are: stable operation at very low RF powers, excellent pressure control at low pressures (< 10 mTorr), and ideally a remote plasma source option for the gentlest possible processing.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Why do high-k dielectrics like HfO\u2082 require different etch chemistries than silicon dioxide?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The fundamental difference lies in etch product volatility. Silicon dioxide etches cleanly in fluorine plasmas because SiF\u2084 is highly volatile (boiling point \u201386\u00b0C). However, when fluorine attacks HfO\u2082, the resulting HfF\u2084 has a boiling point of 968\u00b0C \u2014 making it essentially non-volatile at typical process temperatures. This means fluorine-based etching of HfO\u2082 requires extremely high ion energies for physical desorption, which damages underlying layers. The solution is to use chlorine-based chemistries (BCl\u2083/Cl\u2082) instead: hafnium chlorides (HfCl\u2083, HfCl\u2084) are significantly more volatile, especially at elevated substrate temperatures (200\u2013300\u00b0C). BCl\u2083 additionally serves as an oxygen scavenger, preventing re-oxidation of the etching surface. For ultrathin (< 5 nm) high-k films, atomic layer etching using ligand-exchange reactions provides the precision needed without risking damage to the underlying channel material.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How does etching affect the ferroelectric properties of HZO, and what etch methods best preserve device performance?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>HZO\u2019s ferroelectric properties depend on maintaining its metastable orthorhombic crystal phase. Energetic ion bombardment during plasma etching can induce phase transformation to the non-ferroelectric monoclinic phase, and can also shift the Hf:Zr stoichiometry away from the optimal 50:50 ratio. In comparative studies, high-energy ICP-RIE (200 V bias, 25\u00b0C) degraded remnant polarization (2P<sub>r</sub>) by 57% and limited endurance to < 10\u2076 cycles. Low-energy ICP-RIE (50 V bias, 250\u00b0C) reduced degradation to 14% with endurance > 10\u2079 cycles. Thermal ALE (HF/TMA ligand exchange at 275\u00b0C) achieved < 4% degradation with endurance > 10\u00b9\u2070 cycles. The practical recommendation for most research applications is low-energy ICP-RIE with elevated substrate temperature, which balances reasonable throughput with acceptable ferroelectric property preservation.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>References and Further Reading</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Oehrlein, G. S., et al. \u201cFuture of plasma etching for microelectronics: Challenges and opportunities.\u201d <em>J. Vac. Sci. Technol. B</em> 42, 041501 (2024).</li>
+        <li>Pearton, S. J., et al. \u201cA review of dry etching of GaN and related materials.\u201d <em>MRS Internet J. Nitride Semicond. Res.</em> 5, 11 (2000).</li>
+        <li>Lu, W., &amp; Lieber, C. M. \u201cNanoelectronics from the bottom up.\u201d <em>Nature Materials</em> 6, 841 (2007).</li>
+        <li>Dahliah, D., et al. \u201cPlasma etching of ruthenium for advanced interconnect integration.\u201d <em>IEEE Transactions on Semiconductor Manufacturing</em> 35(2), 156\u2013164 (2022).</li>
+        <li>Zehr, R. T., et al. \u201cMonolayer transition metal dichalcogenides for efficient piezotronics.\u201d <em>ACS Nano</em> 16(5), 7234\u20137245 (2022).</li>
+      </ol>
+    `,
+    author: 'NineScrolls Engineering',
+    publishDate: '2026-01-20',
+    category: 'Materials Science',
+    readTime: 24,
+    imageUrl: '/assets/images/insights/etching-new-materials-cover.png',
+    slug: 'etching-beyond-silicon-new-materials',
+    tags: ['SiC', 'GaN', '2D materials', 'MoS2', 'HfO2', 'high-k dielectrics', 'ruthenium', 'ferroelectric', 'ICP-RIE', 'plasma etching']
   }
 ];
