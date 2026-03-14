@@ -137,6 +137,12 @@ const RELATED_PRODUCTS_MAP: Record<string, RelatedProduct[]> = {
     { href: '/products/pecvd', label: 'PECVD Systems' },
     { href: '/products/ald', label: 'ALD Systems' },
   ],
+  'etching-beyond-silicon-new-materials': [
+    { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
+    { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
+    { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems' },
+    { href: '/products/ald', label: 'ALD Systems' },
+  ],
   'cryogenic-etching-vs-bosch-process': [
     { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
     { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
@@ -180,6 +186,7 @@ const HERO_IMAGES_MAP: Record<string, HeroImageConfig> = {
   'atomic-layer-etching-practical-guide': { prefix: 'ale-guide-cover', fallbackExt: 'png' },
   'cryogenic-etching-vs-bosch-process': { prefix: 'cryo-vs-bosch-cover', fallbackExt: 'png' },
   'machine-learning-plasma-etch-optimization': { prefix: 'ml-plasma-etch-cover', fallbackExt: 'png' },
+  'etching-beyond-silicon-new-materials': { prefix: 'etching-new-materials-cover', fallbackExt: 'png' },
 };
 
 // ─── Standalone Component Articles ───────────────────────────────────────────
