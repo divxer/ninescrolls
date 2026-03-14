@@ -617,6 +617,44 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     };
   }, []);
 
+  // ─── Scroll depth tracking for behavior scoring ──────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const path = location.pathname;
+    // Only track scroll depth on product and insights pages
+    if (!path.startsWith('/products/') && !path.startsWith('/insights/')) return;
+    // Skip list pages (only track detail pages with deeper paths)
+    if (path === '/products' || path === '/products/' || path === '/insights' || path === '/insights/') return;
+
+    let maxScrollDepth = 0;
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const trackScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight <= 0) return;
+      const percent = Math.min(100, Math.round((window.scrollY / scrollHeight) * 100));
+      if (percent > maxScrollDepth) {
+        maxScrollDepth = percent;
+        behaviorAnalytics.trackContentEngagement(path, percent);
+      }
+    };
+
+    const handleScroll = () => {
+      if (scrollTimer) return;
+      scrollTimer = setTimeout(() => {
+        trackScroll();
+        scrollTimer = null;
+      }, 2000);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
+    };
+  }, [location.pathname]);
+
   // ─── Route change tracking ────────────────────────────────────────────────
   useEffect(() => {
     const prevState = pageStateRef.current;

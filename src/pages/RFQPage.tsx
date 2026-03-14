@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
+import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import '../styles/RFQPage.css';
 
 // ---------------------------------------------------------------------------
@@ -227,6 +228,63 @@ export function RFQPage() {
   const [honeypot, setHoneypot] = useState('');
 
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  // ─── Form interaction tracking for behavior scoring ───────────────────────
+  const formInteractionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formStartedRef = useRef(false);
+  const lastFilledRef = useRef(0);
+  useEffect(() => {
+    if (formInteractionTimer.current) clearTimeout(formInteractionTimer.current);
+    formInteractionTimer.current = setTimeout(() => {
+      // Count non-empty, non-default fields
+      const filledFields = Object.entries(formData).filter(([key, val]) => {
+        if (key === 'needsBudgetaryQuote') return val === true;
+        if (key === 'quantity') return val !== 1;
+        if (key === 'shippingCountry') return val !== 'United States';
+        return typeof val === 'string' && val.trim().length > 0;
+      }).length;
+      const totalFields = Object.keys(initialFormData).length;
+      if (filledFields > 0) {
+        if (!formStartedRef.current) {
+          behaviorAnalytics.trackFormStarted('rfq');
+          formStartedRef.current = true;
+        }
+        lastFilledRef.current = filledFields;
+        behaviorAnalytics.trackFormInteraction('rfq', filledFields, totalFields);
+      }
+    }, 5000);
+    return () => {
+      // On cleanup (page leave/unmount), flush immediately if timer pending
+      if (formInteractionTimer.current) {
+        clearTimeout(formInteractionTimer.current);
+        const filledFields = Object.entries(formData).filter(([key, val]) => {
+          if (key === 'needsBudgetaryQuote') return val === true;
+          if (key === 'quantity') return val !== 1;
+          if (key === 'shippingCountry') return val !== 'United States';
+          return typeof val === 'string' && val.trim().length > 0;
+        }).length;
+        const totalFields = Object.keys(initialFormData).length;
+        if (filledFields > 0) {
+          if (!formStartedRef.current) {
+            behaviorAnalytics.trackFormStarted('rfq');
+            formStartedRef.current = true;
+          }
+          lastFilledRef.current = filledFields;
+          behaviorAnalytics.trackFormInteraction('rfq', filledFields, totalFields);
+        }
+      }
+    };
+  }, [formData]);
+
+  // ─── Form abandonment tracking on unmount ──────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (formStartedRef.current) {
+        const totalFields = Object.keys(initialFormData).length;
+        behaviorAnalytics.trackFormAbandoned('rfq', lastFilledRef.current, totalFields);
+      }
+    };
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -485,6 +543,7 @@ export function RFQPage() {
       const result = await response.json();
       setReferenceNumber(result.referenceNumber || '');
       setIsSuccess(true);
+      behaviorAnalytics.trackFormCompleted('rfq');
       setFormData(initialFormData);
       setFiles([]);
       setCurrentStep(1);

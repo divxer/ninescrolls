@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ContactFormContent } from './ContactFormContent';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
+import { behaviorAnalytics } from '../../services/behaviorAnalytics';
 
 interface ContactFormInlineProps {
   className?: string;
@@ -68,6 +69,50 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     }
   }, [inquiryType, topic]);
 
+  // ─── Form interaction tracking for behavior scoring ───────────────────────
+  const formInteractionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formStartedRef = useRef(false);
+  const lastFilledRef = useRef(0);
+  useEffect(() => {
+    if (formInteractionTimer.current) clearTimeout(formInteractionTimer.current);
+    formInteractionTimer.current = setTimeout(() => {
+      const filled = [formData.name, formData.email, formData.phone, formData.organization, formData.message]
+        .filter(v => v.trim().length > 0).length;
+      if (filled > 0) {
+        if (!formStartedRef.current) {
+          behaviorAnalytics.trackFormStarted('contact');
+          formStartedRef.current = true;
+        }
+        lastFilledRef.current = filled;
+        behaviorAnalytics.trackFormInteraction('contact', filled, 5);
+      }
+    }, 3000);
+    return () => {
+      if (formInteractionTimer.current) {
+        clearTimeout(formInteractionTimer.current);
+        const filled = [formData.name, formData.email, formData.phone, formData.organization, formData.message]
+          .filter(v => v.trim().length > 0).length;
+        if (filled > 0) {
+          if (!formStartedRef.current) {
+            behaviorAnalytics.trackFormStarted('contact');
+            formStartedRef.current = true;
+          }
+          lastFilledRef.current = filled;
+          behaviorAnalytics.trackFormInteraction('contact', filled, 5);
+        }
+      }
+    };
+  }, [formData.name, formData.email, formData.phone, formData.organization, formData.message]);
+
+  // ─── Form abandonment tracking on unmount ──────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (formStartedRef.current) {
+        behaviorAnalytics.trackFormAbandoned('contact', lastFilledRef.current, 5);
+      }
+    };
+  }, []);
+
   // Scroll to success message when it appears
   useEffect(() => {
     if (isSuccess && successRef.current) {
@@ -81,6 +126,7 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
     // Honeypot check - if the hidden field is filled, silently "succeed"
     if (formData.website) {
       setIsSuccess(true);
+      behaviorAnalytics.trackFormCompleted('contact');
       return;
     }
 
@@ -107,6 +153,7 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
       }
 
       setIsSuccess(true);
+      behaviorAnalytics.trackFormCompleted('contact');
       setFormData({
         name: '',
         email: '',

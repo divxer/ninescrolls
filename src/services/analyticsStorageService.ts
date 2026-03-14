@@ -125,6 +125,8 @@ interface BehaviorScoreInput {
   returnVisits?: number;
   isPaidTraffic?: boolean;
   trafficChannel?: string;
+  formInteractions?: number;
+  maxScrollDepth?: number;
 }
 
 interface AIClassificationInput {
@@ -190,6 +192,8 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     returnVisits: params.behaviorScore?.returnVisits,
     isPaidTraffic: params.behaviorScore?.isPaidTraffic,
     trafficChannel: params.behaviorScore?.trafficChannel,
+    formInteractions: params.behaviorScore?.formInteractions,
+    maxScrollDepth: params.behaviorScore?.maxScrollDepth,
 
     aiOrganizationType: params.aiClassification?.aiOrganizationType,
     aiConfidence: params.aiClassification?.aiConfidence,

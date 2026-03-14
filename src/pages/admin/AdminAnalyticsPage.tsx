@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
-import { classifyTrafficChannel, extractSearchQuery, type TrafficChannel } from '../../services/behaviorAnalytics';
+import { classifyTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
+import { AdminTrendsSection } from './AdminTrendsSection';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -47,6 +48,7 @@ interface OrganizationRecord {
   maxBehaviorScore: number;
   isAnonymousHighIntent: boolean;
   isISPVisitor: boolean;
+  lifecycleStage: LifecycleStage;
   events: AnalyticsEvent[];
 }
 
@@ -583,6 +585,20 @@ function formatRelativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+// ─── Lifecycle Stage (derived from org event history) ─────────────────────
+
+function computeOrgLifecycleStage(group: AnalyticsEvent[], productsViewed: Set<string>, pdfDownloads: number, returnVisits: number): LifecycleStage {
+  const hasRFQ = group.some(e => e.eventType === 'rfq_step' || e.eventType === 'rfq_submission');
+  if (hasRFQ) return 'intent';
+
+  const hasContactForm = group.some(e => e.eventType === 'contact_form');
+  if (pdfDownloads > 0 || hasContactForm) return 'consideration';
+
+  if (productsViewed.size > 0 || returnVisits > 0) return 'interest';
+
+  return 'awareness';
+}
+
 // ─── Aggregation ────────────────────────────────────────────────────────────
 
 function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
@@ -850,6 +866,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       maxBehaviorScore,
       isAnonymousHighIntent,
       isISPVisitor,
+      lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       events: sorted,
     });
   }
@@ -1096,6 +1113,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}
               >
                 Tier {org.leadTier}
+              </span>
+            )}
+            {org.lifecycleStage && (
+              <span className={`lifecycle-badge lifecycle-${org.lifecycleStage}`}>
+                {org.lifecycleStage}
               </span>
             )}
             {uniqueIPs.length > 0 && (
@@ -1738,6 +1760,14 @@ export function AdminAnalyticsPage() {
   const [keywordSectionOpen, setKeywordSectionOpen] = useState(true);
   const [pageAnalyticsTab, setPageAnalyticsTab] = useState<PageAnalyticsTab>('topPages');
   const [pageAnalyticsSectionOpen, setPageAnalyticsSectionOpen] = useState(true);
+  const [trendsSectionOpen, setTrendsSectionOpen] = useState(true);
+  // Enhanced filter state
+  const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [scoreMin, setScoreMin] = useState<string>('');
+  const [scoreMax, setScoreMax] = useState<string>('');
+  const [lifecycleFilter, setLifecycleFilter] = useState<string>('all');
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const prevDateRange = useRef(dateRange);
   const prevCustomStart = useRef(customStart);
   const prevCustomEnd = useRef(customEnd);
@@ -2031,9 +2061,71 @@ export function AdminAnalyticsPage() {
     );
   }, [filteredOrgs, searchQuery]);
 
+  // Enhanced filters: channel, region, score range, lifecycle
+  const enhancedFilteredOrgs = useMemo(() => {
+    let result = searchedOrgs;
+
+    if (channelFilter !== 'all') {
+      result = result.filter((o) =>
+        o.events.some((e) => e.trafficChannel === channelFilter)
+      );
+    }
+
+    if (regionFilter !== 'all') {
+      result = result.filter((o) => o.country === regionFilter);
+    }
+
+    const minVal = scoreMin !== '' ? parseFloat(scoreMin) : NaN;
+    const maxVal = scoreMax !== '' ? parseFloat(scoreMax) : NaN;
+    if (!isNaN(minVal)) {
+      result = result.filter((o) => o.maxBehaviorScore >= minVal);
+    }
+    if (!isNaN(maxVal)) {
+      result = result.filter((o) => o.maxBehaviorScore <= maxVal);
+    }
+
+    if (lifecycleFilter !== 'all') {
+      result = result.filter((o) => o.lifecycleStage === lifecycleFilter);
+    }
+
+    return result;
+  }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
+
+  // Unique countries for region filter dropdown
+  const availableCountries = useMemo(() => {
+    const countries = new Set<string>();
+    for (const o of organizations) {
+      if (o.country) countries.add(o.country);
+    }
+    return Array.from(countries).sort();
+  }, [organizations]);
+
+  // Active filter count + summary for collapsible filter bar
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (channelFilter !== 'all') count++;
+    if (regionFilter !== 'all') count++;
+    if (scoreMin !== '') count++;
+    if (scoreMax !== '') count++;
+    if (lifecycleFilter !== 'all') count++;
+    return count;
+  }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
+
+  const filterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (channelFilter !== 'all') {
+      const labels: Record<string, string> = { paid_search: 'Paid Search', organic_search: 'Organic Search', paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email', referral: 'Referral', direct: 'Direct' };
+      parts.push(labels[channelFilter] || channelFilter);
+    }
+    if (regionFilter !== 'all') parts.push(regionFilter);
+    if (scoreMin !== '' || scoreMax !== '') parts.push(`Score ${scoreMin || '0'}–${scoreMax || '1'}`);
+    if (lifecycleFilter !== 'all') parts.push(lifecycleFilter);
+    return parts.join(' · ');
+  }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
+
   // Sort organizations
   const sortedOrgs = useMemo(() => {
-    return [...searchedOrgs].sort((a, b) => {
+    return [...enhancedFilteredOrgs].sort((a, b) => {
       let cmp = 0;
       switch (sortCol) {
         case 'orgName':
@@ -2301,6 +2393,17 @@ export function AdminAnalyticsPage() {
 
       {/* World Map — click markers to view org detail */}
       <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} resetKey={kpiFilter} />
+
+      {/* ─── Trends Section ─────────────────────────────────────────────────── */}
+      <AdminTrendsSection
+        filteredEvents={filteredEvents}
+        organizations={organizations}
+        isOpen={trendsSectionOpen}
+        onToggle={() => setTrendsSectionOpen(!trendsSectionOpen)}
+        onChannelClick={(ch) => { setChannelFilter(ch); setFiltersOpen(true); }}
+        onScoreRangeClick={(min, max) => { setScoreMin(min.toFixed(1)); setScoreMax(max.toFixed(1)); setFiltersOpen(true); }}
+        activeChannelFilter={channelFilter}
+      />
 
       {/* ─── Search Keywords Section ────────────────────────────────────────── */}
       {allKeywords.length > 0 && (
@@ -2675,6 +2778,97 @@ export function AdminAnalyticsPage() {
         <button className="analytics-export-btn" onClick={exportCSV}>
           Export CSV
         </button>
+      </div>
+
+      {/* Collapsible Enhanced Filters */}
+      <div className="analytics-filter-bar-wrapper">
+        <h3
+          className="analytics-section-header analytics-filter-header"
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          <span className="keyword-toggle-icon">{filtersOpen ? '▼' : '▶'}</span>
+          {' '}Filters
+          {!filtersOpen && activeFilterCount > 0 && (
+            <span className="analytics-filter-count-badge">{activeFilterCount}</span>
+          )}
+          {!filtersOpen && filterSummary && (
+            <span className="analytics-filter-summary">{filterSummary}</span>
+          )}
+          {activeFilterCount > 0 && (
+            <button
+              className="analytics-filter-clear-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setChannelFilter('all');
+                setRegionFilter('all');
+                setScoreMin('');
+                setScoreMax('');
+                setLifecycleFilter('all');
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </h3>
+        {filtersOpen && (
+          <div className="analytics-enhanced-filters">
+            <div className="analytics-filter-group">
+              <span className="analytics-filter-label">Channel:</span>
+              <select className="analytics-filter-select" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="paid_search">Paid Search</option>
+                <option value="organic_search">Organic Search</option>
+                <option value="paid_social">Paid Social</option>
+                <option value="organic_social">Organic Social</option>
+                <option value="email">Email</option>
+                <option value="referral">Referral</option>
+                <option value="direct">Direct</option>
+              </select>
+            </div>
+            <div className="analytics-filter-group">
+              <span className="analytics-filter-label">Region:</span>
+              <select className="analytics-filter-select" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
+                <option value="all">All</option>
+                {availableCountries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="analytics-filter-group">
+              <span className="analytics-filter-label">Score:</span>
+              <div className="analytics-score-range">
+                <input
+                  type="number"
+                  className="analytics-score-input"
+                  placeholder="Min"
+                  min="0" max="1" step="0.1"
+                  value={scoreMin}
+                  onChange={(e) => setScoreMin(e.target.value)}
+                />
+                <span>–</span>
+                <input
+                  type="number"
+                  className="analytics-score-input"
+                  placeholder="Max"
+                  min="0" max="1" step="0.1"
+                  value={scoreMax}
+                  onChange={(e) => setScoreMax(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="analytics-filter-group">
+              <span className="analytics-filter-label">Lifecycle:</span>
+              <select className="analytics-filter-select" value={lifecycleFilter} onChange={(e) => setLifecycleFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="awareness">Awareness</option>
+                <option value="interest">Interest</option>
+                <option value="consideration">Consideration</option>
+                <option value="intent">Intent</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Organization Table */}
