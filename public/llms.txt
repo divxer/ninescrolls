@@ -53,6 +53,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Plasma Non-Uniformity Solutions](https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions): Causes and fixes for non-uniform plasma in etch chambers
 - [Atomic Layer Etching (ALE) Guide](https://ninescrolls.com/insights/atomic-layer-etching-practical-guide): Comprehensive ALE guide — self-limiting cyclic etch, energy windows, Si/SiO2/III-V/metal chemistries, ICP-RIE implementation, cryogenic and area-selective ALE
 - [Cryogenic Etching vs. Bosch Process](https://ninescrolls.com/insights/cryogenic-etching-vs-bosch-process): In-depth comparison of cryogenic plasma etching and Bosch DRIE for high-aspect-ratio silicon — sidewall smoothness, aspect ratios, equipment retrofit, hybrid approaches, photonics/MEMS/quantum applications
+- [ML for Plasma Etch Optimization](https://ninescrolls.com/insights/machine-learning-plasma-etch-optimization): Practical guide to ML in plasma etching — Bayesian optimization, virtual metrology with OES, endpoint detection, digital twins, predictive maintenance, Python code examples, data management best practices
 - [Future of Plasma Etching](https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics): ALE, pulsed plasmas, cryogenic processes, AI-assisted control
 - [Dry Etching Thermoelectric Films](https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization): CH4/H2/Ar plasma optimization for Bi2Te3 microstructures
 
