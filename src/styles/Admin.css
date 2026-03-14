@@ -2996,3 +2996,210 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ─── Trends Section ──────────────────────────────────────────────────────── */
+
+.trends-section {
+  margin-bottom: 1.5rem;
+}
+
+.trends-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.trends-tab {
+  padding: 0.4rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  background: #fff;
+  color: #555;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trends-tab:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.trends-tab-active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+
+.trends-chart-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.trends-chart-title {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+/* ─── Collapsible Filter Bar ─────────────────────────────────────────────── */
+
+.analytics-filter-bar-wrapper {
+  margin-bottom: 1rem;
+}
+
+.analytics-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analytics-filter-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #1976d2;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.analytics-filter-summary {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 400;
+}
+
+.analytics-filter-clear-all {
+  margin-left: auto;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #666;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.analytics-filter-clear-all:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+}
+
+/* ─── Enhanced Filters ──────────────────────────────────────────────────── */
+
+.analytics-enhanced-filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+}
+
+.analytics-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.analytics-filter-label {
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.analytics-filter-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.analytics-filter-select:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
+.analytics-score-range {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.analytics-score-input {
+  width: 52px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.analytics-score-input:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
+/* ─── Lifecycle Badge ────────────────────────────────────────────────────── */
+
+.lifecycle-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.lifecycle-awareness {
+  background: #e0e0e0;
+  color: #555;
+}
+
+.lifecycle-interest {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.lifecycle-consideration {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.lifecycle-intent {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+@media (max-width: 768px) {
+  .analytics-enhanced-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-filter-group {
+    flex-wrap: wrap;
+  }
+
+  .analytics-filter-summary {
+    display: none;
+  }
+}

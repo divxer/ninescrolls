@@ -110,6 +110,9 @@ const schema = a.schema({
       returnVisits: a.integer(),
       isPaidTraffic: a.boolean(),
       trafficChannel: a.string(),
+      formInteractions: a.integer(),
+      maxScrollDepth: a.integer(),
+      lifecycleStage: a.string(),
       utmTerm: a.string(),
       searchQuery: a.string(),
 

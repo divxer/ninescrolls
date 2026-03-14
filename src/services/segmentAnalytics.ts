@@ -4,9 +4,40 @@
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
-import { behaviorAnalytics, extractSearchQuery } from './behaviorAnalytics';
+import { behaviorAnalytics, extractSearchQuery, type BehaviorScore } from './behaviorAnalytics';
 import { storeAnalyticsEvent, getVisitorId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
+
+// Behavioral tier boost: upgrade lead tier based on behavioral signals
+// Requires multiple distinct signal types (cross-validation) to avoid single-signal false positives
+function applyBehavioralTierBoost(
+  isTargetCustomer: boolean,
+  finalLeadTier: 'A' | 'B' | 'C' | undefined,
+  finalConfidence: number,
+  behaviorScore: BehaviorScore,
+): 'A' | 'B' | 'C' | undefined {
+  if (!isTargetCustomer || !finalLeadTier) return finalLeadTier;
+
+  const lifecycle = behaviorAnalytics.computeLifecycleStage();
+  const boostSignals = [
+    behaviorScore.formInteractions > 0,        // has form interaction
+    behaviorScore.pdfDownloads >= 2,            // multiple PDF downloads
+    behaviorScore.returnVisits >= 2,            // multiple return visits
+    lifecycle === 'consideration' || lifecycle === 'intent',  // advanced lifecycle
+    behaviorScore.productPagesViewed >= 3,     // broad product interest
+  ].filter(Boolean).length;
+
+  let tier = finalLeadTier;
+  // C → B: 2+ distinct boost signals
+  if (tier === 'C' && boostSignals >= 2) {
+    tier = 'B';
+  }
+  // B → A: 3+ distinct boost signals AND finalConfidence >= 0.6
+  if (tier === 'B' && boostSignals >= 3 && finalConfidence >= 0.6) {
+    tier = 'A';
+  }
+  return tier;
+}
 
 function eventNameToType(event: string): string {
   const map: Record<string, string> = {
@@ -350,6 +381,9 @@ class SegmentAnalyticsService {
         finalLeadTier = undefined;
       }
 
+      // Apply behavioral tier boost (cross-validated multi-signal upgrade)
+      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, finalConfidence, behaviorScore);
+
       // Merge event properties
       const enhancedProperties = {
         ...properties,
@@ -597,6 +631,9 @@ class SegmentAnalyticsService {
       } else {
         finalLeadTier = undefined;
       }
+
+      // Apply behavioral tier boost (cross-validated multi-signal upgrade)
+      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, finalConfidence, behaviorScore);
 
       // Extract search query from referrer (available when enterprise proxies leak full URL)
       const referrer = typeof document !== 'undefined' ? document.referrer : undefined;

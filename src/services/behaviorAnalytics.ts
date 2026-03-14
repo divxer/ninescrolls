@@ -159,16 +159,21 @@ interface BehaviorScore {
   highValuePagesViewed: number;    // 高价值页面（如 hy-20l）
   timeOnSite: number;              // 总停留时间（秒）
   pdfDownloads: number;            // PDF 下载次数
-  returnVisits: number;            // 回访次数（7天内）
+  returnVisits: number;            // 回访次数（14天内）
   isPaidTraffic: boolean;          // 是否来自付费广告（向后兼容）
   trafficChannel: TrafficChannel;  // 流量渠道分类
+  formInteractions: number;        // 表单交互信号计数
+  maxScrollDepth: number;          // 最高滚动里程碑 (0/25/50/75/100)
   behaviorScore: number;            // 综合行为得分 (0-1)
 }
+
+export type LifecycleStage = 'awareness' | 'interest' | 'consideration' | 'intent';
 
 class BehaviorAnalyticsService {
   private static instance: BehaviorAnalyticsService;
   private behaviorSignals: BehaviorSignal[] = [];
-  private readonly SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private readonly SESSION_DURATION = 14 * 24 * 60 * 60 * 1000; // 14 days (extended for decay)
+  private readonly DAY_MS = 24 * 60 * 60 * 1000;
   private readonly STORAGE_KEY = 'ninescrolls_behavior_signals';
 
   private constructor() {
@@ -182,6 +187,16 @@ class BehaviorAnalyticsService {
     return BehaviorAnalyticsService.instance;
   }
 
+  // Compute decay multiplier based on signal age
+  // 0-3 days: 1.0, 3-7 days: 0.5, 7-14 days: 0.25, >14 days: 0
+  private getDecayMultiplier(signalTimestamp: number, now: number): number {
+    const ageDays = (now - signalTimestamp) / this.DAY_MS;
+    if (ageDays < 3) return 1.0;
+    if (ageDays < 7) return 0.5;
+    if (ageDays < 14) return 0.25;
+    return 0;
+  }
+
   // Load behavior signals from localStorage
   private loadFromStorage() {
     try {
@@ -189,7 +204,7 @@ class BehaviorAnalyticsService {
         const stored = localStorage.getItem(this.STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Filter out old signals (older than 7 days)
+          // Filter out old signals (older than 14 days)
           const cutoff = Date.now() - this.SESSION_DURATION;
           this.behaviorSignals = parsed.filter((s: BehaviorSignal) => s.timestamp > cutoff);
           this.saveToStorage();
@@ -275,72 +290,185 @@ class BehaviorAnalyticsService {
     });
   }
 
-  // Calculate behavior score
+  // Track form field interaction (RFQ or contact form)
+  // Deduplicates: only records if fieldsEngaged increased for same formType within 60s
+  trackFormInteraction(formType: 'rfq' | 'contact', fieldsEngaged: number, totalFields: number) {
+    const recentCutoff = Date.now() - 60000;
+    const alreadyTracked = this.behaviorSignals.some(
+      s => s.event === 'form_interaction' && s.timestamp > recentCutoff &&
+           (s.metadata as Record<string, unknown>)?.formType === formType &&
+           ((s.metadata as Record<string, unknown>)?.fieldsEngaged as number) >= fieldsEngaged
+    );
+    if (alreadyTracked) return;
+
+    const fillRatio = totalFields > 0 ? fieldsEngaged / totalFields : 0;
+    this.trackSignal('form_interaction', fillRatio, {
+      formType,
+      fieldsEngaged,
+      totalFields,
+    });
+  }
+
+  // Track form lifecycle: started (first field engagement)
+  // Deduplicates per formType within the entire signal window
+  trackFormStarted(formType: 'rfq' | 'contact') {
+    const alreadyStarted = this.behaviorSignals.some(
+      s => s.event === 'form_started' &&
+           (s.metadata as Record<string, unknown>)?.formType === formType
+    );
+    if (alreadyStarted) return;
+    this.trackSignal('form_started', 0, { formType });
+  }
+
+  // Track form lifecycle: completed (successful submission)
+  trackFormCompleted(formType: 'rfq' | 'contact') {
+    this.trackSignal('form_completed', 1, { formType });
+  }
+
+  // Track form lifecycle: abandoned (component unmount without completion)
+  // Includes fieldsEngaged/totalFields for dropout analysis
+  trackFormAbandoned(formType: 'rfq' | 'contact', fieldsEngaged: number, totalFields: number) {
+    const wasStarted = this.behaviorSignals.some(
+      s => s.event === 'form_started' &&
+           (s.metadata as Record<string, unknown>)?.formType === formType
+    );
+    const wasCompleted = this.behaviorSignals.some(
+      s => s.event === 'form_completed' &&
+           (s.metadata as Record<string, unknown>)?.formType === formType
+    );
+    if (wasStarted && !wasCompleted) {
+      const fillRatio = totalFields > 0 ? fieldsEngaged / totalFields : 0;
+      this.trackSignal('form_abandoned', fillRatio, { formType, fieldsEngaged, totalFields });
+    }
+  }
+
+  // Track content engagement (scroll depth milestones)
+  // Only records at 25/50/75/100% thresholds, deduplicates per page+milestone
+  trackContentEngagement(pagePath: string, scrollDepthPercent: number) {
+    const milestone = Math.floor(scrollDepthPercent / 25) * 25;
+    if (milestone < 25) return;
+
+    const alreadyTracked = this.behaviorSignals.some(
+      s => s.event === 'content_engagement' &&
+           (s.metadata as Record<string, unknown>)?.pagePath === pagePath &&
+           (s.value || 0) >= milestone
+    );
+    if (alreadyTracked) return;
+
+    this.trackSignal('content_engagement', milestone, { pagePath });
+  }
+
+  // Calculate behavior score with decay mechanism
   calculateBehaviorScore(): BehaviorScore {
-    const cutoff = Date.now() - this.SESSION_DURATION;
+    const now = Date.now();
+    const cutoff = now - this.SESSION_DURATION;
     const recentSignals = this.behaviorSignals.filter(s => s.timestamp > cutoff);
-    
+
+    // --- Categorize signals ---
     const productViews = recentSignals.filter(s => s.event === 'product_view');
     const highValueViews = productViews.filter(s => s.metadata?.isHighValue);
     const pdfDownloads = recentSignals.filter(s => s.event === 'pdf_download');
     const timeSignals = recentSignals.filter(s => s.event === 'time_on_page');
     const trafficSignals = recentSignals.filter(s => s.event === 'traffic_source');
-    
-    // Calculate total time on site
-    const totalTime = timeSignals.reduce((sum, s) => sum + (s.value || 0), 0);
-    
-    // Check for return visits (multiple sessions)
+    const formSignals = recentSignals.filter(s => s.event === 'form_interaction');
+    const scrollSignals = recentSignals.filter(s => s.event === 'content_engagement');
+
+    // --- Decay-weighted score calculation ---
+    let behaviorScore = 0;
+
+    // Product pages viewed (max +0.15) — decay-weighted count
+    let decayedProductCount = 0;
+    let decayedHighValueCount = 0;
+    for (const s of productViews) {
+      const decay = this.getDecayMultiplier(s.timestamp, now);
+      decayedProductCount += decay;
+      if (s.metadata?.isHighValue) decayedHighValueCount += decay;
+    }
+    if (decayedProductCount >= 2) {
+      behaviorScore += 0.15;
+    } else if (decayedProductCount >= 0.5) {
+      behaviorScore += 0.05;
+    }
+
+    // High-value pages (max +0.2)
+    if (decayedHighValueCount > 0) {
+      behaviorScore += Math.min(0.2, decayedHighValueCount * 0.2);
+    }
+
+    // Time on site (max +0.1) — decay-weighted total seconds
+    let decayedTime = 0;
+    for (const s of timeSignals) {
+      decayedTime += (s.value || 0) * this.getDecayMultiplier(s.timestamp, now);
+    }
+    if (decayedTime > 90) {
+      behaviorScore += 0.1;
+    } else if (decayedTime > 30) {
+      behaviorScore += 0.05;
+    }
+
+    // PDF downloads (max +0.2) — decay-weighted count
+    let decayedPdfCount = 0;
+    for (const s of pdfDownloads) {
+      decayedPdfCount += this.getDecayMultiplier(s.timestamp, now);
+    }
+    if (decayedPdfCount > 0) {
+      behaviorScore += Math.min(0.2, decayedPdfCount * 0.1);
+    }
+
+    // Return visits (max +0.25) — no decay (unique days is the signal itself)
     const uniqueDays = new Set(
       recentSignals.map(s => new Date(s.timestamp).toDateString())
     ).size;
     const returnVisits = uniqueDays > 1 ? uniqueDays - 1 : 0;
-    
-    // Determine traffic channel and paid status
-    const trafficChannel = (trafficSignals[0]?.metadata?.trafficChannel as TrafficChannel) || 'direct';
-    const isPaidTraffic = trafficChannel === 'paid_search' || trafficChannel === 'paid_social';
-    
-    // Calculate behavior score (weighted)
-    let behaviorScore = 0;
-    
-    // Product pages viewed (max +0.15)
-    if (productViews.length >= 2) {
-      behaviorScore += 0.15;
-    } else if (productViews.length === 1) {
-      behaviorScore += 0.05;
-    }
-    
-    // High-value pages (max +0.2)
-    if (highValueViews.length > 0) {
-      behaviorScore += 0.2;
-    }
-    
-    // Time on site (max +0.1)
-    if (totalTime > 90) {
-      behaviorScore += 0.1;
-    } else if (totalTime > 30) {
-      behaviorScore += 0.05;
-    }
-    
-    // PDF downloads (max +0.2)
-    if (pdfDownloads.length > 0) {
-      behaviorScore += Math.min(0.2, pdfDownloads.length * 0.1);
-    }
-    
-    // Return visits (max +0.25)
     if (returnVisits > 0) {
       behaviorScore += Math.min(0.25, returnVisits * 0.1);
     }
-    
-    // Traffic intent bonus (max +0.1)
-    if (isPaidTraffic) {
-      behaviorScore += 0.1;
-    } else if (trafficChannel === 'organic_search') {
+
+    // Traffic intent bonus (max +0.1) — no decay (channel doesn't age)
+    const trafficChannel = (trafficSignals[0]?.metadata?.trafficChannel as TrafficChannel) || 'direct';
+    const isPaidTraffic = trafficChannel === 'paid_search' || trafficChannel === 'paid_social';
+    if (isPaidTraffic || trafficChannel === 'organic_search') {
       behaviorScore += 0.1;
     }
-    
+
+    // Form interaction (max +0.2) — decay-weighted
+    let decayedFormScore = 0;
+    for (const s of formSignals) {
+      const decay = this.getDecayMultiplier(s.timestamp, now);
+      const fillRatio = s.value || 0;
+      const formWeight = (s.metadata as Record<string, unknown>)?.formType === 'rfq' ? 0.2 : 0.15;
+      decayedFormScore += decay * fillRatio * formWeight;
+    }
+    if (decayedFormScore > 0) {
+      behaviorScore += Math.min(0.2, decayedFormScore);
+    }
+
+    // Content engagement / scroll depth (max +0.1) — decay-weighted, page-type weight
+    let decayedScrollScore = 0;
+    for (const s of scrollSignals) {
+      const decay = this.getDecayMultiplier(s.timestamp, now);
+      const depth = (s.value || 0) / 100;
+      const pagePath = (s.metadata as Record<string, unknown>)?.pagePath as string || '';
+      const pageWeight = pagePath.startsWith('/products/') ? 0.06 : 0.04;
+      decayedScrollScore += decay * depth * pageWeight;
+    }
+    if (decayedScrollScore > 0) {
+      behaviorScore += Math.min(0.1, decayedScrollScore);
+    }
+
+    // Combined engagement bonus: deep scroll + substantial time = active explorer
+    const hasDeepScroll = scrollSignals.some(s => (s.value || 0) >= 50);
+    const hasSubstantialTime = decayedTime >= 60;
+    if (hasDeepScroll && hasSubstantialTime) {
+      behaviorScore += 0.05;
+    }
+
     // Cap at 1.0
     behaviorScore = Math.min(1.0, behaviorScore);
-    
+
+    // Raw time for dashboard display
+    const totalTime = timeSignals.reduce((sum, s) => sum + (s.value || 0), 0);
+
     return {
       productPagesViewed: productViews.length,
       highValuePagesViewed: highValueViews.length,
@@ -349,8 +477,41 @@ class BehaviorAnalyticsService {
       returnVisits,
       isPaidTraffic,
       trafficChannel,
-      behaviorScore
+      formInteractions: formSignals.length,
+      maxScrollDepth: scrollSignals.length > 0
+        ? Math.max(...scrollSignals.map(s => s.value || 0))
+        : 0,
+      behaviorScore,
     };
+  }
+
+  // Compute customer lifecycle stage from behavior signals
+  computeLifecycleStage(): LifecycleStage {
+    const now = Date.now();
+    const cutoff = now - this.SESSION_DURATION;
+    const signals = this.behaviorSignals.filter(s => s.timestamp > cutoff);
+
+    // Stage 4: Intent — RFQ form with high fill ratio OR any form completed
+    const hasRfqIntent = signals.some(s =>
+      s.event === 'form_interaction' &&
+      (s.metadata as Record<string, unknown>)?.formType === 'rfq' &&
+      (s.value || 0) >= 0.7
+    );
+    const hasFormCompleted = signals.some(s => s.event === 'form_completed');
+    if (hasRfqIntent || hasFormCompleted) return 'intent';
+
+    // Stage 3: Consideration — PDF download or form interaction
+    const hasPdf = signals.some(s => s.event === 'pdf_download');
+    const hasFormEngagement = signals.some(s => s.event === 'form_interaction');
+    if (hasPdf || hasFormEngagement) return 'consideration';
+
+    // Stage 2: Interest — return visit or product page view
+    const uniqueDays = new Set(signals.map(s => new Date(s.timestamp).toDateString())).size;
+    const hasProductView = signals.some(s => s.event === 'product_view');
+    if (uniqueDays > 1 || hasProductView) return 'interest';
+
+    // Stage 1: Awareness — default
+    return 'awareness';
   }
 
   // Get all behavior signals (for debugging)
