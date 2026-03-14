@@ -29,6 +29,10 @@ const ddbClient = taxRateLimitTable
   : null;
 
 const getClientIp = (event: Parameters<APIGatewayProxyHandlerV2>[0]): string => {
+  const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
+  if (cfViewerAddr) {
+    return cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+  }
   const forwarded = event.headers?.['x-forwarded-for'] || event.headers?.['X-Forwarded-For'];
   if (forwarded) {
     return forwarded.split(',')[0].trim();

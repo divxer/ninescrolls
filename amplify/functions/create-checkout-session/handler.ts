@@ -60,6 +60,10 @@ function isPrivateIP(ip: string): boolean {
 }
 
 const getClientIp = (event: Parameters<APIGatewayProxyHandlerV2>[0]): string => {
+  const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
+  if (cfViewerAddr) {
+    return cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+  }
   const forwarded = event.headers?.['x-forwarded-for'] || event.headers?.['X-Forwarded-For'];
   if (forwarded) {
     const ips = forwarded.split(',').map((s: string) => s.trim());
