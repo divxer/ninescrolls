@@ -51,6 +51,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [PE vs. RIE vs. ICP-RIE](https://ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching): Comparison of three plasma etching modes
 - [Plasma Etching Fundamentals](https://ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications): From basics to applications in semiconductor manufacturing
 - [Plasma Non-Uniformity Solutions](https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions): Causes and fixes for non-uniform plasma in etch chambers
+- [Atomic Layer Etching (ALE) Guide](https://ninescrolls.com/insights/atomic-layer-etching-practical-guide): Comprehensive ALE guide — self-limiting cyclic etch, energy windows, Si/SiO2/III-V/metal chemistries, ICP-RIE implementation, cryogenic and area-selective ALE
 - [Future of Plasma Etching](https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics): ALE, pulsed plasmas, cryogenic processes, AI-assisted control
 - [Dry Etching Thermoelectric Films](https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization): CH4/H2/Ar plasma optimization for Bi2Te3 microstructures
 

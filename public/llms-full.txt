@@ -156,6 +156,10 @@ Summary: From basics to applications — covers ion etching, chemical plasma etc
 URL: https://ninescrolls.com/insights/plasma-non-uniform-etch-chamber-solutions
 Summary: Why plasma is non-uniform in etch chambers (gas flow patterns, electromagnetic asymmetry, chamber geometry) and how to solve it (pressure/gas tuning, hardware symmetry, electrode design).
 
+**Atomic Layer Etching (ALE): A Practical Guide for R&D**
+URL: https://ninescrolls.com/insights/atomic-layer-etching-practical-guide
+Summary: Comprehensive guide to ALE — a cyclic, self-limiting etch process removing material one atomic layer at a time (~0.5–2 Å/cycle). Covers the two-step mechanism (surface modification + low-energy ion removal), the ALE energy window (15–50 eV), core chemistries for Si, SiO₂, III-V semiconductors (GaN, GaAs, InP), metals (W, Co, Ru), and high-k dielectrics (HfO₂). Includes practical guidance on implementing ALE on ICP-RIE systems, gas switching optimization, ion energy calibration, chamber conditioning, and quasi-ALE behavior. Applications span FinFET/GAA gate etch, photonic waveguides, 2D material thinning, and MEMS. Covers emerging frontiers: hybrid ALE, cryogenic ALE (−80°C to −120°C), area-selective ALE, multi-step ALE for complex stacks, and directional ALE for 3D architectures.
+
 **Future of Plasma Etching**
 URL: https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics
 Summary: Emerging trends including atomic layer etching (ALE), pulsed plasmas, low-damage etch for EUV resist removal, cryogenic/variable-temperature processes, and AI-assisted process control.

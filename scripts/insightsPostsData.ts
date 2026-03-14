@@ -5333,6 +5333,53 @@ export const insightsPosts: InsightsPost[] = [
       <p>With emerging variants like hybrid ALE, cryogenic ALE, and area-selective ALE pushing the technique into new territory, the coming years will see an expansion of both the materials and applications that ALE can address. Researchers who build ALE expertise now will be well-positioned to lead this transition.</p>
       <p>NineScrolls offers ICP and RIE etching systems designed with the flexibility and precision control that ALE process development requires. To learn more about how our systems can support your ALE research, visit our <a href="/products">Products page</a> or <a href="/quote">request a quote</a>.</p>
 
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq-item" itemscope itemtype="https://schema.org/Question">
+        <h3 itemprop="name">What is Atomic Layer Etching (ALE) and how does it differ from conventional plasma etching?</h3>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <div itemprop="text">
+            <p>Atomic Layer Etching (ALE) is a cyclic, self-limiting etch process that removes material one atomic layer at a time, typically 0.5\u20132 \u00c5 per cycle. Unlike conventional plasma etching where ions and reactive species simultaneously bombard the substrate, ALE separates the process into two sequential steps: (1) surface modification with a reactive gas that chemically alters only the topmost layer, and (2) removal with low-energy ion bombardment (15\u201350 eV) that selectively sputters the modified layer. This self-limiting behavior delivers sub-nanometer depth control, minimal substrate damage, and excellent uniformity that continuous etching cannot match.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemtype="https://schema.org/Question">
+        <h3 itemprop="name">What is the ALE energy window and why is it important?</h3>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <div itemprop="text">
+            <p>The ALE energy window is the range of ion energies in which the removal step selectively removes only the modified surface layer without sputtering the unmodified bulk material. For most materials, this window spans approximately 15\u201350 eV. Below ~15 eV, ion energy is insufficient to remove even the modified layer; above ~50\u201380 eV, bulk sputtering begins and self-limiting behavior is lost. Silicon has a relatively wide ALE window (~15\u201360 eV for Cl\u2082/Ar), making it forgiving of process variations, while some III-V materials have narrower windows requiring more precise bias control.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemtype="https://schema.org/Question">
+        <h3 itemprop="name">Can I implement ALE on an existing ICP-RIE system?</h3>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <div itemprop="text">
+            <p>Yes. Many modern ICP-RIE systems can be configured for ALE without a dedicated tool. The key requirements are: (1) pulsed plasma capability with fast gas switching, (2) independent bias power control at low levels for the 15\u201350 eV ion energy range, (3) fast gas exchange between steps (ideally &lt; 1 second), and (4) flexible process recipe programming with step-loop timing control. NineScrolls\\' ICP etching systems include all of these capabilities, making them suitable for ALE process development alongside conventional RIE/ICP workflows.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemtype="https://schema.org/Question">
+        <h3 itemprop="name">What materials can be etched using ALE?</h3>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <div itemprop="text">
+            <p>ALE has been demonstrated for a wide range of materials: silicon and silicon dioxide (the most mature processes, using Cl\u2082/Ar and fluorocarbon/Ar chemistries), III-V semiconductors including GaN, GaAs, and InP (for power electronics and photonics), metals such as W, Co, and Ru (for advanced interconnects), high-k dielectrics like HfO\u2082 (via thermal ligand-exchange ALE), ferroelectric HZO (for FeRAM/FeFET), and phase-change materials like GST (for PCM devices). The technique is continuously being extended to new material systems.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" itemscope itemtype="https://schema.org/Question">
+        <h3 itemprop="name">What are the main limitations and challenges of ALE?</h3>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <div itemprop="text">
+            <p>The primary challenges are: (1) lower throughput compared to continuous etching due to cyclic gas switching overhead, though sub-2-second cycles have been demonstrated; (2) process complexity requiring careful optimization of surface chemistry, ion energy thresholds, and gas-phase dynamics; (3) limited established recipes for many emerging materials; and (4) achieving true atomic-level uniformity across large substrates requires excellent gas distribution and temperature control. Quasi-ALE behavior (EPC variation &lt; 5%) is generally acceptable for research applications.</p>
+          </div>
+        </div>
+      </div>
+
       <h2>References and Further Reading</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Oehrlein, G. S., et al. \u201cFuture of plasma etching for microelectronics: Challenges and opportunities.\u201d <em>J. Vac. Sci. Technol. B</em> 42, 041501 (2024). <a href="https://doi.org/10.1116/6.0003579" target="_blank" rel="noopener noreferrer">doi:10.1116/6.0003579</a></li>
