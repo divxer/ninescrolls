@@ -267,11 +267,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         }
 
         // Extract visitor IP and User-Agent from request headers
+        // Priority: CloudFront-Viewer-Address > X-Forwarded-For > sourceIp
+        const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
         const xForwardedFor = event.headers?.['X-Forwarded-For'] || event.headers?.['x-forwarded-for'];
         const sourceIp = event.requestContext?.identity?.sourceIp;
-        const visitorIp = xForwardedFor
-            ? (() => { const ips = xForwardedFor.split(',').map((s: string) => s.trim()); return ips.find((ip: string) => !isPrivateIP(ip)) || ips[0]; })()
-            : sourceIp;
+        const visitorIp = cfViewerAddr
+            ? (cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr)
+            : xForwardedFor
+                ? (() => { const ips = xForwardedFor.split(',').map((s: string) => s.trim()); return ips.find((ip: string) => !isPrivateIP(ip)) || ips[0]; })()
+                : sourceIp;
         const userAgent = event.headers?.['User-Agent'] || event.headers?.['user-agent'] || '';
 
         // Merge frontend browser context with server-side data (IP, userAgent).
