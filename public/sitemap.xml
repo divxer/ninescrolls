@@ -170,7 +170,7 @@
   </url>
   <url>
     <loc>https://ninescrolls.com/insights</loc>
-    <lastmod>2026-02-18</lastmod>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -324,6 +324,12 @@
   <url>
     <loc>https://ninescrolls.com/insights/icp200-metasurface-flow-visualization</loc>
     <lastmod>2025-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ninescrolls.com/insights/atomic-layer-etching-practical-guide</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
