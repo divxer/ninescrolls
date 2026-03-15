@@ -107,13 +107,15 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
 ];
 
 // Known bot / crawler organizations — filtered alongside isBot
+// Use specific org names to avoid false positives on ISPs (e.g. Google Fiber, Apple iCloud Private Relay)
 const BOT_ORG_PATTERNS = [
-  'google', 'googlebot', 'bing', 'microsoft', 'msn',
+  'google llc', 'googlebot',
+  'microsoft corporation', 'msn',
   'ahrefs', 'semrush', 'moz.com', 'majestic',
   'yandex', 'baidu', 'bytedance', 'bytespider',
-  'facebook', 'meta platforms', 'twitter',
-  'apple', 'applebot',
-  'amazon', 'amazonaws',
+  'meta platforms',
+  'applebot',
+  'amazonaws', 'amazon.com',
   'cloudflare', 'fastly',
   'datadome', 'imperva', 'sucuri',
   'censys', 'shodan', 'netcraft',
