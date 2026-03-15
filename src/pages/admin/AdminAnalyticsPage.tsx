@@ -48,6 +48,7 @@ interface OrganizationRecord {
   maxBehaviorScore: number;
   isAnonymousHighIntent: boolean;
   isISPVisitor: boolean;
+  hasBot: boolean;
   lifecycleStage: LifecycleStage;
   events: AnalyticsEvent[];
 }
@@ -806,12 +807,15 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
+    // Detect bot visitors — any event in the group flagged as isBot
+    const hasBot = group.some((e) => e.isBot);
+
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
     );
     const ipOrgType = geoEvent.organizationType || '';
-    const effectiveOrgType = (ipOrgType && ipOrgType !== 'unknown') ? ipOrgType : (aiEvent?.aiOrganizationType || ipOrgType);
+    const effectiveOrgType = hasBot ? 'bot' : (ipOrgType && ipOrgType !== 'unknown') ? ipOrgType : (aiEvent?.aiOrganizationType || ipOrgType);
 
     // Promote AI confidence when it's higher than IP-based confidence
     if (aiEvent?.aiConfidence != null && aiEvent.aiConfidence > maxConf) {
@@ -881,6 +885,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       maxBehaviorScore,
       isAnonymousHighIntent,
       isISPVisitor,
+      hasBot,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       events: sorted,
     });
@@ -1275,6 +1280,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         // Determine classification source
         const source = (() => {
           if (override?.found && override?.source === 'manual') return 'manual';
+          if (org.hasBot) return 'bot';
           if (hasAI && (aiEvent.aiConfidence ?? 0) >= 0.5 && aiEvent.aiOrganizationType !== 'unknown') return 'ai';
           if (ipConfidence > 0 && ipOrgType !== 'unknown') return 'keyword';
           if (org.isAnonymousHighIntent) return 'behavior';
@@ -1283,6 +1289,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
         const sourceBadge: Record<string, { label: string; className: string }> = {
           manual: { label: 'Manual Override', className: 'org-detection-badge-manual' },
+          bot: { label: 'Bot Detected', className: 'org-detection-badge-bot' },
           ai: { label: 'AI Classified', className: 'org-detection-badge-ai' },
           keyword: { label: 'Keyword Match', className: 'org-detection-badge-keyword' },
           behavior: { label: 'Behavior-based', className: 'org-detection-badge-behavior' },
@@ -1299,8 +1306,29 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               <span className={`org-detection-badge ${badge.className}`}>{badge.label}</span>
             </div>
 
+            {/* Bot detection details */}
+            {org.hasBot && (() => {
+              const botEvent = org.events.find((e) => e.isBot);
+              const ua = botEvent?.userAgent || '';
+              // Extract bot name from user agent (e.g. "YisouSpider/5.0" → "YisouSpider")
+              const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
+              const botName = botMatch ? botMatch[1] : 'Unknown Bot';
+              return (
+                <div className="org-detail-ai-classification">
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Bot Name</span>
+                    <span className="org-ai-value">{botName}</span>
+                  </div>
+                  <div className="org-ai-row">
+                    <span className="org-ai-label">Detection</span>
+                    <span className="org-ai-value">User-Agent match</span>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* IP vs AI comparison */}
-            {hasAI ? (
+            {!org.hasBot && hasAI ? (
               <div className="org-detection-comparison">
                 <div className="org-detection-col">
                   <div className="org-detection-col-header">IP Lookup</div>
