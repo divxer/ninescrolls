@@ -2,7 +2,24 @@ import { QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME, SLACK_WEBHOOK_URL } from './dynamodb.js';
-import type { OrderItem, ContactItem, DocumentItem } from './types.js';
+import type { OrderItem, ContactItem, DocumentItem, ContactRole } from './types.js';
+import { CONTACT_ROLES } from './types.js';
+
+/** Sanitize a role value from DynamoDB to a valid ContactRole enum value. */
+function sanitizeRole(raw: string): ContactRole {
+    if (CONTACT_ROLES.includes(raw as ContactRole)) return raw as ContactRole;
+    // Handle legacy mixed-case values from RFQ conversion
+    const upper = raw.toUpperCase().replace(/\s+/g, '_');
+    if (CONTACT_ROLES.includes(upper as ContactRole)) return upper as ContactRole;
+    const LEGACY_MAP: Record<string, ContactRole> = {
+        'RESEARCH_SCIENTIST': 'RESEARCHER',
+        'POSTDOC': 'RESEARCHER',
+        'GRADUATE_STUDENT': 'RESEARCHER',
+        'ENGINEER': 'OTHER',
+        'BUSINESS_DEVELOPMENT': 'OTHER',
+    };
+    return LEGACY_MAP[upper] ?? 'OTHER';
+}
 
 /**
  * Fetch a single ORDER entity from DynamoDB.
@@ -56,7 +73,7 @@ export function buildOrderResponse(order: OrderItem, contacts: ContactItem[]): R
             contactName: c.contactName,
             contactEmail: c.contactEmail,
             contactPhone: c.contactPhone || null,
-            role: c.role,
+            role: sanitizeRole(c.role),
             department: c.department || null,
             isPrimary: c.isPrimary,
             feedbackInvite: c.feedbackInvite,
