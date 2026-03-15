@@ -44,11 +44,20 @@ export async function updateContact(event: AppSyncEvent) {
     const existing = result.Item as ContactItem;
     const updateParts: string[] = [];
     const exprValues: Record<string, unknown> = {};
+    const exprNames: Record<string, string> = {};
+
+    // DynamoDB reserved keywords that need aliasing
+    const RESERVED = new Set(['role', 'status', 'name', 'notes']);
 
     for (const field of CONTACT_FIELDS) {
         const value = (input as Record<string, unknown>)[field];
         if (value !== undefined) {
-            updateParts.push(`${field} = :${field}`);
+            if (RESERVED.has(field)) {
+                exprNames[`#${field}`] = field;
+                updateParts.push(`#${field} = :${field}`);
+            } else {
+                updateParts.push(`${field} = :${field}`);
+            }
             exprValues[`:${field}`] = value;
         }
     }
@@ -72,6 +81,7 @@ export async function updateContact(event: AppSyncEvent) {
         Key: { PK: `ORDER#${orderId}`, SK: `CONTACT#${contactId}` },
         UpdateExpression: `SET ${updateParts.join(', ')}`,
         ExpressionAttributeValues: exprValues,
+        ...(Object.keys(exprNames).length > 0 && { ExpressionAttributeNames: exprNames }),
     }));
 
     // Build updated response
