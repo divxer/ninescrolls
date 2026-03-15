@@ -807,8 +807,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
-    // Detect bot visitors — any event in the group flagged as isBot
-    const hasBot = group.some((e) => e.isBot);
+    // Detect bot visitors — by isBot flag OR known bot org name
+    const orgKey = geoEvent.orgName || geoEvent.org || '';
+    const hasBot = group.some((e) => e.isBot) || (orgKey ? isKnownBotOrg(orgKey) : false);
 
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
@@ -1312,7 +1313,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               const ua = botEvent?.userAgent || '';
               // Extract bot name from user agent (e.g. "YisouSpider/5.0" → "YisouSpider")
               const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
-              const botName = botMatch ? botMatch[1] : 'Unknown Bot';
+              const detectedByUA = !!botEvent;
+              const orgKey = org.events[0]?.orgName || org.events[0]?.org || '';
+              const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
+              const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
               return (
                 <div className="org-detail-ai-classification">
                   <div className="org-ai-row">
@@ -1321,7 +1325,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   </div>
                   <div className="org-ai-row">
                     <span className="org-ai-label">Detection</span>
-                    <span className="org-ai-value">User-Agent match</span>
+                    <span className="org-ai-value">{detectionMethod}</span>
                   </div>
                 </div>
               );
