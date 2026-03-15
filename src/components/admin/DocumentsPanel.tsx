@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useOrderDocuments } from '../../hooks/useOrders';
 import { StatusBadge } from './StatusBadge';
 import { UploadDocumentDialog } from './UploadDocumentDialog';
@@ -9,6 +9,42 @@ import {
   type OrderStatus, type OrderDocument,
 } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
+
+/** Dropdown menu for document actions. */
+function DocMenu({ onDelete, deleting }: { onDelete: () => void; deleting: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="contact-menu-wrapper">
+      <button
+        className="contact-menu-trigger"
+        onClick={() => setOpen(!open)}
+        aria-label="Document actions"
+      >⋯</button>
+      {open && (
+        <div className="contact-menu-dropdown">
+          <button
+            className="contact-menu-item contact-menu-item-danger"
+            onClick={() => { setOpen(false); onDelete(); }}
+            disabled={deleting}
+          >
+            {deleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface DocumentsPanelProps {
   orderId: string;
@@ -134,13 +170,10 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
                     Download
                   </a>
                 )}
-                <button
-                  className="admin-btn-sm admin-btn-danger"
-                  onClick={() => handleDelete(doc)}
-                  disabled={deleting === doc.docId}
-                >
-                  {deleting === doc.docId ? '...' : 'Delete'}
-                </button>
+                <DocMenu
+                  onDelete={() => handleDelete(doc)}
+                  deleting={deleting === doc.docId}
+                />
               </div>
             </div>
           ))}
