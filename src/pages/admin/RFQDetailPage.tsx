@@ -24,6 +24,7 @@ export function RFQDetailPage() {
     productName?: string;
     configuration?: string;
     quoteAmount?: number;
+    quoteNumber?: string;
     notes?: string;
   }) {
     const result = await svc.convertRfqToOrder(rfq!.rfqId, overrides);
