@@ -10,12 +10,12 @@ export function PreviewModal({ doc, onClose }: PreviewModalProps) {
   const url = doc.previewUrl || doc.downloadUrl;
 
   return (
-    <Modal open onClose={onClose} title={doc.fileName}>
+    <Modal open onClose={onClose} title={doc.fileName} className="admin-modal-wide">
       <div style={{ minHeight: '400px' }}>
         {doc.mimeType.includes('pdf') && url ? (
           <iframe
             src={url}
-            style={{ width: '100%', height: '70vh', border: 'none' }}
+            style={{ width: '100%', height: '80vh', border: 'none' }}
             title={doc.fileName}
           />
         ) : doc.mimeType.includes('image') && url ? (
