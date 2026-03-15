@@ -386,6 +386,8 @@ const orderDocumentsBucket = new Bucket(feedbackStack, 'OrderDocumentsBucket', {
             allowedHeaders: ['*'],
             allowedMethods: [HttpMethods.GET, HttpMethods.PUT, HttpMethods.POST],
             allowedOrigins: [
+                'https://ninescrolls.com',
+                'https://www.ninescrolls.com',
                 'https://admin.ninescrolls.com',
                 'http://localhost:5173',
             ],
