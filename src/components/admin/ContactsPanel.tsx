@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Modal } from './Modal';
 import { StatusBadge } from './StatusBadge';
 import { CONTACT_ROLES, ROLE_LABELS, type OrderContact, type ContactRole } from '../../types/admin';
@@ -8,6 +8,41 @@ interface ContactsPanelProps {
   orderId: string;
   contacts: OrderContact[];
   onRefresh: () => void;
+}
+
+/** Dropdown menu anchored to a ⋯ trigger button. */
+function ContactMenu({ onEdit, onRemove }: { onEdit: () => void; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="contact-menu-wrapper">
+      <button
+        className="contact-menu-trigger"
+        onClick={() => setOpen(!open)}
+        aria-label="Contact actions"
+      >⋯</button>
+      {open && (
+        <div className="contact-menu-dropdown">
+          <button className="contact-menu-item" onClick={() => { setOpen(false); onEdit(); }}>
+            Edit
+          </button>
+          <button className="contact-menu-item contact-menu-item-danger" onClick={() => { setOpen(false); onRemove(); }}>
+            Remove
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ContactsPanel({ orderId, contacts, onRefresh }: ContactsPanelProps) {
@@ -43,14 +78,10 @@ export function ContactsPanel({ orderId, contacts, onRefresh }: ContactsPanelPro
                   {contact.isPrimary && <span className="admin-badge-primary">Primary</span>}
                   <StatusBadge status={contact.role} />
                 </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button className="admin-btn-sm admin-btn-outline" onClick={() => setEditingId(contact.contactId)}>
-                    Edit
-                  </button>
-                  <button className="admin-btn-sm admin-btn-danger" onClick={() => handleRemove(contact.contactId, contact.contactName)}>
-                    Remove
-                  </button>
-                </div>
+                <ContactMenu
+                  onEdit={() => setEditingId(contact.contactId)}
+                  onRemove={() => handleRemove(contact.contactId, contact.contactName)}
+                />
               </div>
               <div style={{ marginTop: '8px', fontSize: '0.9em', color: '#555' }}>
                 <div>{contact.contactEmail}</div>
