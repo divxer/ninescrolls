@@ -190,6 +190,7 @@ export async function convertRfqToOrder(rfqId: string, overrides?: {
   productName?: string;
   configuration?: string;
   quoteAmount?: number;
+  quoteNumber?: string;
   notes?: string;
 }) {
   const args: Record<string, unknown> = { rfqId, ...overrides };

@@ -13,6 +13,7 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
         productName?: string;
         configuration?: string;
         quoteAmount?: number;
+        quoteNumber?: string;
         notes?: string;
     };
 
@@ -56,6 +57,7 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
         productName: args.productName || '',
         configuration: args.configuration || rfq.keySpecifications || '',
         quoteAmount: args.quoteAmount,
+        quoteNumber: args.quoteNumber || '',
         notes: args.notes || '',
         matchedOrgId: rfq.matchedOrgId || '',
         createdAt: now,

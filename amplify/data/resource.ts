@@ -600,6 +600,7 @@ const schema = a.schema({
       productName: a.string(),
       configuration: a.string(),
       quoteAmount: a.float(),
+      quoteNumber: a.string(),
       notes: a.string(),
     })
     .returns(a.ref('Order').required())
