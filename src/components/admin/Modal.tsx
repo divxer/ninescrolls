@@ -5,9 +5,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  className?: string;
 }
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, className }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -19,7 +20,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
-      <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`admin-modal${className ? ` ${className}` : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal-header">
           <h2>{title}</h2>
           <button className="admin-modal-close" onClick={onClose}>&times;</button>
