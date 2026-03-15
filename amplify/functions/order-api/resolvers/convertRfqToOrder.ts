@@ -6,6 +6,24 @@ import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelpe
 import type { AppSyncEvent } from '../lib/types.js';
 import crypto from 'node:crypto';
 
+// Map free-text RFQ role values → ContactRole enum values
+const RFQ_ROLE_TO_CONTACT_ROLE: Record<string, string> = {
+    'PI': 'PI',
+    'Research Scientist': 'RESEARCHER',
+    'Postdoc': 'RESEARCHER',
+    'Graduate Student': 'RESEARCHER',
+    'Engineer': 'OTHER',
+    'Lab Manager': 'LAB_MANAGER',
+    'Procurement': 'PROCUREMENT',
+    'Business Development': 'OTHER',
+    'Other': 'OTHER',
+};
+
+function resolveContactRole(rfqRole?: string): string {
+    if (!rfqRole) return 'OTHER';
+    return RFQ_ROLE_TO_CONTACT_ROLE[rfqRole] ?? 'OTHER';
+}
+
 export async function convertRfqToOrder(event: AppSyncEvent) {
     const args = event.arguments as {
         rfqId: string;
@@ -90,7 +108,7 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
             contactName: rfq.name,
             contactEmail: rfq.email,
             contactPhone: rfq.phone || '',
-            role: rfq.role || 'OTHER',
+            role: resolveContactRole(rfq.role as string),
             department: rfq.department || '',
             isPrimary: true,
             feedbackInvite: true,
