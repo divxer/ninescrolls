@@ -46,7 +46,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Reactive Ion Etching (RIE) Guide](https://ninescrolls.com/insights/reactive-ion-etching-guide): Complete guide to RIE principles, process control, system types, and equipment selection
 - [Deep Reactive Ion Etching (DRIE) – Bosch Process](https://ninescrolls.com/insights/deep-reactive-ion-etching-bosch-process): DRIE fundamentals, Bosch cycles, MEMS/TSV applications
 - [ICP-RIE Technology](https://ninescrolls.com/insights/icp-rie-technology-advanced-etching): How ICP differs from conventional RIE, benefits for deep/high-AR etching
-- [RIE vs. Ion Milling](https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling): Decision guide comparing two dry etching techniques
+- [RIE vs. Ion Milling](https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling): In-depth comparison of RIE and ion milling with quantitative etch rates, DRIE/Bosch and RIBE hybrid techniques, material compatibility tables, and decision flowchart
 - [Semiconductor Etchers Overview](https://ninescrolls.com/insights/semiconductor-etchers-overview): How to choose the right etcher for your lab
 - [PE vs. RIE vs. ICP-RIE](https://ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching): Comparison of three plasma etching modes
 - [Plasma Etching Fundamentals](https://ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications): From basics to applications in semiconductor manufacturing
