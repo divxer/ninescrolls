@@ -11,18 +11,18 @@ export function PreviewModal({ doc, onClose }: PreviewModalProps) {
 
   return (
     <Modal open onClose={onClose} title={doc.fileName} className="admin-modal-wide">
-      <div style={{ minHeight: '400px' }}>
+      <div style={{ height: '100%' }}>
         {doc.mimeType.includes('pdf') && url ? (
           <iframe
             src={url}
-            style={{ width: '100%', height: '80vh', border: 'none' }}
+            style={{ width: '100%', height: '100%', border: 'none' }}
             title={doc.fileName}
           />
         ) : doc.mimeType.includes('image') && url ? (
           <img
             src={url}
             alt={doc.fileName}
-            style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
+            style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', padding: '20px' }}
           />
         ) : (
           <div style={{ textAlign: 'center', padding: '40px' }}>
