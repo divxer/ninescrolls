@@ -138,7 +138,7 @@ Summary: ICP-RIE decouples plasma generation from ion energy control, enabling h
 
 **RIE vs. Ion Milling**
 URL: https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling
-Summary: Decision guide comparing RIE (chemical + physical, material-selective) vs. ion milling (purely physical, material-agnostic). RIE offers higher throughput and selectivity; ion milling provides universal material compatibility and precise angle control.
+Summary: In-depth comparison of RIE (chemical + physical hybrid) vs. ion milling/IBE (purely physical sputtering). Covers quantitative etch rates for Si, SiO2, GaAs, GaN, SiC, Au, and Pt; selectivity ratios (Si:SiO2 > 30:1); DRIE/Bosch process for high-AR structures; RIBE hybrid technique combining chemical selectivity with directional beam control. Includes material etch rate tables, process challenge analysis (microloading, ARDE, redeposition), and a decision flowchart for technique selection.
 
 **Semiconductor Etchers Overview**
 URL: https://ninescrolls.com/insights/semiconductor-etchers-overview
