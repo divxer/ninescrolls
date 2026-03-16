@@ -52,6 +52,7 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  createdByEmail?: string | null;
   feedbackScheduleCreated: boolean;
   feedbackCount: number;
   daysSinceLastUpdate: number;

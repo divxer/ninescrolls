@@ -2,6 +2,7 @@ import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { fetchOrder, buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
 export async function declineInquiry(event: AppSyncEvent) {
@@ -25,7 +26,7 @@ export async function declineInquiry(event: AppSyncEvent) {
     }
 
     const now = new Date().toISOString();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { email: operator } = getOperatorInfo(event);
 
     try {
         await docClient.send(new UpdateCommand({

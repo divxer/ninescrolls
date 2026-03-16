@@ -1,6 +1,7 @@
 import { QueryCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, DocumentItem } from '../lib/types.js';
 
 export async function deleteDocument(event: AppSyncEvent) {
@@ -31,7 +32,7 @@ export async function deleteDocument(event: AppSyncEvent) {
 
     const doc = result.Items[0] as DocumentItem;
     const now = new Date().toISOString();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { email: operator } = getOperatorInfo(event);
 
     // Delete from S3
     if (doc.s3Key) {

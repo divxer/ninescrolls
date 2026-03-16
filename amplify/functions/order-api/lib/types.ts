@@ -46,7 +46,19 @@ export const PRESIGNED_URL_EXPIRY = 15 * 60; // 15 minutes
 export interface AppSyncEvent {
     info: { fieldName: string; parentTypeName: string };
     arguments: Record<string, unknown>;
-    identity?: { sub: string; claims: Record<string, unknown> };
+    identity?: { sub: string; username?: string; claims?: Record<string, unknown> };
+}
+
+/** Extract operator identity (stable UUID + display email) from AppSync event */
+export function getOperatorInfo(event: AppSyncEvent): { sub: string; email: string } {
+    const id = event.identity;
+    if (!id) return { sub: 'admin', email: 'admin' };
+    const email = (id.claims?.email as string)
+        || (id.claims?.['cognito:email'] as string)
+        || id.username
+        || id.sub
+        || 'admin';
+    return { sub: id.sub || 'admin', email };
 }
 
 export interface OrderItem {
@@ -81,6 +93,7 @@ export interface OrderItem {
     createdAt: string;
     updatedAt: string;
     createdBy: string;
+    createdByEmail?: string;
     feedbackScheduleCreated: boolean;
     [key: string]: unknown;
 }

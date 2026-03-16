@@ -1,5 +1,6 @@
 import { GetCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, ContactItem } from '../lib/types.js';
 
 export async function removeContact(event: AppSyncEvent) {
@@ -24,7 +25,7 @@ export async function removeContact(event: AppSyncEvent) {
 
     const contact = result.Item as ContactItem;
     const now = new Date().toISOString();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { email: operator } = getOperatorInfo(event);
 
     await docClient.send(new DeleteCommand({
         TableName: TABLE_NAME(),

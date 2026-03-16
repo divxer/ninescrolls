@@ -3,6 +3,7 @@ import { UpdateCommand, PutCommand, GetCommand, QueryCommand } from '@aws-sdk/li
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { isValidTransition, STATUS_DATE_FIELD, FEEDBACK_STAGE_ROLES, FEEDBACK_STAGE_DAYS, addDays } from '../lib/statusMachine.js';
 import { fetchOrder, buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, OrderStatus, ContactItem } from '../lib/types.js';
 
 export async function updateOrderStatus(event: AppSyncEvent) {
@@ -24,7 +25,7 @@ export async function updateOrderStatus(event: AppSyncEvent) {
     }
 
     const currentStatus = currentOrder.status;
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { email: operator } = getOperatorInfo(event);
 
     // 1. Validate state transition
     if (!isValidTransition(currentStatus, newStatus)) {

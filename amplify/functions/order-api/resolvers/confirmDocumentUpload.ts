@@ -1,7 +1,7 @@
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
-import { VALID_STAGES, DOCUMENT_TYPES, MAX_FILE_SIZE } from '../lib/types.js';
+import { VALID_STAGES, DOCUMENT_TYPES, MAX_FILE_SIZE, getOperatorInfo } from '../lib/types.js';
 import { generateDocId } from '../lib/idGenerators.js';
 import { buildDocumentResponse } from '../lib/orderHelper.js';
 import type { AppSyncEvent, DocumentItem } from '../lib/types.js';
@@ -40,7 +40,7 @@ export async function confirmDocumentUpload(event: AppSyncEvent) {
     const safeName = args.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const destKey = `orders/${args.orderId}/${args.stage}/${docId}_${safeName}`;
     const now = new Date().toISOString();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { email: operator } = getOperatorInfo(event);
 
     // Parse tags from JSON if provided
     let tags: string[] = [];

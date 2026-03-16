@@ -2,6 +2,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateOrderId, generateContactId } from '../lib/idGenerators.js';
 import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
 interface CreateOrderInput {
@@ -43,7 +44,7 @@ export async function createOrder(event: AppSyncEvent) {
     const now = new Date().toISOString();
     const orderId = generateOrderId();
     const contactId = generateContactId();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { sub: operatorId, email: operator } = getOperatorInfo(event);
 
     // Create ORDER entity
     const orderItem: Record<string, unknown> = {
@@ -66,7 +67,8 @@ export async function createOrder(event: AppSyncEvent) {
         matchedOrgId: '',
         createdAt: now,
         updatedAt: now,
-        createdBy: operator,
+        createdBy: operatorId,
+        createdByEmail: operator,
         source: 'MANUAL',
         inquiryDate: now.slice(0, 10),
         feedbackScheduleCreated: false,

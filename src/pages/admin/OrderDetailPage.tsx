@@ -101,7 +101,7 @@ export function OrderDetailPage() {
             <dt>Quote Amount</dt><dd>{order.quoteAmount ? `$${order.quoteAmount.toLocaleString()}` : '-'}</dd>
             <dt>Department</dt><dd>{order.department || '-'}</dd>
             <dt>Created</dt><dd>{formatDate(order.createdAt)}</dd>
-            <dt>Created By</dt><dd>{order.createdBy}</dd>
+            <dt>Created By</dt><dd>{order.createdByEmail || order.createdBy}</dd>
           </dl>
           <div style={{ marginTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
