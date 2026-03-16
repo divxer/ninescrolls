@@ -64,6 +64,7 @@ interface RecoveryCheckpoint {
   idleSeconds: number;
   hiddenSeconds: number;
   wallClockSeconds: number;
+  maxScrollDepth: number;
   updatedAt: number;
 }
 
@@ -96,6 +97,7 @@ function persistCheckpoint(state: ActivePageState, now: number): void {
     idleSeconds: Math.floor(idleMs / 1000),
     hiddenSeconds: Math.floor(hiddenMs / 1000),
     wallClockSeconds: Math.floor(wallClockMs / 1000),
+    maxScrollDepth: state.maxScrollDepth,
     updatedAt: now,
   };
   localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(cp));
@@ -155,6 +157,7 @@ interface ActivePageState {
   isFinalized: boolean;
   idleTimeoutMs: number;          // page-type-specific idle threshold
   maxFlushedActiveSeconds: number; // highest activeSeconds written so far (for anomaly detection)
+  maxScrollDepth: number;         // highest scroll depth % reached on this page (0-100)
 }
 
 /**
@@ -437,6 +440,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       startedAt: state.enteredAt,
       endedAt: now,
       idleTimeoutMsUsed: state.idleTimeoutMs,
+      maxScrollDepth: state.maxScrollDepth,
     };
 
     if (reason === 'pagehide') {
@@ -493,6 +497,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       isFinalized: false,
       idleTimeoutMs: getIdleTimeoutForPath(path),
       maxFlushedActiveSeconds: 0,
+      maxScrollDepth: 0,
     };
   }, []);
 
@@ -535,6 +540,7 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
           startedAt: cp.enteredAt,
           endedAt: cp.updatedAt,
           idleTimeoutMsUsed: cp.idleTimeoutMs,
+          maxScrollDepth: cp.maxScrollDepth,
         });
       }
 
@@ -627,15 +633,15 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     // Skip list pages (only track detail pages with deeper paths)
     if (path === '/products' || path === '/products/' || path === '/insights' || path === '/insights/') return;
 
-    let maxScrollDepth = 0;
     let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 
     const trackScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (scrollHeight <= 0) return;
       const percent = Math.min(100, Math.round((window.scrollY / scrollHeight) * 100));
-      if (percent > maxScrollDepth) {
-        maxScrollDepth = percent;
+      const state = pageStateRef.current;
+      if (state && percent > state.maxScrollDepth) {
+        state.maxScrollDepth = percent;
         behaviorAnalytics.trackContentEngagement(path, percent);
       }
     };

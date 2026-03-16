@@ -283,6 +283,7 @@ export interface PageTimeFlushParams {
   startedAt: number;  // epoch ms
   endedAt: number;    // epoch ms
   idleTimeoutMsUsed: number;
+  maxScrollDepth?: number; // highest scroll depth % (0-100) reached during this page view
 }
 
 export function storePageTimeFlush(params: PageTimeFlushParams): void {
@@ -311,6 +312,7 @@ export function storePageTimeFlush(params: PageTimeFlushParams): void {
     isFinal: params.isFinal,
     flushSequence: params.sequence,
     idleTimeoutMsUsed: params.idleTimeoutMsUsed,
+    maxScrollDepth: params.maxScrollDepth || undefined,
 
     userAgent: ua,
     isBot: ua ? isbot(ua) : undefined,
@@ -363,6 +365,7 @@ export function storePageTimeFlushViaBeacon(params: PageTimeFlushParams): void {
         startedAt: params.startedAt,
         endedAt: params.endedAt,
         idleTimeoutMsUsed: params.idleTimeoutMsUsed,
+        maxScrollDepth: params.maxScrollDepth || undefined,
         isBot: ua ? isbot(ua) : false,
         ...getCachedIPEnrichment(),
       },
