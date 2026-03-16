@@ -1782,18 +1782,42 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           <span className={`analytics-badge analytics-badge-${e.eventType}`}>
                             {e.eventType}
                           </span>
-                          <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
-                          {e.productName && (
-                            <span className="timeline-product">{e.productName}</span>
+                          {e.eventType === 'page_time_flush' ? (
+                            <>
+                              <span className="timeline-path">{e.pathname || '/'}</span>
+                              {e.activeSeconds != null && (
+                                <span className="timeline-flush-detail" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
+                                  {formatDuration(e.activeSeconds)} active
+                                  {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
+                                  {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
+                                </span>
+                              )}
+                              {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
+                                <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
+                                  ↓{sd}%
+                                </span>
+                              ) : null; })()}
+                              {(e as Record<string, unknown>).isFinal && (
+                                <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>final</span>
+                              )}
+                              {(e as Record<string, unknown>).isFinal === false && (
+                                <span style={{ background: '#fff3e0', color: '#e65100', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>partial</span>
+                              )}
+                              {e.flushReason && (
+                                <span style={{ fontSize: '10px', color: '#999', marginLeft: '4px' }}>{e.flushReason}</span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
+                              {e.productName && (
+                                <span className="timeline-product">{e.productName}</span>
+                              )}
+                              {pageDuration != null && pageDuration > 0 && (
+                                <span className="timeline-duration">{formatDuration(pageDuration)}</span>
+                              )}
+                            </>
                           )}
-                          {pageDuration != null && pageDuration > 0 && (
-                            <span className="timeline-duration">{formatDuration(pageDuration)}</span>
-                          )}
-                          {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
-                            <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
-                              ↓{sd}%
-                            </span>
-                          ) : null; })()}
                           {entryEventIds.has(e.id) && referrerBadge(e)}
                         </div>
                         );
