@@ -334,19 +334,25 @@ class SegmentAnalyticsService {
       // For returning visitors with behavior data, use balanced weighting
       let finalConfidence: number;
 
+      // Org types that represent identified organizations (not network infrastructure)
+      // Handles both IP-level (education/business/government) and AI-level (university/research_institute/enterprise/hospital) types
+      const isIdentifiedOrg = (orgType: string) =>
+        ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
+      // Org types where the org name is the provider, not the end user
+      const isInfraOrg = (orgType: string) =>
+        ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType);
+
       if (analysis) {
         const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = analysis.organizationType === 'university' ||
-                                analysis.organizationType === 'research_institute' ||
-                                analysis.organizationType === 'enterprise';
+        const isTargetOrgType = isIdentifiedOrg(analysis.organizationType);
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
 
         if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization (identified via keywords or AI)
+          // First-time visitor from high-confidence target organization
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
-        } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {
-          // ISP/unknown org with no meaningful IP signal — let behavior fully drive confidence
+        } else if (analysis.confidence < 0.15 && isInfraOrg(analysis.organizationType) && hasBehaviorData) {
+          // ISP/hosting/unknown org with no meaningful IP signal — let behavior fully drive confidence
           finalConfidence = behaviorScore.behaviorScore;
         } else if (hasBehaviorData) {
           // Returning visitor with behavior data - use balanced weighting
@@ -364,10 +370,7 @@ class SegmentAnalyticsService {
       const ipRejected = analysis && analysis.isTargetCustomer === false;
 
       // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 &&
-                        (analysis.organizationType === 'university' ||
-                         analysis.organizationType === 'research_institute' ||
-                         analysis.organizationType === 'enterprise'))
+      const threshold = (analysis && analysis.confidence >= 0.5 && isIdentifiedOrg(analysis.organizationType))
         ? 0.25  // Lower threshold for target organizations with high IP confidence
         : 0.3;  // Standard threshold
 
@@ -376,12 +379,11 @@ class SegmentAnalyticsService {
       // Determine final lead tier (only for target customers)
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
-        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'education' || analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
           finalLeadTier = 'A';
-        } else if (analysis && analysis.confidence >= 0.9 &&
-                   (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+        } else if (analysis && analysis.confidence >= 0.9 && isIdentifiedOrg(analysis.organizationType)) {
           finalLeadTier = 'A';
-        } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+        } else if (finalConfidence >= 0.5 && analysis && isIdentifiedOrg(analysis.organizationType)) {
           finalLeadTier = 'B';
         } else {
           finalLeadTier = 'C';
@@ -585,19 +587,25 @@ class SegmentAnalyticsService {
       // For returning visitors with behavior data, use balanced weighting
       let finalConfidence: number;
 
+      // Org types that represent identified organizations (not network infrastructure)
+      // Handles both IP-level (education/business/government) and AI-level (university/research_institute/enterprise/hospital) types
+      const isIdentifiedOrg = (orgType: string) =>
+        ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
+      // Org types where the org name is the provider, not the end user
+      const isInfraOrg = (orgType: string) =>
+        ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType);
+
       if (analysis) {
         const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = analysis.organizationType === 'university' ||
-                                analysis.organizationType === 'research_institute' ||
-                                analysis.organizationType === 'enterprise';
+        const isTargetOrgType = isIdentifiedOrg(analysis.organizationType);
         const hasBehaviorData = behaviorScore.behaviorScore > 0;
 
         if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization (identified via keywords or AI)
+          // First-time visitor from high-confidence target organization
           // Use IP confidence directly (don't penalize for lack of behavior data)
           finalConfidence = analysis.confidence;
-        } else if (analysis.confidence < 0.15 && analysis.organizationType === 'unknown' && hasBehaviorData) {
-          // ISP/unknown org with no meaningful IP signal — let behavior fully drive confidence
+        } else if (analysis.confidence < 0.15 && isInfraOrg(analysis.organizationType) && hasBehaviorData) {
+          // ISP/hosting/unknown org with no meaningful IP signal — let behavior fully drive confidence
           finalConfidence = behaviorScore.behaviorScore;
         } else if (hasBehaviorData) {
           // Returning visitor with behavior data - use balanced weighting
@@ -615,10 +623,7 @@ class SegmentAnalyticsService {
       const ipRejected = analysis && analysis.isTargetCustomer === false;
 
       // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 &&
-                        (analysis.organizationType === 'university' ||
-                         analysis.organizationType === 'research_institute' ||
-                         analysis.organizationType === 'enterprise'))
+      const threshold = (analysis && analysis.confidence >= 0.5 && isIdentifiedOrg(analysis.organizationType))
         ? 0.25  // Lower threshold for target organizations with high IP confidence
         : 0.3;  // Standard threshold
 
@@ -627,12 +632,11 @@ class SegmentAnalyticsService {
       // Determine final lead tier (only for target customers)
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
-        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
+        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'education' || analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
           finalLeadTier = 'A';
-        } else if (analysis && analysis.confidence >= 0.9 &&
-                   (analysis.organizationType === 'university' || analysis.organizationType === 'research_institute' || analysis.organizationType === 'enterprise')) {
+        } else if (analysis && analysis.confidence >= 0.9 && isIdentifiedOrg(analysis.organizationType)) {
           finalLeadTier = 'A';
-        } else if (finalConfidence >= 0.5 && analysis && analysis.organizationType !== 'unknown') {
+        } else if (finalConfidence >= 0.5 && analysis && isIdentifiedOrg(analysis.organizationType)) {
           finalLeadTier = 'B';
         } else {
           finalLeadTier = 'C';

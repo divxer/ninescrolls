@@ -53,7 +53,7 @@ interface ConfidenceBreakdown {
 
 interface TargetCustomerAnalysis {
     isTargetCustomer: boolean;
-    organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown';
+    organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown';
     confidence: number;
     confidenceBreakdown?: ConfidenceBreakdown;
     leadTier?: 'A' | 'B' | 'C';
@@ -200,9 +200,11 @@ function isTargetLocation(country: string, region: string): boolean {
 
 function getOrgTypeName(type: string): string {
     const typeNames: Record<string, string> = {
-        university: 'University/Educational Institution',
-        research_institute: 'Research Institution',
-        enterprise: 'Enterprise',
+        education: 'Education',
+        business: 'Business',
+        government: 'Government',
+        isp: 'ISP',
+        hosting: 'Hosting',
         unknown: 'Unknown',
     };
     return typeNames[type] || 'Unknown';
@@ -223,19 +225,28 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     // AI classification and behavioral analysis handle refinement downstream.
     const companyType = ipInfo.company?.type;
     // When companyType is unavailable, AI classification serves as fallback
-    let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
+    // Use IPinfo company.type directly — no lossy remapping.
+    // AI classification (classify-org Lambda) can refine further downstream
+    // (e.g., education → university vs research_institute).
+    let organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown' = 'unknown';
 
     if (companyType === 'education') {
-        organizationType = 'university';
+        organizationType = 'education';
         breakdown.orgMatch = 0.5;
     } else if (companyType === 'business') {
-        organizationType = 'enterprise';
+        organizationType = 'business';
         breakdown.orgMatch = 0.3;
     } else if (companyType === 'government') {
-        organizationType = 'enterprise';  // government labs use similar equipment
+        organizationType = 'government';
         breakdown.orgMatch = 0.3;
+    } else if (companyType === 'isp') {
+        organizationType = 'isp';
+        breakdown.orgMatch = 0;  // org name is the ISP, not the end user
+    } else if (companyType === 'hosting') {
+        organizationType = 'hosting';
+        breakdown.orgMatch = 0;  // org name is the hosting provider, not the end user
     }
-    // companyType undefined / other → stays 'unknown', orgMatch = 0 → AI fallback
+    // companyType undefined → stays 'unknown', orgMatch = 0 → AI fallback
 
     // Geographic location scoring
     const isTargetGeo = isTargetLocation(ipInfo.country, ipInfo.region);
@@ -253,9 +264,9 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     const isTargetCustomer = breakdown.total > threshold;
     let leadTier: 'A' | 'B' | 'C' | undefined;
     if (isTargetCustomer) {
-        if (breakdown.total >= 0.7 && organizationType === 'university') {
+        if (breakdown.total >= 0.7 && organizationType === 'education') {
             leadTier = 'A';
-        } else if (breakdown.total >= 0.5 && organizationType !== 'unknown') {
+        } else if (breakdown.total >= 0.5 && (organizationType === 'education' || organizationType === 'business' || organizationType === 'government')) {
             leadTier = 'B';
         } else {
             leadTier = 'C';
