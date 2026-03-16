@@ -48,6 +48,7 @@ interface OrganizationRecord {
   maxBehaviorScore: number;
   isAnonymousHighIntent: boolean;
   isISPVisitor: boolean;
+  companyType: string;
   hasBot: boolean;
   lifecycleStage: LifecycleStage;
   events: AnalyticsEvent[];
@@ -55,7 +56,7 @@ interface OrganizationRecord {
 
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
-type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning' | 'anonymousIntent';
+type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning' | 'anonymousIntent' | 'ispIntent';
 type KeywordSourceFilter = 'all' | 'external' | 'internal';
 
 interface KeywordEntry {
@@ -877,6 +878,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       ? `${ispOrgName} · ${[geoEvent.city, geoEvent.region].filter(Boolean).join(', ') || 'Unknown'}`
       : key;
 
+    // Extract IPinfo company type from events (first non-empty value)
+    const companyType = group.find(e => (e as Record<string, unknown>).companyType)
+      ? String((group.find(e => (e as Record<string, unknown>).companyType) as Record<string, unknown>).companyType)
+      : '';
+
     records.push({
       key,
       orgName: displayName,
@@ -900,6 +906,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       maxBehaviorScore,
       isAnonymousHighIntent,
       isISPVisitor,
+      companyType,
       hasBot,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       events: sorted,
@@ -1170,6 +1177,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             {uniqueISPs.length > 0 && (
               <span className="org-detail-isp">{uniqueISPs.join(', ')}</span>
             )}
+            {org.companyType && (
+              <span className="org-detail-company-type" title="IPinfo company classification">
+                📡 {org.companyType}
+              </span>
+            )}
             {org.isISPVisitor && (
               <span style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'monospace' }}>
                 ID: {org.key.substring(0, 8)}
@@ -1246,7 +1258,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             <div className="org-signal org-signal-hot">Target Customer Identified</div>
           )}
           {org.isAnonymousHighIntent && !(override?.found && override?.isTargetCustomer) && (
-            <div className="org-signal org-signal-intent">Unknown company with high purchase intent — consider targeted engagement</div>
+            org.isISPVisitor
+              ? <div className="org-signal org-signal-isp-intent">📶 ISP visitor with purchase intent — browsing from home/mobile network. Consider monitoring for return visits or PDF downloads to confirm buyer interest.</div>
+              : <div className="org-signal org-signal-intent">Unknown company with high purchase intent — consider targeted engagement</div>
           )}
           {downloadedPDF && (
             <div className="org-signal org-signal-hot">Downloaded PDF / Spec Sheet</div>
@@ -2108,6 +2122,8 @@ export function AdminAnalyticsPage() {
         return organizations.filter((o) => o.returnVisits > 0);
       case 'anonymousIntent':
         return organizations.filter((o) => o.isAnonymousHighIntent);
+      case 'ispIntent':
+        return organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor);
       default:
         return organizations;
     }
@@ -2253,6 +2269,7 @@ export function AdminAnalyticsPage() {
     const returning = organizations.filter((o) => o.returnVisits > 0).length;
     const companies = organizations.filter((o) => o.organizationType === 'enterprise').length;
     const anonymousIntent = organizations.filter((o) => o.isAnonymousHighIntent).length;
+    const ispHighIntent = organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor).length;
 
     // Compute trend: split filtered events by midpoint of date range
     const { start, end } = getDateBounds(dateRange, customStart, customEnd);
@@ -2267,7 +2284,7 @@ export function AdminAnalyticsPage() {
       ? Math.round(((currVisitors - prevVisitors) / prevVisitors) * 100)
       : currVisitors > 0 ? 100 : 0;
 
-    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, anonymousIntent, visitorTrend };
+    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, anonymousIntent, ispHighIntent, visitorTrend };
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
@@ -2456,6 +2473,23 @@ export function AdminAnalyticsPage() {
           >
             <div className="analytics-stat-value">{kpis.anonymousIntent}</div>
             <div className="analytics-stat-label">Anonymous Intent</div>
+            {kpis.ispHighIntent > 0 && (
+              <div
+                className="analytics-stat-sublabel"
+                title="ISP visitors (home/mobile) showing purchase-intent behavior signals"
+              >
+                incl. {kpis.ispHighIntent} ISP
+              </div>
+            )}
+          </div>
+        )}
+        {kpis.ispHighIntent > 0 && (
+          <div
+            className={`analytics-stat-card analytics-stat-isp-intent analytics-stat-clickable ${kpiFilter === 'ispIntent' ? 'analytics-stat-active' : ''}`}
+            onClick={() => setKpiFilter(kpiFilter === 'ispIntent' ? 'all' : 'ispIntent')}
+          >
+            <div className="analytics-stat-value">{kpis.ispHighIntent}</div>
+            <div className="analytics-stat-label">ISP Intent</div>
           </div>
         )}
       </div>
@@ -3021,6 +3055,11 @@ export function AdminAnalyticsPage() {
                   {org.isISPVisitor && (
                     <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
                       ISP individual visitor · ID: {org.key.substring(0, 8)}
+                      {org.isAnonymousHighIntent && (
+                        <span className="isp-intent-badge" title="ISP visitor with purchase intent">
+                          📶 ISP Intent
+                        </span>
+                      )}
                     </div>
                   )}
                 </td>

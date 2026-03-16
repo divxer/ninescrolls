@@ -95,6 +95,7 @@ const schema = a.schema({
       city: a.string(),
       org: a.string(),
       isp: a.string(),
+      companyType: a.string(),
 
       isTargetCustomer: a.boolean(),
       organizationType: a.string(),

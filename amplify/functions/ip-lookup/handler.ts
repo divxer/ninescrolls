@@ -177,59 +177,12 @@ function mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
 }
 
 // ─── Target Customer Analysis ────────────────────────────────────────────────
-
-const universityKeywords = [
-    'university', 'college', 'school', 'academy', 'institute', 'campus',
-];
-
-const researchKeywords = [
-    'research', 'laboratory', 'lab', 'institute', 'foundation', 'center',
-];
-
-const enterpriseKeywords = [
-    'corporation', 'company', 'inc', 'ltd', 'llc', 'enterprise', 'business',
-];
-
-const noiseOrgs = [
-    // US ISPs and Telecom
-    'comcast', 'verizon', 'at&t', 't-mobile', 'tmobile', 'sprint',
-    'charter communications', 'spectrum', 'cox communications',
-    'centurylink', 'lumen technologies', 'frontier communications',
-    'windstream', 'mediacom', 'altice', 'optimum', 'suddenlink',
-    // International ISPs
-    'virgin media', 'british telecom', 'bt group', 'sky broadband',
-    'talktalk', 'plusnet', 'vodafone', 'orange', 'deutsche telekom',
-    'telefonica', 'swisscom', 'proximus', 'kpn', 'telia', 'telenor',
-    'rogers', 'bell canada', 'telus', 'shaw communications',
-    'optus', 'telstra', 'tpg telecom', 'ntt', 'kddi', 'softbank',
-    'china telecom', 'china unicom', 'china mobile',
-    'reliance jio', 'airtel', 'bsnl',
-    'claro', 'telmex', 'uninet',
-    // Generic ISP/Telecom keywords
-    'crown castle', 'crowncastle', 'fiber', 'telecom', 'telecommunications',
-    'infrastructure', 'tower', 'wireless', 'broadband', 'cable',
-    // Cloud providers and Hosting
-    'cloudflare', 'amazon', 'aws', 'google', 'microsoft', 'oracle',
-    'azure', 'gcp', 'digitalocean', 'linode', 'vultr', 'ovh',
-    'akamai', 'fastly', 'cloudfront', 'cdn', 'proxy', 'vpn',
-    // Data centers, Colocation, and VPN providers
-    'colo', 'colocation', 'datacenter', 'data center', 'whitelabel',
-    'whitelabelcolo', 'server', 'hosting', 'host', 'dedicated',
-    'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
-    // Other non-target industries
-    'real estate', 'construction', 'logistics', 'shipping', 'transportation',
-];
-
-const highPriorityNoise = [
-    'colo', 'colocation', 'datacenter', 'data center', 'whitelabel',
-    'hosting', 'host', 'server', 'dedicated',
-    'cloudflare', 'amazon', 'aws', 'azure', 'gcp',
-    'comcast', 'verizon', 'at&t', 't-mobile', 'isp',
-    'virgin media', 'british telecom', 'charter communications', 'spectrum',
-    'vodafone', 'deutsche telekom', 'telefonica', 'rogers', 'bell canada',
-    'china telecom', 'china unicom', 'china mobile',
-    'datacamp', 'datapacket', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark',
-];
+// Classification strategy:
+//   1. IPinfo company.type is the primary IP-level signal (professionally maintained database)
+//   2. AI classification (Claude via /classify-org) handles refinement and edge cases
+//      (e.g., university vs research_institute, business with research context → upgrade)
+//   3. No keyword matching — company.type is more reliable for non-English names,
+//      abbreviations, and unlisted companies
 
 const targetCountries = [
     'United States', 'China', 'Japan', 'Germany', 'United Kingdom',
@@ -256,119 +209,33 @@ function getOrgTypeName(type: string): string {
 }
 
 function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
-    // L0_REJECT: Early rejection for VPN, proxy, hosting, and ISP types
-    if (ipInfo.privacy?.vpn || ipInfo.privacy?.proxy || ipInfo.privacy?.hosting) {
-        return {
-            isTargetCustomer: false,
-            organizationType: 'unknown',
-            confidence: 0,
-            confidenceBreakdown: { orgMatch: 0, geo: 0, ispPenalty: -1.0, whitelist: 0, total: 0 },
-            leadTier: undefined,
-            details: {
-                orgName: ipInfo.org || ipInfo.isp || 'Unknown',
-                orgType: 'VPN/Proxy/Hosting',
-                location: `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`,
-                keywords: [],
-            },
-        };
-    }
-
-    // L0_REJECT: Reject ISP type companies
-    if (ipInfo.company?.type === 'isp' || ipInfo.company?.type === 'hosting') {
-        return {
-            isTargetCustomer: false,
-            organizationType: 'unknown',
-            confidence: 0,
-            confidenceBreakdown: { orgMatch: 0, geo: 0, ispPenalty: -1.0, whitelist: 0, total: 0 },
-            leadTier: undefined,
-            details: {
-                orgName: ipInfo.org || ipInfo.isp || 'Unknown',
-                orgType: 'ISP/Hosting Provider',
-                location: `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`,
-                keywords: [],
-            },
-        };
-    }
-
     const orgNameRaw = ipInfo.org || ipInfo.isp || 'Unknown';
     // Strip ASN prefix (e.g. "AS12093 University of Waterloo" → "University of Waterloo")
     const orgName = orgNameRaw.replace(/^AS\d+\s+/i, '').trim() || orgNameRaw;
-    const orgLower = orgName.toLowerCase();
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
-
     const breakdown: ConfidenceBreakdown = {
         orgMatch: 0, geo: 0, ispPenalty: 0, whitelist: 0, total: 0,
     };
 
-    // Check for noise/ISP organizations (negative signal)
-    const isNoiseOrg = noiseOrgs.some(noise => orgLower.includes(noise));
-    if (isNoiseOrg) {
-        breakdown.ispPenalty = -0.5;
-        if (highPriorityNoise.some(noise => orgLower.includes(noise))) {
-            return {
-                isTargetCustomer: false,
-                organizationType: 'unknown',
-                confidence: 0,
-                confidenceBreakdown: breakdown,
-                leadTier: undefined,
-                details: { orgName, orgType: 'Data Center/Hosting/ISP', location, keywords: [] },
-            };
-        }
-    }
-
-    // Analyze organization type
+    // Classify by IPinfo company.type
+    // No L0_REJECT — all traffic (VPN, ISP, hosting, etc.) goes through classification.
+    // Potential customers may browse via VPN, home ISP, or corporate proxies.
+    // AI classification and behavioral analysis handle refinement downstream.
+    const companyType = ipInfo.company?.type;
+    // When companyType is unavailable, AI classification serves as fallback
     let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
-    let keywords: string[] = [];
 
-    // Check university keywords
-    const universityMatches = universityKeywords.filter(kw => orgLower.includes(kw));
-    if (universityMatches.length > 0) {
+    if (companyType === 'education') {
         organizationType = 'university';
-        breakdown.orgMatch = Math.min(0.9, 0.3 + (universityMatches.length * 0.2));
-        keywords = universityMatches;
+        breakdown.orgMatch = 0.5;
+    } else if (companyType === 'business') {
+        organizationType = 'enterprise';
+        breakdown.orgMatch = 0.3;
+    } else if (companyType === 'government') {
+        organizationType = 'enterprise';  // government labs use similar equipment
+        breakdown.orgMatch = 0.3;
     }
-
-    // Check research institution keywords (word boundary for short keywords)
-    const researchMatches = researchKeywords.filter(kw => {
-        if (kw.length <= 3) {
-            return new RegExp(`\\b${kw}\\b`, 'i').test(orgLower);
-        }
-        return orgLower.includes(kw);
-    });
-    if (researchMatches.length > 0 && breakdown.orgMatch < 0.5) {
-        organizationType = 'research_institute';
-        breakdown.orgMatch = Math.min(0.9, 0.4 + (researchMatches.length * 0.15));
-        keywords = researchMatches;
-    }
-
-    // Check enterprise keywords (stricter - need research/tech context)
-    const enterpriseMatches = enterpriseKeywords.filter(kw => orgLower.includes(kw));
-    if (enterpriseMatches.length > 0 && breakdown.orgMatch < 0.3 && !isNoiseOrg) {
-        const hasResearchTechContext =
-            orgLower.includes('semiconductor') || orgLower.includes('technology') ||
-            orgLower.includes('research') || orgLower.includes('scientific') ||
-            orgLower.includes('engineering') || orgLower.includes('manufacturing') ||
-            orgLower.includes('materials') || orgLower.includes('nano') ||
-            orgLower.includes('microelectronics') || orgLower.includes('photonics') ||
-            orgLower.includes('optics') || orgLower.includes('biotech') ||
-            orgLower.includes('medical device') || orgLower.includes('computer') ||
-            orgLower.includes('systems') || orgLower.includes('software') ||
-            orgLower.includes('tech');
-
-        if (hasResearchTechContext) {
-            organizationType = 'enterprise';
-            breakdown.orgMatch = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
-            keywords = enterpriseMatches;
-        } else {
-            organizationType = 'unknown';
-            breakdown.orgMatch = 0;
-        }
-    }
-
-    // Apply ISP penalty to orgMatch if it's a noise org
-    if (isNoiseOrg && breakdown.orgMatch > 0) {
-        breakdown.orgMatch = breakdown.orgMatch * 0.3;
-    }
+    // companyType undefined / other → stays 'unknown', orgMatch = 0 → AI fallback
 
     // Geographic location scoring
     const isTargetGeo = isTargetLocation(ipInfo.country, ipInfo.region);
@@ -377,9 +244,7 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     }
 
     // Calculate total confidence
-    breakdown.total = Math.max(0, Math.min(0.95,
-        breakdown.orgMatch + breakdown.geo + breakdown.ispPenalty
-    ));
+    breakdown.total = Math.max(0, Math.min(0.95, breakdown.orgMatch + breakdown.geo));
 
     // Dynamic threshold based on geography
     const threshold = isTargetGeo ? 0.3 : 0.5;
@@ -388,7 +253,7 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     const isTargetCustomer = breakdown.total > threshold;
     let leadTier: 'A' | 'B' | 'C' | undefined;
     if (isTargetCustomer) {
-        if (breakdown.total >= 0.7 && (organizationType === 'university' || organizationType === 'research_institute')) {
+        if (breakdown.total >= 0.7 && organizationType === 'university') {
             leadTier = 'A';
         } else if (breakdown.total >= 0.5 && organizationType !== 'unknown') {
             leadTier = 'B';
@@ -403,7 +268,7 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
         confidence: breakdown.total,
         confidenceBreakdown: breakdown,
         leadTier,
-        details: { orgName, orgType: getOrgTypeName(organizationType), location, keywords },
+        details: { orgName, orgType: getOrgTypeName(organizationType), location, keywords: [] },
     };
 }
 
