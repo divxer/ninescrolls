@@ -104,6 +104,7 @@ interface IPInfoInput {
   city?: string;
   org?: string;
   isp?: string;
+  companyType?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -177,6 +178,7 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     city: params.ipInfo?.city,
     org: params.ipInfo?.org,
     isp: params.ipInfo?.isp,
+    companyType: params.ipInfo?.companyType,
 
     isTargetCustomer: params.targetAnalysis?.isTargetCustomer,
     organizationType: params.targetAnalysis?.organizationType,
@@ -251,6 +253,7 @@ function getCachedIPEnrichment(): Record<string, unknown> {
       city: ipInfo.city,
       org: ipInfo.org,
       isp: ipInfo.isp,
+      companyType: ipInfo.company?.type,
       latitude: ipInfo.latitude,
       longitude: ipInfo.longitude,
     }),
