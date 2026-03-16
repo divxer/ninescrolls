@@ -12,7 +12,7 @@ interface SimpleIPInfo {
 
 interface SimpleTargetCustomerAnalysis {
   isTargetCustomer: boolean;
-  organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown';
+  organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown';
   confidence: number;
   leadTier?: 'A' | 'B' | 'C';  // Optional lead tier
   details: {
@@ -193,37 +193,37 @@ class SimpleIPAnalyticsService {
       // Chinese keywords: '公司', '企业', '集团', '股份', '有限', '科技'
     ];
 
-    // Analyze organization type
-    let organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown' = 'unknown';
+    // Analyze organization type — map keyword matches to IPinfo-aligned types
+    let organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown' = 'unknown';
     let confidence = 0;
     let keywords: string[] = [];
 
-    // Check university keywords
-    const universityMatches = universityKeywords.filter(keyword => 
+    // Check university/education keywords
+    const universityMatches = universityKeywords.filter(keyword =>
       orgLower.includes(keyword)
     );
     if (universityMatches.length > 0) {
-      organizationType = 'university';
+      organizationType = 'education';
       confidence = Math.min(0.9, 0.3 + (universityMatches.length * 0.2));
       keywords = universityMatches;
     }
 
-    // Check research institution keywords
-    const researchMatches = researchKeywords.filter(keyword => 
+    // Check research institution keywords (also education-adjacent)
+    const researchMatches = researchKeywords.filter(keyword =>
       orgLower.includes(keyword)
     );
     if (researchMatches.length > 0 && confidence < 0.5) {
-      organizationType = 'research_institute';
+      organizationType = 'education';
       confidence = Math.min(0.9, 0.4 + (researchMatches.length * 0.15));
       keywords = researchMatches;
     }
 
-    // Check enterprise keywords
-    const enterpriseMatches = enterpriseKeywords.filter(keyword => 
+    // Check enterprise/business keywords
+    const enterpriseMatches = enterpriseKeywords.filter(keyword =>
       orgLower.includes(keyword)
     );
     if (enterpriseMatches.length > 0 && confidence < 0.3) {
-      organizationType = 'enterprise';
+      organizationType = 'business';
       confidence = Math.min(0.8, 0.2 + (enterpriseMatches.length * 0.1));
       keywords = enterpriseMatches;
     }
@@ -266,9 +266,11 @@ class SimpleIPAnalyticsService {
   // Get organization type name
   private getOrgTypeName(type: string): string {
     const typeNames = {
-      university: 'University/Educational Institution',
-      research_institute: 'Research Institution',
-      enterprise: 'Enterprise',
+      education: 'Education',
+      business: 'Business',
+      government: 'Government',
+      isp: 'ISP',
+      hosting: 'Hosting',
       unknown: 'Unknown'
     };
     return typeNames[type as keyof typeof typeNames] || 'Unknown';

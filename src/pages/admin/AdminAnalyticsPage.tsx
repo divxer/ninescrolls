@@ -56,7 +56,7 @@ interface OrganizationRecord {
 
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
-type KpiFilter = 'all' | 'target' | 'university' | 'enterprise' | 'hotLead' | 'returning' | 'anonymousIntent' | 'ispIntent';
+type KpiFilter = 'all' | 'target' | 'education' | 'business' | 'hotLead' | 'returning' | 'anonymousIntent';
 type KeywordSourceFilter = 'all' | 'external' | 'internal';
 
 interface KeywordEntry {
@@ -830,8 +830,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
     );
-    const ipOrgType = geoEvent.organizationType || '';
-    const effectiveOrgType = hasBot ? 'bot' : (ipOrgType && ipOrgType !== 'unknown') ? ipOrgType : (aiEvent?.aiOrganizationType || ipOrgType);
+    const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown')?.organizationType ||
+      geoEvent.organizationType || '';
+    const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || ipOrgType);
 
     // Promote AI confidence when it's higher than IP-based confidence
     if (aiEvent?.aiConfidence != null && aiEvent.aiConfidence > maxConf) {
@@ -839,10 +840,15 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
 
     // Compute tier from AI data when events have no tier
-    const isTargetAIType = effectiveOrgType === 'university' || effectiveOrgType === 'research_institute' || effectiveOrgType === 'enterprise';
-    if (!bestTier && isTargetAIType && maxConf > 0) {
-      const isResearch = effectiveOrgType === 'university' || effectiveOrgType === 'research_institute';
-      if (maxConf >= 0.7 && isResearch) bestTier = 'A';
+    // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise)
+    const isIdentifiedOrgType = (t: string) =>
+      ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(t);
+    const isEducationType = (t: string) =>
+      t === 'education' || t === 'university' || t === 'research_institute';
+
+    const isTargetType = isIdentifiedOrgType(effectiveOrgType);
+    if (!bestTier && isTargetType && maxConf > 0) {
+      if (maxConf >= 0.7 && isEducationType(effectiveOrgType)) bestTier = 'A';
       else if (maxConf >= 0.9) bestTier = 'A';
       else if (maxConf >= 0.5) bestTier = 'B';
       else if (maxConf >= 0.3) bestTier = 'C';
@@ -865,10 +871,10 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const hasRealName = !!ispOrgName && ispOrgName !== 'Unknown';
     const isAIISP = (aiEvent?.aiOrganizationType || orgEvent.aiOrganizationType) === 'telecom_isp';
     const isISPVisitor = hasRealName && key !== ispOrgName && (
-      // Path 1: L0_REJECT ISP
+      // Path 1: ISP/hosting/unknown org with no meaningful IP signal
       (!orgEvent.isTargetCustomer &&
         (orgEvent.confidence == null || orgEvent.confidence === 0) &&
-        (!orgEvent.organizationType || orgEvent.organizationType === 'unknown') &&
+        (!orgEvent.organizationType || orgEvent.organizationType === 'unknown' || orgEvent.organizationType === 'isp' || orgEvent.organizationType === 'hosting') &&
         !(orgEvent.aiConfidence != null && orgEvent.aiConfidence >= 0.5 && !isAIISP)) ||
       // Path 2: AI-classified telecom_isp
       isAIISP
@@ -2124,8 +2130,8 @@ export function AdminAnalyticsPage() {
       // Compute tier for manually-marked target customers
       if (ov.isTargetCustomer && !org.leadTier) {
         const conf = Math.max(org.maxConfidence, ov.confidence);
-        const isResearch = org.organizationType === 'university' || org.organizationType === 'research_institute';
-        if (conf >= 0.7 && isResearch) org.leadTier = 'A';
+        const isEdu = org.organizationType === 'education' || org.organizationType === 'university' || org.organizationType === 'research_institute';
+        if (conf >= 0.7 && isEdu) org.leadTier = 'A';
         else if (conf >= 0.9) org.leadTier = 'A';
         else if (conf >= 0.5) org.leadTier = 'B';
         else if (conf >= 0.3) org.leadTier = 'C';
@@ -2144,20 +2150,20 @@ export function AdminAnalyticsPage() {
     switch (kpiFilter) {
       case 'target':
         return organizations.filter((o) => o.isTargetCustomer);
-      case 'university':
+      case 'education':
         return organizations.filter((o) =>
-          o.organizationType === 'university' || o.organizationType === 'research_institute'
+          o.organizationType === 'education' || o.organizationType === 'university' || o.organizationType === 'research_institute'
         );
-      case 'enterprise':
-        return organizations.filter((o) => o.organizationType === 'enterprise');
+      case 'business':
+        return organizations.filter((o) =>
+          o.organizationType === 'business' || o.organizationType === 'enterprise'
+        );
       case 'hotLead':
         return organizations.filter((o) => o.leadTier === 'A');
       case 'returning':
         return organizations.filter((o) => o.returnVisits > 0);
       case 'anonymousIntent':
         return organizations.filter((o) => o.isAnonymousHighIntent);
-      case 'ispIntent':
-        return organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor);
       default:
         return organizations;
     }
@@ -2296,12 +2302,14 @@ export function AdminAnalyticsPage() {
   const kpis = useMemo(() => {
     const uniqueVisitors = organizations.length;
     const targetCustomers = organizations.filter((o) => o.isTargetCustomer).length;
-    const universities = organizations.filter((o) =>
-      o.organizationType === 'university' || o.organizationType === 'research_institute'
+    const educationOrgs = organizations.filter((o) =>
+      o.organizationType === 'education' || o.organizationType === 'university' || o.organizationType === 'research_institute'
     ).length;
     const hotLeads = organizations.filter((o) => o.leadTier === 'A').length;
     const returning = organizations.filter((o) => o.returnVisits > 0).length;
-    const companies = organizations.filter((o) => o.organizationType === 'enterprise').length;
+    const businessOrgs = organizations.filter((o) =>
+      o.organizationType === 'business' || o.organizationType === 'enterprise'
+    ).length;
     const anonymousIntent = organizations.filter((o) => o.isAnonymousHighIntent).length;
     const ispHighIntent = organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor).length;
 
@@ -2318,7 +2326,7 @@ export function AdminAnalyticsPage() {
       ? Math.round(((currVisitors - prevVisitors) / prevVisitors) * 100)
       : currVisitors > 0 ? 100 : 0;
 
-    return { uniqueVisitors, targetCustomers, universities, hotLeads, returning, companies, anonymousIntent, ispHighIntent, visitorTrend };
+    return { uniqueVisitors, targetCustomers, educationOrgs, hotLeads, returning, businessOrgs, anonymousIntent, ispHighIntent, visitorTrend };
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
@@ -2473,18 +2481,18 @@ export function AdminAnalyticsPage() {
           <div className="analytics-stat-label">Target Customers</div>
         </div>
         <div
-          className={`analytics-stat-card analytics-stat-tier-a analytics-stat-clickable ${kpiFilter === 'university' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'university' ? 'all' : 'university')}
+          className={`analytics-stat-card analytics-stat-tier-a analytics-stat-clickable ${kpiFilter === 'education' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'education' ? 'all' : 'education')}
         >
-          <div className="analytics-stat-value">{kpis.universities}</div>
-          <div className="analytics-stat-label">Universities / Labs</div>
+          <div className="analytics-stat-value">{kpis.educationOrgs}</div>
+          <div className="analytics-stat-label">Education</div>
         </div>
         <div
-          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'enterprise' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'enterprise' ? 'all' : 'enterprise')}
+          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'business' ? 'analytics-stat-active' : ''}`}
+          onClick={() => setKpiFilter(kpiFilter === 'business' ? 'all' : 'business')}
         >
-          <div className="analytics-stat-value">{kpis.companies}</div>
-          <div className="analytics-stat-label">Companies</div>
+          <div className="analytics-stat-value">{kpis.businessOrgs}</div>
+          <div className="analytics-stat-label">Business</div>
         </div>
         <div
           className={`analytics-stat-card analytics-stat-tier-b analytics-stat-clickable ${kpiFilter === 'hotLead' ? 'analytics-stat-active' : ''}`}
@@ -2515,15 +2523,6 @@ export function AdminAnalyticsPage() {
                 incl. {kpis.ispHighIntent} ISP
               </div>
             )}
-          </div>
-        )}
-        {kpis.ispHighIntent > 0 && (
-          <div
-            className={`analytics-stat-card analytics-stat-isp-intent analytics-stat-clickable ${kpiFilter === 'ispIntent' ? 'analytics-stat-active' : ''}`}
-            onClick={() => setKpiFilter(kpiFilter === 'ispIntent' ? 'all' : 'ispIntent')}
-          >
-            <div className="analytics-stat-value">{kpis.ispHighIntent}</div>
-            <div className="analytics-stat-label">ISP Intent</div>
           </div>
         )}
       </div>
