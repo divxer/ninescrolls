@@ -2,7 +2,6 @@
 .insights-post-page {
   min-height: 100vh;
   background: #f8f9fa;
-  overflow-x: hidden;
 }
 
 /* Hero Section */
@@ -197,6 +196,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   min-width: 0; /* Prevent grid child from overflowing when content has non-breaking spaces */
+  overflow-x: hidden;
 }
 
 .post-content {
@@ -511,20 +511,25 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Sidebar */
-.sidebar {
+/* Sidebar Column — grid child that holds non-sticky info + sticky TOC */
+/* Must NOT use align-self: start — needs full grid row height for sticky to work */
+.sidebar-column {
+}
+
+/* Non-sticky card for Related Products + Related Articles */
+.sidebar-info {
   background: white;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  height: fit-content;
-  position: sticky;
-  top: 120px;
-  align-self: start;
+  margin-bottom: 20px;
+}
+
+.related-products {
 }
 
 .related-products h3 {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   color: #2c3e50;
   font-size: 1.1rem;
   font-weight: 600;
@@ -537,8 +542,8 @@
 }
 
 .related-products li {
-  margin-bottom: 12px;
-  padding: 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
   background: #f8f9fa;
   border-radius: 6px;
   border-left: 3px solid #667eea;
@@ -567,15 +572,15 @@
 
 /* Related Articles */
 .related-articles {
-  margin-top: 30px;
-  padding-top: 20px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid #e9ecef;
 }
 
 .related-articles h3 {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   color: #2c3e50;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .related-articles ul {
@@ -584,17 +589,92 @@
 }
 
 .related-articles li {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .related-articles a {
   color: #667eea;
   text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.35;
   transition: color 0.3s ease;
 }
 
 .related-articles a:hover {
   color: #5a6fd8;
+}
+
+/* Table of Contents — standalone sticky card */
+.toc-nav {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 120px;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toc-nav h3 {
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 1rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.toc-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.toc-nav ul::-webkit-scrollbar {
+  width: 3px;
+}
+
+.toc-nav ul::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.toc-item {
+  border-left: 2px solid #e9ecef;
+  transition: border-color 0.2s ease;
+}
+
+.toc-item a {
+  display: block;
+  padding: 5px 10px;
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.toc-h3 a {
+  padding-left: 20px;
+  font-size: 0.78rem;
+}
+
+.toc-item a:hover {
+  color: #2c3e50;
+  background-color: #f8f9fa;
+}
+
+.toc-active {
+  border-left-color: #667eea;
+}
+
+.toc-active a {
+  color: #667eea;
+  font-weight: 600;
 }
 
 /* Loading and Error States */
@@ -642,11 +722,16 @@
     padding: 30px 20px;
   }
   
-  .sidebar {
-    padding: 20px;
-    position: static;
-    max-height: none;
+  .sidebar-column {
     order: 2;
+  }
+
+  .sidebar-info {
+    padding: 20px;
+  }
+
+  .toc-nav {
+    display: none;
   }
   
   .insights-post-meta {
