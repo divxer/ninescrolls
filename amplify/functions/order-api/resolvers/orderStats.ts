@@ -90,7 +90,7 @@ export async function orderStats(_event: AppSyncEvent) {
 
     return {
         totalActive,
-        byStatus: JSON.stringify(byStatus),
+        byStatus,
         avgDaysToInstall,
         upcomingDeliveries,
         overdueOrders,
