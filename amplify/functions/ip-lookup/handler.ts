@@ -43,25 +43,15 @@ interface IPInfo {
     };
 }
 
-interface ConfidenceBreakdown {
-    orgMatch: number;
-    geo: number;
-    ispPenalty: number;
-    whitelist: number;
-    total: number;
-}
-
+// IP Lookup returns only categorical classification from IPinfo company.type.
+// Numeric confidence and target customer determination are handled by
+// AI classification (classify-org Lambda) on the client side.
 interface TargetCustomerAnalysis {
-    isTargetCustomer: boolean;
     organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown';
-    confidence: number;
-    confidenceBreakdown?: ConfidenceBreakdown;
-    leadTier?: 'A' | 'B' | 'C';
     details: {
         orgName: string;
         orgType: string;
         location: string;
-        keywords: string[];
     };
 }
 
@@ -178,25 +168,9 @@ function mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
 
 // ─── Target Customer Analysis ────────────────────────────────────────────────
 // Classification strategy:
-//   1. IPinfo company.type is the primary IP-level signal (professionally maintained database)
-//   2. AI classification (Claude via /classify-org) handles refinement and edge cases
-//      (e.g., university vs research_institute, business with research context → upgrade)
-//   3. No keyword matching — company.type is more reliable for non-English names,
-//      abbreviations, and unlisted companies
-
-const targetCountries = [
-    'United States', 'China', 'Japan', 'Germany', 'United Kingdom',
-    'France', 'Canada', 'Australia', 'South Korea', 'Netherlands',
-    'US', 'CN', 'JP', 'DE', 'GB', 'FR', 'CA', 'AU', 'KR', 'NL',
-];
-
-const targetRegions = [
-    'California', 'Massachusetts', 'New York', 'Texas', 'Illinois',
-];
-
-function isTargetLocation(country: string, region: string): boolean {
-    return targetCountries.includes(country) || targetRegions.includes(region);
-}
+//   1. IPinfo company.type provides a categorical org type (education/business/government/isp/hosting)
+//   2. AI classification (Claude via /classify-org) provides numeric confidence and refined org type
+//   3. No keyword matching — company.type is more reliable for non-English names
 
 function getOrgTypeName(type: string): string {
     const typeNames: Record<string, string> = {
@@ -215,71 +189,27 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     // Strip ASN prefix (e.g. "AS12093 University of Waterloo" → "University of Waterloo")
     const orgName = orgNameRaw.replace(/^AS\d+\s+/i, '').trim() || orgNameRaw;
     const location = `${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}`;
-    const breakdown: ConfidenceBreakdown = {
-        orgMatch: 0, geo: 0, ispPenalty: 0, whitelist: 0, total: 0,
-    };
 
-    // Classify by IPinfo company.type
-    // No L0_REJECT — all traffic (VPN, ISP, hosting, etc.) goes through classification.
-    // Potential customers may browse via VPN, home ISP, or corporate proxies.
-    // AI classification and behavioral analysis handle refinement downstream.
+    // Classify by IPinfo company.type — categorical only, no numeric scoring.
+    // AI classification handles confidence and target customer determination.
     const companyType = ipInfo.company?.type;
-    // When companyType is unavailable, AI classification serves as fallback
-    // Use IPinfo company.type directly — no lossy remapping.
-    // AI classification (classify-org Lambda) can refine further downstream
-    // (e.g., education → university vs research_institute).
     let organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'unknown' = 'unknown';
 
     if (companyType === 'education') {
         organizationType = 'education';
-        breakdown.orgMatch = 0.5;
     } else if (companyType === 'business') {
         organizationType = 'business';
-        breakdown.orgMatch = 0.3;
     } else if (companyType === 'government') {
         organizationType = 'government';
-        breakdown.orgMatch = 0.3;
     } else if (companyType === 'isp') {
         organizationType = 'isp';
-        breakdown.orgMatch = 0;  // org name is the ISP, not the end user
     } else if (companyType === 'hosting') {
         organizationType = 'hosting';
-        breakdown.orgMatch = 0;  // org name is the hosting provider, not the end user
-    }
-    // companyType undefined → stays 'unknown', orgMatch = 0 → AI fallback
-
-    // Geographic location scoring
-    const isTargetGeo = isTargetLocation(ipInfo.country, ipInfo.region);
-    if (isTargetGeo) {
-        breakdown.geo = 0.1;
-    }
-
-    // Calculate total confidence
-    breakdown.total = Math.max(0, Math.min(0.95, breakdown.orgMatch + breakdown.geo));
-
-    // Dynamic threshold based on geography
-    const threshold = isTargetGeo ? 0.3 : 0.5;
-
-    // Determine lead tier (only for target customers)
-    const isTargetCustomer = breakdown.total > threshold;
-    let leadTier: 'A' | 'B' | 'C' | undefined;
-    if (isTargetCustomer) {
-        if (breakdown.total >= 0.7 && organizationType === 'education') {
-            leadTier = 'A';
-        } else if (breakdown.total >= 0.5 && (organizationType === 'education' || organizationType === 'business' || organizationType === 'government')) {
-            leadTier = 'B';
-        } else {
-            leadTier = 'C';
-        }
     }
 
     return {
-        isTargetCustomer,
         organizationType,
-        confidence: breakdown.total,
-        confidenceBreakdown: breakdown,
-        leadTier,
-        details: { orgName, orgType: getOrgTypeName(organizationType), location, keywords: [] },
+        details: { orgName, orgType: getOrgTypeName(organizationType), location },
     };
 }
 

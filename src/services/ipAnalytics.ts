@@ -1,6 +1,6 @@
 // IP Analytics Service
-// Calls the backend /ip-lookup Lambda to get IP info and target customer analysis
-// Server-side lookups avoid CORS restrictions and rate limits on third-party IP services
+// Calls the backend /ip-lookup Lambda to get IP info and org type classification.
+// AI classification (classify-org Lambda) provides numeric confidence and refined org type.
 
 import outputs from '../../amplify_outputs.json';
 import { classifyOrganization, type AIClassification } from './aiClassificationService';
@@ -29,20 +29,11 @@ interface IPInfo {
   };
 }
 
-interface ConfidenceBreakdown {
-  orgMatch: number;      // 组织关键词匹配得分
-  geo: number;           // 地理位置得分
-  ispPenalty: number;    // ISP/噪音惩罚（负数）
-  whitelist: number;     // 白名单加成
-  total: number;          // 总分
-}
-
 interface TargetCustomerAnalysis {
   isTargetCustomer: boolean;
   organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'university' | 'research_institute' | 'enterprise' | 'hospital' | 'telecom_isp' | 'unknown';
-  confidence: number;
-  confidenceBreakdown?: ConfidenceBreakdown;  // 子评分详情
-  leadTier?: 'A' | 'B' | 'C';  // 线索等级
+  confidence: number;  // AI-sourced (0 if AI unavailable)
+  leadTier?: 'A' | 'B' | 'C';
   details: {
     orgName: string;
     orgType: string;
@@ -112,11 +103,27 @@ class IPAnalyticsService {
           this.ipInfo = data.ipInfo;
         }
         if (data.analysis) {
-          this.analysis = data.analysis;
+          // Lambda returns only organizationType + details (no confidence/isTargetCustomer).
+          // Set defaults — AI classification will populate confidence and isTargetCustomer.
+          this.analysis = {
+            organizationType: data.analysis.organizationType || 'unknown',
+            confidence: 0,
+            isTargetCustomer: false,
+            details: {
+              orgName: data.analysis.details?.orgName || 'Unknown',
+              orgType: data.analysis.details?.orgType || 'Unknown',
+              location: data.analysis.details?.location || 'Unknown',
+              keywords: [],
+            },
+          };
         }
 
-        // Fire off AI classification in parallel (non-blocking)
-        if (this.ipInfo?.org) {
+        // Fire off AI classification only when IP org type is ambiguous.
+        // Skip for: education/government (IP already reliable), hosting (almost always bots).
+        // Call for: business (AI refines to enterprise/hospital), isp/unknown (AI identifies org).
+        const needsAI = this.ipInfo?.org
+          && ['business', 'isp', 'telecom_isp', 'unknown'].includes(this.analysis?.organizationType || 'unknown');
+        if (needsAI) {
           this.aiPromise = this.fetchAIClassification();
         }
       } catch (error) {
@@ -139,7 +146,7 @@ class IPAnalyticsService {
 
   /**
    * Fetch AI classification from the classify-org Lambda.
-   * Updates this.analysis with AI-enhanced results when available.
+   * AI is the sole source of numeric confidence and target customer determination.
    */
   private async fetchAIClassification(): Promise<void> {
     if (!this.ipInfo?.org) return;
@@ -155,40 +162,17 @@ class IPAnalyticsService {
       if (result) {
         this.aiClassification = result;
 
-        // Enrich the existing analysis with AI results if AI is more confident
-        // Guard 1: Never override backend L0 rejects (confidence 0) or explicit rejections
-        const isBackendRejected = this.analysis && !this.analysis.isTargetCustomer;
-        // Guard 2: AI can enrich if backend had any signal (lowered from 0.2 since whitelist was removed)
-        const backendHasSignal = this.analysis && this.analysis.confidence >= 0.1;
-
-        if (this.analysis && !isBackendRejected && backendHasSignal && result.confidence > this.analysis.confidence) {
-          // AI agrees with backend direction — enrich with higher confidence
-          this.analysis = {
-            ...this.analysis,
-            isTargetCustomer: result.isTargetCustomer,
-            organizationType: result.organizationType as TargetCustomerAnalysis['organizationType'],
-            confidence: result.confidence,
-            // Recompute lead tier based on AI confidence and target customer status
-            leadTier: this.computeLeadTier(result.confidence, result.organizationType, result.isTargetCustomer),
-            details: {
-              ...this.analysis.details,
-              orgType: result.organizationType,
-              keywords: [result.reason],
-            },
-          };
-        } else if (this.analysis && isBackendRejected && result.isTargetCustomer && result.confidence >= 0.7) {
-          // AI disagrees with backend rejection — allow override with high AI confidence
-          // Whitelist was removed from ip-lookup, so AI is now the primary classifier
-          // for orgs that don't match keyword patterns (e.g. "MIT", "CAS", non-English names)
-          if (import.meta.env.DEV) {
-            console.info(`[IPAnalytics] AI override of backend rejection for ${this.ipInfo?.org}: AI confidence ${result.confidence}`);
+        // AI is the authority for confidence, org type, and target customer status
+        if (this.analysis) {
+          if (import.meta.env.DEV && result.isTargetCustomer) {
+            console.info(`[IPAnalytics] AI classified ${this.ipInfo?.org}: ${result.organizationType} (${(result.confidence * 100).toFixed(0)}%)`);
           }
           this.analysis = {
             ...this.analysis,
             isTargetCustomer: result.isTargetCustomer,
             organizationType: result.organizationType as TargetCustomerAnalysis['organizationType'],
-            confidence: result.confidence * 0.85, // Slight discount when overriding backend rejection
-            leadTier: this.computeLeadTier(result.confidence * 0.85, result.organizationType, result.isTargetCustomer),
+            confidence: result.confidence,
+            leadTier: this.computeLeadTier(result.confidence, result.organizationType, result.isTargetCustomer),
             details: {
               ...this.analysis.details,
               orgType: result.organizationType,
@@ -201,14 +185,14 @@ class IPAnalyticsService {
       if (import.meta.env.DEV) {
         console.warn('AI classification failed:', error);
       }
-      // Silently fail — keyword-based analysis remains
+      // AI unavailable: confidence stays 0, isTargetCustomer stays false
+      // organizationType from IP lookup is still available as categorical data
     }
   }
 
   private computeLeadTier(confidence: number, orgType: string, isTargetCustomer?: boolean): 'A' | 'B' | 'C' | undefined {
     // Non-target customers should never get a lead tier
     if (isTargetCustomer === false) return undefined;
-    // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise/hospital)
     const isIdentifiedOrg = ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
     const isEducation = orgType === 'education' || orgType === 'university' || orgType === 'research_institute';
     if (confidence >= 0.7 && isEducation) return 'A';
