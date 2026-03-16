@@ -76,6 +76,7 @@ interface PageStats {
   uniqueVisitors: number;
   avgActiveSeconds: number;
   totalActiveSeconds: number;
+  avgScrollDepth: number;
   organizations: string[];
   isProductPage: boolean;
 }
@@ -244,6 +245,7 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
   const pageMap = new Map<string, {
     pageTitle: string; views: number; visitors: Set<string>;
     orgs: Set<string>; totalActive: number; flushCount: number;
+    scrollDepthSum: number; scrollDepthCount: number;
     latestTimestamp: string;
   }>();
 
@@ -271,34 +273,43 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
       if (org) orgs.add(org);
       pageMap.set(path, {
         pageTitle: e.pageTitle || '', views: 1, visitors, orgs,
-        totalActive: 0, flushCount: 0, latestTimestamp: e.timestamp,
+        totalActive: 0, flushCount: 0, scrollDepthSum: 0, scrollDepthCount: 0,
+        latestTimestamp: e.timestamp,
       });
     }
   }
 
   // 2. Aggregate page time from page_time_flush events
   // Group by pageViewId, select best flush per pageViewId, then sum per pathname
-  const pvBest = new Map<string, { activeSeconds: number; isFinal: boolean; pathname: string }>();
+  const pvBest = new Map<string, { activeSeconds: number; isFinal: boolean; pathname: string; maxScroll: number }>();
   for (const e of events) {
     if (e.eventType !== 'page_time_flush' || !e.activeSeconds || e.activeSeconds <= 0) continue;
     const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
     const isFinal = !!((e as Record<string, unknown>).isFinal);
     const path = normalizePath(e.pathname || '');
+    const scroll = (e as Record<string, unknown>).maxScrollDepth as number || 0;
     const existing = pvBest.get(pvId);
     const best = selectBestFlush(
       existing ? { activeSeconds: existing.activeSeconds, isFinal: existing.isFinal } : undefined,
       { activeSeconds: e.activeSeconds, isFinal }
     );
-    pvBest.set(pvId, { activeSeconds: best.activeSeconds, isFinal: best.isFinal, pathname: path });
+    pvBest.set(pvId, {
+      activeSeconds: best.activeSeconds, isFinal: best.isFinal, pathname: path,
+      maxScroll: Math.max(existing?.maxScroll || 0, scroll),
+    });
   }
 
-  // Sum best flush times per pathname
-  for (const [, { activeSeconds, pathname }] of pvBest) {
+  // Sum best flush times and scroll depth per pathname
+  for (const [, { activeSeconds, pathname, maxScroll }] of pvBest) {
     if (!pathname) continue;
     const entry = pageMap.get(pathname);
     if (entry) {
       entry.totalActive += activeSeconds;
       entry.flushCount++;
+      if (maxScroll > 0) {
+        entry.scrollDepthSum += maxScroll;
+        entry.scrollDepthCount++;
+      }
     }
   }
 
@@ -310,6 +321,7 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
       uniqueVisitors: data.visitors.size,
       avgActiveSeconds: data.flushCount > 0 ? Math.round(data.totalActive / data.flushCount) : 0,
       totalActiveSeconds: data.totalActive,
+      avgScrollDepth: data.scrollDepthCount > 0 ? Math.round(data.scrollDepthSum / data.scrollDepthCount) : 0,
       organizations: Array.from(data.orgs),
       isProductPage: path.startsWith('/products/'),
     }))
@@ -2645,6 +2657,7 @@ export function AdminAnalyticsPage() {
                             <th>Views</th>
                             <th>Visitors</th>
                             <th>Avg Time</th>
+                            <th>Scroll</th>
                             <th>Organizations</th>
                           </tr>
                         </thead>
@@ -2659,6 +2672,9 @@ export function AdminAnalyticsPage() {
                               <td style={{ textAlign: 'center' }}>{p.uniqueVisitors}</td>
                               <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                                 {p.avgActiveSeconds > 0 ? formatDuration(p.avgActiveSeconds) : '—'}
+                              </td>
+                              <td style={{ textAlign: 'center', whiteSpace: 'nowrap', color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
+                                {p.avgScrollDepth > 0 ? `${p.avgScrollDepth}%` : '—'}
                               </td>
                               <td>
                                 <div className="keyword-org-chips">
@@ -2735,6 +2751,23 @@ export function AdminAnalyticsPage() {
                             />
                           </div>
                         </div>
+                        {p.avgScrollDepth > 0 && (
+                          <div className="product-card-conversion">
+                            <div className="product-conversion-header">
+                              <span>Avg Scroll Depth</span>
+                              <span className="product-conversion-value">{p.avgScrollDepth}%</span>
+                            </div>
+                            <div className="product-conversion-bar-track">
+                              <div
+                                className="product-conversion-bar-fill"
+                                style={{
+                                  width: `${p.avgScrollDepth}%`,
+                                  background: p.avgScrollDepth >= 75 ? '#43a047' : p.avgScrollDepth >= 50 ? '#f9a825' : '#e0e0e0',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
                         {p.avgActiveSeconds > 0 && (
                           <div className="product-card-time">
                             Avg time: {formatDuration(p.avgActiveSeconds)}

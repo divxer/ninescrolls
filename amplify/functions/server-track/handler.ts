@@ -184,6 +184,7 @@ async function writePageTimeFlush(
             isFinal: props.isFinal,
             flushSequence: props.flushSequence,
             idleTimeoutMsUsed: props.idleTimeoutMsUsed,
+            maxScrollDepth: typeof props.maxScrollDepth === 'number' && props.maxScrollDepth > 0 ? props.maxScrollDepth : undefined,
 
             userAgent,
             isBot: props.isBot === true,               // frontend passes isbot() result
