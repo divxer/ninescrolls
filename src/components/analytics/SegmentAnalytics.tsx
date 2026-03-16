@@ -628,10 +628,18 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
     if (typeof window === 'undefined') return;
 
     const path = location.pathname;
-    // Only track scroll depth on product and insights pages
-    if (!path.startsWith('/products/') && !path.startsWith('/insights/')) return;
-    // Skip list pages (only track detail pages with deeper paths)
-    if (path === '/products' || path === '/products/' || path === '/insights' || path === '/insights/') return;
+    // Skip pages where scroll depth tracking is not useful:
+    // - form pages (have their own interaction tracking)
+    // - checkout/cart flow (have conversion tracking)
+    // - legal/policy pages (no analytical value)
+    // - admin/test pages
+    const skipScrollTracking = [
+      '/contact', '/request-quote',
+      '/cart', '/checkout', '/checkout/success', '/checkout/cancel',
+      '/privacy', '/return-policy',
+    ];
+    if (skipScrollTracking.some(p => path === p || path === p + '/')) return;
+    if (path.startsWith('/admin') || path.startsWith('/analytics-test') || path.startsWith('/ip-analysis')) return;
 
     let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 
