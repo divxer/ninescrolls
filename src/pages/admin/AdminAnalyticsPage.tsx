@@ -2300,6 +2300,7 @@ export function AdminAnalyticsPage() {
   const productStats = useMemo(() => aggregateProductStats(pageStats, filteredEvents), [pageStats, filteredEvents]);
   const landingPageStats = useMemo(() => aggregateLandingPages(filteredEvents), [filteredEvents]);
   const [expandedPageOrgs, setExpandedPageOrgs] = useState<Set<string>>(new Set());
+  const [expandedKeywordOrgs, setExpandedKeywordOrgs] = useState<Set<string>>(new Set());
 
   // KPI stats with trend (compare first half vs second half of period)
   const kpis = useMemo(() => {
@@ -2629,22 +2630,39 @@ export function AdminAnalyticsPage() {
                         <td>{kw.searchEngine || (kw.source === 'internal' ? 'Site Search' : '—')}</td>
                         <td>
                           <div className="keyword-org-chips">
-                            {kw.organizations.slice(0, 2).map(org => (
-                              <button
-                                key={org}
-                                className="keyword-org-chip"
-                                onClick={() => {
-                                  const match = organizations.find(o => o.orgName === org);
-                                  if (match) selectOrg(match);
-                                }}
-                                title={org}
-                              >
-                                {org.length > 20 ? org.slice(0, 20) + '...' : org}
-                              </button>
-                            ))}
-                            {kw.organizations.length > 2 && (
-                              <span className="keyword-org-more">+{kw.organizations.length - 2}</span>
-                            )}
+                            {(() => {
+                              const kwKey = `${kw.source}-${kw.keyword}`;
+                              const isExpanded = expandedKeywordOrgs.has(kwKey);
+                              return <>
+                                {(isExpanded ? kw.organizations : kw.organizations.slice(0, 2)).map(org => (
+                                  <button
+                                    key={org}
+                                    className="keyword-org-chip"
+                                    onClick={() => {
+                                      const match = organizations.find(o => o.orgName === org);
+                                      if (match) selectOrg(match);
+                                    }}
+                                    title={org}
+                                  >
+                                    {org.length > 20 ? org.slice(0, 20) + '...' : org}
+                                  </button>
+                                ))}
+                                {kw.organizations.length > 2 && (
+                                  <button
+                                    className="keyword-org-more"
+                                    onClick={() => setExpandedKeywordOrgs(prev => {
+                                      const next = new Set(prev);
+                                      if (next.has(kwKey)) next.delete(kwKey);
+                                      else next.add(kwKey);
+                                      return next;
+                                    })}
+                                    style={{ cursor: 'pointer' }}
+                                  >
+                                    {isExpanded ? 'less' : `+${kw.organizations.length - 2}`}
+                                  </button>
+                                )}
+                              </>;
+                            })()}
                           </div>
                         </td>
                         <td className="keyword-cell-date">
