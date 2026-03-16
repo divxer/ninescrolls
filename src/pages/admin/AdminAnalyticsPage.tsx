@@ -245,7 +245,7 @@ function normalizePath(p: string): string {
 function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
   const pageMap = new Map<string, {
     pageTitle: string; views: number; visitors: Set<string>;
-    orgs: Set<string>; totalActive: number; flushCount: number;
+    orgCounts: Map<string, number>; totalActive: number; flushCount: number;
     scrollDepthSum: number; scrollDepthCount: number;
     latestTimestamp: string;
   }>();
@@ -261,7 +261,7 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
     if (existing) {
       existing.views++;
       if (vid) existing.visitors.add(vid);
-      if (org) existing.orgs.add(org);
+      if (org) existing.orgCounts.set(org, (existing.orgCounts.get(org) || 0) + 1);
       if (!existing.pageTitle && e.pageTitle) existing.pageTitle = e.pageTitle;
       if (e.timestamp > existing.latestTimestamp) {
         existing.latestTimestamp = e.timestamp;
@@ -270,10 +270,10 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
     } else {
       const visitors = new Set<string>();
       if (vid) visitors.add(vid);
-      const orgs = new Set<string>();
-      if (org) orgs.add(org);
+      const orgCounts = new Map<string, number>();
+      if (org) orgCounts.set(org, 1);
       pageMap.set(path, {
-        pageTitle: e.pageTitle || '', views: 1, visitors, orgs,
+        pageTitle: e.pageTitle || '', views: 1, visitors, orgCounts,
         totalActive: 0, flushCount: 0, scrollDepthSum: 0, scrollDepthCount: 0,
         latestTimestamp: e.timestamp,
       });
@@ -323,7 +323,9 @@ function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
       avgActiveSeconds: data.flushCount > 0 ? Math.round(data.totalActive / data.flushCount) : 0,
       totalActiveSeconds: data.totalActive,
       avgScrollDepth: data.scrollDepthCount > 0 ? Math.round(data.scrollDepthSum / data.scrollDepthCount) : 0,
-      organizations: Array.from(data.orgs),
+      organizations: Array.from(data.orgCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([name]) => name),
       isProductPage: path.startsWith('/products/'),
     }))
     .sort((a, b) => b.views - a.views);
@@ -2731,7 +2733,7 @@ export function AdminAnalyticsPage() {
                         <tbody>
                           {pageStats.slice(0, 50).map(p => (
                             <tr key={p.pathname} className={p.isProductPage ? 'row-highlight-blue' : ''}>
-                              <td className="keyword-cell-keyword">{p.pathname}</td>
+                              <td className="keyword-cell-keyword" title={p.pathname}>{p.pathname}</td>
                               <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#666' }}>
                                 {p.pageTitle || '—'}
                               </td>
