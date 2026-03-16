@@ -2620,7 +2620,7 @@ export function AdminAnalyticsPage() {
                   <tbody>
                     {displayedKeywords.slice(0, 50).map((kw, i) => (
                       <tr key={`${kw.source}-${kw.keyword}-${i}`}>
-                        <td className="keyword-cell-keyword">{kw.keyword}</td>
+                        <td className="keyword-cell-keyword" title={kw.keyword}>{kw.keyword}</td>
                         <td style={{ textAlign: 'center' }}>{kw.count}</td>
                         <td>
                           <span className={`keyword-source-badge keyword-source-${kw.source}`}>
