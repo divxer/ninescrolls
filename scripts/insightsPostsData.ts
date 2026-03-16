@@ -2393,360 +2393,409 @@ export const insightsPosts: InsightsPost[] = [
   {
     id: '11',
     title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
-    excerpt: 'A comprehensive comparison of Plasma Etching (PE), Reactive Ion Etching (RIE), and Inductively Coupled Plasma Reactive Ion Etching (ICP-RIE) — principles, trade-offs, and selection criteria.',
+    excerpt: 'PE, RIE, and ICP-RIE compared with real process data — etch rates, gas chemistries, Bosch process, common etch defects, and endpoint detection. A practical guide for choosing the right plasma etching technology.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor process engineers, equipment engineers, R&D scientists, and technical decision-makers in plasma processing.</p>
-      
+
       <h2>TL;DR Summary</h2>
-      <p>Plasma etching technologies have evolved from simple Plasma Etching (PE) to advanced Reactive Ion Etching (RIE) and Inductively Coupled Plasma RIE (ICP-RIE). PE offers isotropic etching with limited control; RIE provides directional etching with better anisotropy; ICP-RIE delivers the highest precision with independent control of ion density and energy. The choice depends on your application requirements for selectivity, anisotropy, and etch rate.</p>
-      
-      <h2>1) Plasma Etching (PE) - The Foundation</h2>
-      <p>Plasma Etching (PE) is the most basic form of plasma etching, relying primarily on chemical reactions between reactive species in the plasma and the material being etched.</p>
-      
+      <p>Plasma etching technologies range from simple chemical dry etching (often called PE) to advanced Reactive Ion Etching (RIE) and Inductively Coupled Plasma RIE (ICP-RIE). PE relies on chemical radicals for isotropic etching at 100–300 nm/min; RIE adds ion bombardment for anisotropic profiles at 200–500 nm/min; ICP-RIE provides independent control of plasma density (10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup>) and ion energy, achieving etch rates above 1 µm/min with excellent profile control. This article covers working principles, gas chemistries, typical process parameters, the Bosch process for DRIE, common etch defects and solutions, and endpoint detection methods — everything you need to select and optimize the right technology for your application.</p>
+
+      <h2>1. Terminology: What Does "PE" Actually Mean?</h2>
+      <p>Before comparing technologies, it is important to clarify terminology. "PE" (Plasma Etching) is a general term that encompasses <em>all</em> plasma-based etching methods. However, in comparative literature it is often used as shorthand for <strong>chemical dry etching</strong> — the simplest plasma etching mode where material removal is driven almost entirely by chemical reactions with minimal ion bombardment. This mode is also known as <em>barrel etching</em>, <em>downstream etching</em>, or <em>radical etching</em>, depending on the reactor configuration.</p>
+      <p>In this article, we use "PE" specifically to refer to this chemistry-dominated, isotropic etching mode, as distinct from the ion-assisted mechanisms of RIE and ICP-RIE. For a broader introduction to plasma etching fundamentals, see our <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Fundamentals</a> guide.</p>
+
+      <h2>2. Plasma Etching (PE) — The Foundation</h2>
+      <p>PE is the most basic form of plasma etching. The substrate sits on or near a grounded electrode (or downstream from the plasma source), so ions reach the surface with very low energy. Material removal is dominated by volatile reaction products formed when reactive radicals — F*, Cl*, O* — react with the substrate surface.</p>
+
       <h3>How PE Works</h3>
       <ul>
-        <li><strong>Chemical Dominance:</strong> Reactive radicals (F*, Cl*, O*) chemically react with the substrate surface</li>
-        <li><strong>Isotropic Nature:</strong> Etching occurs equally in all directions, creating rounded profiles</li>
-        <li><strong>Low Ion Energy:</strong> Minimal physical bombardment, primarily chemical etching</li>
-        <li><strong>High Selectivity:</strong> Excellent selectivity to underlying materials due to chemical specificity</li>
+        <li><strong>Chemical Dominance:</strong> Reactive radicals (F*, Cl*, O*) react chemically with the substrate. Ion energy is typically &lt; 20 eV, far below the physical sputtering threshold.</li>
+        <li><strong>Isotropic Nature:</strong> Because radicals have no preferred direction, etching proceeds equally in all directions — producing rounded, undercut profiles.</li>
+        <li><strong>High Selectivity:</strong> Purely chemical etching can achieve selectivities of 50:1 or higher for certain material pairs (e.g., Si over SiO₂ in CF₄/O₂).</li>
+        <li><strong>Minimal Damage:</strong> Low ion energy means negligible lattice damage — important for sensitive III-V devices and organic materials.</li>
       </ul>
-      
-      <h3>PE Characteristics</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+
+      <h3>Typical PE Process Parameters</h3>
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">PE Performance</th>
+          <tr>
+            <th>Parameter</th>
+            <th>Typical Range</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Anisotropy</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low (isotropic)</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Selectivity</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Etch Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Limited</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Minimal</td>
-          </tr>
+          <tr><td><strong>Etch Rate</strong></td><td>100–300 nm/min</td></tr>
+          <tr><td><strong>Chamber Pressure</strong></td><td>300–1000 mTorr</td></tr>
+          <tr><td><strong>RF Power</strong></td><td>100–300 W</td></tr>
+          <tr><td><strong>Substrate Temperature</strong></td><td>20–80 °C</td></tr>
+          <tr><td><strong>Plasma Density</strong></td><td>10<sup>9</sup>–10<sup>10</sup> cm<sup>−3</sup></td></tr>
         </tbody>
       </table>
-      
+
+      <h3>Common PE Gas Chemistries</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Gas Chemistry</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Photoresist</td><td>O₂</td><td>Ashing/stripping; 200–500 nm/min</td></tr>
+          <tr><td>Silicon</td><td>CF₄, SF₆</td><td>Isotropic; high selectivity to SiO₂</td></tr>
+          <tr><td>SiO₂</td><td>CF₄/O₂</td><td>Moderate rate; widely available</td></tr>
+          <tr><td>Organics</td><td>O₂/Ar</td><td>Surface cleaning and activation</td></tr>
+        </tbody>
+      </table>
+
       <h3>PE Applications</h3>
       <ul>
-        <li>Photoresist stripping and cleaning</li>
-        <li>Surface preparation and activation</li>
-        <li>Isotropic material removal</li>
-        <li>Organic material etching</li>
+        <li>Photoresist stripping and ashing</li>
+        <li>Surface preparation and activation before bonding or deposition</li>
+        <li>Isotropic release etching for MEMS structures</li>
+        <li>Descum and residue removal</li>
       </ul>
-      
-      <h2>2) Reactive Ion Etching (RIE) - The Evolution</h2>
-      <p>Reactive Ion Etching (RIE) combines chemical etching with physical ion bombardment, providing better directional control and anisotropy compared to PE.</p>
-      
-      <h3>How RIE Works</h3>
-      <ul>
-        <li><strong>Dual Mechanism:</strong> Chemical reactions + physical ion bombardment</li>
-        <li><strong>Directional Control:</strong> Ions accelerate toward the substrate, creating anisotropic profiles</li>
-        <li><strong>Enhanced Etch Rate:</strong> Ion bombardment breaks surface bonds, accelerating chemical reactions</li>
-        <li><strong>Moderate Selectivity:</strong> Balance between chemical and physical etching</li>
-      </ul>
-      
+
       <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-etching-principles-optimized.png" 
-          alt="Plasma Etching Principles Comparison - Visual comparison of PE, RIE, and ICP-RIE etching mechanisms and profiles" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Plasma Etching Principles Comparison - Showing the evolution from PE to RIE to ICP-RIE</p>
+        <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch Profile Comparison — Isotropic vs Anisotropic vs High Aspect Ratio cross-section diagrams showing photoresist, film, and substrate layers" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Etch Profile Comparison — Isotropic (PE/wet etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
       </div>
-      
-      <h3>RIE Characteristics</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+
+      <h2>3. Reactive Ion Etching (RIE) — The Evolution</h2>
+      <p>RIE overcomes PE's fundamental limitation — the lack of directional control. In a capacitively coupled plasma (CCP) reactor, the substrate sits on the powered electrode, developing a DC self-bias that accelerates ions perpendicular to the surface. This <strong>dual mechanism</strong> of chemical reaction plus physical ion bombardment produces anisotropic etch profiles that are essential for pattern transfer in semiconductor fabrication.</p>
+
+      <h3>How RIE Differs from PE</h3>
+      <ul>
+        <li><strong>Ion-Enhanced Etching:</strong> Energetic ions (50–500 eV) break surface bonds, enabling chemical reactions that would not occur spontaneously — the ion-neutral synergy effect first demonstrated by Coburn and Winters.</li>
+        <li><strong>Directional Profiles:</strong> Vertical ion bombardment clears the trench bottom faster than radicals attack sidewalls, producing anisotropic profiles with sidewall angles of 80–90°.</li>
+        <li><strong>Coupled Parameters:</strong> In a single-RF CCP system, plasma density and ion energy are <em>not</em> independently controllable — increasing RF power raises both simultaneously. This is the key limitation RIE inherits from its architecture.</li>
+        <li><strong>Lower Pressure Operation:</strong> RIE typically operates at 10–200 mTorr (vs. 300–1000 mTorr for PE), increasing ion mean free path and directionality.</li>
+      </ul>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-principles-optimized.png" alt="Plasma Etching Principles Comparison — visual comparison of PE, RIE, and ICP-RIE reactor architectures and etch profiles" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+        </picture>
+        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: Reactor architectures and resulting etch profiles for PE, RIE, and ICP-RIE</p>
+      </div>
+
+      <h3>Typical RIE Process Parameters</h3>
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">RIE Performance</th>
+          <tr>
+            <th>Parameter</th>
+            <th>Typical Range</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Anisotropy</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate to High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Selectivity</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Etch Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Good</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
-          </tr>
+          <tr><td><strong>Etch Rate</strong></td><td>200–500 nm/min</td></tr>
+          <tr><td><strong>Chamber Pressure</strong></td><td>10–200 mTorr</td></tr>
+          <tr><td><strong>RF Power</strong></td><td>100–600 W (13.56 MHz)</td></tr>
+          <tr><td><strong>DC Self-Bias</strong></td><td>−100 to −500 V</td></tr>
+          <tr><td><strong>Substrate Temperature</strong></td><td>20–100 °C</td></tr>
+          <tr><td><strong>Plasma Density</strong></td><td>10<sup>10</sup>–10<sup>11</sup> cm<sup>−3</sup></td></tr>
         </tbody>
       </table>
-      
+
+      <h3>Common RIE Gas Chemistries</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Gas Chemistry</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Silicon</td><td>SF₆, CF₄/O₂, Cl₂/HBr</td><td>SF₆ for fast isotropic; Cl₂/HBr for anisotropic</td></tr>
+          <tr><td>SiO₂</td><td>CHF₃, C₄F₈, CF₄/CHF₃</td><td>Fluorocarbon polymer sidewall passivation</td></tr>
+          <tr><td>Si₃N₄</td><td>CHF₃/O₂, CF₄/H₂</td><td>H₂ addition improves selectivity to SiO₂</td></tr>
+          <tr><td>Al</td><td>Cl₂/BCl₃</td><td>BCl₃ scavenges native oxide</td></tr>
+          <tr><td>GaAs / InP</td><td>Cl₂/Ar, SiCl₄</td><td>Requires careful temperature control</td></tr>
+        </tbody>
+      </table>
+
       <h3>RIE Applications</h3>
       <ul>
-        <li>Silicon and dielectric etching</li>
-        <li>Metal etching and patterning</li>
-        <li>MEMS device fabrication</li>
-        <li>Semiconductor device manufacturing</li>
+        <li>Pattern transfer for semiconductor device fabrication</li>
+        <li>Dielectric and metal etching</li>
+        <li>MEMS device fabrication (moderate aspect ratios)</li>
+        <li>Optical waveguide definition</li>
       </ul>
-      
-      <h2>3) Inductively Coupled Plasma RIE (ICP-RIE) - The Advanced Solution</h2>
-      <p>ICP-RIE represents the most advanced plasma etching technology, offering independent control of ion density and energy through separate plasma generation and substrate biasing.</p>
-      
-      <h3>How ICP-RIE Works</h3>
+      <p>For a comprehensive deep dive into RIE principles and process optimization, see our <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching Guide</a>.</p>
+
+      <h2>4. Inductively Coupled Plasma RIE (ICP-RIE) — The Advanced Solution</h2>
+      <p>ICP-RIE solves the fundamental limitation of conventional RIE by <strong>decoupling plasma generation from ion energy control</strong>. An external ICP coil (powered at 13.56 MHz or 2 MHz) generates a high-density plasma through inductive coupling, while a separate RF bias on the substrate electrode independently controls ion energy. This dual-source architecture enables process windows that are simply impossible with single-RF RIE.</p>
+
+      <h3>ICP-RIE Architecture Advantages</h3>
       <ul>
-        <li><strong>Dual RF System:</strong> ICP source for plasma generation + RF bias for ion energy control</li>
-        <li><strong>Independent Control:</strong> Separate optimization of ion density and energy</li>
-        <li><strong>High-Density Plasma:</strong> ICP generates dense, uniform plasma</li>
-        <li><strong>Precise Control:</strong> Fine-tuned etching parameters for complex applications</li>
+        <li><strong>Dual RF System:</strong> ICP source (300–3000 W) for plasma density + RF bias (0–600 W) for ion energy — each tunable independently.</li>
+        <li><strong>High-Density Plasma:</strong> Plasma densities of 10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup> — 10–100× higher than CCP-based RIE.</li>
+        <li><strong>Low-Pressure Operation:</strong> Stable plasma at 1–50 mTorr enables long ion mean free paths and highly anisotropic etching.</li>
+        <li><strong>Decoupled Control:</strong> High etch rate with low damage (high density, low bias) or high aspect ratio with controlled passivation — simultaneously optimizable.</li>
       </ul>
-      
-      <h3>ICP-RIE Characteristics</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+
+      <div style="text-align: center; margin: 30px 0;">
+        <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Reactor Architecture Comparison — PE vs RIE vs ICP-RIE chamber cross-sections showing electrodes, plasma regions, gas flow, and etch profiles" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 3: Reactor Architecture Comparison — PE (Chemical Dry Etch) uses grounded electrodes with low-density plasma; RIE (CCP) adds RF bias for directional etching; ICP-RIE decouples plasma density and ion energy via an inductive coil + separate bias electrode</p>
+      </div>
+
+      <h3>Typical ICP-RIE Process Parameters</h3>
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ICP-RIE Performance</th>
+          <tr>
+            <th>Parameter</th>
+            <th>Typical Range</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Anisotropy</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Excellent</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Selectivity</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Etch Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Very High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Excellent</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low (controlled)</td>
-          </tr>
+          <tr><td><strong>Etch Rate</strong></td><td>500–5000+ nm/min (material-dependent)</td></tr>
+          <tr><td><strong>Chamber Pressure</strong></td><td>1–50 mTorr</td></tr>
+          <tr><td><strong>ICP Source Power</strong></td><td>300–3000 W</td></tr>
+          <tr><td><strong>RF Bias Power</strong></td><td>0–600 W</td></tr>
+          <tr><td><strong>DC Self-Bias</strong></td><td>0 to −300 V (independently controlled)</td></tr>
+          <tr><td><strong>Substrate Temperature</strong></td><td>−20 to 200 °C (cryogenic to heated)</td></tr>
+          <tr><td><strong>Plasma Density</strong></td><td>10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup></td></tr>
         </tbody>
       </table>
-      
+
+      <h3>The Bosch Process: Deep Reactive Ion Etching (DRIE)</h3>
+      <p>The Bosch process (patented by Robert Bosch GmbH, 1994) is an ICP-RIE technique that alternates between two steps to achieve deep, high-aspect-ratio features in silicon:</p>
+      <ol>
+        <li><strong>Etch Step:</strong> SF₆ plasma isotropically etches silicon at high rates (3–10 µm/min).</li>
+        <li><strong>Passivation Step:</strong> C₄F₈ plasma deposits a thin fluorocarbon polymer on all surfaces (sidewalls and trench bottom).</li>
+      </ol>
+      <p>During the next etch step, ion bombardment preferentially removes the polymer from the trench bottom (directional), while the sidewall polymer remains intact (no direct ion bombardment). This cyclic process produces near-vertical sidewalls with aspect ratios exceeding 50:1, though characteristic scalloping (sidewall roughness of 50–200 nm per cycle) is visible at high magnification.</p>
+      <p>For a detailed discussion of DRIE process optimization and scallop reduction, see our dedicated <a href="/insights/deep-reactive-ion-etching-bosch-process">Bosch Process Guide</a>. For a comparison with cryogenic etching approaches, see <a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Etching vs. Bosch Process</a>.</p>
+
       <h3>ICP-RIE Applications</h3>
       <ul>
-        <li>High-aspect-ratio etching</li>
-        <li>Advanced semiconductor devices</li>
-        <li>Precision MEMS fabrication</li>
-        <li>Optical device manufacturing</li>
-        <li>Quantum device fabrication</li>
+        <li>Deep silicon etching for MEMS and TSV (through-silicon via)</li>
+        <li>Advanced semiconductor device fabrication (FinFET, gate etch)</li>
+        <li>III-V compound semiconductor etching (GaN, SiC, GaAs)</li>
+        <li>Photonic crystal and optical device manufacturing</li>
+        <li>Quantum device fabrication (superconducting qubits, diamond NV centers)</li>
       </ul>
-      
-      <h2>4) Technology Comparison Matrix</h2>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <p>For more on ICP-RIE capabilities, see our <a href="/insights/icp-rie-technology-advanced-etching">ICP-RIE Technology</a> article.</p>
+
+      <h2>5. Technology Comparison Matrix</h2>
+      <p>The following table consolidates the key differences across all three technologies with quantitative values where possible:</p>
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Feature</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">PE</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">RIE</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ICP-RIE</th>
+          <tr>
+            <th>Feature</th>
+            <th>PE (Chemical Dry Etch)</th>
+            <th>RIE (CCP)</th>
+            <th>ICP-RIE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Plasma Density</strong></td><td>10<sup>9</sup>–10<sup>10</sup> cm<sup>−3</sup></td><td>10<sup>10</sup>–10<sup>11</sup> cm<sup>−3</sup></td><td>10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup></td></tr>
+          <tr><td><strong>Ion Energy</strong></td><td>&lt; 20 eV</td><td>50–500 eV</td><td>0–300 eV (independent)</td></tr>
+          <tr><td><strong>Typical Etch Rate (Si)</strong></td><td>100–300 nm/min</td><td>200–500 nm/min</td><td>500–5000+ nm/min</td></tr>
+          <tr><td><strong>Operating Pressure</strong></td><td>300–1000 mTorr</td><td>10–200 mTorr</td><td>1–50 mTorr</td></tr>
+          <tr><td><strong>Profile Control</strong></td><td>Isotropic</td><td>Anisotropic (80–90°)</td><td>Highly Anisotropic (88–90°)</td></tr>
+          <tr><td><strong>Selectivity</strong></td><td>Very High (&gt; 50:1)</td><td>Moderate (10–30:1)</td><td>High (20–100:1, tunable)</td></tr>
+          <tr><td><strong>Max Aspect Ratio</strong></td><td>N/A (isotropic)</td><td>5–10:1</td><td>50:1+ (Bosch process)</td></tr>
+          <tr><td><strong>Surface Damage</strong></td><td>Minimal</td><td>Moderate</td><td>Low–Moderate (controllable)</td></tr>
+          <tr><td><strong>Parameter Coupling</strong></td><td>N/A</td><td>Density &amp; energy coupled</td><td>Density &amp; energy independent</td></tr>
+          <tr><td><strong>Equipment Cost</strong></td><td>Low ($50K–$150K)</td><td>Medium ($100K–$300K)</td><td>High ($200K–$600K+)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>6. Common Etching Challenges and Solutions</h2>
+      <p>Regardless of which technology you use, certain etch defects can arise. Understanding these failure modes and their root causes is essential for process optimization.</p>
+
+      <h3>Undercut</h3>
+      <p><strong>Problem:</strong> Lateral etching beneath the mask, resulting in loss of critical dimension (CD) control.</p>
+      <p><strong>Causes:</strong> Excessive chemical etching component; high pressure; insufficient sidewall passivation.</p>
+      <p><strong>Solutions:</strong> Reduce pressure to increase ion directionality; add passivation gas (C₄F₈, CHF₃); increase RF bias; switch from PE to RIE or ICP-RIE for better anisotropy.</p>
+
+      <h3>Bowing</h3>
+      <p><strong>Problem:</strong> Convex bulging of trench sidewalls, particularly in deep features.</p>
+      <p><strong>Causes:</strong> Ion scattering off the mask edge or upper sidewall; charge buildup deflecting ions.</p>
+      <p><strong>Solutions:</strong> Optimize mask profile (tapered vs. vertical); reduce chamber pressure; use pulsed bias to reduce charging effects; adjust Bosch cycle timing.</p>
+
+      <h3>Aspect Ratio Dependent Etching (ARDE)</h3>
+      <p><strong>Problem:</strong> Etch rate decreases as feature aspect ratio increases — narrow trenches etch slower than wide ones on the same wafer.</p>
+      <p><strong>Causes:</strong> Knudsen transport limitation of neutrals into high-aspect-ratio features; ion shadowing at trench entrance.</p>
+      <p><strong>Solutions:</strong> Increase ICP power to raise radical flux; reduce pressure for longer mean free path; use time-multiplexed recipes with longer etch cycles for deep features. See our article on <a href="/insights/ultra-high-etch-selectivity">achieving ultra-high etch selectivity</a> for related strategies.</p>
+
+      <h3>Micro-masking and Grass Formation</h3>
+      <p><strong>Problem:</strong> Needle-like or grass-like residues on the etch surface, caused by micro-scale masking from redeposited material or contaminants.</p>
+      <p><strong>Causes:</strong> Metal contamination (from chamber walls or mask material); incomplete polymer removal during Bosch cycles; native oxide residues.</p>
+      <p><strong>Solutions:</strong> Chamber conditioning and cleaning; add O₂ to remove polymer residues; use oxide-free starting surfaces; optimize Bosch passivation/etch ratio.</p>
+
+      <h3>Notching (Footing)</h3>
+      <p><strong>Problem:</strong> Lateral etching at the interface of silicon and an underlying insulator (e.g., SOI buried oxide).</p>
+      <p><strong>Causes:</strong> Charge accumulation on the insulating surface deflects ions sideways.</p>
+      <p><strong>Solutions:</strong> Use pulsed bias or pulsed plasma to allow charge dissipation; reduce bias power near endpoint; apply backside helium cooling.</p>
+
+      <p>For a broader discussion of plasma non-uniformity challenges, see <a href="/insights/plasma-non-uniform-etch-chamber-solutions">Why Plasma Is Non-Uniform in Etch Chambers</a>.</p>
+
+      <h2>7. Endpoint Detection Methods</h2>
+      <p>Knowing exactly when to stop etching is critical for yield and device performance. Three primary methods are used across PE, RIE, and ICP-RIE systems:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Principle</th>
+            <th>Best For</th>
+            <th>Limitations</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Density</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Medium</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
+            <td><strong>Optical Emission Spectroscopy (OES)</strong></td>
+            <td>Monitors emission wavelengths of reactive species and etch byproducts in the plasma. A change in intensity signals the transition between materials.</td>
+            <td>All plasma etch systems; most widely used; non-invasive</td>
+            <td>Requires sufficient exposed area (&gt; 1–5% of wafer); signal can be weak for small open areas</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Ion Energy Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Limited</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Excellent</td>
+            <td><strong>Laser Interferometry</strong></td>
+            <td>A laser beam reflects off the film being etched. Constructive/destructive interference fringes track film thickness in real time.</td>
+            <td>Transparent films (SiO₂, Si₃N₄); precise thickness control; works for small areas</td>
+            <td>Requires optically transparent film; not suitable for metals or opaque materials</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Profile Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Anisotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Highly Anisotropic</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Process Flexibility</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Medium</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Equipment Cost</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Medium</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Operating Cost</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Medium</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Medium-High</td>
+            <td><strong>Mass Spectrometry (RGA)</strong></td>
+            <td>Residual gas analyzer samples exhaust gases, detecting etch byproduct species (e.g., SiF₄ during Si etching).</td>
+            <td>High sensitivity for trace materials; process debugging and characterization</td>
+            <td>Slower response time; higher equipment cost; more common in R&D than production</td>
           </tr>
         </tbody>
       </table>
-      
-      <h2>5) Selection Guidelines</h2>
-      
+
+      <h2>8. Selection Guidelines</h2>
+
       <h3>Choose PE When:</h3>
       <ul>
-        <li>Isotropic etching is required</li>
-        <li>High selectivity is needed</li>
-        <li>Minimal surface damage is critical</li>
-        <li>Budget constraints are significant</li>
-        <li>Simple cleaning or stripping applications</li>
+        <li>Isotropic etching is acceptable or desired (e.g., release etching, undercutting for liftoff)</li>
+        <li>Maximum selectivity is needed and profile control is not critical</li>
+        <li>Minimal surface damage is required (sensitive devices, III-V materials)</li>
+        <li>Photoresist stripping, descum, or surface cleaning applications</li>
+        <li>Budget is constrained and process requirements are straightforward</li>
       </ul>
-      
+
       <h3>Choose RIE When:</h3>
       <ul>
-        <li>Moderate anisotropy is sufficient</li>
-        <li>Good etch rates are needed</li>
-        <li>Balanced selectivity and control</li>
-        <li>Standard semiconductor processing</li>
-        <li>Cost-effective solution for most applications</li>
+        <li>Anisotropic pattern transfer is needed with moderate aspect ratios (&lt; 10:1)</li>
+        <li>Standard semiconductor processing: gate etch, contact etch, dielectric etch</li>
+        <li>Metal etching (Al, Ti, Cr) where moderate ion energy is sufficient</li>
+        <li>Cost-effective solution — when the process window does not require independent density/energy control</li>
+        <li>Lab environments with lower throughput requirements</li>
       </ul>
-      
+
       <h3>Choose ICP-RIE When:</h3>
       <ul>
-        <li>High-aspect-ratio etching is required</li>
-        <li>Precise control of etch profiles</li>
-        <li>Advanced device fabrication</li>
-        <li>Complex material systems</li>
-        <li>Research and development applications</li>
+        <li>High-aspect-ratio features are required (&gt; 10:1, up to 50:1+)</li>
+        <li>Independent control of etch rate and ion energy is needed (e.g., high rate + low damage)</li>
+        <li>Deep silicon etching (DRIE / Bosch process) for MEMS or TSV</li>
+        <li>Hard-to-etch materials: GaN, SiC, diamond, sapphire, III-V compounds</li>
+        <li>Advanced R&D requiring maximum process flexibility</li>
       </ul>
-      
-      <h2>6) Process Parameters and Optimization</h2>
-      
-      <h3>Key Parameters for Each Technology</h3>
-      
-      <p><strong>PE Parameters:</strong></p>
-      <ul>
-        <li>Gas flow rates and composition</li>
-        <li>Chamber pressure</li>
-        <li>RF power</li>
-        <li>Substrate temperature</li>
-      </ul>
-      
-      <p><strong>RIE Parameters:</strong></p>
-      <ul>
-        <li>RF power (source and bias)</li>
-        <li>Gas chemistry and flow rates</li>
-        <li>Chamber pressure</li>
-        <li>Substrate temperature</li>
-        <li>Electrode spacing</li>
-      </ul>
-      
-      <p><strong>ICP-RIE Parameters:</strong></p>
-      <ul>
-        <li>ICP power (plasma density)</li>
-        <li>RF bias power (ion energy)</li>
-        <li>Gas chemistry and flow rates</li>
-        <li>Chamber pressure</li>
-        <li>Substrate temperature</li>
-        <li>Coil design and configuration</li>
-      </ul>
-      
-      <h2>7) NineScrolls Plasma Etching Solutions</h2>
-      <p>NineScrolls offers advanced plasma etching systems designed to meet the diverse needs of research and manufacturing applications:</p>
-      
-      <h3>RIE Etcher Series</h3>
-      <ul>
-        <li>Compact design (1.0m × 1.0m footprint)</li>
-        <li>Advanced plasma control system</li>
-        <li>Multiple gas line configuration</li>
-        <li>Real-time process monitoring</li>
-        <li>Ideal for standard RIE applications</li>
-      </ul>
-      
-      <h3>ICP Etcher Series</h3>
-      <ul>
-        <li>Uni-body design (1.0m × 1.5m footprint)</li>
-        <li>Independent ICP source and bias control</li>
-        <li>High-density plasma generation</li>
-        <li>Advanced process control system</li>
-        <li>Multiple process design kits</li>
-        <li>Perfect for high-precision applications</li>
-      </ul>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-etching-comparison-optimized.png" 
-          alt="Plasma Etching Comparison - Side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: Plasma Etching Comparison - Demonstrating the evolution of etching capabilities from PE to ICP-RIE</p>
-      </div>
-      
-      <h2>8) Future Trends in Plasma Etching</h2>
-      <ul>
-        <li><strong>Atomic Layer Etching (ALE):</strong> Precise atomic-level control</li>
-        <li><strong>Pulsed Plasma Etching:</strong> Enhanced selectivity and reduced damage</li>
-        <li><strong>AI-Enhanced Process Control:</strong> Real-time optimization and predictive maintenance</li>
-        <li><strong>Novel Gas Chemistries:</strong> Improved selectivity and environmental compliance</li>
-        <li><strong>3D Integration:</strong> Advanced etching for through-silicon vias and packaging</li>
-      </ul>
-      
-      <h2>9) Conclusion</h2>
-      <p>The choice between PE, RIE, and ICP-RIE depends on your specific application requirements. PE offers simplicity and high selectivity for basic applications. RIE provides a good balance of performance and cost for most semiconductor applications. ICP-RIE delivers the highest precision and control for advanced applications requiring high-aspect-ratio etching and complex material systems.</p>
-      
-      <p>Understanding these differences helps in selecting the right technology for your specific needs and optimizing process parameters for the best results.</p>
-      
-      <h2>Call-to-Action</h2>
-      <ul>
-        <li>Need help selecting the right plasma etching technology for your application? Contact our technical team.</li>
-        <li>Interested in our RIE or ICP etching systems? Explore our product pages for detailed specifications.</li>
-        <li>Want to discuss process optimization and parameter tuning? Our process engineers are available for consultation.</li>
-      </ul>
-      
-      <p><strong>Contact:</strong><br>
-      RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
-      ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+      <p>For guidance on selecting the right system for your lab, see our <a href="/insights/semiconductor-etchers-overview">Semiconductor Etcher Selection Guide</a>.</p>
 
+      <h2>9. Frequently Asked Questions</h2>
+
+      <h3>What is the main difference between RIE and ICP-RIE?</h3>
+      <p>The fundamental difference is <strong>parameter coupling</strong>. In RIE (a capacitively coupled plasma system), plasma density and ion energy are controlled by a single RF source — increasing power raises both simultaneously. ICP-RIE uses two separate RF sources: an ICP coil for plasma generation and an independent RF bias for ion energy. This decoupled architecture allows you to achieve high etch rates (from high plasma density) with low damage (from low bias power) — a combination that is impossible in conventional RIE.</p>
+
+      <h3>When should I use the Bosch process instead of continuous etching?</h3>
+      <p>The Bosch (time-multiplexed) process is preferred when you need deep, high-aspect-ratio features in silicon (typically &gt; 10 µm depth and &gt; 10:1 aspect ratio). Continuous etching with simultaneous etch/passivation gases (e.g., SF₆/C₄F₈ mixed) produces smoother sidewalls but is limited to lower aspect ratios. If sidewall scalloping is unacceptable (e.g., for optical applications), consider <a href="/insights/cryogenic-etching-vs-bosch-process">cryogenic etching</a> as an alternative.</p>
+
+      <h3>What gases are most commonly used in plasma etching?</h3>
+      <p>The choice depends on the target material: <strong>SF₆</strong> and <strong>CF₄</strong> for silicon; <strong>CHF₃</strong> and <strong>C₄F₈</strong> for SiO₂ and Si₃N₄; <strong>Cl₂/BCl₃</strong> for metals (Al) and III-V semiconductors; <strong>O₂</strong> for photoresist stripping and organic materials. Additives like Ar improve bombardment, while O₂ or H₂ tune selectivity by modifying the fluorocarbon polymer chemistry.</p>
+
+      <h3>How do I reduce etch damage to sensitive devices?</h3>
+      <p>Use ICP-RIE with low RF bias power (or zero bias for purely chemical etching at high density). Pulsed plasma techniques — where RF power is modulated at 1–10 kHz — can further reduce ion energy spread and charge-induced damage. For the most damage-sensitive applications (quantum devices, photonic crystals), downstream PE may be appropriate. See our article on <a href="/insights/atomic-layer-etching-practical-guide">Atomic Layer Etching</a> for the ultimate in damage-free processing.</p>
+
+      <h3>Can I etch multiple materials in one chamber?</h3>
+      <p>Yes, with proper gas and process switching. ICP-RIE systems with multiple mass flow controllers (typically 4–8 gas lines) and automated recipe management can handle silicon, dielectrics, metals, and III-V materials. Cross-contamination can be managed with chamber conditioning steps between processes. NineScrolls systems support multiple process design kits for this purpose.</p>
+
+      <h2>10. NineScrolls Plasma Etching Solutions</h2>
+      <p>NineScrolls designs plasma etching systems specifically for the challenges discussed in this article — from basic RIE pattern transfer to advanced ICP-RIE deep etching.</p>
+
+      <h3><a href="/products/rie-etcher">RIE Etcher Series</a></h3>
+      <p>Optimized for standard RIE applications where cost-effectiveness and reliability matter:</p>
+      <ul>
+        <li>Compact design (1.0 m × 1.0 m footprint) for cleanroom space efficiency</li>
+        <li>13.56 MHz RF source with automatic matching for stable plasma ignition</li>
+        <li>Up to 4 gas lines with precision mass flow controllers</li>
+        <li>Real-time process monitoring (pressure, power, DC bias)</li>
+        <li>Suitable for Si, SiO₂, Si₃N₄, metal etching, and photoresist stripping</li>
+      </ul>
+
+      <h3><a href="/products/icp-etcher">ICP Etcher Series</a></h3>
+      <p>Designed for researchers and process engineers who need independent parameter control and high-density plasma:</p>
+      <ul>
+        <li>Uni-body design (1.0 m × 1.5 m footprint) with integrated ICP source and RF bias</li>
+        <li>ICP source up to 3000 W + independent RF bias up to 600 W</li>
+        <li>Plasma density up to 10<sup>12</sup> cm<sup>−3</sup> for high etch rates</li>
+        <li>Substrate temperature control from −20 °C to 200 °C (He backside cooling)</li>
+        <li>Up to 8 gas lines for complex multi-step recipes (Bosch process ready)</li>
+        <li>Process design kits available for: Si DRIE, SiO₂, GaN/SiC, III-V, and diamond</li>
+        <li>Laser interferometry endpoint detection (optional OES)</li>
+      </ul>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+        </picture>
+        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 4: PE, RIE, and ICP-RIE etching capabilities comparison</p>
+      </div>
+
+      <h2>11. Future Trends in Plasma Etching</h2>
+      <ul>
+        <li><strong>Atomic Layer Etching (ALE):</strong> Self-limiting, monolayer-precision removal — the etch analog of ALD. Increasingly critical for sub-5 nm node processing. See our <a href="/insights/atomic-layer-etching-practical-guide">ALE Practical Guide</a>.</li>
+        <li><strong>Pulsed Plasma Etching:</strong> Modulating plasma source and/or bias at kHz frequencies narrows ion energy distribution, reducing damage while maintaining etch rate.</li>
+        <li><strong>Machine Learning Process Control:</strong> AI-driven run-to-run and real-time optimization using OES, impedance, and sensor data for predictive process control and virtual metrology. See our article on <a href="/insights/machine-learning-plasma-etch-optimization">ML for Plasma Etch Optimization</a>.</li>
+        <li><strong>New Material Challenges:</strong> Etching emerging materials (2D materials, high-entropy alloys, ferroelectric HfO₂) requires entirely new gas chemistries and process approaches. See <a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a>.</li>
+        <li><strong>3D Integration:</strong> Advanced etching for through-silicon vias (TSV), hybrid bonding, and chiplet packaging — driving demand for deeper, higher-aspect-ratio features with tighter CD control.</li>
+      </ul>
+
+      <h2>12. Conclusion</h2>
+      <p>The choice between PE, RIE, and ICP-RIE ultimately depends on three factors: <strong>required anisotropy</strong>, <strong>process flexibility</strong>, and <strong>budget</strong>. PE (chemical dry etching) offers the simplest, lowest-damage approach for isotropic applications. RIE introduces directional control for mainstream pattern transfer at moderate cost. ICP-RIE provides the highest performance and process flexibility — independent density and energy control, support for the Bosch process, and compatibility with the widest range of materials — making it the technology of choice for advanced research and high-aspect-ratio fabrication.</p>
+      <p>Understanding the physics, trade-offs, and failure modes of each technology enables process engineers to make informed equipment decisions and optimize etch recipes more efficiently.</p>
+
+      <h2>Get Started with the Right Etching Solution</h2>
+      <ul>
+        <li><strong>Need help selecting a technology?</strong> Our process engineers can evaluate your application requirements and recommend the optimal system configuration. <a href="mailto:info@ninescrolls.com">Contact our technical team</a>.</li>
+        <li><strong>Explore our systems:</strong> <a href="/products/rie-etcher">RIE Etcher</a> | <a href="/products/icp-etcher">ICP Etcher</a> | <a href="/products/striper">Striper Systems</a></li>
+        <li><strong>Request a process evaluation:</strong> Send us your material stack and target specifications — we will provide a recommended recipe and system configuration at no cost.</li>
+      </ul>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
-        <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
         <li>Coburn, J. W. & Winters, H. F. "Plasma etching — A discussion of mechanisms." <em>Journal of Vacuum Science & Technology</em>, 16(2), 391–403 (1979). <a href="https://doi.org/10.1116/1.569958" target="_blank" rel="noopener noreferrer">doi:10.1116/1.569958</a></li>
+        <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
+        <li>Laermer, F. & Schilp, A. "Method of anisotropically etching silicon." U.S. Patent 5,501,893 (1996). (The Bosch Process patent.)</li>
+        <li>Jansen, H. V. et al. "A survey on the reactive ion etching of silicon in microtechnology." <em>Journal of Micromechanics and Microengineering</em>, 6(1), 14–28 (1996). <a href="https://doi.org/10.1088/0960-1317/6/1/002" target="_blank" rel="noopener noreferrer">doi:10.1088/0960-1317/6/1/002</a></li>
+        <li>Wu, B. et al. "High aspect ratio silicon etch: A review." <em>Journal of Applied Physics</em>, 108(5), 051101 (2010). <a href="https://doi.org/10.1063/1.3474652" target="_blank" rel="noopener noreferrer">doi:10.1063/1.3474652</a></li>
+        <li>Donnelly, V. M. & Kornblit, A. "Plasma etching: Yesterday, today, and tomorrow." <em>Journal of Vacuum Science & Technology A</em>, 31(5), 050825 (2013). <a href="https://doi.org/10.1116/1.4819316" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4819316</a></li>
+        <li>Lee, C. G. N. et al. "Etching of SiC using inductively coupled SF₆/O₂ plasma." <em>Journal of The Electrochemical Society</em>, 151(2), G81–G87 (2004). <a href="https://doi.org/10.1149/1.1636740" target="_blank" rel="noopener noreferrer">doi:10.1149/1.1636740</a></li>
+        <li>Kanarik, K. J. et al. "Overview of atomic layer etching in the semiconductor industry." <em>Journal of Vacuum Science & Technology A</em>, 33(2), 020802 (2015). <a href="https://doi.org/10.1116/1.4913379" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4913379</a></li>
+        <li>Rangelow, I. W. "Critical tasks in high aspect ratio silicon dry etching for microelectromechanical systems." <em>Journal of Vacuum Science & Technology A</em>, 21(4), 1550–1562 (2003). <a href="https://doi.org/10.1116/1.1580488" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1580488</a></li>
       </ol>
     `,
     author: 'NineScrolls Engineering',
     publishDate: '2025-01-25',
     category: 'Materials Science',
-    readTime: 15,
+    readTime: 22,
     imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
-    tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology']
+    tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology', 'Bosch Process', 'DRIE', 'ICP Etching']
   },
   {
     id: '1',
