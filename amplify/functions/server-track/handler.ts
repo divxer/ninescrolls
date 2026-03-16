@@ -196,6 +196,7 @@ async function writePageTimeFlush(
             city: props.city || undefined,
             org: props.org || undefined,
             isp: props.isp || undefined,
+            companyType: typeof props.companyType === 'string' && props.companyType ? props.companyType : undefined,
             latitude: props.latitude || undefined,
             longitude: props.longitude || undefined,
             orgName: props.orgName || undefined,

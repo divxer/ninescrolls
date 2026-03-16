@@ -453,7 +453,7 @@ class SegmentAnalyticsService {
       storeAnalyticsEvent({
         eventName: event,
         eventType: eventNameToType(event),
-        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
+        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, companyType: ipInfo.company?.type, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
         targetAnalysis: analysis ? {
           isTargetCustomer,
           organizationType: analysis.organizationType,
@@ -721,7 +721,7 @@ class SegmentAnalyticsService {
       storeAnalyticsEvent({
         eventName: 'Page Viewed',
         eventType: 'page_view',
-        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
+        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, companyType: ipInfo.company?.type, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
         targetAnalysis: analysis ? {
           isTargetCustomer,
           organizationType: analysis.organizationType,
