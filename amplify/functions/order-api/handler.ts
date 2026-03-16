@@ -53,6 +53,7 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
 
 export const handler = async (event: any) => {
     console.log('order-api event keys:', Object.keys(event));
+    console.log('order-api identity:', JSON.stringify(event.identity));
 
     // Amplify Gen 2 a.handler.function() sends { typeName, fieldName, arguments, identity, ... }
     // Standard AppSync sends { info: { fieldName, parentTypeName }, arguments, identity, ... }

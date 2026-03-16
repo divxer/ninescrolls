@@ -90,6 +90,7 @@ export function buildOrderResponse(order: OrderItem, contacts: ContactItem[]): R
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
         createdBy: order.createdBy,
+        createdByEmail: order.createdByEmail || null,
         feedbackScheduleCreated: order.feedbackScheduleCreated || false,
         feedbackCount: 0, // computed separately if needed
         daysSinceLastUpdate,

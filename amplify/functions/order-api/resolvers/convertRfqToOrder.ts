@@ -3,6 +3,7 @@ import { CopyObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
 import { generateOrderId, generateContactId, generateDocId } from '../lib/idGenerators.js';
 import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
 import crypto from 'node:crypto';
 
@@ -58,7 +59,7 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
     const now = new Date().toISOString();
     const orderId = generateOrderId();
     const contactId = generateContactId();
-    const operator = event.identity?.claims?.email as string || event.identity?.sub || 'admin';
+    const { sub: operatorId, email: operator } = getOperatorInfo(event);
 
     // 2. Create ORDER entity (status: INQUIRY)
     const productModel = args.productModel || rfq.specificModel || rfq.equipmentCategory;
@@ -80,7 +81,8 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
         matchedOrgId: rfq.matchedOrgId || '',
         createdAt: now,
         updatedAt: now,
-        createdBy: operator,
+        createdBy: operatorId,
+        createdByEmail: operator,
         source: 'RFQ_WEBSITE',
         rfqId: args.rfqId,
         inquiryDate: rfq.submittedAt,

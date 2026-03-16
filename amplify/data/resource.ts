@@ -248,6 +248,7 @@ const schema = a.schema({
     createdAt: a.datetime().required(),
     updatedAt: a.datetime().required(),
     createdBy: a.string().required(),
+    createdByEmail: a.string(),
     // Computed
     feedbackScheduleCreated: a.boolean().required(),
     feedbackCount: a.integer().required(),
