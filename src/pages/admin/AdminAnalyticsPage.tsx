@@ -2299,6 +2299,7 @@ export function AdminAnalyticsPage() {
   const pageStats = useMemo(() => aggregatePageStats(filteredEvents), [filteredEvents]);
   const productStats = useMemo(() => aggregateProductStats(pageStats, filteredEvents), [pageStats, filteredEvents]);
   const landingPageStats = useMemo(() => aggregateLandingPages(filteredEvents), [filteredEvents]);
+  const [expandedPageOrgs, setExpandedPageOrgs] = useState<Set<string>>(new Set());
 
   // KPI stats with trend (compare first half vs second half of period)
   const kpis = useMemo(() => {
@@ -2747,7 +2748,7 @@ export function AdminAnalyticsPage() {
                               </td>
                               <td>
                                 <div className="keyword-org-chips">
-                                  {p.organizations.slice(0, 2).map(org => (
+                                  {(expandedPageOrgs.has(p.pathname) ? p.organizations : p.organizations.slice(0, 2)).map(org => (
                                     <button
                                       key={org}
                                       className="keyword-org-chip"
@@ -2761,7 +2762,18 @@ export function AdminAnalyticsPage() {
                                     </button>
                                   ))}
                                   {p.organizations.length > 2 && (
-                                    <span className="keyword-org-more">+{p.organizations.length - 2}</span>
+                                    <button
+                                      className="keyword-org-more"
+                                      onClick={() => setExpandedPageOrgs(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(p.pathname)) next.delete(p.pathname);
+                                        else next.add(p.pathname);
+                                        return next;
+                                      })}
+                                      style={{ cursor: 'pointer' }}
+                                    >
+                                      {expandedPageOrgs.has(p.pathname) ? 'less' : `+${p.organizations.length - 2}`}
+                                    </button>
                                   )}
                                 </div>
                               </td>
