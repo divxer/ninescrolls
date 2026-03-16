@@ -71,6 +71,8 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
+      <p>For a comprehensive comparison of these techniques — including reactor architectures, process parameters, and quantitative performance metrics — see our guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">Understanding the Differences: PE vs RIE vs ICP-RIE</a>.</p>
+
       <h3>Brief History</h3>
       <p>RIE emerged in the late 1970s when researchers at Bell Labs and IBM recognized that placing the substrate on the powered electrode of a parallel‑plate reactor increased ion directionality dramatically. The landmark Coburn‑Winters experiment (1979) demonstrated that simultaneous Ar⁺ bombardment and XeF₂ exposure etched silicon up to 10× faster than either mechanism alone — establishing the theoretical foundation for all modern RIE processes.</p>
 
@@ -765,7 +767,7 @@ export const insightsPosts: InsightsPost[] = [
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
       <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1, making it indispensable for advanced MEMS, TSVs, and photonic devices.</p>
-      <p>The Bosch process, first commercialized by Robert Bosch GmbH, has become the industry standard for DRIE. It relies on a cyclical sequence of passivation and etching to sculpt vertical silicon structures with precision and repeatability.</p>
+      <p>The Bosch process, first commercialized by Robert Bosch GmbH, has become the industry standard for DRIE. It relies on a cyclical sequence of passivation and etching to sculpt vertical silicon structures with precision and repeatability. For foundational context on how DRIE builds upon basic PE and RIE principles, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison guide</a>.</p>
       <hr/>
 
       <h2>2) Working Principle of the Bosch Process</h2>
@@ -848,7 +850,7 @@ export const insightsPosts: InsightsPost[] = [
         <li>Independent control of ion density and ion energy</li>
         <li>Superior selectivity to masks and underlying layers</li>
       </ul>
-      <p>Because of these advantages, ICP‑RIE is the etching platform of choice for fabricating deep trenches, through‑silicon vias (TSVs), photonic crystals, and high‑aspect‑ratio nanostructures.</p>
+      <p>Because of these advantages, ICP‑RIE is the etching platform of choice for fabricating deep trenches, through‑silicon vias (TSVs), photonic crystals, and high‑aspect‑ratio nanostructures. For a side-by-side comparison with basic PE and conventional RIE — including reactor architectures and quantitative performance metrics — see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison</a>.</p>
       <hr/>
 
       <h2>2) Working Principle of ICP‑RIE</h2>
@@ -1339,6 +1341,7 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Ion Beam Etching (IBE/RIBE)</strong><br/>Uses a focused ion beam for physical sputtering. Offers excellent directionality but is slower and more niche—often used in optics and magnetic films.</li>
         <li><strong>Wet Benches with Plasma Strippers (Complementary Tools)</strong><br/>While not strictly “etchers,” these are often needed for resist stripping or pre‑cleaning processes, ensuring compatibility in a complete etching workflow.</li>
       </ul>
+      <p>To understand the technical differences between PE, RIE, and ICP-RIE in detail — including process parameters, reactor architectures, and performance trade-offs — see our <a href=”/insights/understanding-differences-pe-rie-icp-rie-plasma-etching”>comprehensive comparison guide</a>.</p>
 
       <hr/>
 
@@ -2168,7 +2171,8 @@ export const insightsPosts: InsightsPost[] = [
       </div>
       
       <h2>3) Types of Plasma Etching</h2>
-      
+      <p>Plasma etching encompasses several distinct techniques with fundamentally different mechanisms and capabilities. For a detailed technical comparison of process parameters, reactor architectures, and selection guidelines, see our in-depth guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE Plasma Etching</a>.</p>
+
       <h3>3.1 Plasma Etching (PE)</h3>
       <p>The most basic form of plasma etching, relying primarily on chemical reactions:</p>
       <ul>
@@ -2457,9 +2461,15 @@ export const insightsPosts: InsightsPost[] = [
         <li>Descum and residue removal</li>
       </ul>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch Profile Comparison — Isotropic vs Anisotropic vs High Aspect Ratio cross-section diagrams showing photoresist, film, and substrate layers" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Etch Profile Comparison — Isotropic (PE/wet etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch Profile Comparison — Isotropic vs Anisotropic vs High Aspect Ratio cross-section diagrams showing photoresist, film, and substrate layers" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Etch Profile Comparison — Isotropic (PE/wet etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
       </div>
 
       <h2>3. Reactive Ion Etching (RIE) — The Evolution</h2>
@@ -2473,15 +2483,15 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Lower Pressure Operation:</strong> RIE typically operates at 10–200 mTorr (vs. 300–1000 mTorr for PE), increasing ion mean free path and directionality.</li>
       </ul>
 
-      <div style="text-align: center; margin: 30px 0;">
+      <div class="post-figure">
         <picture>
           <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-principles-optimized.png" alt="Plasma Etching Principles Comparison — visual comparison of PE, RIE, and ICP-RIE reactor architectures and etch profiles" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+          <img src="/assets/images/insights/plasma-etching-principles-optimized.png" alt="Plasma Etching Principles Comparison — visual comparison of PE, RIE, and ICP-RIE reactor architectures and etch profiles" loading="lazy" />
         </picture>
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: Reactor architectures and resulting etch profiles for PE, RIE, and ICP-RIE</p>
+        <p class="post-figure-caption">Figure 2: Reactor architectures and resulting etch profiles for PE, RIE, and ICP-RIE</p>
       </div>
 
       <h3>Typical RIE Process Parameters</h3>
@@ -2540,9 +2550,15 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Decoupled Control:</strong> High etch rate with low damage (high density, low bias) or high aspect ratio with controlled passivation — simultaneously optimizable.</li>
       </ul>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Reactor Architecture Comparison — PE vs RIE vs ICP-RIE chamber cross-sections showing electrodes, plasma regions, gas flow, and etch profiles" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 3: Reactor Architecture Comparison — PE (Chemical Dry Etch) uses grounded electrodes with low-density plasma; RIE (CCP) adds RF bias for directional etching; ICP-RIE decouples plasma density and ion energy via an inductive coil + separate bias electrode</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Reactor Architecture Comparison — PE vs RIE vs ICP-RIE chamber cross-sections showing electrodes, plasma regions, gas flow, and etch profiles" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Reactor Architecture Comparison — PE (Chemical Dry Etch) uses grounded electrodes with low-density plasma; RIE (CCP) adds RF bias for directional etching; ICP-RIE decouples plasma density and ion energy via an inductive coil + separate bias electrode</p>
       </div>
 
       <h3>Typical ICP-RIE Process Parameters</h3>
@@ -2702,6 +2718,17 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>For guidance on selecting the right system for your lab, see our <a href="/insights/semiconductor-etchers-overview">Semiconductor Etcher Selection Guide</a>.</p>
 
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-comparison-chart.png" alt="Quantitative Comparison Matrix — bar chart comparing PE, RIE, and ICP-RIE across plasma density, ion energy, etch rate, selectivity, anisotropy, and aspect ratio" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 5: Quantitative Comparison Matrix — Key performance parameters across PE, RIE, and ICP-RIE technologies</p>
+      </div>
+
       <h2>9. Frequently Asked Questions</h2>
 
       <h3>What is the main difference between RIE and ICP-RIE?</h3>
@@ -2744,15 +2771,15 @@ export const insightsPosts: InsightsPost[] = [
         <li>Laser interferometry endpoint detection (optional OES)</li>
       </ul>
 
-      <div style="text-align: center; margin: 30px 0;">
+      <div class="post-figure">
         <picture>
           <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" loading="lazy" />
+          <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" loading="lazy" />
         </picture>
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 4: PE, RIE, and ICP-RIE etching capabilities comparison</p>
+        <p class="post-figure-caption">Figure 4: PE, RIE, and ICP-RIE etching capabilities comparison</p>
       </div>
 
       <h2>11. Future Trends in Plasma Etching</h2>
@@ -2787,6 +2814,9 @@ export const insightsPosts: InsightsPost[] = [
         <li>Lee, C. G. N. et al. "Etching of SiC using inductively coupled SF₆/O₂ plasma." <em>Journal of The Electrochemical Society</em>, 151(2), G81–G87 (2004). <a href="https://doi.org/10.1149/1.1636740" target="_blank" rel="noopener noreferrer">doi:10.1149/1.1636740</a></li>
         <li>Kanarik, K. J. et al. "Overview of atomic layer etching in the semiconductor industry." <em>Journal of Vacuum Science & Technology A</em>, 33(2), 020802 (2015). <a href="https://doi.org/10.1116/1.4913379" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4913379</a></li>
         <li>Rangelow, I. W. "Critical tasks in high aspect ratio silicon dry etching for microelectromechanical systems." <em>Journal of Vacuum Science & Technology A</em>, 21(4), 1550–1562 (2003). <a href="https://doi.org/10.1116/1.1580488" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1580488</a></li>
+        <li>Madou, M. J. <em>Fundamentals of Microfabrication and Nanotechnology</em>, 3rd ed. CRC Press (2011). ISBN 978-0849331800.</li>
+        <li>Huang, S. et al. "Plasma etching of high aspect ratio features in SiO₂ using Ar/C₄F₈/O₂ mixtures: A computational investigation." <em>Journal of Vacuum Science & Technology A</em>, 37(3), 031304 (2019). <a href="https://doi.org/10.1116/1.5090606" target="_blank" rel="noopener noreferrer">doi:10.1116/1.5090606</a></li>
+        <li>Ishikawa, K. et al. "Progress and prospects in nanoscale dry processes: How can we control atomic-scale reactions?" <em>Japanese Journal of Applied Physics</em>, 56(6S2), 06HA02 (2017). <a href="https://doi.org/10.7567/JJAP.56.06HA02" target="_blank" rel="noopener noreferrer">doi:10.7567/JJAP.56.06HA02</a></li>
       </ol>
     `,
     author: 'NineScrolls Engineering',
@@ -5655,7 +5685,7 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'An in-depth comparison of cryogenic plasma etching and the Bosch process for high-aspect-ratio silicon etching. Covers sidewall smoothness, aspect ratio capability, process gases, equipment requirements, retrofit options, and emerging hybrid approaches for MEMS, photonics, and quantum device fabrication.',
     content: `
       <p>High-aspect-ratio (HAR) etching is the backbone of modern MEMS fabrication, through-silicon vias (TSVs), 3D NAND memory, and advanced photonic structures. For decades, the Bosch process \u2014 with its alternating etch/passivation cycles \u2014 has been the industry standard for deep reactive ion etching (DRIE). However, cryogenic plasma etching is gaining renewed attention as an alternative that offers smoother sidewalls, simpler process control, and compatibility with emerging device requirements.</p>
-      <p>This article compares these two approaches in depth, helping researchers and process engineers understand when each technique excels and how to make an informed choice for their specific application.</p>
+      <p>This article compares these two approaches in depth, helping researchers and process engineers understand when each technique excels and how to make an informed choice for their specific application. Both methods are built on ICP-RIE platforms — for foundational context on how ICP-RIE differs from basic PE and RIE, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison</a>.</p>
 
       <h2>The Bosch Process: A Quick Recap</h2>
       <p>The Bosch process (also known as time-multiplexed deep silicon etching) achieves high-aspect-ratio profiles through cyclic alternation between two steps:</p>

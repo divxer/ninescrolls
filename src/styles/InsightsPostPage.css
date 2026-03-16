@@ -370,6 +370,26 @@
   background: #f0f4ff;
 }
 
+/* Article figures */
+.post-figure {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.post-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.post-figure-caption {
+  margin-top: 10px;
+  font-style: italic;
+  color: #666;
+  font-size: 0.9em;
+}
+
 .post-content img,
 .post-content table,
 .post-content pre,
