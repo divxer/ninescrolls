@@ -2631,7 +2631,7 @@
 
 .admin-modal.admin-modal-wide {
   max-width: 960px;
-  max-height: 92vh;
+  height: 92vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
