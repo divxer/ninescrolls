@@ -8,12 +8,11 @@ import { behaviorAnalytics, extractSearchQuery, type BehaviorScore } from './beh
 import { storeAnalyticsEvent, getVisitorId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
 
-// Behavioral tier boost: upgrade lead tier based on behavioral signals
-// Requires multiple distinct signal types (cross-validation) to avoid single-signal false positives
+// Behavioral tier boost: upgrade lead tier based on behavioral signals.
+// Requires multiple distinct signal types (cross-validation) to avoid single-signal false positives.
 function applyBehavioralTierBoost(
   isTargetCustomer: boolean,
   finalLeadTier: 'A' | 'B' | 'C' | undefined,
-  finalConfidence: number,
   behaviorScore: BehaviorScore,
 ): 'A' | 'B' | 'C' | undefined {
   if (!isTargetCustomer || !finalLeadTier) return finalLeadTier;
@@ -32,8 +31,8 @@ function applyBehavioralTierBoost(
   if (tier === 'C' && boostSignals >= 2) {
     tier = 'B';
   }
-  // B → A: 3+ distinct boost signals AND finalConfidence >= 0.6
-  if (tier === 'B' && boostSignals >= 3 && finalConfidence >= 0.6) {
+  // B → A: 3+ distinct boost signals
+  if (tier === 'B' && boostSignals >= 3) {
     tier = 'A';
   }
   return tier;
@@ -329,71 +328,55 @@ class SegmentAnalyticsService {
       // Get behavior score
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
 
-      // Calculate final confidence with smart weighting
-      // For first-time visitors with high IP confidence, rely more on IP analysis
-      // For returning visitors with behavior data, use balanced weighting
+      // ── Target customer determination ─────────────────────────────────
+      // Based on org type (categorical), NOT confidence thresholds.
+      //   1. Target org type (education/university/research_institute) → always target
+      //   2. AI says isTargetCustomer → target (business/enterprise/hospital/government)
+      //   3. ISP/unknown + strong behavior → target (professor at home, VPN user)
+      const orgType = analysis?.organizationType || 'unknown';
+      const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
+      const isTargetOrgType = TARGET_ORG_TYPES.includes(orgType);
+      const isAITarget = analysis?.isTargetCustomer === true;
+      const isBehaviorTarget = ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType)
+        && behaviorScore.behaviorScore >= 0.4;
+      const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
+
+      // ── Final confidence (metadata, not a driver) ─────────────────────
+      // AI confidence = how sure AI is about the org TYPE classification.
+      // Blended with behavior when both are available.
+      const aiConfidence = analysis?.confidence ?? 0;
+      const hasBehaviorData = behaviorScore.behaviorScore > 0;
       let finalConfidence: number;
-
-      // Org types that represent identified organizations (not network infrastructure)
-      // Handles both IP-level (education/business/government) and AI-level (university/research_institute/enterprise/hospital) types
-      const isIdentifiedOrg = (orgType: string) =>
-        ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
-      // Org types where the org name is the provider, not the end user
-      const isInfraOrg = (orgType: string) =>
-        ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType);
-
-      if (analysis) {
-        const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = isIdentifiedOrg(analysis.organizationType);
-        const hasBehaviorData = behaviorScore.behaviorScore > 0;
-
-        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization
-          // Use IP confidence directly (don't penalize for lack of behavior data)
-          finalConfidence = analysis.confidence;
-        } else if (analysis.confidence < 0.15 && isInfraOrg(analysis.organizationType) && hasBehaviorData) {
-          // ISP/hosting/unknown org with no meaningful IP signal — let behavior fully drive confidence
-          finalConfidence = behaviorScore.behaviorScore;
-        } else if (hasBehaviorData) {
-          // Returning visitor with behavior data - use balanced weighting
-          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
-        } else {
-          // Low IP confidence or unknown org - still use weighted average
-          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
-        }
-      } else {
-        // No IP analysis - rely on behavior only
+      if (aiConfidence > 0 && hasBehaviorData) {
+        finalConfidence = aiConfidence * 0.5 + behaviorScore.behaviorScore * 0.5;
+      } else if (aiConfidence > 0) {
+        finalConfidence = aiConfidence;
+      } else if (hasBehaviorData) {
         finalConfidence = behaviorScore.behaviorScore;
+      } else {
+        finalConfidence = 0;
       }
 
-      // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
-      const ipRejected = analysis && analysis.isTargetCustomer === false;
-
-      // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 && isIdentifiedOrg(analysis.organizationType))
-        ? 0.25  // Lower threshold for target organizations with high IP confidence
-        : 0.3;  // Standard threshold
-
-      const isTargetCustomer = !ipRejected && finalConfidence > threshold;
-
-      // Determine final lead tier (only for target customers)
+      // ── Lead tier (only for target customers) ─────────────────────────
+      // Based on org type category + AI confidence, then boosted by behavior.
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
-        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'education' || analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
-          finalLeadTier = 'A';
-        } else if (analysis && analysis.confidence >= 0.9 && isIdentifiedOrg(analysis.organizationType)) {
-          finalLeadTier = 'A';
-        } else if (finalConfidence >= 0.5 && analysis && isIdentifiedOrg(analysis.organizationType)) {
-          finalLeadTier = 'B';
-        } else {
-          finalLeadTier = 'C';
+        if (!finalLeadTier) {
+          // Assign initial tier based on how the visitor was classified
+          if (isTargetOrgType && aiConfidence >= 0.7) {
+            finalLeadTier = 'A';
+          } else if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
+            finalLeadTier = 'B';
+          } else {
+            finalLeadTier = 'C';
+          }
         }
       } else {
         finalLeadTier = undefined;
       }
 
       // Apply behavioral tier boost (cross-validated multi-signal upgrade)
-      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, finalConfidence, behaviorScore);
+      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, behaviorScore);
 
       // Merge event properties
       const enhancedProperties = {
@@ -417,7 +400,6 @@ class SegmentAnalyticsService {
           confidence: analysis.confidence,
           finalConfidence,
           leadTier: finalLeadTier,
-          confidenceBreakdown: analysis.confidenceBreakdown,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
           location: analysis.details.location,
@@ -448,8 +430,9 @@ class SegmentAnalyticsService {
         });
       }
 
-      // Get AI classification if available (non-blocking)
-      const aiResult = ipAnalytics.getAIClassification();
+      // Wait for AI classification before DynamoDB write (avoid missing AI data)
+      const aiResult = ipAnalytics.getAIClassification()
+        ?? await ipAnalytics.waitForAIClassification(3000);
 
       // Dual-write to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({
@@ -495,26 +478,16 @@ class SegmentAnalyticsService {
       // record missing top-level org data, causing dashboard grouping issues).
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
-          // Event context
           originalEvent: event,
           timestamp: new Date().toISOString(),
-
-          // Organization information
           organizationType: analysis?.organizationType || 'unknown',
           orgName: analysis?.details.orgName || 'Unknown',
           orgType: analysis?.details.orgType || 'Unknown',
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
-
-          // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
-          confidenceBreakdown: analysis?.confidenceBreakdown,
-
-          // Lead qualification
           leadTier: finalLeadTier || 'C',
-
-          // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
             productPagesViewed: behaviorScore.productPagesViewed,
@@ -525,8 +498,6 @@ class SegmentAnalyticsService {
             isPaidTraffic: behaviorScore.isPaidTraffic,
             trafficChannel: behaviorScore.trafficChannel
           },
-
-          // IP information (for sales team context)
           ipInfo: ipInfo ? {
             ip: ipInfo.ip,
             country: ipInfo.country,
@@ -537,8 +508,6 @@ class SegmentAnalyticsService {
             privacy: ipInfo.privacy,
             company: ipInfo.company
           } : null,
-
-          // Page context
           pagePath: properties?.pathname || properties?.pagePath || 'unknown',
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined
@@ -582,71 +551,46 @@ class SegmentAnalyticsService {
       // Get behavior score (includes timeOnSite)
       const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
 
-      // Calculate final confidence with smart weighting
-      // For first-time visitors with high IP confidence, rely more on IP analysis
-      // For returning visitors with behavior data, use balanced weighting
+      // ── Target customer determination ─────────────────────────────────
+      const orgType = analysis?.organizationType || 'unknown';
+      const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
+      const isTargetOrgType = TARGET_ORG_TYPES.includes(orgType);
+      const isAITarget = analysis?.isTargetCustomer === true;
+      const isBehaviorTarget = ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType)
+        && behaviorScore.behaviorScore >= 0.4;
+      const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
+
+      // ── Final confidence (metadata) ───────────────────────────────────
+      const aiConfidence = analysis?.confidence ?? 0;
+      const hasBehaviorData = behaviorScore.behaviorScore > 0;
       let finalConfidence: number;
-
-      // Org types that represent identified organizations (not network infrastructure)
-      // Handles both IP-level (education/business/government) and AI-level (university/research_institute/enterprise/hospital) types
-      const isIdentifiedOrg = (orgType: string) =>
-        ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
-      // Org types where the org name is the provider, not the end user
-      const isInfraOrg = (orgType: string) =>
-        ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType);
-
-      if (analysis) {
-        const isHighConfidenceIP = analysis.confidence >= 0.5;
-        const isTargetOrgType = isIdentifiedOrg(analysis.organizationType);
-        const hasBehaviorData = behaviorScore.behaviorScore > 0;
-
-        if (isHighConfidenceIP && isTargetOrgType && !hasBehaviorData) {
-          // First-time visitor from high-confidence target organization
-          // Use IP confidence directly (don't penalize for lack of behavior data)
-          finalConfidence = analysis.confidence;
-        } else if (analysis.confidence < 0.15 && isInfraOrg(analysis.organizationType) && hasBehaviorData) {
-          // ISP/hosting/unknown org with no meaningful IP signal — let behavior fully drive confidence
-          finalConfidence = behaviorScore.behaviorScore;
-        } else if (hasBehaviorData) {
-          // Returning visitor with behavior data - use balanced weighting
-          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
-        } else {
-          // Low IP confidence or unknown org - still use weighted average
-          finalConfidence = (analysis.confidence * 0.4) + (behaviorScore.behaviorScore * 0.6);
-        }
-      } else {
-        // No IP analysis - rely on behavior only
+      if (aiConfidence > 0 && hasBehaviorData) {
+        finalConfidence = aiConfidence * 0.5 + behaviorScore.behaviorScore * 0.5;
+      } else if (aiConfidence > 0) {
+        finalConfidence = aiConfidence;
+      } else if (hasBehaviorData) {
         finalConfidence = behaviorScore.behaviorScore;
+      } else {
+        finalConfidence = 0;
       }
 
-      // Respect ip-lookup rejection: if analysis explicitly says NOT a target, honour it
-      const ipRejected = analysis && analysis.isTargetCustomer === false;
-
-      // Use dynamic threshold: lower for high-confidence IP analysis of target organizations
-      const threshold = (analysis && analysis.confidence >= 0.5 && isIdentifiedOrg(analysis.organizationType))
-        ? 0.25  // Lower threshold for target organizations with high IP confidence
-        : 0.3;  // Standard threshold
-
-      const isTargetCustomer = !ipRejected && finalConfidence > threshold;
-
-      // Determine final lead tier (only for target customers)
+      // ── Lead tier ─────────────────────────────────────────────────────
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
-        if (finalConfidence >= 0.7 && (analysis?.organizationType === 'education' || analysis?.organizationType === 'university' || analysis?.organizationType === 'research_institute')) {
-          finalLeadTier = 'A';
-        } else if (analysis && analysis.confidence >= 0.9 && isIdentifiedOrg(analysis.organizationType)) {
-          finalLeadTier = 'A';
-        } else if (finalConfidence >= 0.5 && analysis && isIdentifiedOrg(analysis.organizationType)) {
-          finalLeadTier = 'B';
-        } else {
-          finalLeadTier = 'C';
+        if (!finalLeadTier) {
+          if (isTargetOrgType && aiConfidence >= 0.7) {
+            finalLeadTier = 'A';
+          } else if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
+            finalLeadTier = 'B';
+          } else {
+            finalLeadTier = 'C';
+          }
         }
       } else {
         finalLeadTier = undefined;
       }
 
-      // Apply behavioral tier boost (cross-validated multi-signal upgrade)
-      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, finalConfidence, behaviorScore);
+      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, behaviorScore);
 
       // Extract search query from referrer (available when enterprise proxies leak full URL)
       const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
@@ -681,7 +625,6 @@ class SegmentAnalyticsService {
           confidence: analysis.confidence,
           finalConfidence,
           leadTier: finalLeadTier,
-          confidenceBreakdown: analysis.confidenceBreakdown,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
           location: analysis.details.location,
@@ -690,7 +633,7 @@ class SegmentAnalyticsService {
         behaviorScore: {
           productPagesViewed: behaviorScore.productPagesViewed,
           highValuePagesViewed: behaviorScore.highValuePagesViewed,
-          timeOnSite: behaviorScore.timeOnSite,  // 停留时间（秒）
+          timeOnSite: behaviorScore.timeOnSite,
           pdfDownloads: behaviorScore.pdfDownloads,
           returnVisits: behaviorScore.returnVisits,
           isPaidTraffic: behaviorScore.isPaidTraffic,
@@ -706,9 +649,7 @@ class SegmentAnalyticsService {
         console.log('Segment Page View with IP + Behavior analysis:', enhancedProperties);
       }
 
-      // Server-side tracking: send the same page event via our /track endpoint.
-      // This guarantees delivery even when analytics.js is blocked by ad blockers.
-      // Segment deduplicates by anonymousId + timestamp proximity.
+      // Server-side tracking
       if (typeof window !== 'undefined') {
         sendServerSideEvent({
           type: 'page',
@@ -718,8 +659,9 @@ class SegmentAnalyticsService {
         });
       }
 
-      // Get AI classification if available (non-blocking)
-      const aiResultPage = ipAnalytics.getAIClassification();
+      // Wait for AI classification before DynamoDB write (avoid missing AI data)
+      const aiResultPage = ipAnalytics.getAIClassification()
+        ?? await ipAnalytics.waitForAIClassification(3000);
 
       // Dual-write page view to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({
@@ -757,30 +699,19 @@ class SegmentAnalyticsService {
         },
       });
 
-      // If it's a target customer, send Segment-only event (skipDynamoDB because
-      // the full page view was already stored above with complete IP/org fields).
+      // If it's a target customer, send Segment-only event
       if (isTargetCustomer) {
         this.track('Target Customer Detected', {
-          // Event context
           originalEvent: 'Page Viewed',
           timestamp: new Date().toISOString(),
-
-          // Organization information
           organizationType: analysis?.organizationType || 'unknown',
           orgName: analysis?.details.orgName || 'Unknown',
           orgType: analysis?.details.orgType || 'Unknown',
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
-
-          // Confidence scores
           confidence: analysis?.confidence || 0,
           finalConfidence,
-          confidenceBreakdown: analysis?.confidenceBreakdown,
-
-          // Lead qualification
           leadTier: finalLeadTier || 'C',
-
-          // Behavior signals
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
             productPagesViewed: behaviorScore.productPagesViewed,
@@ -791,8 +722,6 @@ class SegmentAnalyticsService {
             isPaidTraffic: behaviorScore.isPaidTraffic,
             trafficChannel: behaviorScore.trafficChannel
           },
-
-          // IP information (for sales team context)
           ipInfo: ipInfo ? {
             ip: ipInfo.ip,
             country: ipInfo.country,
@@ -803,8 +732,6 @@ class SegmentAnalyticsService {
             privacy: ipInfo.privacy,
             company: ipInfo.company
           } : null,
-
-          // Page context
           pagePath: properties?.pathname || pageName || 'unknown',
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
           pageTitle: typeof window !== 'undefined' ? document.title : undefined
