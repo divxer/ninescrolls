@@ -1711,6 +1711,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                               {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
                             </span>
                           )}
+                          {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
+                            <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
+                              ↓{sd}%
+                            </span>
+                          ) : null; })()}
                           {(e as Record<string, unknown>).isFinal && (
                             <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>final</span>
                           )}
@@ -1784,6 +1789,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           {pageDuration != null && pageDuration > 0 && (
                             <span className="timeline-duration">{formatDuration(pageDuration)}</span>
                           )}
+                          {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
+                            <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
+                              ↓{sd}%
+                            </span>
+                          ) : null; })()}
                           {entryEventIds.has(e.id) && referrerBadge(e)}
                         </div>
                         );
