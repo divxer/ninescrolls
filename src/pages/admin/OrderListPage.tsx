@@ -14,7 +14,9 @@ export function OrderListPage() {
 
   const statsCards = useMemo(() => {
     if (!stats) return [];
-    const byStatus = (stats.byStatus || {}) as Record<string, number>;
+    let parsed: unknown = stats.byStatus;
+    while (typeof parsed === 'string') parsed = JSON.parse(parsed);
+    const byStatus = (parsed || {}) as Record<string, number>;
     return [
       { label: 'Active Orders', value: stats.totalActive },
       { label: 'Quoting', value: byStatus['QUOTING'] || 0, color: '#2563eb' },
