@@ -2639,8 +2639,14 @@
 
 .admin-modal.admin-modal-wide .admin-modal-body {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   padding: 0;
+}
+
+.admin-modal.admin-modal-wide .admin-modal-body > div {
+  height: 100%;
+  overflow: hidden;
 }
 
 .admin-modal.admin-modal-wide .admin-modal-body iframe {
