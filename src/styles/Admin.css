@@ -916,7 +916,8 @@
 
 .admin-preview-frame .content-wrapper {
   max-width: 100%;
-  overflow: hidden;
+  /* No overflow here — any overflow value (even overflow-x) breaks position:sticky for TOC.
+     Wide content is handled by .main-content { min-width:0; overflow-x:hidden } instead. */
 }
 
 .admin-preview-frame .post-content {
@@ -2651,6 +2652,16 @@
 
 .admin-modal.admin-modal-wide .admin-modal-body iframe {
   display: block;
+}
+
+/* Override admin-modal-wide overflow:hidden so article preview can scroll */
+.admin-modal.admin-modal-wide .admin-modal-body.admin-preview-frame {
+  overflow-y: auto;
+}
+
+.admin-modal.admin-modal-wide .admin-modal-body.admin-preview-frame > div {
+  height: auto;
+  overflow: visible;
 }
 
 .admin-modal-header {
