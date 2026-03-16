@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useInsightsPosts } from '../../hooks/useInsightsPosts';
 import { deleteInsightsPost } from '../../services/insightsAdminService';
@@ -18,6 +18,19 @@ export function AdminInsightsListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenu]);
 
   const filteredPosts = useMemo(() => {
     let result = [...posts].sort(
@@ -153,12 +166,6 @@ export function AdminInsightsListPage() {
                 >
                   Edit
                 </Link>
-                <button
-                  onClick={() => navigate(`/admin/insights/new?from=${post.id}`)}
-                  className="admin-btn-sm admin-btn-outline"
-                >
-                  Duplicate
-                </button>
                 <a
                   href={`/insights/${post.slug}`}
                   target="_blank"
@@ -167,13 +174,37 @@ export function AdminInsightsListPage() {
                 >
                   View
                 </a>
-                <button
-                  onClick={() => handleDelete(post.id, post.title, post.slug)}
-                  disabled={deleting === post.id}
-                  className="admin-btn-sm admin-btn-danger"
-                >
-                  {deleting === post.id ? '...' : 'Delete'}
-                </button>
+                <div className="admin-actions-menu" ref={openMenu === post.id ? menuRef : undefined}>
+                  <button
+                    className="admin-btn-sm admin-btn-outline admin-btn-more"
+                    onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
+                  >
+                    ···
+                  </button>
+                  {openMenu === post.id && (
+                    <div className="admin-actions-dropdown">
+                      <button
+                        className="admin-dropdown-item"
+                        onClick={() => {
+                          setOpenMenu(null);
+                          navigate(`/admin/insights/new?from=${post.id}`);
+                        }}
+                      >
+                        Duplicate
+                      </button>
+                      <button
+                        className="admin-dropdown-item admin-dropdown-item-danger"
+                        onClick={() => {
+                          setOpenMenu(null);
+                          handleDelete(post.id, post.title, post.slug);
+                        }}
+                        disabled={deleting === post.id}
+                      >
+                        {deleting === post.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
