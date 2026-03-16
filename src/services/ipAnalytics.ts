@@ -39,7 +39,7 @@ interface ConfidenceBreakdown {
 
 interface TargetCustomerAnalysis {
   isTargetCustomer: boolean;
-  organizationType: 'university' | 'research_institute' | 'enterprise' | 'unknown';
+  organizationType: 'education' | 'business' | 'government' | 'isp' | 'hosting' | 'university' | 'research_institute' | 'enterprise' | 'hospital' | 'telecom_isp' | 'unknown';
   confidence: number;
   confidenceBreakdown?: ConfidenceBreakdown;  // 子评分详情
   leadTier?: 'A' | 'B' | 'C';  // 线索等级
@@ -208,10 +208,12 @@ class IPAnalyticsService {
   private computeLeadTier(confidence: number, orgType: string, isTargetCustomer?: boolean): 'A' | 'B' | 'C' | undefined {
     // Non-target customers should never get a lead tier
     if (isTargetCustomer === false) return undefined;
-    const isResearchOrg = orgType === 'university' || orgType === 'research_institute';
-    if (confidence >= 0.7 && isResearchOrg) return 'A';
-    if (confidence >= 0.9) return 'A'; // Any org type with very high confidence
-    if (confidence >= 0.5 && orgType !== 'unknown') return 'B';
+    // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise/hospital)
+    const isIdentifiedOrg = ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
+    const isEducation = orgType === 'education' || orgType === 'university' || orgType === 'research_institute';
+    if (confidence >= 0.7 && isEducation) return 'A';
+    if (confidence >= 0.9 && isIdentifiedOrg) return 'A';
+    if (confidence >= 0.5 && isIdentifiedOrg) return 'B';
     if (confidence >= 0.3) return 'C';
     return undefined;
   }
