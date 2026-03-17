@@ -759,13 +759,6 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     let maxReturnVisits = 0;
     let maxBehaviorScore = 0;
 
-    // Aggregate authoritative time from page_time_flush events.
-    // Selection: final-preferred, MAX fallback per pageViewId.
-    // Org total = simple sum of per-pageView best active seconds.
-    // Falls back to legacy timeOnSite snapshot if no flush events exist.
-    const pageViewFlushMap = new Map<string, PageViewFlushInfo>(); // pageViewId → best flush
-    let hasFlushEvents = false;
-
     for (const e of group) {
       if (e.pathname) {
         // Normalize trailing slash to canonical path (e.g. /products/ → /products)
@@ -775,14 +768,6 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         pages.add(normalizedPath);
       }
       if (e.productName) products.add(e.productName);
-
-      if (e.eventType === 'page_time_flush' && e.activeSeconds != null && e.activeSeconds > 0) {
-        hasFlushEvents = true;
-        const pvId = (e as Record<string, unknown>).pageViewId as string || e.id;
-        const isFinal = !!((e as Record<string, unknown>).isFinal);
-        const existing = pageViewFlushMap.get(pvId);
-        pageViewFlushMap.set(pvId, selectBestFlush(existing, { activeSeconds: e.activeSeconds, isFinal }));
-      }
 
       // Prefer AI confidence; fall back to legacy confidence for old events
       const eventConf = e.aiConfidence ?? e.confidence ?? 0;
@@ -802,20 +787,14 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       if (e.behaviorScore != null && e.behaviorScore > maxBehaviorScore) {
         maxBehaviorScore = e.behaviorScore;
       }
-
-      // Legacy fallback: use timeOnSite snapshot from page_view / track events
-      if (!hasFlushEvents && e.timeOnSite) {
-        totalTime = Math.max(totalTime, e.timeOnSite);
-      }
     }
 
-    // Prefer authoritative page_time_flush aggregation over legacy snapshot.
-    // Simple sum of per-pageView best active seconds.
-    if (hasFlushEvents) {
-      totalTime = 0;
-      for (const pv of pageViewFlushMap.values()) {
-        totalTime += pv.activeSeconds;
-      }
+    // Compute total active time using the same hybrid flush + legacy logic
+    // as the timeline (computePerPageDuration). This ensures page_views
+    // without flush events still contribute via timeOnSite deltas.
+    const perPageDurations = computePerPageDuration(group);
+    for (const seconds of perPageDurations.values()) {
+      totalTime += seconds;
     }
 
     // Use the first event with valid lat/lng
