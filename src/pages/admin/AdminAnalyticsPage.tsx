@@ -691,35 +691,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const effOrg = e.org || inherited?.org || '';
     const rawIp = e.ip || inherited?.ip || '';
     const effIp = (rawIp && !isPrivateIP(rawIp)) ? rawIp : '';
-    const effOrgType = e.organizationType || inherited?.organizationType || '';
-    const effConfidence = e.confidence ?? inherited?.confidence ?? null;
-    const effIsTarget = e.isTargetCustomer || inherited?.isTargetCustomer || false;
-    const effAiOrgType = e.aiOrganizationType || inherited?.aiOrganizationType || null;
-    const effAiConf = e.aiConfidence ?? inherited?.aiConfidence ?? null;
-
-    // ISP/VPN/hosting visitors: group by individual visitor to prevent
-    // unrelated residential users from being lumped under one ISP name.
-    // Two detection paths:
-    //   1. L0_REJECT: confidence=0, unknown type, real org name
-    //   2. AI-classified telecom_isp: AI identified it as ISP even if IP lookup missed it
-    const orgNameVal = effOrgName || effOrg || '';
-    const hasRealOrgName = !!orgNameVal && orgNameVal !== 'Unknown';
-    const isAIClassifiedISP = effAiOrgType === 'telecom_isp';
-    const isL0Reject = hasRealOrgName && (
-      // Path 1: IP lookup rejected as ISP/unknown
-      (!effIsTarget &&
-        (effConfidence == null || effConfidence === 0) &&
-        (!effOrgType || effOrgType === 'unknown') &&
-        !(effAiConf != null && effAiConf >= 0.5 && !isAIClassifiedISP)) ||
-      // Path 2: AI says telecom_isp regardless of IP confidence
-      isAIClassifiedISP
-    );
-    const key = isL0Reject
-      ? (vid || effIp || orgNameVal || 'Unknown')
-      : (effOrgName || effOrg || effIp || vid || 'Unknown');
-    //   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //   Key change: when org fields are all empty and no inheritance was possible,
-    //   fall back to visitorId instead of 'Unknown' — ensures per-visitor separation.
+    // Group by org name → IP → visitorId → Unknown.
+    // ISP orgs are re-split by visitorId in a post-processing step.
+    const key = effOrgName || effOrg || effIp || vid || 'Unknown';
     const group = groups.get(key);
     if (group) {
       group.push(e);
@@ -763,11 +737,10 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
   }
 
-  // ── Merge split groups back into their parent org ──────────────────
-  // Different IPs from the same org may have varying classification
-  // confidence.  Low-confidence events are L0_REJECT-keyed by visitorId/IP
-  // while high-confidence ones are keyed by org name.  Merge them so the
-  // same organization doesn't appear as multiple entries.
+  // ── Merge visitor-keyed groups back into their parent org ────────
+  // Different IPs from the same org may land in separate groups when
+  // some events lack org metadata and fall back to visitorId/IP keys.
+  // Merge them so the same organization doesn't appear as multiple entries.
   // Skip ISP orgs — those should stay split by visitor.
   const mergeKeys: string[] = [];
   for (const [key, group] of groups) {
