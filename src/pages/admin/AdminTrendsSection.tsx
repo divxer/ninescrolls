@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { Schema } from '../../../amplify/data/resource';
+import { classifyTrafficChannel } from '../../services/behaviorAnalytics';
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
 
@@ -27,6 +28,7 @@ interface TrendsSectionProps {
 const CHANNEL_COLORS: Record<string, string> = {
   paid_search: '#e91e63',
   organic_search: '#4caf50',
+  ai_referral: '#4527a0',
   paid_social: '#ff9800',
   organic_social: '#2196f3',
   email: '#9c27b0',
@@ -37,6 +39,7 @@ const CHANNEL_COLORS: Record<string, string> = {
 const CHANNEL_LABELS: Record<string, string> = {
   paid_search: 'Paid Search',
   organic_search: 'Organic Search',
+  ai_referral: 'AI Referral',
   paid_social: 'Paid Social',
   organic_social: 'Organic Social',
   email: 'Email',
@@ -91,14 +94,16 @@ function aggregateScoreDistribution(orgs: OrganizationRecord[]) {
 }
 
 function aggregateDailyChannels(events: AnalyticsEvent[]) {
-  const channels = ['paid_search', 'organic_search', 'paid_social', 'organic_social', 'email', 'referral', 'direct'];
+  const channels = ['paid_search', 'organic_search', 'ai_referral', 'paid_social', 'organic_social', 'email', 'referral', 'direct'];
   const dayMap = new Map<string, Record<string, Set<string>>>();
 
   for (const e of events) {
     if (e.eventType !== 'page_view') continue;
     const day = (e.timestamp ?? '').split('T')[0];
     if (!day) continue;
-    const channel = e.trafficChannel || 'direct';
+    // Re-derive channel from referrer when available (fixes historical misclassification, e.g. gemini.google.com stored as organic_search)
+    const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
+    const channel = e.referrer ? derived : (e.trafficChannel || 'direct');
     const vid = (e as Record<string, unknown>).visitorId as string || e.ip || '';
     if (!dayMap.has(day)) {
       const init: Record<string, Set<string>> = {};

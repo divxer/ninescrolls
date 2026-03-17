@@ -45,6 +45,7 @@ export function extractSearchQuery(referrer: string | undefined): string | undef
 export type TrafficChannel =
   | 'paid_search'
   | 'organic_search'
+  | 'ai_referral'
   | 'paid_social'
   | 'organic_social'
   | 'email'
@@ -54,6 +55,24 @@ export type TrafficChannel =
 const SEARCH_ENGINE_DOMAINS = [
   'google.', 'bing.com', 'yahoo.', 'baidu.com', 'yandex.',
   'duckduckgo.com', 'ecosia.org', 'ask.com', 'naver.com', 'sogou.com',
+];
+
+const AI_REFERRER_DOMAINS = [
+  // Google AI
+  'gemini.google.com',
+  'aistudio.google.com',
+  // OpenAI
+  'chatgpt.com',
+  'chat.openai.com',
+  // Other AI platforms
+  'perplexity.ai',
+  'claude.ai',
+  'copilot.microsoft.com',
+  'you.com',
+  'phind.com',
+  'kimi.ai',
+  'deepseek.com',
+  'poe.com',
 ];
 
 const SOCIAL_PLATFORM_DOMAINS = [
@@ -107,6 +126,12 @@ export function classifyTrafficChannel(params: {
   let referrerHost = '';
   if (referrer) {
     try { referrerHost = new URL(referrer).hostname.toLowerCase(); } catch { /* ignore */ }
+  }
+
+  // 3. AI referral (check before search engines — gemini.google.com would otherwise match 'google.')
+  const isAIReferrer = AI_REFERRER_DOMAINS.some(d => hostMatchesDomain(referrerHost, d));
+  if (isAIReferrer) {
+    return 'ai_referral';
   }
 
   const isPaidMedium = medium.includes('paid') ||
@@ -427,7 +452,7 @@ class BehaviorAnalyticsService {
     // Traffic intent bonus (max +0.1) — no decay (channel doesn't age)
     const trafficChannel = (trafficSignals[0]?.metadata?.trafficChannel as TrafficChannel) || 'direct';
     const isPaidTraffic = trafficChannel === 'paid_search' || trafficChannel === 'paid_social';
-    if (isPaidTraffic || trafficChannel === 'organic_search') {
+    if (isPaidTraffic || trafficChannel === 'organic_search' || trafficChannel === 'ai_referral') {
       behaviorScore += 0.1;
     }
 
