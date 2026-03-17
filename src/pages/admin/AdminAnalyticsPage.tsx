@@ -728,16 +728,53 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
   }
 
-  // ── Merge ISP-individual groups back into their parent org ───────────
+  // ── Collect ISP org names (from visitorOrgMap + direct event AI data) ──
+  // Used to prevent ISP visitors from being merged back into one group.
+  const ispOrgNames = new Set<string>();
+  for (const meta of visitorOrgMap.values()) {
+    if (meta.aiOrganizationType === 'telecom_isp') {
+      if (meta.orgName) ispOrgNames.add(meta.orgName);
+      if (meta.org) ispOrgNames.add(meta.org);
+    }
+  }
+  for (const [, grp] of groups) {
+    for (const e of grp) {
+      if (e.aiOrganizationType === 'telecom_isp') {
+        if (e.orgName) ispOrgNames.add(e.orgName);
+        if (e.org) ispOrgNames.add(e.org);
+      }
+    }
+  }
+
+  // ── Split ISP org-keyed groups by individual visitor ───────────────
+  // Some events lack AI classification and end up keyed by org name even
+  // though the org is an ISP.  Re-split those groups by visitorId so each
+  // residential user gets their own entry.
+  for (const ispName of ispOrgNames) {
+    const ispGroup = groups.get(ispName);
+    if (!ispGroup) continue;
+    groups.delete(ispName);
+    for (const e of ispGroup) {
+      const vid = (e as Record<string, unknown>).visitorId as string;
+      const k = vid || e.ip || ispName;
+      const existing = groups.get(k);
+      if (existing) existing.push(e);
+      else groups.set(k, [e]);
+    }
+  }
+
+  // ── Merge split groups back into their parent org ──────────────────
   // Different IPs from the same org may have varying classification
   // confidence.  Low-confidence events are L0_REJECT-keyed by visitorId/IP
   // while high-confidence ones are keyed by org name.  Merge them so the
   // same organization doesn't appear as multiple entries.
+  // Skip ISP orgs — those should stay split by visitor.
   const mergeKeys: string[] = [];
   for (const [key, group] of groups) {
     const orgEvent = group.find((e) => e.orgName || e.org);
     const baseOrgName = orgEvent?.orgName || orgEvent?.org || '';
-    if (baseOrgName && baseOrgName !== 'Unknown' && baseOrgName !== key && groups.has(baseOrgName)) {
+    if (baseOrgName && baseOrgName !== 'Unknown' && baseOrgName !== key
+        && groups.has(baseOrgName) && !ispOrgNames.has(baseOrgName)) {
       groups.get(baseOrgName)!.push(...group);
       mergeKeys.push(key);
     }
