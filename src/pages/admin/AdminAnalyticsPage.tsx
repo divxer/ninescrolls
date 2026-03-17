@@ -640,7 +640,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   const visitorOrgMap = new Map<string, {
     ip: string; org: string; orgName: string;
     country: string; region: string; city: string;
-    organizationType: string; confidence: number | null;
+    organizationType: string;
     isTargetCustomer: boolean; leadTier: string | null;
     aiOrganizationType: string | null; aiConfidence: number | null;
     latitude: number | null; longitude: number | null; isp: string;
@@ -653,9 +653,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     if (!vid) continue;
 
     const existing = visitorOrgMap.get(vid);
-    // Keep the entry with the highest confidence (AI confidence preferred, falls back to legacy)
-    const candidateConf = e.aiConfidence ?? e.confidence ?? 0;
-    const existingConf = existing ? (existing.aiConfidence ?? existing.confidence ?? 0) : -1;
+    // Keep the entry with the highest AI confidence
+    const candidateConf = e.aiConfidence ?? 0;
+    const existingConf = existing ? (existing.aiConfidence ?? 0) : -1;
 
     if (candidateConf > existingConf) {
       visitorOrgMap.set(vid, {
@@ -666,7 +666,6 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         region: e.region || existing?.region || '',
         city: e.city || existing?.city || '',
         organizationType: e.organizationType || existing?.organizationType || '',
-        confidence: e.confidence ?? existing?.confidence ?? null,
         isTargetCustomer: e.isTargetCustomer || existing?.isTargetCustomer || false,
         leadTier: e.leadTier || existing?.leadTier || null,
         aiOrganizationType: e.aiOrganizationType || existing?.aiOrganizationType || null,
@@ -702,21 +701,22 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
   }
 
-  // ── Collect ISP org names (from visitorOrgMap + direct event AI data) ──
-  // Used to prevent ISP visitors from being merged back into one group.
+  // ── Collect ISP org names (AI telecom_isp + IP-level isp) ───────────
+  // Used to split ISP visitors and prevent merge-back.
+  const ISP_ORG_TYPES = new Set(['telecom_isp', 'isp']);
   const ispOrgNames = new Set<string>();
-  for (const meta of visitorOrgMap.values()) {
-    if (meta.aiOrganizationType === 'telecom_isp') {
-      if (meta.orgName) ispOrgNames.add(meta.orgName);
-      if (meta.org) ispOrgNames.add(meta.org);
+  const addIfISP = (orgName: string, org: string, aiType: string | null | undefined, ipType: string | undefined) => {
+    if (ISP_ORG_TYPES.has(aiType || '') || ISP_ORG_TYPES.has(ipType || '')) {
+      if (orgName) ispOrgNames.add(orgName);
+      if (org) ispOrgNames.add(org);
     }
+  };
+  for (const meta of visitorOrgMap.values()) {
+    addIfISP(meta.orgName, meta.org, meta.aiOrganizationType, meta.organizationType);
   }
   for (const [, grp] of groups) {
     for (const e of grp) {
-      if (e.aiOrganizationType === 'telecom_isp') {
-        if (e.orgName) ispOrgNames.add(e.orgName);
-        if (e.org) ispOrgNames.add(e.org);
-      }
+      addIfISP(e.orgName || '', e.org || '', e.aiOrganizationType ?? undefined, e.organizationType ?? undefined);
     }
   }
 
@@ -779,8 +779,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       }
       if (e.productName) products.add(e.productName);
 
-      // Prefer AI confidence; fall back to legacy confidence for old events
-      const eventConf = e.aiConfidence ?? e.confidence ?? 0;
+      const eventConf = e.aiConfidence ?? 0;
       if (eventConf > maxConf) {
         maxConf = eventConf;
       }
@@ -826,11 +825,6 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       geoEvent.organizationType || '';
     const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || ipOrgType);
 
-    // Promote AI confidence when it's higher than IP-based confidence
-    if (aiEvent?.aiConfidence != null && aiEvent.aiConfidence > maxConf) {
-      maxConf = aiEvent.aiConfidence;
-    }
-
     // Compute tier from AI data when events have no tier
     // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise)
     const isIdentifiedOrgType = (t: string) =>
@@ -856,21 +850,10 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         (maxBehaviorScore >= 0.1 && hasProductPageVisit)
       );
 
-    // Detect ISP visitors grouped by individual visitorId/IP
-    // Use an event with org data (group may be sorted with a flush event first)
+    // Detect ISP visitors that were split by the ISP split step
     const orgEvent = group.find((e) => e.orgName || e.org) || group[0];
     const ispOrgName = orgEvent.orgName || orgEvent.org || '';
-    const hasRealName = !!ispOrgName && ispOrgName !== 'Unknown';
-    const isAIISP = (aiEvent?.aiOrganizationType || orgEvent.aiOrganizationType) === 'telecom_isp';
-    const isISPVisitor = hasRealName && key !== ispOrgName && (
-      // Path 1: ISP/hosting/unknown org with no meaningful IP signal
-      (!orgEvent.isTargetCustomer &&
-        (orgEvent.confidence == null || orgEvent.confidence === 0) &&
-        (!orgEvent.organizationType || orgEvent.organizationType === 'unknown' || orgEvent.organizationType === 'isp' || orgEvent.organizationType === 'hosting') &&
-        !(orgEvent.aiConfidence != null && orgEvent.aiConfidence >= 0.5 && !isAIISP)) ||
-      // Path 2: AI-classified telecom_isp
-      isAIISP
-    );
+    const isISPVisitor = ispOrgNames.has(ispOrgName) && key !== ispOrgName;
     // Build a human-readable display name for ISP individual visitors
     const displayName = isISPVisitor
       ? `${ispOrgName} · ${[geoEvent.city, geoEvent.region].filter(Boolean).join(', ') || 'Unknown'}`
