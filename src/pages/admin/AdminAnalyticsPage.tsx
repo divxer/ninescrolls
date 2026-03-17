@@ -56,7 +56,7 @@ interface OrganizationRecord {
 
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
 type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'engagement' | 'lastVisit';
-type KpiFilter = 'all' | 'target' | 'education' | 'business' | 'hotLead' | 'returning' | 'anonymousIntent';
+type KpiFilter = 'all' | 'target' | 'education' | 'business' | 'hotLead' | 'returning' | 'aiReferral' | 'anonymousIntent';
 type KeywordSourceFilter = 'all' | 'external' | 'internal';
 
 interface KeywordEntry {
@@ -1545,6 +1545,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         const channelColors: Record<string, { bg: string; color: string; label: string }> = {
           paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
           organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
+          ai_referral:    { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
           paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
           organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
           email:          { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
@@ -1633,6 +1634,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             const channelColorsTimeline: Record<string, { bg: string; color: string; label: string }> = {
               paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
               organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
+              ai_referral:    { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
               paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
               organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
               email:          { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
@@ -2130,6 +2132,14 @@ export function AdminAnalyticsPage() {
         return organizations.filter((o) => o.leadTier === 'A');
       case 'returning':
         return organizations.filter((o) => o.returnVisits > 0);
+      case 'aiReferral':
+        return organizations.filter((o) =>
+          o.events.some((e) => {
+            const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
+            const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
+            return ch === 'ai_referral';
+          })
+        );
       case 'anonymousIntent':
         return organizations.filter((o) => o.isAnonymousHighIntent);
       default:
@@ -2207,7 +2217,7 @@ export function AdminAnalyticsPage() {
   const filterSummary = useMemo(() => {
     const parts: string[] = [];
     if (channelFilter !== 'all') {
-      const labels: Record<string, string> = { paid_search: 'Paid Search', organic_search: 'Organic Search', paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email', referral: 'Referral', direct: 'Direct' };
+      const labels: Record<string, string> = { paid_search: 'Paid Search', organic_search: 'Organic Search', ai_referral: 'AI Referral', paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email', referral: 'Referral', direct: 'Direct' };
       parts.push(labels[channelFilter] || channelFilter);
     }
     if (regionFilter !== 'all') parts.push(regionFilter);
@@ -2280,6 +2290,13 @@ export function AdminAnalyticsPage() {
     const businessOrgs = organizations.filter((o) =>
       o.organizationType === 'business' || o.organizationType === 'enterprise'
     ).length;
+    const aiReferral = organizations.filter((o) =>
+      o.events.some((e) => {
+        const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
+        const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
+        return ch === 'ai_referral';
+      })
+    ).length;
     const anonymousIntent = organizations.filter((o) => o.isAnonymousHighIntent).length;
     const ispHighIntent = organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor).length;
 
@@ -2296,7 +2313,7 @@ export function AdminAnalyticsPage() {
       ? Math.round(((currVisitors - prevVisitors) / prevVisitors) * 100)
       : currVisitors > 0 ? 100 : 0;
 
-    return { uniqueVisitors, targetCustomers, educationOrgs, hotLeads, returning, businessOrgs, anonymousIntent, ispHighIntent, visitorTrend };
+    return { uniqueVisitors, targetCustomers, educationOrgs, hotLeads, returning, businessOrgs, aiReferral, anonymousIntent, ispHighIntent, visitorTrend };
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
@@ -2478,6 +2495,16 @@ export function AdminAnalyticsPage() {
           <div className="analytics-stat-value">{kpis.returning}</div>
           <div className="analytics-stat-label">Returning Visitors</div>
         </div>
+        {kpis.aiReferral > 0 && (
+          <div
+            className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'aiReferral' ? 'analytics-stat-active' : ''}`}
+            onClick={() => setKpiFilter(kpiFilter === 'aiReferral' ? 'all' : 'aiReferral')}
+            style={kpiFilter === 'aiReferral' ? { borderColor: '#4527a0' } : undefined}
+          >
+            <div className="analytics-stat-value" style={{ color: '#4527a0' }}>{kpis.aiReferral}</div>
+            <div className="analytics-stat-label">AI Referral</div>
+          </div>
+        )}
         {kpis.anonymousIntent > 0 && (
           <div
             className={`analytics-stat-card analytics-stat-intent analytics-stat-clickable ${kpiFilter === 'anonymousIntent' ? 'analytics-stat-active' : ''}`}
@@ -3099,6 +3126,7 @@ export function AdminAnalyticsPage() {
                 <option value="all">All</option>
                 <option value="paid_search">Paid Search</option>
                 <option value="organic_search">Organic Search</option>
+                <option value="ai_referral">AI Referral</option>
                 <option value="paid_social">Paid Social</option>
                 <option value="organic_social">Organic Social</option>
                 <option value="email">Email</option>
