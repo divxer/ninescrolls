@@ -1532,6 +1532,21 @@
 .analytics-tier-C { background: #e0e0e0; color: #616161; }
 .analytics-tier-intent { background: #f3e5f5; color: #6a1b9a; }
 
+/* Engagement badges */
+.analytics-engagement {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.analytics-engagement-high { background: #c8e6c9; color: #1b5e20; }
+.analytics-engagement-medium { background: #fff3e0; color: #e65100; }
+.analytics-engagement-low { background: #e0e0e0; color: #616161; }
+.org-engagement-high { color: #1b5e20; }
+.org-engagement-medium { color: #e65100; }
+.org-engagement-low { color: #616161; }
+
 /* Clickable org rows */
 .analytics-org-row { cursor: pointer; transition: background 0.15s; }
 .analytics-org-row:hover td { background: #e3f2fd !important; }

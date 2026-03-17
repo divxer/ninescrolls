@@ -55,7 +55,7 @@ interface OrganizationRecord {
 }
 
 type DateRange = 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom';
-type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'maxConfidence' | 'lastVisit';
+type SortColumn = 'orgName' | 'organizationType' | 'country' | 'totalEvents' | 'uniquePages' | 'totalTimeOnSite' | 'leadTier' | 'engagement' | 'lastVisit';
 type KpiFilter = 'all' | 'target' | 'education' | 'business' | 'hotLead' | 'returning' | 'anonymousIntent';
 type KeywordSourceFilter = 'all' | 'external' | 'internal';
 
@@ -494,6 +494,20 @@ function formatDuration(seconds: number): string {
   const mins = Math.floor((seconds % 3600) / 60);
   if (mins > 0) return `${hours}h ${mins}m`;
   return `${hours}h`;
+}
+
+function engagementLevel(score: number): 'High' | 'Medium' | 'Low' | null {
+  if (score >= 0.4) return 'High';
+  if (score >= 0.15) return 'Medium';
+  if (score > 0) return 'Low';
+  return null;
+}
+
+function engagementRank(score: number): number {
+  if (score >= 0.4) return 3;
+  if (score >= 0.15) return 2;
+  if (score > 0) return 1;
+  return 0;
 }
 
 // ─── Flush selection helpers ─────────────────────────────────────────────────
@@ -1180,10 +1194,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             )}
           </div>
         </div>
-        {org.maxConfidence > 0 && (
+        {engagementLevel(org.maxBehaviorScore) && (
           <div className="org-detail-score">
-            <div className="org-detail-score-value">{(org.maxConfidence * 100).toFixed(0)}%</div>
-            <div className="org-detail-score-label">Confidence</div>
+            <div className={`org-detail-score-value org-engagement-${engagementLevel(org.maxBehaviorScore)!.toLowerCase()}`}>{engagementLevel(org.maxBehaviorScore)}</div>
+            <div className="org-detail-score-label">Engagement</div>
           </div>
         )}
       </div>
@@ -1423,7 +1437,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
             {/* Final result */}
             <div className="org-detection-final">
-              Final: {(org.maxConfidence * 100).toFixed(0)}% · {org.organizationType || 'unknown'}
+              Final: {org.organizationType || 'unknown'}
               {org.isTargetCustomer && <span className="org-detection-target"> · Target</span>}
             </div>
           </div>
@@ -2103,19 +2117,10 @@ export function AdminAnalyticsPage() {
       if (ov.organizationType && ov.organizationType !== 'unknown') {
         org.organizationType = ov.organizationType;
       }
-      if (ov.confidence > org.maxConfidence) {
-        org.maxConfidence = ov.confidence;
-      }
-
       // Compute tier for manually-marked target customers
+      // Manual override = admin confirmed → assign B (same as pipeline trust gate)
       if (ov.isTargetCustomer && !org.leadTier) {
-        const conf = Math.max(org.maxConfidence, ov.confidence);
-        const isEdu = org.organizationType === 'education' || org.organizationType === 'university' || org.organizationType === 'research_institute';
-        if (conf >= 0.7 && isEdu) org.leadTier = 'A';
-        else if (conf >= 0.9) org.leadTier = 'A';
-        else if (conf >= 0.5) org.leadTier = 'B';
-        else if (conf >= 0.3) org.leadTier = 'C';
-        else org.leadTier = 'B'; // Manual override defaults to at least B
+        org.leadTier = 'B';
       }
 
       // Clear anonymous intent — manually classified orgs are not anonymous
@@ -2254,8 +2259,8 @@ export function AdminAnalyticsPage() {
         case 'leadTier':
           cmp = tierRank(a.leadTier) - tierRank(b.leadTier);
           break;
-        case 'maxConfidence':
-          cmp = a.maxConfidence - b.maxConfidence;
+        case 'engagement':
+          cmp = engagementRank(a.maxBehaviorScore) - engagementRank(b.maxBehaviorScore);
           break;
         case 'lastVisit':
           cmp = new Date(a.lastVisit).getTime() - new Date(b.lastVisit).getTime();
@@ -2312,7 +2317,7 @@ export function AdminAnalyticsPage() {
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
   function exportCSV() {
-    const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Active Time (s)', 'Events', 'Tier', 'Confidence', 'Last Visit'];
+    const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Active Time (s)', 'Events', 'Tier', 'Engagement', 'Last Visit'];
     const rows = sortedOrgs.map((o) => [
       o.orgName,
       o.organizationType || '',
@@ -2322,7 +2327,7 @@ export function AdminAnalyticsPage() {
       o.totalTimeOnSite,
       o.totalEvents,
       o.leadTier || '',
-      o.maxConfidence > 0 ? `${(o.maxConfidence * 100).toFixed(0)}%` : '',
+      engagementLevel(o.maxBehaviorScore) || '',
       o.lastVisit,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -3076,8 +3081,8 @@ export function AdminAnalyticsPage() {
               <th onClick={() => handleSort('leadTier')}>
                 Tier{sortIndicator('leadTier')}
               </th>
-              <th onClick={() => handleSort('maxConfidence')}>
-                Confidence{sortIndicator('maxConfidence')}
+              <th onClick={() => handleSort('engagement')}>
+                Engagement{sortIndicator('engagement')}
               </th>
               <th onClick={() => handleSort('lastVisit')}>
                 Last Visit{sortIndicator('lastVisit')}
@@ -3138,8 +3143,8 @@ export function AdminAnalyticsPage() {
                   )}
                 </td>
                 <td>
-                  {org.maxConfidence > 0
-                    ? `${(org.maxConfidence * 100).toFixed(0)}%`
+                  {engagementLevel(org.maxBehaviorScore)
+                    ? <span className={`analytics-engagement analytics-engagement-${engagementLevel(org.maxBehaviorScore)!.toLowerCase()}`}>{engagementLevel(org.maxBehaviorScore)}</span>
                     : <span className="analytics-na">N/A</span>}
                 </td>
                 <td className="analytics-timestamp">{formatRelativeTime(org.lastVisit)}</td>
