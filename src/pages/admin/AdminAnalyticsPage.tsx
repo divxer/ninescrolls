@@ -653,11 +653,16 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     if (!vid) continue;
 
     const existing = visitorOrgMap.get(vid);
-    // Keep the entry with the highest AI confidence
-    const candidateConf = e.aiConfidence ?? 0;
-    const existingConf = existing ? (existing.aiConfidence ?? 0) : -1;
+    // Keep the entry with the most complete org metadata fields.
+    // Same visitorId = same visitor; differences are just field coverage.
+    const candidateFields = (e.ip ? 1 : 0) + (e.org ? 1 : 0) + (e.orgName ? 1 : 0) +
+      (e.country ? 1 : 0) + (e.region ? 1 : 0) + (e.city ? 1 : 0);
+    const existingFields = existing
+      ? (existing.ip ? 1 : 0) + (existing.org ? 1 : 0) + (existing.orgName ? 1 : 0) +
+        (existing.country ? 1 : 0) + (existing.region ? 1 : 0) + (existing.city ? 1 : 0)
+      : -1;
 
-    if (candidateConf > existingConf) {
+    if (candidateFields > existingFields) {
       visitorOrgMap.set(vid, {
         ip: e.ip || existing?.ip || '',
         org: e.org || existing?.org || '',
@@ -829,15 +834,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise)
     const isIdentifiedOrgType = (t: string) =>
       ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(t);
-    const isEducationType = (t: string) =>
-      t === 'education' || t === 'university' || t === 'research_institute';
-
     const isTargetType = isIdentifiedOrgType(effectiveOrgType);
-    if (!bestTier && isTargetType && maxConf > 0) {
-      if (maxConf >= 0.7 && isEducationType(effectiveOrgType)) bestTier = 'A';
-      else if (maxConf >= 0.9) bestTier = 'A';
-      else if (maxConf >= 0.5) bestTier = 'B';
-      else if (maxConf >= 0.3) bestTier = 'C';
+    // Confidence is a trust gate — if we believe the classification, assign B.
+    // Tier A only comes from behavioral boost in the pipeline.
+    if (!bestTier && isTargetType && maxConf >= 0.5) {
+      bestTier = 'B';
     }
 
     // Anonymous high-intent: unidentified org but strong behavioral signals
