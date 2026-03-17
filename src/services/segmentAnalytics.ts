@@ -341,21 +341,7 @@ class SegmentAnalyticsService {
         && behaviorScore.behaviorScore >= 0.4;
       const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
 
-      // ── Final confidence (metadata, not a driver) ─────────────────────
-      // AI confidence = how sure AI is about the org TYPE classification.
-      // Blended with behavior when both are available.
       const aiConfidence = analysis?.confidence ?? 0;
-      const hasBehaviorData = behaviorScore.behaviorScore > 0;
-      let finalConfidence: number;
-      if (aiConfidence > 0 && hasBehaviorData) {
-        finalConfidence = aiConfidence * 0.5 + behaviorScore.behaviorScore * 0.5;
-      } else if (aiConfidence > 0) {
-        finalConfidence = aiConfidence;
-      } else if (hasBehaviorData) {
-        finalConfidence = behaviorScore.behaviorScore;
-      } else {
-        finalConfidence = 0;
-      }
 
       // ── Lead tier (only for target customers) ─────────────────────────
       // Based on org type category + AI confidence, then boosted by behavior.
@@ -399,7 +385,6 @@ class SegmentAnalyticsService {
           isTargetCustomer,
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
-          finalConfidence,
           leadTier: finalLeadTier,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
@@ -445,7 +430,6 @@ class SegmentAnalyticsService {
           organizationType: analysis.organizationType,
           orgName: analysis.details.orgName,
           confidence: analysis.confidence,
-          finalConfidence,
           leadTier: finalLeadTier,
         } : null,
         behaviorScore: {
@@ -487,7 +471,6 @@ class SegmentAnalyticsService {
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
           confidence: analysis?.confidence || 0,
-          finalConfidence,
           leadTier: finalLeadTier || 'C',
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
@@ -561,19 +544,7 @@ class SegmentAnalyticsService {
         && behaviorScore.behaviorScore >= 0.4;
       const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
 
-      // ── Final confidence (metadata) ───────────────────────────────────
       const aiConfidence = analysis?.confidence ?? 0;
-      const hasBehaviorData = behaviorScore.behaviorScore > 0;
-      let finalConfidence: number;
-      if (aiConfidence > 0 && hasBehaviorData) {
-        finalConfidence = aiConfidence * 0.5 + behaviorScore.behaviorScore * 0.5;
-      } else if (aiConfidence > 0) {
-        finalConfidence = aiConfidence;
-      } else if (hasBehaviorData) {
-        finalConfidence = behaviorScore.behaviorScore;
-      } else {
-        finalConfidence = 0;
-      }
 
       // ── Lead tier ─────────────────────────────────────────────────────
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
@@ -622,7 +593,6 @@ class SegmentAnalyticsService {
           isTargetCustomer,
           organizationType: analysis.organizationType,
           confidence: analysis.confidence,
-          finalConfidence,
           leadTier: finalLeadTier,
           orgName: analysis.details.orgName,
           orgType: analysis.details.orgType,
@@ -672,7 +642,6 @@ class SegmentAnalyticsService {
           organizationType: analysis.organizationType,
           orgName: analysis.details.orgName,
           confidence: analysis.confidence,
-          finalConfidence,
           leadTier: finalLeadTier,
         } : null,
         behaviorScore: {
@@ -709,7 +678,6 @@ class SegmentAnalyticsService {
           location: analysis?.details.location || 'Unknown',
           keywords: analysis?.details.keywords || [],
           confidence: analysis?.confidence || 0,
-          finalConfidence,
           leadTier: finalLeadTier || 'C',
           behaviorScore: behaviorScore.behaviorScore,
           behaviorDetails: {
