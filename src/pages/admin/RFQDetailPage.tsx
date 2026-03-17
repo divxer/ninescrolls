@@ -59,8 +59,8 @@ export function RFQDetailPage() {
     <div className="admin-detail-page">
       <div className="admin-detail-header">
         <Link to="/admin/rfqs" className="admin-btn-sm admin-btn-outline">&larr; Back</Link>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="admin-detail-title">
+          <div className="admin-detail-title-row">
             <h1 style={{ margin: 0 }}>{rfq.referenceNumber || rfq.rfqId}</h1>
             <StatusBadge status={rfq.status} size="lg" />
           </div>
@@ -69,7 +69,7 @@ export function RFQDetailPage() {
           </div>
         </div>
         {rfq.status === 'pending' && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="admin-detail-actions">
             <button className="admin-btn-primary" onClick={() => setShowConvert(true)}>
               Convert to Order
             </button>

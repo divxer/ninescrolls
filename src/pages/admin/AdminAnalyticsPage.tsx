@@ -2644,6 +2644,46 @@ export function AdminAnalyticsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Mobile keyword cards */}
+              <div className="mobile-cards kw-cards-mobile" style={{ marginTop: '0.5rem' }}>
+                {displayedKeywords.slice(0, 50).map((kw, i) => (
+                  <div key={`${kw.source}-${kw.keyword}-${i}`} className="kw-card-mobile">
+                    <div className="kw-card-header">
+                      <span className="kw-card-keyword" title={kw.keyword}>{kw.keyword}</span>
+                      <span className="kw-card-count">{kw.count}</span>
+                    </div>
+                    <div className="kw-card-meta">
+                      <span className={`keyword-source-badge keyword-source-${kw.source}`}>
+                        {kw.source === 'organic' ? 'Organic' : kw.source === 'paid' ? 'Paid' : 'Internal'}
+                      </span>
+                      {kw.searchEngine && (
+                        <span style={{ fontSize: '0.75rem', color: '#888' }}>{kw.searchEngine}</span>
+                      )}
+                    </div>
+                    {kw.organizations.length > 0 && (
+                      <div className="kw-card-orgs">
+                        {kw.organizations.slice(0, 3).map(org => (
+                          <button
+                            key={org}
+                            className="keyword-org-chip"
+                            onClick={() => {
+                              const match = organizations.find(o => o.orgName === org);
+                              if (match) selectOrg(match);
+                            }}
+                            title={org}
+                          >
+                            {org.length > 18 ? org.slice(0, 18) + '...' : org}
+                          </button>
+                        ))}
+                        {kw.organizations.length > 3 && (
+                          <span className="keyword-org-more">+{kw.organizations.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -2771,6 +2811,56 @@ export function AdminAnalyticsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Mobile page cards */}
+                    <div className="mobile-cards page-cards-mobile" style={{ marginTop: '0.5rem' }}>
+                      {pageStats.slice(0, 50).map(p => (
+                        <div key={p.pathname} className={`page-card-mobile${p.isProductPage ? ' page-card-product' : ''}`}>
+                          <div className="page-card-path" title={p.pathname}>{p.pathname}</div>
+                          {p.pageTitle && <div className="page-card-title">{p.pageTitle}</div>}
+                          <div className="page-card-stats">
+                            <div>
+                              <div className="page-card-stat-value">{p.views}</div>
+                              <div className="page-card-stat-label">Views</div>
+                            </div>
+                            <div>
+                              <div className="page-card-stat-value">{p.uniqueVisitors}</div>
+                              <div className="page-card-stat-label">Visitors</div>
+                            </div>
+                            <div>
+                              <div className="page-card-stat-value">{p.avgActiveSeconds > 0 ? formatDuration(p.avgActiveSeconds) : '—'}</div>
+                              <div className="page-card-stat-label">Avg Time</div>
+                            </div>
+                            <div>
+                              <div className="page-card-stat-value" style={{ color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
+                                {p.avgScrollDepth > 0 ? `${p.avgScrollDepth}%` : '—'}
+                              </div>
+                              <div className="page-card-stat-label">Scroll</div>
+                            </div>
+                          </div>
+                          {p.organizations.length > 0 && (
+                            <div className="page-card-orgs">
+                              {p.organizations.slice(0, 3).map(org => (
+                                <button
+                                  key={org}
+                                  className="keyword-org-chip"
+                                  onClick={() => {
+                                    const match = organizations.find(o => o.orgName === org);
+                                    if (match) selectOrg(match);
+                                  }}
+                                  title={org}
+                                >
+                                  {org.length > 18 ? org.slice(0, 18) + '...' : org}
+                                </button>
+                              ))}
+                              {p.organizations.length > 3 && (
+                                <span className="keyword-org-more">+{p.organizations.length - 3}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </>
                 );
               })()}
@@ -2851,6 +2941,7 @@ export function AdminAnalyticsPage() {
               {/* ── Landing Pages Tab ── */}
               {pageAnalyticsTab === 'landingPages' && (
                 landingPageStats.length > 0 ? (
+                  <>
                   <div className="analytics-table-wrapper">
                     <table className="admin-table keyword-table">
                       <thead>
@@ -2903,6 +2994,40 @@ export function AdminAnalyticsPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile landing page cards */}
+                  <div className="mobile-cards landing-cards-mobile" style={{ marginTop: '0.5rem' }}>
+                    {landingPageStats.slice(0, 50).map(lp => {
+                      const channelLabels: Record<string, string> = {
+                        paid_search: 'Paid Search', organic_search: 'Organic',
+                        paid_social: 'Paid Social', organic_social: 'Social',
+                        email: 'Email', referral: 'Referral', direct: 'Direct',
+                      };
+                      const bounceColor = lp.bounceRate < 0.4 ? '#2e7d32' : lp.bounceRate < 0.6 ? '#f57f17' : '#c62828';
+                      return (
+                        <div key={lp.pathname} className="landing-card-mobile">
+                          <div className="landing-card-path" title={lp.pathname}>{lp.pathname}</div>
+                          <div className="landing-card-stats">
+                            <div>
+                              <div className="page-card-stat-value">{lp.landings}</div>
+                              <div className="page-card-stat-label">Landings</div>
+                            </div>
+                            <div>
+                              <div className="page-card-stat-value">{channelLabels[lp.topSource] || lp.topSource}</div>
+                              <div className="page-card-stat-label">Source</div>
+                            </div>
+                            <div>
+                              <div className="page-card-stat-value" style={{ color: bounceColor }}>
+                                {Math.round(lp.bounceRate * 100)}%
+                              </div>
+                              <div className="page-card-stat-label">Bounce</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  </>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
                     No landing page data in this period
@@ -3142,6 +3267,67 @@ export function AdminAnalyticsPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile org cards — visible only at ≤480px */}
+      <div className="mobile-cards org-cards-mobile">
+        {sortedOrgs.length === 0 ? (
+          <div className="admin-no-results" style={{ textAlign: 'center', padding: '1.5rem' }}>
+            No visitor data for this period.
+          </div>
+        ) : (
+          sortedOrgs.map((org) => (
+            <div
+              key={org.key}
+              className={`org-card-mobile${org.isTargetCustomer ? ' org-card-target' : ''}${
+                org.leadTier === 'A' ? ' org-card-tier-A' : org.leadTier === 'B' ? ' org-card-tier-B' : ''
+              }${org.isAnonymousHighIntent ? ' org-card-intent' : ''}`}
+              onClick={() => selectOrg(org)}
+            >
+              <div className="org-card-header">
+                <span className="org-card-name" title={org.orgName}>{org.orgName}</span>
+                <div className="org-card-badges">
+                  {org.leadTier && (
+                    <span className={`org-card-tier analytics-tier-${org.leadTier}`}>{org.leadTier}</span>
+                  )}
+                  {org.isAnonymousHighIntent && !org.leadTier && (
+                    <span className="org-card-tier analytics-tier-intent">Intent</span>
+                  )}
+                  {org.organizationType && (
+                    <span className={`org-card-type analytics-type-${org.organizationType}`}>{org.organizationType}</span>
+                  )}
+                </div>
+              </div>
+              <div className="org-card-location">
+                {[org.city, org.region, org.country].filter(Boolean).join(', ') || 'Unknown location'}
+              </div>
+              <div className="org-card-stats">
+                <div>
+                  <div className="org-card-stat-value">{org.uniquePages}</div>
+                  <div className="org-card-stat-label">Pages</div>
+                </div>
+                <div>
+                  <div className="org-card-stat-value">{org.totalEvents}</div>
+                  <div className="org-card-stat-label">Events</div>
+                </div>
+                <div>
+                  <div className="org-card-stat-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '—'}</div>
+                  <div className="org-card-stat-label">Time</div>
+                </div>
+                <div>
+                  <div className="org-card-stat-value">
+                    {engagementLevel(org.maxBehaviorScore) || '—'}
+                  </div>
+                  <div className="org-card-stat-label">Engage</div>
+                </div>
+              </div>
+              <div className="org-card-footer">
+                <span>{formatRelativeTime(org.lastVisit)}</span>
+                {org.isISPVisitor && <span>ISP visitor</span>}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
