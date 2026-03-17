@@ -191,14 +191,11 @@ class IPAnalyticsService {
   }
 
   private computeLeadTier(confidence: number, orgType: string, isTargetCustomer?: boolean): 'A' | 'B' | 'C' | undefined {
-    // Non-target customers should never get a lead tier
     if (isTargetCustomer === false) return undefined;
+    // Confidence is a trust gate — do we believe this classification?
+    // Tier A only comes from behavioral boost (applyBehavioralTierBoost).
     const isIdentifiedOrg = ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(orgType);
-    const isEducation = orgType === 'education' || orgType === 'university' || orgType === 'research_institute';
-    if (confidence >= 0.7 && isEducation) return 'A';
-    if (confidence >= 0.9 && isIdentifiedOrg) return 'A';
-    if (confidence >= 0.5 && isIdentifiedOrg) return 'B';
-    if (confidence >= 0.3) return 'C';
+    if (isIdentifiedOrg && confidence >= 0.5) return 'B';
     return undefined;
   }
 
