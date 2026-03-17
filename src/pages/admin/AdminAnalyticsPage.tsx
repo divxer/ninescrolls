@@ -830,15 +830,19 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       geoEvent.organizationType || '';
     const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || ipOrgType);
 
-    // Compute tier from AI data when events have no tier
-    // Handle both IP-level types (education/business/government) and AI-level types (university/research_institute/enterprise)
-    const isIdentifiedOrgType = (t: string) =>
-      ['education', 'business', 'government', 'university', 'research_institute', 'enterprise', 'hospital'].includes(t);
-    const isTargetType = isIdentifiedOrgType(effectiveOrgType);
-    // Confidence is a trust gate — if we believe the classification, assign B.
+    // Backfill tier for old events that lack leadTier.
+    // Two paths mirror the pipeline (segmentAnalytics):
+    //   1. IP-reliable org types (education/gov) → B without AI confidence
+    //   2. AI-classified identified orgs → B if confidence >= 0.5 (trust gate)
     // Tier A only comes from behavioral boost in the pipeline.
-    if (!bestTier && isTargetType && maxConf >= 0.5) {
-      bestTier = 'B';
+    const IP_RELIABLE_TYPES = new Set(['education', 'university', 'research_institute', 'government']);
+    const AI_IDENTIFIED_TYPES = new Set(['business', 'enterprise', 'hospital']);
+    if (!bestTier) {
+      if (IP_RELIABLE_TYPES.has(effectiveOrgType)) {
+        bestTier = 'B';
+      } else if (AI_IDENTIFIED_TYPES.has(effectiveOrgType) && maxConf >= 0.5) {
+        bestTier = 'B';
+      }
     }
 
     // Anonymous high-intent: unidentified org but strong behavioral signals
