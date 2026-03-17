@@ -130,7 +130,7 @@ Summary: Complete guide to RIE covering working principles (RF plasma + ion bomb
 
 **Deep Reactive Ion Etching (DRIE) – Bosch Process**
 URL: https://ninescrolls.com/insights/deep-reactive-ion-etching-bosch-process
-Summary: DRIE uses alternating passivation (C4F8 polymer) and etching (SF6 plasma) cycles to achieve >50:1 aspect ratio features in silicon. Covers Bosch cycle mechanics, common defects (scalloping, notching, ARDE), mitigations, and ICP-DRIE equipment considerations.
+Summary: Comprehensive guide to DRIE and the Bosch process for deep silicon etching. Explains C4F8 passivation and SF6 etch cycle mechanics with typical parameter ranges (gas flows, ICP/bias power, pressure, temperature). Covers applications in MEMS, TSVs, photonics, microfluidics, and power electronics with specific feature dimensions. Details five common defects — sidewall scalloping, ARDE (RIE lag), notching/footing on SOI, grass/micromasking, and profile bowing — with mitigation strategies. Compares Bosch vs cryogenic DRIE and discusses future trends including ALE and ML-driven process control.
 
 **ICP-RIE Technology**
 URL: https://ninescrolls.com/insights/icp-rie-technology-advanced-etching
