@@ -766,75 +766,208 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'DRIE fundamentals, Bosch cycles (etch–passivation), applications in MEMS/TSV, common defects and mitigations, and ICP‑DRIE equipment notes.',
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
-      <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1, making it indispensable for advanced MEMS, TSVs, and photonic devices.</p>
-      <p>The Bosch process, first commercialized by Robert Bosch GmbH, has become the industry standard for DRIE. It relies on a cyclical sequence of passivation and etching to sculpt vertical silicon structures with precision and repeatability. For foundational context on how DRIE builds upon basic PE and RIE principles, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison guide</a>.</p>
+      <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, which is typically limited to aspect ratios of roughly 5:1, DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1. This capability makes it indispensable for advanced MEMS, through‑silicon via (TSV) interconnects, and photonic devices.</p>
+      <p>The Bosch process — named after the patent filed by Franz Laermer and Andrea Schilp at Robert Bosch GmbH in 1994 (U.S. Patent 5,501,893) — has become the dominant DRIE method worldwide. It relies on a rapid, cyclical alternation between a passivation step and an etching step to sculpt vertical silicon structures with excellent precision and repeatability. The technique transformed microfabrication by making features hundreds of micrometers deep practical at production scale.</p>
+      <p>For foundational context on how DRIE builds upon basic PE and RIE principles, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison guide</a>.</p>
       <hr/>
 
       <h2>2) Working Principle of the Bosch Process</h2>
-      <ul>
-        <li><strong>Passivation Step</strong> — A fluorocarbon gas (typically C₄F₈) is introduced, depositing a polymer film on all exposed surfaces. This protective polymer layer prevents lateral etching of the sidewalls.</li>
-        <li><strong>Etching Step</strong> — A plasma of SF₆ is ignited under bias. Reactive fluorine radicals isotropically etch silicon, but the vertical ion bombardment preferentially removes the passivation layer at the trench bottom. As a result, etching proceeds only downward, preserving verticality.</li>
-        <li><strong>Cycle Repetition</strong> — By rapidly repeating passivation and etching cycles (typically 1–5 seconds each), deep and vertical trenches or vias can be formed with excellent anisotropy.</li>
-      </ul>
+      <p>The Bosch process achieves its characteristic deep, vertical profiles through a time‑multiplexed alternation of two distinct plasma chemistries. Each cycle consists of a passivation phase followed by an etch phase, repeated hundreds or thousands of times to reach the target depth.</p>
+
+      <h3>2.1 Passivation Step (C₄F₈)</h3>
+      <p>A fluorocarbon gas — most commonly octafluorocyclobutane (C₄F₈) — is introduced into the chamber. In the plasma, C₄F₈ fragments into CF₂ radicals that polymerize on all exposed surfaces, depositing a thin (typically 10–50 nm) Teflon‑like fluorocarbon film. This conformal polymer coating protects the sidewalls from lateral attack during the subsequent etch step. The deposition rate and thickness are controlled by C₄F₈ flow rate, ICP source power, and step duration.</p>
+
+      <h3>2.2 Etching Step (SF₆)</h3>
+      <p>Sulfur hexafluoride (SF₆) plasma is then ignited. SF₆ dissociates into highly reactive fluorine radicals (F*) that etch silicon isotropically. However, a substrate bias (RF platen power) accelerates ions vertically toward the wafer surface. This directional ion bombardment preferentially sputters away the passivation polymer at the trench bottom while leaving the sidewall polymer largely intact. The exposed silicon at the bottom is then etched by fluorine radicals, advancing the trench downward. Typical etch rates range from 2–20 μm/min depending on feature geometry and process conditions.</p>
+
+      <h3>2.3 Cycle Repetition</h3>
+      <p>The two steps alternate rapidly — typically 1–5 seconds each for standard processes, or as short as 0.5 seconds per step for ultra‑smooth sidewall applications. A 100 μm deep trench might require 200–500 cycles. Because each etch step removes a thin layer of silicon at the bottom before re‑passivation, the process yields near‑vertical profiles with excellent anisotropy (sidewall angle > 89°).</p>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/drie-bosch-cycle-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-bosch-cycle-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-bosch-cycle-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-bosch-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/drie-bosch-cycle.png" alt="Bosch process cycle diagram showing three steps: C4F8 passivation polymer deposition, SF6 plasma etching with ion bombardment, and repeated cycles forming a deep vertical trench with scalloped sidewalls" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Bosch Process Cycle — Step 1 deposits a protective C₄F₈ polymer; Step 2 uses SF₆ plasma with directional ion bombardment to etch the trench bottom; repeated cycling produces deep vertical features with characteristic sidewall scalloping.</p>
+      </div>
       <hr/>
 
       <h2>3) Process Parameters and Control</h2>
-      <ul>
-        <li><strong>Cycle Time Ratio (Passivation vs Etching)</strong> — Determines balance between verticality and etch rate.</li>
-        <li><strong>Pressure and Gas Flow</strong> — Control polymer deposition and plasma density.</li>
-        <li><strong>RF Power</strong> — Adjusts ion bombardment energy, influencing sidewall profile.</li>
-        <li><strong>Temperature</strong> — Wafer cooling (usually with He backside cooling) is essential to prevent polymer degradation and maintain uniform etching.</li>
-      </ul>
+      <p>Achieving optimal DRIE results requires careful tuning of multiple interrelated parameters. The table below summarizes the key variables and their typical operating ranges:</p>
+
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Typical Range</th>
+            <th>Effect on Process</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Passivation time</strong></td>
+            <td>0.5–5 s per cycle</td>
+            <td>Longer → thicker polymer → better sidewall protection but lower throughput</td>
+          </tr>
+          <tr>
+            <td><strong>Etch time</strong></td>
+            <td>1–10 s per cycle</td>
+            <td>Longer → deeper bite per cycle → larger scallops, higher etch rate</td>
+          </tr>
+          <tr>
+            <td><strong>SF₆ flow rate</strong></td>
+            <td>100–400 sccm</td>
+            <td>Higher flow → more fluorine radicals → faster etch, potential undercut</td>
+          </tr>
+          <tr>
+            <td><strong>C₄F₈ flow rate</strong></td>
+            <td>50–200 sccm</td>
+            <td>Higher flow → thicker passivation → improved verticality</td>
+          </tr>
+          <tr>
+            <td><strong>ICP source power</strong></td>
+            <td>600–3000 W</td>
+            <td>Controls plasma density and radical generation efficiency</td>
+          </tr>
+          <tr>
+            <td><strong>Platen (bias) power</strong></td>
+            <td>5–50 W</td>
+            <td>Controls ion energy and directionality; higher → more anisotropic</td>
+          </tr>
+          <tr>
+            <td><strong>Chamber pressure</strong></td>
+            <td>15–40 mTorr</td>
+            <td>Lower pressure → longer mean free path → more directional ions</td>
+          </tr>
+          <tr>
+            <td><strong>Substrate temperature</strong></td>
+            <td>10–40 °C (He backside)</td>
+            <td>Cooling prevents polymer degradation; affects etch uniformity</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3.1 Ramped and Multi‑Step Recipes</h3>
+      <p>For deep etches (>100 μm), process parameters often need to change as the trench deepens. This is because reactant transport to the trench bottom becomes increasingly difficult with depth. Advanced DRIE tools support <strong>ramped recipes</strong> where gas flows, pressures, and cycle times are gradually adjusted throughout the process to compensate for depth‑dependent effects. For example, increasing SF₆ flow and chamber pressure at later stages can maintain etch rate uniformity in deep features.</p>
       <hr/>
 
       <h2>4) Applications of DRIE</h2>
-      <ul>
-        <li><strong>MEMS (Micro‑Electro‑Mechanical Systems)</strong> — Gyroscopes, accelerometers, pressure sensors.</li>
-        <li><strong>Through‑Silicon Vias (TSVs)</strong> — 3D IC integration and advanced packaging.</li>
-        <li><strong>Photonics</strong> — Optical waveguides, gratings, and micro‑mirrors.</li>
-        <li><strong>Microfluidics</strong> — Lab‑on‑chip devices requiring high aspect ratio channels.</li>
-        <li><strong>Power Electronics</strong> — Deep isolation trenches for high‑voltage devices.</li>
-      </ul>
+      <p>The ability to etch deep, high aspect ratio features in silicon with vertical sidewalls has made DRIE essential across numerous technology domains:</p>
+
+      <h3>4.1 MEMS (Micro‑Electro‑Mechanical Systems)</h3>
+      <p>DRIE is the workhorse of MEMS fabrication. Inertial sensors (gyroscopes, accelerometers), pressure sensors, micro‑mirrors, and resonators all rely on precisely etched silicon structures. Features typically range from 10–500 μm deep with critical dimensions as small as 1–2 μm. The Bosch process enables the release of freestanding mechanical structures by etching through the full wafer thickness (typically 525 μm for a standard 200 mm wafer).</p>
+
+      <h3>4.2 Through‑Silicon Vias (TSVs)</h3>
+      <p>3D IC integration and advanced packaging technologies such as high bandwidth memory (HBM) and chiplet architectures require electrical connections that pass vertically through silicon. TSVs are typically 5–10 μm in diameter and 50–100 μm deep (via‑middle) or 25–50 μm diameter and 300+ μm deep (via‑last). DRIE provides the necessary depth and profile control, and post‑etch sidewall quality directly affects the conformality of subsequent barrier/seed layer deposition.</p>
+
+      <h3>4.3 Photonics and Optical Devices</h3>
+      <p>Silicon photonic components — including waveguides, Bragg gratings, and micro‑mirrors — demand smooth, vertical sidewalls for low optical loss. While standard Bosch process scalloping may be too rough for some photonic applications, optimized short‑cycle recipes or cryogenic DRIE can achieve the surface quality needed (Ra < 20 nm).</p>
+
+      <h3>4.4 Microfluidics</h3>
+      <p>Lab‑on‑chip devices, micro‑reactors, and bioMEMS use DRIE to create high aspect ratio channels, chambers, and nozzle structures. Channel depths of 50–300 μm with widths of 10–50 μm are common. The ability to etch features with well‑controlled sidewall angles enables precise fluidic behavior and reliable bonding to cap wafers.</p>
+
+      <h3>4.5 Power Electronics</h3>
+      <p>Deep isolation trenches (20–100 μm) in power semiconductor devices provide electrical isolation between high‑voltage and low‑voltage regions. Superjunction MOSFETs and IGBTs use DRIE‑etched trenches that are subsequently filled with oxide or polysilicon to create the charge‑balanced structures necessary for high breakdown voltage.</p>
       <hr/>
 
-      <h2>5) Challenges and Solutions</h2>
+      <h2>5) Common Defects and Challenges</h2>
+      <p>Despite its versatility, the Bosch process introduces several characteristic artifacts and challenges that engineers must understand and address:</p>
+
+      <h3>5.1 Sidewall Scalloping</h3>
+      <p>The most recognizable artifact of the Bosch process is sidewall scalloping — a periodic waviness on the trench walls caused by the alternating etch/passivation cycles. Each etch step isotropically removes a small amount of silicon laterally before the next passivation step re‑protects the surface. Scallop amplitude is typically 50–200 nm for standard cycle times (2–5 s), but can be reduced to < 30 nm with ultra‑short cycles (< 1 s).</p>
+      <p>Scalloping matters because it increases surface roughness, which can degrade thin film conformality in TSV metallization, increase optical scattering in photonic devices, and reduce fatigue life in MEMS structures. Common mitigation strategies include:</p>
       <ul>
-        <li><strong>Sidewall Scalloping</strong> — Caused by alternating Bosch cycles. <em>Mitigation:</em> Reduce cycle duration or apply “smoothing” post‑treatments (e.g., isotropic etching, thermal oxidation).</li>
-        <li><strong>Aspect Ratio Dependent Etching (ARDE)</strong> — Narrow trenches etch more slowly due to transport limitations. <em>Mitigation:</em> Pressure/gas optimization, advanced chamber designs, pulsed bias.</li>
-        <li><strong>Charging Effects</strong> — Local charge buildup may distort features. <em>Mitigation:</em> Dual‑frequency RF or pulsed plasma schemes.</li>
+        <li><strong>Shorter cycle times</strong> — Reducing each step to < 1 s dramatically reduces scallop amplitude but lowers net etch rate.</li>
+        <li><strong>Post‑etch smoothing</strong> — A brief isotropic SF₆ etch (without bias) or thermal oxidation followed by oxide strip can reduce scallop roughness by 70–90%.</li>
+        <li><strong>Hydrogen annealing</strong> — High‑temperature H₂ anneal (1000–1100 °C) causes silicon surface migration that smooths scallops.</li>
+        <li><strong>Switching to cryogenic DRIE</strong> — Eliminates scalloping entirely by using continuous (non‑cyclic) etching at cryogenic temperatures.</li>
       </ul>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/drie-scalloping-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-scalloping-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-scalloping-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-scalloping-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/drie-scalloping.png" alt="Sidewall scalloping diagram showing close-up of periodic waviness from Bosch process cycles, cycle duration vs scallop depth chart, mitigation strategies, and comparison of Bosch vs cryogenic DRIE sidewall quality" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Sidewall Scalloping — Close‑up of periodic sidewall roughness from Bosch cycles, effect of cycle duration on scallop depth, mitigation strategies, and comparison of Bosch (scalloped, Ra 50–200 nm) vs cryogenic DRIE (smooth, Ra < 10 nm).</p>
+      </div>
+
+      <h3>5.2 Aspect Ratio Dependent Etching (ARDE)</h3>
+      <p>ARDE — also called RIE lag — is the phenomenon where narrow trenches etch more slowly than wide ones under identical process conditions. The root cause is Knudsen transport: as the aspect ratio increases, neutral reactant species (fluorine radicals) have a decreasing probability of reaching the trench bottom due to wall collisions. For aspect ratios above 10:1, etch rate can drop to 50% or less of the open‑area rate, causing significant depth non‑uniformity across features of different widths on the same wafer.</p>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/drie-arde-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-arde-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-arde-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/drie-arde-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/drie-arde.png" alt="Aspect Ratio Dependent Etching diagram showing trenches of different widths etched to different depths under identical conditions, etch rate vs aspect ratio curve, and ARDE mitigation approaches" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: ARDE (RIE Lag) — Wider trenches etch significantly deeper than narrow ones in the same process time. The etch rate vs aspect ratio curve shows exponential roll‑off due to Knudsen diffusion transport limitation of reactive species.</p>
+      </div>
+
+      <p>Mitigation approaches for ARDE include:</p>
+      <ul>
+        <li><strong>Pressure ramping</strong> — Increasing chamber pressure during deep etching provides more reactant molecules to improve transport into narrow features.</li>
+        <li><strong>Dynamic gas flow adjustment</strong> — Modulating SF₆/C₄F₈ ratio as depth increases.</li>
+        <li><strong>Pulsed bias schemes</strong> — Time‑modulated ion bombardment can improve bottom access in high AR features.</li>
+        <li><strong>Design rules</strong> — Keeping feature widths uniform where possible, or adding dummy features to equalize local loading.</li>
+      </ul>
+
+      <h3>5.3 Notching (Footing) Effect</h3>
+      <p>When etching silicon that sits on an insulating layer (e.g., SOI buried oxide), positive charge accumulates on the exposed dielectric at the trench bottom. This charge deflects incoming ions laterally, causing an undercut "notch" or "foot" at the silicon/oxide interface. Notching can be mitigated with pulsed‑LF bias, which allows charge dissipation between pulses, or by using low‑frequency (380 kHz) substrate bias.</p>
+
+      <h3>5.4 Grass and Micromasking</h3>
+      <p>Silicon "grass" — needle‑like residues at the trench bottom — occurs when re‑deposited mask material or non‑volatile etch byproducts create micro‑scale etch masks. Contributing factors include poor mask quality, excessive polymer buildup, and inadequate ion bombardment. Prevention involves optimizing the passivation/etch ratio, ensuring sufficient platen power, and using clean mask materials with minimal sputtering.</p>
+
+      <h3>5.5 Profile Tilting and Bowing</h3>
+      <p>Non‑vertical profiles can result from angular ion distribution effects. <strong>Bowing</strong> (barrel‑shaped profiles) occurs when ions reflected from the upper sidewalls accelerate lateral etching mid‑trench. <strong>Tilting</strong> results from asymmetric ion flux, often caused by wafer placement or chamber asymmetry. Both are addressed through careful platen power control, pressure optimization, and chamber maintenance.</p>
       <hr/>
 
       <h2>6) Future Trends in DRIE</h2>
-      <ul>
-        <li><strong>Cryogenic DRIE</strong> — Uses very low substrate temperatures (~–100 °C) with SF₆/O₂ to achieve smooth sidewalls without scalloping.</li>
-        <li><strong>Atomic Layer Etching (ALE)</strong> — Promises sub‑nanometer precision for extreme control.</li>
-        <li><strong>AI‑Driven Process Control</strong> — Machine learning applied to endpoint detection and recipe tuning.</li>
-        <li><strong>Integration with Advanced Packaging</strong> — Scaling TSVs and MEMS for heterogeneous integration.</li>
-      </ul>
+
+      <h3>6.1 Cryogenic DRIE</h3>
+      <p>Cryogenic DRIE operates at substrate temperatures of −80 °C to −120 °C using a continuous SF₆/O₂ chemistry (no cycling). At cryogenic temperatures, the oxygen‑silicon passivation layer that forms on sidewalls is stable enough to prevent lateral etching, while the trench bottom is continuously cleared by ion bombardment. The key advantage is scallop‑free sidewalls (Ra < 5 nm), making it attractive for photonic and MEMS applications requiring optical‑quality surfaces. However, cryogenic systems require specialized chuck cooling and the process window is generally narrower than Bosch. For an in‑depth comparison, see our <a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Etching vs. Bosch Process</a> guide.</p>
+
+      <h3>6.2 Atomic Layer Etching (ALE)</h3>
+      <p>ALE applies the concept of self‑limiting surface reactions to etching, enabling sub‑nanometer depth control per cycle. While ALE is too slow for deep etching, hybrid approaches that combine ALE precision for critical surfaces with conventional DRIE for bulk removal are being developed for applications like FinFET gate etching and advanced 3D NAND structures.</p>
+
+      <h3>6.3 AI and Machine Learning Process Control</h3>
+      <p>Modern DRIE tools increasingly incorporate real‑time process monitoring (optical emission spectroscopy, laser interferometry) coupled with ML algorithms for endpoint detection, chamber‑to‑chamber matching, and recipe auto‑optimization. These approaches can reduce process development time and improve run‑to‑run repeatability, particularly for high‑mix MEMS fabs.</p>
+
+      <h3>6.4 Heterogeneous Integration and Advanced Packaging</h3>
+      <p>The semiconductor industry's shift toward chiplet architectures and 3D stacking is driving demand for higher‑density TSVs, deeper vias, and tighter pitch features. DRIE process development is evolving to meet these needs with improved uniformity, throughput, and compatibility with advanced wafer‑level packaging flows.</p>
       <hr/>
 
       <h2>7) Conclusion & Call‑to‑Action</h2>
-      <p>The Bosch process has redefined what is possible in microfabrication, enabling the miniaturization and integration of MEMS, photonics, and 3D ICs. As process innovations continue, DRIE will remain a key enabler of nanotechnology and semiconductor advancement.</p>
-      <p>Need guidance on DRIE vs cryogenic etching for your application? Our engineers at NineScrolls can help evaluate your aspect ratio, etch depth, and material requirements to recommend the best DRIE solution.</p>
-      <p><a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/products/icp-etcher">DRIE Solutions</a> · <a href="/contact?topic=DRIE%20Inquiry">Contact Us</a></p>
-
+      <p>The Bosch process has fundamentally expanded the capabilities of silicon microfabrication, enabling the miniaturization and integration of MEMS, photonics, power devices, and 3D ICs. Understanding the interplay between process parameters, sidewall quality, and etch uniformity is essential for engineers working with deep silicon etching. As the industry moves toward even more demanding aspect ratios and tighter dimensional tolerances, innovations in cryogenic processes, ALE, and intelligent process control will continue to advance what DRIE can achieve.</p>
+      <p>Need guidance on Bosch vs cryogenic DRIE for your application? Our engineers at NineScrolls can help evaluate your aspect ratio, etch depth, and material stack to recommend the optimal DRIE solution for your process requirements.</p>
+      <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;"><a href="/products/icp-etcher" style="color: #2563eb;">ICP Etcher Series</a> · <a href="/products/icp-etcher" style="color: #2563eb;">DRIE Solutions</a> · <a href="/contact?topic=DRIE%20Inquiry" style="color: #2563eb;">Contact Us for DRIE Consultation</a></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Laermer, F. & Schilp, A. "Method of Anisotropically Etching Silicon." U.S. Patent 5,501,893 (1996). Robert Bosch GmbH.</li>
         <li>Wu, B., Kumar, A. & Pamarthy, S. "High aspect ratio silicon etch: A review." <em>Journal of Applied Physics</em>, 108(5), 051101 (2010). <a href="https://doi.org/10.1063/1.3474652" target="_blank" rel="noopener noreferrer">doi:10.1063/1.3474652</a></li>
-        <li>Blauw, M. A., et al. "Advanced time-multiplexed plasma etching of high aspect ratio silicon structures." <em>Journal of Vacuum Science & Technology B</em>, 20(6), 3106–3110 (2002). <a href="https://doi.org/10.1116/1.1523403" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1523403</a></li>
-        <li>Rangelow, I. W. "Critical tasks in high aspect ratio silicon dry etching for microelectromechanical systems." <em>Journal of Vacuum Science & Technology A</em>, 21(4), 1550–1562 (2003). <a href="https://doi.org/10.1116/1.1580488" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1580488</a></li>
+        <li>Blauw, M. A., et al. "Advanced time-multiplexed plasma etching of high aspect ratio silicon structures." <em>Journal of Vacuum Science &amp; Technology B</em>, 20(6), 3106–3110 (2002). <a href="https://doi.org/10.1116/1.1523403" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1523403</a></li>
+        <li>Rangelow, I. W. "Critical tasks in high aspect ratio silicon dry etching for microelectromechanical systems." <em>Journal of Vacuum Science &amp; Technology A</em>, 21(4), 1550–1562 (2003). <a href="https://doi.org/10.1116/1.1580488" target="_blank" rel="noopener noreferrer">doi:10.1116/1.1580488</a></li>
+        <li>Marty, F., et al. "Advanced etching of silicon based on deep reactive ion etching for silicon high aspect ratio microstructures and three-dimensional micro- and nanostructures." <em>Microelectronics Journal</em>, 36(7), 673–677 (2005). <a href="https://doi.org/10.1016/j.mejo.2005.04.039" target="_blank" rel="noopener noreferrer">doi:10.1016/j.mejo.2005.04.039</a></li>
+        <li>Henry, M. D., et al. "Alumina etch masks for fabrication of high-aspect-ratio silicon micropillars and nanopillars." <em>Nanotechnology</em>, 20(25), 255305 (2009). <a href="https://doi.org/10.1088/0957-4484/20/25/255305" target="_blank" rel="noopener noreferrer">doi:10.1088/0957-4484/20/25/255305</a></li>
+        <li>Sammak, A., et al. "Deep reactive ion etching of silicon for microsystem fabrication." <em>Journal of Micromechanics and Microengineering</em>, 16(4), 912–916 (2006).</li>
+        <li>Gerlt, M. S., et al. "Reduced etch lag and high aspect ratios by deep reactive ion etching (DRIE)." <em>Micromachines</em>, 12(5), 542 (2021). <a href="https://doi.org/10.3390/mi12050542" target="_blank" rel="noopener noreferrer">doi:10.3390/mi12050542</a></li>
       </ol>
     `,
     author: 'NineScrolls Engineering',
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
-    readTime: 10,
+    readTime: 18,
     imageUrl: '/assets/images/insights/drie-cover-lg.webp',
     slug: 'deep-reactive-ion-etching-bosch-process',
-    tags: ['DRIE','Bosch process','reactive ion etching']
+    tags: ['DRIE','Bosch process','reactive ion etching','MEMS','TSV','silicon etching','high aspect ratio','ICP-RIE','scalloping','ARDE']
   },
   {
     id: '22',
@@ -963,15 +1096,15 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'Compare Reactive Ion Etching (RIE) and Ion Milling (IBE) — mechanisms, selectivity, etch rates, throughput, process challenges, and best use cases for semiconductor and research applications. Includes DRIE and RIBE hybrid approaches.',
     content: `
       <h2>Introduction</h2>
-      <p>In advanced semiconductor fabrication and materials science research, <strong>dry etching</strong> plays a central role in transferring patterns with high fidelity. Among the most widely used techniques are <a href=”/insights/reactive-ion-etching-guide”>Reactive Ion Etching (RIE)</a> and Ion Milling (also called <a href=”/products/ibe-ribe”>Ion Beam Etching, IBE</a>).</p>
-      <p>While both approaches rely on energetic ions to remove material, they differ significantly in their mechanisms, process control, and suitable applications. Understanding these differences is essential for selecting the right <a href=”/insights/semiconductor-etchers-overview”>microfabrication etching method</a> for your process requirements.</p>
+      <p>In advanced semiconductor fabrication and materials science research, <strong>dry etching</strong> plays a central role in transferring patterns with high fidelity. Among the most widely used techniques are <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a> and Ion Milling (also called <a href="/products/ibe-ribe">Ion Beam Etching, IBE</a>).</p>
+      <p>While both approaches rely on energetic ions to remove material, they differ significantly in their mechanisms, process control, and suitable applications. Understanding these differences is essential for selecting the right <a href="/insights/semiconductor-etchers-overview">microfabrication etching method</a> for your process requirements.</p>
       <p>This guide provides quantitative process data, practical engineering insights, and a structured decision framework to help you choose between RIE, IBE, and hybrid approaches such as RIBE.</p>
       <hr/>
 
       <h2>Working Principles</h2>
       <h3>Reactive Ion Etching (RIE)</h3>
       <ul>
-        <li><strong>Mechanism:</strong> Combines chemical reactions (from reactive gases like CF₄, SF₆, Cl₂, O₂) with ion bombardment from a <a href=”/insights/plasma-etching-explained-fundamentals-applications”>plasma</a>. The synergy between chemical and physical pathways yields etch rates significantly higher than either mechanism alone.</li>
+        <li><strong>Mechanism:</strong> Combines chemical reactions (from reactive gases like CF₄, SF₆, Cl₂, O₂) with ion bombardment from a <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma</a>. The synergy between chemical and physical pathways yields etch rates significantly higher than either mechanism alone.</li>
         <li><strong>Etch Directionality:</strong> Achieves anisotropic etching because ions are accelerated toward the substrate under an electric field, while reactive radicals provide selective chemical reactions.</li>
         <li><strong>Control Parameters:</strong> Gas chemistry, RF power, pressure, and bias voltage allow fine‑tuning of etch rate, selectivity, and profile.</li>
         <li><strong>Typical Etch Rates:</strong> Si in SF₆ plasma: 100–500 nm/min; SiO₂ in CHF₃/CF₄ plasma: 50–200 nm/min; GaAs in Cl₂/BCl₃ plasma: 200–800 nm/min (rates vary with RF power, pressure, and system configuration).</li>
@@ -979,19 +1112,19 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p><strong>Key takeaway:</strong> RIE is best seen as a hybrid process: physical sputtering enhances anisotropy, while chemical reactions provide high selectivity. The combination of both mechanisms makes RIE the workhorse of semiconductor pattern transfer.</p>
 
-      <figure style=”margin: 24px 0; text-align: center;”>
-        <img src=”/assets/images/insights/rie-vs-milling-rie-chamber.png” alt=”RIE process chamber cross-section schematic showing plasma generation, ion trajectory, reactive gas flow, and substrate positioning for reactive ion etching” style=”max-width: 100%; height: auto; border-radius: 8px;” loading=”lazy” />
-        <figcaption style=”margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;”>Figure 1: RIE Process Chamber Schematic — Cross-section view showing plasma generation, directed ion bombardment, and reactive radical pathways that enable the hybrid chemical + physical etching mechanism.</figcaption>
+      <figure style="margin: 24px 0; text-align: center;">
+        <img src="/assets/images/insights/rie-vs-milling-rie-chamber.png" alt="RIE process chamber cross-section schematic showing plasma generation, ion trajectory, reactive gas flow, and substrate positioning for reactive ion etching" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: RIE Process Chamber Schematic — Cross-section view showing plasma generation, directed ion bombardment, and reactive radical pathways that enable the hybrid chemical + physical etching mechanism.</figcaption>
       </figure>
 
       <h4>DRIE: Deep Reactive Ion Etching (Bosch Process)</h4>
-      <p>An important variant of RIE is <a href=”/insights/deep-reactive-ion-etching-bosch-process”>Deep Reactive Ion Etching (DRIE)</a>, particularly the Bosch process. DRIE uses alternating cycles of etching (typically SF₆) and passivation (C₄F₈) to achieve near-vertical sidewalls at extreme depths:</p>
+      <p>An important variant of RIE is <a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive Ion Etching (DRIE)</a>, particularly the Bosch process. DRIE uses alternating cycles of etching (typically SF₆) and passivation (C₄F₈) to achieve near-vertical sidewalls at extreme depths:</p>
       <ul>
         <li><strong>High aspect ratio capability:</strong> Aspect ratios exceeding 50:1 are achievable, enabling structures from 1 µm to over 500 µm deep.</li>
         <li><strong>Near-vertical sidewalls:</strong> Cyclic passivation protects sidewalls during each etch step, maintaining profile integrity.</li>
         <li><strong>Key applications:</strong> MEMS inertial sensors (accelerometers, gyroscopes), Through-Silicon Vias (TSVs) for 3D IC integration, pressure sensor diaphragms, and microfluidic channels.</li>
       </ul>
-      <p>For applications requiring high-aspect-ratio structures, DRIE is often the technique of choice. See also our comparison of <a href=”/insights/cryogenic-etching-vs-bosch-process”>Cryogenic Plasma Etching vs. the Bosch Process</a> for alternative deep-etch approaches.</p>
+      <p>For applications requiring high-aspect-ratio structures, DRIE is often the technique of choice. See also our comparison of <a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Plasma Etching vs. the Bosch Process</a> for alternative deep-etch approaches.</p>
       <hr/>
 
       <h3>Ion Milling (Ion Beam Etching, IBE)</h3>
@@ -1001,11 +1134,11 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Control Parameters:</strong> Beam energy (typically 300–1000 eV), incidence angle, and ion flux primarily determine etch rate and profile.</li>
         <li><strong>Typical Etch Rates:</strong> Ar⁺ ion milling of most materials: 10–100 nm/min. Rates depend on beam energy, angle, and target material sputter yield — for example, Au sputters at roughly 2–3× the rate of SiO₂ under the same beam conditions.</li>
       </ul>
-      <p><strong>Key takeaway:</strong> Ion Milling is essentially a “sandblasting” process at the nanoscale, offering precise directional control but no inherent chemical selectivity. Its universality — the ability to etch virtually any material — is its defining strength.</p>
+      <p><strong>Key takeaway:</strong> Ion Milling is essentially a "sandblasting" process at the nanoscale, offering precise directional control but no inherent chemical selectivity. Its universality — the ability to etch virtually any material — is its defining strength.</p>
 
-      <figure style=”margin: 24px 0; text-align: center;”>
-        <img src=”/assets/images/insights/rie-vs-milling-ibe-system.png” alt=”Ion Beam Etching (IBE) system schematic showing ion source, beam collimation optics, adjustable sample stage angle, and secondary ion mass spectrometry endpoint detection” style=”max-width: 100%; height: auto; border-radius: 8px;” loading=”lazy” />
-        <figcaption style=”margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;”>Figure 2: IBE System Schematic — Illustrating the ion source, beam collimation, adjustable-angle sample stage, and the directional sputtering mechanism that enables precise physical etching of any material.</figcaption>
+      <figure style="margin: 24px 0; text-align: center;">
+        <img src="/assets/images/insights/rie-vs-milling-ibe-system.png" alt="Ion Beam Etching (IBE) system schematic showing ion source, beam collimation optics, adjustable sample stage angle, and secondary ion mass spectrometry endpoint detection" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: IBE System Schematic — Illustrating the ion source, beam collimation, adjustable-angle sample stage, and the directional sputtering mechanism that enables precise physical etching of any material.</figcaption>
       </figure>
       <hr/>
 
@@ -1015,7 +1148,7 @@ export const insightsPosts: InsightsPost[] = [
       <ul>
         <li>High selectivity between materials (e.g., Si:SiO₂ > 30:1 with optimized chemistry).</li>
         <li>Can achieve vertical sidewalls with anisotropic control.</li>
-        <li>Widely scalable for semiconductor production — <a href=”/products/rie-etcher”>RIE</a> and <a href=”/products/icp-etcher”>ICP-RIE</a> systems handle wafers from small research pieces to 300 mm production.</li>
+        <li>Widely scalable for semiconductor production — <a href="/products/rie-etcher">RIE</a> and <a href="/products/icp-etcher">ICP-RIE</a> systems handle wafers from small research pieces to 300 mm production.</li>
         <li>High throughput (100–500 nm/min for common semiconductors), making it suitable for volume manufacturing.</li>
       </ul>
       <p><strong>Limitations:</strong></p>
@@ -1044,105 +1177,105 @@ export const insightsPosts: InsightsPost[] = [
         <li>More expensive and complex beamline systems.</li>
       </ul>
 
-      <figure style=”margin: 24px 0; text-align: center;”>
-        <img src=”/assets/images/insights/rie-vs-milling-radar-comparison.png” alt=”Radar chart comparing RIE and Ion Beam Etching across six dimensions: selectivity, etch rate, material versatility, profile control, surface damage, and throughput” style=”max-width: 100%; height: auto; border-radius: 8px;” loading=”lazy” />
-        <figcaption style=”margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;”>Figure 3: RIE vs. IBE Performance Comparison — Radar chart illustrating the complementary strengths of each technique across key process dimensions.</figcaption>
+      <figure style="margin: 24px 0; text-align: center;">
+        <img src="/assets/images/insights/rie-vs-milling-radar-comparison.png" alt="Radar chart comparing RIE and Ion Beam Etching across six dimensions: selectivity, etch rate, material versatility, profile control, surface damage, and throughput" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 3: RIE vs. IBE Performance Comparison — Radar chart illustrating the complementary strengths of each technique across key process dimensions.</figcaption>
       </figure>
       <hr/>
 
       <h2>Etch Rate Comparison by Material</h2>
       <p>The following table provides typical etch rate ranges for common substrate and thin-film materials under representative RIE and Ion Milling conditions. Actual rates depend on system configuration, power, pressure, and beam parameters.</p>
-      <table style=”width: 100%; border-collapse: collapse; margin: 16px 0;”>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
-          <tr style=”background: #f6f7fb;”>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Material</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>RIE Etch Rate (nm/min)</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>RIE Gas Chemistry</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Ion Milling Rate (nm/min)</th>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Material</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE Etch Rate (nm/min)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE Gas Chemistry</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Ion Milling Rate (nm/min)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Si</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>100–500</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>SF₆, SF₆/O₂, Cl₂/HBr</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>20–60</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Si</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">100–500</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SF₆, SF₆/O₂, Cl₂/HBr</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–60</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>SiO₂</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>50–200</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>CHF₃/CF₄, C₄F₈/Ar</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>15–40</td>
-          </tr>
-          <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>GaAs</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>200–800</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Cl₂/BCl₃, SiCl₄</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>30–80</td>
-          </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>GaN</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>100–400</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Cl₂/BCl₃/Ar</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>20–50</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SiO₂</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–200</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">CHF₃/CF₄, C₄F₈/Ar</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">15–40</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>SiC</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>50–200</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>SF₆/O₂, CF₄/O₂</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>10–30</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">GaAs</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">200–800</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Cl₂/BCl₃, SiCl₄</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">30–80</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Au</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>— (no effective RIE chemistry)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>—</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>50–100</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">GaN</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">100–400</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Cl₂/BCl₃/Ar</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–50</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Pt</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>— (no effective RIE chemistry)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>—</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>30–70</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SiC</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–200</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SF₆/O₂, CF₄/O₂</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–30</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Au</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (no effective RIE chemistry)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">—</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–100</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Pt</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (no effective RIE chemistry)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">—</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">30–70</td>
           </tr>
         </tbody>
       </table>
-      <p style=”font-size: 0.9em; color: #666;”><em>Note: All values are representative ranges. Actual etch rates depend on specific equipment, process parameters, and material quality. Ion milling rates are for Ar⁺ at 500–800 eV beam energy.</em></p>
+      <p style="font-size: 0.9em; color: #666;"><em>Note: All values are representative ranges. Actual etch rates depend on specific equipment, process parameters, and material quality. Ion milling rates are for Ar⁺ at 500–800 eV beam energy.</em></p>
       <hr/>
 
       <h2>Process Challenges and Practical Solutions</h2>
       <p>Both RIE and Ion Milling present engineering challenges in practice. The following table summarizes common issues encountered in production and research, along with proven mitigation strategies.</p>
-      <table style=”width: 100%; border-collapse: collapse; margin: 16px 0;”>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
-          <tr style=”background: #f6f7fb;”>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Challenge</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Technique</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Mitigation Strategy</th>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Challenge</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Technique</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Mitigation Strategy</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”><strong>Microloading</strong> — etch rate varies between dense and isolated features</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>RIE</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Optimize gas flow distribution, adjust power density, use dummy pattern fill in low-density regions. With proper dummy structures, rate variation can be controlled to within ±5%.</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Microloading</strong> — etch rate varies between dense and isolated features</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">RIE</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Optimize gas flow distribution, adjust power density, use dummy pattern fill in low-density regions. With proper dummy structures, rate variation can be controlled to within ±5%.</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”><strong>ARDE</strong> (Aspect Ratio Dependent Etching) — etch rate decreases in deeper/narrower features</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>RIE / DRIE</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Adjust etch/passivation cycle parameters, increase ion energy, optimize gas ratios. For MEMS deep trenches (AR > 20:1), progressively increasing SF₆ flow can compensate ARDE to maintain < 10% bottom rate deviation.</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>ARDE</strong> (Aspect Ratio Dependent Etching) — etch rate decreases in deeper/narrower features</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">RIE / DRIE</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Adjust etch/passivation cycle parameters, increase ion energy, optimize gas ratios. For MEMS deep trenches (AR > 20:1), progressively increasing SF₆ flow can compensate ARDE to maintain < 10% bottom rate deviation.</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”><strong>Redeposition</strong> — sputtered material redeposits on feature sidewalls</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Ion Milling</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Rotate sample stage continuously during milling, optimize incidence angle (typically 30°–60° oblique), improve beam scan uniformity. In MRAM MTJ patterning, adjusting Ar⁺ incidence to 45° with continuous rotation has been shown to reduce redeposition-induced short-circuit defects by approximately 80%.</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Redeposition</strong> — sputtered material redeposits on feature sidewalls</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Ion Milling</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Rotate sample stage continuously during milling, optimize incidence angle (typically 30°–60° oblique), improve beam scan uniformity. In MRAM MTJ patterning, adjusting Ar⁺ incidence to 45° with continuous rotation has been shown to reduce redeposition-induced short-circuit defects by approximately 80%.</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”><strong>Surface Damage &amp; Amorphization</strong> — ion bombardment disrupts surface crystal structure</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Ion Milling</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Reduce beam energy to 300–500 eV range, apply post-etch thermal annealing to restore lattice order. In GaN HEMT gate etching, reducing beam energy from 800 eV to 400 eV has been reported to recover channel mobility to > 95% of the pristine value.</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Surface Damage &amp; Amorphization</strong> — ion bombardment disrupts surface crystal structure</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Ion Milling</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Reduce beam energy to 300–500 eV range, apply post-etch thermal annealing to restore lattice order. In GaN HEMT gate etching, reducing beam energy from 800 eV to 400 eV has been reported to recover channel mobility to > 95% of the pristine value.</td>
           </tr>
         </tbody>
       </table>
-      <p>These “problem + solution” insights reflect real-world process engineering experience. For more on plasma etch troubleshooting, see our <a href=”/insights/plasma-non-uniform-etch-chamber-solutions”>guide to non-uniform etch chamber solutions</a>.</p>
+      <p>These "problem + solution" insights reflect real-world process engineering experience. For more on plasma etch troubleshooting, see our <a href="/insights/plasma-non-uniform-etch-chamber-solutions">guide to non-uniform etch chamber solutions</a>.</p>
       <hr/>
 
       <h2>Application Scenarios</h2>
@@ -1151,78 +1284,78 @@ export const insightsPosts: InsightsPost[] = [
           <ul>
             <li>Etching semiconductors (Si, GaAs, GaN, SiC) and dielectrics (SiO₂, Si₃N₄) where gas chemistry enables high selectivity.</li>
             <li>Fabricating <strong>CMOS</strong>, <strong>MEMS</strong>, <strong>TSVs</strong>, and <strong>photonic devices</strong> — applications where vertical profiles and throughput are critical.</li>
-            <li>High aspect ratio patterns are required — standard RIE handles up to ~5:1 AR, while <a href=”/insights/deep-reactive-ion-etching-bosch-process”>ICP-RIE and DRIE</a> extend this to 20:1 and beyond.</li>
+            <li>High aspect ratio patterns are required — standard RIE handles up to ~5:1 AR, while <a href="/insights/deep-reactive-ion-etching-bosch-process">ICP-RIE and DRIE</a> extend this to 20:1 and beyond.</li>
           </ul>
-          <p style=”margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;”>If you are looking for a flexible RIE or ICP system for your lab, NineScrolls offers a full range of solutions from R&amp;D to small-batch production. <a href=”/products/rie-etcher” style=”color: #2563eb;”>View RIE Systems</a> · <a href=”/products/icp-etcher” style=”color: #2563eb;”>View ICP Systems</a></p>
+          <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;">If you are looking for a flexible RIE or ICP system for your lab, NineScrolls offers a full range of solutions from R&amp;D to small-batch production. <a href="/products/rie-etcher" style="color: #2563eb;">View RIE Systems</a> · <a href="/products/icp-etcher" style="color: #2563eb;">View ICP Systems</a></p>
         </li>
         <li><strong>Ion Milling is preferred when:</strong>
           <ul>
             <li>Etching metals (Au, Pt, Ta, Nb, Ir, etc.) or compound materials resistant to RIE chemistry.</li>
             <li>Pattern transfer in magnetic devices (<strong>MRAM</strong>, <strong>spintronics</strong>) where the magnetic stack lacks viable reactive etch recipes.</li>
             <li>Research‑scale fabrication requiring directional control at oblique angles for custom etch profiles.</li>
-            <li>Removing thin films or “cleaning” surfaces without chemical residues.</li>
+            <li>Removing thin films or "cleaning" surfaces without chemical residues.</li>
           </ul>
-          <p style=”margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;”>For precision patterning of metal thin films or magnetic materials, our IBE/RIBE systems support multi-angle milling and endpoint detection. <a href=”/products/ibe-ribe” style=”color: #2563eb;”>View IBE/RIBE Systems</a></p>
+          <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;">For precision patterning of metal thin films or magnetic materials, our IBE/RIBE systems support multi-angle milling and endpoint detection. <a href="/products/ibe-ribe" style="color: #2563eb;">View IBE/RIBE Systems</a></p>
         </li>
       </ul>
       <hr/>
 
       <h2>Decision Framework</h2>
-      <table style=”width: 100%; border-collapse: collapse; margin: 16px 0;”>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
-          <tr style=”background: #f6f7fb;”>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Factor</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Reactive Ion Etching (RIE)</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Ion Milling (IBE)</th>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Factor</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Reactive Ion Etching (RIE)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Ion Milling (IBE)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Etch Mechanism</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Physical + Chemical (Plasma)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Physical Sputtering (Ion Beam)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Etch Mechanism</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Physical + Chemical (Plasma)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Physical Sputtering (Ion Beam)</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Selectivity</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>High — tunable via gas chemistry (e.g., Si:SiO₂ > 30:1)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low — non‑selective physical sputtering</td>
-          </tr>
-          <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Etch Rate</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>100–500 nm/min (material dependent)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>10–100 nm/min (material dependent)</td>
-          </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Throughput</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>High — suitable for volume production</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low — primarily R&amp;D and specialty processes</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Selectivity</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High — tunable via gas chemistry (e.g., Si:SiO₂ > 30:1)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — non‑selective physical sputtering</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Material Scope</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Semiconductors, dielectrics (requires suitable gas chemistry)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Any material — metals, insulators, compounds</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Etch Rate</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">100–500 nm/min (material dependent)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–100 nm/min (material dependent)</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Profile Control</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Vertical sidewalls via anisotropic plasma</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Beam-angle dependent — continuously adjustable</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Throughput</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High — suitable for volume production</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — primarily R&amp;D and specialty processes</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Damage/Residue</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Plasma damage, possible polymer residue</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Surface amorphization, redeposition</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Material Scope</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics (requires suitable gas chemistry)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material — metals, insulators, compounds</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Best Use Case</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>High‑volume semiconductor &amp; MEMS processes</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Metals, magnetic devices, research‑scale patterning</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Profile Control</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical sidewalls via anisotropic plasma</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Beam-angle dependent — continuously adjustable</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Damage/Residue</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Plasma damage, possible polymer residue</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Surface amorphization, redeposition</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Best Use Case</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High‑volume semiconductor &amp; MEMS processes</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Metals, magnetic devices, research‑scale patterning</td>
           </tr>
         </tbody>
       </table>
 
-      <figure style=”margin: 24px 0; text-align: center;”>
-        <img src=”/assets/images/insights/rie-vs-milling-decision-flowchart.png” alt=”Decision flowchart for choosing between RIE and Ion Milling based on material type, selectivity requirements, and throughput needs” style=”max-width: 100%; height: auto; border-radius: 8px;” loading=”lazy” />
-        <figcaption style=”margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;”>Figure 4: Decision Flowchart — A simplified guide to selecting between RIE, DRIE, IBE, and RIBE based on your material, selectivity, and throughput requirements.</figcaption>
+      <figure style="margin: 24px 0; text-align: center;">
+        <img src="/assets/images/insights/rie-vs-milling-decision-flowchart.png" alt="Decision flowchart for choosing between RIE and Ion Milling based on material type, selectivity requirements, and throughput needs" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 4: Decision Flowchart — A simplified guide to selecting between RIE, DRIE, IBE, and RIBE based on your material, selectivity, and throughput requirements.</figcaption>
       </figure>
       <hr/>
 
@@ -1236,50 +1369,50 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
 
       <h3>Three-Way Comparison: RIE vs. IBE vs. RIBE</h3>
-      <table style=”width: 100%; border-collapse: collapse; margin: 16px 0;”>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
-          <tr style=”background: #f6f7fb;”>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>Dimension</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>RIE</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>IBE</th>
-            <th style=”border: 1px solid #e5e7eb; padding: 8px; text-align: left;”>RIBE</th>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Dimension</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">IBE</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIBE</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Selectivity</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>High</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Moderate — tunable via reactive gas</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Selectivity</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — tunable via reactive gas</td>
           </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Plasma Damage</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Moderate — direct plasma exposure</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low — decoupled beam</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low — decoupled beam</td>
-          </tr>
-          <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Directional Control</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Vertical (field-driven)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Full angle control</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Full angle control</td>
-          </tr>
-          <tr style=”background: #fafbfc;”>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Material Range</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Semiconductors, dielectrics</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Any material</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Broad — including some metals with reactive assist</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Plasma Damage</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — direct plasma exposure</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
           </tr>
           <tr>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Redeposition</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Low (volatile etch products)</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>High risk</td>
-            <td style=”border: 1px solid #e5e7eb; padding: 8px;”>Reduced — reactive gas forms volatile by-products</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Directional Control</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical (field-driven)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Material Range</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Broad — including some metals with reactive assist</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Redeposition</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (volatile etch products)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High risk</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Reduced — reactive gas forms volatile by-products</td>
           </tr>
         </tbody>
       </table>
 
-      <p style=”margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;”>NineScrolls' <a href=”/products/ibe-ribe” style=”color: #2563eb;”>RIBE systems</a> combine chemical enhancement with ion beam directional control, making them especially effective for damage-sensitive materials that require selective etching.</p>
+      <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;">NineScrolls' <a href="/products/ibe-ribe" style="color: #2563eb;">RIBE systems</a> combine chemical enhancement with ion beam directional control, making them especially effective for damage-sensitive materials that require selective etching.</p>
       <hr/>
 
       <h2>Conclusion</h2>
@@ -1291,22 +1424,22 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>In practice, many advanced research labs and fabs integrate multiple etching technologies, selecting the optimal technique for each layer and material in their process flow.</p>
 
-      <div style=”margin: 32px 0; padding: 24px 28px; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); border-radius: 12px; color: #ffffff; text-align: center;”>
-        <h3 style=”margin: 0 0 8px 0; color: #ffffff; font-size: 1.25em;”>Not sure which etching technique fits your process?</h3>
-        <p style=”margin: 0 0 16px 0; color: #e0e7ff; font-size: 0.95em;”>Whether you are etching metals with IBE or patterning semiconductors with RIE, our engineering team can help you evaluate materials, geometries, and throughput requirements to recommend the right solution.</p>
-        <a href=”/contact?topic=Etching%20Inquiry” style=”display: inline-block; padding: 12px 28px; background: #ffffff; color: #1e3a5f; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1em;”>Discuss Your Requirements</a>
+      <div style="margin: 32px 0; padding: 24px 28px; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); border-radius: 12px; color: #ffffff; text-align: center;">
+        <h3 style="margin: 0 0 8px 0; color: #ffffff; font-size: 1.25em;">Not sure which etching technique fits your process?</h3>
+        <p style="margin: 0 0 16px 0; color: #e0e7ff; font-size: 0.95em;">Whether you are etching metals with IBE or patterning semiconductors with RIE, our engineering team can help you evaluate materials, geometries, and throughput requirements to recommend the right solution.</p>
+        <a href="/contact?topic=Etching%20Inquiry" style="display: inline-block; padding: 12px 28px; background: #ffffff; color: #1e3a5f; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1em;">Discuss Your Requirements</a>
       </div>
 
       <h2>References</h2>
-      <ol style=”font-size: 0.95em; line-height: 1.8;”>
-        <li>Coburn, J. W. “Plasma-assisted etching.” <em>Plasma Chemistry and Plasma Processing</em>, 2(1), 1–41 (1982). <a href=”https://doi.org/10.1007/BF00566856” target=”_blank” rel=”noopener noreferrer”>doi:10.1007/BF00566856</a></li>
-        <li>Sigmund, P. “Theory of sputtering. I. Sputtering yield of amorphous and polycrystalline targets.” <em>Physical Review</em>, 184(2), 383 (1969). <a href=”https://doi.org/10.1103/PhysRev.184.383” target=”_blank” rel=”noopener noreferrer”>doi:10.1103/PhysRev.184.383</a></li>
-        <li>Harper, J. M. E. “Ion beam etching.” In <em>Thin Film Processes</em>, Academic Press, 175–206 (1978). ISBN 978-0125219501.</li>
-        <li>Flamm, D. L. & Donnelly, V. M. “The design of plasma etchants.” <em>Plasma Chemistry and Plasma Processing</em>, 1(4), 317–363 (1981). <a href=”https://doi.org/10.1007/BF00565992” target=”_blank” rel=”noopener noreferrer”>doi:10.1007/BF00565992</a></li>
-        <li>Wu, B., Kumar, A. & Pamarthy, S. “High aspect ratio silicon etch: A review.” <em>Journal of Applied Physics</em>, 108(5), 051101 (2010). <a href=”https://doi.org/10.1063/1.3474652” target=”_blank” rel=”noopener noreferrer”>doi:10.1063/1.3474652</a></li>
-        <li>Lee, S. et al. “Ion beam etching of MTJ nanopillars for high-density MRAM.” <em>Journal of Vacuum Science &amp; Technology B</em>, 36(3), 032201 (2018). <a href=”https://doi.org/10.1116/1.5020731” target=”_blank” rel=”noopener noreferrer”>doi:10.1116/1.5020731</a></li>
-        <li>Laermer, F. & Schilp, A. “Method of anisotropically etching silicon.” U.S. Patent 5,501,893 (1996). (Bosch process patent)</li>
-        <li>Gottscho, R. A., Jurgensen, C. W. & Vitkavage, D. J. “Microscopic uniformity in plasma etching.” <em>Journal of Vacuum Science &amp; Technology B</em>, 10(5), 2133–2147 (1992). <a href=”https://doi.org/10.1116/1.586180” target=”_blank” rel=”noopener noreferrer”>doi:10.1116/1.586180</a></li>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Coburn, J. W. "Plasma-assisted etching." <em>Plasma Chemistry and Plasma Processing</em>, 2(1), 1–41 (1982). <a href="https://doi.org/10.1007/BF00566856" target="_blank" rel="noopener noreferrer">doi:10.1007/BF00566856</a></li>
+        <li>Sigmund, P. "Theory of sputtering. I. Sputtering yield of amorphous and polycrystalline targets." <em>Physical Review</em>, 184(2), 383 (1969). <a href="https://doi.org/10.1103/PhysRev.184.383" target="_blank" rel="noopener noreferrer">doi:10.1103/PhysRev.184.383</a></li>
+        <li>Harper, J. M. E. "Ion beam etching." In <em>Thin Film Processes</em>, Academic Press, 175–206 (1978). ISBN 978-0125219501.</li>
+        <li>Flamm, D. L. & Donnelly, V. M. "The design of plasma etchants." <em>Plasma Chemistry and Plasma Processing</em>, 1(4), 317–363 (1981). <a href="https://doi.org/10.1007/BF00565992" target="_blank" rel="noopener noreferrer">doi:10.1007/BF00565992</a></li>
+        <li>Wu, B., Kumar, A. & Pamarthy, S. "High aspect ratio silicon etch: A review." <em>Journal of Applied Physics</em>, 108(5), 051101 (2010). <a href="https://doi.org/10.1063/1.3474652" target="_blank" rel="noopener noreferrer">doi:10.1063/1.3474652</a></li>
+        <li>Lee, S. et al. "Ion beam etching of MTJ nanopillars for high-density MRAM." <em>Journal of Vacuum Science &amp; Technology B</em>, 36(3), 032201 (2018). <a href="https://doi.org/10.1116/1.5020731" target="_blank" rel="noopener noreferrer">doi:10.1116/1.5020731</a></li>
+        <li>Laermer, F. & Schilp, A. "Method of anisotropically etching silicon." U.S. Patent 5,501,893 (1996). (Bosch process patent)</li>
+        <li>Gottscho, R. A., Jurgensen, C. W. & Vitkavage, D. J. "Microscopic uniformity in plasma etching." <em>Journal of Vacuum Science &amp; Technology B</em>, 10(5), 2133–2147 (1992). <a href="https://doi.org/10.1116/1.586180" target="_blank" rel="noopener noreferrer">doi:10.1116/1.586180</a></li>
       </ol>
     `,
     author: 'NineScrolls Engineering',
@@ -1339,9 +1472,9 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong><a href="/insights/icp-rie-technology-advanced-etching">Inductively Coupled Plasma RIE (ICP‑RIE)</a></strong><br/>Uses high-density plasma with independent control of ion density and ion energy. Suited for advanced processes requiring deep etching, high selectivity, and smooth sidewalls.</li>
         <li><strong>Deep Reactive Ion Etching (DRIE)</strong><br/>Specialized for high aspect ratio (HAR) etching, commonly using the Bosch process. Critical for MEMS, TSV (Through‑Silicon Vias), and photonic devices.</li>
         <li><strong>Ion Beam Etching (IBE/RIBE)</strong><br/>Uses a focused ion beam for physical sputtering. Offers excellent directionality but is slower and more niche—often used in optics and magnetic films.</li>
-        <li><strong>Wet Benches with Plasma Strippers (Complementary Tools)</strong><br/>While not strictly “etchers,” these are often needed for resist stripping or pre‑cleaning processes, ensuring compatibility in a complete etching workflow.</li>
+        <li><strong>Wet Benches with Plasma Strippers (Complementary Tools)</strong><br/>While not strictly "etchers," these are often needed for resist stripping or pre‑cleaning processes, ensuring compatibility in a complete etching workflow.</li>
       </ul>
-      <p>To understand the technical differences between PE, RIE, and ICP-RIE in detail — including process parameters, reactor architectures, and performance trade-offs — see our <a href=”/insights/understanding-differences-pe-rie-icp-rie-plasma-etching”>comprehensive comparison guide</a>.</p>
+      <p>To understand the technical differences between PE, RIE, and ICP-RIE in detail — including process parameters, reactor architectures, and performance trade-offs — see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">comprehensive comparison guide</a>.</p>
 
       <hr/>
 
