@@ -362,10 +362,11 @@ class SegmentAnalyticsService {
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
         if (!finalLeadTier) {
-          // Assign initial tier based on how the visitor was classified
-          if (isTargetOrgType && aiConfidence >= 0.7) {
-            finalLeadTier = 'A';
-          } else if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
+          // Assign initial tier based on how the visitor was classified.
+          // isTargetOrgType (education/government): AI is skipped, so start at B; behavior can boost to A.
+          // isAITarget: AI confirmed target org — B if confident, C otherwise.
+          // isBehaviorTarget: behavior-only signal — start at C.
+          if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
             finalLeadTier = 'B';
           } else {
             finalLeadTier = 'C';
@@ -578,9 +579,7 @@ class SegmentAnalyticsService {
       let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
       if (isTargetCustomer) {
         if (!finalLeadTier) {
-          if (isTargetOrgType && aiConfidence >= 0.7) {
-            finalLeadTier = 'A';
-          } else if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
+          if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
             finalLeadTier = 'B';
           } else {
             finalLeadTier = 'C';
