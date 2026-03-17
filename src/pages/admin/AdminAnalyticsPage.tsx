@@ -640,7 +640,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   const visitorOrgMap = new Map<string, {
     ip: string; org: string; orgName: string;
     country: string; region: string; city: string;
-    organizationType: string; confidence: number | null; finalConfidence: number | null;
+    organizationType: string; confidence: number | null;
     isTargetCustomer: boolean; leadTier: string | null;
     aiOrganizationType: string | null; aiConfidence: number | null;
     latitude: number | null; longitude: number | null; isp: string;
@@ -653,9 +653,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     if (!vid) continue;
 
     const existing = visitorOrgMap.get(vid);
-    // Keep the entry with the highest finalConfidence (most enriched analysis)
-    const candidateConf = e.finalConfidence ?? e.confidence ?? 0;
-    const existingConf = existing ? (existing.finalConfidence ?? existing.confidence ?? 0) : -1;
+    // Keep the entry with the highest confidence (AI confidence preferred, falls back to legacy)
+    const candidateConf = e.aiConfidence ?? e.confidence ?? 0;
+    const existingConf = existing ? (existing.aiConfidence ?? existing.confidence ?? 0) : -1;
 
     if (candidateConf > existingConf) {
       visitorOrgMap.set(vid, {
@@ -667,7 +667,6 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         city: e.city || existing?.city || '',
         organizationType: e.organizationType || existing?.organizationType || '',
         confidence: e.confidence ?? existing?.confidence ?? null,
-        finalConfidence: e.finalConfidence ?? existing?.finalConfidence ?? null,
         isTargetCustomer: e.isTargetCustomer || existing?.isTargetCustomer || false,
         leadTier: e.leadTier || existing?.leadTier || null,
         aiOrganizationType: e.aiOrganizationType || existing?.aiOrganizationType || null,
@@ -785,8 +784,10 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
         pageViewFlushMap.set(pvId, selectBestFlush(existing, { activeSeconds: e.activeSeconds, isFinal }));
       }
 
-      if (e.finalConfidence != null && e.finalConfidence > maxConf) {
-        maxConf = e.finalConfidence;
+      // Prefer AI confidence; fall back to legacy confidence for old events
+      const eventConf = e.aiConfidence ?? e.confidence ?? 0;
+      if (eventConf > maxConf) {
+        maxConf = eventConf;
       }
       if (e.leadTier && tierRank(e.leadTier) > tierRank(bestTier)) {
         bestTier = e.leadTier;

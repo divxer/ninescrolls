@@ -114,7 +114,6 @@ interface TargetAnalysisInput {
   organizationType?: string;
   orgName?: string;
   confidence?: number;
-  finalConfidence?: number;
   leadTier?: string;
 }
 
@@ -184,7 +183,6 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     organizationType: params.targetAnalysis?.organizationType,
     orgName: params.targetAnalysis?.orgName,
     confidence: params.targetAnalysis?.confidence,
-    finalConfidence: params.targetAnalysis?.finalConfidence,
     leadTier: params.targetAnalysis?.leadTier,
 
     behaviorScore: params.behaviorScore?.behaviorScore,
