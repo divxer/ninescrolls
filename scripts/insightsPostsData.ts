@@ -2119,7 +2119,7 @@ export const insightsPosts: InsightsPost[] = [
       <h2>TL;DR Summary</h2>
       <p>Plasma etching is a critical microfabrication technique that uses ionized gases to selectively remove material from substrates. The process combines chemical reactions and physical bombardment to achieve precise, anisotropic etching with excellent selectivity. Understanding plasma etching fundamentals is essential for semiconductor manufacturing, MEMS fabrication, and advanced materials processing.</p>
       
-      <h2>1) What is Plasma Etching?</h2>
+      <h2>1) What is Plasma Etching? Definition, Types, and Key Parameters</h2>
       <p>Plasma etching is a dry etching technique that uses ionized gases (plasma) to selectively remove material from a substrate surface. Unlike wet etching, which uses liquid chemicals, plasma etching offers superior control over etch profiles, better selectivity, and compatibility with modern microfabrication processes.</p>
       
       <h3>Key Components of Plasma Etching</h3>
@@ -2140,7 +2140,18 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Radicals:</strong> Highly reactive neutral species for chemical etching</li>
         <li><strong>Photons:</strong> Emitted during recombination processes</li>
       </ul>
-      
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Plasma etching reactor chamber diagram illustrating RF electrodes, gas inlet, plasma region, and substrate stage" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Plasma Etching Reactor Architecture — Cross-section showing RF electrodes, gas inlet system, plasma generation region, and substrate stage with bias control</p>
+      </div>
+
       <h3>2.2 Etching Mechanisms</h3>
       <p>Plasma etching involves two primary mechanisms working together:</p>
       
@@ -2160,17 +2171,18 @@ export const insightsPosts: InsightsPost[] = [
         <li>Provides directional (anisotropic) etching</li>
       </ul>
       
-      <div style="text-align: center; margin: 30px 0;">
-        <img 
-          src="/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png" 
-          alt="Plasma Etching Fundamentals - Visual representation of plasma etching process showing ion bombardment and chemical reactions" 
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: Plasma Etching Fundamentals - Showing the interaction between chemical reactions and physical bombardment</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png" alt="Plasma etching fundamentals — interaction between chemical radical reactions and directional ion bombardment on substrate surface" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Plasma Etching Fundamentals — The synergistic interaction between chemical radical reactions and directional ion bombardment, first demonstrated by Coburn and Winters (1979) to achieve etch rates up to 10× higher than either mechanism alone</p>
       </div>
       
-      <h2>3) Types of Plasma Etching</h2>
+      <h2>3) Types of Plasma Etching: PE vs RIE vs ICP-RIE</h2>
       <p>Plasma etching encompasses several distinct techniques with fundamentally different mechanisms and capabilities. For a detailed technical comparison of process parameters, reactor architectures, and selection guidelines, see our in-depth guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE Plasma Etching</a>.</p>
 
       <h3>3.1 Plasma Etching (PE)</h3>
@@ -2179,8 +2191,11 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Mechanism:</strong> Primarily chemical etching with minimal ion bombardment</li>
         <li><strong>Profile:</strong> Isotropic (etches equally in all directions)</li>
         <li><strong>Selectivity:</strong> High due to chemical specificity</li>
+        <li><strong>Etch Rate:</strong> 100–300 nm/min (material-dependent)</li>
+        <li><strong>Plasma Density:</strong> 10<sup>9</sup>–10<sup>10</sup> cm<sup>−3</sup></li>
         <li><strong>Applications:</strong> Photoresist stripping, surface cleaning, isotropic etching</li>
       </ul>
+      <p><strong>Best for:</strong> Photoresist stripping, surface cleaning, and isotropic etching where substrate damage must be minimized.</p>
       
       <h3>3.2 <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a></h3>
       <p>Combines chemical and physical etching mechanisms:</p>
@@ -2188,60 +2203,90 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Mechanism:</strong> Chemical reactions + ion bombardment</li>
         <li><strong>Profile:</strong> Anisotropic (directional etching)</li>
         <li><strong>Selectivity:</strong> Moderate, balance between chemical and physical</li>
+        <li><strong>Etch Rate:</strong> 200–500 nm/min</li>
+        <li><strong>Plasma Density:</strong> 10<sup>10</sup>–10<sup>11</sup> cm<sup>−3</sup></li>
+        <li><strong>DC Self-Bias:</strong> −100 to −500 V</li>
         <li><strong>Applications:</strong> Silicon etching, dielectric etching, metal patterning</li>
       </ul>
+      <p><strong>Best for:</strong> Standard semiconductor patterning, dielectric etching, and moderate aspect-ratio features (&lt;10:1).</p>
       
       <h3>3.3 Inductively Coupled Plasma RIE (ICP-RIE)</h3>
-      <p>Advanced plasma etching with independent control of plasma density and ion energy:</p>
+      <p>Advanced plasma etching with independent control of plasma density and ion energy. The ICP source, first systematically reviewed by Hopwood (1992), decouples plasma generation from ion acceleration, enabling precise tuning of both parameters. For a deeper dive into ICP-RIE technology, see our <a href="/insights/icp-rie-technology-advanced-etching">ICP-RIE Technology Guide</a>.</p>
       <ul>
-        <li><strong>Mechanism:</strong> High-density plasma + controlled ion energy</li>
+        <li><strong>Mechanism:</strong> High-density plasma + independently controlled ion energy</li>
         <li><strong>Profile:</strong> Highly anisotropic with excellent control</li>
         <li><strong>Selectivity:</strong> High with proper parameter optimization</li>
-        <li><strong>Applications:</strong> High-aspect-ratio etching, advanced devices, precision fabrication</li>
+        <li><strong>Etch Rate:</strong> 500–5000+ nm/min (material-dependent)</li>
+        <li><strong>Plasma Density:</strong> 10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup></li>
+        <li><strong>DC Self-Bias:</strong> 0 to −300 V (independently controlled)</li>
+        <li><strong>Applications:</strong> High-aspect-ratio etching, DRIE (Bosch process), III-V compounds, photonics</li>
       </ul>
+      <p><strong>Best for:</strong> High-aspect-ratio features (&gt;10:1, up to 50:1+), deep silicon etching (DRIE), III-V compound semiconductors, and photonic device fabrication.</p>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch profile comparison — isotropic (PE), anisotropic (RIE), and high-aspect-ratio (ICP-RIE) cross-section diagrams showing photoresist, film, and substrate layers" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Etch Profile Comparison — Isotropic (PE/chemical etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
+      </div>
       
       <h2>4) Process Parameters and Control</h2>
       
       <h3>4.1 Key Parameters</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Effect on Etching</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Typical Range</th>
+          <tr>
+            <th>Parameter</th>
+            <th>Effect on Etching</th>
+            <th>Typical Range</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RF Power</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Plasma density, etch rate</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">50-2000 W</td>
+            <td><strong>RF Power</strong></td>
+            <td>Plasma density, etch rate</td>
+            <td>50–2000 W</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Bias Voltage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Ion energy, anisotropy</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">50-500 V</td>
+            <td><strong>Bias Voltage</strong></td>
+            <td>Ion energy, anisotropy</td>
+            <td>50–500 V</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Pressure</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Mean free path, etch uniformity</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">1-100 mTorr</td>
+            <td><strong>Pressure</strong></td>
+            <td>Mean free path, etch uniformity</td>
+            <td>1–100 mTorr</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Gas Flow</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Etch rate, selectivity</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">10-500 sccm</td>
+            <td><strong>Gas Flow</strong></td>
+            <td>Etch rate, selectivity</td>
+            <td>10–500 sccm</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Temperature</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reaction kinetics, selectivity</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">20-400°C</td>
+            <td><strong>Temperature</strong></td>
+            <td>Reaction kinetics, selectivity</td>
+            <td>20–400 °C</td>
           </tr>
         </tbody>
       </table>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/plasma-etching-comparison-chart.png" alt="Plasma etching technology comparison chart showing etch rate, selectivity, and anisotropy across PE, RIE, and ICP-RIE" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 4: Plasma Etching Technology Comparison — Etch rate, selectivity, and anisotropy characteristics across PE, RIE, and ICP-RIE platforms</p>
+      </div>
       
       <h3>4.2 Gas Chemistry Selection</h3>
-      <p>The choice of gas chemistry is critical for achieving desired etch characteristics:</p>
+      <p>The choice of gas chemistry is critical for achieving desired etch characteristics. For advanced selectivity optimization techniques, see our guide on <a href="/insights/ultra-high-etch-selectivity">Ultra-High Etch Selectivity</a>.</p>
       
       <p><strong>Silicon Etching:</strong></p>
       <ul>
@@ -2264,14 +2309,14 @@ export const insightsPosts: InsightsPost[] = [
         <li>Ar/O₂: Titanium etching</li>
       </ul>
       
-      <h2>5) Applications in Semiconductor Manufacturing</h2>
+      <h2>5) Plasma Etching Applications in Semiconductor, MEMS, and Advanced Materials Manufacturing</h2>
       
       <h3>5.1 Silicon Processing</h3>
       <ul>
-        <li><strong>Gate Etching:</strong> Precise control of gate length and profile</li>
-        <li><strong>Trench Formation:</strong> Deep trenches for isolation and capacitors</li>
-        <li><strong>Contact/Via Etching:</strong> High-aspect-ratio holes for electrical connections</li>
-        <li><strong>Silicon Dioxide Etching:</strong> Dielectric layer patterning</li>
+        <li><strong>Gate Etching:</strong> Precise control of gate length and profile, achieving sub-10 nm critical dimensions in advanced logic nodes</li>
+        <li><strong>Trench Formation:</strong> Deep trenches for isolation and capacitors, with depths exceeding 500 µm achievable via <a href="/insights/deep-reactive-ion-etching-bosch-process">Bosch process DRIE</a></li>
+        <li><strong>Contact/Via Etching:</strong> High-aspect-ratio holes for electrical connections, with aspect ratios exceeding 50:1 for through-silicon via (TSV) formation</li>
+        <li><strong>Silicon Dioxide Etching:</strong> Dielectric layer patterning with selectivity ratios of 10:1–20:1 over silicon</li>
       </ul>
       
       <h3>5.2 MEMS Fabrication</h3>
@@ -2284,81 +2329,86 @@ export const insightsPosts: InsightsPost[] = [
       
       <h3>5.3 Advanced Applications</h3>
       <ul>
-        <li><strong>3D Integration:</strong> Through-silicon via (TSV) formation</li>
-        <li><strong>Optical Devices:</strong> Waveguide and grating fabrication</li>
-        <li><strong>Quantum Devices:</strong> Precise nanostructure formation</li>
-        <li><strong>Biomedical Devices:</strong> Microfluidic channel etching</li>
+        <li><strong>3D Integration:</strong> Through-silicon via (TSV) formation with aspect ratios exceeding 50:1, enabled by ICP-RIE and Bosch process cycling</li>
+        <li><strong>Optical Devices:</strong> Waveguide and grating fabrication with sidewall roughness &lt;5 nm for low-loss photonic circuits</li>
+        <li><strong>Quantum Devices:</strong> Precise nanostructure formation for superconducting qubits and quantum dot arrays</li>
+        <li><strong>Biomedical Devices:</strong> Microfluidic channel etching with controlled surface properties for lab-on-chip applications</li>
       </ul>
       
       <h2>6) Process Optimization and Troubleshooting</h2>
       
       <h3>6.1 Common Issues and Solutions</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Issue</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Possible Cause</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Solution</th>
+          <tr>
+            <th>Issue</th>
+            <th>Possible Cause</th>
+            <th>Solution</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Low Etch Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Insufficient power, wrong chemistry</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Increase RF power, optimize gas ratio</td>
+            <td><strong>Low Etch Rate</strong></td>
+            <td>Insufficient power, wrong chemistry</td>
+            <td>Increase RF power, optimize gas ratio</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Poor Selectivity</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High ion energy, wrong chemistry</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reduce bias, change gas chemistry</td>
+            <td><strong>Poor Selectivity</strong></td>
+            <td>High ion energy, wrong chemistry</td>
+            <td>Reduce bias, change gas chemistry</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Non-uniform Etching</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Poor gas distribution, temperature gradients</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Optimize gas flow, improve temperature control</td>
+            <td><strong>Non-uniform Etching</strong></td>
+            <td>Poor gas distribution, temperature gradients</td>
+            <td>Optimize gas flow, improve temperature control. See our <a href="/insights/plasma-non-uniform-etch-chamber-solutions">Plasma Uniformity Guide</a> for detailed diagnostics.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Residue Formation</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Incomplete reactions, polymer formation</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Add O₂, optimize pressure and power</td>
+            <td><strong>Residue Formation</strong></td>
+            <td>Incomplete reactions, polymer formation</td>
+            <td>Add O₂, optimize pressure and power</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Profile Tapering</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Mask erosion, sidewall passivation</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Improve mask selectivity, optimize passivation</td>
+            <td><strong>Profile Tapering</strong></td>
+            <td>Mask erosion, sidewall passivation</td>
+            <td>Improve mask selectivity, optimize passivation</td>
           </tr>
         </tbody>
       </table>
       
       <h2>7) NineScrolls Plasma Etching Solutions</h2>
-      <p>NineScrolls offers advanced plasma etching systems designed for research and manufacturing applications:</p>
-      
-      <h3>RIE Etcher Series</h3>
+      <p>NineScrolls offers advanced plasma etching systems designed for research and manufacturing applications. For a complete equipment overview and selection guidance, see our <a href="/insights/semiconductor-etchers-overview">Semiconductor Etcher Selection Guide</a>.</p>
+
+      <h3><a href="/products/rie-etcher">RIE Etcher Series</a></h3>
       <ul>
-        <li>Compact design (1.0m × 1.0m footprint)</li>
-        <li>Advanced plasma control system</li>
-        <li>Multiple gas line configuration</li>
-        <li>Real-time process monitoring</li>
-        <li>Ideal for standard RIE applications</li>
+        <li>Compact design (1.0m × 1.0m footprint), ideal for cleanroom integration</li>
+        <li>4–6 MFC gas line configuration for versatile process chemistry</li>
+        <li>Advanced plasma control system with real-time process monitoring</li>
+        <li>Etch rate capability: 200–500 nm/min for standard Si and dielectric processes</li>
+        <li>Wafer sizes: up to 4-inch (100 mm) standard, 6-inch (150 mm) optional</li>
+        <li>Best for: standard semiconductor patterning, dielectric etching, photoresist processing</li>
       </ul>
-      
-      <h3>ICP Etcher Series</h3>
+
+      <h3><a href="/products/icp-etcher">ICP Etcher Series</a></h3>
       <ul>
-        <li>Uni-body design (1.0m × 1.5m footprint)</li>
-        <li>Independent ICP source and bias control</li>
-        <li>High-density plasma generation</li>
-        <li>Advanced process control system</li>
-        <li>Multiple process design kits</li>
-        <li>Perfect for high-precision applications</li>
+        <li>Uni-body design (1.0m × 1.5m footprint) with integrated gas and vacuum systems</li>
+        <li>Independent ICP source (up to 2000 W) and RF bias (up to 600 W) control</li>
+        <li>6–8 gas lines for complex multi-step processes including Bosch DRIE</li>
+        <li>High-density plasma generation (10<sup>11</sup>–10<sup>12</sup> cm<sup>−3</sup>)</li>
+        <li>Process design kits available for Si, SiO₂, III-V, and photonic materials</li>
+        <li>Optional laser interferometry endpoint detection and OES monitoring</li>
+        <li>Best for: high-aspect-ratio etching, DRIE, III-V compounds, photonic devices, MEMS fabrication</li>
       </ul>
+
+      <p>All NineScrolls etching solutions are designed for cleanroom integration and comply with applicable SEMI standards for semiconductor equipment safety and process control.</p>
       
-      <h2>8) Future Trends in Plasma Etching</h2>
+      <h2>8) Future Trends: ALE, Pulsed Plasma, and AI-Enhanced Etching</h2>
       <ul>
-        <li><strong>Atomic Layer Etching (ALE):</strong> Precise atomic-level control for next-generation devices</li>
-        <li><strong>Pulsed Plasma Etching:</strong> Enhanced selectivity and reduced damage</li>
-        <li><strong>AI-Enhanced Process Control:</strong> Real-time optimization and predictive maintenance</li>
-        <li><strong>Novel Gas Chemistries:</strong> Improved selectivity and environmental compliance</li>
-        <li><strong>3D Integration:</strong> Advanced etching for through-silicon vias and packaging</li>
+        <li><strong>Atomic Layer Etching (ALE):</strong> Precise atomic-level control for next-generation devices, removing material one monolayer at a time with sub-angstrom precision (Kanarik et al., 2015)</li>
+        <li><strong>Pulsed Plasma Etching:</strong> Enhanced selectivity and reduced damage through time-modulated plasma excitation</li>
+        <li><strong>AI-Enhanced Process Control:</strong> Real-time optimization using machine learning for predictive maintenance and process drift correction</li>
+        <li><strong>Cryogenic Etching:</strong> Ultra-smooth sidewalls via temperature-controlled passivation, offering an alternative to the Bosch process for certain applications. See our comparison of <a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Etching vs Bosch Process</a>.</li>
+        <li><strong>Novel Gas Chemistries:</strong> Improved selectivity and environmental compliance, including reduced global-warming-potential alternatives to traditional fluorocarbon gases</li>
+        <li><strong>3D Integration:</strong> Advanced etching for through-silicon vias and heterogeneous packaging, driving demand for high-throughput DRIE solutions</li>
       </ul>
       
       <h2>9) Conclusion</h2>
@@ -2368,28 +2418,31 @@ export const insightsPosts: InsightsPost[] = [
       
       <h2>Call-to-Action</h2>
       <ul>
-        <li>Need help selecting the right plasma etching technology for your application? Contact our technical team.</li>
-        <li>Interested in our RIE or ICP etching systems? Explore our product pages for detailed specifications.</li>
-        <li>Want to discuss process optimization and parameter tuning? Our process engineers are available for consultation.</li>
+        <li><strong>For MEMS researchers:</strong> Our ICP etcher supports Bosch process recipes with aspect ratios &gt;50:1 — explore configurations and starter recipes for your specific materials.</li>
+        <li><strong>For semiconductor fabs:</strong> Explore our customizable multi-step etching process kits for high-precision patterning of Si, SiO₂, and III-V materials.</li>
+        <li><strong>Need process optimization support?</strong> Our process engineers provide starter recipes and DOE templates for Si, SiO₂, III-V, and photonic materials. Contact us for a consultation.</li>
       </ul>
-      
+
       <p><strong>Contact:</strong><br>
-      RIE Etcher: <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/rie-etcher</a><br>
-      ICP Etcher: <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">https://www.ninescrolls.com/products/icp-etcher</a><br>
-      Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+      <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">RIE Etcher Series</a> · <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">ICP Etcher Series</a> · <a href="/contact?topic=Etching%20Inquiry" style="color: #007bff; text-decoration: none;">Contact us</a> · Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
 
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Coburn, J. W. & Winters, H. F. "Ion- and electron-assisted gas-surface chemistry — An important effect in plasma etching." <em>Journal of Applied Physics</em>, 50(5), 3189–3196 (1979). <a href="https://doi.org/10.1063/1.326355" target="_blank" rel="noopener noreferrer">doi:10.1063/1.326355</a></li>
         <li>Manos, D. M. & Flamm, D. L. <em>Plasma Etching: An Introduction</em>. Academic Press (1989). ISBN 978-0124693708.</li>
         <li>Flamm, D. L. "Mechanisms of silicon etching in fluorine- and chlorine-containing plasmas." <em>Pure and Applied Chemistry</em>, 62(9), 1709–1720 (1990). <a href="https://doi.org/10.1351/pac199062091709" target="_blank" rel="noopener noreferrer">doi:10.1351/pac199062091709</a></li>
+        <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109–116 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
         <li>Winters, H. F. & Coburn, J. W. "Surface science aspects of etching reactions." <em>Surface Science Reports</em>, 14(4–6), 161–269 (1992). <a href="https://doi.org/10.1016/0167-5729(92)90009-Z" target="_blank" rel="noopener noreferrer">doi:10.1016/0167-5729(92)90009-Z</a></li>
+        <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
+        <li>Donnelly, V. M. & Kornblit, A. "Plasma etching: Yesterday, today, and tomorrow." <em>Journal of Vacuum Science & Technology A</em>, 31(5), 050825 (2013). <a href="https://doi.org/10.1116/1.4819316" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4819316</a></li>
+        <li>Kanarik, K. J. et al. "Overview of atomic layer etching in the semiconductor industry." <em>Journal of Vacuum Science & Technology A</em>, 33(2), 020802 (2015). <a href="https://doi.org/10.1116/1.4913379" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4913379</a></li>
       </ol>
     `,
     author: 'NineScrolls Engineering',
     publishDate: '2025-01-26',
     category: 'Materials Science',
-    readTime: 12,
+    readTime: 15,
     imageUrl: '/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png',
     slug: 'plasma-etching-explained-fundamentals-applications',
     tags: ['Plasma Etching', 'Semiconductor Manufacturing', 'Materials Science', 'RIE', 'ICP-RIE', 'Microfabrication']
