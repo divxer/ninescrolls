@@ -130,6 +130,51 @@ export function OrderListPage() {
           )}
         </tbody>
       </table>
+
+      {/* Mobile Order cards — visible only at ≤480px */}
+      <div className="mobile-cards order-cards-mobile">
+        {filtered.length === 0 ? (
+          <div className="admin-no-results" style={{ textAlign: 'center', padding: '1.5rem' }}>
+            No orders found.
+          </div>
+        ) : (
+          filtered.map(order => {
+            const primaryContact = order.contacts?.find(c => c.isPrimary);
+            const isOverdue = order.estimatedDelivery &&
+              new Date(order.estimatedDelivery) < new Date() &&
+              !['SHIPPED', 'INSTALLED', 'CLOSED', 'DECLINED'].includes(order.status);
+
+            return (
+              <div
+                key={order.orderId}
+                className={`order-card-mobile${
+                  order.status === 'INQUIRY' ? ' order-card-inquiry' :
+                  order.status === 'DECLINED' ? ' order-card-declined' :
+                  isOverdue ? ' order-card-overdue' : ''
+                }`}
+                onClick={() => window.location.href = `/admin/orders/${order.orderId}`}
+              >
+                <div className="order-card-header">
+                  <span className="order-card-institution">{order.institution}</span>
+                  <StatusBadge status={order.status} />
+                </div>
+                <div className="order-card-product">
+                  {order.productModel}{order.productName ? ` - ${order.productName}` : ''}
+                </div>
+                <div className="order-card-meta">
+                  {order.quoteNumber && <span>Q: {order.quoteNumber}</span>}
+                  {order.poNumber && <span>PO: {order.poNumber}</span>}
+                  {primaryContact?.contactName && <span>{primaryContact.contactName}</span>}
+                </div>
+                <div className="order-card-footer">
+                  <span>{formatDate(order.estimatedDelivery) || '—'}</span>
+                  <span>{order.daysSinceLastUpdate}d in status</span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

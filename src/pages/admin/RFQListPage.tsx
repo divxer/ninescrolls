@@ -112,6 +112,36 @@ export function RFQListPage() {
           )}
         </tbody>
       </table>
+
+      {/* Mobile RFQ cards — visible only at ≤480px */}
+      <div className="mobile-cards rfq-cards-mobile">
+        {filtered.length === 0 ? (
+          <div className="admin-no-results" style={{ textAlign: 'center', padding: '1.5rem' }}>
+            No RFQs found.
+          </div>
+        ) : (
+          filtered.map(rfq => (
+            <Link
+              key={rfq.rfqId}
+              to={`/admin/rfqs/${rfq.rfqId}`}
+              className={`rfq-card-mobile${rfq.status === 'pending' ? ' rfq-card-pending' : rfq.status === 'converted' ? ' rfq-card-converted' : rfq.status === 'declined' ? ' rfq-card-declined' : ''}`}
+            >
+              <div className="rfq-card-header">
+                <span className="rfq-card-name">{rfq.name || 'Unknown'}</span>
+                <StatusBadge status={rfq.status} />
+              </div>
+              <div className="rfq-card-institution">{rfq.institution || '—'}</div>
+              <div className="rfq-card-equipment">
+                {rfq.equipmentCategory}{rfq.specificModel ? ` / ${rfq.specificModel}` : ''}
+              </div>
+              <div className="rfq-card-footer">
+                <span>{formatDate(rfq.submittedAt)}</span>
+                <span>{rfq.budgetRange || ''}</span>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
     </div>
   );
 }

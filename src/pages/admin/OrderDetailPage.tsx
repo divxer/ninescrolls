@@ -56,8 +56,8 @@ export function OrderDetailPage() {
       {/* Header */}
       <div className="admin-detail-header">
         <Link to="/admin/orders" className="admin-btn-sm admin-btn-outline">&larr; Back</Link>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="admin-detail-title">
+          <div className="admin-detail-title-row">
             <StatusBadge status={order.status} size="lg" />
             <h1 style={{ margin: 0 }}>{order.institution}</h1>
           </div>
@@ -65,7 +65,7 @@ export function OrderDetailPage() {
             {order.productModel}{order.productName ? ` - ${order.productName}` : ''}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="admin-detail-actions">
           {nextStatus && (
             <button className="admin-btn-primary" onClick={handleAdvanceStatus} disabled={advancing}>
               {advancing ? 'Updating...' : `Advance to ${STATUS_LABELS[nextStatus]}`}

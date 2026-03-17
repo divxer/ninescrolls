@@ -2354,6 +2354,22 @@
   .analytics-target-row td:first-child {
     background: #e8f5e9 !important;
   }
+
+  /* Hide Products (col 4) and Engagement (col 9) at tablet */
+  .analytics-org-table th:nth-child(4),
+  .analytics-org-table td:nth-child(4),
+  .analytics-org-table th:nth-child(9),
+  .analytics-org-table td:nth-child(9) {
+    display: none;
+  }
+
+  /* Hide Engine/Page (col 4) and Last Seen (col 6) in keyword tables */
+  .keyword-table th:nth-child(4),
+  .keyword-table td:nth-child(4),
+  .keyword-table th:nth-child(6),
+  .keyword-table td:nth-child(6) {
+    display: none;
+  }
 }
 
 /* ─── Order Tracker & RFQ Management ──────────────────────────────────────── */
@@ -2395,6 +2411,21 @@
   gap: 16px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+}
+
+.admin-detail-title {
+  flex: 1;
+}
+
+.admin-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-detail-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .admin-info-grid {
@@ -3208,6 +3239,24 @@
   .page-analytics-section {
     padding: 0.75rem;
   }
+
+  /* Hide Location (col 3), Active Time (col 6), Events (col 7) in org table */
+  .analytics-org-table th:nth-child(3),
+  .analytics-org-table td:nth-child(3),
+  .analytics-org-table th:nth-child(6),
+  .analytics-org-table td:nth-child(6),
+  .analytics-org-table th:nth-child(7),
+  .analytics-org-table td:nth-child(7) {
+    display: none;
+  }
+
+  /* In top pages table: hide Title (col 2), Scroll (col 6) */
+  .page-analytics-section .keyword-table th:nth-child(2),
+  .page-analytics-section .keyword-table td:nth-child(2),
+  .page-analytics-section .keyword-table th:nth-child(6),
+  .page-analytics-section .keyword-table td:nth-child(6) {
+    display: none;
+  }
 }
 
 /* ─── Page Analytics Section ──────────────────────────────────────────────── */
@@ -3564,5 +3613,836 @@
 
   .analytics-filter-summary {
     display: none;
+  }
+}
+
+/* Mobile card containers — hidden on desktop, shown via 480px media query */
+.mobile-cards {
+  display: none;
+}
+
+/* ── Mobile: ≤480px ──────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+
+  /* ── Global touch targets & spacing ── */
+
+  .admin-main {
+    padding: 0.75rem;
+  }
+
+  .admin-analytics button,
+  .admin-analytics input,
+  .admin-analytics select,
+  .admin-analytics .analytics-toggle {
+    min-height: 44px;
+  }
+
+  /* Shared admin touch targets */
+  .admin-insights-list button,
+  .admin-insights-list input,
+  .admin-insights-list select,
+  .admin-insights-list a.admin-btn-sm,
+  .admin-insights-list a.admin-btn-primary,
+  .admin-detail-page button,
+  .admin-detail-page input,
+  .admin-detail-page select,
+  .admin-detail-page a.admin-btn-sm,
+  .admin-detail-page a.admin-btn-primary {
+    min-height: 44px;
+  }
+
+  .admin-analytics select {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .admin-list-header h1 {
+    font-size: 1.3rem;
+  }
+
+  /* ── Date range controls ── */
+
+  .analytics-date-range {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .analytics-date-btn {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .analytics-custom-dates {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .analytics-date-input {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .analytics-date-separator {
+    text-align: center;
+  }
+
+  .analytics-toggle {
+    grid-column: span 1;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .analytics-toggle-label {
+    font-size: 0.8rem;
+  }
+
+  .analytics-refresh-group {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .analytics-refresh-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ── KPI stats cards ── */
+
+  .analytics-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .analytics-stat-card {
+    padding: 0.65rem 0.5rem;
+  }
+
+  .analytics-stat-value {
+    font-size: 1.2rem;
+  }
+
+  .analytics-stat-label {
+    font-size: 0.7rem;
+  }
+
+  .analytics-stat-trend {
+    font-size: 0.65rem;
+  }
+
+  .analytics-stat-sublabel {
+    font-size: 0.65rem;
+  }
+
+  /* ── Search & export toolbar ── */
+
+  .analytics-toolbar {
+    flex-direction: column;
+  }
+
+  .analytics-search {
+    max-width: none;
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .analytics-export-btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .analytics-controls-row {
+    font-size: 0.8rem;
+  }
+
+  /* ── Enhanced filters ── */
+
+  .analytics-enhanced-filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .analytics-filter-select {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .analytics-score-input {
+    min-height: 44px;
+    flex: 1;
+  }
+
+  .analytics-filter-clear-all {
+    min-height: 44px;
+    padding: 0.4rem 0.75rem;
+  }
+
+  /* ── Bar charts ── */
+
+  .keyword-bar-label {
+    flex: 0 0 80px;
+    font-size: 0.7rem;
+  }
+
+  .keyword-bar-track {
+    height: 16px;
+  }
+
+  .keyword-bar-count {
+    flex: 0 0 28px;
+    font-size: 0.7rem;
+  }
+
+  /* ── Section headers ── */
+
+  .analytics-section-header {
+    font-size: 1rem;
+  }
+
+  .keyword-section {
+    padding: 0.5rem;
+  }
+
+  .page-analytics-section {
+    padding: 0.5rem;
+  }
+
+  .keyword-filter-tabs {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .keyword-filter-tab {
+    min-height: 44px;
+    font-size: 0.8rem;
+    flex: 1 1 auto;
+  }
+
+  /* ── Tables: hide on mobile ── */
+
+  .analytics-org-table,
+  .keyword-table {
+    display: none;
+  }
+
+  .analytics-table-wrapper:has(.keyword-table) {
+    overflow: visible;
+  }
+
+  /* ── Mobile card views: show on mobile ── */
+
+  .mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* ── Org cards ── */
+
+  .org-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .org-card-mobile:active {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+  }
+
+  .org-card-mobile.org-card-target {
+    border-left: 3px solid #43a047;
+    background: #f9fdf9;
+  }
+
+  .org-card-mobile.org-card-tier-A {
+    border-left: 3px solid #ff9800;
+  }
+
+  .org-card-mobile.org-card-tier-B {
+    border-left: 3px solid #1a73e8;
+  }
+
+  .org-card-mobile.org-card-intent {
+    border-left: 3px solid #9c27b0;
+  }
+
+  .org-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .org-card-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-card-badges {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .org-card-tier {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+
+  .org-card-type {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+
+  .org-card-location {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-card-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: #555;
+    text-align: center;
+  }
+
+  .org-card-stat-value {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .org-card-stat-label {
+    font-size: 0.65rem;
+    color: #999;
+  }
+
+  .org-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    color: #999;
+  }
+
+  /* ── Keyword cards ── */
+
+  .kw-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+
+  .kw-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .kw-card-keyword {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kw-card-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    flex-shrink: 0;
+  }
+
+  .kw-card-meta {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .kw-card-orgs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  /* ── Page analytics cards ── */
+
+  .page-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+
+  .page-card-mobile.page-card-product {
+    border-left: 3px solid #1a73e8;
+    background: #f8faff;
+  }
+
+  .page-card-path {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #333;
+    margin-bottom: 0.15rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-card-title {
+    font-size: 0.72rem;
+    color: #888;
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-card-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+    text-align: center;
+  }
+
+  .page-card-stat-value {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .page-card-stat-label {
+    font-size: 0.65rem;
+    color: #999;
+  }
+
+  .page-card-orgs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+  }
+
+  /* ── Landing page cards ── */
+
+  .landing-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+
+  .landing-card-path {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #333;
+    margin-bottom: 0.35rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .landing-card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+    text-align: center;
+  }
+
+  /* ── Product cards ── */
+
+  .product-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* ── Org detail view ── */
+
+  .org-detail {
+    padding: 0;
+  }
+
+  .org-detail-back {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .org-detail-title-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .org-detail-name {
+    font-size: 1.1rem;
+  }
+
+  .org-detail-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .org-detail-card-value {
+    font-size: 1rem;
+  }
+
+  .org-detail-card-label {
+    font-size: 0.7rem;
+  }
+
+  .org-detail-ai-classification {
+    overflow-x: auto;
+  }
+
+  .org-detail-section h3 {
+    font-size: 0.9rem;
+  }
+
+  /* Signals wrap more compactly */
+  .org-detail-signals {
+    gap: 0.4rem;
+  }
+
+  /* Timeline compact */
+  .org-detail-timeline {
+    font-size: 0.8rem;
+  }
+
+  /* Trends section */
+  .trends-tab-bar {
+    gap: 0.2rem;
+  }
+
+  .trends-tab-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    min-height: 44px;
+  }
+
+  /* Collapsible sections default collapsed on mobile */
+  .mobile-cards {
+    margin-top: 0.5rem;
+  }
+
+  /* Visitor map responsive */
+  .visitor-map-wrapper {
+    height: 250px;
+  }
+
+  /* Hide table wrapper scrollbar hint on mobile (cards replace tables) */
+  .analytics-table-wrapper {
+    margin: 0;
+    overflow: visible;
+  }
+
+  /* ── Shared admin list pages (RFQ, Orders) ── */
+
+  .admin-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .admin-list-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .admin-list-header .admin-btn-primary {
+    width: 100%;
+    text-align: center;
+    padding: 0.6rem;
+  }
+
+  .admin-list-filters {
+    flex-direction: column;
+  }
+
+  .admin-search-input {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .admin-filter-select {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Stats bar: 2-col grid */
+  .admin-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .admin-stat-card {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .admin-stat-value {
+    font-size: 1.2rem;
+  }
+
+  .admin-stat-label {
+    font-size: 0.72rem;
+  }
+
+  /* Hide admin-table on RFQ/Orders list pages, show mobile cards */
+  .admin-insights-list > .admin-table {
+    display: none;
+  }
+
+  /* ── RFQ mobile cards ── */
+
+  .rfq-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.15s;
+  }
+
+  .rfq-card-mobile:active {
+    border-color: #1a73e8;
+  }
+
+  .rfq-card-mobile.rfq-card-pending {
+    border-left: 3px solid #7c3aed;
+  }
+
+  .rfq-card-mobile.rfq-card-converted {
+    border-left: 3px solid #16a34a;
+  }
+
+  .rfq-card-mobile.rfq-card-declined {
+    opacity: 0.6;
+  }
+
+  .rfq-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .rfq-card-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rfq-card-institution {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rfq-card-equipment {
+    font-size: 0.8rem;
+    color: #444;
+    margin-bottom: 0.35rem;
+  }
+
+  .rfq-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: #999;
+  }
+
+  /* ── Order mobile cards ── */
+
+  .order-card-mobile {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .order-card-mobile:active {
+    border-color: #1a73e8;
+  }
+
+  .order-card-mobile.order-card-inquiry {
+    border-left: 3px solid #7c3aed;
+  }
+
+  .order-card-mobile.order-card-overdue {
+    border-left: 3px solid #dc2626;
+    background: #fef2f2;
+  }
+
+  .order-card-mobile.order-card-declined {
+    opacity: 0.6;
+  }
+
+  .order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .order-card-institution {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .order-card-product {
+    font-size: 0.8rem;
+    color: #444;
+    margin-bottom: 0.3rem;
+  }
+
+  .order-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.3rem;
+  }
+
+  .order-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: #999;
+  }
+
+  /* ── Detail page header ── */
+
+  .admin-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .admin-detail-header .admin-btn-sm,
+  .admin-detail-header .admin-btn-primary {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-detail-title-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-detail-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .admin-detail-actions .admin-btn-primary {
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-detail-page h1 {
+    font-size: 1.1rem;
+  }
+
+  /* Detail panels */
+  .admin-panel {
+    padding: 12px;
+  }
+
+  .admin-dl {
+    gap: 4px 10px;
+    font-size: 0.82rem;
+  }
+
+  .admin-dl dt {
+    font-size: 0.8rem;
+  }
+
+  .admin-dl dd {
+    font-size: 0.8rem;
+  }
+
+  /* Project context: single column on mobile */
+  .admin-dl[style*="columns: 2"] {
+    columns: 1 !important;
   }
 }
