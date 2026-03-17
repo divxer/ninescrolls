@@ -1294,16 +1294,13 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       {/* Detection Details */}
       {(() => {
         const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
-        // Find best IP-based confidence event (before AI enrichment)
-        const ipEvent = org.events.reduce<typeof org.events[0] | null>((best, e) => {
-          if (e.confidence != null && (best == null || (e.confidence ?? 0) > (best.confidence ?? 0))) return e;
-          return best;
-        }, null);
-        const ipConfidence = ipEvent?.confidence ?? 0;
+        // Find IP-based org type (before AI enrichment)
+        const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
         const ipOrgType = ipEvent?.organizationType || 'unknown';
 
         const hasAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
-        const aiUpgraded = hasAI && (aiEvent.aiConfidence ?? 0) > ipConfidence;
+        const aiUpgraded = hasAI && aiEvent.aiOrganizationType !== 'unknown'
+          && aiEvent.aiOrganizationType !== ipOrgType;
         const aiConfirmed = hasAI && !aiUpgraded && aiEvent.aiOrganizationType !== 'unknown';
 
         // Determine classification source
@@ -1311,7 +1308,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           if (override?.found && override?.source === 'manual') return 'manual';
           if (org.hasBot) return 'bot';
           if (hasAI && (aiEvent.aiConfidence ?? 0) >= 0.5 && aiEvent.aiOrganizationType !== 'unknown') return 'ai';
-          if (ipConfidence > 0 && ipOrgType !== 'unknown') return 'keyword';
+          if (ipOrgType !== 'unknown') return 'keyword';
           if (org.isAnonymousHighIntent) return 'behavior';
           return 'none';
         })();
@@ -1365,10 +1362,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 <div className="org-detection-col">
                   <div className="org-detection-col-header">IP Lookup</div>
                   <div className="org-ai-row">
-                    <span className="org-ai-label">Confidence</span>
-                    <span className="org-ai-value">{(ipConfidence * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="org-ai-row">
                     <span className="org-ai-label">Type</span>
                     <span className="org-ai-value">{ipOrgType}</span>
                   </div>
@@ -1392,17 +1385,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     <span className="org-ai-label">Type</span>
                     <span className="org-ai-value">{aiEvent.aiOrganizationType}</span>
                   </div>
-                </div>
-              </div>
-            ) : ipConfidence > 0 ? (
-              <div className="org-detail-ai-classification">
-                <div className="org-ai-row">
-                  <span className="org-ai-label">IP Confidence</span>
-                  <span className="org-ai-value">{(ipConfidence * 100).toFixed(0)}%</span>
-                </div>
-                <div className="org-ai-row">
-                  <span className="org-ai-label">Type</span>
-                  <span className="org-ai-value">{ipOrgType}</span>
                 </div>
               </div>
             ) : org.maxBehaviorScore > 0 ? (
@@ -1438,6 +1420,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             {/* Final result */}
             <div className="org-detection-final">
               Final: {org.organizationType || 'unknown'}
+              {org.maxConfidence > 0 && ` · ${(org.maxConfidence * 100).toFixed(0)}%`}
               {org.isTargetCustomer && <span className="org-detection-target"> · Target</span>}
             </div>
           </div>
