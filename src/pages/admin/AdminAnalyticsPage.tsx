@@ -1308,7 +1308,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           if (override?.found && override?.source === 'manual') return 'manual';
           if (org.hasBot) return 'bot';
           if (hasAI && (aiEvent.aiConfidence ?? 0) >= 0.5 && aiEvent.aiOrganizationType !== 'unknown') return 'ai';
-          if (ipOrgType !== 'unknown') return 'keyword';
+          if (ipOrgType !== 'unknown') return 'ip';
           if (org.isAnonymousHighIntent) return 'behavior';
           return 'none';
         })();
@@ -1317,7 +1317,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           manual: { label: 'Manual Override', className: 'org-detection-badge-manual' },
           bot: { label: 'Bot Detected', className: 'org-detection-badge-bot' },
           ai: { label: 'AI Classified', className: 'org-detection-badge-ai' },
-          keyword: { label: 'Keyword Match', className: 'org-detection-badge-keyword' },
+          ip: { label: 'IP Lookup', className: 'org-detection-badge-ip' },
           behavior: { label: 'Behavior-based', className: 'org-detection-badge-behavior' },
           none: { label: 'Unclassified', className: 'org-detection-badge-none' },
         };
