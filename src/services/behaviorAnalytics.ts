@@ -170,6 +170,36 @@ export function classifyTrafficChannel(params: {
   return 'direct';
 }
 
+/**
+ * Resolve traffic channel for display, combining stored value with re-derivation.
+ *
+ * Re-derives from referrer to fix historical misclassifications (e.g. gemini.google.com
+ * was stored as organic_search, should be ai_referral). But paid classifications
+ * (paid_search, paid_social) are always trusted from the stored value because the
+ * parameters that determine paid status (gclid, msclkid, utmMedium) are not persisted
+ * in the database and cannot be re-derived.
+ */
+export function resolveTrafficChannel(event: {
+  trafficChannel?: string | null;
+  referrer?: string | null;
+  utmTerm?: string | null;
+}): TrafficChannel {
+  const stored = event.trafficChannel as TrafficChannel | undefined;
+
+  // Paid channels can't be re-derived (gclid/msclkid not stored) — always trust stored
+  if (stored === 'paid_search' || stored === 'paid_social') return stored;
+
+  // Re-derive from referrer when available (fixes historical misclassification)
+  if (event.referrer) {
+    return classifyTrafficChannel({
+      referrer: event.referrer,
+      utmTerm: event.utmTerm || undefined,
+    });
+  }
+
+  return stored || 'direct';
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {
