@@ -5,7 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { Schema } from '../../../amplify/data/resource';
-import { classifyTrafficChannel } from '../../services/behaviorAnalytics';
+import { resolveTrafficChannel } from '../../services/behaviorAnalytics';
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
 
@@ -101,9 +101,7 @@ function aggregateDailyChannels(events: AnalyticsEvent[]) {
     if (e.eventType !== 'page_view') continue;
     const day = (e.timestamp ?? '').split('T')[0];
     if (!day) continue;
-    // Re-derive channel from referrer when available (fixes historical misclassification, e.g. gemini.google.com stored as organic_search)
-    const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
-    const channel = e.referrer ? derived : (e.trafficChannel || 'direct');
+    const channel = resolveTrafficChannel(e);
     const vid = (e as Record<string, unknown>).visitorId as string || e.ip || '';
     if (!dayMap.has(day)) {
       const init: Record<string, Set<string>> = {};

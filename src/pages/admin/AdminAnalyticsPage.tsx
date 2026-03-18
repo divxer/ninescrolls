@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
-import { classifyTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
+import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import { generateClient } from 'aws-amplify/data';
 import {
@@ -400,8 +400,7 @@ function aggregateLandingPages(events: AnalyticsEvent[]): LandingPageStats[] {
     const path = normalizePath(first.pathname || '');
     if (path.startsWith('/admin')) continue;
 
-    const channel = first.trafficChannel ||
-      classifyTrafficChannel({ referrer: first.referrer || undefined });
+    const channel = resolveTrafficChannel(first);
     const isBounce = sorted.length === 1;
 
     const existing = landingMap.get(path);
@@ -1399,10 +1398,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     {(() => {
                       const ev = org.events.find(e => e.trafficChannel || e.referrer);
                       if (!ev) return 'unknown';
-                      const ch = ev.referrer
-                        ? classifyTrafficChannel({ referrer: ev.referrer })
-                        : (ev.trafficChannel || 'unknown');
-                      return String(ch).replace(/_/g, ' ');
+                      return String(resolveTrafficChannel(ev)).replace(/_/g, ' ');
                     })()}
                   </span>
                 </div>
@@ -1555,10 +1551,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         const fallbackStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
         const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
         for (const e of org.events) {
-          const storedCh = e.trafficChannel as TrafficChannel | undefined;
-          const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
-          // Always prefer re-derived channel when referrer is available (fixes historical misclassification from substring matching bug)
-          const channel: TrafficChannel = e.referrer ? derivedCh : (storedCh || derivedCh);
+          const channel = resolveTrafficChannel(e);
           const hostname = e.referrer
             ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
             : '';
@@ -1652,8 +1645,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               } catch { return false; }
             };
             const referrerBadge = (e: AnalyticsEvent) => {
-              const derivedCh = classifyTrafficChannel({ referrer: e.referrer || undefined });
-              const channel: TrafficChannel = e.referrer ? derivedCh : ((e.trafficChannel as TrafficChannel) || derivedCh);
+              const channel = resolveTrafficChannel(e);
               const style = channelColorsTimeline[channel] || fallbackChannelStyle;
               const label = e.referrer
                 ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
@@ -2134,11 +2126,7 @@ export function AdminAnalyticsPage() {
         return organizations.filter((o) => o.returnVisits > 0);
       case 'aiReferral':
         return organizations.filter((o) =>
-          o.events.some((e) => {
-            const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
-            const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
-            return ch === 'ai_referral';
-          })
+          o.events.some((e) => resolveTrafficChannel(e) === 'ai_referral')
         );
       case 'anonymousIntent':
         return organizations.filter((o) => o.isAnonymousHighIntent);
@@ -2166,11 +2154,7 @@ export function AdminAnalyticsPage() {
 
     if (channelFilter !== 'all') {
       result = result.filter((o) =>
-        o.events.some((e) => {
-          const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
-          const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
-          return ch === channelFilter;
-        })
+        o.events.some((e) => resolveTrafficChannel(e) === channelFilter)
       );
     }
 
@@ -2291,11 +2275,7 @@ export function AdminAnalyticsPage() {
       o.organizationType === 'business' || o.organizationType === 'enterprise'
     ).length;
     const aiReferral = organizations.filter((o) =>
-      o.events.some((e) => {
-        const derived = classifyTrafficChannel({ referrer: e.referrer || undefined });
-        const ch = e.referrer ? derived : ((e.trafficChannel as TrafficChannel) || derived);
-        return ch === 'ai_referral';
-      })
+      o.events.some((e) => resolveTrafficChannel(e) === 'ai_referral')
     ).length;
     const anonymousIntent = organizations.filter((o) => o.isAnonymousHighIntent).length;
     const ispHighIntent = organizations.filter((o) => o.isAnonymousHighIntent && o.isISPVisitor).length;
