@@ -1005,6 +1005,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>This dual mechanism is what enables ICP‑RIE to achieve highly directional profiles while maintaining selectivity.</p>
       <hr/>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/icp-rie-reactor-architecture.png" alt="ICP-RIE dual-source reactor architecture showing ICP coil for plasma density control and RF-biased substrate electrode for ion energy control" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: ICP-RIE dual-source reactor architecture — independent ICP coil controls plasma density while RF-biased substrate electrode controls ion energy</p>
+      </div>
       <h2>3) Process Control Parameters</h2>
       <h3>3.1 Gas Chemistry</h3>
       <ul>
@@ -1581,6 +1592,17 @@ export const insightsPosts: InsightsPost[] = [
 
       <hr/>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/etcher-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etcher-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etcher-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etcher-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/etcher-architectures-comparison.png" alt="Comparison of four semiconductor etcher architectures: RIE, ICP-RIE, DRIE, and IBE" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Side-by-side comparison of four major etcher architectures — RIE, ICP-RIE, DRIE, and IBE</p>
+      </div>
       <h2>6. Case Study: University Lab vs. Industrial R&D</h2>
       <ul>
         <li><strong>University Lab:</strong> Prioritizes flexibility over throughput. An ICP‑RIE with broad chemistry support allows teaching across materials.</li>
@@ -4949,6 +4971,17 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>The anisotropy factor (F = 1 – a/b) approaches 0.99 at high Ar flow, indicating near-ideal verticality. Importantly, Ar has minimal impact on elemental composition, making it an effective parameter for shape control without influencing stoichiometry.</p>
       
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/thermoelectric-ch4-h2-ar-roles.png" alt="Roles of CH4, H2, and Ar gases in dry etching of Bi2Te3 thermoelectric films" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Synergistic roles of CH₄, H₂, and Ar in dry etching of Bi₂Te₃-based thermoelectric films</p>
+      </div>
       <h2>3) Optimal Gas Ratio and Resulting Microstructure</h2>
       <p>The study reveals that the optimal synergy occurs at:</p>
       
@@ -5517,6 +5550,17 @@ export const insightsPosts: InsightsPost[] = [
       </table>
       <p>The RIE-150 transformed a flat polyimide-coated PA6 surface into dense, high-aspect-ratio <strong>nanofiber forests</strong> (~3 μm height) uniformly distributed across the film. These nanoforests were subsequently coated with aluminum nanoparticles via magnetron sputtering, yielding the final Al@NFs composite structure.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/nanoforest-fabrication-actuation.png" alt="Nanoforest fabrication via RIE-150 oxygen plasma etching and dual-mode soft actuator mechanism" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: RIE-150 oxygen plasma creates nanoforest structures enabling dual-mode actuation — humidity-driven and photothermal response</p>
+      </div>
       <h3>Why the Nanoforests Matter</h3>
       <p><strong>1. Superhydrophilicity for humidity-driven actuation</strong><br/>
       The nanoforest structure reduces the water contact angle from 63° (bare PA6) to just 8° (Al@NFs-modified surface), with complete water spreading achieved within 0.2 seconds. This dramatically enhances moisture absorption and accelerates humidity-driven deformation.</p>
@@ -5606,6 +5650,17 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>The ICP-100\\'s high-density plasma and precise etch control ensured accurate pattern transfer without damaging the underlying PtSe₂ thin film — a challenge that requires careful tuning of etch chemistry and power in 2D material device fabrication.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ptse2-photodetector-architecture.png" alt="PtSe2/Si PIN photodetector device architecture with PECVD SiO2 passivation and ICP-100 patterning" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: p-PtSe₂/n⁻-Si/n⁺-Si PIN photodetector architecture — PECVD-150LL provides SiO₂ passivation while ICP-100 defines precision device features</p>
+      </div>
       <h2>Key Performance Results</h2>
       <table style="width:100%;border-collapse:collapse;margin:1em 0;">
         <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
@@ -5701,6 +5756,17 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
       <p>The RIE-150A\\'s role was critical because the metasurface\\'s optical performance depends directly on the precision of the nanoscale etching. The tilting angle θ and scaling factor S of the meta-diatom pairs must be accurately reproduced to achieve the designed q-BIC resonance conditions and spectral selectivity.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/metasurface-color-router-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-color-router-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-color-router-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-color-router-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/metasurface-color-router.png" alt="q-BIC metasurface color routing principle with cascading meta-diatom pairs on waveguide" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: q-BIC metasurface color routing — cascading meta-diatom pairs achieve wavelength-selective extraction with near-unity energy utilization</p>
+      </div>
       <h2>Key Results</h2>
       <table style="width:100%;border-collapse:collapse;margin:1em 0;">
         <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
@@ -5791,6 +5857,17 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>The C₄F₈/SF₆ chemistry at 2.5:1 ratio provides a balanced etch/passivation process: SF₆ drives the silicon etch while C₄F₈ provides sidewall passivation to maintain vertical profiles.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/metasurface-flow-visualization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-flow-visualization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-flow-visualization-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/metasurface-flow-visualization-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/metasurface-flow-visualization.png" alt="Metasurface-based flow visualization system using photonic spin-decoupled silicon nanopillars" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Photonic spin-decoupled metasurface enables non-invasive 2D visualization of transparent flow fields</p>
+      </div>
       <h2>Key Results</h2>
       <table style="width:100%;border-collapse:collapse;margin:1em 0;">
         <thead><tr style="background:#f1f5f9;"><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Metric</th><th style="text-align:left;padding:8px;border:1px solid #e2e8f0;">Value</th></tr></thead>
@@ -5931,6 +6008,17 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>The width of this energy window determines how robust the ALE process is. Wider windows are more forgiving of plasma non-uniformities and easier to control. Silicon has a relatively wide ALE window (~15\u201360 eV for Cl\u2082/Ar), while some III-V materials have narrower windows that demand more precise bias control.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ale-cycle-energy-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ale-cycle-energy-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ale-cycle-energy-window-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ale-cycle-energy-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ale-cycle-energy-window.png" alt="ALE two-step cycle diagram showing surface modification and removal steps with energy window" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: The ALE two-step cycle (surface modification + low-energy removal) and the self-limiting energy window</p>
+      </div>
       <h2>How to Implement ALE on ICP-RIE Systems</h2>
       <p>One of the most practical aspects of ALE is that it does not necessarily require a dedicated, purpose-built tool. Many modern ICP-RIE systems can be configured for ALE processes with the right capabilities:</p>
 
@@ -6182,6 +6270,17 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/cryo-vs-bosch-comparison.png" alt="Side-by-side comparison of cryogenic etching vs Bosch process trench profiles in silicon" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Cryogenic etching vs. Bosch process — smooth sidewalls vs. scalloped profiles in high-aspect-ratio silicon trenches</p>
+      </div>
       <h2>When to Choose Cryogenic Etching</h2>
 
       <h3>Optical and Photonic Applications</h3>
@@ -6620,6 +6719,17 @@ result = differential_evolution(
         </tbody>
       </table>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ml-etch-optimization-workflow.png" alt="Bayesian optimization workflow for plasma etch process development" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: ML-driven etch optimization workflow — from initial experimental design through Bayesian optimization to validated recipes</p>
+      </div>
       <h2>Challenges and Limitations</h2>
       <p><strong>Data quality matters more than data quantity.</strong> A small dataset with accurate, well-controlled measurements is far more valuable than a large dataset with inconsistent metrology. Before applying ML, ensure your measurement repeatability is adequate.</p>
       <p><strong>ML models are interpolators, not extrapolators.</strong> They work well within the parameter range covered by training data but can produce unreliable predictions outside that range. Always validate predictions that approach the boundaries of your experimental space.</p>
@@ -6729,6 +6839,17 @@ result = differential_evolution(
       </ul>
       <p>Understanding and controlling the initial surface state is therefore essential for reproducible, high-quality etch processes.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/emerging-materials-etch-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/emerging-materials-etch-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/emerging-materials-etch-map-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/emerging-materials-etch-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/emerging-materials-etch-map.png" alt="Etch chemistry map for emerging semiconductor materials including SiC, GaN, MoS2, HfO2, Ru, and HZO" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Etch chemistry landscape for emerging semiconductor materials — recommended chemistries and key challenges</p>
+      </div>
       <h3>Surface Chemistry in Silicon Carbide: Si-face vs. C-face</h3>
       <p>SiC\u2019s etching behavior depends critically on crystal orientation. The Si-face (0001) and C-face (000\u0305\u0031) present fundamentally different surface terminations and reconstructions.</p>
       <p><strong>Si-face (0001):</strong> Naturally terminated with Si atoms, Si-face surfaces are more resistant to etching and more easily cleaned with standard dry processes. However, a native SiO\u2082 layer preferentially forms on Si-face surfaces, initially hindering etch rates until the oxide is removed.</p>
@@ -7188,6 +7309,17 @@ result = differential_evolution(
       <h3>Temperature-Dependent Selectivity</h3>
       <p>Etch selectivity often has a strong temperature dependence because different materials have different activation energies for surface reactions. In some cases, lowering the substrate temperature dramatically increases selectivity by suppressing the etch of the stop layer while maintaining a reasonable rate for the target material. This is one reason why cryogenic etching can achieve exceptional selectivities in certain material systems.</p>
 
+      
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/etch-selectivity-mechanisms.png" alt="Four mechanisms of etch selectivity: chemical, ion-energy, passivation, and temperature-dependent" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Four fundamental mechanisms controlling etch selectivity in plasma processes</p>
+      </div>
       <h2>Practical Strategies for Improving Selectivity</h2>
 
       <h3>Strategy 1: Optimize Gas Chemistry</h3>
