@@ -791,7 +791,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/drie-bosch-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/drie-bosch-cycle.png" alt="Bosch process cycle diagram showing three steps: C4F8 passivation polymer deposition, SF6 plasma etching with ion bombardment, and repeated cycles forming a deep vertical trench with scalloped sidewalls" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Bosch Process Cycle — Step 1 deposits a protective C₄F₈ polymer; Step 2 uses SF₆ plasma with directional ion bombardment to etch the trench bottom; repeated cycling produces deep vertical features with characteristic sidewall scalloping.</p>
+        <p class="post-figure-caption">Figure 1: Bosch Process Cycle — Step 1 deposits a protective C₄F₈ polymer; Step 2 uses SF₆ plasma with directional ion bombardment to etch the trench bottom; repeated cycling produces deep vertical features with characteristic sidewall scalloping</p>
       </div>
       <hr/>
 
@@ -894,7 +894,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/drie-scalloping-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/drie-scalloping.png" alt="Sidewall scalloping diagram showing close-up of periodic waviness from Bosch process cycles, cycle duration vs scallop depth chart, mitigation strategies, and comparison of Bosch vs cryogenic DRIE sidewall quality" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 2: Sidewall Scalloping — Close‑up of periodic sidewall roughness from Bosch cycles, effect of cycle duration on scallop depth, mitigation strategies, and comparison of Bosch (scalloped, Ra 50–200 nm) vs cryogenic DRIE (smooth, Ra < 10 nm).</p>
+        <p class="post-figure-caption">Figure 2: Sidewall Scalloping — Close‑up of periodic sidewall roughness from Bosch cycles, effect of cycle duration on scallop depth, mitigation strategies, and comparison of Bosch (scalloped, Ra 50–200 nm) vs cryogenic DRIE (smooth, Ra < 10 nm)</p>
       </div>
 
       <h3>5.2 Aspect Ratio Dependent Etching (ARDE)</h3>
@@ -908,7 +908,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/drie-arde-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/drie-arde.png" alt="Aspect Ratio Dependent Etching diagram showing trenches of different widths etched to different depths under identical conditions, etch rate vs aspect ratio curve, and ARDE mitigation approaches" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 3: ARDE (RIE Lag) — Wider trenches etch significantly deeper than narrow ones in the same process time. The etch rate vs aspect ratio curve shows exponential roll‑off due to Knudsen diffusion transport limitation of reactive species.</p>
+        <p class="post-figure-caption">Figure 3: ARDE (RIE Lag) — Wider trenches etch significantly deeper than narrow ones in the same process time. The etch rate vs aspect ratio curve shows exponential roll‑off due to Knudsen diffusion transport limitation of reactive species</p>
       </div>
 
       <p>Mitigation approaches for ARDE include:</p>
@@ -1014,7 +1014,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/icp-rie-reactor-architecture.png" alt="ICP-RIE dual-source reactor architecture showing ICP coil for plasma density control and RF-biased substrate electrode for ion energy control" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: ICP-RIE dual-source reactor architecture — independent ICP coil controls plasma density while RF-biased substrate electrode controls ion energy</p>
+        <p class="post-figure-caption">Figure 1: ICP-RIE Dual-Source Reactor Architecture — independent ICP coil controls plasma density while RF-biased substrate electrode controls ion energy</p>
       </div>
       <h2>3) Process Control Parameters</h2>
       <h3>3.1 Gas Chemistry</h3>
@@ -1085,7 +1085,17 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Explore more advanced etching insights at <a href="/insights">NineScrolls Insights</a>.</strong></p>
 
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/semiconductor-etchers-overview">Semiconductor Etchers Overview</a> — comparing RIE, ICP-RIE, DRIE, and IBE architectures</li>
+          <li><a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs. RIE vs. ICP-RIE</a> — understanding the differences between plasma etching approaches</li>
+          <li><a href="/insights/atomic-layer-etching-practical-guide">Atomic Layer Etching (ALE)</a> — a practical guide for precision etch on ICP-RIE platforms</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
         <li>Hopwood, J. "Review of inductively coupled plasmas for plasma processing." <em>Plasma Sources Science and Technology</em>, 1(2), 109 (1992). <a href="https://doi.org/10.1088/0963-0252/1/2/006" target="_blank" rel="noopener noreferrer">doi:10.1088/0963-0252/1/2/006</a></li>
@@ -1601,7 +1611,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/etcher-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/etcher-architectures-comparison.png" alt="Comparison of four semiconductor etcher architectures: RIE, ICP-RIE, DRIE, and IBE" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Side-by-side comparison of four major etcher architectures — RIE, ICP-RIE, DRIE, and IBE</p>
+        <p class="post-figure-caption">Figure 1: Etcher Architecture Comparison — side-by-side view of RIE, ICP-RIE, DRIE, and IBE systems</p>
       </div>
       <h2>6. Case Study: University Lab vs. Industrial R&D</h2>
       <ul>
@@ -1625,7 +1635,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>The key is to match your material set, target applications, and scalability goals with the capabilities of the etching system. With the right choice, your lab can future‑proof its research capabilities and accelerate innovation.</p>
 
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a> — high-density plasma for advanced etching</li>
+          <li><a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE) Guide</a> — principles, applications, and equipment</li>
+          <li><a href="/insights/reactive-ion-etching-vs-ion-milling">RIE vs. Ion Milling</a> — choosing the right technique for your application</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Donnelly, V. M. & Kornblit, A. "Plasma etching: Yesterday, today, and tomorrow." <em>Journal of Vacuum Science & Technology A</em>, 31(5), 050825 (2013). <a href="https://doi.org/10.1116/1.4819316" target="_blank" rel="noopener noreferrer">doi:10.1116/1.4819316</a></li>
         <li>Abe, H., Yoneda, M. & Fujiwara, N. "Developments of plasma etching technology for fabricating semiconductor devices." <em>Japanese Journal of Applied Physics</em>, 47(3R), 1435 (2008). <a href="https://doi.org/10.1143/JJAP.47.1435" target="_blank" rel="noopener noreferrer">doi:10.1143/JJAP.47.1435</a></li>
@@ -2699,7 +2719,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/plasma-etching-principles-optimized.png" alt="Plasma Etching Principles Comparison — visual comparison of PE, RIE, and ICP-RIE reactor architectures and etch profiles" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 2: Reactor architectures and resulting etch profiles for PE, RIE, and ICP-RIE</p>
+        <p class="post-figure-caption">Figure 2: PE/RIE/ICP-RIE Reactor Architectures — chamber cross-sections and resulting etch profiles</p>
       </div>
 
       <h3>Typical RIE Process Parameters</h3>
@@ -2987,7 +3007,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 4: PE, RIE, and ICP-RIE etching capabilities comparison</p>
+        <p class="post-figure-caption">Figure 4: Etching Capabilities Comparison — PE, RIE, and ICP-RIE performance characteristics</p>
       </div>
 
       <h2>11. Future Trends in Plasma Etching</h2>
@@ -4635,7 +4655,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/future-plasma-ale-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/future-plasma-ale-cycle.png" alt="Atomic Layer Etching (ALE) four-step cycle diagram showing surface modification, purge, removal, and purge phases with self-limiting reactions" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: The ALE Cycle — Four-step self-limiting process consisting of surface modification (reactive adsorption), purge, energetic removal of the modified layer, and a final purge. Each cycle removes a precisely controlled amount of material, typically 0.5–2 Å per cycle.</p>
+        <p class="post-figure-caption">Figure 1: The ALE Cycle — Four-step self-limiting process consisting of surface modification (reactive adsorption), purge, energetic removal of the modified layer, and a final purge. Each cycle removes a precisely controlled amount of material, typically 0.5–2 Å per cycle</p>
       </div>
 
       <h3>2.2 Thermal ALE vs Plasma-Enhanced ALE</h3>
@@ -4674,7 +4694,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/future-plasma-pulsed-timing-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/future-plasma-pulsed-timing.png" alt="Pulsed plasma timing diagram showing synchronous and asynchronous pulsing of source RF and bias RF with labeled duty cycles and frequencies" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 2: Pulsed Plasma Operating Modes — Timing diagrams comparing synchronous pulsing (source and bias in phase) and asynchronous pulsing (independent frequencies), illustrating how duty cycle and phase offset provide additional process control dimensions beyond CW operation.</p>
+        <p class="post-figure-caption">Figure 2: Pulsed Plasma Operating Modes — Timing diagrams comparing synchronous pulsing (source and bias in phase) and asynchronous pulsing (independent frequencies), illustrating how duty cycle and phase offset provide additional process control dimensions beyond CW operation</p>
       </div>
 
       <h3>3.2 Benefits and Quantitative Impact</h3>
@@ -4702,7 +4722,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/future-plasma-har-challenges-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/future-plasma-har-challenges.png" alt="High aspect ratio etch defect mechanisms — cross-section diagrams showing ARDE, bowing, twisting, and necking in deep silicon features" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 3: HAR Etch Defect Mechanisms — Cross-section views illustrating (a) ARDE: reduced etch rate in narrower features, (b) bowing: lateral widening from scattered ions, (c) twisting: angular deviation of the feature axis, and (d) necking: constriction near the feature opening due to polymer buildup.</p>
+        <p class="post-figure-caption">Figure 3: HAR Etch Defect Mechanisms — Cross-section views illustrating (a) ARDE: reduced etch rate in narrower features, (b) bowing: lateral widening from scattered ions, (c) twisting: angular deviation of the feature axis, and (d) necking: constriction near the feature opening due to polymer buildup</p>
       </div>
 
       <p>Several defect mechanisms emerge at high aspect ratios, each driven by distinct physical processes:</p>
@@ -4980,7 +5000,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/thermoelectric-ch4-h2-ar-roles.png" alt="Roles of CH4, H2, and Ar gases in dry etching of Bi2Te3 thermoelectric films" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Synergistic roles of CH₄, H₂, and Ar in dry etching of Bi₂Te₃-based thermoelectric films</p>
+        <p class="post-figure-caption">Figure 1: CH₄/H₂/Ar Gas Roles — synergistic functions of each gas species in dry etching of Bi₂Te₃-based thermoelectric films</p>
       </div>
       <h2>3) Optimal Gas Ratio and Resulting Microstructure</h2>
       <p>The study reveals that the optimal synergy occurs at:</p>
@@ -5049,7 +5069,17 @@ export const insightsPosts: InsightsPost[] = [
       Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
 
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a> — plasma processing challenges for emerging semiconductor materials</li>
+          <li><a href="/insights/ultra-high-etch-selectivity">The Selectivity Challenge</a> — achieving ultra-high etch selectivity in modern plasma processes</li>
+          <li><a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a> — high-density plasma for advanced etching</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Snyder, G. J. & Toberer, E. S. "Complex thermoelectric materials." <em>Nature Materials</em>, 7(2), 105–114 (2008). <a href="https://doi.org/10.1038/nmat2090" target="_blank" rel="noopener noreferrer">doi:10.1038/nmat2090</a></li>
         <li>Venkatasubramanian, R., et al. "Thin-film thermoelectric devices with high room-temperature figures of merit." <em>Nature</em>, 413(6856), 597–602 (2001). <a href="https://doi.org/10.1038/35098012" target="_blank" rel="noopener noreferrer">doi:10.1038/35098012</a></li>
@@ -5559,7 +5589,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/nanoforest-fabrication-actuation.png" alt="Nanoforest fabrication via RIE-150 oxygen plasma etching and dual-mode soft actuator mechanism" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: RIE-150 oxygen plasma creates nanoforest structures enabling dual-mode actuation — humidity-driven and photothermal response</p>
+        <p class="post-figure-caption">Figure 1: Nanoforest Fabrication and Actuation — RIE-150 oxygen plasma creates nanoforest structures enabling humidity-driven and photothermal response</p>
       </div>
       <h3>Why the Nanoforests Matter</h3>
       <p><strong>1. Superhydrophilicity for humidity-driven actuation</strong><br/>
@@ -5600,7 +5630,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>For researchers working on nanostructured surfaces, soft actuators, or environmental energy harvesting, the RIE-150 offers the process control and reproducibility required to achieve publication-grade results.</p>
       <p><em>Interested in learning more about our RIE systems? <a href="/contact?topic=quote">Request a Quote →</a></em></p>
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE) Guide</a> — principles, applications, and equipment</li>
+          <li><a href="/insights/advanced-materials-processing-nanotechnology-energy">Advanced Materials Processing</a> — from nanotechnology to energy applications</li>
+          <li><a href="/insights/nanofabrication-techniques-nanoscale-future">Nanofabrication Techniques</a> — building the nanoscale future</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Li, H. et al., "An Environment-Powered Soft Actuator Enabled by Water and Light Highly Absorptive Nanoforests," <em>ACS Applied Nano Materials</em>, 2026. <a href="https://doi.org/10.1021/acsanm.5c05598" target="_blank" rel="noopener noreferrer">doi:10.1021/acsanm.5c05598</a></li>
       </ol>
@@ -5696,7 +5736,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>As the field of 2D/Si heterojunction optoelectronics moves toward scalable manufacturing, reliable plasma processing tools like these become foundational to bridging the gap between lab-scale innovation and production-ready devices.</p>
       <p><em>Interested in learning more about our PECVD and ICP systems? <a href="/contact?topic=quote">Request a Quote →</a></em></p>
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a> — high-density plasma for advanced etching</li>
+          <li><a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a> — plasma processing challenges for emerging semiconductor materials</li>
+          <li><a href="/insights/photonics-manufacturing-precision-engineering">Photonics Manufacturing</a> — precision engineering for optical devices</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Xu, X. et al., "Broadband and high-speed micro-scale PtSe₂/Si 2D-3D PIN photodetector for on-chip polarization-encoded communication and imaging," <em>Applied Surface Science</em> 730 (2026) 166329. <a href="https://doi.org/10.1016/j.apsusc.2026.166329" target="_blank" rel="noopener noreferrer">doi:10.1016/j.apsusc.2026.166329</a></li>
       </ol>
@@ -5796,7 +5846,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>Publication in <strong>Light: Science &amp; Applications</strong> (Nature portfolio, Impact Factor ~20) represents the highest tier of visibility in optics and photonics. This work demonstrates the RIE-150A\\'s capability to deliver the nanoscale pattern fidelity required for advanced metasurface devices where sub-nanometer dimensional control directly determines optical performance.</p>
       <p><em>Interested in our RIE systems? <a href="/contact?topic=quote">Request a Quote →</a></em></p>
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/icp200-metasurface-flow-visualization">Metasurface Flow Visualization</a> — another metasurface application using ICP-200 etching</li>
+          <li><a href="/insights/photonics-manufacturing-precision-engineering">Photonics Manufacturing</a> — precision engineering for optical devices</li>
+          <li><a href="/insights/nanofabrication-techniques-nanoscale-future">Nanofabrication Techniques</a> — building the nanoscale future</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Shi, Y. et al., "On-chip nonlocal metasurface for color router: conquering efficiency-loss from spatial-multiplexing," <em>Light: Science &amp; Applications</em> 15, 66 (2026). <a href="https://doi.org/10.1038/s41377-025-02146-9" target="_blank" rel="noopener noreferrer">doi:10.1038/s41377-025-02146-9</a></li>
       </ol>
@@ -5866,7 +5926,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/metasurface-flow-visualization-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/metasurface-flow-visualization.png" alt="Metasurface-based flow visualization system using photonic spin-decoupled silicon nanopillars" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Photonic spin-decoupled metasurface enables non-invasive 2D visualization of transparent flow fields</p>
+        <p class="post-figure-caption">Figure 1: Metasurface Flow Visualization — photonic spin-decoupled metasurface enables non-invasive 2D visualization of transparent flow fields</p>
       </div>
       <h2>Key Results</h2>
       <table style="width:100%;border-collapse:collapse;margin:1em 0;">
@@ -5900,7 +5960,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>Together with the color router paper (also in <em>Light: Science &amp; Applications</em>), this represents <strong>two Nature-portfolio publications</strong> in rapid succession featuring Tailong Electronics etching systems — a strong endorsement of equipment performance for the nanophotonics community.</p>
       <p><em>Interested in our ICP systems? <a href="/contact?topic=quote">Request a Quote →</a></em></p>
 
-      <h2>References</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/rie150a-metasurface-color-router">On-Chip Metasurface Color Router</a> — another metasurface application using RIE-150A dry etching</li>
+          <li><a href="/insights/photonics-manufacturing-precision-engineering">Photonics Manufacturing</a> — precision engineering for optical devices</li>
+          <li><a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology</a> — high-density plasma for advanced etching</li>
+        </ul>
+      </div>
+
+<h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Fan, Q. et al., "Non-invasive and fully two-dimensional quantitative visualization of transparent flow fields enabled by photonic spin-decoupled metasurfaces," <em>Light: Science &amp; Applications</em> 14, 113 (2025). <a href="https://doi.org/10.1038/s41377-025-01793-2" target="_blank" rel="noopener noreferrer">doi:10.1038/s41377-025-01793-2</a></li>
       </ol>
@@ -6017,7 +6087,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/ale-cycle-energy-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/ale-cycle-energy-window.png" alt="ALE two-step cycle diagram showing surface modification and removal steps with energy window" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: The ALE two-step cycle (surface modification + low-energy removal) and the self-limiting energy window</p>
+        <p class="post-figure-caption">Figure 1: ALE Two-Step Cycle — surface modification and low-energy removal steps with the self-limiting energy window</p>
       </div>
       <h2>How to Implement ALE on ICP-RIE Systems</h2>
       <p>One of the most practical aspects of ALE is that it does not necessarily require a dedicated, purpose-built tool. Many modern ICP-RIE systems can be configured for ALE processes with the right capabilities:</p>
@@ -6116,7 +6186,18 @@ export const insightsPosts: InsightsPost[] = [
       <p>With emerging variants like hybrid ALE, cryogenic ALE, and area-selective ALE pushing the technique into new territory, the coming years will see an expansion of both the materials and applications that ALE can address. Researchers who build ALE expertise now will be well-positioned to lead this transition.</p>
       <p>NineScrolls offers ICP and RIE etching systems designed with the flexibility and precision control that ALE process development requires. To learn more about how our systems can support your ALE research, visit our <a href="/products">Products page</a> or <a href="/quote">request a quote</a>.</p>
 
-      <h2>Frequently Asked Questions</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles in This Series</h3>
+        <ul>
+          <li><a href="/insights/cryogenic-etching-vs-bosch-process">Cryogenic Etching vs. Bosch Process</a> — comparing alternative approaches for high-aspect-ratio structures</li>
+          <li><a href="/insights/ultra-high-etch-selectivity">The Selectivity Challenge</a> — achieving ultra-high etch selectivity in modern plasma processes</li>
+          <li><a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a> — plasma processing challenges for emerging semiconductor materials</li>
+          <li><a href="/insights/machine-learning-plasma-etch-optimization">ML for Plasma Etch Optimization</a> — data-driven approaches to accelerating process development</li>
+        </ul>
+      </div>
+
+<h2>Frequently Asked Questions</h2>
 
       <div class="faq-item" itemscope itemtype="https://schema.org/Question">
         <h3 itemprop="name">What is Atomic Layer Etching (ALE) and how does it differ from conventional plasma etching?</h3>
@@ -6279,7 +6360,7 @@ export const insightsPosts: InsightsPost[] = [
           <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/cryo-vs-bosch-comparison.png" alt="Side-by-side comparison of cryogenic etching vs Bosch process trench profiles in silicon" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Cryogenic etching vs. Bosch process — smooth sidewalls vs. scalloped profiles in high-aspect-ratio silicon trenches</p>
+        <p class="post-figure-caption">Figure 1: Cryogenic Etching vs. Bosch Process — smooth sidewalls vs. scalloped profiles in high-aspect-ratio silicon trenches</p>
       </div>
       <h2>When to Choose Cryogenic Etching</h2>
 
@@ -6396,7 +6477,17 @@ export const insightsPosts: InsightsPost[] = [
       <p>Cryogenic plasma etching is not a replacement for the Bosch process \u2014 it is a complementary technique that excels in applications where sidewall smoothness, process simplicity, and clean passivation matter most. As photonics, quantum devices, and advanced MEMS push the boundaries of what conventional DRIE can deliver, cryogenic etching is poised to become an increasingly important tool in the researcher\u2019s arsenal.</p>
       <p>Understanding the trade-offs between these two approaches allows you to select the optimal process for your specific device requirements \u2014 or to combine elements of both for next-generation fabrication challenges.</p>
 
-      <h2>Frequently Asked Questions</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles in This Series</h3>
+        <ul>
+          <li><a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive Ion Etching (DRIE)</a> — the Bosch process explained in depth</li>
+          <li><a href="/insights/atomic-layer-etching-practical-guide">Atomic Layer Etching (ALE)</a> — a practical guide for precision etch applications</li>
+          <li><a href="/insights/ultra-high-etch-selectivity">The Selectivity Challenge</a> — achieving ultra-high etch selectivity in modern plasma processes</li>
+        </ul>
+      </div>
+
+<h2>Frequently Asked Questions</h2>
       <div class="faq-section">
         <div class="faq-item" itemscope itemtype="https://schema.org/Question">
           <h3 itemprop="name">What is the main advantage of cryogenic etching over the Bosch process?</h3>
@@ -6728,7 +6819,7 @@ result = differential_evolution(
           <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/ml-etch-optimization-workflow.png" alt="Bayesian optimization workflow for plasma etch process development" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: ML-driven etch optimization workflow — from initial experimental design through Bayesian optimization to validated recipes</p>
+        <p class="post-figure-caption">Figure 1: ML-Driven Etch Optimization Workflow — from initial experimental design through Bayesian optimization to validated recipes</p>
       </div>
       <h2>Challenges and Limitations</h2>
       <p><strong>Data quality matters more than data quantity.</strong> A small dataset with accurate, well-controlled measurements is far more valuable than a large dataset with inconsistent metrology. Before applying ML, ensure your measurement repeatability is adequate.</p>
@@ -6752,7 +6843,17 @@ result = differential_evolution(
       <p>Machine learning is no longer a distant promise for plasma etch process development \u2014 it is a practical tool that can deliver immediate value in research labs. By reducing the number of experiments needed for recipe optimization, enabling real-time process monitoring, and providing predictive capability that traditional approaches cannot match, ML helps researchers spend less time on trial-and-error and more time on the science that matters.</p>
       <p>NineScrolls\u2019 etching and deposition systems are designed with comprehensive process data logging and diagnostic capabilities, providing the foundation for data-driven process optimization. <a href="/contact">Contact us</a> to learn how our systems can support your smart manufacturing research.</p>
 
-      <h2>Frequently Asked Questions</h2>
+      
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles in This Series</h3>
+        <ul>
+          <li><a href="/insights/atomic-layer-etching-practical-guide">Atomic Layer Etching (ALE)</a> — precision etching where ML-optimized recipes add significant value</li>
+          <li><a href="/insights/ultra-high-etch-selectivity">The Selectivity Challenge</a> — achieving ultra-high etch selectivity with data-driven optimization</li>
+          <li><a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a> — plasma processing challenges where ML accelerates recipe development</li>
+        </ul>
+      </div>
+
+<h2>Frequently Asked Questions</h2>
       <div class="faq-section">
         <div class="faq-item" itemscope itemtype="https://schema.org/Question">
           <h3 itemprop="name">How many experiments do I need to get started with ML-based etch optimization?</h3>
@@ -6848,7 +6949,7 @@ result = differential_evolution(
           <source srcSet="/assets/images/insights/emerging-materials-etch-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/emerging-materials-etch-map.png" alt="Etch chemistry map for emerging semiconductor materials including SiC, GaN, MoS2, HfO2, Ru, and HZO" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Etch chemistry landscape for emerging semiconductor materials — recommended chemistries and key challenges</p>
+        <p class="post-figure-caption">Figure 1: Emerging Materials Etch Chemistry — recommended chemistries and key challenges for emerging semiconductor materials</p>
       </div>
       <h3>Surface Chemistry in Silicon Carbide: Si-face vs. C-face</h3>
       <p>SiC\u2019s etching behavior depends critically on crystal orientation. The Si-face (0001) and C-face (000\u0305\u0031) present fundamentally different surface terminations and reconstructions.</p>
@@ -7318,7 +7419,7 @@ result = differential_evolution(
           <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="/assets/images/insights/etch-selectivity-mechanisms.png" alt="Four mechanisms of etch selectivity: chemical, ion-energy, passivation, and temperature-dependent" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Four fundamental mechanisms controlling etch selectivity in plasma processes</p>
+        <p class="post-figure-caption">Figure 1: Etch Selectivity Mechanisms — four fundamental mechanisms controlling selectivity in plasma processes</p>
       </div>
       <h2>Practical Strategies for Improving Selectivity</h2>
 
