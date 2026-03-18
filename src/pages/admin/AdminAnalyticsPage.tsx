@@ -1836,6 +1836,7 @@ export function AdminAnalyticsPage() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [showBots, setShowBots] = useState(false);
+  const [showPrivateIPs, setShowPrivateIPs] = useState(false);
   const [hideSelf, setHideSelf] = useState(true);
   const [sortCol, setSortCol] = useState<SortColumn>('lastVisit');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -2055,11 +2056,14 @@ export function AdminAnalyticsPage() {
         return true;
       });
     }
+    if (!showPrivateIPs) {
+      events = events.filter((e) => !e.ip || !isPrivateIP(e.ip));
+    }
     if (hideSelf && selfVisitorIds.size > 0) {
       events = events.filter((e) => !selfVisitorIds.has((e as Record<string, unknown>).visitorId as string));
     }
     return events;
-  }, [allEvents, showBots, hideSelf, selfVisitorIds]);
+  }, [allEvents, showBots, showPrivateIPs, hideSelf, selfVisitorIds]);
 
   const botCount = useMemo(() => {
     return allEvents.filter((e) => {
@@ -2067,6 +2071,10 @@ export function AdminAnalyticsPage() {
       const orgKey = e.orgName || e.org || '';
       return orgKey ? isKnownBotOrg(orgKey) : false;
     }).length;
+  }, [allEvents]);
+
+  const privateIPCount = useMemo(() => {
+    return allEvents.filter((e) => e.ip && isPrivateIP(e.ip)).length;
   }, [allEvents]);
 
   const selfCount = useMemo(() => {
@@ -2393,6 +2401,15 @@ export function AdminAnalyticsPage() {
           />
           <span className="analytics-toggle-slider" />
           <span className="analytics-toggle-label">Bots ({botCount})</span>
+        </label>
+        <label className="analytics-toggle">
+          <input
+            type="checkbox"
+            checked={showPrivateIPs}
+            onChange={(e) => setShowPrivateIPs(e.target.checked)}
+          />
+          <span className="analytics-toggle-slider" />
+          <span className="analytics-toggle-label">Private IPs ({privateIPCount})</span>
         </label>
         <label className="analytics-toggle">
           <input
