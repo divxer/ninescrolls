@@ -267,6 +267,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             .filter((r): r is Partial<IPInfo> => r !== null);
 
         if (successfulResponses.length === 0) {
+            const errors = responses.map((r, i) => {
+                const service = i === 0 ? 'IPinfo' : 'ipapi';
+                return r.status === 'rejected' ? `${service}: ${r.reason}` : `${service}: null response`;
+            });
+            console.error(`All IP lookup services failed for ${visitorIp}:`, errors.join('; '));
             return {
                 statusCode: 502,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -276,6 +281,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
         const ipInfo = mergeIPInfo(successfulResponses);
         const analysis = analyzeTargetCustomer(ipInfo);
+
+        // Log which services responded and the resolved org
+        const serviceStatus = responses.map((r, i) => {
+            const service = i === 0 ? 'IPinfo' : 'ipapi';
+            return r.status === 'fulfilled' && r.value ? `${service}:ok` : `${service}:fail`;
+        }).join(',');
+        console.log(`IP lookup ${visitorIp}: ${serviceStatus} → org="${analysis.details.orgName}" type=${analysis.organizationType}`);
 
         return {
             statusCode: 200,
