@@ -13,6 +13,7 @@ Disallow: /docs/*.pdf
 Allow: /NineScrolls-Equipment-Guide.pdf
 Allow: /equipment-guide.pdf
 Allow: /docs/NineScrolls_Service_Process_Guide.pdf
+Allow: /docs/*-datasheet.pdf
 
 # AI bot access — allow all AI crawlers to index our content
 User-agent: GPTBot
