@@ -38,7 +38,7 @@ function getAdminToken(): string {
 
 async function callClassifyOrg(body: Record<string, unknown>): Promise<unknown> {
   const apiEndpoint = getApiEndpoint();
-  const response = await fetch(`${apiEndpoint}/classify-org`, {
+  const response = await fetch(`${apiEndpoint}/resolve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...body, adminToken: getAdminToken() }),
