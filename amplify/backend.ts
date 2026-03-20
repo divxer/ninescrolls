@@ -137,9 +137,9 @@ const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'Newsletter
 newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
 backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
-// Create /ip-lookup resource for server-side IP geolocation and target customer analysis
+// Create /geo resource for server-side IP geolocation and target customer analysis
 // Moves IP lookups from frontend (CORS issues, rate limits) to Lambda (no restrictions)
-const ipLookupResource = restApi.root.addResource('ip-lookup');
+const ipLookupResource = restApi.root.addResource('geo');
 const ipLookupIntegration = new LambdaIntegration(backend.ipLookup.resources.lambda, {
     proxy: true,
 });

@@ -1,5 +1,5 @@
 // IP Analytics Service
-// Calls the backend /ip-lookup Lambda to get IP info and org type classification.
+// Calls the backend /geo Lambda to get IP info and org type classification.
 // AI classification (classify-org Lambda) provides numeric confidence and refined org type.
 
 import outputs from '../../amplify_outputs.json';
@@ -85,7 +85,7 @@ class IPAnalyticsService {
     this.fetchPromise = (async () => {
       try {
         const apiEndpoint = getApiEndpoint();
-        const response = await fetch(`${apiEndpoint}/ip-lookup`, {
+        const response = await fetch(`${apiEndpoint}/geo`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
