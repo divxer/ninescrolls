@@ -109,7 +109,7 @@ export async function classifyOrganization(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    const response = await fetch(`${apiEndpoint}/classify-org`, {
+    const response = await fetch(`${apiEndpoint}/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orgName, country, city, isp }),

@@ -251,8 +251,8 @@ const taxRateLimitTable = new Table(taxFunctionStack, 'TaxRateLimit', {
 taxRateLimitTable.grantReadWriteData(backend.calculateTax.resources.lambda);
 backend.calculateTax.addEnvironment('TAX_RATE_LIMIT_TABLE', taxRateLimitTable.tableName);
 
-// Create /classify-org resource for AI-powered organization classification
-const classifyOrgResource = restApi.root.addResource('classify-org');
+// Create /resolve resource for AI-powered organization classification
+const classifyOrgResource = restApi.root.addResource('resolve');
 const classifyOrgIntegration = new LambdaIntegration(backend.classifyOrg.resources.lambda, {
     proxy: true,
 });
