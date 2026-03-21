@@ -24,6 +24,7 @@ import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/a
 import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
 import { LayerVersion, Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import type { ILocalBundling } from 'aws-cdk-lib';
 import { execSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -273,6 +274,16 @@ const orgClassificationTable = new Table(classifyOrgFunctionStack, 'OrgClassific
 
 orgClassificationTable.grantReadWriteData(backend.classifyOrg.resources.lambda);
 backend.classifyOrg.addEnvironment('ORG_CLASSIFICATION_TABLE', orgClassificationTable.tableName);
+
+// Grant classify-org Lambda permission to invoke Bedrock models
+backend.classifyOrg.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
+    ],
+}));
 
 // Create /generate-article-meta resource for AI-powered article excerpt & tags generation
 const generateArticleMetaResource = restApi.root.addResource('generate-article-meta');

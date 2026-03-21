@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ const getCorsHeaders = (origin?: string) => {
 // ─── DynamoDB Cache ──────────────────────────────────────────────────────────
 
 const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const bedrockClient = new BedrockRuntimeClient({});
 const TABLE_NAME = process.env.ORG_CLASSIFICATION_TABLE || '';
 const CACHE_TTL_DAYS = 7;
 
@@ -165,16 +167,14 @@ function invalidateCorrectionsCache(): void {
     manualCorrectionsCacheTime = 0;
 }
 
-// ─── Claude API ──────────────────────────────────────────────────────────────
+// ─── AI Classification ───────────────────────────────────────────────────────
 
-async function classifyWithClaude(input: ClassifyRequest): Promise<ClassifyResult> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-        throw new Error('ANTHROPIC_API_KEY not configured');
-    }
+const BEDROCK_TIMEOUT_MS = 5000; // 5-second timeout before falling back to Anthropic API
 
+/** Build the classification prompt (shared by Bedrock and Anthropic API). */
+async function buildClassificationPrompt(input: ClassifyRequest): Promise<string> {
     const location = [input.city, input.country].filter(Boolean).join(', ');
-    // Strip ASN prefix so Claude sees the actual org name
+    // Strip ASN prefix so the model sees the actual org name
     const cleanOrgName = input.orgName.replace(/^AS\d+\s+/i, '').trim() || input.orgName;
 
     // Load manual corrections for few-shot learning
@@ -187,7 +187,7 @@ async function classifyWithClaude(input: ClassifyRequest): Promise<ClassifyResul
         correctionsBlock = `\n\nAdmin corrections (use these as ground truth for similar organizations):\n${lines}`;
     }
 
-    const prompt = `You are classifying organizations that visit NineScrolls, a scientific equipment company selling advanced research instruments (electron microscopes, spectrometers, nanofabrication tools, etc.) to universities, research labs, and R&D departments.
+    return `You are classifying organizations that visit NineScrolls, a scientific equipment company selling advanced research instruments (electron microscopes, spectrometers, nanofabrication tools, etc.) to universities, research labs, and R&D departments.
 
 Given this organization info, classify it:
 
@@ -220,6 +220,66 @@ CRITICAL — these are NEVER target customers (isTargetCustomer = false):
 - Web crawlers/bots: Google, Bing, Ahrefs, SEMrush
 
 isTargetCustomer = true ONLY if the organization would reasonably purchase scientific research equipment (microscopes, spectrometers, nanofab tools, etc.)${correctionsBlock}`;
+}
+
+/** Parse classification JSON from model response text. */
+function parseClassificationResponse(text: string, provider: string): ClassifyResult {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        throw new Error(`Failed to parse ${provider} response: ${text.slice(0, 200)}`);
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    return {
+        organizationType: parsed.organizationType || 'unknown',
+        isTargetCustomer: parsed.isTargetCustomer === true,
+        confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0)),
+        reason: String(parsed.reason || '').slice(0, 200),
+        cached: false,
+        source: 'ai',
+    };
+}
+
+/** Classify via AWS Bedrock (same region, lower latency). */
+async function classifyWithBedrock(prompt: string): Promise<ClassifyResult> {
+    const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-3-5-haiku-20241022-v1:0';
+
+    const command = new InvokeModelCommand({
+        modelId,
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: new TextEncoder().encode(JSON.stringify({
+            anthropic_version: 'bedrock-2023-05-31',
+            max_tokens: 256,
+            messages: [{ role: 'user', content: prompt }],
+        })),
+    });
+
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), BEDROCK_TIMEOUT_MS);
+
+    try {
+        const response = await bedrockClient.send(command, {
+            abortSignal: abortController.signal,
+        });
+        clearTimeout(timeoutId);
+
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        const text = responseBody.content?.[0]?.text || '';
+
+        return parseClassificationResponse(text, 'Bedrock');
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+/** Classify via Anthropic API (fallback when Bedrock fails). */
+async function classifyWithAnthropicAPI(prompt: string): Promise<ClassifyResult> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+        throw new Error('ANTHROPIC_API_KEY not configured');
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -237,28 +297,37 @@ isTargetCustomer = true ONLY if the organization would reasonably purchase scien
 
     if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`Claude API error ${response.status}: ${errText}`);
+        throw new Error(`Anthropic API error ${response.status}: ${errText}`);
     }
 
     const data = await response.json();
     const text = data.content?.[0]?.text || '';
 
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-        throw new Error(`Failed to parse Claude response: ${text}`);
+    return parseClassificationResponse(text, 'Anthropic');
+}
+
+/** Orchestrator: try Bedrock first, fall back to Anthropic API. */
+async function classifyOrganization(input: ClassifyRequest): Promise<ClassifyResult> {
+    const prompt = await buildClassificationPrompt(input);
+
+    // Try Bedrock first (same region, lower latency)
+    try {
+        const result = await classifyWithBedrock(prompt);
+        console.log(`Classification via Bedrock: "${input.orgName}" → ${result.organizationType} (${(result.confidence * 100).toFixed(0)}%)`);
+        return result;
+    } catch (bedrockError) {
+        const errMsg = bedrockError instanceof Error ? bedrockError.message : String(bedrockError);
+        const isTimeout = errMsg.includes('aborted') || errMsg.includes('AbortError');
+        const isAccessDenied = errMsg.includes('AccessDeniedException');
+        const isThrottled = errMsg.includes('ThrottlingException');
+        const errorType = isTimeout ? 'timeout' : isAccessDenied ? 'access_denied' : isThrottled ? 'throttled' : 'error';
+        console.warn(`Bedrock ${errorType} for "${input.orgName}": ${errMsg}. Falling back to Anthropic API.`);
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    return {
-        organizationType: parsed.organizationType || 'unknown',
-        isTargetCustomer: parsed.isTargetCustomer === true,
-        confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0)),
-        reason: String(parsed.reason || '').slice(0, 200),
-        cached: false,
-        source: 'ai',
-    };
+    // Fallback to Anthropic API
+    const result = await classifyWithAnthropicAPI(prompt);
+    console.log(`Classification via Anthropic API (fallback): "${input.orgName}" → ${result.organizationType} (${(result.confidence * 100).toFixed(0)}%)`);
+    return result;
 }
 
 // ─── Admin Auth ─────────────────────────────────────────────────────────────
@@ -538,8 +607,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             }
         }
 
-        // Call Claude API
-        const result = await classifyWithClaude(body);
+        // Classify: Bedrock first, Anthropic API fallback
+        const result = await classifyOrganization(body);
 
         // Cache result (fire-and-forget)
         cacheClassification(body.orgName, result).catch(console.error);
