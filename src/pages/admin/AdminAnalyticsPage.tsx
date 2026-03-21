@@ -774,6 +774,33 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     groups.delete(key);
   }
 
+  // ── Consolidate groups sharing the same visitorId ──────────────────
+  // After ISP splitting and org merge-back, the same visitor may still
+  // appear in multiple groups (e.g. same visitorId from different IPs
+  // where some events have orgName and some don't).  Merge single-visitor
+  // groups that share the same visitorId so they appear as one record.
+  const vidPrimaryKey = new Map<string, string>(); // visitorId → first group key
+  const consolidateKeys: string[] = [];
+  for (const [key, group] of groups) {
+    const vids = new Set<string>();
+    for (const e of group) {
+      const vid = (e as Record<string, unknown>).visitorId as string;
+      if (vid) vids.add(vid);
+    }
+    if (vids.size !== 1) continue; // only merge single-visitor groups
+    const vid = [...vids][0];
+    const existing = vidPrimaryKey.get(vid);
+    if (existing && groups.has(existing)) {
+      groups.get(existing)!.push(...group);
+      consolidateKeys.push(key);
+    } else {
+      vidPrimaryKey.set(vid, key);
+    }
+  }
+  for (const key of consolidateKeys) {
+    groups.delete(key);
+  }
+
   const records: OrganizationRecord[] = [];
 
   for (const [key, group] of groups) {
