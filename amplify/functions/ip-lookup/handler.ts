@@ -175,8 +175,6 @@ function mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
 /** Keyword fallback when IPinfo company.type is unavailable. Matched against WHOIS/ASN org names. */
 const EDUCATION_KEYWORDS = /\b(university|universidade|universidad|universit[aàe]t|universit[eé]|college|polytechnic)\b/i;
 const GOVERNMENT_KEYWORDS = /\b(government|ministry|department of|national lab)\b/i;
-const ISP_KEYWORDS = /\b(telecom|telecommunications|broadband|wireless|mobile|communications|cable|internet service|fiber|network)\b/i;
-const BUSINESS_KEYWORDS = /\b(inc|ltd|llc|corp|corporation|gmbh|s\.a\.|co\.|plc|ag)\b/i;
 
 function getOrgTypeName(type: string): string {
     const typeNames: Record<string, string> = {
@@ -213,15 +211,12 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
         organizationType = 'hosting';
     } else if (!companyType) {
         // Keyword fallback when company.type is unavailable (free tier).
-        // Matches against WHOIS/ASN org names — false positive risk is low.
+        // Only education/government — high precision, low false-positive risk.
+        // ISP/business left to AI classification (keywords too imprecise).
         if (EDUCATION_KEYWORDS.test(orgName)) {
             organizationType = 'education';
         } else if (GOVERNMENT_KEYWORDS.test(orgName)) {
             organizationType = 'government';
-        } else if (ISP_KEYWORDS.test(orgName)) {
-            organizationType = 'isp';
-        } else if (BUSINESS_KEYWORDS.test(orgName)) {
-            organizationType = 'business';
         }
     }
 
