@@ -14,9 +14,6 @@ import { ProductsPage } from '../pages/ProductsPage';
 import { CareersPage } from '../pages/CareersPage';
 import { ContactPage } from '../pages/ContactPage';
 import { ServiceSupportPage } from '../pages/ServiceSupportPage';
-import { AnalyticsTestPage } from '../pages/AnalyticsTestPage';
-import { IPAnalysisPage } from '../pages/IPAnalysisPage';
-import { IPAnalysisTestPage } from '../pages/IPAnalysisTestPage';
 import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -68,14 +65,7 @@ export function AppRoutes() {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
       <Route path="/checkout/cancel" element={<CheckoutCancelPage />} />
-      {import.meta.env.MODE !== 'production' && (
-        <>
-          <Route path="/analytics-test" element={<AnalyticsTestPage />} />
-          <Route path="/ip-analysis" element={<IPAnalysisPage />} />
-          <Route path="/ip-analysis-test" element={<IPAnalysisTestPage />} />
-        </>
-      )}
-      <Route path="/products/rie-etcher" element={<RIEEtcher />} />
+<Route path="/products/rie-etcher" element={<RIEEtcher />} />
       <Route path="/products/compact-rie" element={<CompactRIE />} />
       <Route path="/products/icp-etcher" element={<ICPEtcher />} />
       <Route path="/products/ibe-ribe" element={<IBERIBESystem />} />

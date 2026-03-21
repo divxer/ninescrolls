@@ -148,11 +148,12 @@ interface EventContext {
 export interface StoreAnalyticsEventParams {
   eventName: string;
   eventType: string;
-  ipInfo?: IPInfoInput | null;
-  targetAnalysis?: TargetAnalysisInput | null;
+  pageViewId?: string;
+  ipInfo?: IPInfoInput | null;        // used by storeAnalyticsEvent (GraphQL path)
+  targetAnalysis?: TargetAnalysisInput | null; // used by storeAnalyticsEvent (GraphQL path)
   behaviorScore?: BehaviorScoreInput | null;
   context?: EventContext | null;
-  aiClassification?: AIClassificationInput | null;
+  aiClassification?: AIClassificationInput | null; // used by storeAnalyticsEvent (GraphQL path)
   properties?: Record<string, unknown>;
 }
 
@@ -234,6 +235,80 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
     }, 2000);
   });
 }
+
+// ─── Server-side page_view write via /d Lambda ──────────────────────────────
+// Sends minimal context to /d Lambda via sendBeacon. The Lambda handles
+// IP lookup, AI classification, DDB write, and Segment event forwarding.
+// IP/geo/org fields are resolved server-side from request headers.
+
+function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+  return JSON.stringify({
+    type: 'track',
+    event: 'page_view_store',
+    anonymousId: getAnonymousId(),
+    properties: {
+      pageViewId: params.pageViewId,
+      eventName: params.eventName,
+      eventType: params.eventType,
+      timestamp: new Date().toISOString(),
+      visitorId: getVisitorId(),
+      userAgent: ua,
+      isBot: ua ? isbot(ua) : false,
+
+      // Behavior data (client-side only — Lambda can't compute this)
+      behaviorScore: params.behaviorScore?.behaviorScore,
+      productPagesViewed: params.behaviorScore?.productPagesViewed,
+      timeOnSite: params.behaviorScore?.timeOnSite,
+      pdfDownloads: params.behaviorScore?.pdfDownloads,
+      returnVisits: params.behaviorScore?.returnVisits,
+      isPaidTraffic: params.behaviorScore?.isPaidTraffic,
+      trafficChannel: params.behaviorScore?.trafficChannel,
+      formInteractions: params.behaviorScore?.formInteractions,
+      maxScrollDepth: params.behaviorScore?.maxScrollDepth,
+
+      // Page context
+      pathname: params.context?.pathname,
+      pageTitle: params.context?.pageTitle,
+      productId: params.context?.productId,
+      productName: params.context?.productName,
+      referrer: params.context?.referrer,
+      utmTerm: params.context?.utmTerm,
+      searchQuery: params.context?.searchQuery,
+    },
+    context: collectBrowserContext(),
+  });
+}
+
+export function sendPageViewBeacon(params: StoreAnalyticsEventParams): void {
+  try {
+    const payload = buildPageViewPayload(params);
+    const url = `${getApiEndpoint()}/d`;
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) {
+        console.info('[AnalyticsStorage] page_view sent via sendBeacon:', params.eventName);
+        return;
+      }
+    }
+
+    // Fallback: fetch with keepalive
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).then(() => {
+      console.info('[AnalyticsStorage] page_view sent via fetch:', params.eventName);
+    }).catch((err) => {
+      console.error('[AnalyticsStorage] page_view fetch failed:', params.eventName, err);
+    });
+  } catch (err) {
+    console.error('[AnalyticsStorage] sendPageViewBeacon error:', err);
+  }
+}
+
 
 // ─── Cached IP/org/geo enrichment for page_time_flush events ────────────────
 // Re-use the IP analysis already fetched during page_view so that

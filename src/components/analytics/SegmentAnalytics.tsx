@@ -704,7 +704,8 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
         pathname: location.pathname,
         search: location.search,
-        hash: location.hash
+        hash: location.hash,
+        pageViewId: newState.pageViewId,
       });
     }
 
