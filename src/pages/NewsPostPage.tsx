@@ -125,8 +125,30 @@ export const NewsPostPage: React.FC = () => {
             "timeRequired": `PT${post.readTime}M`
           })}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ninescrolls.com/" },
+              { "@type": "ListItem", "position": 2, "name": "News", "item": "https://ninescrolls.com/news" },
+              { "@type": "ListItem", "position": 3, "name": post.title }
+            ]
+          })}
+        </script>
       </Helmet>
       <div className="news-post-page">
+        {/* Breadcrumb */}
+        <nav className="news-breadcrumb" aria-label="Breadcrumb">
+          <div className="container">
+            <ol>
+              <li><a href="/">Home</a></li>
+              <li><a href="/news">News</a></li>
+              <li aria-current="page">{post.title}</li>
+            </ol>
+          </div>
+        </nav>
+
         {/* Hero Section */}
         <section className="news-post-hero">
           <div className="container">
