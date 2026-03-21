@@ -494,6 +494,7 @@ async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<stri
             confidence: item.confidence,
             reason: item.reason,
             source: item.source || 'ai',
+            provider: item.provider,
             classifiedAt: item.classifiedAt,
             previousClassification: item.previousClassification,
         }),
