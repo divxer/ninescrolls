@@ -11,6 +11,7 @@ export interface OrgOverride {
   confidence?: number;
   reason?: string;
   source?: 'ai' | 'manual';
+  provider?: 'bedrock' | 'anthropic';
   classifiedAt?: string;
   previousClassification?: {
     organizationType: string;
