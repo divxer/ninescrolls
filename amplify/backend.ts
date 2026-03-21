@@ -177,6 +177,18 @@ backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.
 // Feature flag: set to 'false' to disable DDB writes without code rollback
 backend.serverTrack.addEnvironment('ENABLE_PTF_DDB_WRITE', 'true');
 
+// Grant server-track Lambda permission to invoke classify-org Lambda
+// (server-side IP lookup + AI classification pipeline)
+backend.serverTrack.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['lambda:InvokeFunction'],
+    resources: [backend.classifyOrg.resources.lambda.functionArn],
+}));
+backend.serverTrack.addEnvironment(
+    'CLASSIFY_ORG_FUNCTION_NAME',
+    backend.classifyOrg.resources.lambda.functionName,
+);
+
 // Create /seg resource for Segment analytics proxy
 // Proxies requests to cdn.segment.com and api.segment.io through first-party domain
 // to avoid network-level blocking by government/enterprise firewalls
