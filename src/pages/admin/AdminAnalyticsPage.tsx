@@ -1443,6 +1443,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               ) : (
                 <span className="org-override-badge org-override-ai">Auto Classified</span>
               )}
+              {!isManual && override?.provider && (
+                <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '0.4rem' }}>
+                  via {override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API'}
+                </span>
+              )}
               <span className="org-override-target">
                 {currentIsTarget ? 'Target Customer' : 'Not Target'}
               </span>
