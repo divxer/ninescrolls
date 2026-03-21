@@ -2,16 +2,11 @@
 // Extracted to avoid circular dependency between segmentAnalytics.ts and
 // analyticsStorageService.ts. Both import from here.
 
-import outputs from '../../amplify_outputs.json';
-
 /**
  * Get the REST API endpoint for server-side analytics.
- * Resolves from amplify_outputs.json, env var, or hardcoded fallback.
+ * Uses the custom domain to avoid CORS issues with raw API Gateway URLs.
  */
 export function getApiEndpoint(): string {
-  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
-    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
-  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
