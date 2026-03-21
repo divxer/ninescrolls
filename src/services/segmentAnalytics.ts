@@ -4,39 +4,9 @@
 
 import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
 import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
-import { behaviorAnalytics, extractSearchQuery, type BehaviorScore } from './behaviorAnalytics';
-import { storeAnalyticsEvent, getVisitorId } from './analyticsStorageService';
+import { behaviorAnalytics, extractSearchQuery } from './behaviorAnalytics';
+import { storeAnalyticsEvent, sendPageViewBeacon, getVisitorId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
-
-// Behavioral tier boost: upgrade lead tier based on behavioral signals.
-// Requires multiple distinct signal types (cross-validation) to avoid single-signal false positives.
-function applyBehavioralTierBoost(
-  isTargetCustomer: boolean,
-  finalLeadTier: 'A' | 'B' | 'C' | undefined,
-  behaviorScore: BehaviorScore,
-): 'A' | 'B' | 'C' | undefined {
-  if (!isTargetCustomer || !finalLeadTier) return finalLeadTier;
-
-  const lifecycle = behaviorAnalytics.computeLifecycleStage();
-  const boostSignals = [
-    behaviorScore.formInteractions > 0,        // has form interaction
-    behaviorScore.pdfDownloads >= 2,            // multiple PDF downloads
-    behaviorScore.returnVisits >= 2,            // multiple return visits
-    lifecycle === 'consideration' || lifecycle === 'intent',  // advanced lifecycle
-    behaviorScore.productPagesViewed >= 3,     // broad product interest
-  ].filter(Boolean).length;
-
-  let tier = finalLeadTier;
-  // C → B: 2+ distinct boost signals
-  if (tier === 'C' && boostSignals >= 2) {
-    tier = 'B';
-  }
-  // B → A: 3+ distinct boost signals
-  if (tier === 'B' && boostSignals >= 3) {
-    tier = 'A';
-  }
-  return tier;
-}
 
 function eventNameToType(event: string): string {
   const map: Record<string, string> = {
@@ -70,56 +40,6 @@ declare global {
   interface Window {
     analytics?: SegmentAnalyticsClient;
   }
-}
-
-// ─── Server-side tracking helpers ────────────────────────────────────────────
-// getApiEndpoint, getAnonymousId, collectBrowserContext are imported from
-// analyticsTransportUtils.ts (shared with analyticsStorageService.ts).
-
-/**
- * Send an event to the server-side /d endpoint as a FALLBACK.
- *
- * Smart deduplication: waits a few seconds for analytics.js to initialize.
- * - If analytics.js loads successfully → skip (client-side handles it)
- * - If analytics.js is blocked → send via server-side /d endpoint
- *
- * This avoids duplicate events while guaranteeing delivery for blocked users.
- * Includes full browser context to match analytics.js event format.
- */
-const SERVER_FALLBACK_DELAY_MS = 4000;
-
-function sendServerSideEvent(payload: {
-  type: 'page' | 'track' | 'identify';
-  anonymousId: string;
-  name?: string;
-  event?: string;
-  properties?: Record<string, unknown>;
-  traits?: Record<string, unknown>;
-}): void {
-  // Capture browser context NOW (before the timeout, in case user navigates)
-  const context = collectBrowserContext();
-
-  setTimeout(() => {
-    // Check if client-side analytics.js successfully initialized
-    const analytics = window.analytics as Record<string, unknown> | undefined;
-    if (analytics?.initialized) {
-      if (import.meta.env.DEV) {
-        console.debug('Server-side tracking skipped: analytics.js initialized');
-      }
-      return;
-    }
-
-    // analytics.js blocked or failed to load — send via server-side
-    const apiEndpoint = getApiEndpoint();
-    fetch(`${apiEndpoint}/d`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, context }),
-      keepalive: true,
-    }).catch(() => {
-      // Silently fail — best-effort
-    });
-  }, SERVER_FALLBACK_DELAY_MS);
 }
 
 class SegmentAnalyticsService {
@@ -319,406 +239,80 @@ class SegmentAnalyticsService {
   }
 
   // IP Analytics and Target Customer Analysis
-  async trackWithIPAnalysis(event: string, properties?: Record<string, unknown>) {
-    try {
-      // Get IP information and analysis results
-      const ipInfo = await ipAnalytics.getIPInfo();
-      const analysis = await ipAnalytics.analyzeTargetCustomer();
+  // Track custom event: sends to /d Lambda via sendBeacon (fire-and-forget).
+  // Lambda handles IP lookup, AI classification, DDB write, and enriched Segment event.
+  // Also fires basic client-side Segment track event for client-side integrations.
+  trackWithIPAnalysis(event: string, properties?: Record<string, unknown>) {
+    const pageViewId = properties?.pageViewId as string | undefined;
+    const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
 
-      // Get behavior score
-      const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
+    // Fire-and-forget: /d Lambda does IP lookup + AI + DDB + enriched Segment event
+    sendPageViewBeacon({
+      eventName: event,
+      eventType: eventNameToType(event),
+      pageViewId,
+      behaviorScore: {
+        behaviorScore: behaviorScore.behaviorScore,
+        productPagesViewed: behaviorScore.productPagesViewed,
+        timeOnSite: behaviorScore.timeOnSite,
+        pdfDownloads: behaviorScore.pdfDownloads,
+        returnVisits: behaviorScore.returnVisits,
+        isPaidTraffic: behaviorScore.isPaidTraffic,
+        trafficChannel: behaviorScore.trafficChannel,
+      },
+      context: {
+        pathname: (properties?.pathname || properties?.pagePath || '') as string,
+        pageTitle: typeof window !== 'undefined' ? document.title : undefined,
+        productId: properties?.productId as string | undefined,
+        productName: properties?.productName as string | undefined,
+        referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+        utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
+      },
+      properties,
+    });
 
-      // ── Target customer determination ─────────────────────────────────
-      // Based on org type (categorical), NOT confidence thresholds.
-      //   1. Target org type (education/university/research_institute) → always target
-      //   2. AI says isTargetCustomer → target (business/enterprise/hospital/government)
-      //   3. ISP/unknown + strong behavior → target (professor at home, VPN user)
-      const orgType = analysis?.organizationType || 'unknown';
-      const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
-      const isTargetOrgType = TARGET_ORG_TYPES.includes(orgType);
-      const isAITarget = analysis?.isTargetCustomer === true;
-      const isBehaviorTarget = ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType)
-        && behaviorScore.behaviorScore >= 0.4;
-      const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
-
-      const aiConfidence = analysis?.confidence ?? 0;
-
-      // ── Lead tier (only for target customers) ─────────────────────────
-      // Based on org type category + AI confidence, then boosted by behavior.
-      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
-      if (isTargetCustomer) {
-        if (!finalLeadTier) {
-          // Assign initial tier based on how the visitor was classified.
-          // isTargetOrgType (education/government): AI is skipped, so start at B; behavior can boost to A.
-          // isAITarget: AI confirmed target org — B if confident, C otherwise.
-          // isBehaviorTarget: behavior-only signal — start at C.
-          if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
-            finalLeadTier = 'B';
-          } else {
-            finalLeadTier = 'C';
-          }
-        }
-      } else {
-        finalLeadTier = undefined;
-      }
-
-      // Apply behavioral tier boost (cross-validated multi-signal upgrade)
-      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, behaviorScore);
-
-      // Merge event properties
-      const enhancedProperties = {
-        ...properties,
-        ipInfo: ipInfo ? {
-          ip: ipInfo.ip,
-          country: ipInfo.country,
-          region: ipInfo.region,
-          city: ipInfo.city,
-          org: ipInfo.org,
-          isp: ipInfo.isp,
-          timezone: ipInfo.timezone,
-          latitude: ipInfo.latitude,
-          longitude: ipInfo.longitude,
-          privacy: ipInfo.privacy,
-          company: ipInfo.company
-        } : null,
-        targetCustomerAnalysis: analysis ? {
-          isTargetCustomer,
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          leadTier: finalLeadTier,
-          orgName: analysis.details.orgName,
-          orgType: analysis.details.orgType,
-          location: analysis.details.location,
-          keywords: analysis.details.keywords
-        } : null,
-        behaviorScore: {
-          productPagesViewed: behaviorScore.productPagesViewed,
-          highValuePagesViewed: behaviorScore.highValuePagesViewed,
-          timeOnSite: behaviorScore.timeOnSite,
-          pdfDownloads: behaviorScore.pdfDownloads,
-          returnVisits: behaviorScore.returnVisits,
-          isPaidTraffic: behaviorScore.isPaidTraffic,
-          trafficChannel: behaviorScore.trafficChannel,
-          behaviorScore: behaviorScore.behaviorScore
-        }
-      };
-
-      // Send to Segment with enhanced properties
-      this.track(event, enhancedProperties);
-
-      // Server-side tracking: guarantee delivery even when analytics.js is blocked
-      if (typeof window !== 'undefined') {
-        sendServerSideEvent({
-          type: 'track',
-          anonymousId: getAnonymousId(),
-          event,
-          properties: enhancedProperties,
-        });
-      }
-
-      // Wait for AI classification before DynamoDB write (avoid missing AI data)
-      const aiResult = ipAnalytics.getAIClassification()
-        ?? await ipAnalytics.waitForAIClassification(12000);
-
-      // Dual-write to DynamoDB (fire-and-forget)
-      storeAnalyticsEvent({
-        eventName: event,
-        eventType: eventNameToType(event),
-        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, companyType: ipInfo.company?.type, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
-        targetAnalysis: analysis ? {
-          isTargetCustomer,
-          organizationType: analysis.organizationType,
-          orgName: analysis.details.orgName,
-          confidence: analysis.confidence,
-          leadTier: finalLeadTier,
-        } : null,
-        behaviorScore: {
-          behaviorScore: behaviorScore.behaviorScore,
-          productPagesViewed: behaviorScore.productPagesViewed,
-          timeOnSite: behaviorScore.timeOnSite,
-          pdfDownloads: behaviorScore.pdfDownloads,
-          returnVisits: behaviorScore.returnVisits,
-          isPaidTraffic: behaviorScore.isPaidTraffic,
-          trafficChannel: behaviorScore.trafficChannel,
-        },
-        aiClassification: aiResult ? {
-          aiOrganizationType: aiResult.organizationType,
-          aiConfidence: aiResult.confidence,
-          aiReason: aiResult.reason,
-        } : null,
-        context: {
-          pathname: (properties?.pathname || properties?.pagePath || '') as string,
-          pageTitle: typeof window !== 'undefined' ? document.title : undefined,
-          productId: properties?.productId as string | undefined,
-          productName: properties?.productName as string | undefined,
-          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
-          utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
-        },
-        properties,
-      });
-
-      // If it's a target customer, send Segment-only event (skipDynamoDB because
-      // the full event was already stored above via storeAnalyticsEvent with
-      // complete IP/org fields — the track() dual-write would create a duplicate
-      // record missing top-level org data, causing dashboard grouping issues).
-      if (isTargetCustomer) {
-        this.track('Target Customer Detected', {
-          originalEvent: event,
-          timestamp: new Date().toISOString(),
-          organizationType: analysis?.organizationType || 'unknown',
-          orgName: analysis?.details.orgName || 'Unknown',
-          orgType: analysis?.details.orgType || 'Unknown',
-          location: analysis?.details.location || 'Unknown',
-          keywords: analysis?.details.keywords || [],
-          confidence: analysis?.confidence || 0,
-          leadTier: finalLeadTier || 'C',
-          behaviorScore: behaviorScore.behaviorScore,
-          behaviorDetails: {
-            productPagesViewed: behaviorScore.productPagesViewed,
-            highValuePagesViewed: behaviorScore.highValuePagesViewed,
-            timeOnSite: behaviorScore.timeOnSite,
-            pdfDownloads: behaviorScore.pdfDownloads,
-            returnVisits: behaviorScore.returnVisits,
-            isPaidTraffic: behaviorScore.isPaidTraffic,
-            trafficChannel: behaviorScore.trafficChannel
-          },
-          ipInfo: ipInfo ? {
-            ip: ipInfo.ip,
-            country: ipInfo.country,
-            region: ipInfo.region,
-            city: ipInfo.city,
-            org: ipInfo.org,
-            isp: ipInfo.isp,
-            privacy: ipInfo.privacy,
-            company: ipInfo.company
-          } : null,
-          pagePath: properties?.pathname || properties?.pagePath || 'unknown',
-          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
-          pageTitle: typeof window !== 'undefined' ? document.title : undefined
-        }, { skipDynamoDB: true });
-      }
-
-      console.log('Event tracked with IP analysis:', {
-        event,
-        ipInfo,
-        analysis
-      });
-
-    } catch (error) {
-      console.error('Error tracking with IP analysis:', error);
-      // If IP analysis fails, send the original event without IP data
-      if (properties) {
-        this.track(event, properties);
-      } else {
-        this.track(event);
-      }
-    }
   }
 
-  // Perform IP analysis on page view
-  async trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, unknown>) {
-    try {
-      // Get IP information and analysis results
-      const ipInfo = await ipAnalytics.getIPInfo();
-      const analysis = await ipAnalytics.analyzeTargetCustomer();
+  // Track page view: sends minimal context to /d Lambda via sendBeacon.
+  // Lambda handles IP lookup, AI classification, DDB write, and enriched Segment event.
+  // Client-side analytics.page() fires immediately with basic properties for client-side integrations.
+  trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, unknown>) {
+    const pageViewId = properties?.pageViewId as string | undefined;
+    const pathname = properties?.pathname || pageName || '';
 
-      // Auto-detect product page visit from pathname so behavior score
-      // reflects product interest even before the product component mounts
-      const pagePath = (properties?.pathname || pageName || '') as string;
-      if (pagePath.startsWith('/products/') && pagePath.length > '/products/'.length) {
-        const productSlug = pagePath.split('/').filter(Boolean).pop() || '';
-        if (productSlug) {
-          behaviorAnalytics.trackProductView(productSlug, productSlug);
-        }
-      }
-
-      // Get behavior score (includes timeOnSite)
-      const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
-
-      // ── Target customer determination ─────────────────────────────────
-      const orgType = analysis?.organizationType || 'unknown';
-      const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
-      const isTargetOrgType = TARGET_ORG_TYPES.includes(orgType);
-      const isAITarget = analysis?.isTargetCustomer === true;
-      const isBehaviorTarget = ['isp', 'hosting', 'telecom_isp', 'unknown'].includes(orgType)
-        && behaviorScore.behaviorScore >= 0.4;
-      const isTargetCustomer = isTargetOrgType || isAITarget || isBehaviorTarget;
-
-      const aiConfidence = analysis?.confidence ?? 0;
-
-      // ── Lead tier ─────────────────────────────────────────────────────
-      let finalLeadTier: 'A' | 'B' | 'C' | undefined = analysis?.leadTier;
-      if (isTargetCustomer) {
-        if (!finalLeadTier) {
-          if (isTargetOrgType || (isAITarget && aiConfidence >= 0.5)) {
-            finalLeadTier = 'B';
-          } else {
-            finalLeadTier = 'C';
-          }
-        }
-      } else {
-        finalLeadTier = undefined;
-      }
-
-      finalLeadTier = applyBehavioralTierBoost(isTargetCustomer, finalLeadTier, behaviorScore);
-
-      // Extract search query from referrer (available when enterprise proxies leak full URL)
-      const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
-      const searchQuery = extractSearchQuery(referrer);
-
-      // Merge event properties with IP info and behavior
-      const pathname = properties?.pathname || pageName || '';
-      const enhancedProperties = {
-        ...properties,
-        path: pathname,  // Segment expects 'path' property
-        pathname: pathname,
-        search: properties?.search || '',
-        hash: properties?.hash || '',
-        title: typeof window !== 'undefined' ? document.title : '',
-        url: typeof window !== 'undefined' ? window.location.href : '',
-        ipInfo: ipInfo ? {
-          ip: ipInfo.ip,
-          country: ipInfo.country,
-          region: ipInfo.region,
-          city: ipInfo.city,
-          org: ipInfo.org,
-          isp: ipInfo.isp,
-          timezone: ipInfo.timezone,
-          latitude: ipInfo.latitude,
-          longitude: ipInfo.longitude,
-          privacy: ipInfo.privacy,
-          company: ipInfo.company
-        } : null,
-        targetCustomerAnalysis: analysis ? {
-          isTargetCustomer,
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          leadTier: finalLeadTier,
-          orgName: analysis.details.orgName,
-          orgType: analysis.details.orgType,
-          location: analysis.details.location,
-          keywords: analysis.details.keywords
-        } : null,
-        behaviorScore: {
-          productPagesViewed: behaviorScore.productPagesViewed,
-          highValuePagesViewed: behaviorScore.highValuePagesViewed,
-          timeOnSite: behaviorScore.timeOnSite,
-          pdfDownloads: behaviorScore.pdfDownloads,
-          returnVisits: behaviorScore.returnVisits,
-          isPaidTraffic: behaviorScore.isPaidTraffic,
-          trafficChannel: behaviorScore.trafficChannel,
-          behaviorScore: behaviorScore.behaviorScore
-        },
-        ...(searchQuery ? { searchQuery } : {}),
-      };
-
-      // Send PAGE event with enhanced properties (instead of TRACK event)
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
-        window.analytics.page(pageName, enhancedProperties);
-        console.log('Segment Page View with IP + Behavior analysis:', enhancedProperties);
-      }
-
-      // Server-side tracking
-      if (typeof window !== 'undefined') {
-        sendServerSideEvent({
-          type: 'page',
-          anonymousId: getAnonymousId(),
-          name: pageName,
-          properties: enhancedProperties,
-        });
-      }
-
-      // Wait for AI classification before DynamoDB write (avoid missing AI data)
-      const aiResultPage = ipAnalytics.getAIClassification()
-        ?? await ipAnalytics.waitForAIClassification(12000);
-
-      // Dual-write page view to DynamoDB (fire-and-forget)
-      storeAnalyticsEvent({
-        eventName: 'Page Viewed',
-        eventType: 'page_view',
-        ipInfo: ipInfo ? { ip: ipInfo.ip, country: ipInfo.country, region: ipInfo.region, city: ipInfo.city, org: ipInfo.org, isp: ipInfo.isp, companyType: ipInfo.company?.type, latitude: ipInfo.latitude, longitude: ipInfo.longitude } : null,
-        targetAnalysis: analysis ? {
-          isTargetCustomer,
-          organizationType: analysis.organizationType,
-          orgName: analysis.details.orgName,
-          confidence: analysis.confidence,
-          leadTier: finalLeadTier,
-        } : null,
-        behaviorScore: {
-          behaviorScore: behaviorScore.behaviorScore,
-          productPagesViewed: behaviorScore.productPagesViewed,
-          timeOnSite: behaviorScore.timeOnSite,
-          pdfDownloads: behaviorScore.pdfDownloads,
-          returnVisits: behaviorScore.returnVisits,
-          isPaidTraffic: behaviorScore.isPaidTraffic,
-          trafficChannel: behaviorScore.trafficChannel,
-        },
-        aiClassification: aiResultPage ? {
-          aiOrganizationType: aiResultPage.organizationType,
-          aiConfidence: aiResultPage.confidence,
-          aiReason: aiResultPage.reason,
-        } : null,
-        context: {
-          pathname: pathname as string,
-          pageTitle: typeof window !== 'undefined' ? document.title : undefined,
-          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
-          utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
-          searchQuery,
-        },
-      });
-
-      // If it's a target customer, send Segment-only event
-      if (isTargetCustomer) {
-        this.track('Target Customer Detected', {
-          originalEvent: 'Page Viewed',
-          timestamp: new Date().toISOString(),
-          organizationType: analysis?.organizationType || 'unknown',
-          orgName: analysis?.details.orgName || 'Unknown',
-          orgType: analysis?.details.orgType || 'Unknown',
-          location: analysis?.details.location || 'Unknown',
-          keywords: analysis?.details.keywords || [],
-          confidence: analysis?.confidence || 0,
-          leadTier: finalLeadTier || 'C',
-          behaviorScore: behaviorScore.behaviorScore,
-          behaviorDetails: {
-            productPagesViewed: behaviorScore.productPagesViewed,
-            highValuePagesViewed: behaviorScore.highValuePagesViewed,
-            timeOnSite: behaviorScore.timeOnSite,
-            pdfDownloads: behaviorScore.pdfDownloads,
-            returnVisits: behaviorScore.returnVisits,
-            isPaidTraffic: behaviorScore.isPaidTraffic,
-            trafficChannel: behaviorScore.trafficChannel
-          },
-          ipInfo: ipInfo ? {
-            ip: ipInfo.ip,
-            country: ipInfo.country,
-            region: ipInfo.region,
-            city: ipInfo.city,
-            org: ipInfo.org,
-            isp: ipInfo.isp,
-            privacy: ipInfo.privacy,
-            company: ipInfo.company
-          } : null,
-          pagePath: properties?.pathname || pageName || 'unknown',
-          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
-          pageTitle: typeof window !== 'undefined' ? document.title : undefined
-        }, { skipDynamoDB: true });
-      }
-
-    } catch (error) {
-      console.error('Error tracking page view with IP analysis:', error);
-      // If IP analysis fails, send the basic page event without IP data
-      if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
-        window.analytics.page(pageName, {
-          ...properties,
-          pathname: properties?.pathname || pageName,
-          search: properties?.search || '',
-          hash: properties?.hash || '',
-          title: typeof window !== 'undefined' ? document.title : '',
-          url: typeof window !== 'undefined' ? window.location.href : ''
-        });
-      }
+    // Auto-detect product page visit from pathname
+    if (typeof pathname === 'string' && pathname.startsWith('/products/') && pathname.length > '/products/'.length) {
+      const productSlug = pathname.split('/').filter(Boolean).pop() || '';
+      if (productSlug) behaviorAnalytics.trackProductView(productSlug, productSlug);
     }
+
+    const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
+    const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
+    const searchQuery = extractSearchQuery(referrer);
+
+    // Fire-and-forget: /d Lambda does IP lookup + AI + DDB + enriched Segment event
+    sendPageViewBeacon({
+      eventName: 'Page Viewed',
+      eventType: 'page_view',
+      pageViewId,
+      behaviorScore: {
+        behaviorScore: behaviorScore.behaviorScore,
+        productPagesViewed: behaviorScore.productPagesViewed,
+        timeOnSite: behaviorScore.timeOnSite,
+        pdfDownloads: behaviorScore.pdfDownloads,
+        returnVisits: behaviorScore.returnVisits,
+        isPaidTraffic: behaviorScore.isPaidTraffic,
+        trafficChannel: behaviorScore.trafficChannel,
+      },
+      context: {
+        pathname: pathname as string,
+        pageTitle: typeof window !== 'undefined' ? document.title : undefined,
+        referrer,
+        utmTerm: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('utm_term') || undefined : undefined,
+        searchQuery,
+      },
+    });
+
   }
 
   // Perform IP analysis on product view
