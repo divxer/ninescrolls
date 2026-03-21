@@ -26,6 +26,7 @@ interface ClassifyResult {
     reason: string;
     cached: boolean;
     source?: 'ai' | 'manual';
+    provider?: 'bedrock' | 'anthropic';
     previousClassification?: PreviousClassification;
 }
 
@@ -70,6 +71,7 @@ interface CachedItem {
     reason: string;
     classifiedAt?: string;
     source?: 'ai' | 'manual';
+    provider?: 'bedrock' | 'anthropic';
     previousClassification?: PreviousClassification;
     ttl?: number;
 }
@@ -98,6 +100,7 @@ async function getCachedClassification(orgName: string): Promise<ClassifyResult 
         reason: item.reason,
         cached: true,
         source: item.source || 'ai',
+        provider: item.provider,
         previousClassification: item.previousClassification,
     };
 }
@@ -116,6 +119,7 @@ async function cacheClassification(orgName: string, result: ClassifyResult): Pro
                 reason: result.reason,
                 classifiedAt: new Date().toISOString(),
                 source: 'ai',
+                provider: result.provider,
                 ttl,
             },
         }));
@@ -313,6 +317,7 @@ async function classifyOrganization(input: ClassifyRequest): Promise<ClassifyRes
     // Try Bedrock first (same region, lower latency)
     try {
         const result = await classifyWithBedrock(prompt);
+        result.provider = 'bedrock';
         console.log(`Classification via Bedrock: "${input.orgName}" → ${result.organizationType} (${(result.confidence * 100).toFixed(0)}%)`);
         return result;
     } catch (bedrockError) {
@@ -326,6 +331,7 @@ async function classifyOrganization(input: ClassifyRequest): Promise<ClassifyRes
 
     // Fallback to Anthropic API
     const result = await classifyWithAnthropicAPI(prompt);
+    result.provider = 'anthropic';
     console.log(`Classification via Anthropic API (fallback): "${input.orgName}" → ${result.organizationType} (${(result.confidence * 100).toFixed(0)}%)`);
     return result;
 }
