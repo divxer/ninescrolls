@@ -169,7 +169,14 @@ function mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
 // ─── Target Customer Analysis ────────────────────────────────────────────────
 // Classification strategy:
 //   1. IPinfo company.type provides a categorical org type (education/business/government/isp/hosting)
-//   2. AI classification (Claude via /classify-org) provides numeric confidence and refined org type
+//   2. Keyword fallback when company.type is unavailable (free tier without token)
+//   3. AI classification (Claude via /classify-org) provides numeric confidence and refined org type
+
+/** Keyword fallback when IPinfo company.type is unavailable. Matched against WHOIS/ASN org names. */
+const EDUCATION_KEYWORDS = /\b(university|universidade|universidad|universit[aàe]t|universit[eé]|college|polytechnic)\b/i;
+const GOVERNMENT_KEYWORDS = /\b(government|ministry|department of|national lab)\b/i;
+const ISP_KEYWORDS = /\b(telecom|telecommunications|broadband|wireless|mobile|communications|cable|internet service|fiber|network)\b/i;
+const BUSINESS_KEYWORDS = /\b(inc|ltd|llc|corp|corporation|gmbh|s\.a\.|co\.|plc|ag)\b/i;
 
 function getOrgTypeName(type: string): string {
     const typeNames: Record<string, string> = {
@@ -205,12 +212,16 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
     } else if (companyType === 'hosting') {
         organizationType = 'hosting';
     } else if (!companyType) {
-        // Keyword fallback for obvious cases when company.type is unavailable.
-        // Only covers education/government — AI handles ambiguous orgs.
+        // Keyword fallback when company.type is unavailable (free tier).
+        // Matches against WHOIS/ASN org names — false positive risk is low.
         if (EDUCATION_KEYWORDS.test(orgName)) {
             organizationType = 'education';
         } else if (GOVERNMENT_KEYWORDS.test(orgName)) {
             organizationType = 'government';
+        } else if (ISP_KEYWORDS.test(orgName)) {
+            organizationType = 'isp';
+        } else if (BUSINESS_KEYWORDS.test(orgName)) {
+            organizationType = 'business';
         }
     }
 

@@ -8,6 +8,7 @@ export const classifyOrg = defineFunction({
     environment: {
         ANTHROPIC_API_KEY: secret('ANTHROPIC_API_KEY'),
         CLAUDE_MODEL: 'claude-haiku-4-5-20251001',
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
         ADMIN_API_SECRET: secret('ADMIN_API_SECRET'),
     },
 });
