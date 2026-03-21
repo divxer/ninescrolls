@@ -322,7 +322,7 @@ async function writePageTimeFlush(
         console.error('[PTF] ANALYTICS_EVENT_TABLE not set');
         return;
     }
-    if (process.env.ENABLE_PTF_DDB_WRITE !== 'true') {
+    if (process.env.ENABLE_DDB_WRITE !== 'true') {
         console.info('[PTF] DDB write disabled by feature flag');
         return;
     }
@@ -413,7 +413,7 @@ async function writePageView(
         console.error('[PVS] ANALYTICS_EVENT_TABLE not set');
         return noResult;
     }
-    if (process.env.ENABLE_PTF_DDB_WRITE !== 'true') {
+    if (process.env.ENABLE_DDB_WRITE !== 'true') {
         console.info('[PVS] DDB write disabled by feature flag');
         return noResult;
     }
@@ -585,7 +585,7 @@ async function writeAIEnrichment(
         console.error('[AIE] ANALYTICS_EVENT_TABLE not set');
         return { updated: false };
     }
-    if (process.env.ENABLE_PTF_DDB_WRITE !== 'true') {
+    if (process.env.ENABLE_DDB_WRITE !== 'true') {
         console.info('[AIE] DDB write disabled by feature flag');
         return { updated: false };
     }

@@ -3,7 +3,7 @@
 // Includes server-side tracking fallback for visitors with ad blockers
 
 import { behaviorAnalytics, extractSearchQuery } from './behaviorAnalytics';
-import { storeAnalyticsEvent, sendPageViewBeacon, getVisitorId } from './analyticsStorageService';
+import { storeAnalyticsEvent, sendPageViewBeacon, getVisitorId, createPageViewId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
 
 function eventNameToType(event: string): string {
@@ -241,7 +241,7 @@ class SegmentAnalyticsService {
   // Lambda handles IP lookup, AI classification, DDB write, and enriched Segment event.
   // Also fires basic client-side Segment track event for client-side integrations.
   trackWithIPAnalysis(event: string, properties?: Record<string, unknown>) {
-    const pageViewId = properties?.pageViewId as string | undefined;
+    const pageViewId = (properties?.pageViewId as string) || createPageViewId();
     const behaviorScore = behaviorAnalytics.calculateBehaviorScore();
 
     // Fire-and-forget: /d Lambda does IP lookup + AI + DDB + enriched Segment event
@@ -275,7 +275,7 @@ class SegmentAnalyticsService {
   // Lambda handles IP lookup, AI classification, DDB write, and enriched Segment event.
   // Client-side analytics.page() fires immediately with basic properties for client-side integrations.
   trackPageViewWithAnalysis(pageName?: string, properties?: Record<string, unknown>) {
-    const pageViewId = properties?.pageViewId as string | undefined;
+    const pageViewId = (properties?.pageViewId as string) || createPageViewId();
     const pathname = properties?.pathname || pageName || '';
 
     // Auto-detect product page visit from pathname
@@ -313,34 +313,17 @@ class SegmentAnalyticsService {
 
   }
 
-  // Perform IP analysis on product view
-  async trackProductViewWithAnalysis(productId: string, productName: string) {
-    // Track behavior signal for product view
+  trackProductViewWithAnalysis(productId: string, productName: string) {
     behaviorAnalytics.trackProductView(productId, productName);
-    
-    await this.trackWithIPAnalysis('Product Viewed', {
-      productId,
-      productName,
-      category: 'Product'
-    });
+    this.trackWithIPAnalysis('Product Viewed', { productId, productName, category: 'Product' });
   }
 
-  // Perform IP analysis on contact form submission
-  async trackContactFormSubmitWithAnalysis(productId?: string, productName?: string) {
-    await this.trackWithIPAnalysis('Contact Form Submitted', {
-      productId,
-      productName,
-      formName: 'contact_form'
-    });
+  trackContactFormSubmitWithAnalysis(productId?: string, productName?: string) {
+    this.trackWithIPAnalysis('Contact Form Submitted', { productId, productName, formName: 'contact_form' });
   }
 
-  // Perform IP analysis on RFQ submission
-  async trackRFQSubmissionWithAnalysis(productId?: string, productName?: string) {
-    await this.trackWithIPAnalysis('RFQ Submitted', {
-      productId,
-      productName,
-      formName: 'rfq_submission'
-    });
+  trackRFQSubmissionWithAnalysis(productId?: string, productName?: string) {
+    this.trackWithIPAnalysis('RFQ Submitted', { productId, productName, formName: 'rfq_submission' });
   }
 
   /**

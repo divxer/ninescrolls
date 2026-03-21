@@ -174,8 +174,8 @@ backend.serverTrack.addEnvironment('SEGMENT_WRITE_KEY', 'WMoEScvR6dgChGx0LQUz0wQ
 const analyticsEventTable = backend.data.resources.tables['AnalyticsEvent'];
 analyticsEventTable.grantReadWriteData(backend.serverTrack.resources.lambda);
 backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
-// Feature flag: set to 'false' to disable DDB writes without code rollback
-backend.serverTrack.addEnvironment('ENABLE_PTF_DDB_WRITE', 'true');
+// Feature flag: set to 'false' to disable ALL DDB writes (page_view, page_time_flush, ai_enrichment)
+backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
 
 // Grant server-track Lambda permission to invoke classify-org Lambda
 // (server-side IP lookup + AI classification pipeline)
