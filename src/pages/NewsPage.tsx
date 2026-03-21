@@ -76,17 +76,20 @@ export const NewsPage: React.FC = () => {
               />
             </div>
 
-            <div className="news-category-filters">
-              {newsCategories.map(category => (
-                <button
-                  key={category}
-                  className={`news-category-btn ${selectedCategory === category ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+            {/* Show category filters only when 2+ categories have posts */}
+            {new Set(posts.map(p => p.category)).size >= 2 && (
+              <div className="news-category-filters">
+                {newsCategories.map(category => (
+                  <button
+                    key={category}
+                    className={`news-category-btn ${selectedCategory === category ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

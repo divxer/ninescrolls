@@ -81,15 +81,24 @@ async function createNews(filePath: string) {
   const title = extractTitle(html);
   const bodyContent = extractBodyContent(html);
 
-  // Remove the <h1> from body content (already used as title)
-  const contentWithoutH1 = bodyContent.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '').trim();
-  // Remove the byline paragraph (NineScrolls.com | date)
-  const content = contentWithoutH1.replace(/<p><strong>NineScrolls\.com<\/strong>[^<]*<\/p>/i, '').trim();
+  // Clean body content for storage
+  let cleaned = bodyContent;
+  // Remove <h1> (already used as title)
+  cleaned = cleaned.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '');
+  // Remove byline paragraph (NineScrolls.com | date)
+  cleaned = cleaned.replace(/<p><strong>NineScrolls\.com<\/strong>[^<]*<\/p>/i, '');
+  // Remove the first <img> (will be shown as hero via imageUrl)
+  cleaned = cleaned.replace(/<img[^>]*>/i, '');
+  const content = cleaned.trim();
 
-  const plainText = stripHtml(content);
+  // Extract excerpt from body text, skipping TOC section
+  const withoutToc = content
+    .replace(/<h2[^>]*>Table of Contents<\/h2>/i, '')
+    .replace(/<ul>[\s\S]*?<\/ul>/i, ''); // remove first <ul> (TOC links)
+  const plainText = stripHtml(withoutToc);
   const slug = generateSlug(title);
-  const readTime = estimateReadTime(plainText);
-  const excerpt = plainText.slice(0, 200);
+  const readTime = estimateReadTime(stripHtml(content));
+  const excerpt = plainText.replace(/^\s+/, '').slice(0, 200);
   const today = new Date().toISOString().split('T')[0];
   const coverImage = extractFirstImage(bodyContent);
 
