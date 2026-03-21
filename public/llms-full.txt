@@ -254,6 +254,12 @@ Summary: ICP-200 fabricates silicon nanopillars enabling the first fully non-inv
 
 ---
 
+## News
+
+- **Industry News**: https://ninescrolls.com/news — Latest updates in semiconductor manufacturing, plasma processing, and advanced materials. Categories: Industry, Product, Event, Partnership. Updated frequently for SEO and industry awareness.
+
+---
+
 ## Service & Company Pages
 
 - **Service & Support**: https://ninescrolls.com/service-support — Warranty, AMC packages, service process, emergency support

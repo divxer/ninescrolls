@@ -85,6 +85,10 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [RIE-150A Metasurface Color Router](https://ninescrolls.com/insights/rie150a-metasurface-color-router): RIE-150A etching enables on-chip q-BIC metasurface color router with near-unity efficiency (Light: Science & Applications, 2026)
 - [ICP-200 Metasurface Flow Visualization](https://ninescrolls.com/insights/icp200-metasurface-flow-visualization): ICP-200 fabricates Si nanopillars for first fully non-invasive 2D flow visualization (Light: Science & Applications, 2025)
 
+## News
+
+- [Industry News](https://ninescrolls.com/news): Latest updates in semiconductor manufacturing, plasma processing, and advanced materials — industry trends, product announcements, events, and partnerships
+
 ## Service & Company
 
 - [Service & Support](https://ninescrolls.com/service-support): Warranty, AMC packages, service process

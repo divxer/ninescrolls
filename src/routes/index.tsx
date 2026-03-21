@@ -16,6 +16,8 @@ import { ContactPage } from '../pages/ContactPage';
 import { ServiceSupportPage } from '../pages/ServiceSupportPage';
 import { InsightsPage } from '../pages/InsightsPage';
 import { InsightsPostPage } from '../pages/InsightsPostPage';
+import { NewsPage } from '../pages/NewsPage';
+import { NewsPostPage } from '../pages/NewsPostPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PrivacyPage } from '../pages/PrivacyPage';
 import { ReturnPolicyPage } from '../pages/ReturnPolicyPage';
@@ -58,6 +60,8 @@ export function AppRoutes() {
       <Route path="/service-support" element={<ServiceSupportPage />} />
       <Route path="/insights" element={<InsightsPage />} />
       <Route path="/insights/:slug" element={<InsightsPostPage />} />
+      <Route path="/news" element={<NewsPage />} />
+      <Route path="/news/:slug" element={<NewsPostPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/return-policy" element={<ReturnPolicyPage />} />
       <Route path="/startup-package" element={<StartupPackagePage />} />

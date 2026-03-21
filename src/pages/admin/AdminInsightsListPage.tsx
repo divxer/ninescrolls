@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useInsightsPosts } from '../../hooks/useInsightsPosts';
 import { deleteInsightsPost } from '../../services/insightsAdminService';
 import { deleteInsightsImages } from '../../services/insightsImageService';
+import { insightCategories, newsCategories } from '../../types';
 
-const CATEGORIES = ['All', 'Materials Science', 'Photonics', 'Nanotechnology', 'Energy'];
 const STATUS_FILTERS = ['All', 'Published', 'Drafts'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
+const CONTENT_TYPES = ['All', 'Insights', 'News'] as const;
+type ContentTypeFilter = (typeof CONTENT_TYPES)[number];
 
 const INCLUDE_DRAFTS = { includeDrafts: true };
 
@@ -16,6 +18,7 @@ export function AdminInsightsListPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+  const [contentTypeFilter, setContentTypeFilter] = useState<ContentTypeFilter>('All');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -32,10 +35,26 @@ export function AdminInsightsListPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openMenu]);
 
+  const CATEGORIES = contentTypeFilter === 'News'
+    ? newsCategories
+    : contentTypeFilter === 'Insights'
+    ? insightCategories
+    : ['All', ...new Set([
+        ...insightCategories.filter(c => c !== 'All'),
+        ...newsCategories.filter(c => c !== 'All'),
+      ])];
+
   const filteredPosts = useMemo(() => {
     let result = [...posts].sort(
       (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
     );
+
+    // Content type filter
+    if (contentTypeFilter === 'Insights') {
+      result = result.filter((p) => (p.contentType ?? 'insight') === 'insight');
+    } else if (contentTypeFilter === 'News') {
+      result = result.filter((p) => p.contentType === 'news');
+    }
 
     if (statusFilter === 'Published') {
       result = result.filter((p) => !p.isDraft);
@@ -58,7 +77,7 @@ export function AdminInsightsListPage() {
     }
 
     return result;
-  }, [posts, search, categoryFilter, statusFilter]);
+  }, [posts, search, categoryFilter, statusFilter, contentTypeFilter]);
 
   async function handleDelete(id: string, title: string, slug: string) {
     if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -90,10 +109,28 @@ export function AdminInsightsListPage() {
   return (
     <div className="admin-insights-list">
       <div className="admin-list-header">
-        <h1>Insights Articles ({posts.length})</h1>
-        <Link to="/admin/insights/new" className="admin-btn-primary">
-          + New Article
+        <h1>
+          {contentTypeFilter === 'News' ? 'News' : contentTypeFilter === 'Insights' ? 'Insights' : 'All Content'}
+          {' '}({filteredPosts.length})
+        </h1>
+        <Link
+          to={contentTypeFilter === 'News' ? '/admin/insights/new?type=news' : '/admin/insights/new'}
+          className="admin-btn-primary"
+        >
+          + New {contentTypeFilter === 'News' ? 'News' : 'Article'}
         </Link>
+      </div>
+
+      <div className="admin-content-type-tabs">
+        {CONTENT_TYPES.map((ct) => (
+          <button
+            key={ct}
+            className={`admin-content-type-tab ${contentTypeFilter === ct ? 'active' : ''}`}
+            onClick={() => { setContentTypeFilter(ct); setCategoryFilter('All'); }}
+          >
+            {ct}
+          </button>
+        ))}
       </div>
 
       <div className="admin-status-tabs">
@@ -167,7 +204,7 @@ export function AdminInsightsListPage() {
                   Edit
                 </Link>
                 <a
-                  href={`/insights/${post.slug}`}
+                  href={`/${(post.contentType ?? 'insight') === 'news' ? 'news' : 'insights'}/${post.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="admin-btn-sm admin-btn-outline"

@@ -34,12 +34,29 @@ export function rankRelatedInsights(
   limit: number = 4,
   weights: RankingWeights = defaultRankingWeights
 ): InsightsPost[] {
-  return allPosts
-    .filter(p => p.slug !== base.slug)
+  const baseType = base.contentType ?? 'insight';
+
+  // Prefer same contentType
+  const sameType = allPosts
+    .filter(p => p.slug !== base.slug && (p.contentType ?? 'insight') === baseType)
     .map(p => ({ post: p, score: computeRelatedScore(p, base, weights) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ post }) => post);
+
+  // Fallback: fill from other contentType if not enough same-type results
+  if (sameType.length < limit) {
+    const sameTypeSlugs = new Set(sameType.map(p => p.slug));
+    const otherType = allPosts
+      .filter(p => p.slug !== base.slug && !sameTypeSlugs.has(p.slug))
+      .map(p => ({ post: p, score: computeRelatedScore(p, base, weights) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit - sameType.length)
+      .map(({ post }) => post);
+    return [...sameType, ...otherType];
+  }
+
+  return sameType;
 }
 
 
