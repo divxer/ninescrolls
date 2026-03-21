@@ -1,9 +1,5 @@
-import { generateClient } from 'aws-amplify/data';
 import { isbot } from 'isbot';
-import type { Schema } from '../../amplify/data/resource';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
-
-const client = generateClient<Schema>();
 
 // ─── UUID helper ────────────────────────────────────────────────────────────
 function generateUUID(): string {
@@ -96,26 +92,6 @@ export function createPageViewId(): string {
   return generateUUID();
 }
 
-interface IPInfoInput {
-  ip?: string;
-  country?: string;
-  region?: string;
-  city?: string;
-  org?: string;
-  isp?: string;
-  companyType?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-interface TargetAnalysisInput {
-  isTargetCustomer?: boolean;
-  organizationType?: string;
-  orgName?: string;
-  confidence?: number;
-  leadTier?: string;
-}
-
 interface BehaviorScoreInput {
   behaviorScore?: number;
   productPagesViewed?: number;
@@ -126,12 +102,6 @@ interface BehaviorScoreInput {
   trafficChannel?: string;
   formInteractions?: number;
   maxScrollDepth?: number;
-}
-
-interface AIClassificationInput {
-  aiOrganizationType?: string;
-  aiConfidence?: number;
-  aiReason?: string;
 }
 
 interface EventContext {
@@ -148,90 +118,17 @@ export interface StoreAnalyticsEventParams {
   eventName: string;
   eventType: string;
   pageViewId?: string;
-  ipInfo?: IPInfoInput | null;        // used by storeAnalyticsEvent (GraphQL path)
-  targetAnalysis?: TargetAnalysisInput | null; // used by storeAnalyticsEvent (GraphQL path)
   behaviorScore?: BehaviorScoreInput | null;
   context?: EventContext | null;
-  aiClassification?: AIClassificationInput | null; // used by storeAnalyticsEvent (GraphQL path)
   properties?: Record<string, unknown>;
 }
 
 export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
-
-  const payload = {
-    eventName: params.eventName,
-    eventType: params.eventType,
-    timestamp: new Date().toISOString(),
-
-    visitorId: getVisitorId(),
-
-    userAgent: ua,
-    isBot: ua ? isbot(ua) : undefined,
-    latitude: params.ipInfo?.latitude,
-    longitude: params.ipInfo?.longitude,
-
-    ip: params.ipInfo?.ip,
-    country: params.ipInfo?.country,
-    region: params.ipInfo?.region,
-    city: params.ipInfo?.city,
-    org: params.ipInfo?.org,
-    isp: params.ipInfo?.isp,
-    companyType: params.ipInfo?.companyType,
-
-    isTargetCustomer: params.targetAnalysis?.isTargetCustomer,
-    organizationType: params.targetAnalysis?.organizationType,
-    orgName: params.targetAnalysis?.orgName,
-    confidence: params.targetAnalysis?.confidence,
-    leadTier: params.targetAnalysis?.leadTier,
-
-    behaviorScore: params.behaviorScore?.behaviorScore,
-    productPagesViewed: params.behaviorScore?.productPagesViewed,
-    timeOnSite: params.behaviorScore?.timeOnSite,
-    pdfDownloads: params.behaviorScore?.pdfDownloads,
-    returnVisits: params.behaviorScore?.returnVisits,
-    isPaidTraffic: params.behaviorScore?.isPaidTraffic,
-    trafficChannel: params.behaviorScore?.trafficChannel,
-    formInteractions: params.behaviorScore?.formInteractions,
-    maxScrollDepth: params.behaviorScore?.maxScrollDepth,
-
-    aiOrganizationType: params.aiClassification?.aiOrganizationType,
-    aiConfidence: params.aiClassification?.aiConfidence,
-    aiReason: params.aiClassification?.aiReason,
-
-    pathname: params.context?.pathname,
-    pageTitle: params.context?.pageTitle,
-    productId: params.context?.productId,
-    productName: params.context?.productName,
-    referrer: params.context?.referrer,
-    utmTerm: params.context?.utmTerm,
-    searchQuery: params.context?.searchQuery,
-
-    properties: params.properties ? JSON.stringify(params.properties) : undefined,
-  };
-
-  // Fire-and-forget: don't await, don't block UI.
-  // Amplify Data returns { data, errors } — GraphQL errors are in the
-  // response, NOT thrown.  We must check both paths.
-  const attempt = () =>
-    client.models.AnalyticsEvent.create(payload).then((result) => {
-      if (result.errors && result.errors.length > 0) {
-        console.error(
-          '[AnalyticsStorage] GraphQL errors storing event:',
-          params.eventName,
-          result.errors,
-        );
-      }
-    });
-
-  attempt().catch((err) => {
-    console.error('[AnalyticsStorage] Failed to store event:', params.eventName, err);
-    // Retry once after 2s for transient network failures
-    setTimeout(() => {
-      attempt().catch((retryErr) => {
-        console.error('[AnalyticsStorage] Retry also failed:', params.eventName, retryErr);
-      });
-    }, 2000);
+  // All analytics events go through /d Lambda via sendBeacon/fetch.
+  // Lambda handles DDB write + Segment forwarding server-side.
+  sendPageViewBeacon({
+    ...params,
+    pageViewId: params.pageViewId || createPageViewId(),
   });
 }
 
@@ -336,60 +233,9 @@ export interface PageTimeFlushParams {
   maxScrollDepth?: number; // highest scroll depth % (0-100) reached during this page view
 }
 
-export function storePageTimeFlush(params: PageTimeFlushParams): void {
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
-
-  const payload = {
-    // Deterministic ID → idempotent writes (retries won't create duplicates)
-    id: `ptf-${params.pageViewId}-${params.sequence}`,
-    eventName: 'Page Time Flush',
-    eventType: 'page_time_flush',
-    timestamp: new Date(params.endedAt).toISOString(),
-
-    visitorId: getVisitorId(),
-    pageViewId: params.pageViewId,
-    sessionId: params.sessionId,
-    tabId: params.tabId,
-
-    pathname: params.path,
-    pageTitle: params.title,
-
-    activeSeconds: params.activeSeconds,
-    idleSeconds: params.idleSeconds,
-    hiddenSeconds: params.hiddenSeconds,
-    wallClockSeconds: params.wallClockSeconds,
-    flushReason: params.flushReason,
-    isFinal: params.isFinal,
-    flushSequence: params.sequence,
-    idleTimeoutMsUsed: params.idleTimeoutMsUsed,
-    maxScrollDepth: params.maxScrollDepth || undefined,
-
-    userAgent: ua,
-    isBot: ua ? isbot(ua) : undefined,
-    // IP/org enrichment resolved server-side by /d Lambda from request headers
-  };
-
-  const attempt = () =>
-    client.models.AnalyticsEvent.create(payload).then((result) => {
-      if (result.errors && result.errors.length > 0) {
-        console.error('[AnalyticsStorage] GraphQL errors storing page_time_flush:', result.errors);
-      }
-    });
-
-  attempt().catch((err) => {
-    console.error('[AnalyticsStorage] Failed to store page_time_flush:', err);
-    setTimeout(() => {
-      attempt().catch((retryErr) => {
-        console.error('[AnalyticsStorage] Retry also failed (page_time_flush):', retryErr);
-      });
-    }, 2000);
-  });
-}
-
-// ─── Beacon-friendly page_time_flush (pagehide path) ────────────────────────
-// Uses sendBeacon to /d, which fans out to Segment ('Time on Page') + DynamoDB.
-// This is the only reliable transport during page unload — GraphQL fetch
-// may be killed by the browser before completing.
+// ─── page_time_flush via /d Lambda ──────────────────────────────────────────
+// All flush reasons go through /d Lambda via sendBeacon/fetch.
+// Lambda fans out to Segment ('Time on Page') + DynamoDB.
 
 export function storePageTimeFlushViaBeacon(params: PageTimeFlushParams): void {
   try {
