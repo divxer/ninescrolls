@@ -170,7 +170,6 @@ function mergeIPInfo(responses: Array<Partial<IPInfo>>): IPInfo {
 // Classification strategy:
 //   1. IPinfo company.type provides a categorical org type (education/business/government/isp/hosting)
 //   2. AI classification (Claude via /classify-org) provides numeric confidence and refined org type
-//   3. No keyword matching — company.type is more reliable for non-English names
 
 function getOrgTypeName(type: string): string {
     const typeNames: Record<string, string> = {
@@ -205,6 +204,14 @@ function analyzeTargetCustomer(ipInfo: IPInfo): TargetCustomerAnalysis {
         organizationType = 'isp';
     } else if (companyType === 'hosting') {
         organizationType = 'hosting';
+    } else if (!companyType) {
+        // Keyword fallback for obvious cases when company.type is unavailable.
+        // Only covers education/government — AI handles ambiguous orgs.
+        if (EDUCATION_KEYWORDS.test(orgName)) {
+            organizationType = 'education';
+        } else if (GOVERNMENT_KEYWORDS.test(orgName)) {
+            organizationType = 'government';
+        }
     }
 
     return {
