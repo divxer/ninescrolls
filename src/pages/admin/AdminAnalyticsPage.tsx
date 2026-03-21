@@ -1485,9 +1485,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               <div style={{ fontSize: '0.85rem', color: '#666', margin: '0.4rem 0' }}>
                 {isManual && override?.reason
                   ? <>Reason: {override.reason}</>
-                  : aiEvent?.aiReason
-                    ? <>AI: {aiEvent.aiReason}</>
-                    : null}
+                  : override?.reason
+                    ? <>AI: {override.reason}</>
+                    : aiEvent?.aiReason
+                      ? <>AI: {aiEvent.aiReason}</>
+                      : null}
               </div>
             )}
 
