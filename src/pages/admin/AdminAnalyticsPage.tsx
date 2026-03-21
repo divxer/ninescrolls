@@ -1324,16 +1324,23 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
         const ipOrgType = ipEvent?.organizationType || 'unknown';
 
-        const hasAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
-        const aiUpgraded = hasAI && aiEvent.aiOrganizationType !== 'unknown'
-          && aiEvent.aiOrganizationType !== ipOrgType;
-        const aiConfirmed = hasAI && !aiUpgraded && aiEvent.aiOrganizationType !== 'unknown';
+        // Use override data as fallback when page_view events lack AI data (pre-fix records)
+        const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
+        const hasOverrideAI = !hasEventAI && override?.found && override?.source !== 'manual'
+          && override?.organizationType && override.organizationType !== 'unknown';
+        const hasAI = hasEventAI || hasOverrideAI;
+        const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
+        const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
+        const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
+        const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown'
+          && effectiveAiOrgType !== ipOrgType;
+        const aiConfirmed = hasAI && !aiUpgraded && effectiveAiOrgType !== 'unknown';
 
         // Determine classification source
         const source = (() => {
           if (override?.found && override?.source === 'manual') return 'manual';
           if (org.hasBot) return 'bot';
-          if (hasAI && (aiEvent.aiConfidence ?? 0) >= 0.5 && aiEvent.aiOrganizationType !== 'unknown') return 'ai';
+          if (hasAI && effectiveAiConf >= 0.5 && effectiveAiOrgType !== 'unknown') return 'ai';
           if (ipOrgType !== 'unknown') return 'ip';
           if (org.isAnonymousHighIntent) return 'behavior';
           return 'none';
@@ -1405,11 +1412,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   <div className="org-detection-col-header">AI Classification</div>
                   <div className="org-ai-row">
                     <span className="org-ai-label">Confidence</span>
-                    <span className="org-ai-value">{((aiEvent.aiConfidence ?? 0) * 100).toFixed(0)}%</span>
+                    <span className="org-ai-value">{(effectiveAiConf * 100).toFixed(0)}%</span>
                   </div>
                   <div className="org-ai-row">
                     <span className="org-ai-label">Type</span>
-                    <span className="org-ai-value">{aiEvent.aiOrganizationType}</span>
+                    <span className="org-ai-value">{effectiveAiOrgType}</span>
                   </div>
                 </div>
               </div>
@@ -1433,16 +1440,16 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             ) : null}
 
             {/* AI reason */}
-            {aiEvent?.aiReason && (
+            {effectiveAiReason && (
               <div className="org-detection-reason">
                 <span className="org-ai-label">AI Reason</span>
-                <span className="org-ai-reason">{aiEvent.aiReason}</span>
+                <span className="org-ai-reason">{effectiveAiReason}</span>
               </div>
             )}
 
             {/* Final result */}
             <div className="org-detection-final">
-              Final: {org.organizationType || 'unknown'}
+              Final: {(hasOverrideAI ? override?.organizationType : null) || org.organizationType || 'unknown'}
               {org.maxConfidence > 0 && ` · ${(org.maxConfidence * 100).toFixed(0)}%`}
               {org.isTargetCustomer && <span className="org-detection-target"> · Target</span>}
             </div>
