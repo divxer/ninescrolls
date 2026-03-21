@@ -69,6 +69,11 @@ function extractTitle(html: string): string {
   return 'Untitled News';
 }
 
+function extractFirstImage(html: string): string {
+  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return imgMatch ? imgMatch[1] : '';
+}
+
 async function createNews(filePath: string) {
   await authenticate();
 
@@ -86,12 +91,14 @@ async function createNews(filePath: string) {
   const readTime = estimateReadTime(plainText);
   const excerpt = plainText.slice(0, 200);
   const today = new Date().toISOString().split('T')[0];
+  const coverImage = extractFirstImage(bodyContent);
 
   console.log(`Title: ${title}`);
   console.log(`Slug: ${slug}`);
   console.log(`Read time: ${readTime} min`);
   console.log(`Content length: ${content.length} chars`);
   console.log(`Excerpt: ${excerpt.slice(0, 80)}...`);
+  console.log(`Cover image: ${coverImage || '(none - will use category placeholder)'}`);
 
   // Check slug uniqueness
   const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug });
@@ -109,7 +116,7 @@ async function createNews(filePath: string) {
     publishDate: today,
     category: 'Industry',
     readTime,
-    imageUrl: `/assets/images/news/${slug}`,
+    imageUrl: coverImage || `/assets/images/news/${slug}`,
     tags: [],
     contentType: 'news',
     isDraft: true, // Create as draft for review

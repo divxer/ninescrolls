@@ -18,6 +18,10 @@
   align-items: center;
 }
 
+.news-hero-content.news-hero-no-image {
+  grid-template-columns: 1fr;
+}
+
 .news-post-meta-top {
   display: flex;
   align-items: center;

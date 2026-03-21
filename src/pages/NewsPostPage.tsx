@@ -10,6 +10,10 @@ import '../styles/NewsPostPage.css';
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
+function hasValidImage(url: string): boolean {
+  return Boolean(url) && !url.startsWith('/assets/images/news/');
+}
+
 function NewsHeroImage({ post }: { post: InsightsPost }) {
   const url = post.imageUrl;
 
@@ -126,7 +130,7 @@ export const NewsPostPage: React.FC = () => {
         {/* Hero Section */}
         <section className="news-post-hero">
           <div className="container">
-            <div className="news-hero-content">
+            <div className={`news-hero-content ${hasValidImage(post.imageUrl) ? '' : 'news-hero-no-image'}`}>
               <div className="news-hero-text">
                 <div className="news-post-meta-top">
                   <span className="news-post-category">{post.category}</span>
@@ -140,9 +144,11 @@ export const NewsPostPage: React.FC = () => {
                   <span className="read-time">{post.readTime} min read</span>
                 </div>
               </div>
-              <div className="news-hero-image">
-                <NewsHeroImage post={post} />
-              </div>
+              {hasValidImage(post.imageUrl) && (
+                <div className="news-hero-image">
+                  <NewsHeroImage post={post} />
+                </div>
+              )}
             </div>
           </div>
         </section>
