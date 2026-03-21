@@ -418,7 +418,7 @@ class SegmentAnalyticsService {
 
       // Wait for AI classification before DynamoDB write (avoid missing AI data)
       const aiResult = ipAnalytics.getAIClassification()
-        ?? await ipAnalytics.waitForAIClassification(10000);
+        ?? await ipAnalytics.waitForAIClassification(12000);
 
       // Dual-write to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({
@@ -630,7 +630,7 @@ class SegmentAnalyticsService {
 
       // Wait for AI classification before DynamoDB write (avoid missing AI data)
       const aiResultPage = ipAnalytics.getAIClassification()
-        ?? await ipAnalytics.waitForAIClassification(10000);
+        ?? await ipAnalytics.waitForAIClassification(12000);
 
       // Dual-write page view to DynamoDB (fire-and-forget)
       storeAnalyticsEvent({

@@ -10,6 +10,8 @@ export interface AIClassification {
   confidence: number;
   reason: string;
   cached?: boolean;
+  source?: 'ai' | 'manual';
+  provider?: 'bedrock' | 'anthropic';
 }
 
 const CACHE_KEY = 'ninescrolls_ai_classifications';
@@ -85,7 +87,7 @@ function setCached(orgName: string, result: AIClassification): void {
 
 /**
  * Classify an organization using AI (Claude Haiku via Lambda).
- * - Checks localStorage cache first (7-day TTL)
+ * - Checks localStorage cache first (3-day TTL)
  * - Falls back to null on timeout or error (caller should use keyword-based fallback)
  * - Non-blocking: designed for fire-and-forget enrichment
  */
