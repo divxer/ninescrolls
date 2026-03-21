@@ -356,7 +356,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     if (!publishDate) newErrors.publishDate = 'Publish date is required';
     if (!category) newErrors.category = 'Category is required';
     if (!readTime || readTime < 1) newErrors.readTime = 'Read time must be at least 1';
-    if (!imageUrl.trim()) newErrors.imageUrl = 'Cover image is required';
+    if (contentType === 'insight' && !imageUrl.trim()) newErrors.imageUrl = 'Cover image is required';
 
     // Validate related products
     const validProducts = relatedProducts.filter(p => p.href.trim() || p.label.trim());

@@ -12,6 +12,17 @@ function resolveCardImage(url: string): string {
   return `${url}.webp`;
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  Industry: '#0d9488',
+  Product: '#3b82f6',
+  Event: '#8b5cf6',
+  Partnership: '#f59e0b',
+};
+
+function hasValidImage(url: string): boolean {
+  return Boolean(url) && !url.startsWith('/assets/images/news/');
+}
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -92,7 +103,16 @@ export const NewsPage: React.FC = () => {
                   <article key={post.id} className="news-item">
                     <div className="news-item-image">
                       <Link to={`/news/${post.slug}`}>
-                        <img src={resolveCardImage(post.imageUrl)} alt={post.title} loading="lazy" decoding="async" />
+                        {hasValidImage(post.imageUrl) ? (
+                          <img src={resolveCardImage(post.imageUrl)} alt={post.title} loading="lazy" decoding="async" />
+                        ) : (
+                          <div
+                            className="news-item-placeholder"
+                            style={{ background: CATEGORY_COLORS[post.category] || '#0d9488' }}
+                          >
+                            <span>{post.category}</span>
+                          </div>
+                        )}
                       </Link>
                     </div>
                     <div className="news-item-content">
