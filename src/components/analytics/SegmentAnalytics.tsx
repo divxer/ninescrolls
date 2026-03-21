@@ -6,7 +6,6 @@ import {
   getSessionId,
   getTabId,
   createPageViewId,
-  storePageTimeFlush,
   storePageTimeFlushViaBeacon,
   storeAnalyticsEvent,
   type FlushReason,
@@ -443,17 +442,9 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       maxScrollDepth: state.maxScrollDepth,
     };
 
-    if (reason === 'pagehide') {
-      // Single beacon transport → Lambda fans out to Segment ('Time on Page') + DynamoDB.
-      // sendBeacon is reliable during page unload; GraphQL fetch may be killed by the browser.
-      storePageTimeFlushViaBeacon(flushParams);
-    } else {
-      // Segment via sendBeacon (backward-compatible heuristic path)
-      const score = behaviorAnalytics.calculateBehaviorScore();
-      segmentAnalytics.sendTimeBeacon(state.path, activeSeconds, score.timeOnSite, state.title);
-      // Authoritative DynamoDB via GraphQL (safe — not in unload context)
-      storePageTimeFlush(flushParams);
-    }
+    // All flush reasons go through /d Lambda (sendBeacon → DDB + Segment).
+    // Unified path: no more GraphQL for time flushes.
+    storePageTimeFlushViaBeacon(flushParams);
 
     // 7. Detect final < partial anomaly (cumulative model should never regress)
     if (isFinal && state.maxFlushedActiveSeconds > 0 && activeSeconds < state.maxFlushedActiveSeconds) {
@@ -522,9 +513,9 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
         // Update behavior heuristic (for lead scoring)
         behaviorAnalytics.trackTimeOnPage(cp.path, cp.activeSeconds);
 
-        // Write a recovery flush to DynamoDB
+        // Write a recovery flush via /d Lambda
         const recoverySeq = cp.flushSequence + 1;
-        storePageTimeFlush({
+        storePageTimeFlushViaBeacon({
           sessionId: cp.sessionId,
           tabId: cp.tabId,
           pageViewId: cp.pageViewId,
