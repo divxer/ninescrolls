@@ -35,34 +35,18 @@ export const useSegmentAnalytics = () => {
         window.analytics.reset();
       }
     },
-    // IP Analysis methods
-    trackWithIPAnalysis: async (event: string, properties?: SegmentProperties) => {
-      await segmentAnalytics.trackWithIPAnalysis(event, properties);
+    // IP Analysis methods (server-side via /d Lambda)
+    trackWithIPAnalysis: (event: string, properties?: SegmentProperties) => {
+      segmentAnalytics.trackWithIPAnalysis(event, properties);
     },
-    trackProductViewWithAnalysis: async (productId: string, productName: string) => {
-      await segmentAnalytics.trackProductViewWithAnalysis(productId, productName);
+    trackProductViewWithAnalysis: (productId: string, productName: string) => {
+      segmentAnalytics.trackProductViewWithAnalysis(productId, productName);
     },
-    trackContactFormSubmitWithAnalysis: async (productId?: string, productName?: string) => {
-      await segmentAnalytics.trackContactFormSubmitWithAnalysis(productId, productName);
+    trackContactFormSubmitWithAnalysis: (productId?: string, productName?: string) => {
+      segmentAnalytics.trackContactFormSubmitWithAnalysis(productId, productName);
     },
-    trackRFQSubmissionWithAnalysis: async (productId?: string, productName?: string) => {
-      await segmentAnalytics.trackRFQSubmissionWithAnalysis(productId, productName);
+    trackRFQSubmissionWithAnalysis: (productId?: string, productName?: string) => {
+      segmentAnalytics.trackRFQSubmissionWithAnalysis(productId, productName);
     },
-    getCurrentIPInfo: async () => {
-      return await segmentAnalytics.getCurrentIPInfo();
-    },
-    getTargetCustomerAnalysis: async () => {
-      return await segmentAnalytics.getTargetCustomerAnalysis();
-    },
-    // Simple IP Analysis methods
-    trackWithSimpleIPAnalysis: async (event: string, properties?: SegmentProperties) => {
-      await segmentAnalytics.trackWithSimpleIPAnalysis(event, properties);
-    },
-    getSimpleIPInfo: async () => {
-      return await segmentAnalytics.getSimpleIPInfo();
-    },
-    getSimpleTargetCustomerAnalysis: async () => {
-      return await segmentAnalytics.getSimpleTargetCustomerAnalysis();
-    }
   }), []);
 };

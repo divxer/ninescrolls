@@ -2,8 +2,6 @@
 // This service provides a unified interface for tracking events with Segment
 // Includes server-side tracking fallback for visitors with ad blockers
 
-import { ipAnalytics, type IPInfo, type TargetCustomerAnalysis } from './ipAnalytics';
-import { simpleIPAnalytics, type SimpleIPInfo, type SimpleTargetCustomerAnalysis } from './simpleIPAnalytics';
 import { behaviorAnalytics, extractSearchQuery } from './behaviorAnalytics';
 import { storeAnalyticsEvent, sendPageViewBeacon, getVisitorId } from './analyticsStorageService';
 import { getApiEndpoint, getAnonymousId, collectBrowserContext } from './analyticsTransportUtils';
@@ -343,87 +341,6 @@ class SegmentAnalyticsService {
       productName,
       formName: 'rfq_submission'
     });
-  }
-
-  // Get current IP information
-  async getCurrentIPInfo(): Promise<IPInfo | null> {
-    return await ipAnalytics.getIPInfo();
-  }
-
-  // Get target customer analysis results
-  async getTargetCustomerAnalysis(): Promise<TargetCustomerAnalysis | null> {
-    return await ipAnalytics.analyzeTargetCustomer();
-  }
-
-  // Use simplified IP analysis service
-  async trackWithSimpleIPAnalysis(event: string, properties?: Record<string, unknown>) {
-    try {
-      // Get simplified IP information and analysis results
-      const ipInfo = await simpleIPAnalytics.getIPInfo();
-      const analysis = await simpleIPAnalytics.analyzeTargetCustomer();
-
-      // Merge event properties
-      const enhancedProperties = {
-        ...properties,
-        simpleIPInfo: ipInfo ? {
-          ip: ipInfo.ip,
-          country: ipInfo.country,
-          region: ipInfo.region,
-          city: ipInfo.city,
-          org: ipInfo.org,
-          isp: ipInfo.isp
-        } : null,
-        simpleTargetCustomerAnalysis: analysis ? {
-          isTargetCustomer: analysis.isTargetCustomer,
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          orgName: analysis.details.orgName,
-          orgType: analysis.details.orgType,
-          location: analysis.details.location,
-          keywords: analysis.details.keywords
-        } : null
-      };
-
-      // Send to Segment with enhanced properties
-      this.track(event, enhancedProperties);
-
-      // If it's a target customer, send additional event (not duplicate)
-      if (analysis && analysis.isTargetCustomer) {
-        this.track('Simple Target Customer Detected', {
-          originalEvent: event,
-          organizationType: analysis.organizationType,
-          confidence: analysis.confidence,
-          leadTier: analysis.leadTier || 'C',
-          orgName: analysis.details.orgName,
-          location: analysis.details.location
-        });
-      }
-
-      console.log('Event tracked with simple IP analysis:', {
-        event,
-        ipInfo,
-        analysis
-      });
-
-    } catch (error) {
-      console.error('Error tracking with simple IP analysis:', error);
-      // If IP analysis fails, send the original event without IP data
-      if (properties) {
-        this.track(event, properties);
-      } else {
-        this.track(event);
-      }
-    }
-  }
-
-  // Get simplified IP information
-  async getSimpleIPInfo(): Promise<SimpleIPInfo | null> {
-    return await simpleIPAnalytics.getIPInfo();
-  }
-
-  // Get simplified target customer analysis results
-  async getSimpleTargetCustomerAnalysis(): Promise<SimpleTargetCustomerAnalysis | null> {
-    return await simpleIPAnalytics.analyzeTargetCustomer();
   }
 
   /**

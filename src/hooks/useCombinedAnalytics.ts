@@ -102,17 +102,11 @@ export const useCombinedAnalytics = () => {
       group: segmentAnalyticsHook.group,
       alias: segmentAnalyticsHook.alias,
       reset: segmentAnalyticsHook.reset,
-      // IP Analysis methods
+      // IP Analysis methods (server-side via /d Lambda)
       trackWithIPAnalysis: segmentAnalyticsHook.trackWithIPAnalysis,
       trackProductViewWithAnalysis: segmentAnalyticsHook.trackProductViewWithAnalysis,
       trackContactFormSubmitWithAnalysis: segmentAnalyticsHook.trackContactFormSubmitWithAnalysis,
       trackRFQSubmissionWithAnalysis: segmentAnalyticsHook.trackRFQSubmissionWithAnalysis,
-      getCurrentIPInfo: segmentAnalyticsHook.getCurrentIPInfo,
-      getTargetCustomerAnalysis: segmentAnalyticsHook.getTargetCustomerAnalysis,
-      // Simple IP Analysis methods
-      trackWithSimpleIPAnalysis: segmentAnalyticsHook.trackWithSimpleIPAnalysis,
-      getSimpleIPInfo: segmentAnalyticsHook.getSimpleIPInfo,
-      getSimpleTargetCustomerAnalysis: segmentAnalyticsHook.getSimpleTargetCustomerAnalysis
     },
 
     // Google Analytics-specific methods
