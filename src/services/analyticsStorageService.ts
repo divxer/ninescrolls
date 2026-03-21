@@ -240,7 +240,11 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
 // IP lookup, AI classification, DDB write, and Segment event forwarding.
 // IP/geo/org fields are resolved server-side from request headers.
 
-function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
+export interface SendPageViewBeaconParams extends StoreAnalyticsEventParams {
+  pageViewId: string; // required — deterministic DDB ID: pv-${pageViewId}
+}
+
+function buildPageViewPayload(params: SendPageViewBeaconParams): string {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
   return JSON.stringify({
     type: 'track',
@@ -279,7 +283,7 @@ function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
   });
 }
 
-export function sendPageViewBeacon(params: StoreAnalyticsEventParams): void {
+export function sendPageViewBeacon(params: SendPageViewBeaconParams): void {
   try {
     const payload = buildPageViewPayload(params);
     const url = `${getApiEndpoint()}/d`;
