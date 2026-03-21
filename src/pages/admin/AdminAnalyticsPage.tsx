@@ -1167,11 +1167,16 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         <div>
           <h1 className="org-detail-name">{org.orgName}</h1>
           <div className="org-detail-subtitle">
-            {org.organizationType && (
-              <span className={`analytics-type-badge analytics-type-${org.organizationType}`}>
-                {org.organizationType}
-              </span>
-            )}
+            {(() => {
+              const displayOrgType = (override?.found && override?.organizationType && override.organizationType !== 'unknown')
+                ? override.organizationType
+                : org.organizationType;
+              return displayOrgType ? (
+                <span className={`analytics-type-badge analytics-type-${displayOrgType}`}>
+                  {displayOrgType}
+                </span>
+              ) : null;
+            })()}
             <span className="org-detail-location">
               {[org.city, org.region, org.country].filter(Boolean).join(', ')}
             </span>
