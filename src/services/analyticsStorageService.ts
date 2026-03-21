@@ -148,6 +148,7 @@ interface EventContext {
 export interface StoreAnalyticsEventParams {
   eventName: string;
   eventType: string;
+  pageViewId?: string;
   ipInfo?: IPInfoInput | null;
   targetAnalysis?: TargetAnalysisInput | null;
   behaviorScore?: BehaviorScoreInput | null;
@@ -233,6 +234,168 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
       });
     }, 2000);
   });
+}
+
+// ─── Server-side page_view write via /d Lambda ──────────────────────────────
+// Sends analytics data to /d Lambda for DynamoDB write. Uses sendBeacon for
+// reliability (works during page unload) with fetch+keepalive fallback.
+// This replaces client-side GraphQL create() for page_view/track events.
+
+function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+  return JSON.stringify({
+    type: 'track',
+    event: 'page_view_store',
+    anonymousId: getAnonymousId(),
+    properties: {
+      pageViewId: params.pageViewId,
+      eventName: params.eventName,
+      eventType: params.eventType,
+      timestamp: new Date().toISOString(),
+      visitorId: getVisitorId(),
+      userAgent: ua,
+      isBot: ua ? isbot(ua) : false,
+
+      ip: params.ipInfo?.ip,
+      country: params.ipInfo?.country,
+      region: params.ipInfo?.region,
+      city: params.ipInfo?.city,
+      org: params.ipInfo?.org,
+      isp: params.ipInfo?.isp,
+      companyType: params.ipInfo?.companyType,
+      latitude: params.ipInfo?.latitude,
+      longitude: params.ipInfo?.longitude,
+
+      isTargetCustomer: params.targetAnalysis?.isTargetCustomer,
+      organizationType: params.targetAnalysis?.organizationType,
+      orgName: params.targetAnalysis?.orgName,
+      confidence: params.targetAnalysis?.confidence,
+      leadTier: params.targetAnalysis?.leadTier,
+
+      behaviorScore: params.behaviorScore?.behaviorScore,
+      productPagesViewed: params.behaviorScore?.productPagesViewed,
+      timeOnSite: params.behaviorScore?.timeOnSite,
+      pdfDownloads: params.behaviorScore?.pdfDownloads,
+      returnVisits: params.behaviorScore?.returnVisits,
+      isPaidTraffic: params.behaviorScore?.isPaidTraffic,
+      trafficChannel: params.behaviorScore?.trafficChannel,
+      formInteractions: params.behaviorScore?.formInteractions,
+      maxScrollDepth: params.behaviorScore?.maxScrollDepth,
+
+      pathname: params.context?.pathname,
+      pageTitle: params.context?.pageTitle,
+      productId: params.context?.productId,
+      productName: params.context?.productName,
+      referrer: params.context?.referrer,
+      utmTerm: params.context?.utmTerm,
+      searchQuery: params.context?.searchQuery,
+    },
+    context: collectBrowserContext(),
+  });
+}
+
+export function sendPageViewBeacon(params: StoreAnalyticsEventParams): void {
+  try {
+    const payload = buildPageViewPayload(params);
+    const url = `${getApiEndpoint()}/d`;
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) {
+        console.info('[AnalyticsStorage] page_view sent via sendBeacon:', params.eventName);
+        return;
+      }
+    }
+
+    // Fallback: fetch with keepalive
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).then(() => {
+      console.info('[AnalyticsStorage] page_view sent via fetch:', params.eventName);
+    }).catch((err) => {
+      console.error('[AnalyticsStorage] page_view fetch failed:', params.eventName, err);
+    });
+  } catch (err) {
+    console.error('[AnalyticsStorage] sendPageViewBeacon error:', err);
+  }
+}
+
+// ─── AI enrichment via /d Lambda ────────────────────────────────────────────
+
+export interface AIEnrichmentParams {
+  pageViewId: string;
+  aiOrganizationType?: string;
+  aiConfidence?: number;
+  aiReason?: string;
+  provider?: string;
+  isTargetCustomer?: boolean;
+  confidence?: number;
+  organizationType?: string;
+  leadTier?: string;
+}
+
+function buildAIEnrichmentPayload(params: AIEnrichmentParams): string {
+  return JSON.stringify({
+    type: 'track',
+    event: 'ai_enrichment',
+    anonymousId: getAnonymousId(),
+    properties: {
+      pageViewId: params.pageViewId,
+      aiOrganizationType: params.aiOrganizationType,
+      aiConfidence: params.aiConfidence,
+      aiReason: params.aiReason,
+      provider: params.provider,
+      isTargetCustomer: params.isTargetCustomer,
+      confidence: params.confidence,
+      organizationType: params.organizationType,
+      leadTier: params.leadTier,
+    },
+  });
+}
+
+export function sendAIEnrichment(params: AIEnrichmentParams): void {
+  try {
+    const payload = buildAIEnrichmentPayload(params);
+    const url = `${getApiEndpoint()}/d`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).then(() => {
+      console.info('[AnalyticsStorage] AI enrichment sent for pvid:', params.pageViewId);
+    }).catch((err) => {
+      console.error('[AnalyticsStorage] AI enrichment fetch failed:', err);
+    });
+  } catch (err) {
+    console.error('[AnalyticsStorage] sendAIEnrichment error:', err);
+  }
+}
+
+export function sendAIEnrichmentViaBeacon(params: AIEnrichmentParams): void {
+  try {
+    const payload = buildAIEnrichmentPayload(params);
+    const url = `${getApiEndpoint()}/d`;
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) return;
+    }
+
+    // Fallback: fetch with keepalive
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => { /* best-effort during unload */ });
+  } catch {
+    // Silent — runs during page unload
+  }
 }
 
 // ─── Cached IP/org/geo enrichment for page_time_flush events ────────────────
