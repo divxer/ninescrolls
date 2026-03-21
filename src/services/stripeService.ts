@@ -5,7 +5,6 @@
  * For production, you'll need a backend API endpoint to create the session securely.
  */
 
-import outputs from '../../amplify_outputs.json';
 
 export interface StripeCheckoutItem {
   id: string;
@@ -57,22 +56,12 @@ export interface TaxCalculationResult {
 }
 
 /**
- * Get API Gateway endpoint from Amplify outputs
+ * Get API Gateway endpoint.
  */
 function getApiEndpoint(): string {
-  // Try to get from amplify_outputs.json first
-  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
-    // Remove trailing slash if present
-    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
-  }
-  
-  // Fallback to environment variable
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
-  // Last resort: use the hardcoded URL (should not happen in production)
-  console.warn('Using fallback API URL. Please configure VITE_API_URL or ensure amplify_outputs.json is available.');
   return 'https://api.ninescrolls.com';
 }
 

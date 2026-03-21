@@ -1,7 +1,6 @@
 // Admin Classification Override Service
 // Calls the /classify-org Lambda with admin actions (override, undo, get-override)
 
-import outputs from '../../amplify_outputs.json';
 
 export interface OrgOverride {
   found: boolean;
@@ -24,9 +23,6 @@ export interface OrgOverride {
 }
 
 function getApiEndpoint(): string {
-  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
-    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
-  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }

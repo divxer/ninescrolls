@@ -1,17 +1,12 @@
 // AI Article Metadata Generation Service
 // Calls the /generate-article-meta Lambda to get Claude-powered excerpt & tags
 
-import outputs from '../../amplify_outputs.json';
-
 export interface ArticleMeta {
   excerpt: string;
   tags: string[];
 }
 
 function getApiEndpoint(): string {
-  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
-    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
-  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }

@@ -11,7 +11,6 @@ import {
   type FlushReason,
   type PageTimeFlushParams,
 } from '../../services/analyticsStorageService';
-import outputs from '../../../amplify_outputs.json';
 
 // ─── Time tracking constants ─────────────────────────────────────────────────
 const MIN_TRACK_SECONDS = 5;       // Minimum seconds to track (filters bots/misclicks)
@@ -164,9 +163,6 @@ interface ActivePageState {
  * Follows the same pattern as stripeService.ts getApiEndpoint().
  */
 function getSegmentProxyBase(): string {
-  if (outputs?.custom?.API?.['ninescrolls-api']?.endpoint) {
-    return outputs.custom.API['ninescrolls-api'].endpoint.replace(/\/$/, '');
-  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
