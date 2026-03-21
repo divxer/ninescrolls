@@ -31,6 +31,8 @@ export interface HeroImageConfig {
   fallbackExt: string;
 }
 
+export type ContentType = 'insight' | 'news';
+
 export interface InsightsPost {
   id: string;
   title: string;
@@ -48,9 +50,10 @@ export interface InsightsPost {
   heroImages?: HeroImageConfig;
   isStandaloneComponent?: boolean;
   isDraft?: boolean;
+  contentType?: ContentType;
 }
 
-export const categories = [
+export const insightCategories = [
   'All',
   'Materials Science',
   'Photonics',
@@ -58,3 +61,14 @@ export const categories = [
   'Energy',
   'Publication Spotlight'
 ];
+
+export const newsCategories = [
+  'All',
+  'Industry',
+  'Product',
+  'Event',
+  'Partnership'
+];
+
+// Backward compatibility alias
+export const categories = insightCategories;

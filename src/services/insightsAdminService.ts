@@ -18,6 +18,7 @@ export interface CreateInsightsPostInput {
   heroImages?: string | null;
   isStandaloneComponent?: boolean;
   isDraft?: boolean;
+  contentType?: string;
 }
 
 export interface UpdateInsightsPostInput extends CreateInsightsPostInput {

@@ -75,6 +75,7 @@ const schema = a.schema({
       heroImages: a.json(),
       isStandaloneComponent: a.boolean(),
       isDraft: a.boolean().default(false),
+      contentType: a.string().default('insight'),
     })
     .authorization((allow) => [
       allow.publicApiKey().to(['read']),

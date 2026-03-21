@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { InsightsPost } from '../types';
+import type { InsightsPost, ContentType } from '../types';
 import { fetchAllInsightsPosts, fetchInsightsPostBySlug } from '../services/insightsService';
 
-export function useInsightsPosts(options?: { includeDrafts?: boolean }) {
+export function useInsightsPosts(options?: {
+  includeDrafts?: boolean;
+  contentType?: ContentType;
+}) {
   const [posts, setPosts] = useState<InsightsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -25,7 +28,7 @@ export function useInsightsPosts(options?: { includeDrafts?: boolean }) {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [options?.contentType, options?.includeDrafts]);
 
   return { posts, loading, error };
 }
@@ -62,4 +65,13 @@ export function useInsightsPost(slug: string | undefined) {
   }, [slug]);
 
   return { post, loading, error };
+}
+
+// Convenience hooks for News content
+export function useNewsPosts(options?: { includeDrafts?: boolean }) {
+  return useInsightsPosts({ ...options, contentType: 'news' });
+}
+
+export function useNewsPost(slug: string | undefined) {
+  return useInsightsPost(slug);
 }

@@ -7,12 +7,13 @@ import {
   fetchInsightsPostById,
 } from '../../services/insightsAdminService';
 import { fetchInsightsPostBySlug } from '../../services/insightsService';
-import type { InsightsPost } from '../../types';
+import type { InsightsPost, ContentType } from '../../types';
 
 export function AdminInsightsFormPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const fromId = searchParams.get('from');
+  const typeParam = searchParams.get('type') as ContentType | null;
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
@@ -56,6 +57,7 @@ export function AdminInsightsFormPage() {
             : undefined,
           isStandaloneComponent: data.isStandaloneComponent ?? undefined,
           isDraft: data.isDraft ?? undefined,
+          contentType: (data.contentType as ContentType) ?? 'insight',
         });
       } catch (err) {
         if (!cancelled) {
@@ -71,6 +73,24 @@ export function AdminInsightsFormPage() {
       cancelled = true;
     };
   }, [id]);
+
+  // Set default contentType for new articles based on URL param
+  useEffect(() => {
+    if (!isEdit && !fromId && typeParam === 'news') {
+      setInitialData({
+        id: '',
+        slug: '',
+        title: '',
+        author: 'NineScrolls Team',
+        publishDate: new Date().toISOString().split('T')[0],
+        category: 'Industry',
+        readTime: 3,
+        imageUrl: '',
+        tags: [],
+        contentType: 'news',
+      });
+    }
+  }, [isEdit, fromId, typeParam]);
 
   // Duplicate article: load source and prepare as new
   useEffect(() => {
@@ -148,6 +168,7 @@ export function AdminInsightsFormPage() {
         relatedProducts: formData.relatedProducts || null,
         isStandaloneComponent: formData.isStandaloneComponent,
         isDraft: formData.isDraft,
+        contentType: formData.contentType,
       };
 
       if (isEdit && id) {

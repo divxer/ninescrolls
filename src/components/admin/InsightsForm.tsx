@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { RichTextEditor } from './RichTextEditor';
-import type { InsightsPost, RelatedProduct } from '../../types';
+import type { InsightsPost, RelatedProduct, ContentType } from '../../types';
+import { insightCategories, newsCategories } from '../../types';
 import { generateArticleMeta } from '../../services/insightsAIService';
 import {
   getImageUploadUrl,
@@ -9,7 +10,8 @@ import {
 } from '../../services/insightsImageService';
 import { InsightsPostPreview } from '../../pages/InsightsPostPage';
 
-const CATEGORIES = ['Materials Science', 'Photonics', 'Nanotechnology', 'Energy'];
+const INSIGHT_CATEGORIES = insightCategories.filter(c => c !== 'All');
+const NEWS_CATEGORIES = newsCategories.filter(c => c !== 'All');
 const AUTHORS = ['NineScrolls Team', 'Dr. Wei Chen', 'Dr. Sarah Kim'];
 const EXCERPT_MAX = 200;
 const TITLE_MAX = 120;
@@ -57,6 +59,7 @@ export interface InsightsFormData {
   relatedProducts: string;
   isStandaloneComponent: boolean;
   isDraft: boolean;
+  contentType: ContentType;
 }
 
 type ImageUploadState = 'idle' | 'uploading' | 'processing' | 'done' | 'error';
@@ -65,6 +68,8 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFormProps) {
+  const [contentType, setContentType] = useState<ContentType>('insight');
+  const availableCategories = contentType === 'news' ? NEWS_CATEGORIES : INSIGHT_CATEGORIES;
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
@@ -74,7 +79,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
   const [author, setAuthor] = useState('NineScrolls Team');
   const [showAuthorDropdown, setShowAuthorDropdown] = useState(false);
   const [publishDate, setPublishDate] = useState(todayISO());
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState(availableCategories[0]);
   const [readTime, setReadTime] = useState(5);
   const [readTimeManuallyEdited, setReadTimeManuallyEdited] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
@@ -112,7 +117,8 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     imageUrl: imagePreviewUrl || imageUrl,
     tags,
     relatedProducts: relatedProducts.filter(p => p.href.trim() || p.label.trim()),
-  }), [slug, title, content, excerpt, author, publishDate, category, readTime, imageUrl, imagePreviewUrl, tags, relatedProducts]);
+    contentType,
+  }), [slug, title, content, excerpt, author, publishDate, category, readTime, imageUrl, imagePreviewUrl, tags, relatedProducts, contentType]);
 
   // Close author dropdown on outside click
   useEffect(() => {
@@ -145,6 +151,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setRelatedProducts(initialData.relatedProducts || []);
       setIsStandaloneComponent(initialData.isStandaloneComponent || false);
       setIsDraft(initialData.isDraft || false);
+      setContentType((initialData.contentType as ContentType) || 'insight');
       // Show cover image preview when editing an existing article
       if (initialData.imageUrl) {
         if (!initialData.imageUrl.startsWith('/assets/')) {
@@ -385,6 +392,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       relatedProducts: validProducts.length > 0 ? JSON.stringify(validProducts) : '',
       isStandaloneComponent,
       isDraft: submitAsDraft,
+      contentType,
     });
 
     // Clear draft on successful submit
@@ -525,6 +533,33 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
 
             <hr className="sidebar-divider" />
 
+            {/* Content Type */}
+            <div className="form-field">
+              <label>Content Type</label>
+              <div className="content-type-toggle">
+                <button
+                  type="button"
+                  className={`content-type-btn ${contentType === 'insight' ? 'active' : ''}`}
+                  onClick={() => {
+                    setContentType('insight');
+                    setCategory(INSIGHT_CATEGORIES[0]);
+                  }}
+                >
+                  Insight
+                </button>
+                <button
+                  type="button"
+                  className={`content-type-btn ${contentType === 'news' ? 'active' : ''}`}
+                  onClick={() => {
+                    setContentType('news');
+                    setCategory(NEWS_CATEGORIES[0]);
+                  }}
+                >
+                  News
+                </button>
+              </div>
+            </div>
+
             {/* Author */}
             <div className="form-field" ref={authorRef}>
               <label htmlFor="author">Author *</label>
@@ -586,7 +621,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                {CATEGORIES.map((cat) => (
+                {availableCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>
@@ -749,8 +784,8 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               </div>
             </div>
 
-            {/* Related Products */}
-            <div className="form-field">
+            {/* Related Products (insights only) */}
+            {contentType === 'insight' && <div className="form-field">
               <div className="form-label-row">
                 <label>Related Products</label>
                 <button
@@ -793,10 +828,10 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               {errors.relatedProducts && (
                 <span className="field-error">{errors.relatedProducts}</span>
               )}
-            </div>
+            </div>}
 
-            {/* Standalone Component */}
-            <div className="form-field form-checkbox">
+            {/* Standalone Component (insights only) */}
+            {contentType === 'insight' && <div className="form-field form-checkbox">
               <label>
                 <input
                   type="checkbox"
@@ -811,7 +846,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                   ?
                 </span>
               </label>
-            </div>
+            </div>}
           </div>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
-import type { InsightsPost } from '../types';
+import type { InsightsPost, ContentType } from '../types';
 
 const client = generateClient<Schema>();
 
@@ -27,11 +27,23 @@ function mapToInsightsPost(item: DynamoInsightsPost): InsightsPost {
       : undefined,
     isStandaloneComponent: item.isStandaloneComponent ?? undefined,
     isDraft: item.isDraft ?? undefined,
+    contentType: (item.contentType as ContentType) ?? 'insight',
   };
 }
 
-export async function fetchAllInsightsPosts(options?: { includeDrafts?: boolean }): Promise<InsightsPost[]> {
-  const filter = options?.includeDrafts ? undefined : { isDraft: { ne: true } };
+export async function fetchAllInsightsPosts(options?: {
+  includeDrafts?: boolean;
+  contentType?: ContentType;
+}): Promise<InsightsPost[]> {
+  const filterConditions: Record<string, any> = {};
+  if (!options?.includeDrafts) {
+    filterConditions.isDraft = { ne: true };
+  }
+  if (options?.contentType) {
+    filterConditions.contentType = { eq: options.contentType };
+  }
+  const filter = Object.keys(filterConditions).length > 0 ? filterConditions : undefined;
+
   const firstPage = await client.models.InsightsPost.list({
     limit: 100,
     ...(filter ? { filter } : {}),
