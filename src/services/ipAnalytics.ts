@@ -4,6 +4,7 @@
 
 import outputs from '../../amplify_outputs.json';
 import { classifyOrganization, type AIClassification } from './aiClassificationService';
+import { isbot } from 'isbot';
 
 interface IPInfo {
   ip: string;
@@ -119,9 +120,11 @@ class IPAnalyticsService {
         }
 
         // Fire off AI classification only when IP org type is ambiguous.
-        // Skip for: education/government (IP already reliable), hosting (almost always bots).
+        // Skip for: education/government (IP already reliable), hosting (almost always bots), bots.
         // Call for: business (AI refines to enterprise/hospital), isp/unknown (AI identifies org).
-        const needsAI = this.ipInfo?.org
+        const isBotUA = typeof navigator !== 'undefined' && isbot(navigator.userAgent);
+        const needsAI = !isBotUA
+          && this.ipInfo?.org
           && ['business', 'isp', 'telecom_isp', 'unknown'].includes(this.analysis?.organizationType || 'unknown');
         if (needsAI) {
           this.aiPromise = this.fetchAIClassification();

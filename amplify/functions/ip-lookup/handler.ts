@@ -75,13 +75,12 @@ const getCorsHeaders = (origin?: string) => {
 // ─── IP Fetching ─────────────────────────────────────────────────────────────
 
 async function fetchWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
-    try {
-        return await promise;
-    } finally {
-        clearTimeout(timer);
-    }
+    return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('IP lookup timeout')), timeout)
+        ),
+    ]);
 }
 
 async function fetchFromIPInfo(ip: string): Promise<Partial<IPInfo> | null> {
@@ -248,8 +247,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
         let visitorIp: string | undefined;
         if (cfViewerAddr) {
-            // Format is "ip:port" — strip the port
-            visitorIp = cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+            // Format is "ip:port" (IPv4) or "[ip]:port" (IPv6) — strip the port
+            if (cfViewerAddr.startsWith('[')) {
+                // IPv6 bracketed: "[2001:db8::1]:12345"
+                visitorIp = cfViewerAddr.slice(1, cfViewerAddr.indexOf(']'));
+            } else {
+                visitorIp = cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr;
+            }
         } else if (xForwardedFor) {
             const ips = xForwardedFor.split(',').map((s: string) => s.trim());
             visitorIp = ips.find((ip: string) => !isPrivateIP(ip)) || ips[0];

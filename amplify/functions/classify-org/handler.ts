@@ -36,6 +36,7 @@ interface PreviousClassification {
     confidence: number;
     reason: string;
     source: string;
+    provider?: 'bedrock' | 'anthropic';
     classifiedAt?: string;
 }
 
@@ -143,15 +144,22 @@ async function getManualCorrections(): Promise<typeof manualCorrectionsCache> {
     if (!TABLE_NAME) return [];
 
     try {
-        const result = await ddbClient.send(new ScanCommand({
-            TableName: TABLE_NAME,
-            FilterExpression: '#src = :manual',
-            ExpressionAttributeNames: { '#src': 'source' },
-            ExpressionAttributeValues: { ':manual': 'manual' },
-            Limit: 50, // Scan limit (may return fewer due to filter)
-        }));
+        // Paginated scan to find all manual overrides (Limit controls items read, not returned)
+        const items: Record<string, unknown>[] = [];
+        let lastKey: Record<string, unknown> | undefined;
+        do {
+            const result = await ddbClient.send(new ScanCommand({
+                TableName: TABLE_NAME,
+                FilterExpression: '#src = :manual',
+                ExpressionAttributeNames: { '#src': 'source' },
+                ExpressionAttributeValues: { ':manual': 'manual' },
+                ExclusiveStartKey: lastKey,
+            }));
+            if (result.Items) items.push(...result.Items);
+            lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+        } while (lastKey && items.length < 50);
 
-        manualCorrectionsCache = (result.Items || []).slice(0, 20).map((item: Record<string, unknown>) => ({
+        manualCorrectionsCache = items.slice(0, 20).map((item: Record<string, unknown>) => ({
             orgName: item.orgName as string,
             organizationType: item.organizationType as string,
             isTargetCustomer: item.isTargetCustomer as boolean,
@@ -174,6 +182,7 @@ function invalidateCorrectionsCache(): void {
 // ─── AI Classification ───────────────────────────────────────────────────────
 
 const BEDROCK_TIMEOUT_MS = 5000; // 5-second timeout before falling back to Anthropic API
+const ANTHROPIC_TIMEOUT_MS = 20000; // 20-second timeout for Anthropic API fallback
 
 /** Build the classification prompt (shared by Bedrock and Anthropic API). */
 async function buildClassificationPrompt(input: ClassifyRequest): Promise<string> {
@@ -247,7 +256,7 @@ function parseClassificationResponse(text: string, provider: string): ClassifyRe
 
 /** Classify via AWS Bedrock (same region, lower latency). */
 async function classifyWithBedrock(prompt: string): Promise<ClassifyResult> {
-    const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-3-5-haiku-20241022-v1:0';
+    const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-haiku-4-5-20251001-v1:0';
 
     const command = new InvokeModelCommand({
         modelId,
@@ -285,6 +294,9 @@ async function classifyWithAnthropicAPI(prompt: string): Promise<ClassifyResult>
         throw new Error('ANTHROPIC_API_KEY not configured');
     }
 
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), ANTHROPIC_TIMEOUT_MS);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -297,7 +309,9 @@ async function classifyWithAnthropicAPI(prompt: string): Promise<ClassifyResult>
             max_tokens: 256,
             messages: [{ role: 'user', content: prompt }],
         }),
+        signal: abortController.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
         const errText = await response.text();
@@ -371,6 +385,7 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
         confidence: existing.confidence,
         reason: existing.reason,
         source: existing.source || 'ai',
+        provider: existing.provider,
         classifiedAt: existing.classifiedAt,
     } : undefined;
 
@@ -433,6 +448,7 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             reason: existing.previousClassification.reason,
             classifiedAt: new Date().toISOString(),
             source: existing.previousClassification.source || 'ai',
+            provider: existing.previousClassification.provider,
             ttl,
         };
 
