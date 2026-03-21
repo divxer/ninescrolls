@@ -149,11 +149,11 @@ export interface StoreAnalyticsEventParams {
   eventName: string;
   eventType: string;
   pageViewId?: string;
-  ipInfo?: IPInfoInput | null;
-  targetAnalysis?: TargetAnalysisInput | null;
+  ipInfo?: IPInfoInput | null;        // used by storeAnalyticsEvent (GraphQL path)
+  targetAnalysis?: TargetAnalysisInput | null; // used by storeAnalyticsEvent (GraphQL path)
   behaviorScore?: BehaviorScoreInput | null;
   context?: EventContext | null;
-  aiClassification?: AIClassificationInput | null;
+  aiClassification?: AIClassificationInput | null; // used by storeAnalyticsEvent (GraphQL path)
   properties?: Record<string, unknown>;
 }
 
@@ -237,9 +237,9 @@ export function storeAnalyticsEvent(params: StoreAnalyticsEventParams): void {
 }
 
 // ─── Server-side page_view write via /d Lambda ──────────────────────────────
-// Sends analytics data to /d Lambda for DynamoDB write. Uses sendBeacon for
-// reliability (works during page unload) with fetch+keepalive fallback.
-// This replaces client-side GraphQL create() for page_view/track events.
+// Sends minimal context to /d Lambda via sendBeacon. The Lambda handles
+// IP lookup, AI classification, DDB write, and Segment event forwarding.
+// IP/geo/org fields are resolved server-side from request headers.
 
 function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
@@ -256,22 +256,7 @@ function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
       userAgent: ua,
       isBot: ua ? isbot(ua) : false,
 
-      ip: params.ipInfo?.ip,
-      country: params.ipInfo?.country,
-      region: params.ipInfo?.region,
-      city: params.ipInfo?.city,
-      org: params.ipInfo?.org,
-      isp: params.ipInfo?.isp,
-      companyType: params.ipInfo?.companyType,
-      latitude: params.ipInfo?.latitude,
-      longitude: params.ipInfo?.longitude,
-
-      isTargetCustomer: params.targetAnalysis?.isTargetCustomer,
-      organizationType: params.targetAnalysis?.organizationType,
-      orgName: params.targetAnalysis?.orgName,
-      confidence: params.targetAnalysis?.confidence,
-      leadTier: params.targetAnalysis?.leadTier,
-
+      // Behavior data (client-side only — Lambda can't compute this)
       behaviorScore: params.behaviorScore?.behaviorScore,
       productPagesViewed: params.behaviorScore?.productPagesViewed,
       timeOnSite: params.behaviorScore?.timeOnSite,
@@ -282,6 +267,7 @@ function buildPageViewPayload(params: StoreAnalyticsEventParams): string {
       formInteractions: params.behaviorScore?.formInteractions,
       maxScrollDepth: params.behaviorScore?.maxScrollDepth,
 
+      // Page context
       pathname: params.context?.pathname,
       pageTitle: params.context?.pageTitle,
       productId: params.context?.productId,
@@ -323,80 +309,6 @@ export function sendPageViewBeacon(params: StoreAnalyticsEventParams): void {
   }
 }
 
-// ─── AI enrichment via /d Lambda ────────────────────────────────────────────
-
-export interface AIEnrichmentParams {
-  pageViewId: string;
-  aiOrganizationType?: string;
-  aiConfidence?: number;
-  aiReason?: string;
-  provider?: string;
-  isTargetCustomer?: boolean;
-  confidence?: number;
-  organizationType?: string;
-  leadTier?: string;
-}
-
-function buildAIEnrichmentPayload(params: AIEnrichmentParams): string {
-  return JSON.stringify({
-    type: 'track',
-    event: 'ai_enrichment',
-    anonymousId: getAnonymousId(),
-    properties: {
-      pageViewId: params.pageViewId,
-      aiOrganizationType: params.aiOrganizationType,
-      aiConfidence: params.aiConfidence,
-      aiReason: params.aiReason,
-      provider: params.provider,
-      isTargetCustomer: params.isTargetCustomer,
-      confidence: params.confidence,
-      organizationType: params.organizationType,
-      leadTier: params.leadTier,
-    },
-  });
-}
-
-export function sendAIEnrichment(params: AIEnrichmentParams): void {
-  try {
-    const payload = buildAIEnrichmentPayload(params);
-    const url = `${getApiEndpoint()}/d`;
-
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-      keepalive: true,
-    }).then(() => {
-      console.info('[AnalyticsStorage] AI enrichment sent for pvid:', params.pageViewId);
-    }).catch((err) => {
-      console.error('[AnalyticsStorage] AI enrichment fetch failed:', err);
-    });
-  } catch (err) {
-    console.error('[AnalyticsStorage] sendAIEnrichment error:', err);
-  }
-}
-
-export function sendAIEnrichmentViaBeacon(params: AIEnrichmentParams): void {
-  try {
-    const payload = buildAIEnrichmentPayload(params);
-    const url = `${getApiEndpoint()}/d`;
-
-    if (navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'application/json' });
-      if (navigator.sendBeacon(url, blob)) return;
-    }
-
-    // Fallback: fetch with keepalive
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-      keepalive: true,
-    }).catch(() => { /* best-effort during unload */ });
-  } catch {
-    // Silent — runs during page unload
-  }
-}
 
 // ─── Cached IP/org/geo enrichment for page_time_flush events ────────────────
 // Re-use the IP analysis already fetched during page_view so that
