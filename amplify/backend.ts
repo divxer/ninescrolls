@@ -297,6 +297,16 @@ backend.classifyOrg.resources.lambda.addToRolePolicy(new PolicyStatement({
     ],
 }));
 
+// Grant AWS Marketplace permissions required for Bedrock model access validation
+backend.classifyOrg.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+        'aws-marketplace:ViewSubscriptions',
+        'aws-marketplace:Subscribe',
+    ],
+    resources: ['*'],
+}));
+
 // Create /generate-article-meta resource for AI-powered article excerpt & tags generation
 const generateArticleMetaResource = restApi.root.addResource('generate-article-meta');
 const generateArticleMetaIntegration = new LambdaIntegration(backend.generateArticleMeta.resources.lambda, {
