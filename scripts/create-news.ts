@@ -2,10 +2,14 @@
  * Create a news article in DynamoDB from an HTML file.
  *
  * Usage:
- *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/create-news.ts <html-file>
+ *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/create-news.ts <html-file> [--publish]
+ *
+ * Options:
+ *   --publish  Publish immediately (skip draft) and notify Bing/Yandex via IndexNow
  *
  * Example:
- *   npx tsx scripts/create-news.ts ~/marketing/insight/applied-materials-epic-center-news.html
+ *   npx tsx scripts/create-news.ts ~/marketing/insight/article.html              # as draft
+ *   npx tsx scripts/create-news.ts ~/marketing/insight/article.html --publish    # publish + ping
  *
  * The script extracts title, content, and metadata from the HTML file,
  * then creates an InsightsPost record with contentType='news'.
@@ -118,6 +122,8 @@ async function createNews(filePath: string) {
     process.exit(1);
   }
 
+  const publish = process.argv.includes('--publish');
+
   const { data, errors } = await client.models.InsightsPost.create({
     slug,
     title,
@@ -130,7 +136,7 @@ async function createNews(filePath: string) {
     imageUrl: coverImage || `/assets/images/news/${slug}`,
     tags: [],
     contentType: 'news',
-    isDraft: true, // Create as draft for review
+    isDraft: !publish,
   });
 
   if (errors) {
@@ -138,20 +144,53 @@ async function createNews(filePath: string) {
     process.exit(1);
   }
 
-  console.log('\nCreated successfully (as draft)!');
+  console.log(`\nCreated successfully${publish ? ' (published)' : ' (as draft)'}!`);
   console.log(`  id: ${data?.id}`);
   console.log(`  slug: ${slug}`);
   console.log(`  contentType: news`);
-  console.log(`  isDraft: true`);
-  console.log(`\nNext steps:`);
-  console.log(`  1. Upload a cover image via admin`);
-  console.log(`  2. Review and publish at /admin/insights/${data?.id}/edit`);
+  console.log(`  isDraft: ${!publish}`);
+
+  if (publish) {
+    // Ping IndexNow (Bing/Yandex) for instant indexing
+    const articleUrl = `https://ninescrolls.com/news/${slug}`;
+    console.log(`\nNotifying search engines: ${articleUrl}`);
+    await pingIndexNow(articleUrl);
+  } else {
+    console.log(`\nNext steps:`);
+    console.log(`  1. Upload a cover image via admin`);
+    console.log(`  2. Review and publish at /admin/insights/${data?.id}/edit`);
+  }
+}
+
+const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+
+async function pingIndexNow(url: string) {
+  try {
+    const response = await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        host: 'ninescrolls.com',
+        key: INDEXNOW_KEY,
+        keyLocation: `https://ninescrolls.com/${INDEXNOW_KEY}.txt`,
+        urlList: [url],
+      }),
+    });
+    if (response.ok || response.status === 202) {
+      console.log(`  IndexNow accepted (HTTP ${response.status})`);
+    } else {
+      console.warn(`  IndexNow rejected (HTTP ${response.status})`);
+    }
+  } catch (err) {
+    console.warn('  IndexNow ping failed (non-blocking):', err);
+  }
 }
 
 // CLI entry
-const filePath = process.argv[2];
+const filePath = process.argv.filter(a => !a.startsWith('--'))[2];
 if (!filePath) {
-  console.error('Usage: npx tsx scripts/create-news.ts <html-file>');
+  console.error('Usage: npx tsx scripts/create-news.ts <html-file> [--publish]');
+  console.error('  --publish  Publish immediately and notify search engines');
   process.exit(1);
 }
 
