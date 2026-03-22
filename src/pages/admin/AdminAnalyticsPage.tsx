@@ -1987,6 +1987,7 @@ export function AdminAnalyticsPage() {
   const [scoreMax, setScoreMax] = useState<string>('');
   const [lifecycleFilter, setLifecycleFilter] = useState<string>('all');
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [showAllOrgs, setShowAllOrgs] = useState(false);
   const prevDateRange = useRef(dateRange);
   const prevCustomStart = useRef(customStart);
   const prevCustomEnd = useRef(customEnd);
@@ -2019,15 +2020,14 @@ export function AdminAnalyticsPage() {
     prevCustomStart.current = customStart;
     prevCustomEnd.current = customEnd;
 
-    // Soft refresh: keep existing data visible when only refreshKey changed
-    const isSoftRefresh = !dateChanged && allEvents.length > 0;
+    // Soft refresh: keep existing data visible while loading new data
+    const isSoftRefresh = allEvents.length > 0;
 
     async function loadAllEvents() {
       if (isSoftRefresh) {
         setRefreshing(true);
       } else {
         setLoading(true);
-        setAllEvents([]);
         setLoadProgress(0);
       }
       setError('');
@@ -2523,6 +2523,7 @@ export function AdminAnalyticsPage() {
           >
             <span className="material-symbols-outlined text-lg">calendar_today</span>
           </button>
+          <span className={`material-symbols-outlined text-lg text-on-surface-variant transition-opacity ${refreshing ? 'opacity-100 animate-spin' : 'opacity-0'}`} style={{ fontVariationSettings: "'FILL' 1" }}>progress_activity</span>
         </div>
       </section>
 
@@ -2607,61 +2608,139 @@ export function AdminAnalyticsPage() {
 
         {/* Organization Ledger — col-span-9 */}
         <div className="lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden">
-          <div className="p-6 border-b border-surface-container flex justify-between items-center">
-            <h4 className="font-headline font-bold">Organization Ledger</h4>
-            <button
-              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors border-none bg-transparent cursor-pointer"
-              onClick={exportCSV}
-              title="Export CSV"
-            >
-              download
-            </button>
+          {/* Header: title + search + export */}
+          <div className="p-6 border-b border-surface-container">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-headline font-bold">Organization Ledger</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-on-surface-variant">{sortedOrgs.length} organizations</span>
+                <button
+                  className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors border-none bg-transparent cursor-pointer"
+                  onClick={exportCSV}
+                  title="Export CSV"
+                >
+                  download
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+                <input
+                  type="text"
+                  className="w-full bg-surface-container-low border-none rounded-lg py-2 pl-9 pr-4 text-sm placeholder:text-on-surface-variant/50"
+                  placeholder="Search organizations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                className="text-xs text-on-surface-variant border-none bg-transparent cursor-pointer flex items-center gap-1"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+              >
+                <span className="material-symbols-outlined text-sm">tune</span>
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="bg-secondary text-white px-1.5 py-0.5 rounded text-[10px] font-bold">{activeFilterCount}</span>
+                )}
+              </button>
+            </div>
+            {/* Collapsible Filters */}
+            {filtersOpen && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-outline-variant/10">
+                <select className="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-xs" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
+                  <option value="all">All Channels</option>
+                  <option value="paid_search">Paid Search</option>
+                  <option value="organic_search">Organic Search</option>
+                  <option value="ai_referral">AI Referral</option>
+                  <option value="paid_social">Paid Social</option>
+                  <option value="organic_social">Organic Social</option>
+                  <option value="email">Email</option>
+                  <option value="referral">Referral</option>
+                  <option value="direct">Direct</option>
+                </select>
+                <select className="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-xs" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
+                  <option value="all">All Regions</option>
+                  {availableCountries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <select className="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-xs" value={lifecycleFilter} onChange={(e) => setLifecycleFilter(e.target.value)}>
+                  <option value="all">All Lifecycle</option>
+                  <option value="awareness">Awareness</option>
+                  <option value="interest">Interest</option>
+                  <option value="consideration">Consideration</option>
+                  <option value="intent">Intent</option>
+                </select>
+                {activeFilterCount > 0 && (
+                  <button
+                    className="text-xs text-secondary font-medium border-none bg-transparent cursor-pointer hover:underline"
+                    onClick={() => { setChannelFilter('all'); setRegionFilter('all'); setScoreMin(''); setScoreMax(''); setLifecycleFilter('all'); }}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+            )}
           </div>
+          {/* Desktop table */}
           <div className="overflow-x-auto">
-            <table className="hidden md:table w-full text-left table-fixed">
+            <table className="hidden md:table w-full text-left">
               <thead>
                 <tr className="bg-surface-container-low">
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('orgName')}>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('orgName')}>
                     Name{sortIndicator('orgName')}
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('organizationType')}>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('organizationType')}>
                     Type{sortIndicator('organizationType')}
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
                     Visits{sortIndicator('totalEvents')}
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('engagement')}>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('engagement')}>
                     Engagement{sortIndicator('engagement')}
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Target</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalTimeOnSite')}>
+                    Active Time{sortIndicator('totalTimeOnSite')}
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
+                    Events{sortIndicator('totalEvents')}
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('lastVisit')}>
+                    Last Visit{sortIndicator('lastVisit')}
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Target</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-low">
-                {sortedOrgs.slice(0, 15).map((org) => (
+                {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 15)).map((org) => (
                   <tr
                     key={org.key}
-                    className="hover:bg-primary-fixed/30 transition-colors cursor-pointer"
+                    className={`hover:bg-primary-fixed/30 transition-colors cursor-pointer ${org.isTargetCustomer ? 'bg-secondary/5' : ''}`}
                     onClick={() => selectOrg(org)}
                   >
-                    <td className="px-6 py-5">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
                           {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                         </div>
-                        <span className="text-sm font-semibold">{org.orgName}</span>
+                        <span className="text-sm font-semibold truncate max-w-[160px]">{org.orgName}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-xs text-on-surface-variant">{org.organizationType || '--'}</td>
-                    <td className="px-6 py-5 text-xs text-center font-medium">{org.totalEvents.toLocaleString()}</td>
-                    <td className="px-6 py-5">
-                      <div className="w-24 bg-surface-container-high rounded-full h-1.5">
+                    <td className="px-5 py-4 text-xs text-on-surface-variant">{org.organizationType || '--'}</td>
+                    <td className="px-5 py-4 text-xs text-center font-medium">{org.totalEvents.toLocaleString()}</td>
+                    <td className="px-5 py-4">
+                      <div className="w-20 bg-surface-container-high rounded-full h-1.5">
                         <div
                           className="bg-secondary h-full rounded-full"
                           style={{ width: `${Math.min(Math.max(org.maxBehaviorScore * 100, 3), 100)}%` }}
                         />
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-right">
+                    <td className="px-5 py-4 text-xs text-center text-on-surface-variant">{formatDuration(org.totalTimeOnSite)}</td>
+                    <td className="px-5 py-4 text-xs text-center font-medium">{org.totalEvents}</td>
+                    <td className="px-5 py-4 text-xs text-on-surface-variant">{formatRelativeTime(org.lastVisit)}</td>
+                    <td className="px-5 py-4 text-right">
                       {org.isTargetCustomer ? (
                         <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span>
                       ) : (
@@ -2672,7 +2751,7 @@ export function AdminAnalyticsPage() {
                 ))}
                 {sortedOrgs.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-on-surface-variant text-sm">
+                    <td colSpan={8} className="text-center py-8 text-on-surface-variant text-sm">
                       No visitor data for this period.
                     </td>
                   </tr>
@@ -2680,9 +2759,9 @@ export function AdminAnalyticsPage() {
               </tbody>
             </table>
           </div>
-          {/* Mobile org cards in bento area */}
+          {/* Mobile org cards */}
           <div className="md:hidden grid gap-3 p-4">
-            {sortedOrgs.slice(0, 10).map((org) => (
+            {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => (
               <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
@@ -2699,17 +2778,20 @@ export function AdminAnalyticsPage() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div><div className="font-headline text-sm font-bold">{org.totalEvents}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Events</div></div>
                   <div><div className="font-headline text-sm font-bold">{engagementLevel(org.maxBehaviorScore) || '--'}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Engage</div></div>
-                  <div><div className="font-headline text-sm font-bold">{org.maxConfidence > 0 ? `${Math.round(org.maxConfidence * 100)}%` : '--'}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">AI Conf</div></div>
+                  <div><div className="font-headline text-sm font-bold">{formatDuration(org.totalTimeOnSite)}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Time</div></div>
                 </div>
               </div>
             ))}
           </div>
+          {/* Show all / collapse toggle */}
           {sortedOrgs.length > 15 && (
             <div className="text-center py-3 border-t border-outline-variant/5">
-              <span className="text-xs text-on-surface-variant">
-                Showing 15 of {sortedOrgs.length} organizations.{' '}
-                <a href="#full-org-table" className="text-secondary font-medium hover:underline">View all</a>
-              </span>
+              <button
+                className="text-xs text-secondary font-medium hover:underline border-none bg-transparent cursor-pointer"
+                onClick={() => setShowAllOrgs(!showAllOrgs)}
+              >
+                {showAllOrgs ? 'Show less' : `Show all ${sortedOrgs.length} organizations`}
+              </button>
             </div>
           )}
         </div>
@@ -3323,297 +3405,6 @@ export function AdminAnalyticsPage() {
         </div>
       )}
 
-      {/* Event Count */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-on-surface-variant font-medium">
-          {filteredEvents.length} events from {organizations.length} visitors
-        </span>
-      </div>
-
-      {/* Search & Export */}
-      <div className="flex items-center gap-3 mb-4">
-        <input
-          type="text"
-          className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl py-2.5 pl-10 pr-4 text-sm flex-1"
-          placeholder="Search organizations..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <button className="bg-transparent border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface cursor-pointer" onClick={exportCSV}>
-          Export CSV
-        </button>
-      </div>
-
-      {/* Collapsible Enhanced Filters */}
-      <div className="mb-6">
-        <h3
-          className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-          onClick={() => setFiltersOpen(!filtersOpen)}
-        >
-          <span className="text-on-surface-variant text-xs">{filtersOpen ? '▼' : '▶'}</span>
-          {' '}Filters
-          {!filtersOpen && activeFilterCount > 0 && (
-            <span className="bg-secondary text-white px-1.5 py-0.5 rounded text-[10px] font-bold ml-2">{activeFilterCount}</span>
-          )}
-          {!filtersOpen && filterSummary && (
-            <span className="text-xs text-on-surface-variant ml-2">{filterSummary}</span>
-          )}
-          {activeFilterCount > 0 && (
-            <button
-              className="text-xs text-secondary font-medium ml-auto hover:underline cursor-pointer border-none bg-transparent"
-              onClick={(e) => {
-                e.stopPropagation();
-                setChannelFilter('all');
-                setRegionFilter('all');
-                setScoreMin('');
-                setScoreMax('');
-                setLifecycleFilter('all');
-              }}
-            >
-              Clear all
-            </button>
-          )}
-        </h3>
-        {filtersOpen && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Channel:</span>
-              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
-                <option value="all">All</option>
-                <option value="paid_search">Paid Search</option>
-                <option value="organic_search">Organic Search</option>
-                <option value="ai_referral">AI Referral</option>
-                <option value="paid_social">Paid Social</option>
-                <option value="organic_social">Organic Social</option>
-                <option value="email">Email</option>
-                <option value="referral">Referral</option>
-                <option value="direct">Direct</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Region:</span>
-              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
-                <option value="all">All</option>
-                {availableCountries.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Score:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  className="w-16 bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-2 text-sm text-center"
-                  placeholder="Min"
-                  min="0" max="1" step="0.1"
-                  value={scoreMin}
-                  onChange={(e) => setScoreMin(e.target.value)}
-                />
-                <span>–</span>
-                <input
-                  type="number"
-                  className="w-16 bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-2 text-sm text-center"
-                  placeholder="Max"
-                  min="0" max="1" step="0.1"
-                  value={scoreMax}
-                  onChange={(e) => setScoreMax(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Lifecycle:</span>
-              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={lifecycleFilter} onChange={(e) => setLifecycleFilter(e.target.value)}>
-                <option value="all">All</option>
-                <option value="awareness">Awareness</option>
-                <option value="interest">Interest</option>
-                <option value="consideration">Consideration</option>
-                <option value="intent">Intent</option>
-              </select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Organization Table */}
-      <h2 id="full-org-table" className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">
-        Visitor Organizations
-        {kpiFilter !== 'all' && (
-          <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2">
-            Filtered
-            <button className="text-xs text-secondary hover:underline cursor-pointer border-none bg-transparent" onClick={() => setKpiFilter('all')}>
-              &times;
-            </button>
-          </span>
-        )}
-      </h2>
-      <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('orgName')}>
-                Organization{sortIndicator('orgName')}
-              </th>
-              <th onClick={() => handleSort('organizationType')}>
-                Type{sortIndicator('organizationType')}
-              </th>
-              <th onClick={() => handleSort('country')}>
-                Location{sortIndicator('country')}
-              </th>
-              <th>Products</th>
-              <th onClick={() => handleSort('uniquePages')}>
-                Pages{sortIndicator('uniquePages')}
-              </th>
-              <th onClick={() => handleSort('totalTimeOnSite')}>
-                Active Time{sortIndicator('totalTimeOnSite')}
-              </th>
-              <th onClick={() => handleSort('totalEvents')}>
-                Events{sortIndicator('totalEvents')}
-              </th>
-              <th onClick={() => handleSort('leadTier')}>
-                Tier{sortIndicator('leadTier')}
-              </th>
-              <th onClick={() => handleSort('engagement')}>
-                Engagement{sortIndicator('engagement')}
-              </th>
-              <th onClick={() => handleSort('lastVisit')}>
-                Last Visit{sortIndicator('lastVisit')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedOrgs.map((org) => (
-              <tr
-                key={org.key}
-                className={`hover:bg-primary-fixed/30 transition-colors cursor-pointer ${org.isTargetCustomer ? 'bg-secondary/5' : ''} ${
-                  org.leadTier ? 'border-l-2 border-secondary' : org.isAnonymousHighIntent ? 'border-l-2 border-tertiary-fixed-dim' : ''
-                }`}
-                onClick={() => selectOrg(org)}
-              >
-                <td>
-                  <div className="font-semibold text-on-surface">{org.orgName}</div>
-                  {org.isISPVisitor && (
-                    <div className="text-xs text-on-surface-variant mt-0.5" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
-                      ISP individual visitor · ID: {org.key.substring(0, 8)}
-                      {org.isAnonymousHighIntent && (
-                        <span className="ml-1 px-1.5 py-0.5 rounded bg-tertiary-fixed-dim/30 text-on-surface text-[10px] font-semibold" title="ISP visitor with purchase intent">
-                          📶 ISP Intent
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </td>
-                <td>
-                  {org.organizationType ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
-                      {org.organizationType}
-                    </span>
-                  ) : (
-                    <span className="text-on-surface-variant/50 text-xs">N/A</span>
-                  )}
-                </td>
-                <td className="text-xs text-on-surface-variant">
-                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || <span className="text-on-surface-variant/50 text-xs">N/A</span>}
-                </td>
-                <td>
-                  {org.productsViewed.length > 0
-                    ? org.productsViewed.join(', ')
-                    : <span className="text-on-surface-variant/50 text-xs">N/A</span>}
-                </td>
-                <td>{org.uniquePages}</td>
-                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="text-on-surface-variant/50 text-xs" title="No time data yet — visitor may still be on site">Pending</span>}</td>
-                <td>{org.totalEvents}</td>
-                <td>
-                  {org.leadTier ? (
-                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-secondary/10 text-secondary">
-                      {org.leadTier}
-                    </span>
-                  ) : org.isAnonymousHighIntent ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Intent</span>
-                  ) : (
-                    <span className="text-on-surface-variant/50 text-xs">N/A</span>
-                  )}
-                </td>
-                <td>
-                  {engagementLevel(org.maxBehaviorScore)
-                    ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-surface-container text-on-surface-variant">{engagementLevel(org.maxBehaviorScore)}</span>
-                    : <span className="text-on-surface-variant/50 text-xs">N/A</span>}
-                </td>
-                <td className="text-xs text-on-surface-variant whitespace-nowrap">{formatRelativeTime(org.lastVisit)}</td>
-              </tr>
-            ))}
-            {sortedOrgs.length === 0 && (
-              <tr>
-                <td colSpan={10} className="text-center py-8 text-on-surface-variant text-sm">
-                  No visitor data for this period.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile org cards — visible only at ≤480px */}
-      <div className="md:hidden grid gap-3">
-        {sortedOrgs.length === 0 ? (
-          <div className="text-center py-8 text-on-surface-variant text-sm" style={{ textAlign: 'center', padding: '1.5rem' }}>
-            No visitor data for this period.
-          </div>
-        ) : (
-          sortedOrgs.map((org) => (
-            <div
-              key={org.key}
-              className={`bg-surface-container-lowest rounded-xl p-4 shadow-card cursor-pointer hover:translate-y-[-2px] transition-all${org.isTargetCustomer ? ' border-l-2 border-secondary' : ''}${
-                org.leadTier === 'A' ? ' ring-2 ring-secondary' : org.leadTier === 'B' ? ' ring-1 ring-secondary/50' : ''
-              }${org.isAnonymousHighIntent ? ' border-l-2 border-tertiary-fixed-dim' : ''}`}
-              onClick={() => selectOrg(org)}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className="font-headline font-bold text-sm text-on-surface overflow-hidden text-ellipsis whitespace-nowrap" title={org.orgName}>{org.orgName}</span>
-                <div className="flex gap-1 items-center shrink-0">
-                  {org.leadTier && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary">{org.leadTier}</span>
-                  )}
-                  {org.isAnonymousHighIntent && !org.leadTier && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-tertiary-fixed-dim/30 text-on-surface">Intent</span>
-                  )}
-                  {org.organizationType && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">{org.organizationType}</span>
-                  )}
-                </div>
-              </div>
-              <div className="text-xs text-on-surface-variant mb-2">
-                {[org.city, org.region, org.country].filter(Boolean).join(', ') || 'Unknown location'}
-              </div>
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                <div>
-                  <div className="font-headline text-sm font-bold text-on-surface">{org.uniquePages}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Pages</div>
-                </div>
-                <div>
-                  <div className="font-headline text-sm font-bold text-on-surface">{org.totalEvents}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Events</div>
-                </div>
-                <div>
-                  <div className="font-headline text-sm font-bold text-on-surface">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '—'}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Time</div>
-                </div>
-                <div>
-                  <div className="font-headline text-sm font-bold text-on-surface">
-                    {engagementLevel(org.maxBehaviorScore) || '—'}
-                  </div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Engage</div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/10">
-                <span>{formatRelativeTime(org.lastVisit)}</span>
-                {org.isISPVisitor && <span>ISP visitor</span>}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 }
