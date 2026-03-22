@@ -10,7 +10,6 @@ import { fetchInsightsPostBySlug } from '../../services/insightsService';
 import type { InsightsPost, ContentType } from '../../types';
 
 const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.ninescrolls.com';
 
 function pingIndexNow(url: string) {
   fetch('https://api.indexnow.org/indexnow', {
@@ -24,10 +23,7 @@ function pingIndexNow(url: string) {
     }),
   }).catch(() => {}); // fire-and-forget
 }
-
-function regenerateSitemaps() {
-  fetch(`${API_BASE}/generate-sitemaps`, { method: 'POST' }).catch(() => {}); // fire-and-forget
-}
+// Sitemaps are served dynamically via Lambda — no regeneration trigger needed
 
 export function AdminInsightsFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -198,12 +194,9 @@ export function AdminInsightsFormPage() {
         await createInsightsPost(input);
       }
 
-      // When publishing (not draft), update sitemaps and notify search engines
-      if (!formData.isDraft) {
-        regenerateSitemaps();
-        if (formData.contentType === 'news') {
-          pingIndexNow(`https://ninescrolls.com/news/${formData.slug}`);
-        }
+      // Notify search engines when publishing a news article
+      if (formData.contentType === 'news' && !formData.isDraft) {
+        pingIndexNow(`https://ninescrolls.com/news/${formData.slug}`);
       }
 
       navigate('/admin/insights');
