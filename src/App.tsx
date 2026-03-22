@@ -3,7 +3,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/layout/Layout';
 import { AppRoutes, AdminRoutes } from './routes';
 import { GoogleAnalytics } from './components/analytics/GoogleAnalytics';
-import { SegmentAnalytics } from './components/analytics/SegmentAnalytics';
+import { PageTimeTracker } from './components/analytics/PageTimeTracker';
 import { HubSpotPageViewSync } from './components/analytics/HubSpotPageViewSync';
 import { RedirectHandler } from './components/common/RedirectHandler';
 import { CartProvider } from './contexts/CartContext';
@@ -19,7 +19,7 @@ function AppShell() {
   return (
     <CartProvider>
       <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
-      <SegmentAnalytics />
+      <PageTimeTracker />
       <HubSpotPageViewSync />
       <RedirectHandler />
       <Layout>

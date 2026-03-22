@@ -158,7 +158,7 @@ interface ActivePageState {
   maxScrollDepth: number;         // highest scroll depth % reached on this page (0-100)
 }
 
-export const SegmentAnalytics: React.FC = () => {
+export const PageTimeTracker: React.FC = () => {
   const location = useLocation();
 
   // ─── Page state ref (replaces scattered refs) ─────────────────────────────
