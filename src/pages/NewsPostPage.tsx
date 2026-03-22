@@ -4,9 +4,17 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useNewsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
+import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import '../styles/NewsPostPage.css';
+
+// ─── Helper Functions ────────────────────────────────────────────────────────
+
+/** Strip inline "Table of Contents" heading + its following <ul> from HTML content */
+function stripInlineToc(html: string): string {
+  return html.replace(/<h2[^>]*>\s*Table of Contents\s*<\/h2>\s*<ul>[\s\S]*?<\/ul>/i, '');
+}
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
@@ -177,12 +185,12 @@ export const NewsPostPage: React.FC = () => {
 
         {/* Content Section */}
         <section className="news-post-content">
-          <div className="news-content-wrapper">
+          <div className="news-content-layout">
             <div className="news-main-content">
               {post.content ? (
                 <div
                   className="post-content"
-                  dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;|\u00a0/g, ' ') }}
+                  dangerouslySetInnerHTML={{ __html: stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
                 />
               ) : null}
 
@@ -207,11 +215,12 @@ export const NewsPostPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Related News */}
-          <div className="news-content-wrapper">
-            <RelatedNewsSidebar post={post} allPosts={allNewsPosts} />
+            {/* Sidebar: Related News (static) + TOC (sticky) */}
+            <div className="news-sidebar-column">
+              <RelatedNewsSidebar post={post} allPosts={allNewsPosts} />
+              <TableOfContents />
+            </div>
           </div>
         </section>
       </div>
