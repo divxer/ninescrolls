@@ -1086,8 +1086,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     setOverrideLoading(true);
     getOrgOverride(org.orgName).then(async (result) => {
       if (cancelled) return;
-      // Auto-classify if no cached classification exists
-      if (!result.found) {
+      // Auto-classify if no cached classification exists (skip bots)
+      if (!result.found && !org.hasBot) {
         try {
           const classified = await classifyOrg(org.orgName);
           if (!cancelled) setOverride(classified);
