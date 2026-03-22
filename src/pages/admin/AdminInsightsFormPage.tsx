@@ -124,6 +124,7 @@ export function AdminInsightsFormPage() {
               )
             : undefined,
           isStandaloneComponent: data.isStandaloneComponent ?? undefined,
+          contentType: (data.contentType as 'insight' | 'news') ?? 'insight',
           isDraft: true, // duplicates start as drafts
         });
       } catch (err) {
