@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
+import { newsCategories } from '../types';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import '../styles/HomePage.css';
 
@@ -11,7 +12,9 @@ export function HomePage() {
   // Scroll to top when component mounts
   useScrollToTop();
 
-  const { posts: allInsightsPosts, loading: insightsLoading } = useInsightsPosts();
+  const { posts: allFetchedPosts, loading: insightsLoading } = useInsightsPosts();
+  const newsCats = useMemo(() => new Set(newsCategories.filter(c => c !== 'All')), []);
+  const allInsightsPosts = useMemo(() => allFetchedPosts.filter(p => !newsCats.has(p.category)), [allFetchedPosts, newsCats]);
   const latestInsights = useMemo(
     () => [...allInsightsPosts]
       .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
