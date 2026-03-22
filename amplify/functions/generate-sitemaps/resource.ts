@@ -6,4 +6,5 @@ export const generateSitemaps = defineFunction({
   runtime: 22,
   timeoutSeconds: 30,
   memoryMB: 256,
+  resourceGroupName: 'data',
 });
