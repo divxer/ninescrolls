@@ -9,6 +9,21 @@ import {
 import { fetchInsightsPostBySlug } from '../../services/insightsService';
 import type { InsightsPost, ContentType } from '../../types';
 
+const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+
+function pingIndexNow(url: string) {
+  fetch('https://api.indexnow.org/indexnow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({
+      host: 'ninescrolls.com',
+      key: INDEXNOW_KEY,
+      keyLocation: `https://ninescrolls.com/${INDEXNOW_KEY}.txt`,
+      urlList: [url],
+    }),
+  }).catch(() => {}); // fire-and-forget
+}
+
 export function AdminInsightsFormPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -176,6 +191,11 @@ export function AdminInsightsFormPage() {
         await updateInsightsPost({ ...input, id });
       } else {
         await createInsightsPost(input);
+      }
+
+      // Ping IndexNow when a news article is published (non-blocking)
+      if (formData.contentType === 'news' && !formData.isDraft) {
+        pingIndexNow(`https://ninescrolls.com/news/${formData.slug}`);
       }
 
       navigate('/admin/insights');
