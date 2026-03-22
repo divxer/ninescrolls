@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
-import { categories, InsightsPost } from '../types';
+import { categories, newsCategories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import '../styles/InsightsPage.css';
 
@@ -16,7 +16,9 @@ function resolveCardImage(url: string): string {
 }
 
 export const InsightsPage: React.FC = () => {
-  const { posts: rawPosts, loading } = useInsightsPosts();
+  const { posts: allPosts, loading } = useInsightsPosts();
+  const newsCats = useMemo(() => new Set(newsCategories.filter(c => c !== 'All')), []);
+  const rawPosts = useMemo(() => allPosts.filter(p => !newsCats.has(p.category)), [allPosts, newsCats]);
   const posts = useMemo(
     () => [...rawPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()),
     [rawPosts]
