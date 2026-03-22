@@ -8,16 +8,18 @@
  *   dist/<indexnow-key>.txt — IndexNow verification file
  *
  * Usage:
- *   npx tsx scripts/generate-seo.ts
+ *   npx tsx scripts/generate-seo.ts              # write to dist/ (build-time)
+ *   npx tsx scripts/generate-seo.ts --upload     # upload to S3 (no redeploy needed)
  *
  * Prerequisites:
  *   - amplify_outputs.json in project root
- *   - dist/ directory exists (run after vite build)
+ *   - dist/ directory exists (build-time mode) OR HOSTING_BUCKET env var (upload mode)
  */
 
-import { writeFileSync, existsSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
@@ -271,12 +273,37 @@ function generateRssFeed(newsPosts: ArticleData[]): string {
   return lines.join('\n') + '\n';
 }
 
+// ─── S3 Upload ──────────────────────────────────────────────────────────────
+
+async function uploadToS3(files: Record<string, string>, bucket: string) {
+  const s3 = new S3Client({ region: 'us-east-2' });
+
+  for (const [key, body] of Object.entries(files)) {
+    const contentType = key.endsWith('.xml') ? 'application/xml' : 'text/plain';
+    await s3.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: `${contentType}; charset=utf-8`,
+      CacheControl: 'public, max-age=3600',
+    }));
+    console.log(`  Uploaded s3://${bucket}/${key}`);
+  }
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  if (!existsSync('dist')) {
-    console.error('ERROR: dist/ not found. Run "vite build" first.');
+  const uploadMode = process.argv.includes('--upload');
+  const outDir = uploadMode ? '/tmp/seo-gen' : 'dist';
+
+  if (!uploadMode && !existsSync('dist')) {
+    console.error('ERROR: dist/ not found. Run "vite build" first, or use --upload to upload directly to S3.');
     process.exit(1);
+  }
+
+  if (uploadMode) {
+    mkdirSync(outDir, { recursive: true });
   }
 
   console.log('Fetching published articles from DynamoDB...');
@@ -286,28 +313,39 @@ async function main() {
 
   console.log(`  Found ${posts.length} articles (${insightPosts.length} insights, ${newsPosts.length} news)`);
 
-  // Generate main sitemap
-  const sitemap = generateMainSitemap(posts);
-  writeFileSync('dist/sitemap.xml', sitemap);
+  // Generate all files
+  const files: Record<string, string> = {};
+
+  files['sitemap.xml'] = generateMainSitemap(posts);
   console.log(`Generated sitemap.xml (${STATIC_PAGES.length + posts.length} URLs)`);
 
-  // Generate news sitemap
-  const newsSitemap = generateNewsSitemap(newsPosts);
-  const recentCount = (newsSitemap.match(/<url>/g) || []).length;
-  writeFileSync('dist/news-sitemap.xml', newsSitemap);
+  files['news-sitemap.xml'] = generateNewsSitemap(newsPosts);
+  const recentCount = (files['news-sitemap.xml'].match(/<url>/g) || []).length;
   console.log(`Generated news-sitemap.xml (${recentCount} recent news URLs)`);
 
-  // Generate RSS feed
-  const feed = generateRssFeed(newsPosts);
-  const feedCount = (feed.match(/<item>/g) || []).length;
-  writeFileSync('dist/feed.xml', feed);
+  files['feed.xml'] = generateRssFeed(newsPosts);
+  const feedCount = (files['feed.xml'].match(/<item>/g) || []).length;
   console.log(`Generated feed.xml (${feedCount} items)`);
 
-  // Generate IndexNow verification file
-  writeFileSync(`dist/${INDEXNOW_KEY}.txt`, INDEXNOW_KEY);
-  console.log(`Generated ${INDEXNOW_KEY}.txt (IndexNow verification)`);
+  files[`${INDEXNOW_KEY}.txt`] = INDEXNOW_KEY;
 
-  console.log('\nSEO assets generated successfully.');
+  if (uploadMode) {
+    // Upload directly to S3 hosting bucket
+    const bucket = process.env.HOSTING_BUCKET;
+    if (!bucket) {
+      console.error('ERROR: Set HOSTING_BUCKET environment variable (S3 bucket name for Amplify hosting).');
+      process.exit(1);
+    }
+    console.log(`\nUploading to S3 bucket: ${bucket}`);
+    await uploadToS3(files, bucket);
+    console.log('\nSEO assets uploaded to S3 (live immediately, no redeploy needed).');
+  } else {
+    // Write to dist/ (build-time mode)
+    for (const [key, body] of Object.entries(files)) {
+      writeFileSync(`${outDir}/${key}`, body);
+    }
+    console.log('\nSEO assets written to dist/.');
+  }
 }
 
 main().catch(err => {
