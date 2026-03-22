@@ -2016,9 +2016,6 @@ export function AdminAnalyticsPage() {
     if (dateRange === 'custom' && (!customStart || !customEnd)) return;
 
     let cancelled = false;
-    const dateChanged = dateRange !== prevDateRange.current
-      || customStart !== prevCustomStart.current
-      || customEnd !== prevCustomEnd.current;
     prevDateRange.current = dateRange;
     prevCustomStart.current = customStart;
     prevCustomEnd.current = customEnd;
@@ -2343,17 +2340,6 @@ export function AdminAnalyticsPage() {
     return count;
   }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
 
-  const filterSummary = useMemo(() => {
-    const parts: string[] = [];
-    if (channelFilter !== 'all') {
-      const labels: Record<string, string> = { paid_search: 'Paid Search', organic_search: 'Organic Search', ai_referral: 'AI Referral', paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email', referral: 'Referral', direct: 'Direct' };
-      parts.push(labels[channelFilter] || channelFilter);
-    }
-    if (regionFilter !== 'all') parts.push(regionFilter);
-    if (scoreMin !== '' || scoreMax !== '') parts.push(`Score ${scoreMin || '0'}–${scoreMax || '1'}`);
-    if (lifecycleFilter !== 'all') parts.push(lifecycleFilter);
-    return parts.join(' · ');
-  }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
 
   // Sort organizations
   const sortedOrgs = useMemo(() => {
