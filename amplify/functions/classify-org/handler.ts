@@ -538,13 +538,10 @@ async function handleListOverrides(body: ClassifyRequest, corsHeaders: Record<st
         const items: CachedItem[] = [];
         let lastKey: Record<string, unknown> | undefined;
 
-        // Paginated scan for all manual overrides
+        // Paginated scan for all classifications (manual + AI)
         do {
             const result = await ddbClient.send(new ScanCommand({
                 TableName: TABLE_NAME,
-                FilterExpression: '#src = :manual',
-                ExpressionAttributeNames: { '#src': 'source' },
-                ExpressionAttributeValues: { ':manual': 'manual' },
                 ExclusiveStartKey: lastKey,
             }));
             if (result.Items) {
@@ -559,7 +556,8 @@ async function handleListOverrides(body: ClassifyRequest, corsHeaders: Record<st
             isTargetCustomer: item.isTargetCustomer,
             confidence: item.confidence,
             reason: item.reason,
-            source: 'manual' as const,
+            source: (item.source || 'ai') as 'manual' | 'ai',
+            provider: item.provider,
             classifiedAt: item.classifiedAt,
         }));
 

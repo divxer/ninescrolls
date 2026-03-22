@@ -2143,19 +2143,25 @@ export function AdminAnalyticsPage() {
       const ov = overrideMap.get(org.orgName);
       if (!ov) continue;
 
-      // Apply manual override data
-      org.isTargetCustomer = ov.isTargetCustomer;
-      if (ov.organizationType && ov.organizationType !== 'unknown') {
-        org.organizationType = ov.organizationType;
+      if (ov.source === 'manual') {
+        // Apply manual override data
+        org.isTargetCustomer = ov.isTargetCustomer;
+        if (ov.organizationType && ov.organizationType !== 'unknown') {
+          org.organizationType = ov.organizationType;
+        }
+        // Manual override = admin confirmed → assign B (same as pipeline trust gate)
+        if (ov.isTargetCustomer && !org.leadTier) {
+          org.leadTier = 'B';
+        }
+        // Clear anonymous intent — manually classified orgs are not anonymous
+        org.isAnonymousHighIntent = false;
+      } else {
+        // Apply AI classification when event-level data is missing (pre-fix records)
+        if ((!org.organizationType || org.organizationType === 'unknown')
+          && ov.organizationType && ov.organizationType !== 'unknown') {
+          org.organizationType = ov.organizationType;
+        }
       }
-      // Compute tier for manually-marked target customers
-      // Manual override = admin confirmed → assign B (same as pipeline trust gate)
-      if (ov.isTargetCustomer && !org.leadTier) {
-        org.leadTier = 'B';
-      }
-
-      // Clear anonymous intent — manually classified orgs are not anonymous
-      org.isAnonymousHighIntent = false;
     }
 
     return orgs;
