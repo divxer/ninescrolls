@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm install --no-ignore-optional && tsc && vite build",
+    "build": "npm install --no-ignore-optional && tsc && vite build && npm run generate-seo",
+    "generate-seo": "npx tsx scripts/generate-seo.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "optimize-images": "node scripts/optimize-images.js",
