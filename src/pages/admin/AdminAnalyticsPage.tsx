@@ -2012,6 +2012,9 @@ export function AdminAnalyticsPage() {
   // Load all events within date range.
   // Date range change → full loading spinner. Refresh key bump → soft background update.
   useEffect(() => {
+    // Don't fetch when custom is selected but dates aren't set yet
+    if (dateRange === 'custom' && (!customStart || !customEnd)) return;
+
     let cancelled = false;
     const dateChanged = dateRange !== prevDateRange.current
       || customStart !== prevCustomStart.current
@@ -2524,18 +2527,17 @@ export function AdminAnalyticsPage() {
             <span className="material-symbols-outlined text-lg">calendar_today</span>
           </button>
           <span className={`material-symbols-outlined text-lg text-on-surface-variant transition-opacity ${refreshing ? 'opacity-100 animate-spin' : 'opacity-0'}`} style={{ fontVariationSettings: "'FILL' 1" }}>progress_activity</span>
+          {dateRange === 'custom' && (
+            <>
+              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
+                className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-xs" />
+              <span className="text-on-surface-variant text-xs">to</span>
+              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
+                className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-xs" />
+            </>
+          )}
         </div>
       </section>
-
-      {dateRange === 'custom' && (
-        <div className="flex items-center gap-2 -mt-4 mb-4">
-          <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
-            className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" />
-          <span className="text-on-surface-variant text-sm">to</span>
-          <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
-            className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" />
-        </div>
-      )}
 
       {error && <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm">{error}</div>}
 
