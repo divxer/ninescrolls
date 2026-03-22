@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
+import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import { generateClient } from 'aws-amplify/data';
@@ -1084,8 +1084,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(org.orgName).then((result) => {
-      if (!cancelled) setOverride(result);
+    getOrgOverride(org.orgName).then(async (result) => {
+      if (cancelled) return;
+      // Auto-classify if no cached classification exists
+      if (!result.found) {
+        try {
+          const classified = await classifyOrg(org.orgName);
+          if (!cancelled) setOverride(classified);
+        } catch {
+          if (!cancelled) setOverride(result);
+        }
+      } else {
+        setOverride(result);
+      }
     }).catch(() => {
       if (!cancelled) setOverride(null);
     }).finally(() => {
