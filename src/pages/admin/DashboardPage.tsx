@@ -1,8 +1,24 @@
 import { useMemo } from 'react';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { useRfqs } from '../../hooks/useRfqs';
+import { useDashboardAnalytics, computeTrend } from '../../hooks/useDashboardAnalytics';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import type { Order } from '../../types/admin';
+
+function TrendBadge({ trend, loading }: { trend: number; loading?: boolean }) {
+  if (loading) return null;
+  if (trend === 0) {
+    return (
+      <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2 py-1 rounded-full">0%</span>
+    );
+  }
+  const positive = trend > 0;
+  return (
+    <span className={`text-xs font-bold px-2 py-1 rounded-full ${positive ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+      {positive ? '+' : ''}{trend}%
+    </span>
+  );
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -36,6 +52,7 @@ export function DashboardPage() {
   const { orders, loading: ordersLoading } = useOrders();
   const { stats, loading: statsLoading } = useOrderStats();
   const { rfqs, loading: rfqsLoading } = useRfqs();
+  const { monthlyVisitors, targetCustomers, visitorTrend, targetTrend, dailyCounts, loading: analyticsLoading } = useDashboardAnalytics();
 
   const pendingRfqCount = useMemo(
     () => rfqs.filter((r) => r.status === 'pending').length,
@@ -64,15 +81,31 @@ export function DashboardPage() {
     (stats?.byStatus?.QUOTE_SENT || 0) + (stats?.byStatus?.PO_RECEIVED || 0), [stats]);
   const onHoldCount = useMemo(() => stats?.byStatus?.INQUIRY || 0, [stats]);
 
-  // Stable visitor bars
-  const visitorBars = useMemo(() => {
-    const bars: number[] = [];
-    for (let i = 0; i < 20; i++) {
-      bars.push(Math.floor(Math.random() * 60) + 20);
-    }
-    return bars;
-  }, []);
-  const maxVisitor = Math.max(...visitorBars, 1);
+  const { ordersTrend, rfqsTrend } = useMemo(() => {
+    const now = Date.now();
+    const thirtyDaysMs = 30 * 86_400_000;
+    const currentStart = now - thirtyDaysMs;
+    const previousStart = now - 2 * thirtyDaysMs;
+
+    const currentOrders = orders.filter(o => new Date(o.createdAt).getTime() >= currentStart).length;
+    const previousOrders = orders.filter(o => {
+      const t = new Date(o.createdAt).getTime();
+      return t >= previousStart && t < currentStart;
+    }).length;
+
+    const currentRfqs = rfqs.filter(r => new Date(r.submittedAt).getTime() >= currentStart).length;
+    const previousRfqs = rfqs.filter(r => {
+      const t = new Date(r.submittedAt).getTime();
+      return t >= previousStart && t < currentStart;
+    }).length;
+
+    return {
+      ordersTrend: computeTrend(currentOrders, previousOrders),
+      rfqsTrend: computeTrend(currentRfqs, previousRfqs),
+    };
+  }, [orders, rfqs]);
+
+  const maxVisitor = Math.max(...(dailyCounts.length > 0 ? dailyCounts : [1]), 1);
 
   const isLoading = ordersLoading || statsLoading || rfqsLoading;
 
@@ -103,7 +136,7 @@ export function DashboardPage() {
             <span className="p-2 bg-primary-fixed text-primary rounded-lg">
               <span className="material-symbols-outlined">receipt_long</span>
             </span>
-            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.5%</span>
+            <TrendBadge trend={ordersTrend} loading={ordersLoading} />
           </div>
           <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">New Orders</p>
           <h3 className="font-headline text-4xl font-bold text-on-surface">{isLoading ? '...' : stats?.totalActive ?? 0}</h3>
@@ -113,7 +146,7 @@ export function DashboardPage() {
             <span className="p-2 bg-tertiary-fixed text-tertiary-container rounded-lg">
               <span className="material-symbols-outlined">pending_actions</span>
             </span>
-            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">+4.2%</span>
+            <TrendBadge trend={rfqsTrend} loading={rfqsLoading} />
           </div>
           <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">Pending RFQs</p>
           <h3 className="font-headline text-4xl font-bold text-on-surface">{isLoading ? '...' : pendingRfqCount}</h3>
@@ -123,20 +156,20 @@ export function DashboardPage() {
             <span className="p-2 bg-secondary-fixed text-secondary rounded-lg">
               <span className="material-symbols-outlined">group</span>
             </span>
-            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+28%</span>
+            <TrendBadge trend={visitorTrend} loading={analyticsLoading} />
           </div>
           <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">Monthly Visitors</p>
-          <h3 className="font-headline text-4xl font-bold text-on-surface">48.2k</h3>
+          <h3 className="font-headline text-4xl font-bold text-on-surface">{analyticsLoading ? '...' : monthlyVisitors.toLocaleString()}</h3>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)]">
           <div className="flex justify-between items-start mb-4">
             <span className="p-2 bg-primary-fixed text-primary rounded-lg">
               <span className="material-symbols-outlined">target</span>
             </span>
-            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+8.1%</span>
+            <TrendBadge trend={targetTrend} loading={analyticsLoading} />
           </div>
           <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">Target Customers</p>
-          <h3 className="font-headline text-4xl font-bold text-on-surface">312</h3>
+          <h3 className="font-headline text-4xl font-bold text-on-surface">{analyticsLoading ? '...' : targetCustomers.toLocaleString()}</h3>
         </div>
       </div>
 
@@ -208,19 +241,29 @@ export function DashboardPage() {
           </div>
           <div className="h-64 flex items-end gap-[2px] px-2">
             <div className="flex-grow flex items-end gap-[2px] h-full">
-              {visitorBars.map((val, i) => (
+              {dailyCounts.length > 0 ? dailyCounts.map((val, i) => (
                 <div
                   key={i}
                   className="w-full bg-secondary-fixed/30 hover:bg-secondary rounded-t-sm transition-all"
-                  style={{ height: `${(val / maxVisitor) * 100}%` }}
+                  style={{ height: `${(val / maxVisitor) * 100}%`, minHeight: val > 0 ? '2px' : undefined }}
                 />
-              ))}
+              )) : (
+                <div className="flex-1 flex items-center justify-center text-sm text-on-surface-variant">
+                  {analyticsLoading ? 'Loading...' : 'No data'}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-between mt-4 px-2">
-            <span className="text-[10px] font-bold text-on-surface-variant/50">OCT 01</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/50">OCT 15</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/50">OCT 30</span>
+            <span className="text-[10px] font-bold text-on-surface-variant/50">
+              {new Date(Date.now() - 30 * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase()}
+            </span>
+            <span className="text-[10px] font-bold text-on-surface-variant/50">
+              {new Date(Date.now() - 15 * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase()}
+            </span>
+            <span className="text-[10px] font-bold text-on-surface-variant/50">
+              {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase()}
+            </span>
           </div>
           <div className="mt-8 p-4 bg-surface-container-low rounded-lg flex items-center gap-4">
             <div className="p-2 bg-secondary/10 text-secondary rounded">
