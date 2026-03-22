@@ -1245,715 +1245,751 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     }
   }
 
+  // ── Pre-compute detection details (shared between left & right columns) ──
+  const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
+  const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
+  const ipOrgType = ipEvent?.organizationType || 'unknown';
+  const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
+  const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
+    && override?.organizationType && override.organizationType !== 'unknown';
+  const hasAI = hasEventAI || hasOverrideAI;
+  const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
+  const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
+  const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
+  const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown' && effectiveAiOrgType !== ipOrgType;
+
+  // Classification source
+  const classificationSource = (() => {
+    if (override?.found && override?.source === 'manual') return 'manual';
+    if (org.hasBot) return 'bot';
+    if (hasAI && effectiveAiConf >= 0.5 && effectiveAiOrgType !== 'unknown') return 'ai';
+    if (ipOrgType !== 'unknown') return 'ip';
+    if (org.isAnonymousHighIntent) return 'behavior';
+    return 'none';
+  })();
+
+  // AI provider label
+  const aiProviderLabel = (() => {
+    if (hasEventAI) {
+      const provider = (aiEvent as Record<string, unknown>).provider as string | undefined;
+      if (provider === 'bedrock') return 'Bedrock';
+      if (provider === 'anthropic') return 'Anthropic API';
+    }
+    if (override?.provider) return override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API';
+    return null;
+  })();
+
+  // Override state
+  const isManualOverride = override?.found && override?.source === 'manual';
+  const currentIsTarget = isManualOverride ? override?.isTargetCustomer : org.isTargetCustomer;
+
+  // Display org type
+  const displayOrgType = org.hasBot ? 'bot'
+    : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
+      ? override.organizationType
+      : org.organizationType;
+
+  // Engagement level
+  const engagement = engagementLevel(org.maxBehaviorScore);
+  const engagementBadgeClass = engagement === 'High'
+    ? 'bg-secondary/10 text-secondary'
+    : engagement === 'Medium'
+      ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant'
+      : 'bg-error-container text-on-error-container';
+
+  // Traffic sources computation
+  const channelIcons: Record<string, string> = {
+    paid_search: 'search', organic_search: 'search', ai_referral: 'smart_toy',
+    paid_social: 'share', organic_social: 'share', email: 'mail',
+    referral: 'link', direct: 'monitor',
+  };
+  const channelLabels: Record<string, string> = {
+    paid_search: 'Paid Search', organic_search: 'Organic Search', ai_referral: 'AI Referral',
+    paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email',
+    referral: 'Referral', direct: 'Direct',
+  };
+  const trafficSources = useMemo(() => {
+    const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
+    for (const e of org.events) {
+      const channel = resolveTrafficChannel(e);
+      const hostname = e.referrer
+        ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
+        : '';
+      const groupKey = hostname ? `${channel}::${hostname}` : channel;
+      const displayLabel = hostname || (channelLabels[channel] || 'Other');
+      const existing = sources.get(groupKey);
+      if (existing) existing.count += 1;
+      else sources.set(groupKey, { count: 1, channel, label: displayLabel });
+    }
+    return Array.from(sources.entries()).sort((a, b) => b[1].count - a[1].count);
+  }, [org.events]);
+
+  // Referrer URL for display
+  const primaryReferrer = useMemo(() => {
+    const ev = org.events.find((e) => {
+      if (!e.referrer) return false;
+      try {
+        const host = new URL(e.referrer).hostname.toLowerCase();
+        return !host.includes('ninescrolls') && !host.includes('localhost');
+      } catch { return false; }
+    });
+    return ev?.referrer || null;
+  }, [org.events]);
+
+  // Parse UA for OS/Browser display
+  const parsedUA = useMemo(() => {
+    const ua = uniqueUAs[0] || '';
+    let os = 'Unknown';
+    let browser = 'Unknown';
+    if (ua.includes('Mac OS X')) {
+      const m = ua.match(/Mac OS X (\d+[._]\d+)/);
+      os = m ? `macOS ${m[1].replace(/_/g, '.')}` : 'macOS';
+    } else if (ua.includes('Windows')) {
+      const m = ua.match(/Windows NT (\d+\.\d+)/);
+      os = m ? `Windows ${m[1] === '10.0' ? '10/11' : m[1]}` : 'Windows';
+    } else if (ua.includes('Linux')) os = 'Linux';
+    if (ua.includes('Chrome/')) {
+      const m = ua.match(/Chrome\/(\d+)/);
+      browser = m ? `Chrome ${m[1]}` : 'Chrome';
+    } else if (ua.includes('Firefox/')) {
+      const m = ua.match(/Firefox\/(\d+)/);
+      browser = m ? `Firefox ${m[1]}` : 'Firefox';
+    } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+      const m = ua.match(/Version\/(\d+)/);
+      browser = m ? `Safari ${m[1]}` : 'Safari';
+    }
+    return { os, browser };
+  }, [uniqueUAs]);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-2">
-        <button className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface font-medium mb-4 border-none bg-transparent cursor-pointer" onClick={onBack}>&larr; Back to list</button>
-      </div>
-
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-headline text-3xl font-bold text-primary">{org.orgName}</h1>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            {(() => {
-              const displayOrgType = org.hasBot ? 'bot'
-                : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
-                  ? override.organizationType
-                  : org.organizationType;
-              return displayOrgType ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
-                  {displayOrgType}
-                </span>
-              ) : null;
-            })()}
-            <span className="text-sm text-on-surface-variant">
-              {[org.city, org.region, org.country].filter(Boolean).join(', ')}
-            </span>
-            {org.leadTier && (
-              <span
-                className="px-2 py-0.5 rounded text-xs font-bold bg-secondary/10 text-secondary"
-                style={override?.found && override?.source === 'manual' && !override?.isTargetCustomer
-                  ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}
-              >
-                Tier {org.leadTier}
-              </span>
-            )}
-            {org.lifecycleStage && (
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-tertiary-fixed text-on-tertiary-fixed-variant">
-                {org.lifecycleStage}
-              </span>
-            )}
-            {uniqueIPs.length > 0 && (
-              <span
-                className="text-xs text-on-surface-variant font-mono cursor-pointer hover:text-on-surface"
-                onClick={() => setShowFullIP((v) => !v)}
-                title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-              >
-                {showFullIP
-                  ? uniqueIPs.join(', ')
-                  : uniqueIPs.map(maskIP).join(', ')}
-              </span>
-            )}
-            {uniqueISPs.length > 0 && (
-              <span className="text-xs text-on-surface-variant">{uniqueISPs.join(', ')}</span>
-            )}
-            {org.companyType && (
-              <span className="text-xs text-on-surface-variant" title="IPinfo company classification">
-                {org.companyType}
-              </span>
-            )}
-            {org.isISPVisitor && (
-              <span className="text-xs text-on-surface-variant font-mono">
-                ID: {org.key.substring(0, 8)}
-              </span>
-            )}
-            {uniqueVisitors.filter((v) => !v.includes('.') && !(org.isISPVisitor && v === org.key)).length > 0 && (
-              <span className="text-xs text-on-surface-variant font-mono">
-                {uniqueVisitors.filter((v) => !v.includes('.') && !(org.isISPVisitor && v === org.key)).map((v) => v.slice(0, 8)).join(', ')}
-              </span>
-            )}
-          </div>
-        </div>
-        {engagementLevel(org.maxBehaviorScore) && (
-          <div className="text-right">
-            <div className="font-headline text-lg font-bold text-secondary">{engagementLevel(org.maxBehaviorScore)}</div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Engagement</div>
-          </div>
-        )}
-      </div>
-
-      {/* Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{new Date(org.firstVisit).toLocaleDateString()}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">First Seen</div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{formatRelativeTime(org.lastVisit)}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Last Seen</div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{org.totalEvents}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Total Events</div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{org.uniquePages}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Pages Viewed</div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : 'Pending'}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Active Time</div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
-          <div className="font-headline text-xl font-bold text-on-surface">{org.returnVisits}</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Return Visits</div>
-        </div>
-      </div>
-
-      {/* Behavior Signals */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Behavior Analysis</h2>
-        {org.maxBehaviorScore > 0 && (
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Behavior Score</span>
-            <span className="flex-1 bg-surface-container-high rounded-full h-2">
-              <span
-                className="block rounded-full h-2 transition-all"
-                style={{
-                  width: `${Math.min(org.maxBehaviorScore * 100, 100)}%`,
-                  backgroundColor: org.maxBehaviorScore >= 0.3 ? '#7b1fa2' : '#bdbdbd',
-                }}
-              />
-            </span>
-            <span className={`text-sm font-bold ${org.maxBehaviorScore >= 0.3 ? 'text-secondary' : 'text-on-surface-variant'}`}>
-              {(org.maxBehaviorScore * 100).toFixed(0)}%
-            </span>
-            {org.maxBehaviorScore < 0.3 && !org.isAnonymousHighIntent && (
-              <span className="text-[10px] text-on-surface-variant">below 30% intent threshold</span>
-            )}
-          </div>
-        )}
-        <div className="space-y-2">
-          {org.isTargetCustomer && (
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span> Target Customer Identified</div>
-          )}
-          {org.isAnonymousHighIntent && !(override?.found && override?.isTargetCustomer) && (
-            org.isISPVisitor
-              ? <div className="bg-tertiary-fixed-dim/20 text-on-surface rounded-lg px-3 py-2 text-sm">ISP visitor with purchase intent -- browsing from home/mobile network. Consider monitoring for return visits or PDF downloads to confirm buyer interest.</div>
-              : <div className="bg-tertiary-fixed/30 text-on-surface rounded-lg px-3 py-2 text-sm">Unknown company with high purchase intent -- consider targeted engagement</div>
-          )}
-          {downloadedPDF && (
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">download</span> Downloaded PDF / Spec Sheet</div>
-          )}
-          {visitedContactPage && (
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">mail</span> Visited Contact Page</div>
-          )}
-          {rfqSubmitted && (
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">send</span> Submitted RFQ</div>
-          )}
-          {contactFormSubmitted && !rfqSubmitted && (
-            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">contact_mail</span> Submitted Contact Form</div>
-          )}
-          {uniqueProductPages.size >= 3 && (
-            <div className="bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-2 text-sm">Viewed {uniqueProductPages.size} product pages -- comparing solutions</div>
-          )}
-          {org.returnVisits >= 3 && (
-            <div className="bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-2 text-sm">Returning visitor ({org.returnVisits} return visits)</div>
-          )}
-          {org.productsViewed.length > 0 && (
-            <div className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">
-              Products of interest: {org.productsViewed.join(', ')}
-            </div>
-          )}
-          {org.pdfDownloads > 0 && (
-            <div className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">{org.pdfDownloads} PDF download(s)</div>
-          )}
-        </div>
-      </div>
-
-      {/* Detection Details */}
-      {(() => {
-        const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
-        // Find IP-based org type (before AI enrichment)
-        const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
-        const ipOrgType = ipEvent?.organizationType || 'unknown';
-
-        // Use override data as fallback when page_view events lack AI data (pre-fix records)
-        const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
-        const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
-          && override?.organizationType && override.organizationType !== 'unknown';
-        const hasAI = hasEventAI || hasOverrideAI;
-        const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
-        const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
-        const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
-        const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown'
-          && effectiveAiOrgType !== ipOrgType;
-        const aiConfirmed = hasAI && !aiUpgraded && effectiveAiOrgType !== 'unknown';
-
-        // Determine classification source
-        const source = (() => {
-          if (override?.found && override?.source === 'manual') return 'manual';
-          if (org.hasBot) return 'bot';
-          if (hasAI && effectiveAiConf >= 0.5 && effectiveAiOrgType !== 'unknown') return 'ai';
-          if (ipOrgType !== 'unknown') return 'ip';
-          if (org.isAnonymousHighIntent) return 'behavior';
-          return 'none';
-        })();
-
-        const sourceBadge: Record<string, { label: string; className: string }> = {
-          manual: { label: 'Manual Override', className: 'bg-tertiary-fixed text-on-tertiary-fixed-variant' },
-          bot: { label: 'Bot Detected', className: 'bg-error-container text-on-error-container' },
-          ai: { label: 'AI Classified', className: 'bg-secondary/10 text-secondary' },
-          ip: { label: 'IP Lookup', className: 'bg-surface-container text-on-surface-variant' },
-          behavior: { label: 'Behavior-based', className: 'bg-tertiary-fixed-dim/30 text-on-surface' },
-          none: { label: 'Unclassified', className: 'bg-surface-container-low text-on-surface-variant' },
-        };
-        const badge = sourceBadge[source];
-
-        return (
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Detection Details</h2>
-
-            {/* Classification source badge */}
-            <div className="mb-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${badge.className}`}>{badge.label}</span>
-            </div>
-
-            {/* Bot detection details */}
-            {org.hasBot && (() => {
-              const botEvent = org.events.find((e) => e.isBot);
-              const ua = botEvent?.userAgent || '';
-              // Extract bot name from user agent (e.g. "YisouSpider/5.0" → "YisouSpider")
-              const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
-              const detectedByUA = !!botEvent;
-              const orgKey = org.events[0]?.orgName || org.events[0]?.org || '';
-              const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
-              const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
-              return (
-                <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Bot Name</span>
-                    <span className="text-sm font-medium text-on-surface">{botName}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Detection</span>
-                    <span className="text-sm font-medium text-on-surface">{detectionMethod}</span>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* IP vs AI comparison */}
-            {!org.hasBot && hasAI ? (
-              <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mt-4">
-                <div className="bg-surface-container-low rounded-lg p-4">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">IP Lookup</div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Type</span>
-                    <span className="text-sm font-medium text-on-surface">{ipOrgType}</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  {aiUpgraded ? (
-                    <span className="text-secondary font-bold text-xs">↑ Upgraded</span>
-                  ) : aiConfirmed ? (
-                    <span className="text-secondary font-bold text-xs">✓ Confirmed</span>
-                  ) : (
-                    <span className="text-on-surface-variant">→</span>
-                  )}
-                </div>
-                <div className="bg-surface-container-low rounded-lg p-4">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">AI Classification</div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Confidence</span>
-                    <span className="text-sm font-medium text-on-surface">{(effectiveAiConf * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Type</span>
-                    <span className="text-sm font-medium text-on-surface">{effectiveAiOrgType}</span>
-                  </div>
-                </div>
-              </div>
-            ) : org.maxBehaviorScore > 0 ? (
-              <div className="bg-surface-container-low rounded-lg p-4 space-y-2 mt-4">
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Behavior Score</span>
-                  <span className="text-sm font-medium text-on-surface">{(org.maxBehaviorScore * 100).toFixed(0)}%</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Traffic</span>
-                  <span className="text-sm font-medium text-on-surface">
-                    {(() => {
-                      const ev = org.events.find(e => e.trafficChannel || e.referrer);
-                      if (!ev) return 'unknown';
-                      return String(resolveTrafficChannel(ev)).replace(/_/g, ' ');
-                    })()}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-
-            {/* AI reason */}
-            {effectiveAiReason && (
-              <div className="mt-3 flex items-start gap-2">
-                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">AI Reason</span>
-                <span className="text-sm text-on-surface-variant">{effectiveAiReason}</span>
-              </div>
-            )}
-
-            {/* Final result */}
-            <div className="mt-4 pt-3 border-t border-outline-variant/10 text-sm font-semibold text-on-surface">
-              Final: {(hasOverrideAI ? override?.organizationType : null) || org.organizationType || 'unknown'}
-              {org.maxConfidence > 0 && ` · ${(org.maxConfidence * 100).toFixed(0)}%`}
-              {org.isTargetCustomer && <span className="text-secondary"> · Target</span>}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Classification Override */}
-      {(() => {
-        const isManual = override?.found && override?.source === 'manual';
-        const currentIsTarget = isManual ? override?.isTargetCustomer : org.isTargetCustomer;
-        const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
-        const hasConflict = isManual && aiEvent?.aiConfidence != null &&
-          override?.isTargetCustomer !== (aiEvent.aiConfidence >= 0.5);
-
-        return (
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Classification Override</h2>
-
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              {isManual ? (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Manual Override</span>
-              ) : override?.found ? (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-secondary/10 text-secondary">AI Classified</span>
-              ) : (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-secondary/10 text-secondary">Auto Classified</span>
-              )}
-              {!isManual && override?.provider && (
-                <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '0.4rem' }}>
-                  via {override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API'}
-                </span>
-              )}
-              <span className="text-sm font-semibold text-on-surface">
-                {currentIsTarget ? 'Target Customer' : 'Not Target'}
-              </span>
-            </div>
-
-            {/* Reason display */}
-            {(override?.reason || aiEvent?.aiReason) && (
-              <div style={{ fontSize: '0.85rem', color: '#666', margin: '0.4rem 0' }}>
-                {isManual && override?.reason
-                  ? <>Reason: {override.reason}</>
-                  : override?.reason
-                    ? <>AI: {override.reason}</>
-                    : aiEvent?.aiReason
-                      ? <>AI: {aiEvent.aiReason}</>
-                      : null}
-              </div>
-            )}
-
-            {hasConflict && (
-              <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm my-2">
-                Manual classification conflicts with AI — AI says{' '}
-                {aiEvent!.aiConfidence! >= 0.5 ? 'target' : 'not target'} ({(aiEvent!.aiConfidence! * 100).toFixed(0)}% confidence)
-              </div>
-            )}
-
-            <div className="flex gap-2 mt-3">
-              {currentIsTarget ? (
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-error-container text-on-error-container hover:opacity-90 disabled:opacity-50"
-                  onClick={() => handleOverride(false)}
-                  disabled={overrideLoading}
-                >
-                  Mark as Not Target
-                </button>
-              ) : (
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50"
-                  onClick={() => handleOverride(true)}
-                  disabled={overrideLoading}
-                >
-                  Mark as Target
-                </button>
-              )}
-              {isManual && (
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-semibold border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50"
-                  onClick={handleUndoOverride}
-                  disabled={overrideLoading}
-                >
-                  Undo Override
-                </button>
-              )}
-            </div>
-
-            {overrideMsg && (
-              <div className={`mt-2 p-2 rounded-lg text-sm ${overrideMsg.type === 'success' ? 'bg-secondary/10 text-secondary' : 'bg-error-container text-on-error-container'}`}>{overrideMsg.text}</div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* User Agent */}
-      {uniqueUAs.length > 0 && (
-        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-          <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">User Agent</h2>
+    <div className="space-y-8">
+      {/* ── Header Section ── */}
+      <section className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
-            {uniqueUAs.map((ua) => (
-              <div key={ua} className="text-xs text-on-surface-variant font-mono bg-surface-container-low rounded px-3 py-2 break-all">{ua}</div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Pages Visited */}
-      {(() => {
-        const pageEvents = org.events.filter((e) => e.pathname);
-        const uniquePages = new Map<string, number>();
-        for (const e of pageEvents) {
-          uniquePages.set(e.pathname!, (uniquePages.get(e.pathname!) || 0) + 1);
-        }
-        return uniquePages.size > 0 ? (
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Pages Visited</h2>
-            <div className="space-y-1">
-              {Array.from(uniquePages.entries()).map(([path, count]) => (
-                <div key={path} className="flex justify-between items-center bg-surface-container-low rounded px-3 py-2">
-                  <span className="text-sm font-medium text-on-surface">{path}</span>
-                  <span className="text-[10px] font-bold bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">{count}x</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null;
-      })()}
-
-      {/* Traffic Sources with Channel Classification */}
-      {(() => {
-        const channelColors: Record<string, { bg: string; color: string; label: string }> = {
-          paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
-          organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
-          ai_referral:    { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
-          paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
-          organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
-          email:          { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
-          referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
-          direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
-        };
-        const fallbackStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
-        const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
-        for (const e of org.events) {
-          const channel = resolveTrafficChannel(e);
-          const hostname = e.referrer
-            ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
-            : '';
-          // Group by channel + hostname so paid vs organic from the same domain are separate
-          const groupKey = hostname ? `${channel}::${hostname}` : channel;
-          const displayLabel = hostname || (channelColors[channel] || fallbackStyle).label;
-          const existing = sources.get(groupKey);
-          if (existing) {
-            existing.count += 1;
-          } else {
-            sources.set(groupKey, { count: 1, channel, label: displayLabel });
-          }
-        }
-        return sources.size > 0 ? (
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Traffic Sources</h2>
-            <div className="space-y-2">
-              {Array.from(sources.entries())
-                .sort((a, b) => b[1].count - a[1].count)
-                .map(([groupKey, { count, channel, label: displayLabel }]) => {
-                  const style = channelColors[channel] || fallbackStyle;
-                  return (
-                    <div key={groupKey} className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">
-                      <span
-                        className="px-2 py-0.5 rounded text-[10px] font-bold"
-                        style={{ background: style.bg, color: style.color, marginRight: '0.5rem', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '3px' }}
-                      >
-                        {style.label}
-                      </span>
-                      {displayLabel} ({count} visit{count > 1 ? 's' : ''})
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        ) : null;
-      })()}
-
-      {/* Visit Timeline — grouped by visitor (visitorId → IP fallback) */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">
-          Visit Timeline
-          {uniqueVisitors.length > 1 && <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2">{uniqueVisitors.length} visitors</span>}
-        </h2>
-        <div className="space-y-3">
-          {/* Hint: visit started before the selected date range */}
-          {org.events.length > 0 && org.events.every((e) => e.eventType === 'page_time_flush') && (
-            <div style={{ background: '#fff8e1', color: '#8d6e00', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '8px', lineHeight: 1.6 }}>
-              Page opened before selected date range — only the unload event is within the current filter.
-              {(org.orgName || org.country) && (
-                <span style={{ display: 'block', marginTop: '2px', fontWeight: 500 }}>
-                  {org.orgName && org.orgName !== org.key && <>{org.orgName}</>}
-                  {org.city && <>{org.orgName && org.orgName !== org.key ? ' · ' : ''}{org.city}{org.region ? `, ${org.region}` : ''}</>}
-                  {org.country && <>{(org.orgName && org.orgName !== org.key) || org.city ? ' · ' : ''}{org.country}</>}
+            <button className="inline-flex items-center gap-2 text-secondary text-sm font-medium hover:underline mb-2 border-none bg-transparent cursor-pointer" onClick={onBack}>
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
+              Back to list
+            </button>
+            <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{org.orgName}</h1>
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              {(org.city || org.region || org.country) && (
+                <>
+                  <span className="material-symbols-outlined text-sm">location_on</span>
+                  <span className="text-sm">{[org.city, org.region, org.country].filter(Boolean).join(', ')}</span>
+                </>
+              )}
+              {engagement && (
+                <>
+                  {(org.city || org.region || org.country) && <span className="mx-2 text-outline-variant">|</span>}
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${engagementBadgeClass}`}>
+                    {engagement} Engagement
+                  </span>
+                </>
+              )}
+              {displayOrgType && displayOrgType !== 'unknown' && (
+                <>
+                  <span className="mx-2 text-outline-variant">|</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
+                    {displayOrgType}
+                  </span>
+                </>
+              )}
+              {org.leadTier && (
+                <span
+                  className="px-2 py-0.5 rounded text-xs font-bold bg-secondary/10 text-secondary"
+                  style={isManualOverride && !override?.isTargetCustomer ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}
+                >
+                  Tier {org.leadTier}
                 </span>
               )}
             </div>
-          )}
-          {(() => {
-            // Pre-compute per-page durations (delta from cumulative timeOnSite)
-            const perPageDurations = computePerPageDuration(org.events);
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {currentIsTarget ? (
+              <button
+                className="bg-error-container text-on-error-container px-6 py-2 rounded font-semibold text-sm hover:opacity-90 disabled:opacity-50 border-none cursor-pointer"
+                onClick={() => handleOverride(false)}
+                disabled={overrideLoading}
+              >
+                Mark as Not Target
+              </button>
+            ) : (
+              <button
+                className="bg-primary text-on-primary px-6 py-2 rounded font-semibold text-sm hover:opacity-90 disabled:opacity-50 border-none cursor-pointer"
+                onClick={() => handleOverride(true)}
+                disabled={overrideLoading}
+              >
+                Mark as Target
+              </button>
+            )}
+            {isManualOverride && (
+              <button
+                className="bg-surface-container-high text-on-surface px-6 py-2 rounded font-semibold text-sm hover:bg-surface-dim border-none cursor-pointer disabled:opacity-50"
+                onClick={handleUndoOverride}
+                disabled={overrideLoading}
+              >
+                Undo Override
+              </button>
+            )}
+          </div>
+        </div>
 
-            // Group events by visitorId (preferred) → IP (fallback for legacy events)
-            const byVisitor = new Map<string, AnalyticsEvent[]>();
-            for (const e of org.events) {
-              const key = visitorKey(e);
-              const group = byVisitor.get(key);
-              if (group) group.push(e);
-              else byVisitor.set(key, [e]);
-            }
-            // If only 1 visitor, no need for visitor headers — just show by date
-            // Helper: build referrer badge for the first event of a visitor
-            const channelColorsTimeline: Record<string, { bg: string; color: string; label: string }> = {
-              paid_search:    { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
-              organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
-              ai_referral:    { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
-              paid_social:    { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
-              organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
-              email:          { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
-              referral:       { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
-              direct:         { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
-            };
-            const fallbackChannelStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
-            // Check if an event has an external referrer (not self-referrer)
-            const hasExternalReferrer = (e: AnalyticsEvent): boolean => {
-              if (!e.referrer) return false;
-              try {
-                const host = new URL(e.referrer).hostname.toLowerCase();
-                // Filter out self-referrers (own site)
-                return !host.includes('ninescrolls') && !host.includes('localhost') && !host.includes('127.0.0.1');
-              } catch { return false; }
-            };
-            const referrerBadge = (e: AnalyticsEvent) => {
-              const channel = resolveTrafficChannel(e);
-              const style = channelColorsTimeline[channel] || fallbackChannelStyle;
-              const label = e.referrer
-                ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
-                : style.label;
-              const sq = getSearchQuery(e);
-              return (
+        {overrideMsg && (
+          <div className={`p-3 rounded-lg text-sm ${overrideMsg.type === 'success' ? 'bg-secondary/10 text-secondary' : 'bg-error-container text-on-error-container'}`}>
+            {overrideMsg.text}
+          </div>
+        )}
+
+        {/* ── High-Level Stats Grid ── */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0.5 bg-outline-variant/20 rounded-xl overflow-hidden">
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">First Seen</p>
+            <p className="font-headline text-lg font-bold">{new Date(org.firstVisit).toLocaleDateString()}</p>
+          </div>
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Last Seen</p>
+            <p className="font-headline text-lg font-bold">{formatRelativeTime(org.lastVisit)}</p>
+          </div>
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Total Events</p>
+            <p className="font-headline text-lg font-bold">{org.totalEvents.toLocaleString()}</p>
+          </div>
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Pages Viewed</p>
+            <p className="font-headline text-lg font-bold">{org.uniquePages}</p>
+          </div>
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Active Time</p>
+            <p className="font-headline text-lg font-bold">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : 'Pending'}</p>
+          </div>
+          <div className="bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Return Visits</p>
+            <p className="font-headline text-lg font-bold">{org.returnVisits}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Analysis Dashboard: Two-Column Layout ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* ── Left Column: Primary Analysis ── */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Behavior Analysis Card */}
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">psychology</span>
+                Behavior Analysis
+              </h3>
+              {org.lifecycleStage && (
+                <span className="text-xs font-medium text-on-surface-variant">{org.lifecycleStage}</span>
+              )}
+            </div>
+            <div className="space-y-4">
+              {org.maxBehaviorScore > 0 ? (
                 <>
-                  <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
-                    {label}
-                  </span>
-                  {(sq || e.utmTerm) && (
-                    <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
-                      🔍 {sq || e.utmTerm}
-                    </span>
-                  )}
-                </>
-              );
-            };
-
-            // Only show referrer badge on the entry event (earliest per visitor) — in a SPA,
-            // document.referrer persists across client-side navigations so all events carry the same external referrer.
-            const entryEventIds = new Set<string>();
-            for (const [, vEvents] of byVisitor) {
-              const externalEvents = vEvents.filter(hasExternalReferrer);
-              if (externalEvents.length > 0) {
-                const earliest = externalEvents.reduce((a, b) =>
-                  new Date(a.timestamp).getTime() < new Date(b.timestamp).getTime() ? a : b
-                );
-                entryEventIds.add(earliest.id);
-              }
-            }
-
-            if (byVisitor.size <= 1) {
-              return Array.from(eventsByDate.entries()).map(([date, events]) => (
-                <div key={date} className="space-y-1">
-                  <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pt-2 pb-1">{date}</div>
-                  {events.map((e) => {
-                    const pageDuration = perPageDurations.get(e.id);
-                    return (
-                    <div key={e.id} className="flex flex-wrap items-center gap-1.5 text-xs py-1 px-2 rounded hover:bg-surface-container-low">
-                      <span className="text-on-surface-variant font-mono text-[11px] shrink-0">
-                        {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
-                        {e.eventType}
-                      </span>
-                      {e.eventType === 'page_time_flush' ? (
-                        <>
-                          <span className="text-on-surface font-medium">{e.pathname || '/'}</span>
-                          {e.activeSeconds != null && (
-                            <span className="text-on-surface-variant" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
-                              {formatDuration(e.activeSeconds)} active
-                              {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
-                              {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
-                            </span>
-                          )}
-                          {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
-                            <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
-                              ↓{sd}%
-                            </span>
-                          ) : null; })()}
-                          {(e as Record<string, unknown>).isFinal && (
-                            <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>final</span>
-                          )}
-                          {(e as Record<string, unknown>).isFinal === false && (
-                            <span style={{ background: '#fff3e0', color: '#e65100', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>partial</span>
-                          )}
-                          {e.flushReason && (
-                            <span style={{ fontSize: '10px', color: '#999', marginLeft: '4px' }}>{e.flushReason}</span>
-                          )}
-                        </>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-3xl font-headline font-bold text-primary">{(org.maxBehaviorScore * 100).toFixed(0)}%</p>
+                      <p className="text-sm text-on-surface-variant">Intent Probability Score</p>
+                    </div>
+                    <div className="text-right">
+                      {org.maxBehaviorScore >= 0.3 ? (
+                        <p className="text-xs font-bold text-secondary uppercase">Above Threshold</p>
                       ) : (
                         <>
-                          <span className="text-on-surface font-medium">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
-                          {e.productName && (
-                            <span className="text-secondary text-[11px] font-medium">{e.productName}</span>
-                          )}
-                          {pageDuration != null && pageDuration > 0 && (
-                            <span className="text-on-surface-variant text-[11px]">{formatDuration(pageDuration)}</span>
-                          )}
-                          {entryEventIds.has(e.id) && referrerBadge(e)}
+                          <p className="text-xs font-bold text-error uppercase">Below Threshold</p>
+                          <p className="text-xs text-on-surface-variant">30% minimum required</p>
                         </>
                       )}
                     </div>
-                    );
-                  })}
+                  </div>
+                  <div className="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-secondary rounded-full transition-all"
+                      style={{ width: `${Math.min(org.maxBehaviorScore * 100, 100)}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-3xl font-headline font-bold text-on-surface-variant">--</p>
+                    <p className="text-sm text-on-surface-variant">No behavior score recorded</p>
+                  </div>
                 </div>
-              ));
-            }
-            // Multiple visitors — group by visitor
-            return Array.from(byVisitor.entries()).map(([vKey, events], idx) => {
-              const ip = events.find((e) => e.ip)?.ip || '';
-              const ua = events.find((e) => e.userAgent)?.userAgent || '';
-              const shortUA = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : ua.split('/')[0] || '';
-              const visitorDateGroups = new Map<string, AnalyticsEvent[]>();
-              for (const e of events) {
-                const dk = new Date(e.timestamp).toLocaleDateString();
-                const g = visitorDateGroups.get(dk);
-                if (g) g.push(e);
-                else visitorDateGroups.set(dk, [e]);
+              )}
+
+              {/* AI Observation / Behavior Signals */}
+              <div className="space-y-2">
+                {org.isTargetCustomer && (
+                  <div className="p-4 bg-secondary/5 rounded-lg">
+                    <p className="text-sm leading-relaxed text-on-surface">
+                      <span className="font-bold text-secondary">Target Customer:</span> Identified as a target customer based on classification and engagement signals.
+                    </p>
+                  </div>
+                )}
+                {org.isAnonymousHighIntent && !(override?.found && override?.isTargetCustomer) && (
+                  <div className="p-4 bg-surface rounded-lg">
+                    <p className="text-sm leading-relaxed text-on-surface">
+                      <span className="font-bold text-primary">AI Observation:</span>{' '}
+                      {org.isISPVisitor
+                        ? 'ISP visitor with purchase intent — browsing from home/mobile network. Consider monitoring for return visits or PDF downloads to confirm buyer interest.'
+                        : 'Unknown company with high purchase intent — consider targeted engagement.'}
+                    </p>
+                  </div>
+                )}
+                {!org.isTargetCustomer && !org.isAnonymousHighIntent && org.maxBehaviorScore > 0 && org.maxBehaviorScore < 0.3 && (
+                  <div className="p-4 bg-surface rounded-lg">
+                    <p className="text-sm leading-relaxed text-on-surface">
+                      <span className="font-bold text-primary">AI Observation:</span> The visitor primarily engaged with documentation and generic pricing pages without initiating high-value interactions like "Schedule Demo" or "API Console" access.
+                    </p>
+                  </div>
+                )}
+                {effectiveAiReason && !org.isAnonymousHighIntent && (
+                  <div className="p-4 bg-surface rounded-lg">
+                    <p className="text-sm leading-relaxed text-on-surface">
+                      <span className="font-bold text-primary">AI Observation:</span> {effectiveAiReason}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Signal badges */}
+              {(downloadedPDF || visitedContactPage || rfqSubmitted || contactFormSubmitted || uniqueProductPages.size >= 3 || org.returnVisits >= 3) && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {downloadedPDF && (
+                    <span className="flex items-center gap-1.5 bg-secondary/10 text-secondary rounded-lg px-3 py-1.5 text-xs font-medium">
+                      <span className="material-symbols-outlined text-sm">download</span> PDF Downloaded
+                    </span>
+                  )}
+                  {visitedContactPage && (
+                    <span className="flex items-center gap-1.5 bg-secondary/10 text-secondary rounded-lg px-3 py-1.5 text-xs font-medium">
+                      <span className="material-symbols-outlined text-sm">mail</span> Contact Page
+                    </span>
+                  )}
+                  {rfqSubmitted && (
+                    <span className="flex items-center gap-1.5 bg-secondary/10 text-secondary rounded-lg px-3 py-1.5 text-xs font-medium">
+                      <span className="material-symbols-outlined text-sm">send</span> RFQ Submitted
+                    </span>
+                  )}
+                  {contactFormSubmitted && !rfqSubmitted && (
+                    <span className="flex items-center gap-1.5 bg-secondary/10 text-secondary rounded-lg px-3 py-1.5 text-xs font-medium">
+                      <span className="material-symbols-outlined text-sm">contact_mail</span> Contact Form
+                    </span>
+                  )}
+                  {uniqueProductPages.size >= 3 && (
+                    <span className="flex items-center gap-1.5 bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-1.5 text-xs font-medium">
+                      {uniqueProductPages.size} Products Compared
+                    </span>
+                  )}
+                  {org.returnVisits >= 3 && (
+                    <span className="flex items-center gap-1.5 bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-1.5 text-xs font-medium">
+                      {org.returnVisits} Return Visits
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Activity Ledger ── */}
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+            <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">timeline</span>
+              Activity Ledger
+              {uniqueVisitors.length > 1 && (
+                <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2 normal-case tracking-normal">{uniqueVisitors.length} visitors</span>
+              )}
+            </h3>
+
+            {/* Hint: visit started before the selected date range */}
+            {org.events.length > 0 && org.events.every((e) => e.eventType === 'page_time_flush') && (
+              <div className="bg-tertiary-fixed/30 text-on-surface p-3 rounded-lg text-xs mb-4" style={{ lineHeight: 1.6 }}>
+                Page opened before selected date range — only the unload event is within the current filter.
+                {(org.orgName || org.country) && (
+                  <span className="block mt-0.5 font-medium">
+                    {org.orgName && org.orgName !== org.key && <>{org.orgName}</>}
+                    {org.city && <>{org.orgName && org.orgName !== org.key ? ' · ' : ''}{org.city}{org.region ? `, ${org.region}` : ''}</>}
+                    {org.country && <>{(org.orgName && org.orgName !== org.key) || org.city ? ' · ' : ''}{org.country}</>}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {(() => {
+              const perPageDurations = computePerPageDuration(org.events);
+              const byVisitor = new Map<string, AnalyticsEvent[]>();
+              for (const e of org.events) {
+                const key = visitorKey(e);
+                const group = byVisitor.get(key);
+                if (group) group.push(e);
+                else byVisitor.set(key, [e]);
               }
-              return (
-                <div key={vKey} className="border-l-2 border-outline-variant/20 pl-4 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="font-bold text-on-surface text-sm">Visitor {idx + 1}</span>
-                    {ip && (
-                      <span className="font-mono cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
-                        {showFullIP ? ip : maskIP(ip)}
+              const channelColorsTimeline: Record<string, { bg: string; color: string; label: string }> = {
+                paid_search: { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
+                organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
+                ai_referral: { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
+                paid_social: { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
+                organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
+                email: { bg: '#f3e5f5', color: '#7b1fa2', label: 'Email' },
+                referral: { bg: '#e0f2f1', color: '#00695c', label: 'Referral' },
+                direct: { bg: '#f5f5f5', color: '#616161', label: 'Direct' },
+              };
+              const fallbackChannelStyle = { bg: '#f5f5f5', color: '#616161', label: 'Other' };
+              const hasExternalReferrer = (e: AnalyticsEvent): boolean => {
+                if (!e.referrer) return false;
+                try {
+                  const host = new URL(e.referrer).hostname.toLowerCase();
+                  return !host.includes('ninescrolls') && !host.includes('localhost') && !host.includes('127.0.0.1');
+                } catch { return false; }
+              };
+              const referrerBadge = (e: AnalyticsEvent) => {
+                const channel = resolveTrafficChannel(e);
+                const style = channelColorsTimeline[channel] || fallbackChannelStyle;
+                const label = e.referrer
+                  ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
+                  : style.label;
+                const sq = getSearchQuery(e);
+                return (
+                  <>
+                    <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                      {label}
+                    </span>
+                    {(sq || e.utmTerm) && (
+                      <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                        {sq || e.utmTerm}
                       </span>
                     )}
-                    {shortUA && <span className="text-on-surface-variant">{shortUA}</span>}
-                    <span className="text-on-surface-variant">{events.length} events</span>
-                    {vKey && !vKey.includes('.') && <span className="font-mono text-on-surface-variant" title={vKey}>{vKey.slice(0, 8)}</span>}
-                  </div>
-                  {Array.from(visitorDateGroups.entries()).map(([date, devts]) => (
-                    <div key={date} className="space-y-1">
-                      <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pt-2 pb-1">{date}</div>
-                      {devts.map((e) => {
-                        const pageDuration = perPageDurations.get(e.id);
-                        return (
-                        <div key={e.id} className="flex flex-wrap items-center gap-1.5 text-xs py-1 px-2 rounded hover:bg-surface-container-low">
-                          <span className="text-on-surface-variant font-mono text-[11px] shrink-0">
-                            {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </>
+                );
+              };
+              const entryEventIds = new Set<string>();
+              for (const [, vEvents] of byVisitor) {
+                const externalEvents = vEvents.filter(hasExternalReferrer);
+                if (externalEvents.length > 0) {
+                  const earliest = externalEvents.reduce((a, b) =>
+                    new Date(a.timestamp).getTime() < new Date(b.timestamp).getTime() ? a : b
+                  );
+                  entryEventIds.add(earliest.id);
+                }
+              }
+
+              // Timeline event icon
+              const eventIcon = (e: AnalyticsEvent) => {
+                if (e.eventType === 'page_time_flush') return 'timer';
+                if (e.eventType === 'page_view') return e.pathname === '/' ? 'home' : 'description';
+                if (e.eventType === 'pdf_download') return 'download';
+                if (e.eventType === 'contact_form' || e.eventType === 'rfq_submission') return 'mail';
+                return 'mouse';
+              };
+
+              // Timeline event row renderer
+              const renderTimelineEvent = (e: AnalyticsEvent, isLast: boolean) => {
+                const pageDuration = perPageDurations.get(e.id);
+                const icon = eventIcon(e);
+                const isFinal = (e as Record<string, unknown>).isFinal;
+                const eventLabel = e.eventType === 'page_view'
+                  ? (e.eventName || e.pathname || '/')
+                  : e.eventType === 'page_time_flush'
+                    ? (e.pathname || '/')
+                    : (e.eventName || e.pathname || e.eventType);
+                const sd = (e as Record<string, unknown>).maxScrollDepth as number;
+                return (
+                  <div key={e.id} className={`relative pl-10 ${isLast ? '' : 'pb-8'}`}>
+                    <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center z-10 ${isFinal ? 'bg-primary-fixed' : 'bg-surface-container'}`}>
+                      <span className={`material-symbols-outlined text-[14px] ${isFinal ? 'text-primary' : 'text-on-surface-variant'}`}>{icon}</span>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="text-sm font-bold text-on-surface">{eventLabel}</h4>
+                        {e.pathname && <p className="text-xs text-secondary font-mono">{e.pathname}</p>}
+                        {e.productName && <p className="text-xs text-secondary font-medium">{e.productName}</p>}
+                      </div>
+                      <div className="text-right flex items-center gap-4">
+                        {e.eventType === 'page_time_flush' && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${isFinal ? 'text-on-surface-variant bg-surface-container' : 'text-on-surface-variant bg-surface-container'}`}>
+                            {isFinal ? 'FINAL' : isFinal === false ? 'PARTIAL' : e.eventType.replace(/_/g, ' ')}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
-                            {e.eventType}
+                        )}
+                        {e.eventType !== 'page_time_flush' && e.eventType !== 'page_view' && (
+                          <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded uppercase">
+                            {e.eventType.replace(/_/g, ' ')}
                           </span>
+                        )}
+                        {entryEventIds.has(e.id) && referrerBadge(e)}
+                        <div className="text-right">
                           {e.eventType === 'page_time_flush' ? (
                             <>
-                              <span className="text-on-surface font-medium">{e.pathname || '/'}</span>
                               {e.activeSeconds != null && (
-                                <span className="text-on-surface-variant" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
-                                  {formatDuration(e.activeSeconds)} active
-                                  {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
-                                  {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
-                                </span>
+                                <p className="text-xs font-bold text-on-surface">{formatDuration(e.activeSeconds)}</p>
                               )}
-                              {(() => { const sd = (e as Record<string, unknown>).maxScrollDepth as number; return sd > 0 ? (
-                                <span style={{ background: sd >= 75 ? '#e8f5e9' : sd >= 50 ? '#fff8e1' : '#f5f5f5', color: sd >= 75 ? '#2e7d32' : sd >= 50 ? '#f57f17' : '#888', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>
-                                  ↓{sd}%
-                                </span>
-                              ) : null; })()}
-                              {(e as Record<string, unknown>).isFinal && (
-                                <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>final</span>
-                              )}
-                              {(e as Record<string, unknown>).isFinal === false && (
-                                <span style={{ background: '#fff3e0', color: '#e65100', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', marginLeft: '4px', fontWeight: 500 }}>partial</span>
-                              )}
-                              {e.flushReason && (
-                                <span style={{ fontSize: '10px', color: '#999', marginLeft: '4px' }}>{e.flushReason}</span>
+                              {sd > 0 && (
+                                <p className="text-[10px] text-on-surface-variant">↓{sd}% scroll</p>
                               )}
                             </>
                           ) : (
                             <>
-                              <span className="text-on-surface font-medium">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
-                              {e.productName && (
-                                <span className="text-secondary text-[11px] font-medium">{e.productName}</span>
-                              )}
                               {pageDuration != null && pageDuration > 0 && (
-                                <span className="text-on-surface-variant text-[11px]">{formatDuration(pageDuration)}</span>
+                                <p className="text-xs font-bold text-on-surface">{formatDuration(pageDuration)}</p>
                               )}
                             </>
                           )}
-                          {entryEventIds.has(e.id) && referrerBadge(e)}
+                          <p className="text-[10px] text-on-surface-variant">
+                            {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </p>
                         </div>
-                        );
-                      })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              };
+
+              if (byVisitor.size <= 1) {
+                const allEvents = org.events;
+                return (
+                  <div className="space-y-0 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-outline-variant/30">
+                    {allEvents.map((e, i) => renderTimelineEvent(e, i === allEvents.length - 1))}
+                  </div>
+                );
+              }
+
+              // Multiple visitors
+              return Array.from(byVisitor.entries()).map(([vKey, events], idx) => {
+                const ip = events.find((e) => e.ip)?.ip || '';
+                const ua = events.find((e) => e.userAgent)?.userAgent || '';
+                const shortUA = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : ua.split('/')[0] || '';
+                return (
+                  <div key={vKey} className="mb-6 last:mb-0">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant mb-3">
+                      <span className="font-bold text-on-surface text-sm">Visitor {idx + 1}</span>
+                      {ip && (
+                        <span className="font-mono cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
+                          {showFullIP ? ip : maskIP(ip)}
+                        </span>
+                      )}
+                      {shortUA && <span>{shortUA}</span>}
+                      <span>{events.length} events</span>
+                      {vKey && !vKey.includes('.') && <span className="font-mono" title={vKey}>{vKey.slice(0, 8)}</span>}
+                    </div>
+                    <div className="space-y-0 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-outline-variant/30">
+                      {events.map((e, i) => renderTimelineEvent(e, i === events.length - 1))}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+
+        {/* ── Right Column: Context & Metadata ── */}
+        <div className="space-y-8">
+          {/* Detection Details Card */}
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+            <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">security</span>
+              Detection Details
+            </h3>
+            <div className="space-y-6">
+              {/* IP Details */}
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">IP Lookup</p>
+                <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
+                  <span
+                    className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                    onClick={() => setShowFullIP((v) => !v)}
+                    title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                  >
+                    {uniqueIPs.length > 0
+                      ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
+                      : 'N/A'}
+                  </span>
+                  {aiUpgraded && (
+                    <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
+                  )}
+                </div>
+                <p className="text-xs text-on-surface-variant mt-2">
+                  Type: <span className="text-on-surface font-medium">
+                    {org.companyType || ipOrgType || 'Unknown'}
+                    {uniqueISPs.length > 0 && ` / ${uniqueISPs[0]}`}
+                  </span>
+                </p>
+              </div>
+
+              {/* AI Classification */}
+              {hasAI && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">AI Classification</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-on-surface">{effectiveAiOrgType}</span>
+                    <span className="text-sm font-bold text-secondary">{(effectiveAiConf * 100).toFixed(0)}% Confidence</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+                    <div className="h-full bg-secondary" style={{ width: `${effectiveAiConf * 100}%` }} />
+                  </div>
+                  {effectiveAiReason && (
+                    <div className="mt-4 p-3 border-l-4 border-outline-variant bg-surface-container-low">
+                      <p className="text-xs italic text-on-surface-variant leading-relaxed">
+                        "{effectiveAiReason}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bot detection details */}
+              {org.hasBot && (() => {
+                const botEvent = org.events.find((e) => e.isBot);
+                const ua = botEvent?.userAgent || '';
+                const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
+                const detectedByUA = !!botEvent;
+                const orgKey = org.events[0]?.orgName || org.events[0]?.org || '';
+                const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
+                const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
+                return (
+                  <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Bot Name</span>
+                      <span className="text-sm font-medium text-on-surface">{botName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Detection</span>
+                      <span className="text-sm font-medium text-on-surface">{detectionMethod}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Status Indicators */}
+              <div className="pt-4" style={{ borderTop: '1px solid rgba(196, 198, 207, 0.2)' }}>
+                <div className="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
+                  {classificationSource === 'ai' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                      AI Classified{aiProviderLabel ? ` via ${aiProviderLabel}` : ''}
+                    </>
+                  )}
+                  {classificationSource === 'manual' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-tertiary-fixed-dim" style={{ fontVariationSettings: "'FILL' 1" }}>edit</span>
+                      Manual Override
+                    </>
+                  )}
+                  {classificationSource === 'bot' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-error">bug_report</span>
+                      Bot Detected
+                    </>
+                  )}
+                  {classificationSource === 'ip' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">dns</span>
+                      IP Lookup Classification
+                    </>
+                  )}
+                  {classificationSource === 'behavior' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-tertiary-fixed-dim">trending_up</span>
+                      Behavior-based Classification
+                    </>
+                  )}
+                  {classificationSource === 'none' && (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">help_outline</span>
+                      Unclassified
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Traffic Sources Card */}
+          {trafficSources.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Traffic Sources</h3>
+              <div className="space-y-4">
+                {trafficSources.map(([groupKey, { count, channel, label: displayLabel }]) => (
+                  <div key={groupKey} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-on-surface-variant">{channelIcons[channel] || 'language'}</span>
+                      <span className="font-medium">{channelLabels[channel] || displayLabel}</span>
+                    </div>
+                    <span className="font-bold">{count} Visit{count !== 1 ? 's' : ''}</span>
+                  </div>
+                ))}
+                {primaryReferrer && (
+                  <div className="mt-2 p-3 bg-surface rounded text-[10px] font-mono text-on-surface-variant break-all">
+                    Referrer: {primaryReferrer}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Technical Context Card */}
+          {uniqueUAs.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Technical Context</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">User Agent</p>
+                  <p className="text-[11px] font-mono leading-relaxed bg-surface p-3 rounded text-on-surface-variant break-all">
+                    {uniqueUAs[0]}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">OS</p>
+                    <p className="text-sm font-semibold">{parsedUA.os}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Browser</p>
+                    <p className="text-sm font-semibold">{parsedUA.browser}</p>
+                  </div>
+                </div>
+                {uniqueIPs.length > 1 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">Additional IPs</p>
+                    <div className="space-y-1">
+                      {uniqueIPs.slice(1).map((ip) => (
+                        <p key={ip} className="text-xs font-mono text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
+                          {showFullIP ? ip : maskIP(ip)}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {org.isISPVisitor && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Visitor ID</p>
+                    <p className="text-xs font-mono">{org.key.substring(0, 12)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Pages Visited Card */}
+          {(() => {
+            const pageEvents = org.events.filter((e) => e.pathname);
+            const uniquePages = new Map<string, number>();
+            for (const e of pageEvents) {
+              uniquePages.set(e.pathname!, (uniquePages.get(e.pathname!) || 0) + 1);
+            }
+            return uniquePages.size > 0 ? (
+              <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Pages Visited</h3>
+                <div className="space-y-1">
+                  {Array.from(uniquePages.entries()).map(([path, count]) => (
+                    <div key={path} className="flex justify-between items-center bg-surface-container-low rounded px-3 py-2">
+                      <span className="text-sm font-medium text-on-surface">{path}</span>
+                      <span className="text-[10px] font-bold bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">{count}x</span>
                     </div>
                   ))}
                 </div>
-              );
-            });
+              </div>
+            ) : null;
           })()}
         </div>
       </div>
@@ -2213,23 +2249,6 @@ export function AdminAnalyticsPage() {
     }
     return events;
   }, [allEvents, showBots, showPrivateIPs, hideSelf, selfVisitorIds]);
-
-  const botCount = useMemo(() => {
-    return allEvents.filter((e) => {
-      if (e.isBot) return true;
-      const orgKey = e.orgName || e.org || '';
-      return orgKey ? isKnownBotOrg(orgKey) : false;
-    }).length;
-  }, [allEvents]);
-
-  const privateIPCount = useMemo(() => {
-    return allEvents.filter((e) => e.ip && isPrivateIP(e.ip)).length;
-  }, [allEvents]);
-
-  const selfCount = useMemo(() => {
-    if (selfVisitorIds.size === 0) return 0;
-    return allEvents.filter((e) => selfVisitorIds.has((e as Record<string, unknown>).visitorId as string)).length;
-  }, [allEvents, selfVisitorIds]);
 
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
