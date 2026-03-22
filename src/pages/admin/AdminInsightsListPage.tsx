@@ -99,161 +99,219 @@ export function AdminInsightsListPage() {
   }
 
   if (loading) {
-    return <div className="admin-loading">Loading articles...</div>;
+    return <div className="flex items-center justify-center py-20 text-on-surface-variant font-body">Loading articles...</div>;
   }
 
   if (error) {
-    return <div className="admin-error">Error: {error.message}</div>;
+    return <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body">Error: {error.message}</div>;
   }
 
   return (
-    <div className="admin-insights-list">
-      <div className="admin-list-header">
-        <h1>
-          {contentTypeFilter === 'News' ? 'News' : contentTypeFilter === 'Insights' ? 'Insights' : 'All Content'}
-          {' '}({filteredPosts.length})
-        </h1>
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-end mb-10">
+        <div>
+          <h1 className="font-headline text-4xl font-bold tracking-tight text-on-surface">
+            {contentTypeFilter === 'News' ? 'News' : contentTypeFilter === 'Insights' ? 'Insights' : 'All Content'}
+          </h1>
+          <p className="text-on-surface-variant mt-2 max-w-lg">Manage articles, insights, and news posts across the site.</p>
+        </div>
         <Link
           to={contentTypeFilter === 'News' ? '/admin/insights/new?type=news' : '/admin/insights/new'}
-          className="admin-btn-primary"
+          className="bg-secondary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-secondary/20 hover:opacity-90 transition-opacity"
         >
-          + New {contentTypeFilter === 'News' ? 'News' : 'Article'}
+          <span className="material-symbols-outlined text-lg">add</span>
+          Create New Article
         </Link>
       </div>
 
-      <div className="admin-content-type-tabs">
-        {CONTENT_TYPES.map((ct) => (
-          <button
-            key={ct}
-            className={`admin-content-type-tab ${contentTypeFilter === ct ? 'active' : ''}`}
-            onClick={() => { setContentTypeFilter(ct); setCategoryFilter('All'); }}
-          >
-            {ct}
-          </button>
-        ))}
+      {/* Filters area */}
+      <div className="grid grid-cols-12 gap-6 mb-8">
+        <div className="col-span-8 bg-surface-container-low p-6 rounded-xl">
+          <div className="flex items-center gap-4">
+            {/* Content Type filters */}
+            <div className="flex items-center gap-1">
+              {CONTENT_TYPES.map((ct) => (
+                <button
+                  key={ct}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    contentTypeFilter === ct
+                      ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
+                      : 'hover:bg-surface-container-lowest text-on-surface-variant'
+                  }`}
+                  onClick={() => { setContentTypeFilter(ct); setCategoryFilter('All'); }}
+                >
+                  {ct === 'All' ? 'All Types' : ct}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div className="h-10 w-px bg-outline-variant/20" />
+
+            {/* Status filters */}
+            <div className="flex items-center gap-1">
+              {STATUS_FILTERS.map((status) => (
+                <button
+                  key={status}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    statusFilter === status
+                      ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
+                      : 'hover:bg-surface-container-lowest text-on-surface-variant'
+                  }`}
+                  onClick={() => setStatusFilter(status)}
+                >
+                  {status}
+                  {status === 'Drafts' && (
+                    <span className="bg-surface-container text-on-surface-variant text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {posts.filter((p) => p.isDraft).length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div className="h-10 w-px bg-outline-variant/20" />
+
+            {/* Category filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-surface-container-lowest border border-outline-variant/30 px-3 py-2 rounded-lg text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Velocity stat card */}
+        <div className="col-span-4 bg-primary-container p-6 rounded-xl">
+          <p className="text-xs text-on-primary-container uppercase tracking-widest mb-1">Total Articles</p>
+          <p className="text-3xl font-bold font-headline text-on-primary-container">{filteredPosts.length}</p>
+          <p className="text-xs text-on-primary-container/70 mt-1">{posts.length} across all filters</p>
+        </div>
       </div>
 
-      <div className="admin-status-tabs">
-        {STATUS_FILTERS.map((status) => (
-          <button
-            key={status}
-            className={`admin-status-tab ${statusFilter === status ? 'admin-status-tab-active' : ''}`}
-            onClick={() => setStatusFilter(status)}
-          >
-            {status}
-            {status === 'Drafts' && (
-              <span className="admin-status-tab-count">
-                {posts.filter((p) => p.isDraft).length}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div className="admin-list-filters">
+      {/* Search bar */}
+      <div className="relative mb-8">
+        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
         <input
           type="text"
           placeholder="Search by title, slug, or excerpt..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="admin-search-input"
+          className="w-full bg-surface-container-low pl-12 pr-4 py-3 rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant/60 border-none outline-none focus:ring-2 focus:ring-primary/20"
         />
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="admin-filter-select"
-        >
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
       </div>
 
-      {deleteError && <div className="admin-error">{deleteError}</div>}
+      {deleteError && <div className="bg-error-container text-on-error-container p-4 rounded-lg mb-6">{deleteError}</div>}
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Author</th>
-            <th>Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPosts.map((post) => (
-            <tr key={post.id}>
-              <td>
-                <div className="admin-post-title">
-                  {post.title}
-                  {post.isDraft && <span className="draft-badge">Draft</span>}
-                </div>
-                <div className="admin-post-slug">/{post.slug}</div>
-              </td>
-              <td>{post.category}</td>
-              <td>{post.author}</td>
-              <td>{post.publishDate}</td>
-              <td className="admin-actions">
-                <Link
-                  to={`/admin/insights/${post.id}/edit`}
-                  className="admin-btn-sm"
-                >
-                  Edit
-                </Link>
-                <a
-                  href={`/${(post.contentType ?? 'insight') === 'news' ? 'news' : 'insights'}/${post.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="admin-btn-sm admin-btn-outline"
-                >
-                  View
-                </a>
-                <div className="admin-actions-menu" ref={openMenu === post.id ? menuRef : undefined}>
-                  <button
-                    className="admin-btn-sm admin-btn-outline admin-btn-more"
-                    onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
-                  >
-                    ···
-                  </button>
-                  {openMenu === post.id && (
-                    <div className="admin-actions-dropdown">
-                      <button
-                        className="admin-dropdown-item"
-                        onClick={() => {
-                          setOpenMenu(null);
-                          navigate(`/admin/insights/new?from=${post.id}`);
-                        }}
-                      >
-                        Duplicate
-                      </button>
-                      <button
-                        className="admin-dropdown-item admin-dropdown-item-danger"
-                        onClick={() => {
-                          setOpenMenu(null);
-                          handleDelete(post.id, post.title, post.slug);
-                        }}
-                        disabled={deleting === post.id}
-                      >
-                        {deleting === post.id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
+      {/* Article table */}
+      <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-card mb-12">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-surface-container-low">
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Title</th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Author</th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Date</th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Type</th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Status</th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPosts.map((post) => (
+              <tr key={post.id} className="border-t border-outline-variant/10 hover:bg-primary-fixed/30 transition-colors group">
+                <td className="px-4 py-3">
+                  <p className="text-sm font-semibold text-on-surface">{post.title}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">/{post.slug}</p>
+                </td>
+                <td className="px-4 py-3 text-sm text-on-surface">{post.author}</td>
+                <td className="px-4 py-3 text-sm text-on-surface-variant">{post.publishDate}</td>
+                <td className="px-4 py-3">
+                  <span className="text-[10px] font-bold bg-surface-container-high rounded px-2 py-1 text-on-surface-variant uppercase">
+                    {post.contentType === 'news' ? 'News' : 'Insight'}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {post.isDraft ? (
+                    <span className="flex items-center gap-1.5 text-sm text-on-surface-variant">
+                      <span className="w-2 h-2 rounded-full bg-outline-variant inline-block" />
+                      Draft
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-sm text-secondary">
+                      <span className="w-2 h-2 rounded-full bg-secondary inline-block" />
+                      Published
+                    </span>
                   )}
-                </div>
-              </td>
-            </tr>
-          ))}
-          {filteredPosts.length === 0 && (
-            <tr>
-              <td colSpan={5} className="admin-no-results">
-                No articles found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/admin/insights/${post.id}/edit`}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary"
+                    >
+                      <span className="material-symbols-outlined text-xl">edit</span>
+                    </Link>
+                    <a
+                      href={`/${(post.contentType ?? 'insight') === 'news' ? 'news' : 'insights'}/${post.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary"
+                    >
+                      <span className="material-symbols-outlined text-xl">visibility</span>
+                    </a>
+                    <div className="relative" ref={openMenu === post.id ? menuRef : undefined}>
+                      <button
+                        className="text-on-surface-variant hover:text-on-surface transition-colors"
+                        onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
+                      >
+                        <span className="material-symbols-outlined text-xl">more_vert</span>
+                      </button>
+                      {openMenu === post.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-1 z-10 min-w-[140px]">
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-surface-container rounded transition-colors"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              navigate(`/admin/insights/new?from=${post.id}`);
+                            }}
+                          >
+                            Duplicate
+                          </button>
+                          <button
+                            className="w-full text-left px-3 py-2 text-sm text-error hover:bg-error-container rounded transition-colors"
+                            onClick={() => {
+                              setOpenMenu(null);
+                              handleDelete(post.id, post.title, post.slug);
+                            }}
+                            disabled={deleting === post.id}
+                          >
+                            {deleting === post.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredPosts.length === 0 && (
+              <tr>
+                <td colSpan={6} className="text-center py-12 text-on-surface-variant text-sm">
+                  No articles found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

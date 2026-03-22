@@ -138,19 +138,18 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
   const dailyChannels = useMemo(() => aggregateDailyChannels(filteredEvents), [filteredEvents]);
 
   return (
-    <div className="trends-section">
+    <div className="mb-8">
       <h3
-        className="analytics-section-header"
-        style={{ cursor: 'pointer', userSelect: 'none' }}
+        className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 cursor-pointer select-none py-3 mb-4"
         onClick={onToggle}
       >
-        <span className="keyword-toggle-icon">{isOpen ? '▼' : '▶'}</span>
+        <span className="material-symbols-outlined text-on-surface-variant text-base">{isOpen ? 'expand_more' : 'chevron_right'}</span>
         Trends
       </h3>
 
       {isOpen && (
         <>
-          <div className="trends-tab-bar">
+          <div className="flex gap-2 mb-6">
             {([
               ['visitors', 'Daily Visitors'],
               ['targets', 'Target Customers'],
@@ -159,7 +158,7 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
             ] as const).map(([key, label]) => (
               <button
                 key={key}
-                className={`trends-tab ${activeChart === key ? 'trends-tab-active' : ''}`}
+                className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${activeChart === key ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}
                 onClick={() => setActiveChart(key)}
               >
                 {label}
@@ -167,17 +166,17 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
             ))}
           </div>
 
-          <div className="trends-chart-card">
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
             {activeChart === 'visitors' && (
               <>
-                <div className="trends-chart-title">Daily Unique Visitors</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Daily Unique Visitors</div>
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={dailyVisitors}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" />
                     <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip labelFormatter={(v) => `Date: ${v}`} />
-                    <Line type="monotone" dataKey="visitors" stroke="#1976d2" strokeWidth={2} dot={false} name="Visitors" />
+                    <Tooltip labelFormatter={(v) => `Date: ${v}`} contentStyle={{ background: '#fff', border: 'none', boxShadow: '0px 10px 30px rgba(2,36,72,0.08)', borderRadius: '8px' }} />
+                    <Line type="monotone" dataKey="visitors" stroke="#0058be" strokeWidth={2} dot={false} name="Visitors" />
                   </LineChart>
                 </ResponsiveContainer>
               </>
@@ -185,15 +184,15 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
 
             {activeChart === 'targets' && (
               <>
-                <div className="trends-chart-title">Daily Target Customers vs All Visitors</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Daily Target Customers vs All Visitors</div>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={dailyTargets}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" />
                     <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip labelFormatter={(v) => `Date: ${v}`} />
+                    <Tooltip labelFormatter={(v) => `Date: ${v}`} contentStyle={{ background: '#fff', border: 'none', boxShadow: '0px 10px 30px rgba(2,36,72,0.08)', borderRadius: '8px' }} />
                     <Legend />
-                    <Area type="monotone" dataKey="all" stroke="#90caf9" fill="#e3f2fd" name="All Visitors" />
+                    <Area type="monotone" dataKey="all" stroke="#0058be" fill="#d5e3ff" name="All Visitors" />
                     <Area type="monotone" dataKey="target" stroke="#2e7d32" fill="#c8e6c9" name="Target Customers" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -202,16 +201,16 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
 
             {activeChart === 'scores' && (
               <>
-                <div className="trends-chart-title">Behavior Score Distribution</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Behavior Score Distribution</div>
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={scoreDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" />
                     <XAxis dataKey="range" tick={{ fontSize: 11 }} label={{ value: 'Score', position: 'insideBottom', offset: -5, fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip />
+                    <Tooltip contentStyle={{ background: '#fff', border: 'none', boxShadow: '0px 10px 30px rgba(2,36,72,0.08)', borderRadius: '8px' }} />
                     <Bar
                       dataKey="count"
-                      fill="#1976d2"
+                      fill="#0058be"
                       radius={[4, 4, 0, 0]}
                       name="Organizations"
                       cursor={onScoreRangeClick ? 'pointer' : undefined}
@@ -230,13 +229,13 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
 
             {activeChart === 'channels' && (
               <>
-                <div className="trends-chart-title">Traffic Channels Over Time</div>
+                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Traffic Channels Over Time</div>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={dailyChannels}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" />
                     <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip labelFormatter={(v) => `Date: ${v}`} />
+                    <Tooltip labelFormatter={(v) => `Date: ${v}`} contentStyle={{ background: '#fff', border: 'none', boxShadow: '0px 10px 30px rgba(2,36,72,0.08)', borderRadius: '8px' }} />
                     <Legend />
                     {Object.entries(CHANNEL_COLORS).map(([channel, color]) => (
                       <Area

@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useRfqs } from '../../hooks/useRfqs';
-import { StatsBar } from '../../components/admin/StatsBar';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { formatDate } from '../../types/admin';
 
@@ -18,12 +17,7 @@ export function RFQListPage() {
     const declined = rfqs.filter(r => r.status === 'declined').length;
     const total = converted + declined;
     const rate = total > 0 ? Math.round((converted / total) * 100) : 0;
-    return [
-      { label: 'Pending', value: pending, color: '#7c3aed' },
-      { label: 'Converted', value: converted, color: '#16a34a' },
-      { label: 'Declined', value: declined, color: '#6b7280' },
-      { label: 'Conversion Rate', value: `${rate}%` },
-    ];
+    return { pending, converted, declined, rate };
   }, [rfqs]);
 
   const filtered = useMemo(() => {
@@ -45,102 +39,114 @@ export function RFQListPage() {
     return result;
   }, [rfqs, search, statusFilter]);
 
-  if (loading) return <div className="admin-loading">Loading RFQs...</div>;
-  if (error) return <div className="admin-error">Error: {error.message}</div>;
+  if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant font-body">Loading RFQs...</div>;
+  if (error) return <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body">Error: {error.message}</div>;
 
   return (
-    <div className="admin-insights-list">
-      <div className="admin-list-header">
-        <h1>RFQ Management ({rfqs.length})</h1>
-      </div>
-
-      <StatsBar stats={stats} />
-
-      <div className="admin-list-filters">
-        <input
-          type="text"
-          placeholder="Search by name, institution, equipment..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="admin-search-input"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="admin-filter-select"
-        >
-          {STATUS_OPTIONS.map(s => (
-            <option key={s} value={s}>{s === 'All' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}</option>
-          ))}
-        </select>
-      </div>
-
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Name</th>
-            <th>Institution</th>
-            <th>Equipment</th>
-            <th>Budget</th>
-            <th>Timeline</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map(rfq => (
-            <tr key={rfq.rfqId} className={rfq.status === 'pending' ? 'row-highlight-purple' : rfq.status === 'declined' ? 'row-muted' : ''}>
-              <td>{formatDate(rfq.submittedAt)}</td>
-              <td>{rfq.name || '-'}</td>
-              <td>{rfq.institution || '-'}</td>
-              <td>{rfq.equipmentCategory}{rfq.specificModel ? ` / ${rfq.specificModel}` : ''}</td>
-              <td>{rfq.budgetRange || '-'}</td>
-              <td>{rfq.timeline || '-'}</td>
-              <td><StatusBadge status={rfq.status} /></td>
-              <td className="admin-actions">
-                <Link to={`/admin/rfqs/${rfq.rfqId}`} className="admin-btn-sm">
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr>
-              <td colSpan={8} className="admin-no-results">No RFQs found.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Mobile RFQ cards — visible only at ≤480px */}
-      <div className="mobile-cards rfq-cards-mobile">
-        {filtered.length === 0 ? (
-          <div className="admin-no-results" style={{ textAlign: 'center', padding: '1.5rem' }}>
-            No RFQs found.
+    <div>
+      {/* Header area */}
+      <div className="grid grid-cols-12 gap-8 mb-12">
+        <div className="col-span-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-2">Request Overview</p>
+          <h1 className="font-headline text-5xl font-black text-on-surface tracking-tighter">RFQ Management</h1>
+        </div>
+        <div className="col-span-2">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-card">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Pending</p>
+            <p className="font-headline text-4xl font-bold text-primary">{stats.pending}</p>
+            <p className="text-xs text-secondary mt-1">{rfqs.length} total</p>
           </div>
-        ) : (
-          filtered.map(rfq => (
-            <Link
-              key={rfq.rfqId}
-              to={`/admin/rfqs/${rfq.rfqId}`}
-              className={`rfq-card-mobile${rfq.status === 'pending' ? ' rfq-card-pending' : rfq.status === 'converted' ? ' rfq-card-converted' : rfq.status === 'declined' ? ' rfq-card-declined' : ''}`}
+        </div>
+        <div className="col-span-2">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-card">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Conversion Rate</p>
+            <p className="font-headline text-4xl font-bold text-primary">{stats.rate}%</p>
+            <p className="text-xs text-secondary mt-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">trending_up</span>
+              {stats.converted} converted
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-2">
+          {STATUS_OPTIONS.map(s => (
+            <button
+              key={s}
+              className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${
+                statusFilter === s
+                  ? 'bg-surface-container text-on-surface'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+              }`}
+              onClick={() => setStatusFilter(s)}
             >
-              <div className="rfq-card-header">
-                <span className="rfq-card-name">{rfq.name || 'Unknown'}</span>
-                <StatusBadge status={rfq.status} />
-              </div>
-              <div className="rfq-card-institution">{rfq.institution || '—'}</div>
-              <div className="rfq-card-equipment">
-                {rfq.equipmentCategory}{rfq.specificModel ? ` / ${rfq.specificModel}` : ''}
-              </div>
-              <div className="rfq-card-footer">
-                <span>{formatDate(rfq.submittedAt)}</span>
-                <span>{rfq.budgetRange || ''}</span>
-              </div>
-            </Link>
-          ))
-        )}
+              {s === 'All' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+            <input
+              type="text"
+              placeholder="Search by name, institution, equipment..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-surface-container-low pl-10 pr-4 py-2 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/60 border-none outline-none focus:ring-2 focus:ring-primary/20 w-72"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Data table */}
+      <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-card">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-surface-container-low/50">
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Ref #</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Name</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Institution</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Category</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Budget</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Status</th>
+              <th className="text-left text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(rfq => (
+              <tr key={rfq.rfqId} className="border-t border-outline-variant/10 hover:bg-primary-fixed/30 transition-colors cursor-pointer group">
+                <td className="px-4 py-3">
+                  <span className="font-headline font-bold text-primary text-sm">{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</span>
+                  <div className="text-[10px] text-on-surface-variant mt-0.5">{formatDate(rfq.submittedAt)}</div>
+                </td>
+                <td className="px-4 py-3 text-sm font-medium text-on-surface">{rfq.name || '-'}</td>
+                <td className="px-4 py-3 text-sm italic text-on-surface-variant">{rfq.institution || '-'}</td>
+                <td className="px-4 py-3">
+                  <span className="bg-surface-container px-2 py-1 rounded text-[10px] font-bold text-on-surface-variant">
+                    {rfq.equipmentCategory}{rfq.specificModel ? ` / ${rfq.specificModel}` : ''}
+                  </span>
+                </td>
+                <td className="px-4 py-3 font-headline font-semibold text-sm text-on-surface">{rfq.budgetRange || '-'}</td>
+                <td className="px-4 py-3"><StatusBadge status={rfq.status} /></td>
+                <td className="px-4 py-3">
+                  <Link
+                    to={`/admin/rfqs/${rfq.rfqId}`}
+                    className="text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-xl">visibility</span>
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center py-12 text-on-surface-variant text-sm">No RFQs found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

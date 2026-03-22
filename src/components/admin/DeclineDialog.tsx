@@ -33,35 +33,59 @@ export function DeclineDialog({ open, onClose, onConfirm, title = 'Decline Inqui
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
-      <p>Are you sure you want to decline this inquiry?</p>
+      <p className="text-sm text-on-surface-variant mb-4">
+        Are you sure you want to decline this inquiry?
+      </p>
 
-      {error && <div className="admin-error">{error}</div>}
+      {error && (
+        <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm mb-4">
+          {error}
+        </div>
+      )}
 
-      <div className="form-field">
-        <label>Reason *</label>
-        <select value={reason} onChange={(e) => setReason(e.target.value)} className="admin-filter-select" style={{ width: '100%' }}>
-          <option value="">Select a reason...</option>
-          {DECLINE_REASONS.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Reason *
+          </label>
+          <select
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+          >
+            <option value="">Select a reason...</option>
+            {DECLINE_REASONS.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Additional Notes
+          </label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
+          />
+        </div>
       </div>
 
-      <div className="form-field">
-        <label>Additional Notes</label>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-        />
-      </div>
-
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <button className="admin-btn-sm admin-btn-outline" onClick={onClose} disabled={submitting}>
+      <div className="flex gap-3 justify-end mt-6">
+        <button
+          className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors"
+          onClick={onClose}
+          disabled={submitting}
+        >
           Cancel
         </button>
-        <button className="admin-btn-sm admin-btn-danger" onClick={handleSubmit} disabled={submitting}>
+        <button
+          className="bg-error text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-error/90 transition-colors disabled:opacity-50"
+          onClick={handleSubmit}
+          disabled={submitting}
+        >
           {submitting ? 'Declining...' : 'Decline'}
         </button>
       </div>

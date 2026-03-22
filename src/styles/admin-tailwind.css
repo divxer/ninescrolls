@@ -1,0 +1,186 @@
+/* Import only Tailwind utilities + theme — NO preflight/base reset */
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+@theme {
+  /* ── Spacing baseline (required for Tailwind v4 spacing utilities) ── */
+  --spacing: 0.25rem;
+
+  /* ── Colors: Surface Architecture ── */
+  --color-surface: #f9f9f9;
+  --color-surface-bright: #f9f9f9;
+  --color-surface-dim: #dadada;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f3;
+  --color-surface-container: #eeeeee;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e2e2e2;
+  --color-surface-variant: #e2e2e2;
+  --color-surface-tint: #455f87;
+
+  /* ── Colors: Primary ── */
+  --color-primary: #022448;
+  --color-primary-container: #1e3a5f;
+  --color-primary-fixed: #d5e3ff;
+  --color-primary-fixed-dim: #adc8f5;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #8aa4cf;
+  --color-on-primary-fixed: #001c3b;
+  --color-on-primary-fixed-variant: #2d486d;
+
+  /* ── Colors: Secondary ── */
+  --color-secondary: #0058be;
+  --color-secondary-container: #2170e4;
+  --color-secondary-fixed: #d8e2ff;
+  --color-secondary-fixed-dim: #adc6ff;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #fefcff;
+  --color-on-secondary-fixed: #001a42;
+  --color-on-secondary-fixed-variant: #004395;
+
+  /* ── Colors: Tertiary ── */
+  --color-tertiary: #341f00;
+  --color-tertiary-container: #503300;
+  --color-tertiary-fixed: #ffddb2;
+  --color-tertiary-fixed-dim: #edbf7f;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #c69b5f;
+  --color-on-tertiary-fixed: #291800;
+  --color-on-tertiary-fixed-variant: #60410c;
+
+  /* ── Colors: Error ── */
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* ── Colors: Neutral / On-Surface ── */
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #43474e;
+  --color-on-background: #1a1c1c;
+  --color-background: #f9f9f9;
+  --color-outline: #74777f;
+  --color-outline-variant: #c4c6cf;
+  --color-inverse-surface: #2f3131;
+  --color-inverse-on-surface: #f1f1f1;
+  --color-inverse-primary: #adc8f5;
+
+  /* ── Font Families ── */
+  --font-headline: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-label: 'Inter', sans-serif;
+
+  /* ── Border Radius (precision editorial) ── */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  /* ── Ambient Shadows (navy-tinted, not gray) ── */
+  --shadow-card: 0px 10px 30px rgba(2, 36, 72, 0.04);
+  --shadow-elevated: 0px 10px 30px rgba(2, 36, 72, 0.06);
+  --shadow-float: 0px 15px 40px rgba(2, 36, 72, 0.1);
+}
+
+/* ── Admin-scoped base styles ── */
+/* These MUST be un-layered to override main.css global rules */
+.admin-root {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+}
+
+.admin-root *,
+.admin-root ::after,
+.admin-root ::before {
+  box-sizing: border-box;
+}
+
+/* ── Admin layout structure (un-layered to beat main.css) ── */
+.admin-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 16rem;
+  z-index: 40;
+  background-color: #f3f3f3;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+  transition: transform 0.3s;
+  transform: translateX(-100%);
+}
+
+.admin-sidebar-open {
+  transform: translateX(0) !important;
+}
+
+@media (min-width: 1024px) {
+  .admin-sidebar {
+    transform: translateX(0);
+  }
+}
+
+.admin-header-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  z-index: 20;
+  background-color: rgba(249, 249, 249, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 1024px) {
+  .admin-header-bar {
+    width: calc(100% - 16rem);
+    padding: 0 2rem;
+  }
+}
+
+/* Override global `main { margin-top: 60px }` from main.css */
+.admin-root > main {
+  margin-top: 0 !important;
+  margin-left: 0;
+  padding: 5rem 1rem 3rem 1rem;
+  min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+  .admin-root > main {
+    margin-left: 16rem;
+    padding: 5rem 2rem 3rem 2rem;
+  }
+}
+
+/* Material Symbols sizing helper */
+.admin-root .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Amplify auth overrides for admin */
+.admin-root [data-amplify-authenticator] {
+  --amplify-colors-brand-primary-10: #d5e3ff;
+  --amplify-colors-brand-primary-80: #022448;
+  --amplify-colors-brand-primary-90: #1e3a5f;
+  --amplify-colors-brand-primary-100: #022448;
+}

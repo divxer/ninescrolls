@@ -85,25 +85,28 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
   );
 
   return (
-    <div className="rich-text-editor">
-      <div className="rich-text-editor-toggle">
+    <div>
+      <div className="flex gap-2 border-b border-outline-variant/20 pb-3 mb-4">
         <button
           type="button"
-          className={`editor-mode-btn ${!isSourceMode ? 'active' : ''}`}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!isSourceMode ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
           onClick={() => setIsSourceMode(false)}
         >
           Visual
         </button>
         <button
           type="button"
-          className={`editor-mode-btn ${isSourceMode ? 'active' : ''}`}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isSourceMode ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
           onClick={() => setIsSourceMode(true)}
         >
           HTML Source
         </button>
       </div>
       {uploading && (
-        <div className="editor-upload-indicator">Uploading image...</div>
+        <div className="text-secondary text-xs font-medium mb-2 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+          Uploading image...
+        </div>
       )}
       {isSourceMode ? (
         <textarea
@@ -113,7 +116,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               el.style.height = Math.max(600, el.scrollHeight) + 'px';
             }
           }}
-          className="html-source-editor"
+          className="w-full bg-surface-container-low border-none rounded-lg p-4 text-xs font-mono text-on-surface focus:ring-1 focus:ring-secondary/30 resize-none"
           value={value}
           onChange={(e) => {
             const el = e.target;
@@ -135,19 +138,19 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
             content_css: false,
             content_style: `
               body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 font-size: 0.95rem;
                 line-height: 1.6;
                 padding: 8px 12px;
                 margin: 0;
-                color: #333;
+                color: #1a1c1c;
               }
               table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-              table td, table th { border: 1px solid #ccc; padding: 8px 10px; }
-              table th { background: #f5f5f5; font-weight: 600; }
+              table td, table th { border: 1px solid #c4c6cf; padding: 8px 10px; }
+              table th { background: #f3f3f3; font-weight: 600; }
               img { max-width: 100%; height: auto; }
-              blockquote { border-left: 3px solid #ccc; margin: 1em 0; padding: 0.5em 1em; color: #666; }
-              pre { background: #f4f4f4; padding: 1em; border-radius: 4px; overflow-x: auto; }
+              blockquote { border-left: 3px solid #c4c6cf; margin: 1em 0; padding: 0.5em 1em; color: #43474e; }
+              pre { background: #f3f3f3; padding: 1em; border-radius: 6px; overflow-x: auto; }
             `,
 
             min_height: 600,
@@ -155,7 +158,6 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
             menubar: false,
             placeholder: placeholder || '',
 
-            // Resolve relative image paths inside the editor iframe
             document_base_url: window.location.origin + '/',
             relative_urls: false,
             convert_urls: false,
@@ -175,18 +177,14 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
 
             block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
 
-            // Prevent &nbsp; between words
             entity_encoding: 'raw' as const,
 
-            // Preserve all HTML elements and attributes (tables, th, inline styles)
             valid_elements: '*[*]',
             extended_valid_elements: 'th[*],td[*],tr[*],thead[*],tbody[*],table[*]',
 
-            // Image upload
             file_picker_types: 'image',
             file_picker_callback: handleImageUpload,
 
-            // Table defaults
             table_default_attributes: {
               border: '1',
             },

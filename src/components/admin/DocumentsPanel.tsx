@@ -25,16 +25,18 @@ function DocMenu({ onDelete, deleting }: { onDelete: () => void; deleting: boole
   }, [open]);
 
   return (
-    <div ref={ref} className="contact-menu-wrapper">
+    <div ref={ref} className="relative">
       <button
-        className="contact-menu-trigger"
+        className="hover:bg-surface-container-low rounded-full p-1 transition-colors"
         onClick={() => setOpen(!open)}
         aria-label="Document actions"
-      >⋯</button>
+      >
+        <span className="material-symbols-outlined text-on-surface-variant text-lg">more_vert</span>
+      </button>
       {open && (
-        <div className="contact-menu-dropdown">
+        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-elevated border border-outline-variant/10 py-1 z-20 min-w-[120px]">
           <button
-            className="contact-menu-item contact-menu-item-danger"
+            className="w-full text-left px-4 py-2 text-xs font-medium text-error hover:bg-error-container/30 transition-colors"
             onClick={() => { setOpen(false); onDelete(); }}
             disabled={deleting}
           >
@@ -49,6 +51,13 @@ function DocMenu({ onDelete, deleting }: { onDelete: () => void; deleting: boole
 interface DocumentsPanelProps {
   orderId: string;
   currentStatus: OrderStatus;
+}
+
+function getMimeIcon(mime: string): { icon: string; bgClass: string; textClass: string } {
+  if (mime.includes('pdf')) return { icon: 'description', bgClass: 'bg-red-50', textClass: 'text-red-600' };
+  if (mime.includes('image')) return { icon: 'image', bgClass: 'bg-blue-50', textClass: 'text-blue-600' };
+  if (mime.includes('sheet') || mime.includes('excel')) return { icon: 'table_chart', bgClass: 'bg-green-50', textClass: 'text-green-600' };
+  return { icon: 'attach_file', bgClass: 'bg-surface-container', textClass: 'text-on-surface-variant' };
 }
 
 export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) {
@@ -89,31 +98,50 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
     }
   }
 
-  function getMimeIcon(mime: string) {
-    if (mime.includes('pdf')) return '📄';
-    if (mime.includes('image')) return '🖼️';
-    if (mime.includes('word') || mime.includes('document')) return '📝';
-    if (mime.includes('sheet') || mime.includes('excel')) return '📊';
-    return '📎';
+  if (loading) {
+    return (
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+        <p className="text-sm text-on-surface-variant">Loading documents...</p>
+      </div>
+    );
   }
 
-  if (loading) return <div className="admin-loading">Loading documents...</div>;
-  if (error) return <div className="admin-error">Error loading documents: {error.message}</div>;
+  if (error) {
+    return (
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+        <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm">
+          Error loading documents: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-panel">
-      <div className="admin-panel-header">
-        <h3>Documents ({documents.length})</h3>
-        <button className="admin-btn-sm" onClick={() => setShowUpload(true)}>
-          Upload Document
+    <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-on-surface-variant text-lg">attachment</span>
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">
+            Artifacts & Documentation ({documents.length})
+          </h3>
+        </div>
+        <button
+          className="text-xs font-medium text-secondary hover:underline"
+          onClick={() => setShowUpload(true)}
+        >
+          Upload
         </button>
       </div>
 
       {/* Stage Tabs */}
       {stages.length > 0 && (
-        <div className="admin-stage-tabs">
+        <div className="flex gap-2 mb-5 flex-wrap">
           <button
-            className={`admin-stage-tab ${activeStage === 'all' ? 'active' : ''}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              activeStage === 'all'
+                ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
+                : 'hover:bg-surface-container-low text-on-surface-variant'
+            }`}
             onClick={() => setActiveStage('all')}
           >
             All ({documents.length})
@@ -121,7 +149,11 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
           {stages.map(stage => (
             <button
               key={stage}
-              className={`admin-stage-tab ${activeStage === stage ? 'active' : ''}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                activeStage === stage
+                  ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
+                  : 'hover:bg-surface-container-low text-on-surface-variant'
+              }`}
               onClick={() => setActiveStage(stage)}
             >
               {STATUS_LABELS[stage]} ({stageCounts[stage]})
@@ -132,51 +164,83 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
 
       {/* Document List */}
       {filteredDocs.length === 0 ? (
-        <p className="admin-empty">
-          {documents.length === 0
-            ? 'No documents yet. Upload the first one.'
-            : 'No documents in this stage.'}
-        </p>
+        <div className="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-center">
+          <p className="text-xs font-bold text-on-surface-variant">
+            {documents.length === 0
+              ? 'No documents yet. Upload the first one.'
+              : 'No documents in this stage.'}
+          </p>
+        </div>
       ) : (
-        <div className="admin-doc-list">
-          {filteredDocs.map(doc => (
-            <div key={doc.docId} className="admin-doc-row">
-              <div className="admin-doc-icon">{getMimeIcon(doc.mimeType)}</div>
-              <div className="admin-doc-info">
-                <div className="admin-doc-name">{doc.fileName}</div>
-                <div className="admin-doc-meta">
-                  <StatusBadge status={doc.docType} />
-                  <span>{formatFileSize(doc.fileSize)}</span>
-                  <span>{formatDateTime(doc.uploadedAt)}</span>
-                  <span>{doc.uploadedBy}</span>
+        <div className="space-y-1">
+          {filteredDocs.map(doc => {
+            const { icon, bgClass, textClass } = getMimeIcon(doc.mimeType);
+            return (
+              <div
+                key={doc.docId}
+                className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group"
+              >
+                {/* File icon */}
+                <div className={`w-10 h-10 rounded flex items-center justify-center ${bgClass} ${textClass}`}>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {icon}
+                  </span>
                 </div>
-                {doc.description && <div className="admin-doc-desc">{doc.description}</div>}
-                {doc.tags && doc.tags.length > 0 && (
-                  <div className="admin-doc-tags">
-                    {doc.tags.map(tag => (
-                      <span key={tag} className="admin-doc-tag">{tag}</span>
-                    ))}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-on-surface truncate">{doc.fileName}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <StatusBadge status={doc.docType} />
+                    <span className="text-[10px] text-on-surface-variant">{formatFileSize(doc.fileSize)}</span>
+                    <span className="text-[10px] text-on-surface-variant">{formatDateTime(doc.uploadedAt)}</span>
+                    <span className="text-[10px] text-on-surface-variant">{doc.uploadedBy}</span>
                   </div>
-                )}
+                  {doc.description && (
+                    <p className="text-[10px] text-on-surface-variant mt-1 truncate">{doc.description}</p>
+                  )}
+                  {doc.tags && doc.tags.length > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {doc.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="text-[9px] font-medium bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  {(doc.mimeType.includes('pdf') || doc.mimeType.includes('image')) && doc.previewUrl && (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-container rounded-full p-1"
+                      onClick={() => setPreviewDoc(doc)}
+                    >
+                      <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
+                    </button>
+                  )}
+                  {doc.downloadUrl && (
+                    <a
+                      href={doc.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-container rounded-full p-1"
+                    >
+                      <span className="material-symbols-outlined text-on-surface-variant text-lg">download</span>
+                    </a>
+                  )}
+                  <DocMenu
+                    onDelete={() => handleDelete(doc)}
+                    deleting={deleting === doc.docId}
+                  />
+                </div>
               </div>
-              <div className="admin-doc-actions">
-                {(doc.mimeType.includes('pdf') || doc.mimeType.includes('image')) && doc.previewUrl && (
-                  <button className="admin-btn-sm admin-btn-outline" onClick={() => setPreviewDoc(doc)}>
-                    Preview
-                  </button>
-                )}
-                {doc.downloadUrl && (
-                  <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer" className="admin-btn-sm admin-btn-outline">
-                    Download
-                  </a>
-                )}
-                <DocMenu
-                  onDelete={() => handleDelete(doc)}
-                  deleting={deleting === doc.docId}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

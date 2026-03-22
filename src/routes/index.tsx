@@ -8,6 +8,7 @@ import { OrderDetailPage } from '../pages/admin/OrderDetailPage';
 import { CreateOrderPage } from '../pages/admin/CreateOrderPage';
 import { RFQListPage } from '../pages/admin/RFQListPage';
 import { RFQDetailPage } from '../pages/admin/RFQDetailPage';
+import { DashboardPage } from '../pages/admin/DashboardPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -98,7 +99,8 @@ export function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<AdminRoute />}>
-        <Route index element={<Navigate to="analytics" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="insights" element={<AdminInsightsListPage />} />
         <Route path="insights/new" element={<AdminInsightsFormPage />} />
         <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />

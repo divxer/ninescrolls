@@ -15,9 +15,9 @@ export function RFQDetailPage() {
   const [showDecline, setShowDecline] = useState(false);
   const [reverting, setReverting] = useState(false);
 
-  if (loading) return <div className="admin-loading">Loading RFQ...</div>;
-  if (error) return <div className="admin-error">Error: {error.message}</div>;
-  if (!rfq) return <div className="admin-error">RFQ not found.</div>;
+  if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant font-body">Loading RFQ...</div>;
+  if (error) return <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body">Error: {error.message}</div>;
+  if (!rfq) return <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body">RFQ not found.</div>;
 
   async function handleConvert(overrides: {
     productModel?: string;
@@ -56,106 +56,186 @@ export function RFQDetailPage() {
   }
 
   return (
-    <div className="admin-detail-page">
-      <div className="admin-detail-header">
-        <Link to="/admin/rfqs" className="admin-btn-sm admin-btn-outline">&larr; Back</Link>
-        <div className="admin-detail-title">
-          <div className="admin-detail-title-row">
-            <h1 style={{ margin: 0 }}>{rfq.referenceNumber || rfq.rfqId}</h1>
+    <div>
+      {/* Back link */}
+      <Link to="/admin/rfqs" className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors mb-6">
+        <span className="material-symbols-outlined text-lg">arrow_back</span>
+        Back to RFQs
+      </Link>
+
+      {/* Page title area */}
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="font-headline text-3xl font-bold text-primary">RFQ-{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</h1>
             <StatusBadge status={rfq.status} size="lg" />
           </div>
-          <div style={{ color: '#666', marginTop: '4px' }}>
-            Submitted {formatDateTime(rfq.submittedAt)}
-          </div>
+          <p className="text-sm text-on-surface-variant mt-1">Submitted {formatDateTime(rfq.submittedAt)}</p>
         </div>
-        {rfq.status === 'pending' && (
-          <div className="admin-detail-actions">
-            <button className="admin-btn-primary" onClick={() => setShowConvert(true)}>
-              Convert to Order
+        <div className="flex items-center gap-3">
+          {rfq.status === 'pending' && (
+            <>
+              <button
+                className="bg-secondary text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-secondary/20 hover:opacity-90 transition-opacity"
+                onClick={() => setShowConvert(true)}
+              >
+                <span className="material-symbols-outlined text-lg">swap_horiz</span>
+                Convert to Order
+              </button>
+              <button
+                className="border border-error text-error px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 hover:bg-error/5 transition-colors"
+                onClick={() => setShowDecline(true)}
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+                Decline
+              </button>
+            </>
+          )}
+          {rfq.status === 'declined' && (
+            <button
+              className="border border-outline-variant text-on-surface px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 hover:bg-surface-container-low transition-colors"
+              onClick={handleRevert}
+              disabled={reverting}
+            >
+              <span className="material-symbols-outlined text-lg">undo</span>
+              {reverting ? 'Reverting...' : 'Revert to Pending'}
             </button>
-            <button className="admin-btn-sm admin-btn-danger" onClick={() => setShowDecline(true)}>
-              Decline
-            </button>
-          </div>
-        )}
-        {rfq.status === 'declined' && (
-          <button className="admin-btn-sm admin-btn-outline" onClick={handleRevert} disabled={reverting}>
-            {reverting ? 'Reverting...' : 'Revert to Pending'}
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
+      {/* Linked Order */}
       {rfq.linkedOrderId && (
-        <div className="admin-panel" style={{ background: '#f0fdf4', borderColor: '#16a34a' }}>
-          Converted &rarr; Order{' '}
-          <Link to={`/admin/orders/${rfq.linkedOrderId}`} className="admin-btn-sm">
-            {rfq.linkedOrderId} - View Order
+        <div className="bg-surface-container-low p-4 rounded-lg mb-6 flex items-center gap-3">
+          <span className="material-symbols-outlined text-secondary">link</span>
+          <span className="text-sm text-on-surface">Converted to Order</span>
+          <Link
+            to={`/admin/orders/${rfq.linkedOrderId}`}
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            {rfq.linkedOrderId} — View Order
           </Link>
         </div>
       )}
 
-      <div className="admin-info-grid">
-        <div className="admin-panel">
-          <h3>Contact Information</h3>
-          <dl className="admin-dl">
-            <dt>Name</dt><dd>{rfq.name || '-'}</dd>
-            <dt>Email</dt><dd>{rfq.email || '-'}</dd>
-            <dt>Phone</dt><dd>{rfq.phone || '-'}</dd>
-            <dt>Institution</dt><dd>{rfq.institution || '-'}</dd>
-            <dt>Department</dt><dd>{rfq.department || '-'}</dd>
-            <dt>Role</dt><dd>{rfq.role || '-'}</dd>
-          </dl>
-        </div>
-
-        <div className="admin-panel">
-          <h3>Equipment Requirements</h3>
-          <dl className="admin-dl">
-            <dt>Category</dt><dd>{rfq.equipmentCategory || '-'}</dd>
-            <dt>Specific Model</dt><dd>{rfq.specificModel || '-'}</dd>
-            <dt>Quantity</dt><dd>{rfq.quantity || '-'}</dd>
-          </dl>
-          {rfq.applicationDescription && (
-            <>
-              <h4>Application Description</h4>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{rfq.applicationDescription}</p>
-            </>
-          )}
-          {rfq.keySpecifications && (
-            <>
-              <h4>Key Specifications</h4>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{rfq.keySpecifications}</p>
-            </>
-          )}
+      {/* Contact Information */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+        <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-lg">person</span>
+          Contact Information
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Name</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Email</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.email || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Phone</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.phone || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Institution</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.institution || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Department</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.department || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Role</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.role || '-'}</p>
+          </div>
         </div>
       </div>
 
+      {/* Equipment Requirements */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+        <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-lg">precision_manufacturing</span>
+          Equipment Requirements
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Category</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.equipmentCategory || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Specific Model</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.specificModel || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Quantity</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.quantity || '-'}</p>
+          </div>
+        </div>
+        {rfq.applicationDescription && (
+          <div className="mt-6">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Application Description</p>
+            <p className="text-sm text-on-surface whitespace-pre-wrap">{rfq.applicationDescription}</p>
+          </div>
+        )}
+        {rfq.keySpecifications && (
+          <div className="mt-6">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Key Specifications</p>
+            <p className="text-sm text-on-surface whitespace-pre-wrap">{rfq.keySpecifications}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Budgetary Quote */}
       {rfq.needsBudgetaryQuote && (
-        <div className="admin-panel" style={{ background: '#fffbeb', borderColor: '#f59e0b' }}>
-          <h3>Budgetary Quote Requested</h3>
-          <dl className="admin-dl">
-            <dt>Shipping Address</dt>
-            <dd>
+        <div className="bg-tertiary-fixed/10 border border-tertiary-fixed-dim/30 rounded-xl p-6 shadow-card mb-6">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-lg">request_quote</span>
+            Budgetary Quote Requested
+          </h3>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Shipping Address</p>
+            <p className="text-sm font-medium text-on-surface">
               {[rfq.shippingAddress, rfq.shippingCity, rfq.shippingState, rfq.shippingZipCode, rfq.shippingCountry]
                 .filter(Boolean).join(', ') || '-'}
-            </dd>
-          </dl>
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="admin-panel">
-        <h3>Project Context</h3>
-        <dl className="admin-dl" style={{ columns: 2 }}>
-          <dt>Budget Range</dt><dd>{rfq.budgetRange || '-'}</dd>
-          <dt>Timeline</dt><dd>{rfq.timeline || '-'}</dd>
-          <dt>Funding Status</dt><dd>{rfq.fundingStatus || '-'}</dd>
-          <dt>Referral Source</dt><dd>{rfq.referralSource || '-'}</dd>
-          <dt>Existing Equipment</dt><dd>{rfq.existingEquipment || '-'}</dd>
-        </dl>
+      {/* Project Context */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+        <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-lg">info</span>
+          Project Context
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Budget Range</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.budgetRange || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Timeline</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.timeline || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Funding Status</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.fundingStatus || '-'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Referral Source</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.referralSource || '-'}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Existing Equipment</p>
+            <p className="text-sm font-medium text-on-surface">{rfq.existingEquipment || '-'}</p>
+          </div>
+        </div>
         {rfq.additionalComments && (
-          <>
-            <h4>Additional Comments</h4>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{rfq.additionalComments}</p>
-          </>
+          <div className="mt-6">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Additional Comments</p>
+            <p className="text-sm text-on-surface whitespace-pre-wrap">{rfq.additionalComments}</p>
+          </div>
         )}
       </div>
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { PRODUCT_MODELS, type RfqSubmission } from '../../types/admin';
 
-// ── Model → default equipment name mapping ──────────────────────────────────
+// -- Model -> default equipment name mapping --
 const MODEL_NAME_DEFAULTS: Record<string, string> = {
   ICP: 'ICP-150 Inductively Coupled Plasma Etcher',
   PECVD: 'PECVD-150 Plasma Enhanced CVD System',
@@ -13,7 +13,7 @@ const MODEL_NAME_DEFAULTS: Record<string, string> = {
   'HDP-CVD': 'HDP-CVD-150 High Density Plasma CVD System',
 };
 
-// ── Fuzzy-match free-text to a PRODUCT_MODELS value ─────────────────────────
+// -- Fuzzy-match free-text to a PRODUCT_MODELS value --
 function detectModel(text: string): string {
   const lower = text.toLowerCase();
   const patterns: [RegExp, string][] = [
@@ -38,7 +38,7 @@ function resolveInitialModel(rfq: RfqSubmission): string {
   return detectModel(sources);
 }
 
-// ── Quote JSON sidecar type ─────────────────────────────────────────────────
+// -- Quote JSON sidecar type --
 interface QuoteMetadata {
   quoteNumber?: string;
   productModel?: string;
@@ -64,7 +64,7 @@ function formatCurrency(value: string): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(num);
 }
 
-// ── Component ───────────────────────────────────────────────────────────────
+// -- Component --
 interface ConvertToOrderDialogProps {
   open: boolean;
   onClose: () => void;
@@ -102,7 +102,7 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
     }
   }, [productModel, importedFile]);
 
-  // ── Import from quote JSON ──────────────────────────────────────────────
+  // -- Import from quote JSON --
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -183,31 +183,35 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
 
   return (
     <Modal open={open} onClose={onClose} title="Convert RFQ to Order">
-      <p className="convert-dialog-subtitle">
+      <p className="text-sm text-on-surface-variant mb-4">
         Creating order from RFQ {rfq.referenceNumber || rfq.rfqId}.
         Contact: {rfq.name} ({rfq.institution})
       </p>
 
       {/* Import from quote JSON */}
-      <div className="convert-dialog-import">
+      <div className="flex items-center gap-3 mb-5">
         <input
           ref={fileInputRef}
           type="file"
           accept=".json"
           onChange={handleImportFile}
-          style={{ display: 'none' }}
+          className="hidden"
         />
         <button
           type="button"
-          className="admin-btn-sm admin-btn-outline convert-dialog-import-btn"
+          className="bg-surface-container-low border border-outline-variant/30 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-surface-container transition-colors"
           onClick={() => fileInputRef.current?.click()}
         >
-          &#8593; Import from Quote
+          <span className="material-symbols-outlined text-sm align-middle mr-1">upload</span>
+          Import from Quote
         </button>
         {importedFile ? (
-          <span className="convert-dialog-import-success">&#10003; {importedFile}</span>
+          <span className="text-xs font-medium text-green-700">
+            <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
+            {importedFile}
+          </span>
         ) : (
-          <span className="form-hint" style={{ marginTop: 0 }}>
+          <span className="text-[10px] text-on-surface-variant">
             Select the .json file generated with your quote PDF
           </span>
         )}
@@ -215,37 +219,48 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
 
       {/* Collapsible RFQ context */}
       {(contextItems.length > 0 || shippingAddress || rfq.applicationDescription) && (
-        <div className="convert-dialog-context">
+        <div className="mb-5">
           <button
             type="button"
-            className="convert-dialog-context-toggle"
+            className="text-xs font-medium text-secondary cursor-pointer flex items-center gap-1"
             onClick={() => setShowContext(!showContext)}
           >
-            <span className="convert-dialog-context-arrow" data-open={showContext}>&#9654;</span>
+            <span
+              className="material-symbols-outlined text-sm transition-transform"
+              style={{ transform: showContext ? 'rotate(90deg)' : 'rotate(0deg)' }}
+            >
+              chevron_right
+            </span>
             RFQ Details
           </button>
           {showContext && (
-            <div className="convert-dialog-context-body">
+            <div className="mt-3">
               {contextItems.length > 0 && (
-                <div className="convert-dialog-context-grid">
+                <div className="grid grid-cols-2 gap-4 p-4 bg-surface-container-low rounded-lg mb-3">
                   {contextItems.map((item) => (
                     <div key={item.label}>
-                      <span className="convert-dialog-context-label">{item.label}</span>
-                      <span>{item.value}</span>
+                      <span className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                        {item.label}
+                      </span>
+                      <span className="text-sm text-on-surface">{String(item.value)}</span>
                     </div>
                   ))}
                 </div>
               )}
               {shippingAddress && (
-                <div className="convert-dialog-context-row">
-                  <span className="convert-dialog-context-label">Shipping</span>
-                  <span>{shippingAddress}</span>
+                <div className="p-4 bg-surface-container-low rounded-lg mb-3">
+                  <span className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                    Shipping
+                  </span>
+                  <span className="text-sm text-on-surface">{shippingAddress}</span>
                 </div>
               )}
               {rfq.applicationDescription && (
-                <div className="convert-dialog-context-row">
-                  <span className="convert-dialog-context-label">Application</span>
-                  <span className="convert-dialog-context-truncate">{rfq.applicationDescription}</span>
+                <div className="p-4 bg-surface-container-low rounded-lg">
+                  <span className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                    Application
+                  </span>
+                  <span className="text-sm text-on-surface line-clamp-3">{rfq.applicationDescription}</span>
                 </div>
               )}
             </div>
@@ -253,104 +268,140 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
         </div>
       )}
 
-      {error && <div className="admin-error">{error}</div>}
+      {error && (
+        <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm mb-4">
+          {error}
+        </div>
+      )}
 
-      <div className="form-field">
-        <label>Equipment Model <span className="form-required">*</span></label>
-        <select
-          value={productModel}
-          onChange={(e) => {
-            setProductModel(e.target.value);
-            setImportedFile('');
-            setTouched((t) => ({ ...t, productModel: true }));
-          }}
-        >
-          <option value="">Select model...</option>
-          {PRODUCT_MODELS.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        {validationErrors.productModel && (
-          <span className="form-error-inline">{validationErrors.productModel}</span>
-        )}
-      </div>
-
-      <div className="form-field">
-        <label>Equipment Name</label>
-        <input
-          type="text"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          placeholder={productModel && !MODEL_NAME_DEFAULTS[productModel]
-            ? 'Enter equipment name'
-            : 'Auto-filled from model selection'}
-        />
-        {!importedFile && productModel && MODEL_NAME_DEFAULTS[productModel] && productName === MODEL_NAME_DEFAULTS[productModel] && (
-          <span className="form-hint">Auto-filled from model. You can edit this.</span>
-        )}
-      </div>
-
-      <div className="form-field">
-        <label>Configuration</label>
-        <textarea
-          value={configuration}
-          onChange={(e) => setConfiguration(e.target.value)}
-          rows={4}
-          placeholder={'One item per line, e.g.:\n2x DC 1000W Targets\n1x RF 600W Source\nTMP + Dry Pump'}
-        />
-      </div>
-
-      <div className="admin-form-row">
-        <div className="form-field">
-          <label>Quote Amount</label>
-          <div className="form-input-prefix">
-            <span className="form-input-prefix-label">$</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={quoteAmountRaw}
-              onChange={(e) => {
-                setQuoteAmountRaw(e.target.value.replace(/[^0-9.]/g, ''));
-                setTouched((t) => ({ ...t, quoteAmount: true }));
-              }}
-              onBlur={() => {
-                if (quoteAmountRaw) setQuoteAmountRaw(formatCurrency(quoteAmountRaw));
-              }}
-              placeholder="0.00"
-            />
-          </div>
-          {validationErrors.quoteAmount && (
-            <span className="form-error-inline">{validationErrors.quoteAmount}</span>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Equipment Model <span className="text-error">*</span>
+          </label>
+          <select
+            value={productModel}
+            onChange={(e) => {
+              setProductModel(e.target.value);
+              setImportedFile('');
+              setTouched((t) => ({ ...t, productModel: true }));
+            }}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+          >
+            <option value="">Select model...</option>
+            {PRODUCT_MODELS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          {validationErrors.productModel && (
+            <span className="text-error text-[10px] mt-1 block">{validationErrors.productModel}</span>
           )}
         </div>
 
-        <div className="form-field">
-          <label>Quote Number</label>
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Equipment Name
+          </label>
           <input
             type="text"
-            value={quoteNumber}
-            onChange={(e) => setQuoteNumber(e.target.value)}
-            placeholder="e.g. NS-Q-2026-CSULB-001"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder={productModel && !MODEL_NAME_DEFAULTS[productModel]
+              ? 'Enter equipment name'
+              : 'Auto-filled from model selection'}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
           />
-          <span className="form-hint">Auto-generated. You can edit this.</span>
+          {!importedFile && productModel && MODEL_NAME_DEFAULTS[productModel] && productName === MODEL_NAME_DEFAULTS[productModel] && (
+            <span className="text-[10px] text-on-surface-variant mt-1 block">
+              Auto-filled from model. You can edit this.
+            </span>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Configuration
+          </label>
+          <textarea
+            value={configuration}
+            onChange={(e) => setConfiguration(e.target.value)}
+            rows={4}
+            placeholder={'One item per line, e.g.:\n2x DC 1000W Targets\n1x RF 600W Source\nTMP + Dry Pump'}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Quote Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={quoteAmountRaw}
+                onChange={(e) => {
+                  setQuoteAmountRaw(e.target.value.replace(/[^0-9.]/g, ''));
+                  setTouched((t) => ({ ...t, quoteAmount: true }));
+                }}
+                onBlur={() => {
+                  if (quoteAmountRaw) setQuoteAmountRaw(formatCurrency(quoteAmountRaw));
+                }}
+                placeholder="0.00"
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 pl-7 pr-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+              />
+            </div>
+            {validationErrors.quoteAmount && (
+              <span className="text-error text-[10px] mt-1 block">{validationErrors.quoteAmount}</span>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Quote Number
+            </label>
+            <input
+              type="text"
+              value={quoteNumber}
+              onChange={(e) => setQuoteNumber(e.target.value)}
+              placeholder="e.g. NS-Q-2026-CSULB-001"
+              className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+            />
+            <span className="text-[10px] text-on-surface-variant mt-1 block">
+              Auto-generated. You can edit this.
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Internal Notes <span className="text-[10px] font-normal normal-case tracking-normal text-on-surface-variant">(Optional)</span>
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="Any internal notes about this order..."
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
+          />
         </div>
       </div>
 
-      <div className="form-field">
-        <label>Internal Notes <span className="form-optional">(Optional)</span></label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          placeholder="Any internal notes about this order..."
-        />
-      </div>
-
-      <div className="convert-dialog-actions">
-        <button className="admin-btn-sm admin-btn-outline" onClick={onClose} disabled={submitting}>
+      <div className="flex gap-3 justify-end mt-6">
+        <button
+          className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors"
+          onClick={onClose}
+          disabled={submitting}
+        >
           Cancel
         </button>
-        <button className="admin-btn-primary" onClick={handleSubmit} disabled={submitting || !!validationErrors.productModel}>
+        <button
+          className="bg-secondary text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-secondary/90 transition-colors disabled:opacity-50"
+          onClick={handleSubmit}
+          disabled={submitting || !!validationErrors.productModel}
+        >
           {submitting ? 'Creating Order...' : 'Create Order'}
         </button>
       </div>
