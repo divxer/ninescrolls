@@ -1,34 +1,21 @@
 /**
- * Lambda: Regenerate sitemap.xml, news-sitemap.xml, feed.xml and upload to S3.
+ * Lambda: Serve sitemap.xml, news-sitemap.xml, feed.xml dynamically.
  *
- * Triggered via REST API POST /generate-sitemaps after publishing articles.
- * Queries AppSync GraphQL for all published articles, generates XML, uploads to S3.
+ * GET /seo?file=sitemap       → sitemap.xml
+ * GET /seo?file=news-sitemap  → news-sitemap.xml
+ * GET /seo?file=feed          → feed.xml
+ * GET /seo?file=indexnow      → IndexNow verification key
+ *
+ * Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
+ * Always real-time from DynamoDB — no redeploy needed.
  */
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT!;
 const GRAPHQL_API_KEY = process.env.GRAPHQL_API_KEY!;
-const HOSTING_BUCKET = process.env.HOSTING_BUCKET!;
 const BASE_URL = 'https://ninescrolls.com';
 const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
-
-const allowedOrigins = [
-  'https://ninescrolls.com',
-  'https://www.ninescrolls.com',
-  'http://localhost:5173',
-];
-
-const getCorsHeaders = (origin?: string) => {
-  const allowed = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Access-Control-Max-Age': '86400',
-  };
-};
 
 // ─── XML Helpers ────────────────────────────────────────────────────────────
 
@@ -44,14 +31,12 @@ function escapeXml(str: string): string {
 function toIsoDate(dateStr: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
-  return d.toISOString().split('T')[0];
+  return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
 }
 
 function toRfc822(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00Z');
-  if (isNaN(d.getTime())) return new Date().toUTCString();
-  return d.toUTCString();
+  return isNaN(d.getTime()) ? new Date().toUTCString() : d.toUTCString();
 }
 
 // ─── Static Pages ───────────────────────────────────────────────────────────
@@ -90,7 +75,7 @@ const STATIC_PAGES = [
   { loc: '/NineScrolls-Equipment-Guide.pdf', lastmod: '2025-09-08', changefreq: 'monthly', priority: '0.3' },
 ];
 
-// ─── GraphQL Query ──────────────────────────────────────────────────────────
+// ─── GraphQL ────────────────────────────────────────────────────────────────
 
 interface ArticleData {
   slug: string;
@@ -102,7 +87,7 @@ interface ArticleData {
 }
 
 const LIST_QUERY = `
-  query ListPosts($filter: ModelInsightsPostFilterInput, $limit: Int, $nextToken: String) {
+  query($filter: ModelInsightsPostFilterInput, $limit: Int, $nextToken: String) {
     listInsightsPosts(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items { slug title excerpt publishDate contentType updatedAt }
       nextToken
@@ -115,23 +100,15 @@ async function fetchPublishedPosts(): Promise<ArticleData[]> {
   let nextToken: string | null = null;
 
   do {
-    const response = await fetch(GRAPHQL_ENDPOINT, {
+    const res = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': GRAPHQL_API_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': GRAPHQL_API_KEY },
       body: JSON.stringify({
         query: LIST_QUERY,
-        variables: {
-          filter: { isDraft: { ne: true } },
-          limit: 100,
-          ...(nextToken ? { nextToken } : {}),
-        },
+        variables: { filter: { isDraft: { ne: true } }, limit: 100, ...(nextToken ? { nextToken } : {}) },
       }),
     });
-
-    const json: any = await response.json();
+    const json: any = await res.json();
     const page = json.data?.listInsightsPosts;
     if (!page) break;
 
@@ -154,11 +131,8 @@ async function fetchPublishedPosts(): Promise<ArticleData[]> {
 
 // ─── Generators ─────────────────────────────────────────────────────────────
 
-function generateMainSitemap(posts: ArticleData[]): string {
-  const lines = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-  ];
+function generateSitemap(posts: ArticleData[]): string {
+  const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'];
   for (const p of STATIC_PAGES) {
     lines.push(`  <url><loc>${BASE_URL}${p.loc}</loc><lastmod>${p.lastmod}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
   }
@@ -172,14 +146,10 @@ function generateMainSitemap(posts: ArticleData[]): string {
 }
 
 function generateNewsSitemap(newsPosts: ArticleData[]): string {
-  const twoDaysAgo = new Date();
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-  const recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= twoDaysAgo);
-
-  const lines = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">',
-  ];
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 2);
+  const recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= cutoff);
+  const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'];
   for (const post of recent) {
     lines.push(`  <url><loc>${BASE_URL}/news/${post.slug}</loc><news:news><news:publication><news:name>NineScrolls</news:name><news:language>en</news:language></news:publication><news:publication_date>${toIsoDate(post.publishDate)}</news:publication_date><news:title>${escapeXml(post.title)}</news:title></news:news></url>`);
   }
@@ -187,10 +157,9 @@ function generateNewsSitemap(newsPosts: ArticleData[]): string {
   return lines.join('\n') + '\n';
 }
 
-function generateRssFeed(newsPosts: ArticleData[]): string {
+function generateFeed(newsPosts: ArticleData[]): string {
   const sorted = [...newsPosts].sort((a, b) => b.publishDate.localeCompare(a.publishDate)).slice(0, 20);
-  const lastBuildDate = sorted.length > 0 ? toRfc822(sorted[0].publishDate) : new Date().toUTCString();
-
+  const lastBuild = sorted.length > 0 ? toRfc822(sorted[0].publishDate) : new Date().toUTCString();
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
@@ -199,7 +168,7 @@ function generateRssFeed(newsPosts: ArticleData[]): string {
     `    <link>${BASE_URL}/news</link>`,
     '    <description>Latest semiconductor equipment and plasma processing industry news from NineScrolls</description>',
     '    <language>en-us</language>',
-    `    <lastBuildDate>${lastBuildDate}</lastBuildDate>`,
+    `    <lastBuildDate>${lastBuild}</lastBuildDate>`,
     `    <atom:link href="${BASE_URL}/feed.xml" rel="self" type="application/rss+xml"/>`,
   ];
   for (const post of sorted) {
@@ -213,54 +182,55 @@ function generateRssFeed(newsPosts: ArticleData[]): string {
 // ─── Handler ────────────────────────────────────────────────────────────────
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-  const headers = getCorsHeaders(event.headers?.origin);
-
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,OPTIONS' }, body: '' };
+  }
+
+  const file = event.queryStringParameters?.file;
+
+  // IndexNow key — no DynamoDB query needed
+  if (file === 'indexnow') {
+    return { statusCode: 200, headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=86400' }, body: INDEXNOW_KEY };
+  }
+
+  if (!file || !['sitemap', 'news-sitemap', 'feed'].includes(file)) {
+    return { statusCode: 400, headers: { 'Content-Type': 'text/plain' }, body: 'file parameter required: sitemap, news-sitemap, feed, or indexnow' };
   }
 
   try {
     const posts = await fetchPublishedPosts();
     const newsPosts = posts.filter(p => p.contentType === 'news');
 
-    const files: Record<string, string> = {
-      'sitemap.xml': generateMainSitemap(posts),
-      'news-sitemap.xml': generateNewsSitemap(newsPosts),
-      'feed.xml': generateRssFeed(newsPosts),
-      [`${INDEXNOW_KEY}.txt`]: INDEXNOW_KEY,
-    };
+    let body: string;
+    let contentType: string;
 
-    const s3 = new S3Client({});
-    for (const [key, body] of Object.entries(files)) {
-      const ct = key.endsWith('.xml') ? 'application/xml' : 'text/plain';
-      await s3.send(new PutObjectCommand({
-        Bucket: HOSTING_BUCKET,
-        Key: key,
-        Body: body,
-        ContentType: `${ct}; charset=utf-8`,
-        CacheControl: 'public, max-age=3600',
-      }));
+    switch (file) {
+      case 'sitemap':
+        body = generateSitemap(posts);
+        contentType = 'application/xml';
+        break;
+      case 'news-sitemap':
+        body = generateNewsSitemap(newsPosts);
+        contentType = 'application/xml';
+        break;
+      case 'feed':
+        body = generateFeed(newsPosts);
+        contentType = 'application/rss+xml';
+        break;
+      default:
+        return { statusCode: 400, headers: { 'Content-Type': 'text/plain' }, body: 'invalid file' };
     }
-
-    const recentNews = (files['news-sitemap.xml'].match(/<url>/g) || []).length;
-    const feedItems = (files['feed.xml'].match(/<item>/g) || []).length;
 
     return {
       statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        sitemap: STATIC_PAGES.length + posts.length,
-        newsSitemap: recentNews,
-        feed: feedItems,
-      }),
+      headers: {
+        'Content-Type': `${contentType}; charset=utf-8`,
+        'Cache-Control': 'public, max-age=3600',
+      },
+      body,
     };
   } catch (err: any) {
-    console.error('Generate sitemaps failed:', err);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: err.message }),
-    };
+    console.error('Sitemap generation failed:', err);
+    return { statusCode: 500, headers: { 'Content-Type': 'text/plain' }, body: 'Internal error' };
   }
 };

@@ -558,27 +558,17 @@ if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
 }
 
 // =============================================================================
-// Lambda: Generate sitemaps — regenerates sitemap/RSS and uploads to S3
+// Lambda: Dynamic sitemaps — serves sitemap/RSS/feed in real-time from DynamoDB
+// Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
 // =============================================================================
 
-// Pass AppSync GraphQL endpoint and API key so Lambda can query articles
 const graphqlApi = backend.data.resources.graphqlApi;
 backend.generateSitemaps.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
 backend.generateSitemaps.addEnvironment('GRAPHQL_API_KEY', graphqlApi.apiKey || '');
 
-// Grant S3 write access to hosting bucket (bucket name set via HOSTING_BUCKET secret)
-backend.generateSitemaps.resources.lambda.addToRolePolicy(
-    new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['s3:PutObject'],
-        resources: ['arn:aws:s3:::*'], // Scoped by HOSTING_BUCKET at runtime
-    }),
-);
-
-// Expose via REST API
-const generateSitemapsResource = restApi.root.addResource('generate-sitemaps');
-generateSitemapsResource.addMethod('POST', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
-generateSitemapsResource.addMethod('OPTIONS', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
+const seoResource = restApi.root.addResource('seo');
+seoResource.addMethod('GET', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
+seoResource.addMethod('OPTIONS', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
 
 // Add outputs
 backend.addOutput({
