@@ -562,11 +562,9 @@ if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
 // Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
 // =============================================================================
 
-const graphqlApi = backend.data.resources.graphqlApi;
-const cfnApi = graphqlApi.node.findChild('Resource') as import('aws-cdk-lib/aws-appsync').CfnGraphQLApi;
-const cfnApiKey = graphqlApi.node.tryFindChild('DefaultApiKey')?.node.defaultChild as import('aws-cdk-lib/aws-appsync').CfnApiKey | undefined;
-backend.generateSitemaps.addEnvironment('GRAPHQL_ENDPOINT', `https://${cfnApi.attrGraphQlUrl}`);
-backend.generateSitemaps.addEnvironment('GRAPHQL_API_KEY', cfnApiKey?.attrApiKey || '');
+const insightsPostTable = backend.data.resources.tables['InsightsPost'];
+insightsPostTable.grantReadData(backend.generateSitemaps.resources.lambda);
+backend.generateSitemaps.addEnvironment('INSIGHTS_POST_TABLE', insightsPostTable.tableName);
 
 const seoResource = restApi.root.addResource('seo');
 seoResource.addMethod('GET', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
