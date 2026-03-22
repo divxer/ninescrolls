@@ -89,6 +89,8 @@ async function createNews(filePath: string) {
   cleaned = cleaned.replace(/<p><strong>NineScrolls\.com<\/strong>[^<]*<\/p>/i, '');
   // Remove the first <img> (will be shown as hero via imageUrl)
   cleaned = cleaned.replace(/<img[^>]*>/i, '');
+  // Remove inline Table of Contents (rendered via sidebar TOC component)
+  cleaned = cleaned.replace(/<h2[^>]*>\s*Table of Contents\s*<\/h2>\s*<ul>[\s\S]*?<\/ul>/i, '');
   const content = cleaned.trim();
 
   // Extract excerpt from body text, skipping TOC section
