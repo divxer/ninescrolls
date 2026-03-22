@@ -698,9 +698,9 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   const groups = new Map<string, AnalyticsEvent[]>();
 
   for (const e of events) {
-    // ── Inherit org metadata for events missing it (e.g. page_time_flush) ──
+    // ── Inherit org metadata for events missing org/orgName (e.g. page_time_flush) ──
     const vid = (e as Record<string, unknown>).visitorId as string;
-    const needsInheritance = !e.ip && !e.org && !e.orgName;
+    const needsInheritance = !e.org && !e.orgName;
     const inherited = (needsInheritance && vid) ? visitorOrgMap.get(vid) : undefined;
 
     // Effective org fields: event's own data → inherited → default
