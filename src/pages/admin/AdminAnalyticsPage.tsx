@@ -1179,9 +1179,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           <h1 className="org-detail-name">{org.orgName}</h1>
           <div className="org-detail-subtitle">
             {(() => {
-              const displayOrgType = (override?.found && override?.organizationType && override.organizationType !== 'unknown')
-                ? override.organizationType
-                : org.organizationType;
+              const displayOrgType = org.hasBot ? 'bot'
+                : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
+                  ? override.organizationType
+                  : org.organizationType;
               return displayOrgType ? (
                 <span className={`analytics-type-badge analytics-type-${displayOrgType}`}>
                   {displayOrgType}
@@ -1342,7 +1343,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
         // Use override data as fallback when page_view events lack AI data (pre-fix records)
         const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
-        const hasOverrideAI = !hasEventAI && override?.found && override?.source !== 'manual'
+        const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
           && override?.organizationType && override.organizationType !== 'unknown';
         const hasAI = hasEventAI || hasOverrideAI;
         const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
