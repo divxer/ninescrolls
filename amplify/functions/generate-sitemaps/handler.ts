@@ -181,20 +181,32 @@ function generateFeed(newsPosts: ArticleData[]): string {
 
 // ─── Handler ────────────────────────────────────────────────────────────────
 
+function response(statusCode: number, body: string, contentType = 'text/plain', cacheMaxAge = 3600) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': `${contentType}; charset=utf-8`,
+      'Cache-Control': `public, max-age=${cacheMaxAge}`,
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,OPTIONS',
+    },
+    body,
+  };
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,OPTIONS' }, body: '' };
+    return response(200, '');
   }
 
   const file = event.queryStringParameters?.file;
 
-  // IndexNow key — no DynamoDB query needed
   if (file === 'indexnow') {
-    return { statusCode: 200, headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=86400' }, body: INDEXNOW_KEY };
+    return response(200, INDEXNOW_KEY, 'text/plain', 86400);
   }
 
   if (!file || !['sitemap', 'news-sitemap', 'feed'].includes(file)) {
-    return { statusCode: 400, headers: { 'Content-Type': 'text/plain' }, body: 'file parameter required: sitemap, news-sitemap, feed, or indexnow' };
+    return response(400, 'file parameter required: sitemap, news-sitemap, feed, or indexnow');
   }
 
   try {
@@ -218,19 +230,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         contentType = 'application/rss+xml';
         break;
       default:
-        return { statusCode: 400, headers: { 'Content-Type': 'text/plain' }, body: 'invalid file' };
+        return response(400, 'invalid file');
     }
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': `${contentType}; charset=utf-8`,
-        'Cache-Control': 'public, max-age=3600',
-      },
-      body,
-    };
+    return response(200, body, contentType);
   } catch (err: any) {
     console.error('Sitemap generation failed:', err);
-    return { statusCode: 500, headers: { 'Content-Type': 'text/plain' }, body: 'Internal error' };
+    return response(500, 'Internal error');
   }
 };
