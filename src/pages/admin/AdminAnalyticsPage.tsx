@@ -988,18 +988,24 @@ function VisitorMap({
 
   if (markers.length === 0) {
     return (
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
-        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Visitor Map</h2>
+      <section className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+        <div className="flex justify-between items-center mb-6">
+          <h4 className="font-headline font-bold">Visitor Map</h4>
+          <span className="text-xs font-medium text-on-surface-variant uppercase tracking-widest">Geographic Density</span>
+        </div>
         <div className="text-center py-12 text-on-surface-variant">
           No geo-coordinates available yet. New events will appear on the map.
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
-      <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Visitor Map</h2>
+    <section className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+      <div className="flex justify-between items-center mb-6">
+        <h4 className="font-headline font-bold">Visitor Map</h4>
+        <span className="text-xs font-medium text-on-surface-variant uppercase tracking-widest">Geographic Density</span>
+      </div>
       <ComposableMap
         projectionConfig={{ rotate: [-10, 0, 0], scale: 147 }}
         style={{ width: '100%', height: 'auto' }}
@@ -1057,13 +1063,13 @@ function VisitorMap({
           {tooltip.isTargetCustomer && <div className="text-secondary font-bold text-[10px] uppercase mt-1">Target Customer</div>}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
 // ─── Channel Summary Chart (Bento Grid) ─────────────────────────────────────
 
-function ChannelSummaryChart({ events, onChannelClick }: { events: AnalyticsEvent[]; onChannelClick?: (channel: string) => void }) {
+function ChannelSummaryChart({ events, activeChannel, onChannelClick }: { events: AnalyticsEvent[]; activeChannel?: string; onChannelClick?: (channel: string) => void }) {
   const channelTotals = useMemo(() => {
     const channelMap = new Map<string, Set<string>>();
     for (const e of events) {
@@ -1106,22 +1112,24 @@ function ChannelSummaryChart({ events, onChannelClick }: { events: AnalyticsEven
     <div className="flex items-end justify-between gap-4" style={{ height: BAR_HEIGHT + 32 }}>
       {channelTotals.map((ch) => {
         const barH = Math.max(Math.round((ch.count / maxCount) * BAR_HEIGHT), 4);
+        const isActive = activeChannel === ch.channel;
+        const isDimmed = activeChannel && activeChannel !== 'all' && !isActive;
         return (
           <div
             key={ch.channel}
             className="flex-1 flex flex-col items-center justify-end gap-3 group cursor-pointer"
-            style={{ height: '100%' }}
+            style={{ height: '100%', opacity: isDimmed ? 0.35 : 1, transition: 'opacity 0.2s' }}
             onClick={() => onChannelClick?.(ch.channel)}
           >
             <div
-              className="w-full bg-secondary-fixed-dim rounded-t-sm group-hover:bg-secondary transition-colors relative"
+              className={`w-full rounded-t-sm transition-colors relative ${isActive ? 'bg-secondary' : 'bg-secondary/20 group-hover:bg-secondary'}`}
               style={{ height: barH }}
             >
-              <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              <span className={`absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold transition-opacity whitespace-nowrap ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 {ch.count}
               </span>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant whitespace-nowrap">
+            <span className="text-[9px] font-bold uppercase tracking-tight text-on-surface-variant text-center whitespace-nowrap">
               {ch.label}
             </span>
           </div>
@@ -1966,6 +1974,7 @@ export function AdminAnalyticsPage() {
   const [showBots, setShowBots] = useState(false);
   const [showPrivateIPs, setShowPrivateIPs] = useState(false);
   const [hideSelf, setHideSelf] = useState(true);
+  const [exclusionsOpen, setExclusionsOpen] = useState(false);
   const [sortCol, setSortCol] = useState<SortColumn>('lastVisit');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRecord | null>(null);
@@ -1977,6 +1986,7 @@ export function AdminAnalyticsPage() {
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
   const [keywordSectionOpen, setKeywordSectionOpen] = useState(false);
+  const keywordSectionRef = useRef<HTMLElement>(null);
   const [pageAnalyticsTab, setPageAnalyticsTab] = useState<PageAnalyticsTab>('topPages');
   const [pageAnalyticsSectionOpen, setPageAnalyticsSectionOpen] = useState(true);
   const [trendsSectionOpen, setTrendsSectionOpen] = useState(true);
@@ -2141,10 +2151,21 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // Auto-refresh every 30s
+  // Auto-refresh every 5 min with countdown
+  const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
+  const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL);
   useEffect(() => {
-    if (!autoRefresh) return;
-    const timer = setInterval(() => setRefreshKey((k) => k + 1), 30000);
+    if (!autoRefresh) { setRefreshCountdown(AUTO_REFRESH_INTERVAL); return; }
+    setRefreshCountdown(AUTO_REFRESH_INTERVAL);
+    const timer = setInterval(() => {
+      setRefreshCountdown((prev) => {
+        if (prev <= 1) {
+          setRefreshKey((k) => k + 1);
+          return AUTO_REFRESH_INTERVAL;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, [autoRefresh]);
 
@@ -2486,41 +2507,57 @@ export function AdminAnalyticsPage() {
     <div className="space-y-8">
 
       {/* ─── Hero Header ──────────────────────────────────────────────────── */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-secondary">Precision Insights</span>
-          <h1 className="font-headline text-4xl font-black text-primary tracking-tighter mt-1">Intelligence Ledger</h1>
+      <section className="sticky top-16 -mx-8 px-8 py-6 z-30 bg-surface/90 backdrop-blur-md border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-end gap-6 transition-all mb-2">
+        <div className="space-y-2">
+          <span className="text-secondary font-bold text-xs tracking-widest uppercase">Precision Insights</span>
+          <h2 className="text-4xl font-black text-primary tracking-tight font-headline">Intelligence Ledger</h2>
         </div>
-        <div className="flex items-center gap-2">
-          {DATE_RANGES.filter(r => r.value !== 'custom').map((r) => (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-surface-container-low p-1 rounded-xl">
+            {DATE_RANGES.filter(r => r.value !== 'custom').map((r) => (
+              <button
+                key={r.value}
+                className={`px-4 py-2 text-xs font-medium rounded-lg border-none transition-colors ${dateRange === r.value
+                  ? 'bg-primary text-on-primary font-bold shadow-sm'
+                  : 'text-on-surface-variant'}`}
+                onClick={() => setDateRange(r.value)}
+              >
+                {r.label}
+              </button>
+            ))}
             <button
-              key={r.value}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-colors ${dateRange === r.value
-                ? 'border-primary bg-primary text-on-primary'
-                : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
-              onClick={() => setDateRange(r.value)}
-            >
-              {r.label}
-            </button>
-          ))}
+              className={`material-symbols-outlined px-3 border-none rounded-lg transition-colors ${dateRange === 'custom'
+                ? 'bg-primary text-on-primary'
+                : 'text-on-surface-variant'}`}
+              onClick={() => setDateRange('custom')}
+              title="Custom date range"
+            >calendar_today</button>
+          </div>
+          {/* Auto-refresh toggle + countdown */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Auto Refresh</span>
+            <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="toggle-switch" />
+          </label>
+          {autoRefresh && (
+            <span className="text-[10px] font-medium text-on-surface-variant tabular-nums">
+              Next refresh in: {String(Math.floor(refreshCountdown / 60)).padStart(2, '0')}:{String(refreshCountdown % 60).padStart(2, '0')}
+            </span>
+          )}
           <button
-            className={`p-2 rounded-lg border transition-colors ${dateRange === 'custom'
-              ? 'border-primary bg-primary text-on-primary'
-              : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
-            onClick={() => setDateRange('custom')}
-            title="Custom date range"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold border border-outline-variant/30 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors uppercase tracking-wider bg-transparent cursor-pointer"
+            onClick={() => setRefreshKey((k) => k + 1)}
+            disabled={refreshing}
           >
-            <span className="material-symbols-outlined text-lg">calendar_today</span>
+            <span className={`material-symbols-outlined text-sm ${refreshing ? 'animate-spin' : ''}`}>sync</span>Refresh
           </button>
-          <span className={`material-symbols-outlined text-lg text-on-surface-variant transition-opacity ${refreshing ? 'opacity-100 animate-spin' : 'opacity-0'}`} style={{ fontVariationSettings: "'FILL' 1" }}>progress_activity</span>
           {dateRange === 'custom' && (
-            <>
+            <div className="flex items-center gap-2">
               <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-xs" />
               <span className="text-on-surface-variant text-xs">to</span>
               <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
                 className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-xs" />
-            </>
+            </div>
           )}
         </div>
       </section>
@@ -2539,63 +2576,123 @@ export function AdminAnalyticsPage() {
         ]).map(({ key, label }) => (
           <button
             key={key}
-            className={`px-4 py-1.5 rounded-full text-xs whitespace-nowrap border transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-xs whitespace-nowrap border-none transition-colors ${
               kpiFilter === key
-                ? 'border-primary bg-primary text-on-primary font-semibold'
-                : 'border-outline-variant/30 text-on-surface-variant font-medium hover:border-outline-variant/60 hover:text-on-surface'
+                ? 'bg-primary text-on-primary font-semibold'
+                : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container'
             }`}
             onClick={() => setKpiFilter(kpiFilter === key && key !== 'all' ? 'all' : key)}
           >
             {label}
           </button>
         ))}
+        {/* Data Exclusions dropdown */}
+        <div className="relative">
+          <button
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border-none bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors whitespace-nowrap cursor-pointer"
+            onClick={() => setExclusionsOpen(!exclusionsOpen)}
+          >
+            <span className="material-symbols-outlined text-sm">tune</span>
+            Data Exclusions
+            <span className="material-symbols-outlined text-sm">{exclusionsOpen ? 'expand_less' : 'expand_more'}</span>
+          </button>
+          {exclusionsOpen && (
+            <div className="absolute top-full left-0 mt-2 bg-surface-container-lowest rounded-xl shadow-float p-5 z-20 min-w-[250px] space-y-4">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-on-surface">Hide Internal Traffic</span>
+                <input type="checkbox" checked={hideSelf} onChange={(e) => setHideSelf(e.target.checked)} className="toggle-switch" />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-on-surface">Hide Search Engines</span>
+                <input type="checkbox" checked={!showBots} onChange={(e) => setShowBots(!e.target.checked)} className="toggle-switch" />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-on-surface">Hide Private IPs</span>
+                <input type="checkbox" checked={!showPrivateIPs} onChange={(e) => setShowPrivateIPs(!e.target.checked)} className="toggle-switch" />
+              </label>
+            </div>
+          )}
+        </div>
         {dateRange !== 'all' && kpis.visitorTrend !== 0 && (
-          <span className={`text-xs font-semibold ml-auto shrink-0 ${kpis.visitorTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`ml-auto text-xs font-bold ${kpis.visitorTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs prev
-          </span>
+          </div>
         )}
       </div>
+      {/* ─── Active Exclusions Tags ────────────────────────────────────────── */}
+      {(!showBots || !showPrivateIPs || hideSelf) && (
+        <div className="flex flex-wrap items-center gap-2 py-1.5">
+          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mr-1">Active Exclusions:</span>
+          {!showBots && (
+            <button
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              onClick={() => setShowBots(true)}
+            >
+              Search Engines
+              <span className="material-symbols-outlined text-[12px]">close</span>
+            </button>
+          )}
+          {!showPrivateIPs && (
+            <button
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              onClick={() => setShowPrivateIPs(true)}
+            >
+              Private IPs
+              <span className="material-symbols-outlined text-[12px]">close</span>
+            </button>
+          )}
+          {hideSelf && (
+            <button
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              onClick={() => setHideSelf(false)}
+            >
+              Internal Traffic
+              <span className="material-symbols-outlined text-[12px]">close</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ─── Bento Grid ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Hero KPI Card — col-span-4 */}
-        <div className="lg:col-span-4 group relative overflow-hidden bg-primary-container rounded-xl p-8">
-          <div className="relative z-10">
-            <p className="text-on-primary-container/80 text-sm font-medium mb-1">Unique Visitors</p>
-            <h3 className="font-headline text-6xl font-black text-white tracking-tighter mb-4">{kpis.uniqueVisitors}</h3>
-            <div className="flex items-center gap-2 text-primary-fixed-dim font-bold text-sm">
-              {dateRange !== 'all' && kpis.visitorTrend !== 0 ? (
-                <>
-                  <span className="material-symbols-outlined text-sm">
-                    {kpis.visitorTrend > 0 ? 'trending_up' : 'trending_down'}
-                  </span>
-                  {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs Previous Period
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-sm">flag</span>
-                  {kpis.targetCustomers} target customers
-                </>
-              )}
-            </div>
+        <div className="lg:col-span-4 bg-primary p-8 rounded-xl relative overflow-hidden text-white">
+          <p className="text-white/80 text-sm font-medium mb-1">Unique Visitors</p>
+          <h3 className="text-7xl font-black font-headline tracking-tighter mb-4">{kpis.uniqueVisitors}</h3>
+          <div className="flex items-center gap-2 text-white/90 font-bold text-sm">
+            {dateRange !== 'all' && kpis.visitorTrend !== 0 ? (
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  {kpis.visitorTrend > 0 ? 'trending_up' : 'trending_down'}
+                </span>
+                {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs Previous Period
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-sm">flag</span>
+                {kpis.targetCustomers} target customers
+              </>
+            )}
           </div>
-          <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-            <span className="material-symbols-outlined text-[180px]" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
+          <div className="absolute right-4 bottom-4 w-32 h-12 opacity-50">
+            <svg className="w-full h-full" viewBox="0 0 100 40">
+              <path d="M0 35 Q 25 35, 30 20 T 60 25 T 90 5 T 100 15" fill="none" stroke="white" strokeWidth="2" />
+            </svg>
           </div>
         </div>
 
         {/* Traffic Channel Attribution — col-span-8 */}
-        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-8">
+        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10">
           <div className="flex justify-between items-center mb-10">
             <h4 className="font-headline font-bold text-on-surface">Traffic Channel Attribution</h4>
             <span className="text-xs font-medium text-on-surface-variant">Volume / Sessions</span>
           </div>
-          <ChannelSummaryChart events={filteredEvents} onChannelClick={(ch) => { setChannelFilter(ch); setFiltersOpen(true); }} />
+          <ChannelSummaryChart events={filteredEvents} activeChannel={channelFilter} onChannelClick={(ch) => { setChannelFilter(channelFilter === ch ? 'all' : ch); setFiltersOpen(true); }} />
         </div>
 
         {/* Organization Ledger — col-span-9 */}
-        <div className="lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden">
+        <div className="lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/10">
           {/* Header: title + search + export */}
           <div className="p-6 border-b border-surface-container">
             <div className="flex justify-between items-center mb-4">
@@ -2674,61 +2771,61 @@ export function AdminAnalyticsPage() {
           {/* Desktop table */}
           <div className="overflow-x-auto">
             <table className="hidden md:table w-full text-left">
-              <thead>
-                <tr className="bg-surface-container-low">
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('orgName')}>
+              <thead className="bg-surface-container-low border-b border-surface-container">
+                <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                  <th className="pl-5 pr-2 py-4 cursor-pointer" onClick={() => handleSort('orgName')}>
                     Name{sortIndicator('orgName')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('organizationType')}>
+                  <th className="px-3 py-4 cursor-pointer" onClick={() => handleSort('organizationType')}>
                     Type{sortIndicator('organizationType')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
+                  <th className="px-3 py-4 text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
                     Visits{sortIndicator('totalEvents')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('engagement')}>
+                  <th className="px-3 py-4 cursor-pointer" onClick={() => handleSort('engagement')}>
                     Engagement{sortIndicator('engagement')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalTimeOnSite')}>
+                  <th className="px-3 py-4 cursor-pointer whitespace-nowrap" onClick={() => handleSort('totalTimeOnSite')}>
                     Active Time{sortIndicator('totalTimeOnSite')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
+                  <th className="px-3 py-4 text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
                     Events{sortIndicator('totalEvents')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('lastVisit')}>
+                  <th className="px-3 py-4 cursor-pointer whitespace-nowrap" onClick={() => handleSort('lastVisit')}>
                     Last Visit{sortIndicator('lastVisit')}
                   </th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Target</th>
+                  <th className="pl-3 pr-5 py-4 text-right">Target</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-low">
                 {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 15)).map((org) => (
                   <tr
                     key={org.key}
-                    className={`hover:bg-primary-fixed/30 transition-colors cursor-pointer ${org.isTargetCustomer ? 'bg-secondary/5' : ''}`}
+                    className="hover:bg-surface-container-low/50 transition-colors cursor-pointer"
                     onClick={() => selectOrg(org)}
                   >
-                    <td className="px-5 py-4">
+                    <td className="pl-5 pr-2 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
+                        <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
                           {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                         </div>
-                        <span className="text-sm font-semibold truncate max-w-[160px]">{org.orgName}</span>
+                        <span className="font-semibold truncate max-w-[150px]">{org.orgName}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-xs text-on-surface-variant">{org.organizationType || '--'}</td>
-                    <td className="px-5 py-4 text-xs text-center font-medium">{org.totalEvents.toLocaleString()}</td>
-                    <td className="px-5 py-4">
-                      <div className="w-20 bg-surface-container-high rounded-full h-1.5">
+                    <td className="px-3 py-4 text-on-surface-variant text-xs">{org.organizationType || '--'}</td>
+                    <td className="px-3 py-4 text-center">{org.totalEvents.toLocaleString()}</td>
+                    <td className="px-3 py-4">
+                      <div className="w-20 bg-surface-container-high rounded-full h-1 relative">
                         <div
-                          className="bg-secondary h-full rounded-full"
-                          style={{ width: `${Math.min(Math.max(org.maxBehaviorScore * 100, 3), 100)}%` }}
+                          className="absolute left-0 w-1 h-1 bg-secondary rounded-full -top-[1.5px]"
+                          style={{ left: `${Math.min(Math.max(org.maxBehaviorScore * 100, 0), 100)}%` }}
                         />
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-xs text-center text-on-surface-variant">{formatDuration(org.totalTimeOnSite)}</td>
-                    <td className="px-5 py-4 text-xs text-center font-medium">{org.totalEvents}</td>
-                    <td className="px-5 py-4 text-xs text-on-surface-variant">{formatRelativeTime(org.lastVisit)}</td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-3 py-4 text-xs">{formatDuration(org.totalTimeOnSite)}</td>
+                    <td className="px-3 py-4 text-center">{org.totalEvents}</td>
+                    <td className="px-3 py-4 text-xs text-on-surface-variant whitespace-nowrap">{formatRelativeTime(org.lastVisit)}</td>
+                    <td className="pl-3 pr-5 py-4 text-right">
                       {org.isTargetCustomer ? (
                         <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span>
                       ) : (
@@ -2773,9 +2870,9 @@ export function AdminAnalyticsPage() {
           </div>
           {/* Show all / collapse toggle */}
           {sortedOrgs.length > 15 && (
-            <div className="text-center py-3 border-t border-outline-variant/5">
+            <div className="p-4 text-center border-t border-surface-container">
               <button
-                className="text-xs text-secondary font-medium hover:underline border-none bg-transparent cursor-pointer"
+                className="text-xs font-bold text-secondary hover:underline border-none bg-transparent cursor-pointer"
                 onClick={() => setShowAllOrgs(!showAllOrgs)}
               >
                 {showAllOrgs ? 'Show less' : `Show all ${sortedOrgs.length} organizations`}
@@ -2785,31 +2882,48 @@ export function AdminAnalyticsPage() {
         </div>
 
         {/* Top Keywords Sidebar — col-span-3 */}
-        <div className="lg:col-span-3 bg-surface-container-low p-8 rounded-xl">
-          <h4 className="font-headline font-bold mb-8 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>key</span>
-            Top Keywords
-          </h4>
-          <div className="flex flex-col gap-6">
-            {displayedKeywords.slice(0, 5).map((kw, i) => (
-              <div key={`${kw.source}-${kw.keyword}-${i}`} className="flex justify-between items-center group">
-                <span className="text-sm font-medium text-on-surface hover:text-secondary cursor-pointer transition-colors">
-                  {kw.keyword}
-                </span>
-                <span className="text-xs font-semibold text-on-surface-variant">
-                  {kw.count >= 1000 ? `${(kw.count / 1000).toFixed(1)}k` : kw.count}
-                </span>
-              </div>
-            ))}
-            {displayedKeywords.length === 0 && (
-              <div className="text-xs text-on-surface-variant/50 text-center py-4">No keyword data</div>
-            )}
+        <div className="lg:col-span-3 space-y-6">
+          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10">
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="font-headline font-bold">Top Keywords</h4>
+              <span className="material-symbols-outlined text-on-surface-variant text-sm">key</span>
+            </div>
+            <div className="space-y-4">
+              {displayedKeywords.slice(0, 5).map((kw, i) => {
+                const maxCount = displayedKeywords[0]?.count || 1;
+                return (
+                  <div key={`${kw.source}-${kw.keyword}-${i}`} className="flex flex-col gap-1.5 group cursor-pointer">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-primary">{kw.keyword}</span>
+                      <span className="text-[10px] font-bold text-on-surface-variant">
+                        {kw.count >= 1000 ? `${(kw.count / 1000).toFixed(1)}k` : kw.count}
+                      </span>
+                    </div>
+                    <div className="w-full bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-secondary h-full group-hover:bg-primary transition-all" style={{ width: `${Math.max((kw.count / maxCount) * 100, 5)}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {displayedKeywords.length === 0 && (
+                <div className="text-xs text-on-surface-variant/50 text-center py-4">No keyword data</div>
+              )}
+            </div>
+            <button
+              className="w-full mt-6 py-2 border border-outline-variant/30 rounded-lg text-[10px] font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors uppercase tracking-widest bg-transparent cursor-pointer"
+              onClick={() => {
+                setKeywordSectionOpen(true);
+                setTimeout(() => keywordSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+              }}
+            >
+              View Search Queries
+            </button>
           </div>
           {kpis.hotLeads > 0 && (
-            <div className="mt-8 p-4 bg-surface-container-lowest rounded-lg border-l-4 border-secondary">
-              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Trend Alert</p>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
-                {kpis.hotLeads} hot lead{kpis.hotLeads !== 1 ? 's' : ''} identified this period.
+            <div className="bg-primary/5 p-6 rounded-xl border border-primary/10">
+              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Insight AI</p>
+              <p className="text-xs text-primary/80 leading-relaxed font-medium italic">
+                "{kpis.hotLeads} hot lead{kpis.hotLeads !== 1 ? 's' : ''} identified this period with high conversion potential."
               </p>
             </div>
           )}
@@ -2817,39 +2931,10 @@ export function AdminAnalyticsPage() {
 
       </div>{/* End Bento Grid */}
 
-      {/* ─── Advanced Controls (collapsed) ────────────────────────────────── */}
-      <details className="mt-2">
-        <summary className="text-xs font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer select-none py-2">
-          Advanced Controls
-        </summary>
-        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={showBots} onChange={(e) => setShowBots(e.target.checked)} className="accent-secondary" />
-            <span className="text-xs font-medium text-on-surface-variant">Bots ({botCount})</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={showPrivateIPs} onChange={(e) => setShowPrivateIPs(e.target.checked)} className="accent-secondary" />
-            <span className="text-xs font-medium text-on-surface-variant">Private IPs ({privateIPCount})</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={hideSelf} onChange={(e) => setHideSelf(e.target.checked)} className="accent-secondary" />
-            <span className="text-xs font-medium text-on-surface-variant">Hide Me ({selfCount})</span>
-          </label>
-          <div className="flex items-center gap-3 ml-auto">
-            <button
-              className={`p-2 rounded-lg border-none bg-transparent text-on-surface-variant hover:bg-surface-container-low cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
-              onClick={() => setRefreshKey((k) => k + 1)}
-              title="Refresh data" disabled={refreshing}
-            >
-              <span className="material-symbols-outlined text-lg">refresh</span>
-            </button>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="accent-secondary" />
-              <span className="text-xs font-medium text-on-surface-variant">Auto 30s</span>
-            </label>
-          </div>
-        </div>
-      </details>
+      {/* Click-away handler for exclusions dropdown */}
+      {exclusionsOpen && (
+        <div className="fixed inset-0 z-10" onClick={() => setExclusionsOpen(false)} />
+      )}
 
       {/* ─── World Map ────────────────────────────────────────────────────── */}
       <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} resetKey={kpiFilter} />
@@ -2867,16 +2952,15 @@ export function AdminAnalyticsPage() {
 
       {/* ─── Search Keywords Section ────────────────────────────────────────── */}
       {allKeywords.length > 0 && (
-        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
-          <h2
-            className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
+        <section ref={keywordSectionRef} className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+          <div
+            className="flex items-center gap-2 mb-8 cursor-pointer select-none"
             onClick={() => setKeywordSectionOpen(!keywordSectionOpen)}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
           >
-            <span className="text-on-surface-variant text-xs">{keywordSectionOpen ? '▼' : '▶'}</span>
-            {' '}Search Keywords
-            <span className="bg-surface-container px-2 py-0.5 rounded text-[10px] font-bold text-on-surface-variant">{allKeywords.length}</span>
-          </h2>
+            <span className="material-symbols-outlined text-on-surface-variant">search</span>
+            <h4 className="font-headline font-bold">Search Keywords <span className="ml-2 text-xs font-normal text-on-surface-variant">{allKeywords.length}</span></h4>
+            <span className="material-symbols-outlined text-on-surface-variant text-sm ml-1">{keywordSectionOpen ? 'expand_more' : 'chevron_right'}</span>
+          </div>
 
           {keywordSectionOpen && (
             <>
@@ -2885,7 +2969,7 @@ export function AdminAnalyticsPage() {
                 {([['all', 'All'], ['external', 'External'], ['internal', 'Internal']] as const).map(([val, label]) => (
                   <button
                     key={val}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${keywordSourceFilter === val ? 'border-primary bg-primary text-on-primary font-bold' : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
+                    className={`px-4 py-1.5 text-[10px] font-medium rounded border-none transition-colors ${keywordSourceFilter === val ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-low text-on-surface-variant'}`}
                     onClick={() => setKeywordSourceFilter(val)}
                   >
                     {label}
@@ -3040,34 +3124,29 @@ export function AdminAnalyticsPage() {
               </div>
             </>
           )}
-        </div>
+        </section>
       )}
 
       {/* ─── Page Analytics Section ───────────────────────────────────────── */}
       {pageStats.length > 0 && (
-        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
-          <h2
-            className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
-            onClick={() => setPageAnalyticsSectionOpen(!pageAnalyticsSectionOpen)}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
-          >
-            <span className="text-on-surface-variant text-xs">{pageAnalyticsSectionOpen ? '▼' : '▶'}</span>
-            {' '}Page Analytics
-            <span className="bg-surface-container px-2 py-0.5 rounded text-[10px] font-bold text-on-surface-variant">{pageStats.length}</span>
-          </h2>
+        <section className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+          <div className="flex items-center gap-2 mb-8 cursor-pointer select-none" onClick={() => setPageAnalyticsSectionOpen(!pageAnalyticsSectionOpen)}>
+            <span className="material-symbols-outlined text-on-surface-variant">description</span>
+            <h4 className="font-headline font-bold">Page Analytics <span className="ml-2 text-xs font-normal text-on-surface-variant">{pageStats.length}</span></h4>
+            <span className="material-symbols-outlined text-on-surface-variant text-sm ml-1">{pageAnalyticsSectionOpen ? 'expand_more' : 'chevron_right'}</span>
+          </div>
 
           {pageAnalyticsSectionOpen && (
             <>
               {/* Tab navigation */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-6">
                 {([['topPages', 'Top Pages'], ['products', 'Products'], ['landingPages', 'Landing Pages']] as const).map(([val, label]) => (
                   <button
                     key={val}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${pageAnalyticsTab === val ? 'border-primary bg-primary text-on-primary font-bold' : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
+                    className={`px-4 py-1.5 text-[10px] font-medium rounded border-none transition-colors ${pageAnalyticsTab === val ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-low text-on-surface-variant'}`}
                     onClick={() => setPageAnalyticsTab(val)}
                   >
-                    {label}
-                    <span className="text-[10px] text-on-surface-variant ml-1">
+                    {label} <span className="ml-1 opacity-50">
                       {val === 'topPages' ? pageStats.length : val === 'products' ? productStats.length : landingPageStats.length}
                     </span>
                   </button>
@@ -3080,48 +3159,48 @@ export function AdminAnalyticsPage() {
                 const maxViews = top10[0]?.views || 1;
                 return (
                   <>
-                    <div className="space-y-2">
-                      {top10.map((p) => (
-                        <div key={p.pathname} className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-on-surface w-36 truncate" title={p.pathname}>
-                            {p.pathname.length > 30 ? p.pathname.slice(0, 30) + '...' : p.pathname}
+                    <div className="space-y-4 mb-8">
+                      {top10.slice(0, 5).map((p) => (
+                        <div key={p.pathname} className="flex items-center gap-4 group">
+                          <span className="text-[10px] font-medium text-on-surface-variant w-24 truncate" title={p.pathname}>
+                            {p.pathname}
                           </span>
-                          <div className="flex-1 bg-surface-container-high rounded-full h-2">
+                          <div className="flex-1 h-3 bg-surface-container-low rounded-sm overflow-hidden">
                             <div
-                              className="bg-secondary h-full rounded-full"
+                              className="h-full bg-secondary"
                               style={{ width: `${Math.max((p.views / maxViews) * 100, 4)}%` }}
                             />
                           </div>
-                          <span className="text-[10px] font-bold text-on-surface-variant w-8 text-right">{p.views}</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant">{p.views}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden" style={{ marginTop: '1rem' }}>
-                      <table className="w-full text-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[11px]">
                         <thead>
-                          <tr>
-                            <th>Page</th>
-                            <th>Title</th>
-                            <th>Views</th>
-                            <th>Visitors</th>
-                            <th>Avg Time</th>
-                            <th>Scroll</th>
-                            <th>Organizations</th>
+                          <tr className="text-on-surface-variant border-b border-surface-container">
+                            <th className="px-2 py-3 text-left font-bold uppercase tracking-tighter">Page</th>
+                            <th className="px-2 py-3 text-left font-bold uppercase tracking-tighter">Title</th>
+                            <th className="px-2 py-3 text-center font-bold uppercase tracking-tighter">Views</th>
+                            <th className="px-2 py-3 text-center font-bold uppercase tracking-tighter">Visitors</th>
+                            <th className="px-2 py-3 text-center font-bold uppercase tracking-tighter">Avg Time</th>
+                            <th className="px-2 py-3 text-center font-bold uppercase tracking-tighter">Scroll</th>
+                            <th className="px-2 py-3 text-left font-bold uppercase tracking-tighter">Organizations</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-surface-container-low">
                           {pageStats.slice(0, 50).map(p => (
-                            <tr key={p.pathname} className={p.isProductPage ? 'bg-primary-fixed/10' : ''}>
-                              <td className="text-sm font-medium text-on-surface max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={p.pathname}>{p.pathname}</td>
-                              <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#666' }}>
+                            <tr key={p.pathname} className="hover:bg-surface-container-low/30">
+                              <td className="px-2 py-3 text-on-surface-variant">{p.pathname}</td>
+                              <td className="px-2 py-3 font-medium max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
                                 {p.pageTitle || '—'}
                               </td>
-                              <td style={{ textAlign: 'center' }}>{p.views}</td>
-                              <td style={{ textAlign: 'center' }}>{p.uniqueVisitors}</td>
-                              <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <td className="px-2 py-3 text-center font-bold">{p.views}</td>
+                              <td className="px-2 py-3 text-center">{p.uniqueVisitors}</td>
+                              <td className="px-2 py-3 text-center whitespace-nowrap">
                                 {p.avgActiveSeconds > 0 ? formatDuration(p.avgActiveSeconds) : '—'}
                               </td>
-                              <td style={{ textAlign: 'center', whiteSpace: 'nowrap', color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
+                              <td className="px-2 py-3 text-center font-bold" style={{ color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
                                 {p.avgScrollDepth > 0 ? `${p.avgScrollDepth}%` : '—'}
                               </td>
                               <td>
@@ -3390,7 +3469,7 @@ export function AdminAnalyticsPage() {
               )}
             </>
           )}
-        </div>
+        </section>
       )}
 
     </div>

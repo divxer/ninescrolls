@@ -138,18 +138,15 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
   const dailyChannels = useMemo(() => aggregateDailyChannels(filteredEvents), [filteredEvents]);
 
   return (
-    <div className="mb-8">
-      <h3
-        className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 cursor-pointer select-none py-3 mb-4"
-        onClick={onToggle}
-      >
-        <span className="material-symbols-outlined text-on-surface-variant text-base">{isOpen ? 'expand_more' : 'chevron_right'}</span>
-        Trends
-      </h3>
-
-      {isOpen && (
-        <>
-          <div className="flex gap-2 mb-6">
+    <section className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex items-center gap-2 cursor-pointer select-none" onClick={onToggle}>
+          <span className="material-symbols-outlined text-on-surface-variant">trending_up</span>
+          <h4 className="font-headline font-bold">Trends</h4>
+          <span className="material-symbols-outlined text-on-surface-variant text-sm ml-1">{isOpen ? 'expand_more' : 'chevron_right'}</span>
+        </div>
+        {isOpen && (
+          <div className="flex bg-surface-container-low p-1 rounded-lg">
             {([
               ['visitors', 'Daily Visitors'],
               ['targets', 'Target Customers'],
@@ -158,15 +155,19 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
             ] as const).map(([key, label]) => (
               <button
                 key={key}
-                className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${activeChart === key ? 'bg-primary text-on-primary font-bold' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}
+                className={`px-4 py-1.5 text-[10px] font-medium rounded border-none transition-colors ${activeChart === key ? 'bg-primary text-on-primary font-bold' : 'text-on-surface-variant'}`}
                 onClick={() => setActiveChart(key)}
               >
                 {label}
               </button>
             ))}
           </div>
+        )}
+      </div>
 
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+      {isOpen && (
+        <>
+          <div>
             {activeChart === 'visitors' && (
               <>
                 <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Daily Unique Visitors</div>
@@ -262,6 +263,6 @@ export function AdminTrendsSection({ filteredEvents, organizations, isOpen, onTo
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
