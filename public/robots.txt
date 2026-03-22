@@ -39,3 +39,4 @@ Allow: /
 
 # Sitemap location
 Sitemap: https://ninescrolls.com/sitemap.xml
+Sitemap: https://ninescrolls.com/news-sitemap.xml
