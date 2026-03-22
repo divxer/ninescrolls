@@ -1241,7 +1241,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-2">
-        <button className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface font-medium mb-4" onClick={onBack}>&larr; Back to list</button>
+        <button className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface font-medium mb-4 border-none bg-transparent cursor-pointer" onClick={onBack}>&larr; Back to list</button>
       </div>
 
       <div className="flex items-start justify-between gap-4">
@@ -2610,7 +2610,7 @@ export function AdminAnalyticsPage() {
           <div className="p-6 border-b border-surface-container flex justify-between items-center">
             <h4 className="font-headline font-bold">Organization Ledger</h4>
             <button
-              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors border-none bg-transparent cursor-pointer"
               onClick={exportCSV}
               title="Export CSV"
             >
@@ -2767,7 +2767,7 @@ export function AdminAnalyticsPage() {
           </label>
           <div className="flex items-center gap-3 ml-auto">
             <button
-              className={`p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low ${refreshing ? 'animate-spin' : ''}`}
+              className={`p-2 rounded-lg border-none bg-transparent text-on-surface-variant hover:bg-surface-container-low cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
               onClick={() => setRefreshKey((k) => k + 1)}
               title="Refresh data" disabled={refreshing}
             >
@@ -2887,7 +2887,7 @@ export function AdminAnalyticsPage() {
                                 {(isExpanded ? kw.organizations : kw.organizations.slice(0, 2)).map(org => (
                                   <button
                                     key={org}
-                                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
+                                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer border-none"
                                     onClick={() => {
                                       const match = organizations.find(o => o.orgName === org);
                                       if (match) selectOrg(match);
@@ -2899,7 +2899,7 @@ export function AdminAnalyticsPage() {
                                 ))}
                                 {kw.organizations.length > 2 && (
                                   <button
-                                    className="text-[10px] text-on-surface-variant font-medium"
+                                    className="text-[10px] text-on-surface-variant font-medium border-none bg-transparent cursor-pointer"
                                     onClick={() => setExpandedKeywordOrgs(prev => {
                                       const next = new Set(prev);
                                       if (next.has(kwKey)) next.delete(kwKey);
@@ -2950,7 +2950,7 @@ export function AdminAnalyticsPage() {
                         {kw.organizations.slice(0, 3).map(org => (
                           <button
                             key={org}
-                            className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
+                            className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer border-none"
                             onClick={() => {
                               const match = organizations.find(o => o.orgName === org);
                               if (match) selectOrg(match);
@@ -3059,7 +3059,7 @@ export function AdminAnalyticsPage() {
                                   {(expandedPageOrgs.has(p.pathname) ? p.organizations : p.organizations.slice(0, 2)).map(org => (
                                     <button
                                       key={org}
-                                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
+                                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer border-none"
                                       onClick={() => {
                                         const match = organizations.find(o => o.orgName === org);
                                         if (match) selectOrg(match);
@@ -3071,7 +3071,7 @@ export function AdminAnalyticsPage() {
                                   ))}
                                   {p.organizations.length > 2 && (
                                     <button
-                                      className="text-[10px] text-on-surface-variant font-medium"
+                                      className="text-[10px] text-on-surface-variant font-medium border-none bg-transparent cursor-pointer"
                                       onClick={() => setExpandedPageOrgs(prev => {
                                         const next = new Set(prev);
                                         if (next.has(p.pathname)) next.delete(p.pathname);
@@ -3127,7 +3127,7 @@ export function AdminAnalyticsPage() {
                               {p.organizations.slice(0, 3).map(org => (
                                 <button
                                   key={org}
-                                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
+                                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer border-none"
                                   onClick={() => {
                                     const match = organizations.find(o => o.orgName === org);
                                     if (match) selectOrg(match);
@@ -3339,7 +3339,7 @@ export function AdminAnalyticsPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <button className="bg-surface-container-lowest border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-container-low" onClick={exportCSV}>
+        <button className="bg-transparent border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface cursor-pointer" onClick={exportCSV}>
           Export CSV
         </button>
       </div>
@@ -3361,7 +3361,7 @@ export function AdminAnalyticsPage() {
           )}
           {activeFilterCount > 0 && (
             <button
-              className="text-xs text-secondary font-medium ml-auto hover:underline cursor-pointer"
+              className="text-xs text-secondary font-medium ml-auto hover:underline cursor-pointer border-none bg-transparent"
               onClick={(e) => {
                 e.stopPropagation();
                 setChannelFilter('all');
@@ -3442,7 +3442,7 @@ export function AdminAnalyticsPage() {
         {kpiFilter !== 'all' && (
           <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2">
             Filtered
-            <button className="text-xs text-secondary hover:underline cursor-pointer" onClick={() => setKpiFilter('all')}>
+            <button className="text-xs text-secondary hover:underline cursor-pointer border-none bg-transparent" onClick={() => setKpiFilter('all')}>
               &times;
             </button>
           </span>
