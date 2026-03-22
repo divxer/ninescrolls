@@ -78,72 +78,114 @@ export function UploadDocumentDialog({ open, onClose, orderId, currentStatus, on
 
   return (
     <Modal open={open} onClose={onClose} title="Upload Document">
-      {error && <div className="admin-error">{error}</div>}
-      {progress && <div style={{ color: '#2563eb', marginBottom: '12px' }}>{progress}</div>}
+      {error && (
+        <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm mb-4">
+          {error}
+        </div>
+      )}
+      {progress && (
+        <p className="text-secondary text-sm mb-3">{progress}</p>
+      )}
 
       {/* Drop zone */}
       <div
-        className="admin-dropzone"
+        className="w-full py-8 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-secondary transition-all mb-5"
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
       >
         {file ? (
-          <div>
-            <strong>{file.name}</strong>
-            <div style={{ fontSize: '0.85em', color: '#666' }}>
-              {(file.size / 1024).toFixed(1)} KB - {file.type}
-            </div>
+          <div className="p-4 bg-surface-container-low rounded-lg text-center">
+            <p className="text-xs font-bold text-on-surface">{file.name}</p>
+            <p className="text-[10px] text-on-surface-variant mt-1">
+              {(file.size / 1024).toFixed(1)} KB &middot; {file.type}
+            </p>
           </div>
         ) : (
-          <div>
-            <div>Drag & drop a file here, or click to browse</div>
-            <div style={{ fontSize: '0.85em', color: '#999' }}>PDF, images, Word, Excel up to 50MB</div>
-          </div>
+          <>
+            <span className="material-symbols-outlined text-outline-variant text-4xl mb-2">cloud_upload</span>
+            <p className="text-xs font-bold text-on-surface">Drag & drop a file here, or click to browse</p>
+            <p className="text-[10px] text-on-surface-variant mt-1">PDF, images, Word, Excel up to 50MB</p>
+          </>
         )}
         <input
           ref={fileInputRef}
           type="file"
           onChange={handleFileSelect}
-          style={{ display: 'none' }}
+          className="hidden"
         />
       </div>
 
-      <div className="form-field">
-        <label>Stage</label>
-        <select value={stage} onChange={(e) => setStage(e.target.value)}
-          className="admin-filter-select" style={{ width: '100%' }}>
-          {FORWARD_PATH.map(s => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </select>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Stage
+          </label>
+          <select
+            value={stage}
+            onChange={(e) => setStage(e.target.value)}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+          >
+            {FORWARD_PATH.map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Document Type
+          </label>
+          <select
+            value={docType}
+            onChange={(e) => setDocType(e.target.value as DocumentType)}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+          >
+            {DOCUMENT_TYPES.map(dt => (
+              <option key={dt} value={dt}>{DOC_TYPE_LABELS[dt]}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Description
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Tags (comma separated)
+          </label>
+          <input
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="e.g. final, signed"
+            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+          />
+        </div>
       </div>
 
-      <div className="form-field">
-        <label>Document Type</label>
-        <select value={docType} onChange={(e) => setDocType(e.target.value as DocumentType)}
-          className="admin-filter-select" style={{ width: '100%' }}>
-          {DOCUMENT_TYPES.map(dt => (
-            <option key={dt} value={dt}>{DOC_TYPE_LABELS[dt]}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-field">
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-          rows={2} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
-      </div>
-
-      <div className="form-field">
-        <label>Tags (comma separated)</label>
-        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)}
-          placeholder="e.g. final, signed" className="admin-search-input" style={{ width: '100%' }} />
-      </div>
-
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
-        <button className="admin-btn-sm admin-btn-outline" onClick={onClose} disabled={uploading}>Cancel</button>
-        <button className="admin-btn-primary" onClick={handleUpload} disabled={uploading || !file}>
+      <div className="flex gap-3 justify-end mt-6">
+        <button
+          className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors"
+          onClick={onClose}
+          disabled={uploading}
+        >
+          Cancel
+        </button>
+        <button
+          className="bg-secondary text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-secondary/90 transition-colors disabled:opacity-50"
+          onClick={handleUpload}
+          disabled={uploading || !file}
+        >
           {uploading ? 'Uploading...' : 'Upload'}
         </button>
       </div>

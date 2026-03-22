@@ -72,131 +72,261 @@ export function CreateOrderPage() {
   }
 
   return (
-    <div className="admin-detail-page">
-      <div className="admin-detail-header">
-        <Link to="/admin/orders" className="admin-btn-sm admin-btn-outline">&larr; Back</Link>
-        <h1 style={{ margin: 0 }}>Create New Order</h1>
-      </div>
+    <div className="max-w-4xl">
+      {/* Back button */}
+      <Link
+        to="/admin/orders"
+        className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface mb-4 transition-colors"
+      >
+        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+        Back to Orders
+      </Link>
 
-      {error && <div className="admin-error">{error}</div>}
+      {/* Page title */}
+      <h1 className="font-headline text-3xl font-bold tracking-tight text-primary mb-8">
+        Create New Order
+      </h1>
 
-      <form onSubmit={handleSubmit}>
+      {error && (
+        <div className="bg-error-container text-on-error-container p-4 rounded-lg text-sm mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px]">error</span>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Equipment */}
-        <div className="admin-panel">
-          <h3>Equipment</h3>
-          <div className="admin-form-row">
-            <div className="form-field">
-              <label>Product Model *</label>
-              <select value={productModel} onChange={(e) => setProductModel(e.target.value)} className="admin-filter-select" style={{ width: '100%' }}>
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[18px]">precision_manufacturing</span>
+            Equipment
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Product Model<span className="text-error ml-0.5">*</span>
+              </label>
+              <select
+                value={productModel}
+                onChange={(e) => setProductModel(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              >
                 <option value="">Select...</option>
                 {PRODUCT_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div className="form-field">
-              <label>Product Name</label>
-              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)}
-                placeholder="Auto-fill based on model" className="admin-search-input" style={{ width: '100%' }} />
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Product Name
+              </label>
+              <input
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                placeholder="Auto-fill based on model"
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
           </div>
-          <div className="form-field">
-            <label>Configuration</label>
-            <textarea value={configuration} onChange={(e) => setConfiguration(e.target.value)}
-              rows={2} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+          <div className="mt-4">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Configuration
+            </label>
+            <textarea
+              value={configuration}
+              onChange={(e) => setConfiguration(e.target.value)}
+              className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none min-h-[80px] resize-none"
+              rows={2}
+            />
           </div>
-          <div className="form-field">
-            <label>Quote Amount ($)</label>
-            <input type="number" value={quoteAmount} onChange={(e) => setQuoteAmount(e.target.value)}
-              placeholder="Optional" className="admin-search-input" style={{ width: '200px' }} />
+          <div className="mt-4 max-w-[200px]">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Quote Amount ($)
+            </label>
+            <input
+              type="number"
+              value={quoteAmount}
+              onChange={(e) => setQuoteAmount(e.target.value)}
+              placeholder="Optional"
+              className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+            />
           </div>
         </div>
 
         {/* Section 2: Customer */}
-        <div className="admin-panel">
-          <h3>Customer</h3>
-          <div className="admin-form-row">
-            <div className="form-field">
-              <label>Institution *</label>
-              <input type="text" value={institution} onChange={(e) => setInstitution(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} required />
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[18px]">apartment</span>
+            Customer
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Institution<span className="text-error ml-0.5">*</span>
+              </label>
+              <input
+                type="text"
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+                required
+              />
             </div>
-            <div className="form-field">
-              <label>Department</label>
-              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} />
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Department
+              </label>
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
           </div>
         </div>
 
         {/* Section 3: Primary Contact */}
-        <div className="admin-panel">
-          <h3>Primary Contact</h3>
-          <div className="admin-form-row">
-            <div className="form-field">
-              <label>Name *</label>
-              <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} required />
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[18px]">person</span>
+            Primary Contact
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Name<span className="text-error ml-0.5">*</span>
+              </label>
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+                required
+              />
             </div>
-            <div className="form-field">
-              <label>Email *</label>
-              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} required />
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Email<span className="text-error ml-0.5">*</span>
+              </label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+                required
+              />
             </div>
           </div>
-          <div className="admin-form-row">
-            <div className="form-field">
-              <label>Phone</label>
-              <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} />
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
-            <div className="form-field">
-              <label>Role *</label>
-              <select value={contactRole} onChange={(e) => setContactRole(e.target.value as ContactRole)}
-                className="admin-filter-select" style={{ width: '100%' }}>
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Role<span className="text-error ml-0.5">*</span>
+              </label>
+              <select
+                value={contactRole}
+                onChange={(e) => setContactRole(e.target.value as ContactRole)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              >
                 {CONTACT_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
-            <div className="form-field">
-              <label>Department</label>
-              <input type="text" value={contactDept} onChange={(e) => setContactDept(e.target.value)}
-                className="admin-search-input" style={{ width: '100%' }} />
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Department
+              </label>
+              <input
+                type="text"
+                value={contactDept}
+                onChange={(e) => setContactDept(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
           </div>
         </div>
 
         {/* Section 4: Dates */}
-        <div className="admin-panel">
-          <h3>Dates</h3>
-          <div className="admin-form-row">
-            <div className="form-field">
-              <label>Quote Date</label>
-              <input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)}
-                className="admin-search-input" style={{ width: '200px' }} />
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+            Dates
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Quote Date
+              </label>
+              <input
+                type="date"
+                value={quoteDate}
+                onChange={(e) => setQuoteDate(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
-            <div className="form-field">
-              <label>Estimated Delivery</label>
-              <input type="date" value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)}
-                className="admin-search-input" style={{ width: '200px' }} />
+            <div>
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Estimated Delivery
+              </label>
+              <input
+                type="date"
+                value={estimatedDelivery}
+                onChange={(e) => setEstimatedDelivery(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
             </div>
           </div>
         </div>
 
         {/* Section 5: Reference */}
-        <div className="admin-panel">
-          <h3>Reference</h3>
-          <div className="form-field">
-            <label>Quote Number</label>
-            <input type="text" value={quoteNumber} onChange={(e) => setQuoteNumber(e.target.value)}
-              placeholder="e.g. NS-Q-2026-003" className="admin-search-input" style={{ width: '300px' }} />
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[18px]">tag</span>
+            Reference
+          </h3>
+          <div className="max-w-[300px]">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Quote Number
+            </label>
+            <input
+              type="text"
+              value={quoteNumber}
+              onChange={(e) => setQuoteNumber(e.target.value)}
+              placeholder="e.g. NS-Q-2026-003"
+              className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+            />
           </div>
-          <div className="form-field">
-            <label>Internal Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              rows={3} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+          <div className="mt-4">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              Internal Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none min-h-[80px] resize-none"
+            />
           </div>
         </div>
 
-        <div style={{ marginTop: '16px' }}>
-          <button type="submit" className="admin-btn-primary" disabled={submitting}>
+        {/* Submit */}
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="bg-secondary text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-secondary/20 disabled:opacity-50"
+            disabled={submitting}
+          >
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
             {submitting ? 'Creating...' : 'Create Order'}
           </button>
         </div>

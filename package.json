@@ -20,6 +20,7 @@
     "@aws-sdk/lib-dynamodb": "^3.758.0",
     "@sendgrid/mail": "^8.1.0",
     "@stripe/stripe-js": "^8.6.4",
+    "@tailwindcss/vite": "^4.2.2",
     "@tinymce/tinymce-react": "^4.3.2",
     "@types/react-lazy-load-image-component": "^1.6.4",
     "aws-amplify": "^6.0.17",
@@ -36,6 +37,7 @@
     "recharts": "^3.8.0",
     "sharp": "^0.33.5",
     "stripe": "^20.2.0",
+    "tailwindcss": "^4.2.2",
     "tinymce": "^6.8.6"
   },
   "devDependencies": {

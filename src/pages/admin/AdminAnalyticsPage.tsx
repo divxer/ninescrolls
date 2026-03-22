@@ -988,9 +988,9 @@ function VisitorMap({
 
   if (markers.length === 0) {
     return (
-      <div className="analytics-map-container">
-        <h2 className="analytics-section-header">Visitor Map</h2>
-        <div className="analytics-map-empty">
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
+        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Visitor Map</h2>
+        <div className="text-center py-12 text-on-surface-variant">
           No geo-coordinates available yet. New events will appear on the map.
         </div>
       </div>
@@ -998,8 +998,8 @@ function VisitorMap({
   }
 
   return (
-    <div className="analytics-map-container">
-      <h2 className="analytics-section-header">Visitor Map</h2>
+    <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
+      <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Visitor Map</h2>
       <ComposableMap
         projectionConfig={{ rotate: [-10, 0, 0], scale: 147 }}
         style={{ width: '100%', height: 'auto' }}
@@ -1045,7 +1045,7 @@ function VisitorMap({
       </ComposableMap>
       {tooltip && (
         <div
-          className="analytics-map-tooltip"
+          className="bg-surface-container-lowest rounded-lg shadow-lg p-3 text-xs fixed z-50 pointer-events-none"
           style={{ left: tooltipPos.x + 12, top: tooltipPos.y - 40 }}
         >
           <strong>{tooltip.orgName}</strong>
@@ -1054,9 +1054,79 @@ function VisitorMap({
           </div>
           {tooltip.leadTier && <div>Lead Tier: {tooltip.leadTier}</div>}
           <div>{tooltip.totalEvents} events</div>
-          {tooltip.isTargetCustomer && <div className="analytics-tooltip-target">Target Customer</div>}
+          {tooltip.isTargetCustomer && <div className="text-secondary font-bold text-[10px] uppercase mt-1">Target Customer</div>}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Channel Summary Chart (Bento Grid) ─────────────────────────────────────
+
+function ChannelSummaryChart({ events, onChannelClick }: { events: AnalyticsEvent[]; onChannelClick?: (channel: string) => void }) {
+  const channelTotals = useMemo(() => {
+    const channelMap = new Map<string, Set<string>>();
+    for (const e of events) {
+      if (e.eventType !== 'page_view') continue;
+      const channel = resolveTrafficChannel(e);
+      const vid = (e as Record<string, unknown>).visitorId as string || e.ip || '';
+      if (!channelMap.has(channel)) channelMap.set(channel, new Set());
+      channelMap.get(channel)!.add(vid);
+    }
+    const CHANNEL_LABELS: Record<string, string> = {
+      direct: 'Direct', organic_search: 'Organic Search', referral: 'Referral',
+      paid_search: 'Paid Search', organic_social: 'Social', email: 'Email',
+      ai_referral: 'AI Referral', paid_social: 'Paid Social',
+    };
+    const CHANNEL_COLORS: Record<string, string> = {
+      direct: '#9e9e9e', organic_search: '#4caf50', referral: '#009688',
+      paid_search: '#e91e63', organic_social: '#2196f3', email: '#9c27b0',
+      ai_referral: '#4527a0', paid_social: '#ff9800',
+    };
+    return Array.from(channelMap.entries())
+      .map(([channel, visitors]) => ({
+        channel,
+        label: CHANNEL_LABELS[channel] || channel,
+        count: visitors.size,
+        color: CHANNEL_COLORS[channel] || '#9e9e9e',
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [events]);
+
+  const maxCount = channelTotals[0]?.count || 1;
+
+  if (channelTotals.length === 0) {
+    return <div className="text-sm text-on-surface-variant text-center py-8">No traffic data</div>;
+  }
+
+  const BAR_HEIGHT = 128; // px, matches design h-32
+
+  return (
+    <div className="flex items-end justify-between gap-4" style={{ height: BAR_HEIGHT + 32 }}>
+      {channelTotals.map((ch) => {
+        const barH = Math.max(Math.round((ch.count / maxCount) * BAR_HEIGHT), 4);
+        return (
+          <div
+            key={ch.channel}
+            className="flex-1 flex flex-col items-center justify-end gap-3 group cursor-pointer"
+            style={{ height: '100%' }}
+            onClick={() => onChannelClick?.(ch.channel)}
+          >
+            <div
+              className="w-full bg-secondary-fixed-dim rounded-t-sm group-hover:bg-secondary transition-colors relative"
+              style={{ height: barH }}
+            >
+              <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {ch.count}
+              </span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant whitespace-nowrap">
+              {ch.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1168,33 +1238,33 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   }
 
   return (
-    <div className="org-detail">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="org-detail-header">
-        <button className="org-detail-back" onClick={onBack}>&larr; Back to list</button>
+      <div className="mb-2">
+        <button className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface font-medium mb-4" onClick={onBack}>&larr; Back to list</button>
       </div>
 
-      <div className="org-detail-title-row">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="org-detail-name">{org.orgName}</h1>
-          <div className="org-detail-subtitle">
+          <h1 className="font-headline text-3xl font-bold text-primary">{org.orgName}</h1>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             {(() => {
               const displayOrgType = org.hasBot ? 'bot'
                 : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
                   ? override.organizationType
                   : org.organizationType;
               return displayOrgType ? (
-                <span className={`analytics-type-badge analytics-type-${displayOrgType}`}>
+                <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
                   {displayOrgType}
                 </span>
               ) : null;
             })()}
-            <span className="org-detail-location">
+            <span className="text-sm text-on-surface-variant">
               {[org.city, org.region, org.country].filter(Boolean).join(', ')}
             </span>
             {org.leadTier && (
               <span
-                className={`analytics-tier analytics-tier-${org.leadTier}`}
+                className="px-2 py-0.5 rounded text-xs font-bold bg-secondary/10 text-secondary"
                 style={override?.found && override?.source === 'manual' && !override?.isTargetCustomer
                   ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}
               >
@@ -1202,13 +1272,13 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               </span>
             )}
             {org.lifecycleStage && (
-              <span className={`lifecycle-badge lifecycle-${org.lifecycleStage}`}>
+              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-tertiary-fixed text-on-tertiary-fixed-variant">
                 {org.lifecycleStage}
               </span>
             )}
             {uniqueIPs.length > 0 && (
               <span
-                className="org-detail-ip"
+                className="text-xs text-on-surface-variant font-mono cursor-pointer hover:text-on-surface"
                 onClick={() => setShowFullIP((v) => !v)}
                 title={showFullIP ? 'Click to mask' : 'Click to reveal'}
               >
@@ -1218,118 +1288,118 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               </span>
             )}
             {uniqueISPs.length > 0 && (
-              <span className="org-detail-isp">{uniqueISPs.join(', ')}</span>
+              <span className="text-xs text-on-surface-variant">{uniqueISPs.join(', ')}</span>
             )}
             {org.companyType && (
-              <span className="org-detail-company-type" title="IPinfo company classification">
-                📡 {org.companyType}
+              <span className="text-xs text-on-surface-variant" title="IPinfo company classification">
+                {org.companyType}
               </span>
             )}
             {org.isISPVisitor && (
-              <span style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'monospace' }}>
+              <span className="text-xs text-on-surface-variant font-mono">
                 ID: {org.key.substring(0, 8)}
               </span>
             )}
             {uniqueVisitors.filter((v) => !v.includes('.') && !(org.isISPVisitor && v === org.key)).length > 0 && (
-              <span style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'monospace' }}>
+              <span className="text-xs text-on-surface-variant font-mono">
                 {uniqueVisitors.filter((v) => !v.includes('.') && !(org.isISPVisitor && v === org.key)).map((v) => v.slice(0, 8)).join(', ')}
               </span>
             )}
           </div>
         </div>
         {engagementLevel(org.maxBehaviorScore) && (
-          <div className="org-detail-score">
-            <div className={`org-detail-score-value org-engagement-${engagementLevel(org.maxBehaviorScore)!.toLowerCase()}`}>{engagementLevel(org.maxBehaviorScore)}</div>
-            <div className="org-detail-score-label">Engagement</div>
+          <div className="text-right">
+            <div className="font-headline text-lg font-bold text-secondary">{engagementLevel(org.maxBehaviorScore)}</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Engagement</div>
           </div>
         )}
       </div>
 
       {/* Overview Cards */}
-      <div className="org-detail-overview">
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{new Date(org.firstVisit).toLocaleDateString()}</div>
-          <div className="org-detail-card-label">First Seen</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{new Date(org.firstVisit).toLocaleDateString()}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">First Seen</div>
         </div>
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{formatRelativeTime(org.lastVisit)}</div>
-          <div className="org-detail-card-label">Last Seen</div>
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{formatRelativeTime(org.lastVisit)}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Last Seen</div>
         </div>
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{org.totalEvents}</div>
-          <div className="org-detail-card-label">Total Events</div>
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{org.totalEvents}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Total Events</div>
         </div>
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{org.uniquePages}</div>
-          <div className="org-detail-card-label">Pages Viewed</div>
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{org.uniquePages}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Pages Viewed</div>
         </div>
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : 'Pending'}</div>
-          <div className="org-detail-card-label">Active Time</div>
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : 'Pending'}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Active Time</div>
         </div>
-        <div className="org-detail-card">
-          <div className="org-detail-card-value">{org.returnVisits}</div>
-          <div className="org-detail-card-label">Return Visits</div>
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+          <div className="font-headline text-xl font-bold text-on-surface">{org.returnVisits}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Return Visits</div>
         </div>
       </div>
 
       {/* Behavior Signals */}
-      <div className="org-detail-section">
-        <h2 className="analytics-section-header">Behavior Analysis</h2>
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Behavior Analysis</h2>
         {org.maxBehaviorScore > 0 && (
-          <div className="org-behavior-score">
-            <span className="org-behavior-score-label">Behavior Score</span>
-            <span className="org-behavior-score-bar">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Behavior Score</span>
+            <span className="flex-1 bg-surface-container-high rounded-full h-2">
               <span
-                className="org-behavior-score-fill"
+                className="block rounded-full h-2 transition-all"
                 style={{
                   width: `${Math.min(org.maxBehaviorScore * 100, 100)}%`,
                   backgroundColor: org.maxBehaviorScore >= 0.3 ? '#7b1fa2' : '#bdbdbd',
                 }}
               />
             </span>
-            <span className={`org-behavior-score-value${org.maxBehaviorScore >= 0.3 ? ' org-behavior-score-high' : ''}`}>
+            <span className={`text-sm font-bold ${org.maxBehaviorScore >= 0.3 ? 'text-secondary' : 'text-on-surface-variant'}`}>
               {(org.maxBehaviorScore * 100).toFixed(0)}%
             </span>
             {org.maxBehaviorScore < 0.3 && !org.isAnonymousHighIntent && (
-              <span className="org-behavior-score-hint">below 30% intent threshold</span>
+              <span className="text-[10px] text-on-surface-variant">below 30% intent threshold</span>
             )}
           </div>
         )}
-        <div className="org-detail-signals">
+        <div className="space-y-2">
           {org.isTargetCustomer && (
-            <div className="org-signal org-signal-hot">Target Customer Identified</div>
+            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span> Target Customer Identified</div>
           )}
           {org.isAnonymousHighIntent && !(override?.found && override?.isTargetCustomer) && (
             org.isISPVisitor
-              ? <div className="org-signal org-signal-isp-intent">📶 ISP visitor with purchase intent — browsing from home/mobile network. Consider monitoring for return visits or PDF downloads to confirm buyer interest.</div>
-              : <div className="org-signal org-signal-intent">Unknown company with high purchase intent — consider targeted engagement</div>
+              ? <div className="bg-tertiary-fixed-dim/20 text-on-surface rounded-lg px-3 py-2 text-sm">ISP visitor with purchase intent -- browsing from home/mobile network. Consider monitoring for return visits or PDF downloads to confirm buyer interest.</div>
+              : <div className="bg-tertiary-fixed/30 text-on-surface rounded-lg px-3 py-2 text-sm">Unknown company with high purchase intent -- consider targeted engagement</div>
           )}
           {downloadedPDF && (
-            <div className="org-signal org-signal-hot">Downloaded PDF / Spec Sheet</div>
+            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">download</span> Downloaded PDF / Spec Sheet</div>
           )}
           {visitedContactPage && (
-            <div className="org-signal org-signal-hot">Visited Contact Page</div>
+            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">mail</span> Visited Contact Page</div>
           )}
           {rfqSubmitted && (
-            <div className="org-signal org-signal-hot">Submitted RFQ</div>
+            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">send</span> Submitted RFQ</div>
           )}
           {contactFormSubmitted && !rfqSubmitted && (
-            <div className="org-signal org-signal-hot">Submitted Contact Form</div>
+            <div className="flex items-center gap-2 bg-secondary/10 text-secondary rounded-lg px-3 py-2 text-sm font-medium"><span className="material-symbols-outlined text-base">contact_mail</span> Submitted Contact Form</div>
           )}
           {uniqueProductPages.size >= 3 && (
-            <div className="org-signal org-signal-warm">Viewed {uniqueProductPages.size} product pages — comparing solutions</div>
+            <div className="bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-2 text-sm">Viewed {uniqueProductPages.size} product pages -- comparing solutions</div>
           )}
           {org.returnVisits >= 3 && (
-            <div className="org-signal org-signal-warm">Returning visitor ({org.returnVisits} return visits)</div>
+            <div className="bg-tertiary-fixed/20 text-on-surface rounded-lg px-3 py-2 text-sm">Returning visitor ({org.returnVisits} return visits)</div>
           )}
           {org.productsViewed.length > 0 && (
-            <div className="org-signal org-signal-info">
+            <div className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">
               Products of interest: {org.productsViewed.join(', ')}
             </div>
           )}
           {org.pdfDownloads > 0 && (
-            <div className="org-signal org-signal-info">{org.pdfDownloads} PDF download(s)</div>
+            <div className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">{org.pdfDownloads} PDF download(s)</div>
           )}
         </div>
       </div>
@@ -1364,22 +1434,22 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
         })();
 
         const sourceBadge: Record<string, { label: string; className: string }> = {
-          manual: { label: 'Manual Override', className: 'org-detection-badge-manual' },
-          bot: { label: 'Bot Detected', className: 'org-detection-badge-bot' },
-          ai: { label: 'AI Classified', className: 'org-detection-badge-ai' },
-          ip: { label: 'IP Lookup', className: 'org-detection-badge-ip' },
-          behavior: { label: 'Behavior-based', className: 'org-detection-badge-behavior' },
-          none: { label: 'Unclassified', className: 'org-detection-badge-none' },
+          manual: { label: 'Manual Override', className: 'bg-tertiary-fixed text-on-tertiary-fixed-variant' },
+          bot: { label: 'Bot Detected', className: 'bg-error-container text-on-error-container' },
+          ai: { label: 'AI Classified', className: 'bg-secondary/10 text-secondary' },
+          ip: { label: 'IP Lookup', className: 'bg-surface-container text-on-surface-variant' },
+          behavior: { label: 'Behavior-based', className: 'bg-tertiary-fixed-dim/30 text-on-surface' },
+          none: { label: 'Unclassified', className: 'bg-surface-container-low text-on-surface-variant' },
         };
         const badge = sourceBadge[source];
 
         return (
-          <div className="org-detail-section">
-            <h2 className="analytics-section-header">Detection Details</h2>
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Detection Details</h2>
 
             {/* Classification source badge */}
-            <div className="org-detection-source">
-              <span className={`org-detection-badge ${badge.className}`}>{badge.label}</span>
+            <div className="mb-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${badge.className}`}>{badge.label}</span>
             </div>
 
             {/* Bot detection details */}
@@ -1393,14 +1463,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
               const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
               return (
-                <div className="org-detail-ai-classification">
-                  <div className="org-ai-row">
-                    <span className="org-ai-label">Bot Name</span>
-                    <span className="org-ai-value">{botName}</span>
+                <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Bot Name</span>
+                    <span className="text-sm font-medium text-on-surface">{botName}</span>
                   </div>
-                  <div className="org-ai-row">
-                    <span className="org-ai-label">Detection</span>
-                    <span className="org-ai-value">{detectionMethod}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Detection</span>
+                    <span className="text-sm font-medium text-on-surface">{detectionMethod}</span>
                   </div>
                 </div>
               );
@@ -1408,44 +1478,44 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
             {/* IP vs AI comparison */}
             {!org.hasBot && hasAI ? (
-              <div className="org-detection-comparison">
-                <div className="org-detection-col">
-                  <div className="org-detection-col-header">IP Lookup</div>
-                  <div className="org-ai-row">
-                    <span className="org-ai-label">Type</span>
-                    <span className="org-ai-value">{ipOrgType}</span>
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mt-4">
+                <div className="bg-surface-container-low rounded-lg p-4">
+                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">IP Lookup</div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Type</span>
+                    <span className="text-sm font-medium text-on-surface">{ipOrgType}</span>
                   </div>
                 </div>
-                <div className="org-detection-arrow">
+                <div className="text-center">
                   {aiUpgraded ? (
-                    <span className="org-detection-upgrade">↑ Upgraded</span>
+                    <span className="text-secondary font-bold text-xs">↑ Upgraded</span>
                   ) : aiConfirmed ? (
-                    <span className="org-detection-confirmed">✓ Confirmed</span>
+                    <span className="text-secondary font-bold text-xs">✓ Confirmed</span>
                   ) : (
-                    <span className="org-detection-arrow-icon">→</span>
+                    <span className="text-on-surface-variant">→</span>
                   )}
                 </div>
-                <div className="org-detection-col">
-                  <div className="org-detection-col-header">AI Classification</div>
-                  <div className="org-ai-row">
-                    <span className="org-ai-label">Confidence</span>
-                    <span className="org-ai-value">{(effectiveAiConf * 100).toFixed(0)}%</span>
+                <div className="bg-surface-container-low rounded-lg p-4">
+                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">AI Classification</div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Confidence</span>
+                    <span className="text-sm font-medium text-on-surface">{(effectiveAiConf * 100).toFixed(0)}%</span>
                   </div>
-                  <div className="org-ai-row">
-                    <span className="org-ai-label">Type</span>
-                    <span className="org-ai-value">{effectiveAiOrgType}</span>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Type</span>
+                    <span className="text-sm font-medium text-on-surface">{effectiveAiOrgType}</span>
                   </div>
                 </div>
               </div>
             ) : org.maxBehaviorScore > 0 ? (
-              <div className="org-detail-ai-classification">
-                <div className="org-ai-row">
-                  <span className="org-ai-label">Behavior Score</span>
-                  <span className="org-ai-value">{(org.maxBehaviorScore * 100).toFixed(0)}%</span>
+              <div className="bg-surface-container-low rounded-lg p-4 space-y-2 mt-4">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Behavior Score</span>
+                  <span className="text-sm font-medium text-on-surface">{(org.maxBehaviorScore * 100).toFixed(0)}%</span>
                 </div>
-                <div className="org-ai-row">
-                  <span className="org-ai-label">Traffic</span>
-                  <span className="org-ai-value">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Traffic</span>
+                  <span className="text-sm font-medium text-on-surface">
                     {(() => {
                       const ev = org.events.find(e => e.trafficChannel || e.referrer);
                       if (!ev) return 'unknown';
@@ -1458,17 +1528,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
             {/* AI reason */}
             {effectiveAiReason && (
-              <div className="org-detection-reason">
-                <span className="org-ai-label">AI Reason</span>
-                <span className="org-ai-reason">{effectiveAiReason}</span>
+              <div className="mt-3 flex items-start gap-2">
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">AI Reason</span>
+                <span className="text-sm text-on-surface-variant">{effectiveAiReason}</span>
               </div>
             )}
 
             {/* Final result */}
-            <div className="org-detection-final">
+            <div className="mt-4 pt-3 border-t border-outline-variant/10 text-sm font-semibold text-on-surface">
               Final: {(hasOverrideAI ? override?.organizationType : null) || org.organizationType || 'unknown'}
               {org.maxConfidence > 0 && ` · ${(org.maxConfidence * 100).toFixed(0)}%`}
-              {org.isTargetCustomer && <span className="org-detection-target"> · Target</span>}
+              {org.isTargetCustomer && <span className="text-secondary"> · Target</span>}
             </div>
           </div>
         );
@@ -1483,23 +1553,23 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           override?.isTargetCustomer !== (aiEvent.aiConfidence >= 0.5);
 
         return (
-          <div className="org-detail-section">
-            <h2 className="analytics-section-header">Classification Override</h2>
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Classification Override</h2>
 
-            <div className="org-override-status">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               {isManual ? (
-                <span className="org-override-badge org-override-manual">Manual Override</span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Manual Override</span>
               ) : override?.found ? (
-                <span className="org-override-badge org-override-ai">AI Classified</span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-secondary/10 text-secondary">AI Classified</span>
               ) : (
-                <span className="org-override-badge org-override-ai">Auto Classified</span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-secondary/10 text-secondary">Auto Classified</span>
               )}
               {!isManual && override?.provider && (
                 <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '0.4rem' }}>
                   via {override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API'}
                 </span>
               )}
-              <span className="org-override-target">
+              <span className="text-sm font-semibold text-on-surface">
                 {currentIsTarget ? 'Target Customer' : 'Not Target'}
               </span>
             </div>
@@ -1518,16 +1588,16 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             )}
 
             {hasConflict && (
-              <div className="org-override-warning">
+              <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm my-2">
                 Manual classification conflicts with AI — AI says{' '}
                 {aiEvent!.aiConfidence! >= 0.5 ? 'target' : 'not target'} ({(aiEvent!.aiConfidence! * 100).toFixed(0)}% confidence)
               </div>
             )}
 
-            <div className="org-override-actions">
+            <div className="flex gap-2 mt-3">
               {currentIsTarget ? (
                 <button
-                  className="org-override-btn org-override-btn-reject"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-error-container text-on-error-container hover:opacity-90 disabled:opacity-50"
                   onClick={() => handleOverride(false)}
                   disabled={overrideLoading}
                 >
@@ -1535,7 +1605,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 </button>
               ) : (
                 <button
-                  className="org-override-btn org-override-btn-approve"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50"
                   onClick={() => handleOverride(true)}
                   disabled={overrideLoading}
                 >
@@ -1544,7 +1614,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               )}
               {isManual && (
                 <button
-                  className="org-override-btn org-override-btn-undo"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50"
                   onClick={handleUndoOverride}
                   disabled={overrideLoading}
                 >
@@ -1554,7 +1624,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             </div>
 
             {overrideMsg && (
-              <div className={`org-override-${overrideMsg.type}`}>{overrideMsg.text}</div>
+              <div className={`mt-2 p-2 rounded-lg text-sm ${overrideMsg.type === 'success' ? 'bg-secondary/10 text-secondary' : 'bg-error-container text-on-error-container'}`}>{overrideMsg.text}</div>
             )}
           </div>
         );
@@ -1562,11 +1632,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
       {/* User Agent */}
       {uniqueUAs.length > 0 && (
-        <div className="org-detail-section">
-          <h2 className="analytics-section-header">User Agent</h2>
-          <div className="org-detail-ua-list">
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+          <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">User Agent</h2>
+          <div className="space-y-1">
             {uniqueUAs.map((ua) => (
-              <div key={ua} className="org-detail-ua-item">{ua}</div>
+              <div key={ua} className="text-xs text-on-surface-variant font-mono bg-surface-container-low rounded px-3 py-2 break-all">{ua}</div>
             ))}
           </div>
         </div>
@@ -1580,13 +1650,13 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           uniquePages.set(e.pathname!, (uniquePages.get(e.pathname!) || 0) + 1);
         }
         return uniquePages.size > 0 ? (
-          <div className="org-detail-section">
-            <h2 className="analytics-section-header">Pages Visited</h2>
-            <div className="org-detail-pages-list">
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Pages Visited</h2>
+            <div className="space-y-1">
               {Array.from(uniquePages.entries()).map(([path, count]) => (
-                <div key={path} className="org-detail-page-item">
-                  <span className="org-detail-page-title">{path}</span>
-                  <span className="org-detail-page-count">{count}x</span>
+                <div key={path} className="flex justify-between items-center bg-surface-container-low rounded px-3 py-2">
+                  <span className="text-sm font-medium text-on-surface">{path}</span>
+                  <span className="text-[10px] font-bold bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">{count}x</span>
                 </div>
               ))}
             </div>
@@ -1624,17 +1694,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
           }
         }
         return sources.size > 0 ? (
-          <div className="org-detail-section">
-            <h2 className="analytics-section-header">Traffic Sources</h2>
-            <div className="org-detail-signals">
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+            <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">Traffic Sources</h2>
+            <div className="space-y-2">
               {Array.from(sources.entries())
                 .sort((a, b) => b[1].count - a[1].count)
                 .map(([groupKey, { count, channel, label: displayLabel }]) => {
                   const style = channelColors[channel] || fallbackStyle;
                   return (
-                    <div key={groupKey} className="org-signal org-signal-info">
+                    <div key={groupKey} className="bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface-variant">
                       <span
-                        className="analytics-badge"
+                        className="px-2 py-0.5 rounded text-[10px] font-bold"
                         style={{ background: style.bg, color: style.color, marginRight: '0.5rem', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '3px' }}
                       >
                         {style.label}
@@ -1649,12 +1719,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       })()}
 
       {/* Visit Timeline — grouped by visitor (visitorId → IP fallback) */}
-      <div className="org-detail-section">
-        <h2 className="analytics-section-header">
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
+        <h2 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">
           Visit Timeline
-          {uniqueVisitors.length > 1 && <span className="analytics-filter-badge">{uniqueVisitors.length} visitors</span>}
+          {uniqueVisitors.length > 1 && <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2">{uniqueVisitors.length} visitors</span>}
         </h2>
-        <div className="org-detail-timeline">
+        <div className="space-y-3">
           {/* Hint: visit started before the selected date range */}
           {org.events.length > 0 && org.events.every((e) => e.eventType === 'page_time_flush') && (
             <div style={{ background: '#fff8e1', color: '#8d6e00', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '8px', lineHeight: 1.6 }}>
@@ -1711,11 +1781,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               const sq = getSearchQuery(e);
               return (
                 <>
-                  <span className="timeline-referrer" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                  <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
                     {label}
                   </span>
                   {(sq || e.utmTerm) && (
-                    <span className="timeline-keyword" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                    <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
                       🔍 {sq || e.utmTerm}
                     </span>
                   )}
@@ -1738,23 +1808,23 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
             if (byVisitor.size <= 1) {
               return Array.from(eventsByDate.entries()).map(([date, events]) => (
-                <div key={date} className="timeline-day">
-                  <div className="timeline-date">{date}</div>
+                <div key={date} className="space-y-1">
+                  <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pt-2 pb-1">{date}</div>
                   {events.map((e) => {
                     const pageDuration = perPageDurations.get(e.id);
                     return (
-                    <div key={e.id} className="timeline-event">
-                      <span className="timeline-time">
+                    <div key={e.id} className="flex flex-wrap items-center gap-1.5 text-xs py-1 px-2 rounded hover:bg-surface-container-low">
+                      <span className="text-on-surface-variant font-mono text-[11px] shrink-0">
                         {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </span>
-                      <span className={`analytics-badge analytics-badge-${e.eventType}`}>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
                         {e.eventType}
                       </span>
                       {e.eventType === 'page_time_flush' ? (
                         <>
-                          <span className="timeline-path">{e.pathname || '/'}</span>
+                          <span className="text-on-surface font-medium">{e.pathname || '/'}</span>
                           {e.activeSeconds != null && (
-                            <span className="timeline-flush-detail" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
+                            <span className="text-on-surface-variant" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
                               {formatDuration(e.activeSeconds)} active
                               {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
                               {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
@@ -1777,12 +1847,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                         </>
                       ) : (
                         <>
-                          <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
+                          <span className="text-on-surface font-medium">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
                           {e.productName && (
-                            <span className="timeline-product">{e.productName}</span>
+                            <span className="text-secondary text-[11px] font-medium">{e.productName}</span>
                           )}
                           {pageDuration != null && pageDuration > 0 && (
-                            <span className="timeline-duration">{formatDuration(pageDuration)}</span>
+                            <span className="text-on-surface-variant text-[11px]">{formatDuration(pageDuration)}</span>
                           )}
                           {entryEventIds.has(e.id) && referrerBadge(e)}
                         </>
@@ -1806,36 +1876,36 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 else visitorDateGroups.set(dk, [e]);
               }
               return (
-                <div key={vKey} className="timeline-visitor">
-                  <div className="timeline-visitor-header">
-                    <span className="timeline-visitor-label">Visitor {idx + 1}</span>
+                <div key={vKey} className="border-l-2 border-outline-variant/20 pl-4 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
+                    <span className="font-bold text-on-surface text-sm">Visitor {idx + 1}</span>
                     {ip && (
-                      <span className="timeline-visitor-ip" onClick={() => setShowFullIP((v) => !v)}>
+                      <span className="font-mono cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
                         {showFullIP ? ip : maskIP(ip)}
                       </span>
                     )}
-                    {shortUA && <span className="timeline-visitor-ua">{shortUA}</span>}
-                    <span className="timeline-visitor-count">{events.length} events</span>
-                    {vKey && !vKey.includes('.') && <span className="timeline-visitor-vid" title={vKey}>{vKey.slice(0, 8)}</span>}
+                    {shortUA && <span className="text-on-surface-variant">{shortUA}</span>}
+                    <span className="text-on-surface-variant">{events.length} events</span>
+                    {vKey && !vKey.includes('.') && <span className="font-mono text-on-surface-variant" title={vKey}>{vKey.slice(0, 8)}</span>}
                   </div>
                   {Array.from(visitorDateGroups.entries()).map(([date, devts]) => (
-                    <div key={date} className="timeline-day">
-                      <div className="timeline-date">{date}</div>
+                    <div key={date} className="space-y-1">
+                      <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pt-2 pb-1">{date}</div>
                       {devts.map((e) => {
                         const pageDuration = perPageDurations.get(e.id);
                         return (
-                        <div key={e.id} className="timeline-event">
-                          <span className="timeline-time">
+                        <div key={e.id} className="flex flex-wrap items-center gap-1.5 text-xs py-1 px-2 rounded hover:bg-surface-container-low">
+                          <span className="text-on-surface-variant font-mono text-[11px] shrink-0">
                             {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </span>
-                          <span className={`analytics-badge analytics-badge-${e.eventType}`}>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
                             {e.eventType}
                           </span>
                           {e.eventType === 'page_time_flush' ? (
                             <>
-                              <span className="timeline-path">{e.pathname || '/'}</span>
+                              <span className="text-on-surface font-medium">{e.pathname || '/'}</span>
                               {e.activeSeconds != null && (
-                                <span className="timeline-flush-detail" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
+                                <span className="text-on-surface-variant" style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
                                   {formatDuration(e.activeSeconds)} active
                                   {e.idleSeconds != null && e.idleSeconds > 0 && <> · {formatDuration(e.idleSeconds)} idle</>}
                                   {e.hiddenSeconds != null && e.hiddenSeconds > 0 && <> · {formatDuration(e.hiddenSeconds)} hidden</>}
@@ -1858,12 +1928,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                             </>
                           ) : (
                             <>
-                              <span className="timeline-path">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
+                              <span className="text-on-surface font-medium">{e.eventType === 'page_view' ? (e.pathname || e.eventName) : (e.eventName || e.pathname)}</span>
                               {e.productName && (
-                                <span className="timeline-product">{e.productName}</span>
+                                <span className="text-secondary text-[11px] font-medium">{e.productName}</span>
                               )}
                               {pageDuration != null && pageDuration > 0 && (
-                                <span className="timeline-duration">{formatDuration(pageDuration)}</span>
+                                <span className="text-on-surface-variant text-[11px]">{formatDuration(pageDuration)}</span>
                               )}
                             </>
                           )}
@@ -1906,7 +1976,7 @@ export function AdminAnalyticsPage() {
   const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
-  const [keywordSectionOpen, setKeywordSectionOpen] = useState(true);
+  const [keywordSectionOpen, setKeywordSectionOpen] = useState(false);
   const [pageAnalyticsTab, setPageAnalyticsTab] = useState<PageAnalyticsTab>('topPages');
   const [pageAnalyticsSectionOpen, setPageAnalyticsSectionOpen] = useState(true);
   const [trendsSectionOpen, setTrendsSectionOpen] = useState(true);
@@ -2408,7 +2478,7 @@ export function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="admin-loading">
+      <div className="flex items-center justify-center py-20 text-on-surface-variant">
         Loading analytics...{loadProgress > 0 ? ` (${loadProgress} events)` : ''}
       </div>
     );
@@ -2417,175 +2487,301 @@ export function AdminAnalyticsPage() {
   // Show detail view if an org is selected
   if (selectedOrg) {
     return (
-      <div className="admin-analytics">
+      <div className="space-y-6">
         <OrgDetail org={selectedOrg} onBack={() => history.back()} />
       </div>
     );
   }
 
   return (
-    <div className="admin-analytics">
-      <div className="admin-list-header">
-        <h1>Market Intelligence</h1>
-      </div>
+    <div className="space-y-8">
 
-      {/* Date Range Selector + Bot Toggle */}
-      <div className="analytics-date-range">
-        {DATE_RANGES.map((r) => (
+      {/* ─── Hero Header ──────────────────────────────────────────────────── */}
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-secondary">Precision Insights</span>
+          <h1 className="font-headline text-4xl font-black text-primary tracking-tighter mt-1">Intelligence Ledger</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {DATE_RANGES.filter(r => r.value !== 'custom').map((r) => (
+            <button
+              key={r.value}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-colors ${dateRange === r.value
+                ? 'border-primary bg-primary text-on-primary'
+                : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
+              onClick={() => setDateRange(r.value)}
+            >
+              {r.label}
+            </button>
+          ))}
           <button
-            key={r.value}
-            className={`analytics-date-btn ${dateRange === r.value ? 'active' : ''}`}
-            onClick={() => setDateRange(r.value)}
+            className={`p-2 rounded-lg border transition-colors ${dateRange === 'custom'
+              ? 'border-primary bg-primary text-on-primary'
+              : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
+            onClick={() => setDateRange('custom')}
+            title="Custom date range"
           >
-            {r.label}
+            <span className="material-symbols-outlined text-lg">calendar_today</span>
+          </button>
+        </div>
+      </section>
+
+      {dateRange === 'custom' && (
+        <div className="flex items-center gap-2 -mt-4 mb-4">
+          <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
+            className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" />
+          <span className="text-on-surface-variant text-sm">to</span>
+          <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
+            className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" />
+        </div>
+      )}
+
+      {error && <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm">{error}</div>}
+
+      {/* ─── Filter Chips ─────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3 py-2 border-b border-outline-variant/5">
+        <span className="text-xs font-bold text-on-surface-variant mr-2">FILTERS:</span>
+        {([
+          { key: 'all' as KpiFilter, label: 'All' },
+          { key: 'target' as KpiFilter, label: 'Target Customers' },
+          { key: 'education' as KpiFilter, label: 'Education' },
+          { key: 'hotLead' as KpiFilter, label: 'Hot Leads' },
+          { key: 'returning' as KpiFilter, label: 'Returning' },
+        ]).map(({ key, label }) => (
+          <button
+            key={key}
+            className={`px-4 py-1.5 rounded-full text-xs whitespace-nowrap border transition-colors ${
+              kpiFilter === key
+                ? 'border-primary bg-primary text-on-primary font-semibold'
+                : 'border-outline-variant/30 text-on-surface-variant font-medium hover:border-outline-variant/60 hover:text-on-surface'
+            }`}
+            onClick={() => setKpiFilter(kpiFilter === key && key !== 'all' ? 'all' : key)}
+          >
+            {label}
           </button>
         ))}
-        {dateRange === 'custom' && (
-          <div className="analytics-custom-dates">
-            <input
-              type="date"
-              value={customStart}
-              onChange={(e) => setCustomStart(e.target.value)}
-              className="analytics-date-input"
-            />
-            <span className="analytics-date-separator">to</span>
-            <input
-              type="date"
-              value={customEnd}
-              onChange={(e) => setCustomEnd(e.target.value)}
-              className="analytics-date-input"
-            />
-          </div>
+        {dateRange !== 'all' && kpis.visitorTrend !== 0 && (
+          <span className={`text-xs font-semibold ml-auto shrink-0 ${kpis.visitorTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs prev
+          </span>
         )}
-        <label className="analytics-toggle">
-          <input
-            type="checkbox"
-            checked={showBots}
-            onChange={(e) => setShowBots(e.target.checked)}
-          />
-          <span className="analytics-toggle-slider" />
-          <span className="analytics-toggle-label">Bots ({botCount})</span>
-        </label>
-        <label className="analytics-toggle">
-          <input
-            type="checkbox"
-            checked={showPrivateIPs}
-            onChange={(e) => setShowPrivateIPs(e.target.checked)}
-          />
-          <span className="analytics-toggle-slider" />
-          <span className="analytics-toggle-label">Private IPs ({privateIPCount})</span>
-        </label>
-        <label className="analytics-toggle">
-          <input
-            type="checkbox"
-            checked={hideSelf}
-            onChange={(e) => setHideSelf(e.target.checked)}
-          />
-          <span className="analytics-toggle-slider" />
-          <span className="analytics-toggle-label">Hide Me ({selfCount})</span>
-        </label>
-        <div className="analytics-refresh-group">
-          <button
-            className={`analytics-refresh-btn ${refreshing ? 'refreshing' : ''}`}
-            onClick={() => setRefreshKey((k) => k + 1)}
-            title="Refresh data"
-            disabled={refreshing}
-          >
-            ↻
-          </button>
-          <label className="analytics-toggle">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-            />
-            <span className="analytics-toggle-slider" />
-            <span className="analytics-toggle-label">Auto 30s</span>
-          </label>
-        </div>
       </div>
 
-      {error && <div className="admin-error">{error}</div>}
+      {/* ─── Bento Grid ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* KPI Cards — click to filter table */}
-      <div className="analytics-stats-grid">
-        <div
-          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'all' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter('all')}
-        >
-          <div className="analytics-stat-value">{kpis.uniqueVisitors}</div>
-          <div className="analytics-stat-label">Unique Visitors</div>
-          {dateRange !== 'all' && kpis.visitorTrend !== 0 && (
-            <div className={`analytics-stat-trend ${kpis.visitorTrend > 0 ? 'trend-up' : 'trend-down'}`}>
-              {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs prev
+        {/* Hero KPI Card — col-span-4 */}
+        <div className="lg:col-span-4 group relative overflow-hidden bg-primary-container rounded-xl p-8">
+          <div className="relative z-10">
+            <p className="text-on-primary-container/80 text-sm font-medium mb-1">Unique Visitors</p>
+            <h3 className="font-headline text-6xl font-black text-white tracking-tighter mb-4">{kpis.uniqueVisitors}</h3>
+            <div className="flex items-center gap-2 text-primary-fixed-dim font-bold text-sm">
+              {dateRange !== 'all' && kpis.visitorTrend !== 0 ? (
+                <>
+                  <span className="material-symbols-outlined text-sm">
+                    {kpis.visitorTrend > 0 ? 'trending_up' : 'trending_down'}
+                  </span>
+                  {kpis.visitorTrend > 0 ? '+' : ''}{kpis.visitorTrend}% vs Previous Period
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-sm">flag</span>
+                  {kpis.targetCustomers} target customers
+                </>
+              )}
+            </div>
+          </div>
+          <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <span className="material-symbols-outlined text-[180px]" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
+          </div>
+        </div>
+
+        {/* Traffic Channel Attribution — col-span-8 */}
+        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-8">
+          <div className="flex justify-between items-center mb-10">
+            <h4 className="font-headline font-bold text-on-surface">Traffic Channel Attribution</h4>
+            <span className="text-xs font-medium text-on-surface-variant">Volume / Sessions</span>
+          </div>
+          <ChannelSummaryChart events={filteredEvents} onChannelClick={(ch) => { setChannelFilter(ch); setFiltersOpen(true); }} />
+        </div>
+
+        {/* Organization Ledger — col-span-9 */}
+        <div className="lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-surface-container flex justify-between items-center">
+            <h4 className="font-headline font-bold">Organization Ledger</h4>
+            <button
+              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+              onClick={exportCSV}
+              title="Export CSV"
+            >
+              download
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="hidden md:table w-full text-left table-fixed">
+              <thead>
+                <tr className="bg-surface-container-low">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('orgName')}>
+                    Name{sortIndicator('orgName')}
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('organizationType')}>
+                    Type{sortIndicator('organizationType')}
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center cursor-pointer" onClick={() => handleSort('totalEvents')}>
+                    Visits{sortIndicator('totalEvents')}
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer" onClick={() => handleSort('engagement')}>
+                    Engagement{sortIndicator('engagement')}
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Target</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container-low">
+                {sortedOrgs.slice(0, 15).map((org) => (
+                  <tr
+                    key={org.key}
+                    className="hover:bg-primary-fixed/30 transition-colors cursor-pointer"
+                    onClick={() => selectOrg(org)}
+                  >
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
+                          {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                        </div>
+                        <span className="text-sm font-semibold">{org.orgName}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-xs text-on-surface-variant">{org.organizationType || '--'}</td>
+                    <td className="px-6 py-5 text-xs text-center font-medium">{org.totalEvents.toLocaleString()}</td>
+                    <td className="px-6 py-5">
+                      <div className="w-24 bg-surface-container-high rounded-full h-1.5">
+                        <div
+                          className="bg-secondary h-full rounded-full"
+                          style={{ width: `${Math.min(Math.max(org.maxBehaviorScore * 100, 3), 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      {org.isTargetCustomer ? (
+                        <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-outline-variant">flag</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {sortedOrgs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-on-surface-variant text-sm">
+                      No visitor data for this period.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile org cards in bento area */}
+          <div className="md:hidden grid gap-3 p-4">
+            {sortedOrgs.slice(0, 10).map((org) => (
+              <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
+                    {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-on-surface truncate">{org.orgName}</div>
+                    <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
+                  </div>
+                  {org.isTargetCustomer && (
+                    <span className="material-symbols-outlined text-secondary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div><div className="font-headline text-sm font-bold">{org.totalEvents}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Events</div></div>
+                  <div><div className="font-headline text-sm font-bold">{engagementLevel(org.maxBehaviorScore) || '--'}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Engage</div></div>
+                  <div><div className="font-headline text-sm font-bold">{org.maxConfidence > 0 ? `${Math.round(org.maxConfidence * 100)}%` : '--'}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">AI Conf</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {sortedOrgs.length > 15 && (
+            <div className="text-center py-3 border-t border-outline-variant/5">
+              <span className="text-xs text-on-surface-variant">
+                Showing 15 of {sortedOrgs.length} organizations.{' '}
+                <a href="#full-org-table" className="text-secondary font-medium hover:underline">View all</a>
+              </span>
             </div>
           )}
         </div>
-        <div
-          className={`analytics-stat-card analytics-stat-highlight analytics-stat-clickable ${kpiFilter === 'target' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'target' ? 'all' : 'target')}
-        >
-          <div className="analytics-stat-value">{kpis.targetCustomers}</div>
-          <div className="analytics-stat-label">Target Customers</div>
-        </div>
-        <div
-          className={`analytics-stat-card analytics-stat-tier-a analytics-stat-clickable ${kpiFilter === 'education' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'education' ? 'all' : 'education')}
-        >
-          <div className="analytics-stat-value">{kpis.educationOrgs}</div>
-          <div className="analytics-stat-label">Education</div>
-        </div>
-        <div
-          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'business' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'business' ? 'all' : 'business')}
-        >
-          <div className="analytics-stat-value">{kpis.businessOrgs}</div>
-          <div className="analytics-stat-label">Business</div>
-        </div>
-        <div
-          className={`analytics-stat-card analytics-stat-tier-b analytics-stat-clickable ${kpiFilter === 'hotLead' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'hotLead' ? 'all' : 'hotLead')}
-        >
-          <div className="analytics-stat-value">{kpis.hotLeads}</div>
-          <div className="analytics-stat-label">Hot Leads (A)</div>
-        </div>
-        <div
-          className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'returning' ? 'analytics-stat-active' : ''}`}
-          onClick={() => setKpiFilter(kpiFilter === 'returning' ? 'all' : 'returning')}
-        >
-          <div className="analytics-stat-value">{kpis.returning}</div>
-          <div className="analytics-stat-label">Returning Visitors</div>
-        </div>
-        {kpis.aiReferral > 0 && (
-          <div
-            className={`analytics-stat-card analytics-stat-clickable ${kpiFilter === 'aiReferral' ? 'analytics-stat-active' : ''}`}
-            onClick={() => setKpiFilter(kpiFilter === 'aiReferral' ? 'all' : 'aiReferral')}
-            style={kpiFilter === 'aiReferral' ? { borderColor: '#4527a0' } : undefined}
-          >
-            <div className="analytics-stat-value" style={{ color: '#4527a0' }}>{kpis.aiReferral}</div>
-            <div className="analytics-stat-label">AI Referral</div>
-          </div>
-        )}
-        {kpis.anonymousIntent > 0 && (
-          <div
-            className={`analytics-stat-card analytics-stat-intent analytics-stat-clickable ${kpiFilter === 'anonymousIntent' ? 'analytics-stat-active' : ''}`}
-            onClick={() => setKpiFilter(kpiFilter === 'anonymousIntent' ? 'all' : 'anonymousIntent')}
-          >
-            <div className="analytics-stat-value">{kpis.anonymousIntent}</div>
-            <div className="analytics-stat-label">Anonymous Intent</div>
-            {kpis.ispHighIntent > 0 && (
-              <div
-                className="analytics-stat-sublabel"
-                title="ISP visitors (home/mobile) showing purchase-intent behavior signals"
-              >
-                incl. {kpis.ispHighIntent} ISP
+
+        {/* Top Keywords Sidebar — col-span-3 */}
+        <div className="lg:col-span-3 bg-surface-container-low p-8 rounded-xl">
+          <h4 className="font-headline font-bold mb-8 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>key</span>
+            Top Keywords
+          </h4>
+          <div className="flex flex-col gap-6">
+            {displayedKeywords.slice(0, 5).map((kw, i) => (
+              <div key={`${kw.source}-${kw.keyword}-${i}`} className="flex justify-between items-center group">
+                <span className="text-sm font-medium text-on-surface hover:text-secondary cursor-pointer transition-colors">
+                  {kw.keyword}
+                </span>
+                <span className="text-xs font-semibold text-on-surface-variant">
+                  {kw.count >= 1000 ? `${(kw.count / 1000).toFixed(1)}k` : kw.count}
+                </span>
               </div>
+            ))}
+            {displayedKeywords.length === 0 && (
+              <div className="text-xs text-on-surface-variant/50 text-center py-4">No keyword data</div>
             )}
           </div>
-        )}
-      </div>
+          {kpis.hotLeads > 0 && (
+            <div className="mt-8 p-4 bg-surface-container-lowest rounded-lg border-l-4 border-secondary">
+              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Trend Alert</p>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                {kpis.hotLeads} hot lead{kpis.hotLeads !== 1 ? 's' : ''} identified this period.
+              </p>
+            </div>
+          )}
+        </div>
 
-      {/* World Map — click markers to view org detail */}
+      </div>{/* End Bento Grid */}
+
+      {/* ─── Advanced Controls (collapsed) ────────────────────────────────── */}
+      <details className="mt-2">
+        <summary className="text-xs font-bold uppercase tracking-widest text-on-surface-variant cursor-pointer select-none py-2">
+          Advanced Controls
+        </summary>
+        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-outline-variant/10">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={showBots} onChange={(e) => setShowBots(e.target.checked)} className="accent-secondary" />
+            <span className="text-xs font-medium text-on-surface-variant">Bots ({botCount})</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={showPrivateIPs} onChange={(e) => setShowPrivateIPs(e.target.checked)} className="accent-secondary" />
+            <span className="text-xs font-medium text-on-surface-variant">Private IPs ({privateIPCount})</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={hideSelf} onChange={(e) => setHideSelf(e.target.checked)} className="accent-secondary" />
+            <span className="text-xs font-medium text-on-surface-variant">Hide Me ({selfCount})</span>
+          </label>
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              className={`p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low ${refreshing ? 'animate-spin' : ''}`}
+              onClick={() => setRefreshKey((k) => k + 1)}
+              title="Refresh data" disabled={refreshing}
+            >
+              <span className="material-symbols-outlined text-lg">refresh</span>
+            </button>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="accent-secondary" />
+              <span className="text-xs font-medium text-on-surface-variant">Auto 30s</span>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      {/* ─── World Map ────────────────────────────────────────────────────── */}
       <VisitorMap organizations={filteredOrgs} onSelectOrg={selectOrg} resetKey={kpiFilter} />
 
       {/* ─── Trends Section ─────────────────────────────────────────────────── */}
@@ -2601,29 +2797,29 @@ export function AdminAnalyticsPage() {
 
       {/* ─── Search Keywords Section ────────────────────────────────────────── */}
       {allKeywords.length > 0 && (
-        <div className="keyword-section">
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
           <h2
-            className="analytics-section-header keyword-section-header"
+            className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
             onClick={() => setKeywordSectionOpen(!keywordSectionOpen)}
             style={{ cursor: 'pointer', userSelect: 'none' }}
           >
-            <span className="keyword-toggle-icon">{keywordSectionOpen ? '▼' : '▶'}</span>
+            <span className="text-on-surface-variant text-xs">{keywordSectionOpen ? '▼' : '▶'}</span>
             {' '}Search Keywords
-            <span className="keyword-count-badge">{allKeywords.length}</span>
+            <span className="bg-surface-container px-2 py-0.5 rounded text-[10px] font-bold text-on-surface-variant">{allKeywords.length}</span>
           </h2>
 
           {keywordSectionOpen && (
             <>
               {/* Source filter tabs */}
-              <div className="keyword-filter-tabs">
+              <div className="flex gap-2 mb-4">
                 {([['all', 'All'], ['external', 'External'], ['internal', 'Internal']] as const).map(([val, label]) => (
                   <button
                     key={val}
-                    className={`keyword-filter-tab ${keywordSourceFilter === val ? 'active' : ''}`}
+                    className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${keywordSourceFilter === val ? 'border-primary bg-primary text-on-primary font-bold' : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
                     onClick={() => setKeywordSourceFilter(val)}
                   >
                     {label}
-                    <span className="keyword-filter-count">
+                    <span className="text-[10px] text-on-surface-variant ml-1">
                       {val === 'all'
                         ? allKeywords.length
                         : val === 'external'
@@ -2639,19 +2835,19 @@ export function AdminAnalyticsPage() {
                 const top10 = displayedKeywords.slice(0, 10);
                 const maxCount = top10[0]?.count || 1;
                 return (
-                  <div className="keyword-bar-chart">
+                  <div className="space-y-2">
                     {top10.map((kw, i) => (
-                      <div key={`${kw.source}-${kw.keyword}-${i}`} className="keyword-bar-row">
-                        <span className="keyword-bar-label" title={kw.keyword}>
+                      <div key={`${kw.source}-${kw.keyword}-${i}`} className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-on-surface w-36 truncate" title={kw.keyword}>
                           {kw.keyword.length > 30 ? kw.keyword.slice(0, 30) + '...' : kw.keyword}
                         </span>
-                        <div className="keyword-bar-track">
+                        <div className="flex-1 bg-surface-container-high rounded-full h-2">
                           <div
-                            className={`keyword-bar-fill keyword-bar-fill-${kw.source}`}
+                            className="bg-secondary h-full rounded-full transition-all"
                             style={{ width: `${Math.max((kw.count / maxCount) * 100, 4)}%` }}
                           />
                         </div>
-                        <span className="keyword-bar-count">{kw.count}</span>
+                        <span className="text-[10px] font-bold text-on-surface-variant w-8 text-right">{kw.count}</span>
                       </div>
                     ))}
                   </div>
@@ -2659,8 +2855,8 @@ export function AdminAnalyticsPage() {
               })()}
 
               {/* Keywords table */}
-              <div className="analytics-table-wrapper" style={{ marginTop: '1rem' }}>
-                <table className="admin-table keyword-table">
+              <div className="bg-surface-container-lowest rounded-xl overflow-hidden" style={{ marginTop: '1rem' }}>
+                <table className="w-full text-sm">
                   <thead>
                     <tr>
                       <th>Keyword</th>
@@ -2674,16 +2870,16 @@ export function AdminAnalyticsPage() {
                   <tbody>
                     {displayedKeywords.slice(0, 50).map((kw, i) => (
                       <tr key={`${kw.source}-${kw.keyword}-${i}`}>
-                        <td className="keyword-cell-keyword" title={kw.keyword}>{kw.keyword}</td>
+                        <td className="text-sm font-medium text-on-surface max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={kw.keyword}>{kw.keyword}</td>
                         <td style={{ textAlign: 'center' }}>{kw.count}</td>
                         <td>
-                          <span className={`keyword-source-badge keyword-source-${kw.source}`}>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
                             {kw.source === 'organic' ? 'Organic' : kw.source === 'paid' ? 'Paid' : 'Internal'}
                           </span>
                         </td>
                         <td>{kw.searchEngine || (kw.source === 'internal' ? 'Site Search' : '—')}</td>
                         <td>
-                          <div className="keyword-org-chips">
+                          <div className="flex flex-wrap gap-1">
                             {(() => {
                               const kwKey = `${kw.source}-${kw.keyword}`;
                               const isExpanded = expandedKeywordOrgs.has(kwKey);
@@ -2691,7 +2887,7 @@ export function AdminAnalyticsPage() {
                                 {(isExpanded ? kw.organizations : kw.organizations.slice(0, 2)).map(org => (
                                   <button
                                     key={org}
-                                    className="keyword-org-chip"
+                                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
                                     onClick={() => {
                                       const match = organizations.find(o => o.orgName === org);
                                       if (match) selectOrg(match);
@@ -2703,7 +2899,7 @@ export function AdminAnalyticsPage() {
                                 ))}
                                 {kw.organizations.length > 2 && (
                                   <button
-                                    className="keyword-org-more"
+                                    className="text-[10px] text-on-surface-variant font-medium"
                                     onClick={() => setExpandedKeywordOrgs(prev => {
                                       const next = new Set(prev);
                                       if (next.has(kwKey)) next.delete(kwKey);
@@ -2719,7 +2915,7 @@ export function AdminAnalyticsPage() {
                             })()}
                           </div>
                         </td>
-                        <td className="keyword-cell-date">
+                        <td className="text-xs text-on-surface-variant">
                           {new Date(kw.lastSeen).toLocaleDateString()}
                         </td>
                       </tr>
@@ -2734,15 +2930,15 @@ export function AdminAnalyticsPage() {
               </div>
 
               {/* Mobile keyword cards */}
-              <div className="mobile-cards kw-cards-mobile" style={{ marginTop: '0.5rem' }}>
+              <div className="md:hidden grid gap-3 mt-3">
                 {displayedKeywords.slice(0, 50).map((kw, i) => (
-                  <div key={`${kw.source}-${kw.keyword}-${i}`} className="kw-card-mobile">
-                    <div className="kw-card-header">
-                      <span className="kw-card-keyword" title={kw.keyword}>{kw.keyword}</span>
-                      <span className="kw-card-count">{kw.count}</span>
+                  <div key={`${kw.source}-${kw.keyword}-${i}`} className="bg-surface-container-lowest rounded-xl p-4 shadow-card space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-on-surface" title={kw.keyword}>{kw.keyword}</span>
+                      <span className="text-xs font-bold bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">{kw.count}</span>
                     </div>
-                    <div className="kw-card-meta">
-                      <span className={`keyword-source-badge keyword-source-${kw.source}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">
                         {kw.source === 'organic' ? 'Organic' : kw.source === 'paid' ? 'Paid' : 'Internal'}
                       </span>
                       {kw.searchEngine && (
@@ -2750,11 +2946,11 @@ export function AdminAnalyticsPage() {
                       )}
                     </div>
                     {kw.organizations.length > 0 && (
-                      <div className="kw-card-orgs">
+                      <div className="flex flex-wrap gap-1">
                         {kw.organizations.slice(0, 3).map(org => (
                           <button
                             key={org}
-                            className="keyword-org-chip"
+                            className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
                             onClick={() => {
                               const match = organizations.find(o => o.orgName === org);
                               if (match) selectOrg(match);
@@ -2765,7 +2961,7 @@ export function AdminAnalyticsPage() {
                           </button>
                         ))}
                         {kw.organizations.length > 3 && (
-                          <span className="keyword-org-more">+{kw.organizations.length - 3}</span>
+                          <span className="text-[10px] text-on-surface-variant font-medium">+{kw.organizations.length - 3}</span>
                         )}
                       </div>
                     )}
@@ -2779,29 +2975,29 @@ export function AdminAnalyticsPage() {
 
       {/* ─── Page Analytics Section ───────────────────────────────────────── */}
       {pageStats.length > 0 && (
-        <div className="page-analytics-section">
+        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_10px_30px_rgba(2,36,72,0.04)] mb-6">
           <h2
-            className="analytics-section-header keyword-section-header"
+            className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
             onClick={() => setPageAnalyticsSectionOpen(!pageAnalyticsSectionOpen)}
             style={{ cursor: 'pointer', userSelect: 'none' }}
           >
-            <span className="keyword-toggle-icon">{pageAnalyticsSectionOpen ? '▼' : '▶'}</span>
+            <span className="text-on-surface-variant text-xs">{pageAnalyticsSectionOpen ? '▼' : '▶'}</span>
             {' '}Page Analytics
-            <span className="keyword-count-badge">{pageStats.length}</span>
+            <span className="bg-surface-container px-2 py-0.5 rounded text-[10px] font-bold text-on-surface-variant">{pageStats.length}</span>
           </h2>
 
           {pageAnalyticsSectionOpen && (
             <>
               {/* Tab navigation */}
-              <div className="keyword-filter-tabs">
+              <div className="flex gap-2 mb-4">
                 {([['topPages', 'Top Pages'], ['products', 'Products'], ['landingPages', 'Landing Pages']] as const).map(([val, label]) => (
                   <button
                     key={val}
-                    className={`keyword-filter-tab ${pageAnalyticsTab === val ? 'active' : ''}`}
+                    className={`px-4 py-2 rounded-lg text-xs font-medium border transition-colors ${pageAnalyticsTab === val ? 'border-primary bg-primary text-on-primary font-bold' : 'border-outline-variant/30 text-on-surface-variant hover:border-outline-variant/60 hover:text-on-surface'}`}
                     onClick={() => setPageAnalyticsTab(val)}
                   >
                     {label}
-                    <span className="keyword-filter-count">
+                    <span className="text-[10px] text-on-surface-variant ml-1">
                       {val === 'topPages' ? pageStats.length : val === 'products' ? productStats.length : landingPageStats.length}
                     </span>
                   </button>
@@ -2814,24 +3010,24 @@ export function AdminAnalyticsPage() {
                 const maxViews = top10[0]?.views || 1;
                 return (
                   <>
-                    <div className="keyword-bar-chart">
+                    <div className="space-y-2">
                       {top10.map((p) => (
-                        <div key={p.pathname} className="keyword-bar-row">
-                          <span className="keyword-bar-label" title={p.pathname}>
+                        <div key={p.pathname} className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-on-surface w-36 truncate" title={p.pathname}>
                             {p.pathname.length > 30 ? p.pathname.slice(0, 30) + '...' : p.pathname}
                           </span>
-                          <div className="keyword-bar-track">
+                          <div className="flex-1 bg-surface-container-high rounded-full h-2">
                             <div
-                              className="keyword-bar-fill keyword-bar-fill-organic"
+                              className="bg-secondary h-full rounded-full"
                               style={{ width: `${Math.max((p.views / maxViews) * 100, 4)}%` }}
                             />
                           </div>
-                          <span className="keyword-bar-count">{p.views}</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant w-8 text-right">{p.views}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="analytics-table-wrapper" style={{ marginTop: '1rem' }}>
-                      <table className="admin-table keyword-table">
+                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden" style={{ marginTop: '1rem' }}>
+                      <table className="w-full text-sm">
                         <thead>
                           <tr>
                             <th>Page</th>
@@ -2845,8 +3041,8 @@ export function AdminAnalyticsPage() {
                         </thead>
                         <tbody>
                           {pageStats.slice(0, 50).map(p => (
-                            <tr key={p.pathname} className={p.isProductPage ? 'row-highlight-blue' : ''}>
-                              <td className="keyword-cell-keyword" title={p.pathname}>{p.pathname}</td>
+                            <tr key={p.pathname} className={p.isProductPage ? 'bg-primary-fixed/10' : ''}>
+                              <td className="text-sm font-medium text-on-surface max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={p.pathname}>{p.pathname}</td>
                               <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#666' }}>
                                 {p.pageTitle || '—'}
                               </td>
@@ -2859,11 +3055,11 @@ export function AdminAnalyticsPage() {
                                 {p.avgScrollDepth > 0 ? `${p.avgScrollDepth}%` : '—'}
                               </td>
                               <td>
-                                <div className="keyword-org-chips">
+                                <div className="flex flex-wrap gap-1">
                                   {(expandedPageOrgs.has(p.pathname) ? p.organizations : p.organizations.slice(0, 2)).map(org => (
                                     <button
                                       key={org}
-                                      className="keyword-org-chip"
+                                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
                                       onClick={() => {
                                         const match = organizations.find(o => o.orgName === org);
                                         if (match) selectOrg(match);
@@ -2875,7 +3071,7 @@ export function AdminAnalyticsPage() {
                                   ))}
                                   {p.organizations.length > 2 && (
                                     <button
-                                      className="keyword-org-more"
+                                      className="text-[10px] text-on-surface-variant font-medium"
                                       onClick={() => setExpandedPageOrgs(prev => {
                                         const next = new Set(prev);
                                         if (next.has(p.pathname)) next.delete(p.pathname);
@@ -2901,37 +3097,37 @@ export function AdminAnalyticsPage() {
                     </div>
 
                     {/* Mobile page cards */}
-                    <div className="mobile-cards page-cards-mobile" style={{ marginTop: '0.5rem' }}>
+                    <div className="md:hidden grid gap-3 mt-3">
                       {pageStats.slice(0, 50).map(p => (
-                        <div key={p.pathname} className={`page-card-mobile${p.isProductPage ? ' page-card-product' : ''}`}>
-                          <div className="page-card-path" title={p.pathname}>{p.pathname}</div>
-                          {p.pageTitle && <div className="page-card-title">{p.pageTitle}</div>}
-                          <div className="page-card-stats">
+                        <div key={p.pathname} className={`bg-surface-container-lowest rounded-xl p-4 shadow-card${p.isProductPage ? ' border-l-2 border-secondary' : ''}`}>
+                          <div className="text-sm font-medium text-on-surface overflow-hidden text-ellipsis whitespace-nowrap" title={p.pathname}>{p.pathname}</div>
+                          {p.pageTitle && <div className="text-xs text-on-surface-variant overflow-hidden text-ellipsis whitespace-nowrap">{p.pageTitle}</div>}
+                          <div className="grid grid-cols-4 gap-2 mt-2">
                             <div>
-                              <div className="page-card-stat-value">{p.views}</div>
-                              <div className="page-card-stat-label">Views</div>
+                              <div className="font-headline text-sm font-bold text-on-surface">{p.views}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Views</div>
                             </div>
                             <div>
-                              <div className="page-card-stat-value">{p.uniqueVisitors}</div>
-                              <div className="page-card-stat-label">Visitors</div>
+                              <div className="font-headline text-sm font-bold text-on-surface">{p.uniqueVisitors}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Visitors</div>
                             </div>
                             <div>
-                              <div className="page-card-stat-value">{p.avgActiveSeconds > 0 ? formatDuration(p.avgActiveSeconds) : '—'}</div>
-                              <div className="page-card-stat-label">Avg Time</div>
+                              <div className="font-headline text-sm font-bold text-on-surface">{p.avgActiveSeconds > 0 ? formatDuration(p.avgActiveSeconds) : '—'}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Avg Time</div>
                             </div>
                             <div>
-                              <div className="page-card-stat-value" style={{ color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
+                              <div className="font-headline text-sm font-bold text-on-surface" style={{ color: p.avgScrollDepth >= 75 ? '#2e7d32' : p.avgScrollDepth >= 50 ? '#f57f17' : '#888' }}>
                                 {p.avgScrollDepth > 0 ? `${p.avgScrollDepth}%` : '—'}
                               </div>
-                              <div className="page-card-stat-label">Scroll</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Scroll</div>
                             </div>
                           </div>
                           {p.organizations.length > 0 && (
-                            <div className="page-card-orgs">
+                            <div className="flex flex-wrap gap-1 mt-2">
                               {p.organizations.slice(0, 3).map(org => (
                                 <button
                                   key={org}
-                                  className="keyword-org-chip"
+                                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer"
                                   onClick={() => {
                                     const match = organizations.find(o => o.orgName === org);
                                     if (match) selectOrg(match);
@@ -2942,7 +3138,7 @@ export function AdminAnalyticsPage() {
                                 </button>
                               ))}
                               {p.organizations.length > 3 && (
-                                <span className="keyword-org-more">+{p.organizations.length - 3}</span>
+                                <span className="text-[10px] text-on-surface-variant font-medium">+{p.organizations.length - 3}</span>
                               )}
                             </div>
                           )}
@@ -2956,37 +3152,37 @@ export function AdminAnalyticsPage() {
               {/* ── Products Tab ── */}
               {pageAnalyticsTab === 'products' && (
                 productStats.length > 0 ? (
-                  <div className="product-card-grid">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {productStats.map(p => (
-                      <div key={p.pathname} className="product-card">
-                        <div className="product-card-name">{p.productName}</div>
-                        <div className="product-card-path">{p.pathname}</div>
-                        <div className="product-card-metrics">
-                          <div className="product-card-metric">
-                            <span className="product-metric-value">{p.views}</span>
-                            <span className="product-metric-label">Views</span>
+                      <div key={p.pathname} className="bg-surface-container-lowest rounded-xl p-5 shadow-card">
+                        <div className="font-headline text-lg font-bold text-on-surface">{p.productName}</div>
+                        <div className="text-xs text-on-surface-variant mb-3">{p.pathname}</div>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                          <div className="text-center">
+                            <span className="font-headline text-xl font-bold text-on-surface">{p.views}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Views</span>
                           </div>
-                          <div className="product-card-metric">
-                            <span className="product-metric-value">{p.uniqueVisitors}</span>
-                            <span className="product-metric-label">Visitors</span>
+                          <div className="text-center">
+                            <span className="font-headline text-xl font-bold text-on-surface">{p.uniqueVisitors}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Visitors</span>
                           </div>
-                          <div className="product-card-metric">
-                            <span className="product-metric-value">{p.pdfDownloads}</span>
-                            <span className="product-metric-label">Downloads</span>
+                          <div className="text-center">
+                            <span className="font-headline text-xl font-bold text-on-surface">{p.pdfDownloads}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Downloads</span>
                           </div>
-                          <div className="product-card-metric">
-                            <span className="product-metric-value">{p.contactFormSubmits}</span>
-                            <span className="product-metric-label">RFQs</span>
+                          <div className="text-center">
+                            <span className="font-headline text-xl font-bold text-on-surface">{p.contactFormSubmits}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">RFQs</span>
                           </div>
                         </div>
-                        <div className="product-card-conversion">
-                          <div className="product-conversion-header">
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center text-xs text-on-surface-variant mb-1">
                             <span>Conversion Rate</span>
-                            <span className="product-conversion-value">{Math.round(p.conversionRate * 100)}%</span>
+                            <span className="font-bold text-on-surface">{Math.round(p.conversionRate * 100)}%</span>
                           </div>
-                          <div className="product-conversion-bar-track">
+                          <div className="bg-surface-container-high rounded-full h-1.5">
                             <div
-                              className="product-conversion-bar-fill"
+                              className="rounded-full h-1.5 transition-all"
                               style={{
                                 width: `${Math.max(p.conversionRate * 100, 2)}%`,
                                 background: p.conversionRate >= 0.1 ? '#43a047' : p.conversionRate >= 0.05 ? '#f9a825' : '#e0e0e0',
@@ -2995,14 +3191,14 @@ export function AdminAnalyticsPage() {
                           </div>
                         </div>
                         {p.avgScrollDepth > 0 && (
-                          <div className="product-card-conversion">
-                            <div className="product-conversion-header">
+                          <div className="mb-3">
+                            <div className="flex justify-between items-center text-xs text-on-surface-variant mb-1">
                               <span>Avg Scroll Depth</span>
-                              <span className="product-conversion-value">{p.avgScrollDepth}%</span>
+                              <span className="font-bold text-on-surface">{p.avgScrollDepth}%</span>
                             </div>
-                            <div className="product-conversion-bar-track">
+                            <div className="bg-surface-container-high rounded-full h-1.5">
                               <div
-                                className="product-conversion-bar-fill"
+                                className="rounded-full h-1.5 transition-all"
                                 style={{
                                   width: `${p.avgScrollDepth}%`,
                                   background: p.avgScrollDepth >= 75 ? '#43a047' : p.avgScrollDepth >= 50 ? '#f9a825' : '#e0e0e0',
@@ -3012,7 +3208,7 @@ export function AdminAnalyticsPage() {
                           </div>
                         )}
                         {p.avgActiveSeconds > 0 && (
-                          <div className="product-card-time">
+                          <div className="text-xs text-on-surface-variant mt-2">
                             Avg time: {formatDuration(p.avgActiveSeconds)}
                           </div>
                         )}
@@ -3030,8 +3226,8 @@ export function AdminAnalyticsPage() {
               {pageAnalyticsTab === 'landingPages' && (
                 landingPageStats.length > 0 ? (
                   <>
-                  <div className="analytics-table-wrapper">
-                    <table className="admin-table keyword-table">
+                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr>
                           <th>Landing Page</th>
@@ -3051,10 +3247,10 @@ export function AdminAnalyticsPage() {
                           };
                           return (
                             <tr key={lp.pathname}>
-                              <td className="keyword-cell-keyword" title={lp.pathname}>{lp.pathname}</td>
+                              <td className="text-sm font-medium text-on-surface max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={lp.pathname}>{lp.pathname}</td>
                               <td style={{ textAlign: 'center' }}>{lp.landings}</td>
                               <td>
-                                <span className="keyword-source-badge" style={{
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{
                                   background: lp.topSource.includes('paid') ? '#e3f2fd' : lp.topSource.includes('organic') ? '#e8f5e9' : '#f5f5f5',
                                   color: lp.topSource.includes('paid') ? '#1565c0' : lp.topSource.includes('organic') ? '#2e7d32' : '#555',
                                   border: '1px solid ' + (lp.topSource.includes('paid') ? '#bbdefb' : lp.topSource.includes('organic') ? '#c8e6c9' : '#e0e0e0'),
@@ -3064,13 +3260,13 @@ export function AdminAnalyticsPage() {
                               </td>
                               <td style={{ textAlign: 'center' }}>{lp.avgSessionPages}</td>
                               <td>
-                                <div className="bounce-rate-cell">
-                                  <span className="bounce-rate-value" style={{ color: bounceColor }}>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold w-10" style={{ color: bounceColor }}>
                                     {Math.round(lp.bounceRate * 100)}%
                                   </span>
-                                  <div className="bounce-rate-bar-track">
+                                  <div className="flex-1 bg-surface-container-high rounded-full h-1.5">
                                     <div
-                                      className="bounce-rate-bar-fill"
+                                      className="rounded-full h-1.5 transition-all"
                                       style={{ width: `${lp.bounceRate * 100}%`, background: bounceColor }}
                                     />
                                   </div>
@@ -3084,7 +3280,7 @@ export function AdminAnalyticsPage() {
                   </div>
 
                   {/* Mobile landing page cards */}
-                  <div className="mobile-cards landing-cards-mobile" style={{ marginTop: '0.5rem' }}>
+                  <div className="md:hidden grid gap-3 mt-3">
                     {landingPageStats.slice(0, 50).map(lp => {
                       const channelLabels: Record<string, string> = {
                         paid_search: 'Paid Search', organic_search: 'Organic',
@@ -3093,22 +3289,22 @@ export function AdminAnalyticsPage() {
                       };
                       const bounceColor = lp.bounceRate < 0.4 ? '#2e7d32' : lp.bounceRate < 0.6 ? '#f57f17' : '#c62828';
                       return (
-                        <div key={lp.pathname} className="landing-card-mobile">
-                          <div className="landing-card-path" title={lp.pathname}>{lp.pathname}</div>
-                          <div className="landing-card-stats">
+                        <div key={lp.pathname} className="bg-surface-container-lowest rounded-xl p-4 shadow-card">
+                          <div className="text-sm font-medium text-on-surface overflow-hidden text-ellipsis whitespace-nowrap" title={lp.pathname}>{lp.pathname}</div>
+                          <div className="grid grid-cols-3 gap-2 mt-2">
                             <div>
-                              <div className="page-card-stat-value">{lp.landings}</div>
-                              <div className="page-card-stat-label">Landings</div>
+                              <div className="font-headline text-sm font-bold text-on-surface">{lp.landings}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Landings</div>
                             </div>
                             <div>
-                              <div className="page-card-stat-value">{channelLabels[lp.topSource] || lp.topSource}</div>
-                              <div className="page-card-stat-label">Source</div>
+                              <div className="font-headline text-sm font-bold text-on-surface">{channelLabels[lp.topSource] || lp.topSource}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Source</div>
                             </div>
                             <div>
-                              <div className="page-card-stat-value" style={{ color: bounceColor }}>
+                              <div className="font-headline text-sm font-bold text-on-surface" style={{ color: bounceColor }}>
                                 {Math.round(lp.bounceRate * 100)}%
                               </div>
-                              <div className="page-card-stat-label">Bounce</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Bounce</div>
                             </div>
                           </div>
                         </div>
@@ -3128,44 +3324,44 @@ export function AdminAnalyticsPage() {
       )}
 
       {/* Event Count */}
-      <div className="analytics-controls-row">
-        <span className="analytics-event-count">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs text-on-surface-variant font-medium">
           {filteredEvents.length} events from {organizations.length} visitors
         </span>
       </div>
 
       {/* Search & Export */}
-      <div className="analytics-toolbar">
+      <div className="flex items-center gap-3 mb-4">
         <input
           type="text"
-          className="analytics-search"
+          className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl py-2.5 pl-10 pr-4 text-sm flex-1"
           placeholder="Search organizations..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <button className="analytics-export-btn" onClick={exportCSV}>
+        <button className="bg-surface-container-lowest border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-container-low" onClick={exportCSV}>
           Export CSV
         </button>
       </div>
 
       {/* Collapsible Enhanced Filters */}
-      <div className="analytics-filter-bar-wrapper">
+      <div className="mb-6">
         <h3
-          className="analytics-section-header analytics-filter-header"
+          className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4 cursor-pointer select-none"
           style={{ cursor: 'pointer', userSelect: 'none' }}
           onClick={() => setFiltersOpen(!filtersOpen)}
         >
-          <span className="keyword-toggle-icon">{filtersOpen ? '▼' : '▶'}</span>
+          <span className="text-on-surface-variant text-xs">{filtersOpen ? '▼' : '▶'}</span>
           {' '}Filters
           {!filtersOpen && activeFilterCount > 0 && (
-            <span className="analytics-filter-count-badge">{activeFilterCount}</span>
+            <span className="bg-secondary text-white px-1.5 py-0.5 rounded text-[10px] font-bold ml-2">{activeFilterCount}</span>
           )}
           {!filtersOpen && filterSummary && (
-            <span className="analytics-filter-summary">{filterSummary}</span>
+            <span className="text-xs text-on-surface-variant ml-2">{filterSummary}</span>
           )}
           {activeFilterCount > 0 && (
             <button
-              className="analytics-filter-clear-all"
+              className="text-xs text-secondary font-medium ml-auto hover:underline cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setChannelFilter('all');
@@ -3180,10 +3376,10 @@ export function AdminAnalyticsPage() {
           )}
         </h3>
         {filtersOpen && (
-          <div className="analytics-enhanced-filters">
-            <div className="analytics-filter-group">
-              <span className="analytics-filter-label">Channel:</span>
-              <select className="analytics-filter-select" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Channel:</span>
+              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="paid_search">Paid Search</option>
                 <option value="organic_search">Organic Search</option>
@@ -3195,21 +3391,21 @@ export function AdminAnalyticsPage() {
                 <option value="direct">Direct</option>
               </select>
             </div>
-            <div className="analytics-filter-group">
-              <span className="analytics-filter-label">Region:</span>
-              <select className="analytics-filter-select" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Region:</span>
+              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
                 <option value="all">All</option>
                 {availableCountries.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
-            <div className="analytics-filter-group">
-              <span className="analytics-filter-label">Score:</span>
-              <div className="analytics-score-range">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Score:</span>
+              <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  className="analytics-score-input"
+                  className="w-16 bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-2 text-sm text-center"
                   placeholder="Min"
                   min="0" max="1" step="0.1"
                   value={scoreMin}
@@ -3218,7 +3414,7 @@ export function AdminAnalyticsPage() {
                 <span>–</span>
                 <input
                   type="number"
-                  className="analytics-score-input"
+                  className="w-16 bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-2 text-sm text-center"
                   placeholder="Max"
                   min="0" max="1" step="0.1"
                   value={scoreMax}
@@ -3226,9 +3422,9 @@ export function AdminAnalyticsPage() {
                 />
               </div>
             </div>
-            <div className="analytics-filter-group">
-              <span className="analytics-filter-label">Lifecycle:</span>
-              <select className="analytics-filter-select" value={lifecycleFilter} onChange={(e) => setLifecycleFilter(e.target.value)}>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Lifecycle:</span>
+              <select className="bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-1.5 px-3 text-sm" value={lifecycleFilter} onChange={(e) => setLifecycleFilter(e.target.value)}>
                 <option value="all">All</option>
                 <option value="awareness">Awareness</option>
                 <option value="interest">Interest</option>
@@ -3241,19 +3437,19 @@ export function AdminAnalyticsPage() {
       </div>
 
       {/* Organization Table */}
-      <h2 className="analytics-section-header">
+      <h2 id="full-org-table" className="font-headline text-lg font-bold text-on-surface flex items-center gap-2 mb-4">
         Visitor Organizations
         {kpiFilter !== 'all' && (
-          <span className="analytics-filter-badge">
+          <span className="bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-medium text-on-surface-variant ml-2">
             Filtered
-            <button className="analytics-filter-clear" onClick={() => setKpiFilter('all')}>
+            <button className="text-xs text-secondary hover:underline cursor-pointer" onClick={() => setKpiFilter('all')}>
               &times;
             </button>
           </span>
         )}
       </h2>
-      <div className="analytics-table-wrapper">
-        <table className="admin-table analytics-org-table">
+      <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
           <thead>
             <tr>
               <th onClick={() => handleSort('orgName')}>
@@ -3290,18 +3486,18 @@ export function AdminAnalyticsPage() {
             {sortedOrgs.map((org) => (
               <tr
                 key={org.key}
-                className={`analytics-org-row ${org.isTargetCustomer ? 'analytics-target-row' : ''} ${
-                  org.leadTier ? `tier-border-${org.leadTier}` : org.isAnonymousHighIntent ? 'tier-border-intent' : ''
+                className={`hover:bg-primary-fixed/30 transition-colors cursor-pointer ${org.isTargetCustomer ? 'bg-secondary/5' : ''} ${
+                  org.leadTier ? 'border-l-2 border-secondary' : org.isAnonymousHighIntent ? 'border-l-2 border-tertiary-fixed-dim' : ''
                 }`}
                 onClick={() => selectOrg(org)}
               >
                 <td>
-                  <div className="analytics-org-primary">{org.orgName}</div>
+                  <div className="font-semibold text-on-surface">{org.orgName}</div>
                   {org.isISPVisitor && (
-                    <div className="analytics-org-secondary" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
+                    <div className="text-xs text-on-surface-variant mt-0.5" style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
                       ISP individual visitor · ID: {org.key.substring(0, 8)}
                       {org.isAnonymousHighIntent && (
-                        <span className="isp-intent-badge" title="ISP visitor with purchase intent">
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-tertiary-fixed-dim/30 text-on-surface text-[10px] font-semibold" title="ISP visitor with purchase intent">
                           📶 ISP Intent
                         </span>
                       )}
@@ -3310,46 +3506,46 @@ export function AdminAnalyticsPage() {
                 </td>
                 <td>
                   {org.organizationType ? (
-                    <span className={`analytics-type-badge analytics-type-${org.organizationType}`}>
+                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
                       {org.organizationType}
                     </span>
                   ) : (
-                    <span className="analytics-na">N/A</span>
+                    <span className="text-on-surface-variant/50 text-xs">N/A</span>
                   )}
                 </td>
-                <td className="analytics-geo">
-                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || <span className="analytics-na">N/A</span>}
+                <td className="text-xs text-on-surface-variant">
+                  {[org.city, org.region, org.country].filter(Boolean).join(', ') || <span className="text-on-surface-variant/50 text-xs">N/A</span>}
                 </td>
                 <td>
                   {org.productsViewed.length > 0
                     ? org.productsViewed.join(', ')
-                    : <span className="analytics-na">N/A</span>}
+                    : <span className="text-on-surface-variant/50 text-xs">N/A</span>}
                 </td>
                 <td>{org.uniquePages}</td>
-                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="analytics-na" title="No time data yet — visitor may still be on site">Pending</span>}</td>
+                <td>{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : <span className="text-on-surface-variant/50 text-xs" title="No time data yet — visitor may still be on site">Pending</span>}</td>
                 <td>{org.totalEvents}</td>
                 <td>
                   {org.leadTier ? (
-                    <span className={`analytics-tier analytics-tier-${org.leadTier}`}>
+                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-secondary/10 text-secondary">
                       {org.leadTier}
                     </span>
                   ) : org.isAnonymousHighIntent ? (
-                    <span className="analytics-tier analytics-tier-intent">Intent</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Intent</span>
                   ) : (
-                    <span className="analytics-na">N/A</span>
+                    <span className="text-on-surface-variant/50 text-xs">N/A</span>
                   )}
                 </td>
                 <td>
                   {engagementLevel(org.maxBehaviorScore)
-                    ? <span className={`analytics-engagement analytics-engagement-${engagementLevel(org.maxBehaviorScore)!.toLowerCase()}`}>{engagementLevel(org.maxBehaviorScore)}</span>
-                    : <span className="analytics-na">N/A</span>}
+                    ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-surface-container text-on-surface-variant">{engagementLevel(org.maxBehaviorScore)}</span>
+                    : <span className="text-on-surface-variant/50 text-xs">N/A</span>}
                 </td>
-                <td className="analytics-timestamp">{formatRelativeTime(org.lastVisit)}</td>
+                <td className="text-xs text-on-surface-variant whitespace-nowrap">{formatRelativeTime(org.lastVisit)}</td>
               </tr>
             ))}
             {sortedOrgs.length === 0 && (
               <tr>
-                <td colSpan={10} className="admin-no-results">
+                <td colSpan={10} className="text-center py-8 text-on-surface-variant text-sm">
                   No visitor data for this period.
                 </td>
               </tr>
@@ -3359,58 +3555,58 @@ export function AdminAnalyticsPage() {
       </div>
 
       {/* Mobile org cards — visible only at ≤480px */}
-      <div className="mobile-cards org-cards-mobile">
+      <div className="md:hidden grid gap-3">
         {sortedOrgs.length === 0 ? (
-          <div className="admin-no-results" style={{ textAlign: 'center', padding: '1.5rem' }}>
+          <div className="text-center py-8 text-on-surface-variant text-sm" style={{ textAlign: 'center', padding: '1.5rem' }}>
             No visitor data for this period.
           </div>
         ) : (
           sortedOrgs.map((org) => (
             <div
               key={org.key}
-              className={`org-card-mobile${org.isTargetCustomer ? ' org-card-target' : ''}${
-                org.leadTier === 'A' ? ' org-card-tier-A' : org.leadTier === 'B' ? ' org-card-tier-B' : ''
-              }${org.isAnonymousHighIntent ? ' org-card-intent' : ''}`}
+              className={`bg-surface-container-lowest rounded-xl p-4 shadow-card cursor-pointer hover:translate-y-[-2px] transition-all${org.isTargetCustomer ? ' border-l-2 border-secondary' : ''}${
+                org.leadTier === 'A' ? ' ring-2 ring-secondary' : org.leadTier === 'B' ? ' ring-1 ring-secondary/50' : ''
+              }${org.isAnonymousHighIntent ? ' border-l-2 border-tertiary-fixed-dim' : ''}`}
               onClick={() => selectOrg(org)}
             >
-              <div className="org-card-header">
-                <span className="org-card-name" title={org.orgName}>{org.orgName}</span>
-                <div className="org-card-badges">
+              <div className="flex justify-between items-start mb-1">
+                <span className="font-headline font-bold text-sm text-on-surface overflow-hidden text-ellipsis whitespace-nowrap" title={org.orgName}>{org.orgName}</span>
+                <div className="flex gap-1 items-center shrink-0">
                   {org.leadTier && (
-                    <span className={`org-card-tier analytics-tier-${org.leadTier}`}>{org.leadTier}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary">{org.leadTier}</span>
                   )}
                   {org.isAnonymousHighIntent && !org.leadTier && (
-                    <span className="org-card-tier analytics-tier-intent">Intent</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-tertiary-fixed-dim/30 text-on-surface">Intent</span>
                   )}
                   {org.organizationType && (
-                    <span className={`org-card-type analytics-type-${org.organizationType}`}>{org.organizationType}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">{org.organizationType}</span>
                   )}
                 </div>
               </div>
-              <div className="org-card-location">
+              <div className="text-xs text-on-surface-variant mb-2">
                 {[org.city, org.region, org.country].filter(Boolean).join(', ') || 'Unknown location'}
               </div>
-              <div className="org-card-stats">
+              <div className="grid grid-cols-4 gap-2 mt-2">
                 <div>
-                  <div className="org-card-stat-value">{org.uniquePages}</div>
-                  <div className="org-card-stat-label">Pages</div>
+                  <div className="font-headline text-sm font-bold text-on-surface">{org.uniquePages}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Pages</div>
                 </div>
                 <div>
-                  <div className="org-card-stat-value">{org.totalEvents}</div>
-                  <div className="org-card-stat-label">Events</div>
+                  <div className="font-headline text-sm font-bold text-on-surface">{org.totalEvents}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Events</div>
                 </div>
                 <div>
-                  <div className="org-card-stat-value">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '—'}</div>
-                  <div className="org-card-stat-label">Time</div>
+                  <div className="font-headline text-sm font-bold text-on-surface">{org.totalTimeOnSite > 0 ? formatDuration(org.totalTimeOnSite) : '—'}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Time</div>
                 </div>
                 <div>
-                  <div className="org-card-stat-value">
+                  <div className="font-headline text-sm font-bold text-on-surface">
                     {engagementLevel(org.maxBehaviorScore) || '—'}
                   </div>
-                  <div className="org-card-stat-label">Engage</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Engage</div>
                 </div>
               </div>
-              <div className="org-card-footer">
+              <div className="flex justify-between items-center text-xs text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/10">
                 <span>{formatRelativeTime(org.lastVisit)}</span>
                 {org.isISPVisitor && <span>ISP visitor</span>}
               </div>

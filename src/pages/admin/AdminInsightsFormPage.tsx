@@ -208,17 +208,31 @@ export function AdminInsightsFormPage() {
   }
 
   if (loading) {
-    return <div className="admin-loading">Loading article...</div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-on-surface-variant font-body text-sm">Loading article...</p>
+      </div>
+    );
   }
 
   if (loadError) {
-    return <div className="admin-error">Error: {loadError}</div>;
+    return (
+      <div className="bg-error-container text-on-error-container p-4 rounded-lg">
+        Error: {loadError}
+      </div>
+    );
   }
 
   return (
-    <div className="admin-insights-form-page">
-      <h1>{isEdit ? 'Edit Article' : fromId ? 'Duplicate Article' : 'New Article'}</h1>
-      {submitError && <div className="admin-error">{submitError}</div>}
+    <div>
+      <h1 className="font-headline text-3xl font-bold text-on-surface tracking-tight mb-6">
+        {isEdit ? 'Edit Article' : fromId ? 'Duplicate Article' : 'New Article'}
+      </h1>
+      {submitError && (
+        <div className="bg-error-container text-on-error-container p-4 rounded-lg mb-6">
+          {submitError}
+        </div>
+      )}
       <InsightsForm
         initialData={initialData}
         onSubmit={handleSubmit}

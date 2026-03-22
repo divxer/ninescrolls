@@ -152,16 +152,13 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       setIsStandaloneComponent(initialData.isStandaloneComponent || false);
       setIsDraft(initialData.isDraft || false);
       setContentType((initialData.contentType as ContentType) || 'insight');
-      // Show cover image preview when editing an existing article
       if (initialData.imageUrl) {
         if (!initialData.imageUrl.startsWith('/assets/')) {
-          // CDN image URL
           setUseCustomUrl(true);
           setImageUploadState('done');
           const url = initialData.imageUrl;
           setImagePreviewUrl(url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') ? url : `${url}-lg.webp`);
         } else {
-          // Local image path
           setImageUploadState('done');
           setImagePreviewUrl(initialData.imageUrl);
         }
@@ -193,28 +190,24 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     }
   }, [initialData]);
 
-  // Auto-generate slug from title
   useEffect(() => {
     if (!slugManuallyEdited && title) {
       setSlug(generateSlug(title));
     }
   }, [title, slugManuallyEdited]);
 
-  // Auto-calculate read time from content
   useEffect(() => {
     if (!readTimeManuallyEdited && content) {
       setReadTime(estimateReadTime(content));
     }
   }, [content, readTimeManuallyEdited]);
 
-  // Auto-extract excerpt from content
   useEffect(() => {
     if (!excerptManuallyEdited && content) {
       setExcerpt(stripHtml(content).slice(0, 160));
     }
   }, [content, excerptManuallyEdited]);
 
-  // Auto-fill image URL from slug
   useEffect(() => {
     if (!imageUrlManuallyEdited && slug) {
       setImageUrl(`/assets/images/insights/${slug}`);
@@ -248,7 +241,6 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     }
   }
 
-  // Tag management
   function addTag(value: string) {
     const tag = value.trim().toLowerCase();
     if (tag && !tags.includes(tag)) {
@@ -270,7 +262,6 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     }
   }
 
-  // Image upload
   async function handleImageUpload(file: File) {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       setImageUploadError('Unsupported file type. Use JPEG, PNG, or WebP.');
@@ -293,13 +284,8 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     setImageUploadError('');
 
     try {
-      // Step 1: Get presigned URL
       const { uploadUrl, s3Key } = await getImageUploadUrl(slug, file.name, file.type);
-
-      // Step 2: Upload to S3
       await uploadImageToS3(uploadUrl, file, setImageUploadProgress);
-
-      // Step 3: Process (resize + WebP)
       setImageUploadState('processing');
       const result = await processImage(s3Key, slug);
 
@@ -307,7 +293,6 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
         console.warn('Image processing had partial errors:', result.error);
       }
 
-      // Auto-fill imageUrl with CDN path (extensionless, -lg suffix for hero derivation)
       const cdnImageUrl = `${result.cdnBaseUrl}/insights/${slug}/${result.heroPrefix}-lg`;
       setImageUrl(cdnImageUrl);
       setImageUrlManuallyEdited(true);
@@ -329,11 +314,9 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleImageUpload(file);
-    // Reset input so same file can be re-selected
     e.target.value = '';
   }
 
-  // Related products management
   function addRelatedProduct() {
     setRelatedProducts([...relatedProducts, { href: '', label: '' }]);
   }
@@ -358,7 +341,6 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     if (!readTime || readTime < 1) newErrors.readTime = 'Read time must be at least 1';
     if (contentType === 'insight' && !imageUrl.trim()) newErrors.imageUrl = 'Cover image is required';
 
-    // Validate related products
     const validProducts = relatedProducts.filter(p => p.href.trim() || p.label.trim());
     for (const p of validProducts) {
       if (!p.href.trim() || !p.label.trim()) {
@@ -395,7 +377,6 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
       contentType,
     });
 
-    // Clear draft on successful submit
     localStorage.removeItem(DRAFT_STORAGE_KEY);
   }
 
@@ -403,481 +384,518 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
 
   return (
     <>
-      <form className="insights-form" onSubmit={handleSubmit}>
-        <div className="insights-form-grid">
-          <div className="insights-form-main">
-            {/* Title */}
-            <div className="form-field">
-              <div className="form-label-row">
-                <label htmlFor="title">Title *</label>
-                <span className={`char-count ${title.length > TITLE_MAX ? 'char-count-over' : ''}`}>
-                  {title.length}/{TITLE_MAX}
-                </span>
+      <form onSubmit={handleSubmit}>
+        {/* Editor header bar */}
+        <div className="bg-surface-container-low rounded-2xl p-8 border-t-4 border-secondary overflow-hidden">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center">
+                <span className="material-symbols-outlined">article</span>
               </div>
-              <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Article title"
-              />
-              {errors.title && <span className="field-error">{errors.title}</span>}
-            </div>
-
-            {/* Slug */}
-            <div className="form-field">
-              <div className="form-label-row">
-                <label htmlFor="slug">Slug *</label>
-                <span className="form-hint">Auto-generated from title</span>
+              <div>
+                <h3 className="text-xl font-bold font-headline">
+                  {initialData ? 'Edit Article' : 'New Article'}
+                </h3>
+                {isDraft && (
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Draft</p>
+                )}
               </div>
-              <input
-                id="slug"
-                type="text"
-                value={slug}
-                onChange={(e) => {
-                  setSlug(e.target.value);
-                  setSlugManuallyEdited(true);
-                }}
-                placeholder="url-friendly-slug"
-              />
-              {errors.slug && <span className="field-error">{errors.slug}</span>}
             </div>
-
-            {/* Excerpt */}
-            <div className="form-field">
-              <div className="form-label-row">
-                <label htmlFor="excerpt">Excerpt</label>
-                <div className="form-label-row-right">
-                  <span className={`char-count ${excerptLen > EXCERPT_MAX ? 'char-count-over' : excerptLen > EXCERPT_MAX * 0.9 ? 'char-count-warn' : ''}`}>
-                    {excerptLen}/{EXCERPT_MAX}
-                  </span>
-                  <button
-                    type="button"
-                    className="ai-generate-btn"
-                    onClick={handleAIGenerate}
-                    disabled={!stripHtml(content).trim() || isGenerating}
-                  >
-                    {isGenerating ? 'Generating...' : 'AI Generate'}
-                  </button>
-                </div>
-              </div>
-              <textarea
-                id="excerpt"
-                value={excerpt}
-                onChange={(e) => {
-                  setExcerpt(e.target.value);
-                  setExcerptManuallyEdited(true);
-                }}
-                placeholder="Short description for article cards (150-200 chars recommended)"
-                rows={3}
-              />
-              {errors.ai && <span className="field-error">{errors.ai}</span>}
-            </div>
-
-            {/* Content */}
-            <div className="form-field">
-              <label>Content</label>
-              <RichTextEditor
-                value={content}
-                onChange={setContent}
-                placeholder="Article content..."
-                slug={slug}
-              />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="text-sm font-semibold text-on-surface-variant hover:text-on-surface px-4 py-2 transition-all"
+                onClick={handleSaveDraft}
+              >
+                {draftSaved ? 'Saved!' : 'Save Local'}
+              </button>
+              <button
+                type="button"
+                className="text-sm font-semibold text-on-surface-variant hover:text-on-surface px-4 py-2 transition-all"
+                onClick={() => setShowPreview(true)}
+                disabled={!title.trim()}
+              >
+                Preview
+              </button>
+              {(!initialData || isDraft) && (
+                <button
+                  type="button"
+                  className="bg-surface-container-lowest border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-all"
+                  disabled={isSubmitting}
+                  onClick={(e) => handleSubmit(e as any, true)}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Draft'}
+                </button>
+              )}
+              <button
+                type="button"
+                className="bg-primary text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-all"
+                disabled={isSubmitting}
+                onClick={(e) => handleSubmit(e as any, false)}
+              >
+                {isSubmitting ? 'Publishing...' : initialData && !isDraft ? 'Update' : 'Publish Now'}
+              </button>
             </div>
           </div>
 
-          <div className="insights-form-sidebar">
-            {/* Action buttons at top of sidebar */}
-            <div className="sidebar-actions">
-              {isDraft && (
-                <div className="draft-indicator">Draft</div>
-              )}
-              <div className="sidebar-actions-row">
-                {(!initialData || isDraft) && (
-                  <button
-                    type="button"
-                    className="admin-btn-outline sidebar-btn-half"
-                    disabled={isSubmitting}
-                    onClick={(e) => handleSubmit(e as any, true)}
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save as Draft'}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={`admin-submit-btn ${!initialData || isDraft ? 'sidebar-btn-half' : 'sidebar-btn-full'}`}
-                  disabled={isSubmitting}
-                  onClick={(e) => handleSubmit(e as any, false)}
-                >
-                  {isSubmitting ? 'Publishing...' : initialData && !isDraft ? 'Update' : 'Publish'}
-                </button>
-              </div>
-              <div className="sidebar-actions-row">
-                <button
-                  type="button"
-                  className="admin-btn-outline sidebar-btn-half"
-                  onClick={handleSaveDraft}
-                >
-                  {draftSaved ? 'Local Saved!' : 'Save Local'}
-                </button>
-                <button
-                  type="button"
-                  className="admin-btn-outline sidebar-btn-half"
-                  onClick={() => setShowPreview(true)}
-                  disabled={!title.trim()}
-                >
-                  Preview
-                </button>
-              </div>
-            </div>
-
-            <hr className="sidebar-divider" />
-
-            {/* Content Type */}
-            <div className="form-field">
-              <label>Content Type</label>
-              <div className="content-type-toggle">
-                <button
-                  type="button"
-                  className={`content-type-btn ${contentType === 'insight' ? 'active' : ''}`}
-                  onClick={() => {
-                    setContentType('insight');
-                    setCategory(INSIGHT_CATEGORIES[0]);
-                  }}
-                >
-                  Insight
-                </button>
-                <button
-                  type="button"
-                  className={`content-type-btn ${contentType === 'news' ? 'active' : ''}`}
-                  onClick={() => {
-                    setContentType('news');
-                    setCategory(NEWS_CATEGORIES[0]);
-                  }}
-                >
-                  News
-                </button>
-              </div>
-            </div>
-
-            {/* Author */}
-            <div className="form-field" ref={authorRef}>
-              <label htmlFor="author">Author *</label>
-              <div className="author-combobox">
+          <div className="grid grid-cols-12 gap-8">
+            {/* Main content area */}
+            <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+              {/* Title */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="title" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Title *</label>
+                  <span className={`text-[10px] font-medium ${title.length > TITLE_MAX ? 'text-error' : 'text-on-surface-variant'}`}>
+                    {title.length}/{TITLE_MAX}
+                  </span>
+                </div>
                 <input
-                  id="author"
+                  id="title"
                   type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  onFocus={() => setShowAuthorDropdown(true)}
-                  autoComplete="off"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter article title..."
+                  className="w-full border-none focus:ring-0 text-3xl font-bold font-headline placeholder:text-outline-variant bg-transparent"
                 />
-                <button
-                  type="button"
-                  className="author-combobox-toggle"
-                  onClick={() => setShowAuthorDropdown(!showAuthorDropdown)}
-                  tabIndex={-1}
-                  aria-label="Toggle author list"
-                >
-                  &#9662;
-                </button>
-                {showAuthorDropdown && (
-                  <ul className="author-dropdown">
-                    {AUTHORS.filter(a => a.toLowerCase().includes(author.toLowerCase())).map((a) => (
-                      <li
-                        key={a}
-                        className={`author-option ${a === author ? 'author-option-selected' : ''}`}
-                        onMouseDown={() => {
-                          setAuthor(a);
-                          setShowAuthorDropdown(false);
-                        }}
-                      >
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {errors.author && <span className="field-error">{errors.author}</span>}
-            </div>
-
-            {/* Publish Date */}
-            <div className="form-field">
-              <label htmlFor="publishDate">Publish Date *</label>
-              <input
-                id="publishDate"
-                type="date"
-                value={publishDate}
-                onChange={(e) => setPublishDate(e.target.value)}
-              />
-              {errors.publishDate && <span className="field-error">{errors.publishDate}</span>}
-            </div>
-
-            {/* Category */}
-            <div className="form-field">
-              <label htmlFor="category">Category *</label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {availableCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              {errors.category && <span className="field-error">{errors.category}</span>}
-            </div>
-
-            {/* Read Time */}
-            <div className="form-field">
-              <div className="form-label-row">
-                <label htmlFor="readTime">Read Time (minutes) *</label>
-                <span className="form-hint">Auto-calculated</span>
-              </div>
-              <input
-                id="readTime"
-                type="number"
-                min={1}
-                value={readTime}
-                onChange={(e) => {
-                  setReadTime(Number(e.target.value));
-                  setReadTimeManuallyEdited(true);
-                }}
-              />
-              {errors.readTime && <span className="field-error">{errors.readTime}</span>}
-            </div>
-
-            {/* Cover Image Upload */}
-            <div className="form-field">
-              <div className="form-label-row">
-                <label>Cover Image *</label>
-                <button
-                  type="button"
-                  className="admin-btn-sm"
-                  onClick={() => setUseCustomUrl(!useCustomUrl)}
-                >
-                  {useCustomUrl ? 'Use Upload' : 'Use URL'}
-                </button>
+                {errors.title && <span className="text-error text-[10px] mt-1">{errors.title}</span>}
               </div>
 
-              {useCustomUrl ? (
-                <>
+              {/* Slug */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="slug" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">URL Slug *</label>
+                  <span className="text-[10px] text-on-surface-variant">Auto-generated</span>
+                </div>
+                <div className="flex items-center bg-surface-container-low rounded px-3 py-2">
+                  <span className="text-[10px] text-on-surface-variant/50">ninescrolls.com/</span>
                   <input
-                    id="imageUrl"
+                    id="slug"
                     type="text"
-                    value={imageUrl}
+                    value={slug}
                     onChange={(e) => {
-                      setImageUrl(e.target.value);
-                      setImageUrlManuallyEdited(true);
+                      setSlug(e.target.value);
+                      setSlugManuallyEdited(true);
                     }}
-                    placeholder="/assets/images/insights/... or CDN URL"
+                    placeholder="article-title-here"
+                    className="bg-transparent border-none p-0 text-xs focus:ring-0 ml-0.5 text-on-surface font-medium w-full"
                   />
-                  {imageUrl && (
-                    <div className="image-preview">
-                      <img
-                        src={imageUrl.endsWith('.png') || imageUrl.endsWith('.jpg') || imageUrl.endsWith('.webp') || imageUrl.endsWith('.svg') ? imageUrl : `${imageUrl}.webp`}
-                        alt="Preview"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFileSelect}
-                    style={{ display: 'none' }}
-                  />
-                  <div
-                    className={`image-dropzone ${isDragOver ? 'image-dropzone-active' : ''} ${imageUploadState === 'done' ? 'image-dropzone-done' : ''}`}
-                    onClick={() => imageUploadState !== 'uploading' && imageUploadState !== 'processing' && fileInputRef.current?.click()}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                    onDragLeave={() => setIsDragOver(false)}
-                    onDrop={handleDrop}
-                  >
-                    {imageUploadState === 'idle' && (
-                      <div className="image-dropzone-content">
-                        <span className="image-dropzone-icon">+</span>
-                        <span>Drop image or click to select</span>
-                        <span className="image-dropzone-hint">JPEG, PNG, WebP (max 10MB)</span>
-                      </div>
-                    )}
-                    {imageUploadState === 'uploading' && (
-                      <div className="image-dropzone-content">
-                        <div className="image-upload-progress">
-                          <div className="image-upload-progress-bar" style={{ width: `${imageUploadProgress}%` }} />
-                        </div>
-                        <span>Uploading... {imageUploadProgress}%</span>
-                      </div>
-                    )}
-                    {imageUploadState === 'processing' && (
-                      <div className="image-dropzone-content">
-                        <span className="image-dropzone-spinner" />
-                        <span>Optimizing image...</span>
-                      </div>
-                    )}
-                    {imageUploadState === 'done' && imagePreviewUrl && (
-                      <div className="image-dropzone-content">
-                        <img
-                          src={imagePreviewUrl}
-                          alt="Uploaded preview"
-                          className="image-dropzone-preview"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="image-dropzone-hint">Click to replace</span>
-                      </div>
-                    )}
-                    {imageUploadState === 'error' && (
-                      <div className="image-dropzone-content image-dropzone-error">
-                        <span>{imageUploadError}</span>
-                        <button
-                          type="button"
-                          className="admin-btn-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setImageUploadState('idle');
-                            setImageUploadError('');
-                          }}
-                        >
-                          Retry
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-              {errors.imageUrl && <span className="field-error">{errors.imageUrl}</span>}
-            </div>
+                </div>
+                {errors.slug && <span className="text-error text-[10px] mt-1">{errors.slug}</span>}
+              </div>
 
-            {/* Tags */}
-            <div className="form-field">
-              <label htmlFor="tagInput">Tags</label>
-              <div className="tags-input-wrapper">
-                {tags.map((tag, i) => (
-                  <span key={i} className="tag-pill">
-                    {tag}
+              {/* Excerpt */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="excerpt" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Excerpt</label>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[10px] font-medium ${excerptLen > EXCERPT_MAX ? 'text-error' : excerptLen > EXCERPT_MAX * 0.9 ? 'text-amber-600' : 'text-on-surface-variant'}`}>
+                      {excerptLen}/{EXCERPT_MAX}
+                    </span>
                     <button
                       type="button"
-                      className="tag-pill-remove"
-                      onClick={() => removeTag(i)}
-                      aria-label={`Remove tag ${tag}`}
+                      className="text-[10px] font-bold text-secondary uppercase tracking-widest hover:underline disabled:opacity-50"
+                      onClick={handleAIGenerate}
+                      disabled={!stripHtml(content).trim() || isGenerating}
                     >
-                      &times;
+                      {isGenerating ? 'Generating...' : 'AI Generate'}
                     </button>
-                  </span>
-                ))}
-                <input
-                  id="tagInput"
-                  type="text"
-                  className="tags-input"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagKeyDown}
-                  onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
-                  placeholder={tags.length === 0 ? 'Type and press Enter to add tags' : 'Add tag...'}
+                  </div>
+                </div>
+                <textarea
+                  id="excerpt"
+                  value={excerpt}
+                  onChange={(e) => {
+                    setExcerpt(e.target.value);
+                    setExcerptManuallyEdited(true);
+                  }}
+                  placeholder="Brief summary for search results..."
+                  rows={3}
+                  className="w-full bg-surface-container-low border-none rounded p-2 text-xs focus:ring-1 focus:ring-secondary/30 resize-none"
+                />
+                {errors.ai && <span className="text-error text-[10px] mt-1">{errors.ai}</span>}
+              </div>
+
+              {/* Rich text toolbar placeholder + editor */}
+              <div className="mb-4">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 block">Content</label>
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Article content..."
+                  slug={slug}
                 />
               </div>
             </div>
 
-            {/* Related Products (insights only) */}
-            {contentType === 'insight' && <div className="form-field">
-              <div className="form-label-row">
-                <label>Related Products</label>
-                <button
-                  type="button"
-                  className="admin-btn-sm"
-                  onClick={addRelatedProduct}
-                >
-                  + Add
-                </button>
-              </div>
-              {relatedProducts.length === 0 && (
-                <p className="form-empty-hint">No related products. Click "+ Add" to link products.</p>
-              )}
-              {relatedProducts.map((product, i) => (
-                <div key={i} className="related-product-row">
-                  <input
-                    type="text"
-                    value={product.label}
-                    onChange={(e) => updateRelatedProduct(i, 'label', e.target.value)}
-                    placeholder="Product name"
-                    className="related-product-input"
-                  />
-                  <input
-                    type="text"
-                    value={product.href}
-                    onChange={(e) => updateRelatedProduct(i, 'href', e.target.value)}
-                    placeholder="/products/..."
-                    className="related-product-input"
-                  />
+            {/* SEO Sidebar */}
+            <div className="col-span-12 lg:col-span-4 space-y-6">
+              {/* Content Type */}
+              <div className="bg-surface-container-lowest p-5 rounded-xl">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 block">Content Type</label>
+                <div className="flex bg-surface-container-low p-1 rounded-lg">
                   <button
                     type="button"
-                    className="related-product-remove"
-                    onClick={() => removeRelatedProduct(i)}
-                    aria-label="Remove product"
+                    className={`flex-1 px-4 py-2 rounded-md text-xs font-bold transition-all ${contentType === 'insight' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    onClick={() => {
+                      setContentType('insight');
+                      setCategory(INSIGHT_CATEGORIES[0]);
+                    }}
                   >
-                    &times;
+                    Insight
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 px-4 py-2 rounded-md text-xs font-bold transition-all ${contentType === 'news' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    onClick={() => {
+                      setContentType('news');
+                      setCategory(NEWS_CATEGORIES[0]);
+                    }}
+                  >
+                    News
                   </button>
                 </div>
-              ))}
-              {errors.relatedProducts && (
-                <span className="field-error">{errors.relatedProducts}</span>
-              )}
-            </div>}
+              </div>
 
-            {/* Standalone Component (insights only) */}
-            {contentType === 'insight' && <div className="form-field form-checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isStandaloneComponent}
-                  onChange={(e) => setIsStandaloneComponent(e.target.checked)}
-                />
-                Standalone Component
-                <span
-                  className="form-tooltip-icon"
-                  title="When enabled, this article renders as an independent component with its own layout, outside the standard article template."
-                >
-                  ?
-                </span>
-              </label>
-            </div>}
+              {/* Cover Image Upload */}
+              <div className="bg-surface-container-lowest p-5 rounded-xl border border-dashed border-outline-variant/50">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Cover Image *</label>
+                  <button
+                    type="button"
+                    className="text-[10px] font-bold text-secondary hover:underline"
+                    onClick={() => setUseCustomUrl(!useCustomUrl)}
+                  >
+                    {useCustomUrl ? 'Upload' : 'URL'}
+                  </button>
+                </div>
+
+                {useCustomUrl ? (
+                  <>
+                    <input
+                      id="imageUrl"
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => {
+                        setImageUrl(e.target.value);
+                        setImageUrlManuallyEdited(true);
+                      }}
+                      placeholder="/assets/images/insights/..."
+                      className="w-full bg-surface-container-low border-none rounded p-2 text-xs focus:ring-1 focus:ring-secondary/30 mb-2"
+                    />
+                    {imageUrl && (
+                      <div className="w-full h-32 rounded-lg overflow-hidden bg-surface-container-low">
+                        <img
+                          src={imageUrl.endsWith('.png') || imageUrl.endsWith('.jpg') || imageUrl.endsWith('.webp') || imageUrl.endsWith('.svg') ? imageUrl : `${imageUrl}.webp`}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFileSelect}
+                      style={{ display: 'none' }}
+                    />
+                    <div
+                      className={`w-full h-32 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${
+                        isDragOver
+                          ? 'border-2 border-dashed border-secondary bg-secondary/5'
+                          : imageUploadState === 'done'
+                          ? 'bg-surface-container-low'
+                          : 'bg-surface-container-low hover:border-secondary'
+                      }`}
+                      onClick={() => imageUploadState !== 'uploading' && imageUploadState !== 'processing' && fileInputRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={handleDrop}
+                    >
+                      {imageUploadState === 'idle' && (
+                        <div className="flex flex-col items-center">
+                          <span className="material-symbols-outlined text-outline-variant text-4xl">cloud_upload</span>
+                          <p className="text-xs font-bold text-on-surface mt-1">Featured Image</p>
+                          <p className="text-[10px] text-on-surface-variant mt-0.5">PNG, JPG up to 10MB</p>
+                        </div>
+                      )}
+                      {imageUploadState === 'uploading' && (
+                        <div className="flex flex-col items-center gap-2 w-full px-6">
+                          <div className="w-full bg-surface-container-high rounded-full h-1.5">
+                            <div className="bg-secondary h-full rounded-full transition-all" style={{ width: `${imageUploadProgress}%` }} />
+                          </div>
+                          <span className="text-[10px] text-secondary font-medium">Uploading... {imageUploadProgress}%</span>
+                        </div>
+                      )}
+                      {imageUploadState === 'processing' && (
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="material-symbols-outlined text-secondary animate-spin">progress_activity</span>
+                          <span className="text-[10px] text-on-surface-variant">Optimizing...</span>
+                        </div>
+                      )}
+                      {imageUploadState === 'done' && imagePreviewUrl && (
+                        <div className="w-full h-full relative">
+                          <img
+                            src={imagePreviewUrl}
+                            alt="Uploaded preview"
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          <span className="absolute bottom-1 right-1 text-[10px] text-on-surface-variant bg-white/80 px-1.5 py-0.5 rounded">Click to replace</span>
+                        </div>
+                      )}
+                      {imageUploadState === 'error' && (
+                        <div className="flex flex-col items-center gap-2 text-center px-4">
+                          <span className="text-[10px] text-error">{imageUploadError}</span>
+                          <button
+                            type="button"
+                            className="text-[10px] font-bold text-secondary hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImageUploadState('idle');
+                              setImageUploadError('');
+                            }}
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {errors.imageUrl && <span className="text-error text-[10px] mt-1 block">{errors.imageUrl}</span>}
+              </div>
+
+              {/* SEO Fields */}
+              <div className="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.1em] text-on-surface-variant">SEO & Meta</h4>
+
+                {/* Author */}
+                <div ref={authorRef} className="relative">
+                  <label htmlFor="author" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Author *</label>
+                  <div className="relative">
+                    <input
+                      id="author"
+                      type="text"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      onFocus={() => setShowAuthorDropdown(true)}
+                      autoComplete="off"
+                      className="w-full bg-surface-container-low border-none rounded py-2 px-3 text-xs focus:ring-1 focus:ring-secondary/30 pr-8"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-xs"
+                      onClick={() => setShowAuthorDropdown(!showAuthorDropdown)}
+                      tabIndex={-1}
+                      aria-label="Toggle author list"
+                    >
+                      <span className="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    {showAuthorDropdown && (
+                      <ul className="absolute z-10 w-full bg-surface-container-lowest rounded-lg shadow-elevated mt-1 py-1">
+                        {AUTHORS.filter(a => a.toLowerCase().includes(author.toLowerCase())).map((a) => (
+                          <li
+                            key={a}
+                            className={`px-3 py-2 text-xs cursor-pointer hover:bg-primary-fixed/30 ${a === author ? 'text-secondary font-bold' : 'text-on-surface'}`}
+                            onMouseDown={() => {
+                              setAuthor(a);
+                              setShowAuthorDropdown(false);
+                            }}
+                          >
+                            {a}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {errors.author && <span className="text-error text-[10px] mt-1">{errors.author}</span>}
+                </div>
+
+                {/* Publish Date */}
+                <div>
+                  <label htmlFor="publishDate" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Publish Date *</label>
+                  <input
+                    id="publishDate"
+                    type="date"
+                    value={publishDate}
+                    onChange={(e) => setPublishDate(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded py-2 px-3 text-xs focus:ring-1 focus:ring-secondary/30"
+                  />
+                  {errors.publishDate && <span className="text-error text-[10px] mt-1">{errors.publishDate}</span>}
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label htmlFor="category" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Category *</label>
+                  <select
+                    id="category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded py-2 px-3 text-xs focus:ring-1 focus:ring-secondary/30"
+                  >
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {errors.category && <span className="text-error text-[10px] mt-1">{errors.category}</span>}
+                </div>
+
+                {/* Read Time */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="readTime" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Read Time *</label>
+                    <span className="text-[10px] text-on-surface-variant">Auto-calculated</span>
+                  </div>
+                  <input
+                    id="readTime"
+                    type="number"
+                    min={1}
+                    value={readTime}
+                    onChange={(e) => {
+                      setReadTime(Number(e.target.value));
+                      setReadTimeManuallyEdited(true);
+                    }}
+                    className="w-full bg-surface-container-low border-none rounded py-2 px-3 text-xs focus:ring-1 focus:ring-secondary/30"
+                  />
+                  {errors.readTime && <span className="text-error text-[10px] mt-1">{errors.readTime}</span>}
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label htmlFor="tagInput" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Tags</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {tags.map((tag, i) => (
+                      <span key={i} className="bg-primary-fixed text-[10px] font-bold px-2 py-0.5 rounded text-on-primary-fixed flex items-center gap-1">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(i)}
+                          aria-label={`Remove tag ${tag}`}
+                          className="hover:text-error"
+                        >
+                          <span className="material-symbols-outlined text-[12px]">close</span>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    id="tagInput"
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+                    placeholder={tags.length === 0 ? 'Type and press Enter' : 'Add tag...'}
+                    className="w-full bg-surface-container-low border-none rounded p-2 text-xs focus:ring-1 focus:ring-secondary/30"
+                  />
+                </div>
+              </div>
+
+              {/* Related Products (insights only) */}
+              {contentType === 'insight' && (
+                <div className="bg-surface-container-lowest p-6 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.1em] text-on-surface-variant">Related Products</h4>
+                    <button
+                      type="button"
+                      className="text-[10px] font-bold text-secondary hover:underline"
+                      onClick={addRelatedProduct}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  {relatedProducts.length === 0 && (
+                    <p className="text-[10px] text-on-surface-variant">No related products.</p>
+                  )}
+                  {relatedProducts.map((product, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={product.label}
+                        onChange={(e) => updateRelatedProduct(i, 'label', e.target.value)}
+                        placeholder="Product name"
+                        className="flex-1 bg-surface-container-low border-none rounded py-1.5 px-2 text-xs focus:ring-1 focus:ring-secondary/30"
+                      />
+                      <input
+                        type="text"
+                        value={product.href}
+                        onChange={(e) => updateRelatedProduct(i, 'href', e.target.value)}
+                        placeholder="/products/..."
+                        className="flex-1 bg-surface-container-low border-none rounded py-1.5 px-2 text-xs focus:ring-1 focus:ring-secondary/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeRelatedProduct(i)}
+                        aria-label="Remove product"
+                        className="text-on-surface-variant hover:text-error p-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  ))}
+                  {errors.relatedProducts && (
+                    <span className="text-error text-[10px]">{errors.relatedProducts}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Standalone Component (insights only) */}
+              {contentType === 'insight' && (
+                <div className="bg-surface-container-lowest p-5 rounded-xl">
+                  <label className="flex items-center gap-2 text-xs font-medium text-on-surface cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isStandaloneComponent}
+                      onChange={(e) => setIsStandaloneComponent(e.target.checked)}
+                      className="rounded border-outline-variant text-secondary focus:ring-secondary/30"
+                    />
+                    Standalone Component
+                    <span
+                      className="material-symbols-outlined text-sm text-on-surface-variant cursor-help"
+                      title="Renders as independent component with own layout"
+                    >help</span>
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </form>
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="admin-modal-overlay" onClick={() => setShowPreview(false)}>
-          <div className="admin-modal admin-modal-wide" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header">
-              <h2>Article Preview</h2>
-              <div className="article-preview-device-toggle">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-start justify-center pt-[5vh]" onClick={() => setShowPreview(false)}>
+          <div className="bg-surface-container-lowest rounded-xl shadow-float w-[90vw] max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
+              <h2 className="font-headline text-lg font-bold text-on-surface">Article Preview</h2>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className={`admin-btn-sm${previewMode === 'desktop' ? ' active' : ''}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold ${previewMode === 'desktop' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
                   onClick={() => setPreviewMode('desktop')}
                 >
                   Desktop
                 </button>
                 <button
                   type="button"
-                  className={`admin-btn-sm${previewMode === 'mobile' ? ' active' : ''}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold ${previewMode === 'mobile' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
                   onClick={() => setPreviewMode('mobile')}
                 >
                   Mobile
                 </button>
+                <button
+                  className="ml-4 p-1 hover:bg-surface-container-low rounded-full transition-all"
+                  onClick={() => setShowPreview(false)}
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
               </div>
-              <button className="admin-modal-close" onClick={() => setShowPreview(false)}>
-                &times;
-              </button>
             </div>
-            <div className={`admin-modal-body admin-preview-frame${previewMode === 'mobile' ? ' admin-preview-mobile' : ''}`}>
+            <div className={`flex-1 overflow-y-auto p-6 ${previewMode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
               <InsightsPostPreview post={previewPost} />
             </div>
           </div>
