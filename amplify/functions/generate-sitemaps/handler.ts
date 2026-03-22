@@ -6,16 +6,19 @@
  * GET /seo?file=feed          → feed.xml
  * GET /seo?file=indexnow      → IndexNow verification key
  *
+ * Reads directly from DynamoDB InsightsPost table (no GraphQL needed).
  * Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
- * Always real-time from DynamoDB — no redeploy needed.
  */
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT!;
-const GRAPHQL_API_KEY = process.env.GRAPHQL_API_KEY!;
+const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
 const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+
+const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 // ─── XML Helpers ────────────────────────────────────────────────────────────
 
@@ -75,7 +78,7 @@ const STATIC_PAGES = [
   { loc: '/NineScrolls-Equipment-Guide.pdf', lastmod: '2025-09-08', changefreq: 'monthly', priority: '0.3' },
 ];
 
-// ─── GraphQL ────────────────────────────────────────────────────────────────
+// ─── DynamoDB Query ─────────────────────────────────────────────────────────
 
 interface ArticleData {
   slug: string;
@@ -86,33 +89,20 @@ interface ArticleData {
   updatedAt: string;
 }
 
-const LIST_QUERY = `
-  query($filter: ModelInsightsPostFilterInput, $limit: Int, $nextToken: String) {
-    listInsightsPosts(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items { slug title excerpt publishDate contentType updatedAt }
-      nextToken
-    }
-  }
-`;
-
 async function fetchPublishedPosts(): Promise<ArticleData[]> {
   const all: ArticleData[] = [];
-  let nextToken: string | null = null;
+  let lastKey: Record<string, any> | undefined;
 
   do {
-    const res = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': GRAPHQL_API_KEY },
-      body: JSON.stringify({
-        query: LIST_QUERY,
-        variables: { filter: { isDraft: { ne: true } }, limit: 100, ...(nextToken ? { nextToken } : {}) },
-      }),
-    });
-    const json: any = await res.json();
-    const page = json.data?.listInsightsPosts;
-    if (!page) break;
+    const result = await ddbClient.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'isDraft <> :true',
+      ExpressionAttributeValues: { ':true': true },
+      ProjectionExpression: 'slug, title, excerpt, publishDate, contentType, updatedAt',
+      ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
+    }));
 
-    for (const item of page.items) {
+    for (const item of result.Items || []) {
       if (!item.slug || !item.publishDate) continue;
       all.push({
         slug: item.slug,
@@ -123,8 +113,8 @@ async function fetchPublishedPosts(): Promise<ArticleData[]> {
         updatedAt: item.updatedAt ?? item.publishDate,
       });
     }
-    nextToken = page.nextToken ?? null;
-  } while (nextToken);
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
 
   return all;
 }
