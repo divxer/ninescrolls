@@ -155,13 +155,7 @@ async function createNews(filePath: string) {
     const articleUrl = `https://ninescrolls.com/news/${slug}`;
     console.log(`\nNotifying search engines: ${articleUrl}`);
     await pingIndexNow(articleUrl);
-
-    // Update sitemap/RSS on S3 if HOSTING_BUCKET is set
-    if (process.env.HOSTING_BUCKET) {
-      console.log('\nUpdating sitemap & RSS on S3...');
-      const { execSync } = await import('child_process');
-      execSync('npx tsx scripts/generate-seo.ts --upload', { stdio: 'inherit' });
-    }
+    console.log('\nSitemap/RSS will update automatically (served dynamically via Lambda).');
   } else {
     console.log(`\nNext steps:`);
     console.log(`  1. Upload a cover image via admin`);
