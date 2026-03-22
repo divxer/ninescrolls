@@ -845,18 +845,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     }),
                     behaviorScore: properties.behaviorScore,
                 };
-                sendToSegment({
-                    type: 'page',
-                    anonymousId: anonymousId || undefined,
-                    name: (properties.pathname as string) || '/',
-                    properties: segmentProperties,
-                    timestamp: new Date().toISOString(),
-                    context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
-                }).catch((err) => console.error('[PVS] Segment page forwarding failed:', err));
+                const segmentPromises: Promise<{ status: number; body: string }>[] = [
+                    sendToSegment({
+                        type: 'page',
+                        anonymousId: anonymousId || undefined,
+                        name: (properties.pathname as string) || '/',
+                        properties: segmentProperties,
+                        timestamp: new Date().toISOString(),
+                        context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
+                    }),
+                ];
 
                 // Send Target Customer Detected event to Segment (if applicable)
                 if (result.isTargetCustomer) {
-                    sendToSegment({
+                    segmentPromises.push(sendToSegment({
                         type: 'track',
                         anonymousId: anonymousId || undefined,
                         event: 'Target Customer Detected',
@@ -870,13 +872,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                         },
                         timestamp: new Date().toISOString(),
                         context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
-                    }).catch((err) => console.error('[PVS] Segment target customer event failed:', err));
+                    }));
                 }
+
+                const segResults = await Promise.allSettled(segmentPromises);
+                const segOk = segResults.every(r => r.status === 'fulfilled' && r.value.status < 400);
+                if (!segOk) console.error('[PVS] Segment forwarding failed:', segResults);
 
                 return {
                     statusCode: 200,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ success: true }),
+                    body: JSON.stringify({ success: true, segmentForwarded: segOk }),
                 };
             } catch (err) {
                 const isDuplicate = (err as { name?: string })?.name === 'ConditionalCheckFailedException';
