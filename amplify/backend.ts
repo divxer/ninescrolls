@@ -563,8 +563,10 @@ if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
 // =============================================================================
 
 const graphqlApi = backend.data.resources.graphqlApi;
-backend.generateSitemaps.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
-backend.generateSitemaps.addEnvironment('GRAPHQL_API_KEY', graphqlApi.apiKey || '');
+const cfnApi = graphqlApi.node.findChild('Resource') as import('aws-cdk-lib/aws-appsync').CfnGraphQLApi;
+const cfnApiKey = graphqlApi.node.tryFindChild('DefaultApiKey')?.node.defaultChild as import('aws-cdk-lib/aws-appsync').CfnApiKey | undefined;
+backend.generateSitemaps.addEnvironment('GRAPHQL_ENDPOINT', `https://${cfnApi.attrGraphQlUrl}`);
+backend.generateSitemaps.addEnvironment('GRAPHQL_API_KEY', cfnApiKey?.attrApiKey || '');
 
 const seoResource = restApi.root.addResource('seo');
 seoResource.addMethod('GET', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
