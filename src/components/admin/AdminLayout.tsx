@@ -64,7 +64,7 @@ export function AdminLayout() {
           {/* New Report CTA */}
           <Link
             to="/admin/orders/new"
-            className="w-full mb-6 bg-primary text-on-primary font-headline py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary-container transition-all shadow-md text-sm font-semibold"
+            className="w-full mb-6 bg-primary text-on-primary font-headline py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary-container transition-all shadow-md text-sm font-semibold no-underline"
           >
             <span className="material-symbols-outlined text-sm">add</span>
             New Order
