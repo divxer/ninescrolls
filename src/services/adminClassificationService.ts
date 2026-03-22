@@ -89,12 +89,13 @@ export interface OrgOverrideSummary {
   isTargetCustomer: boolean;
   confidence: number;
   reason: string;
-  source: 'manual';
+  source: 'manual' | 'ai';
+  provider?: 'bedrock' | 'anthropic';
   classifiedAt?: string;
 }
 
 /**
- * List all manual overrides (batch fetch).
+ * List all classifications (manual overrides + AI).
  */
 export async function listOrgOverrides(): Promise<OrgOverrideSummary[]> {
   const result = await callClassifyOrg({ action: 'list-overrides', orgName: '' });
