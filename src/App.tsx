@@ -19,7 +19,7 @@ function AppShell() {
   return (
     <CartProvider>
       <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
-      <SegmentAnalytics writeKey={import.meta.env.VITE_SEGMENT_WRITE_KEY} />
+      <SegmentAnalytics />
       <HubSpotPageViewSync />
       <RedirectHandler />
       <Layout>

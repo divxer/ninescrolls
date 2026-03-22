@@ -158,106 +158,7 @@ interface ActivePageState {
   maxScrollDepth: number;         // highest scroll depth % reached on this page (0-100)
 }
 
-/**
- * Get API Gateway endpoint for Segment proxy.
- * Follows the same pattern as stripeService.ts getApiEndpoint().
- */
-function getSegmentProxyBase(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  return 'https://api.ninescrolls.com';
-}
-
-/**
- * Intercept fetch / XMLHttpRequest / sendBeacon to redirect all Segment requests
- * through our first-party proxy. This works regardless of analytics.js version
- * and catches all network calls to Segment domains.
- */
-let _proxyInterceptInstalled = false;
-function installSegmentProxyIntercept(proxyBase: string) {
-  if (_proxyInterceptInstalled) return;
-  _proxyInterceptInstalled = true;
-
-  const rewriteUrl = (url: string): string => {
-    if (url.includes('api.segment.io')) {
-      return url.replace('https://api.segment.io', `${proxyBase}/seg`);
-    }
-    if (url.includes('cdn.segment.com')) {
-      return url.replace('https://cdn.segment.com', `${proxyBase}/seg/cdn`);
-    }
-    return url;
-  };
-
-  // Intercept fetch
-  const originalFetch = window.fetch;
-  window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
-    if (typeof input === 'string') {
-      input = rewriteUrl(input);
-    } else if (input instanceof Request) {
-      const rewritten = rewriteUrl(input.url);
-      if (rewritten !== input.url) {
-        input = new Request(rewritten, input);
-      }
-    }
-    return originalFetch.call(window, input, init);
-  };
-
-  // Intercept XMLHttpRequest
-  const originalXHROpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function (
-    method: string,
-    url: string | URL,
-    ...rest: unknown[]
-  ) {
-    const urlStr = typeof url === 'string' ? url : url.toString();
-    const rewritten = rewriteUrl(urlStr);
-    return originalXHROpen.apply(this, [method, rewritten, ...rest] as Parameters<typeof originalXHROpen>);
-  };
-
-  // Intercept sendBeacon
-  if (navigator.sendBeacon) {
-    const originalSendBeacon = navigator.sendBeacon.bind(navigator);
-    navigator.sendBeacon = function (url: string | URL, data?: BodyInit | null) {
-      const urlStr = typeof url === 'string' ? url : url.toString();
-      return originalSendBeacon(rewriteUrl(urlStr), data);
-    };
-  }
-}
-
-interface SegmentAnalyticsProps {
-  writeKey?: string;
-}
-
-type SegmentAnalyticsClient = {
-  track: (event: string, properties?: Record<string, unknown>) => void;
-  identify: (userId: string, traits?: Record<string, unknown>) => void;
-  page: (name?: string, properties?: Record<string, unknown>) => void;
-  group: (groupId: string, traits?: Record<string, unknown>) => void;
-  alias: (userId: string, previousId?: string) => void;
-  reset: () => void;
-};
-
-type SegmentAnalyticsStub = SegmentAnalyticsClient & {
-  initialized?: boolean;
-  invoked?: boolean;
-  methods?: string[];
-  factory?: (method: string) => (...args: unknown[]) => void;
-  load?: (key: string, options?: { integrations?: Record<string, unknown> }) => void;
-  _writeKey?: string;
-  SNIPPET_VERSION?: string;
-  push: (args: unknown[]) => number;
-};
-
-declare global {
-  interface Window {
-    analytics?: SegmentAnalyticsClient;
-  }
-}
-
-export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
-  writeKey = 'WMoEScvR6dgChGx0LQUz0wQhgXK4nAHU'
-}) => {
+export const SegmentAnalytics: React.FC = () => {
   const location = useLocation();
 
   // ─── Page state ref (replaces scattered refs) ─────────────────────────────
@@ -267,96 +168,6 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
-
-  // ─── Segment script loading ───────────────────────────────────────────────
-  useEffect(() => {
-    // Load Segment script if not already loaded
-    if (typeof window !== 'undefined' && !window.analytics) {
-      const analytics = (window.analytics = ((window.analytics || []) as unknown as SegmentAnalyticsStub));
-      if (analytics.invoked) {
-        window.console?.error?.('Segment snippet included twice.');
-        return;
-      }
-
-      analytics.invoked = true;
-      analytics.methods = [
-        'trackSubmit',
-        'trackClick',
-        'trackLink',
-        'trackForm',
-        'pageview',
-        'identify',
-        'reset',
-        'group',
-        'track',
-        'ready',
-        'alias',
-        'debug',
-        'page',
-        'screen',
-        'once',
-        'off',
-        'on',
-        'addSourceMiddleware',
-        'addIntegrationMiddleware',
-        'setAnonymousId',
-        'addDestinationMiddleware',
-        'register'
-      ];
-
-      analytics.factory = (method: string) => {
-        return (...args: unknown[]) => {
-          if (analytics.initialized && typeof (analytics as Record<string, unknown>)[method] === 'function') {
-            const analyticsMethods = analytics as unknown as Record<string, (...params: unknown[]) => unknown>;
-            return analyticsMethods[method](...args);
-          }
-          const payload = args.slice();
-          if (['track', 'screen', 'alias', 'group', 'page', 'identify'].includes(method)) {
-            const canonical = document.querySelector("link[rel='canonical']")?.getAttribute('href') || undefined;
-            payload.push({
-              __t: 'bpc',
-              c: canonical,
-              p: window.location.pathname,
-              u: window.location.href,
-              s: window.location.search,
-              t: document.title,
-              r: document.referrer
-            });
-          }
-          payload.unshift(method);
-          analytics.push(payload);
-          return analytics;
-        };
-      };
-
-      analytics.methods.forEach((method) => {
-        (analytics as Record<string, unknown>)[method] = analytics.factory?.(method);
-      });
-
-      // Use first-party proxy to avoid network-level blocking of cdn.segment.com / api.segment.io
-      // Intercept all network requests to Segment domains and redirect through our proxy
-      const proxyBase = getSegmentProxyBase();
-      installSegmentProxyIntercept(proxyBase);
-
-      analytics.load = (key: string) => {
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.async = true;
-        script.setAttribute('data-global-segment-analytics-key', 'analytics');
-        script.src = `${proxyBase}/seg/cdn/analytics.js/v1/${key}/analytics.min.js`;
-        const firstScript = document.getElementsByTagName('script')[0];
-        firstScript?.parentNode?.insertBefore(script, firstScript);
-      };
-
-      analytics._writeKey = writeKey;
-      analytics.SNIPPET_VERSION = '5.2.0';
-      // Set custom CDN base so the real SDK fetches settings from our proxy
-      // The proxy rewrites the settings JSON to redirect tracking calls through our domain
-      (analytics as Record<string, unknown>)._cdn = `${proxyBase}/seg/cdn`;
-
-      analytics.load(writeKey);
-    }
-  }, [writeKey]);
 
   // ─── Core: flush page time to DynamoDB + Segment (spec §18) ────────────────
   const flushPageTime = useCallback((reason: FlushReason, isFinal: boolean) => {
@@ -686,15 +497,13 @@ export const SegmentAnalytics: React.FC<SegmentAnalyticsProps> = ({
       }
     });
 
-    // Track page views with Segment and IP analysis (merged into single call)
-    if (typeof window !== 'undefined' && window.analytics) {
-      segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-        pageViewId: newState.pageViewId,
-      });
-    }
+    // Track page view via sendBeacon → /d Lambda (server-side Segment forwarding)
+    segmentAnalytics.trackPageViewWithAnalysis(location.pathname, {
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash,
+      pageViewId: newState.pageViewId,
+    });
 
     // Track traffic source on first page load
     if (typeof window !== 'undefined') {

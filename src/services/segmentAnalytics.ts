@@ -57,15 +57,6 @@ class SegmentAnalyticsService {
 
   initialize() {
     if (this.isInitialized) return;
-    
-    // Check if Segment is already loaded
-    if (typeof window !== 'undefined' && window.analytics) {
-      this.isInitialized = true;
-      console.log('Segment Analytics already initialized');
-      return;
-    }
-    
-    console.log('Segment Analytics service initialized');
     this.isInitialized = true;
   }
 
@@ -91,14 +82,7 @@ class SegmentAnalyticsService {
 
     this.lastTrackedEvents.set(eventKey, now);
 
-    // Send to Segment (if analytics.js is loaded)
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.track) {
-      window.analytics.track(event, properties);
-      console.log('Segment Track Event:', event, properties);
-    }
-
-    // Always dual-write to DynamoDB regardless of analytics.js availability,
-    // unless the caller already stored the event (skipDynamoDB).
+    // Write to DynamoDB via sendBeacon → /d Lambda (which also forwards to Segment server-side)
     if (!skipDynamoDB) {
       storeAnalyticsEvent({
         eventName: event,
@@ -124,45 +108,12 @@ class SegmentAnalyticsService {
     }
   }
 
-  // Identify users
-  identify(userId: string, traits?: Record<string, unknown>) {
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.identify) {
-      window.analytics.identify(userId, traits);
-      console.log('Segment Identify User:', userId, traits);
-    }
-  }
-
-  // Track page views
-  page(name?: string, properties?: Record<string, unknown>) {
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.page) {
-      window.analytics.page(name, properties);
-      console.log('Segment Page View:', name, properties);
-    }
-  }
-
-  // Track group events
-  group(groupId: string, traits?: Record<string, unknown>) {
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.group) {
-      window.analytics.group(groupId, traits);
-      console.log('Segment Group Event:', groupId, traits);
-    }
-  }
-
-  // Alias users
-  alias(userId: string, previousId?: string) {
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.alias) {
-      window.analytics.alias(userId, previousId);
-      console.log('Segment Alias User:', userId, previousId);
-    }
-  }
-
-  // Reset user
-  reset() {
-    if (typeof window !== 'undefined' && window.analytics && window.analytics.reset) {
-      window.analytics.reset();
-      console.log('Segment Reset User');
-    }
-  }
+  // No-ops: analytics.js removed; all tracking goes through /d Lambda server-side
+  identify(_userId: string, _traits?: Record<string, unknown>) { /* no-op */ }
+  page(_name?: string, _properties?: Record<string, unknown>) { /* no-op */ }
+  group(_groupId: string, _traits?: Record<string, unknown>) { /* no-op */ }
+  alias(_userId: string, _previousId?: string) { /* no-op */ }
+  reset() { /* no-op */ }
 
   // Product-specific tracking methods
   trackProductView(productId: string, productName: string) {
