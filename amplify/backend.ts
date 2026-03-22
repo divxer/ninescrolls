@@ -16,6 +16,7 @@ import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
+import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -52,6 +53,7 @@ const backend = defineBackend({
     documentUpload,
     orderApi,
     optimizeInsightsImage,
+    generateSitemaps,
 });
 
 // Create a fixed stage name
@@ -554,6 +556,29 @@ const cfnFunction = backend.optimizeInsightsImage.resources.lambda.node.defaultC
 if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
     (cfnFunction as any).addPropertyOverride('Layers', [sharpLayer.layerVersionArn]);
 }
+
+// =============================================================================
+// Lambda: Generate sitemaps — regenerates sitemap/RSS and uploads to S3
+// =============================================================================
+
+// Pass AppSync GraphQL endpoint and API key so Lambda can query articles
+const graphqlApi = backend.data.resources.graphqlApi;
+backend.generateSitemaps.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
+backend.generateSitemaps.addEnvironment('GRAPHQL_API_KEY', graphqlApi.apiKey || '');
+
+// Grant S3 write access to hosting bucket (bucket name set via HOSTING_BUCKET secret)
+backend.generateSitemaps.resources.lambda.addToRolePolicy(
+    new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['s3:PutObject'],
+        resources: ['arn:aws:s3:::*'], // Scoped by HOSTING_BUCKET at runtime
+    }),
+);
+
+// Expose via REST API
+const generateSitemapsResource = restApi.root.addResource('generate-sitemaps');
+generateSitemapsResource.addMethod('POST', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
+generateSitemapsResource.addMethod('OPTIONS', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
 
 // Add outputs
 backend.addOutput({
