@@ -2483,7 +2483,7 @@ export function AdminAnalyticsPage() {
       }
       return sortDir === 'desc' ? -cmp : cmp;
     });
-  }, [searchedOrgs, sortCol, sortDir]);
+  }, [enhancedFilteredOrgs, sortCol, sortDir]);
 
   // ─── Search Keywords aggregation ───────────────────────────────────────────
   const allKeywords = useMemo(() => aggregateKeywords(filteredEvents), [filteredEvents]);
