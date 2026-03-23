@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
+import { getOrgOverride, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import { generateClient } from 'aws-amplify/data';
@@ -1184,22 +1184,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const [overrideLoading, setOverrideLoading] = useState(true);
   const [overrideMsg, setOverrideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Fetch override state (manual admin overrides only)
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(org.orgName).then(async (result) => {
-      if (cancelled) return;
-      // Auto-classify if no cached classification exists (skip bots)
-      if (!result.found && !org.hasBot) {
-        try {
-          const classified = await classifyOrg(org.orgName);
-          if (!cancelled) setOverride(classified);
-        } catch {
-          if (!cancelled) setOverride(result);
-        }
-      } else {
-        setOverride(result);
-      }
+    getOrgOverride(org.orgName).then((result) => {
+      if (!cancelled) setOverride(result);
     }).catch(() => {
       if (!cancelled) setOverride(null);
     }).finally(() => {
@@ -1271,29 +1261,20 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   }
 
   // ── Pre-compute detection details (shared between left & right columns) ──
-  // Single source of truth: event data first, override only for manual admin actions
+  // Single source of truth: event data for AI classification, override only for manual admin actions
   const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
   const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
   const ipOrgType = ipEvent?.organizationType || 'unknown';
 
-  // AI classification: prefer event data, fall back to override for pre-pipeline records
-  const hasEventAI = !!(aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType);
-  const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
-    && !!(override?.organizationType);
-  const hasAI = hasEventAI || hasOverrideAI;
-  const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
-  const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
-  const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
+  // AI classification — from event data only
+  const hasAI = !!(aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType);
+  const effectiveAiOrgType = hasAI ? aiEvent.aiOrganizationType : undefined;
+  const effectiveAiConf = hasAI ? (aiEvent.aiConfidence ?? 0) : 0;
+  const effectiveAiReason = hasAI ? aiEvent.aiReason : undefined;
   const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown' && effectiveAiOrgType !== ipOrgType;
 
-  // AI provider: event field (after schema deploy) → override (legacy fallback)
-  const aiProvider = (() => {
-    if (hasEventAI) {
-      const p = (aiEvent as Record<string, unknown>).provider as string | undefined;
-      if (p) return p;
-    }
-    return override?.provider || null;
-  })();
+  // AI provider — from event data
+  const aiProvider = hasAI ? (aiEvent as Record<string, unknown>).provider as string | null : null;
   const aiProviderLabel = aiProvider === 'bedrock' ? 'Bedrock'
     : aiProvider === 'anthropic' ? 'Anthropic API'
     : null;
@@ -1312,9 +1293,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const isManualOverride = override?.found && override?.source === 'manual';
   const currentIsTarget = isManualOverride ? override?.isTargetCustomer : org.isTargetCustomer;
 
-  // Display org type
+  // Display org type: manual override → org aggregated type (from events)
   const displayOrgType = org.hasBot ? 'bot'
-    : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
+    : (isManualOverride && override?.organizationType && override.organizationType !== 'unknown')
       ? override.organizationType
       : org.organizationType;
 
