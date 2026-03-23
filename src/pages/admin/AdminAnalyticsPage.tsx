@@ -1695,6 +1695,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     ? (e.pathname || '/')
                     : (e.eventName || e.pathname || e.eventType);
                 const sd = (e as Record<string, unknown>).maxScrollDepth as number;
+                const idleSec = (e as Record<string, unknown>).idleSeconds as number | undefined;
+                const hiddenSec = (e as Record<string, unknown>).hiddenSeconds as number | undefined;
+                const wallSec = (e as Record<string, unknown>).wallClockSeconds as number | undefined;
                 return (
                   <div key={e.id} className={`relative pl-10 ${isLast ? '' : 'pb-8'}`}>
                     <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center z-10 ${isFinal ? 'bg-primary-fixed' : 'bg-surface-container'}`}>
@@ -1723,6 +1726,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                             <>
                               {e.activeSeconds != null && (
                                 <p className="text-xs font-bold text-on-surface">{formatDuration(e.activeSeconds)}</p>
+                              )}
+                              {(idleSec != null && idleSec > 0 || hiddenSec != null && hiddenSec > 0) && (
+                                <p className="text-[10px] text-on-surface-variant">
+                                  {[
+                                    idleSec != null && idleSec > 0 ? `${idleSec}s idle` : null,
+                                    hiddenSec != null && hiddenSec > 0 ? `${hiddenSec}s hidden` : null,
+                                  ].filter(Boolean).join(' · ')}
+                                </p>
                               )}
                               {sd > 0 && (
                                 <p className="text-[10px] text-on-surface-variant">↓{sd}% scroll</p>
