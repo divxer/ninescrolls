@@ -2604,20 +2604,20 @@ export function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
 
       {/* ─── Hero Header ──────────────────────────────────────────────────── */}
-      <section className="sticky top-16 -mx-8 px-8 py-6 z-30 bg-surface/90 backdrop-blur-md border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-end gap-6 transition-all mb-2">
+      <section className="sticky top-16 -mx-4 px-4 py-4 md:-mx-8 md:px-8 md:py-6 z-30 bg-surface/90 backdrop-blur-md border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-end gap-4 md:gap-6 transition-all mb-2">
         <div className="space-y-2">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase">Precision Insights</span>
-          <h2 className="text-4xl font-black text-primary tracking-tight font-headline">Intelligence Ledger</h2>
+          <h2 className="text-2xl md:text-4xl font-black text-primary tracking-tight font-headline">Intelligence Ledger</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-surface-container-low p-1 rounded-xl">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex overflow-x-auto scrollbar-hide bg-surface-container-low p-0.5 md:p-1 rounded-xl max-w-full">
             {DATE_RANGES.filter(r => r.value !== 'custom').map((r) => (
               <button
                 key={r.value}
-                className={`px-4 py-2 text-xs font-medium rounded-lg border-none transition-colors ${dateRange === r.value
+                className={`px-1.5 md:px-4 py-2 text-[10px] md:text-xs font-medium rounded-lg border-none transition-colors whitespace-nowrap ${dateRange === r.value
                   ? 'bg-primary text-on-primary font-bold shadow-sm'
                   : 'text-on-surface-variant'}`}
                 onClick={() => setDateRange(r.value)}
@@ -2626,7 +2626,7 @@ export function AdminAnalyticsPage() {
               </button>
             ))}
             <button
-              className={`material-symbols-outlined px-3 border-none rounded-lg transition-colors ${dateRange === 'custom'
+              className={`material-symbols-outlined px-2 md:px-3 border-none rounded-lg transition-colors ${dateRange === 'custom'
                 ? 'bg-primary text-on-primary'
                 : 'text-on-surface-variant'}`}
               onClick={() => setDateRange('custom')}
@@ -2757,9 +2757,9 @@ export function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Hero KPI Card — col-span-4 */}
-        <div className="lg:col-span-4 bg-primary p-8 rounded-xl relative overflow-hidden text-white">
+        <div className="lg:col-span-4 bg-primary p-5 md:p-8 rounded-xl relative overflow-hidden text-white">
           <p className="text-white/80 text-sm font-medium mb-1">Unique Visitors</p>
-          <h3 className="text-7xl font-black font-headline tracking-tighter mb-4">{kpis.uniqueVisitors}</h3>
+          <h3 className="text-4xl md:text-7xl font-black font-headline tracking-tighter mb-4">{kpis.uniqueVisitors}</h3>
           <div className="flex items-center gap-2 text-white/90 font-bold text-sm">
             {dateRange !== 'all' && kpis.visitorTrend !== 0 ? (
               <>
@@ -2794,8 +2794,8 @@ export function AdminAnalyticsPage() {
         </div>
 
         {/* Traffic Channel Attribution — col-span-8 */}
-        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10">
-          <div className="flex justify-between items-center mb-10">
+        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-4 md:p-8 border border-outline-variant/10">
+          <div className="flex justify-between items-center mb-6 md:mb-10">
             <h4 className="font-headline font-bold text-on-surface">Traffic Channel Attribution</h4>
             <span className="text-xs font-medium text-on-surface-variant">Volume / Sessions</span>
           </div>
@@ -2805,7 +2805,7 @@ export function AdminAnalyticsPage() {
         {/* Organization Ledger — col-span-9 */}
         <div className="lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/10">
           {/* Header: title + search + export */}
-          <div className="p-6 border-b border-surface-container">
+          <div className="p-4 md:p-6 border-b border-surface-container">
             <div className="flex justify-between items-center mb-4">
               <h4 className="font-headline font-bold">Organization Ledger</h4>
               <div className="flex items-center gap-2">
@@ -3063,7 +3063,7 @@ export function AdminAnalyticsPage() {
 
       {/* ─── Search Keywords Section ────────────────────────────────────────── */}
       {allKeywords.length > 0 && (
-        <section ref={keywordSectionRef} className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+        <section ref={keywordSectionRef} className="bg-surface-container-lowest p-4 md:p-8 rounded-xl border border-outline-variant/10">
           <div
             className="flex items-center gap-2 mb-8 cursor-pointer select-none"
             onClick={() => setKeywordSectionOpen(!keywordSectionOpen)}
@@ -3119,8 +3119,8 @@ export function AdminAnalyticsPage() {
                 );
               })()}
 
-              {/* Keywords table */}
-              <div className="bg-surface-container-lowest rounded-xl overflow-hidden" style={{ marginTop: '1rem' }}>
+              {/* Keywords table (desktop only) */}
+              <div className="hidden md:block bg-surface-container-lowest rounded-xl overflow-hidden" style={{ marginTop: '1rem' }}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
@@ -3240,7 +3240,7 @@ export function AdminAnalyticsPage() {
 
       {/* ─── Page Analytics Section ───────────────────────────────────────── */}
       {pageStats.length > 0 && (
-        <section className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10">
+        <section className="bg-surface-container-lowest p-4 md:p-8 rounded-xl border border-outline-variant/10">
           <div className="flex items-center gap-2 mb-8 cursor-pointer select-none" onClick={() => setPageAnalyticsSectionOpen(!pageAnalyticsSectionOpen)}>
             <span className="material-symbols-outlined text-on-surface-variant">description</span>
             <h4 className="font-headline font-bold">Page Analytics <span className="ml-2 text-xs font-normal text-on-surface-variant">{pageStats.length}</span></h4>
@@ -3286,7 +3286,7 @@ export function AdminAnalyticsPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-[11px]">
                         <thead>
                           <tr className="text-on-surface-variant border-b border-surface-container">
@@ -3486,7 +3486,7 @@ export function AdminAnalyticsPage() {
               {pageAnalyticsTab === 'landingPages' && (
                 landingPageStats.length > 0 ? (
                   <>
-                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
+                  <div className="hidden md:block bg-surface-container-lowest rounded-xl overflow-hidden">
                     <table className="w-full text-sm">
                       <thead>
                         <tr>

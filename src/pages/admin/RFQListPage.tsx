@@ -98,13 +98,13 @@ export function RFQListPage() {
   return (
     <div>
       {/* Header Stats - Laboratory Ledger Style */}
-      <div className="grid grid-cols-12 gap-8 mb-12">
+      <div className="grid grid-cols-12 gap-4 md:gap-8 mb-6 md:mb-12">
         <div className="col-span-12 md:col-span-8 flex flex-col justify-end">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-2">Request Overview</p>
-          <h1 className="font-headline text-5xl font-black text-on-surface tracking-tighter">RFQ Management</h1>
+          <h1 className="font-headline text-3xl md:text-5xl font-black text-on-surface tracking-tighter">RFQ Management</h1>
         </div>
         <div className="col-span-6 md:col-span-2">
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)] flex flex-col justify-between items-start hover:-translate-y-0.5 transition-transform">
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)] flex flex-col justify-between items-start hover:-translate-y-0.5 transition-transform p-4 md:p-6">
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Pending Count</p>
             <div className="flex items-baseline gap-2 mt-4">
               <span className="font-headline text-4xl font-bold text-primary tracking-tight">{stats.pending}</span>
@@ -113,7 +113,7 @@ export function RFQListPage() {
           </div>
         </div>
         <div className="col-span-6 md:col-span-2">
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)] flex flex-col justify-between items-start hover:-translate-y-0.5 transition-transform">
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)] flex flex-col justify-between items-start hover:-translate-y-0.5 transition-transform p-4 md:p-6">
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Conversion Rate</p>
             <div className="flex items-baseline gap-2 mt-4">
               <span className="font-headline text-4xl font-bold text-primary tracking-tight">{stats.rate}%</span>
@@ -124,8 +124,8 @@ export function RFQListPage() {
       </div>
 
       {/* Filters and Actions */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row gap-3 md:justify-between md:items-center mb-6">
+        <div className="flex flex-wrap items-center gap-2">
           {STATUS_OPTIONS.map(s => (
             <button
               key={s}
@@ -148,7 +148,7 @@ export function RFQListPage() {
               placeholder="Search by name, institution, equipment..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-surface-container-low pl-10 pr-4 py-2 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/60 border-none outline-none focus:ring-2 focus:ring-primary/20 w-72"
+              className="bg-surface-container-low pl-10 pr-4 py-2 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/60 border-none outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-72"
             />
           </div>
           <button className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all border-none bg-transparent cursor-pointer">
@@ -159,7 +159,35 @@ export function RFQListPage() {
 
       {/* RFQ Data Table - Precision Aesthetic */}
       <div className="bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)]">
-        <table className="w-full text-left border-collapse">
+        {/* Mobile RFQ cards */}
+        <div className="md:hidden divide-y divide-outline-variant/5">
+          {filtered.map(rfq => (
+            <div
+              key={rfq.rfqId}
+              className="p-4 cursor-pointer hover:bg-primary-fixed/30 transition-colors"
+              onClick={() => openPanel(rfq)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-headline font-bold text-primary text-sm">{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</span>
+                <StatusBadge status={rfq.status} />
+              </div>
+              <div className="text-sm font-medium text-on-surface">{rfq.name || '-'}</div>
+              <div className="text-xs text-on-surface-variant italic">{rfq.institution || '-'}</div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="bg-surface-container px-2 py-0.5 rounded text-[10px] font-bold text-on-surface-variant uppercase">
+                  {rfq.equipmentCategory || '-'}
+                </span>
+                <span className="font-headline font-semibold text-primary text-sm">{rfq.budgetRange || '-'}</span>
+              </div>
+              <div className="text-[10px] text-on-surface-variant mt-1">{formatDate(rfq.submittedAt)}</div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="text-center py-12 text-on-surface-variant text-sm">No RFQs found.</div>
+          )}
+        </div>
+        {/* Desktop table */}
+        <table className="hidden md:table w-full text-left border-collapse">
           <thead>
             <tr className="bg-surface-container-low/50">
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Ref #</th>
@@ -234,7 +262,7 @@ export function RFQListPage() {
             }`}
           >
             {/* Panel Header */}
-            <div className="px-10 py-8 border-b border-outline-variant/10 flex justify-between items-center">
+            <div className="px-5 py-5 md:px-10 md:py-8 border-b border-outline-variant/10 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <span className="w-10 h-10 bg-primary-fixed text-primary rounded-lg flex items-center justify-center">
                   <span className="material-symbols-outlined">article</span>
@@ -257,7 +285,7 @@ export function RFQListPage() {
             </div>
 
             {/* Panel Content */}
-            <div className="flex-1 overflow-y-auto p-10 space-y-10" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6 md:p-10 md:space-y-10" style={{ scrollbarWidth: 'none' }}>
               {/* Contact Info Grid */}
               <div className="grid grid-cols-2 gap-x-8 gap-y-7">
                 <div>
@@ -287,7 +315,7 @@ export function RFQListPage() {
               </div>
 
               {/* Equipment Requirements */}
-              <div className="bg-surface-container-low p-8 rounded-xl border-l-2 border-primary">
+              <div className="bg-surface-container-low p-4 md:p-8 rounded-xl border-l-2 border-primary">
                 <h3 className="text-xs font-bold text-primary uppercase tracking-[0.1em] mb-5">Equipment Requirements</h3>
                 <ul className="space-y-4">
                   {selectedRfq.equipmentCategory && (
@@ -388,7 +416,7 @@ export function RFQListPage() {
 
             {/* Footer Actions */}
             {selectedRfq.status === 'pending' && (
-              <div className="px-10 py-8 border-t border-outline-variant/10 grid grid-cols-2 gap-4 bg-surface">
+              <div className="px-5 py-5 md:px-10 md:py-8 border-t border-outline-variant/10 grid grid-cols-2 gap-4 bg-surface">
                 <button
                   className="px-6 py-4 border border-error text-error rounded-xl font-headline font-bold text-sm hover:bg-error-container/20 transition-all flex items-center justify-center gap-2"
                   onClick={() => setShowDecline(true)}
