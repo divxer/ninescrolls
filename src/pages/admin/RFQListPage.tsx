@@ -151,7 +151,7 @@ export function RFQListPage() {
               className="bg-surface-container-low pl-10 pr-4 py-2 rounded-lg text-sm text-on-surface placeholder:text-on-surface-variant/60 border-none outline-none focus:ring-2 focus:ring-primary/20 w-72"
             />
           </div>
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all">
+          <button className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all border-none bg-transparent cursor-pointer">
             <span className="material-symbols-outlined">download</span>
           </button>
         </div>
