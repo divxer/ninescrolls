@@ -1184,17 +1184,20 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const [overrideLoading, setOverrideLoading] = useState(true);
   const [overrideMsg, setOverrideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Base org name from events (without ISP display suffix like "· City, State")
+  const baseOrgName = org.events.find(e => e.orgName)?.orgName || org.orgName;
+
   // Fetch override / auto-classify for orgs lacking event-level AI data
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(org.orgName).then(async (result) => {
+    getOrgOverride(baseOrgName).then(async (result) => {
       if (cancelled) return;
       // Auto-classify if no cached classification and no event-level AI data
       const hasEventAI = org.events.some(e => e.aiOrganizationType);
       if (!result.found && !org.hasBot && !hasEventAI) {
         try {
-          const classified = await classifyOrg(org.orgName);
+          const classified = await classifyOrg(baseOrgName);
           if (!cancelled) setOverride(classified);
         } catch {
           if (!cancelled) setOverride(result);
@@ -1208,7 +1211,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       if (!cancelled) setOverrideLoading(false);
     });
     return () => { cancelled = true; };
-  }, [org.orgName]);
+  }, [baseOrgName]);
 
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
