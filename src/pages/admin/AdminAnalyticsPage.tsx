@@ -1797,6 +1797,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                             </>
                           )}
                           <p className="text-[10px] text-on-surface-variant">
+                            {new Date(e.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
                             {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </p>
                         </div>
