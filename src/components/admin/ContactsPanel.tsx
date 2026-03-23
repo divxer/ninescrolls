@@ -27,27 +27,32 @@ function ContactMenu({ onEdit, onRemove }: { onEdit: () => void; onRemove: () =>
   return (
     <div ref={ref} className="relative">
       <button
-        className="hover:bg-surface-container-low rounded-full p-1 transition-colors"
+        className="p-2.5 rounded-lg hover:bg-surface-container-low transition-colors bg-transparent border-none cursor-pointer"
         onClick={() => setOpen(!open)}
         aria-label="Contact actions"
       >
-        <span className="material-symbols-outlined text-on-surface-variant text-lg">more_vert</span>
+        <span className="material-symbols-outlined text-on-surface-variant">more_vert</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-elevated border border-outline-variant/10 py-1 z-20 min-w-[120px]">
-          <button
-            className="w-full text-left px-4 py-2 text-xs font-medium text-on-surface hover:bg-surface-container-low transition-colors"
-            onClick={() => { setOpen(false); onEdit(); }}
-          >
-            Edit
-          </button>
-          <button
-            className="w-full text-left px-4 py-2 text-xs font-medium text-error hover:bg-error-container/30 transition-colors"
-            onClick={() => { setOpen(false); onRemove(); }}
-          >
-            Remove
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.12)] py-1.5 z-50 min-w-[160px]">
+            <button
+              className="w-full text-left px-4 py-2.5 text-xs font-medium text-on-surface bg-transparent hover:bg-surface-container-low transition-colors flex items-center gap-3 border-none"
+              onClick={() => { setOpen(false); onEdit(); }}
+            >
+              <span className="material-symbols-outlined text-sm">edit</span>
+              Edit
+            </button>
+            <button
+              className="w-full text-left px-4 py-2.5 text-xs font-medium text-error bg-transparent hover:bg-error-container/30 transition-colors flex items-center gap-3 border-none"
+              onClick={() => { setOpen(false); onRemove(); }}
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+              Remove
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -76,58 +81,45 @@ export function ContactsPanel({ orderId, contacts, onRefresh }: ContactsPanelPro
   }
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-on-surface-variant text-lg">groups</span>
-          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">
-            Contacts ({contacts.length})
-          </h3>
-        </div>
+    <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+      {/* Header bar */}
+      <div className="p-6 bg-surface-container-low flex justify-between items-center">
+        <h3 className="text-sm font-bold tracking-wider text-primary uppercase">Stakeholders</h3>
         <button
-          className="text-xs font-medium text-secondary hover:underline"
+          className="text-primary hover:bg-white p-1.5 rounded-lg transition-colors bg-transparent border-none cursor-pointer"
           onClick={() => setShowAdd(true)}
         >
-          + Add Contact
+          <span className="material-symbols-outlined text-xl">add</span>
         </button>
       </div>
 
       {contacts.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">No contacts.</p>
+        <p className="text-sm text-on-surface-variant p-6">No contacts.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="divide-y divide-outline-variant/10">
           {contacts.map(contact => (
-            <div key={contact.contactId} className="flex items-center gap-4">
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-primary-fixed/30 flex items-center justify-center text-[11px] font-bold text-primary flex-shrink-0">
-                {getInitials(contact.contactName)}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-on-surface truncate">
-                    {contact.contactName}
-                  </span>
-                  {contact.isPrimary && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-secondary/10 text-secondary px-1.5 py-0.5 rounded">
-                      Primary
-                    </span>
-                  )}
-                  <StatusBadge status={contact.role} />
+            <div key={contact.contactId} className="p-4 hover:bg-surface-container-low transition-colors group">
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded bg-primary-fixed flex items-center justify-center text-primary font-bold flex-shrink-0">
+                  {getInitials(contact.contactName)}
                 </div>
-                <div className="text-[11px] text-on-surface-variant mt-0.5 space-x-2">
-                  <span>{contact.contactEmail}</span>
-                  {contact.contactPhone && <span>{contact.contactPhone}</span>}
-                  {contact.department && <span>{contact.department}</span>}
-                </div>
-              </div>
 
-              {/* Menu */}
-              <ContactMenu
-                onEdit={() => setEditingId(contact.contactId)}
-                onRemove={() => handleRemove(contact.contactId, contact.contactName)}
-              />
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-on-surface truncate">{contact.contactName}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-tight mt-0.5">
+                    {contact.isPrimary && <span className="text-secondary">Primary </span>}
+                    <span className="text-on-tertiary-fixed-variant">{ROLE_LABELS[contact.role as ContactRole] || contact.role}</span>
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <ContactMenu
+                  onEdit={() => setEditingId(contact.contactId)}
+                  onRemove={() => handleRemove(contact.contactId, contact.contactName)}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -201,126 +193,135 @@ function ContactFormModal({ orderId, contact, onClose, onSuccess }: {
     }
   }
 
+  const inputClass = "w-full bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-sm px-4 py-2.5 text-on-surface placeholder:text-outline-variant transition-all";
+  const labelClass = "text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant font-label";
+
   return (
-    <Modal open onClose={onClose} title={isEdit ? 'Edit Contact' : 'Add Contact'}>
+    <Modal
+      open
+      onClose={onClose}
+      title={isEdit ? 'Edit Contact' : 'Add Contact'}
+      subtitle={isEdit ? 'Update contact information.' : 'Register a new contact or department representative.'}
+      footer={
+        <>
+          <button
+            className="flex-1 sm:flex-none px-8 py-2.5 bg-secondary text-on-secondary font-semibold text-sm rounded-lg hover:bg-secondary-container transition-all active:scale-[0.98] disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? 'Saving...' : isEdit ? 'Update Contact' : 'Add Contact'}
+          </button>
+          <button
+            className="flex-1 sm:flex-none px-8 py-2.5 bg-transparent border border-outline-variant text-on-surface-variant font-semibold text-sm rounded-lg hover:bg-surface-variant/20 hover:text-on-surface transition-all active:scale-[0.98]"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+        </>
+      }
+    >
       {error && (
         <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm mb-4">
           {error}
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Name *
-          </label>
+      <form className="space-y-5">
+        {/* Full Name */}
+        <div className="space-y-1.5">
+          <label className={labelClass}>Full Name *</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+            placeholder="e.g. Dr. Helena Richards"
+            className={inputClass}
           />
         </div>
 
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Email *
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+        {/* Email & Phone */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className={labelClass}>Email Address *</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="h.richards@lab.com"
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>Phone Number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="+1 (555) 000-0000"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* Role & Department */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className={labelClass}>Role *</label>
+            <select
+              value={role}
+              onChange={e => setRole(e.target.value as ContactRole)}
+              className={`${inputClass} cursor-pointer`}
+            >
+              {CONTACT_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>Department</label>
+            <input
+              type="text"
+              value={dept}
+              onChange={e => setDept(e.target.value)}
+              placeholder="e.g. Nanofabrication"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div className="space-y-1.5">
+          <label className={labelClass}>Internal Notes</label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Additional context regarding contact authority..."
+            className={`${inputClass} resize-none`}
           />
         </div>
 
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Phone
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Role *
-          </label>
-          <select
-            value={role}
-            onChange={e => setRole(e.target.value as ContactRole)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
-          >
-            {CONTACT_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Department
-          </label>
-          <input
-            type="text"
-            value={dept}
-            onChange={e => setDept(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
-          />
-        </div>
-
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer">
+        {/* Checkboxes */}
+        <div className="flex items-center gap-6 pt-2">
+          <label className="flex items-center gap-2 text-xs text-on-surface-variant cursor-pointer select-none">
             <input
               type="checkbox"
               checked={isPrimary}
               onChange={e => setIsPrimary(e.target.checked)}
-              className="rounded border-outline-variant text-secondary focus:ring-secondary"
+              className="w-4 h-4 rounded-sm border-outline-variant bg-surface-container-low text-secondary focus:ring-secondary/20 transition-all cursor-pointer"
             />
             Primary Contact
           </label>
-          <label className="flex items-center gap-2 text-sm text-on-surface cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-on-surface-variant cursor-pointer select-none">
             <input
               type="checkbox"
               checked={feedbackInvite}
               onChange={e => setFeedbackInvite(e.target.checked)}
-              className="rounded border-outline-variant text-secondary focus:ring-secondary"
+              className="w-4 h-4 rounded-sm border-outline-variant bg-surface-container-low text-secondary focus:ring-secondary/20 transition-all cursor-pointer"
             />
-            Feedback Invite
+            Send feedback invitation email
           </label>
         </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Notes
-          </label>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows={2}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-3 justify-end mt-6">
-        <button
-          className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors"
-          onClick={onClose}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
-        <button
-          className="bg-secondary text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-secondary/90 transition-colors disabled:opacity-50"
-          onClick={handleSubmit}
-          disabled={submitting}
-        >
-          {submitting ? 'Saving...' : isEdit ? 'Update' : 'Add Contact'}
-        </button>
-      </div>
+      </form>
     </Modal>
   );
 }

@@ -4,11 +4,13 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  subtitle?: string;
   children: ReactNode;
+  footer?: ReactNode;
   className?: string;
 }
 
-export function Modal({ open, onClose, title, children, className }: ModalProps) {
+export function Modal({ open, onClose, title, subtitle, children, footer, className }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -20,25 +22,38 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+      className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className={`bg-surface-container-lowest rounded-xl shadow-elevated max-w-lg w-full mx-auto mt-[10vh] max-h-[80vh] overflow-y-auto${className ? ` ${className}` : ''}`}
+        className={`relative w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.1)] border border-outline-variant/20 max-h-[80vh] flex flex-col${className ? ` ${className}` : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center">
-          <h2 className="font-headline text-lg font-bold text-on-surface">{title}</h2>
-          <button
-            onClick={onClose}
-            className="hover:bg-surface-container-low rounded-full p-1 transition-colors"
-          >
-            <span className="material-symbols-outlined text-on-surface-variant text-xl">close</span>
-          </button>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-on-surface-variant hover:text-primary transition-colors bg-transparent border-none cursor-pointer z-10"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+
+        {/* Header */}
+        <div className="px-8 pt-8 pb-4">
+          <h2 className="text-2xl font-bold tracking-tight text-primary font-headline">{title}</h2>
+          {subtitle && <p className="text-sm text-on-surface-variant mt-1">{subtitle}</p>}
         </div>
-        <div className="p-6">
+
+        {/* Body */}
+        <div className="px-8 py-4 flex-1 overflow-y-auto">
           {children}
         </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="px-8 py-6 bg-surface-container-low/50 flex flex-col sm:flex-row-reverse gap-3 border-t border-outline-variant/10">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

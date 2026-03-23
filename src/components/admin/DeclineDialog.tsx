@@ -9,6 +9,9 @@ interface DeclineDialogProps {
   title?: string;
 }
 
+const inputClass = "w-full bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-sm px-4 py-2.5 text-on-surface placeholder:text-outline-variant transition-all";
+const labelClass = "text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant font-label";
+
 export function DeclineDialog({ open, onClose, onConfirm, title = 'Decline Inquiry' }: DeclineDialogProps) {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
@@ -32,26 +35,43 @@ export function DeclineDialog({ open, onClose, onConfirm, title = 'Decline Inqui
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={title}>
-      <p className="text-sm text-on-surface-variant mb-4">
-        Are you sure you want to decline this inquiry?
-      </p>
-
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      subtitle="Are you sure you want to decline this inquiry?"
+      footer={
+        <>
+          <button
+            className="flex-1 sm:flex-none px-8 py-2.5 bg-error text-on-error font-semibold text-sm rounded-lg hover:bg-error/90 transition-all active:scale-[0.98] disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? 'Declining...' : 'Decline'}
+          </button>
+          <button
+            className="flex-1 sm:flex-none px-8 py-2.5 bg-transparent border border-outline-variant text-on-surface-variant font-semibold text-sm rounded-lg hover:bg-surface-variant/20 hover:text-on-surface transition-all active:scale-[0.98]"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+        </>
+      }
+    >
       {error && (
         <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm mb-4">
           {error}
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Reason *
-          </label>
+      <form className="space-y-5">
+        <div className="space-y-1.5">
+          <label className={labelClass}>Reason *</label>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none"
+            className={`${inputClass} cursor-pointer`}
           >
             <option value="">Select a reason...</option>
             {DECLINE_REASONS.map((r) => (
@@ -60,35 +80,17 @@ export function DeclineDialog({ open, onClose, onConfirm, title = 'Decline Inqui
           </select>
         </div>
 
-        <div>
-          <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-            Additional Notes
-          </label>
+        <div className="space-y-1.5">
+          <label className={labelClass}>Additional Notes</label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary outline-none resize-none"
+            placeholder="Additional context..."
+            className={`${inputClass} resize-none`}
           />
         </div>
-      </div>
-
-      <div className="flex gap-3 justify-end mt-6">
-        <button
-          className="border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-low transition-colors"
-          onClick={onClose}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
-        <button
-          className="bg-error text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-error/90 transition-colors disabled:opacity-50"
-          onClick={handleSubmit}
-          disabled={submitting}
-        >
-          {submitting ? 'Declining...' : 'Decline'}
-        </button>
-      </div>
+      </form>
     </Modal>
   );
 }

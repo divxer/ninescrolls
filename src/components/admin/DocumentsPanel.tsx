@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useOrderDocuments } from '../../hooks/useOrders';
-import { StatusBadge } from './StatusBadge';
 import { UploadDocumentDialog } from './UploadDocumentDialog';
 import { PreviewModal } from './PreviewModal';
 import {
@@ -27,22 +26,26 @@ function DocMenu({ onDelete, deleting }: { onDelete: () => void; deleting: boole
   return (
     <div ref={ref} className="relative">
       <button
-        className="hover:bg-surface-container-low rounded-full p-1 transition-colors"
+        className="p-2.5 rounded-lg hover:bg-surface-container-low transition-colors bg-transparent border-none cursor-pointer"
         onClick={() => setOpen(!open)}
         aria-label="Document actions"
       >
-        <span className="material-symbols-outlined text-on-surface-variant text-lg">more_vert</span>
+        <span className="material-symbols-outlined text-on-surface-variant">more_vert</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-elevated border border-outline-variant/10 py-1 z-20 min-w-[120px]">
-          <button
-            className="w-full text-left px-4 py-2 text-xs font-medium text-error hover:bg-error-container/30 transition-colors"
-            onClick={() => { setOpen(false); onDelete(); }}
-            disabled={deleting}
-          >
-            {deleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.12)] py-1.5 z-50 min-w-[160px]">
+            <button
+              className="w-full text-left px-4 py-2.5 text-xs font-medium text-error bg-transparent hover:bg-error-container/30 transition-colors flex items-center gap-3 border-none"
+              onClick={() => { setOpen(false); onDelete(); }}
+              disabled={deleting}
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -117,42 +120,38 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
   }
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-on-surface-variant text-lg">attachment</span>
-          <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">
-            Artifacts & Documentation ({documents.length})
-          </h3>
+    <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-bold tracking-wider text-primary uppercase">Documentation</h3>
+          <button
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary-container text-on-primary-container rounded-lg text-xs font-bold hover:brightness-110 transition-all"
+            onClick={() => setShowUpload(true)}
+          >
+            <span className="material-symbols-outlined text-sm">upload</span>
+            <span>Upload</span>
+          </button>
         </div>
-        <button
-          className="text-xs font-medium text-secondary hover:underline"
-          onClick={() => setShowUpload(true)}
-        >
-          Upload
-        </button>
-      </div>
 
-      {/* Stage Tabs */}
-      {stages.length > 0 && (
+        {/* Stage Tabs */}
         <div className="flex gap-2 mb-5 flex-wrap">
           <button
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-colors border-none cursor-pointer ${
               activeStage === 'all'
-                ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
-                : 'hover:bg-surface-container-low text-on-surface-variant'
+                ? 'bg-primary text-white'
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
             }`}
             onClick={() => setActiveStage('all')}
           >
-            All ({documents.length})
+            All{documents.length > 0 ? ` (${documents.length})` : ''}
           </button>
           {stages.map(stage => (
             <button
               key={stage}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-colors border-none cursor-pointer ${
                 activeStage === stage
-                  ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
-                  : 'hover:bg-surface-container-low text-on-surface-variant'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
               }`}
               onClick={() => setActiveStage(stage)}
             >
@@ -160,89 +159,65 @@ export function DocumentsPanel({ orderId, currentStatus }: DocumentsPanelProps) 
             </button>
           ))}
         </div>
-      )}
 
-      {/* Document List */}
-      {filteredDocs.length === 0 ? (
-        <div className="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-center">
-          <p className="text-xs font-bold text-on-surface-variant">
-            {documents.length === 0
-              ? 'No documents yet. Upload the first one.'
-              : 'No documents in this stage.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {filteredDocs.map(doc => {
-            const { icon, bgClass, textClass } = getMimeIcon(doc.mimeType);
-            return (
-              <div
-                key={doc.docId}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group"
-              >
-                {/* File icon */}
-                <div className={`w-10 h-10 rounded flex items-center justify-center ${bgClass} ${textClass}`}>
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    {icon}
-                  </span>
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-on-surface truncate">{doc.fileName}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <StatusBadge status={doc.docType} />
-                    <span className="text-[10px] text-on-surface-variant">{formatFileSize(doc.fileSize)}</span>
-                    <span className="text-[10px] text-on-surface-variant">{formatDateTime(doc.uploadedAt)}</span>
-                    <span className="text-[10px] text-on-surface-variant">{doc.uploadedBy}</span>
+        {/* Document List */}
+        <div className="space-y-4">
+          {filteredDocs.length === 0 ? (
+            <div className="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-center">
+              <p className="text-xs font-bold text-on-surface-variant">
+                {documents.length === 0
+                  ? 'No documents yet. Upload the first one.'
+                  : 'No documents in this stage.'}
+              </p>
+            </div>
+          ) : (
+            filteredDocs.map(doc => {
+              const { icon, bgClass, textClass } = getMimeIcon(doc.mimeType);
+              return (
+                <div
+                  key={doc.docId}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-outline-variant/10 hover:border-primary/30 transition-all cursor-pointer group"
+                  onClick={() => {
+                    if ((doc.mimeType.includes('pdf') || doc.mimeType.includes('image')) && doc.previewUrl) {
+                      setPreviewDoc(doc);
+                    } else if (doc.downloadUrl) {
+                      window.open(doc.downloadUrl, '_blank');
+                    }
+                  }}
+                >
+                  <div className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${bgClass} ${textClass}`}>
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{icon}</span>
                   </div>
-                  {doc.description && (
-                    <p className="text-[10px] text-on-surface-variant mt-1 truncate">{doc.description}</p>
-                  )}
-                  {doc.tags && doc.tags.length > 0 && (
-                    <div className="flex gap-1 mt-1">
-                      {doc.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="text-[9px] font-medium bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{doc.fileName}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      {formatDateTime(doc.uploadedAt)} &middot; {formatFileSize(doc.fileSize)}
+                    </p>
+                    {doc.description && (
+                      <p className="text-[10px] text-on-surface-variant mt-1 truncate">{doc.description}</p>
+                    )}
+                    {doc.tags && doc.tags.length > 0 && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {doc.tags.map(tag => (
+                          <span key={tag} className="text-[9px] font-medium bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <DocMenu
+                      onDelete={() => handleDelete(doc)}
+                      deleting={deleting === doc.docId}
+                    />
+                  </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  {(doc.mimeType.includes('pdf') || doc.mimeType.includes('image')) && doc.previewUrl && (
-                    <button
-                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-container rounded-full p-1"
-                      onClick={() => setPreviewDoc(doc)}
-                    >
-                      <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
-                    </button>
-                  )}
-                  {doc.downloadUrl && (
-                    <a
-                      href={doc.downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-container rounded-full p-1"
-                    >
-                      <span className="material-symbols-outlined text-on-surface-variant text-lg">download</span>
-                    </a>
-                  )}
-                  <DocMenu
-                    onDelete={() => handleDelete(doc)}
-                    deleting={deleting === doc.docId}
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
-      )}
+      </div>
 
       {showUpload && (
         <UploadDocumentDialog
