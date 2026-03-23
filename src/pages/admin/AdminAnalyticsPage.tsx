@@ -799,8 +799,17 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const vid = [...vids][0];
     const existing = vidPrimaryKey.get(vid);
     if (existing && groups.has(existing)) {
-      groups.get(existing)!.push(...group);
-      consolidateKeys.push(key);
+      // Prefer non-ISP group as primary so the org name reflects the
+      // real institution rather than a residential ISP connection.
+      if (ispOrgNames.has(existing) && !ispOrgNames.has(key)) {
+        // Current key is non-ISP, swap: move existing into current
+        groups.get(key)!.push(...groups.get(existing)!);
+        consolidateKeys.push(existing);
+        vidPrimaryKey.set(vid, key);
+      } else {
+        groups.get(existing)!.push(...group);
+        consolidateKeys.push(key);
+      }
     } else {
       vidPrimaryKey.set(vid, key);
     }
@@ -921,7 +930,12 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       );
 
     // Detect ISP visitors that were split by the ISP split step
-    const orgEvent = group.find((e) => e.orgName || e.org) || group[0];
+    // Prefer non-ISP org name when the visitor has events from multiple networks
+    const nonIspEvent = group.find((e) => {
+      const name = e.orgName || e.org || '';
+      return name && !ispOrgNames.has(name);
+    });
+    const orgEvent = nonIspEvent || group.find((e) => e.orgName || e.org) || group[0];
     const ispOrgName = orgEvent.orgName || orgEvent.org || '';
     const isISPVisitor = ispOrgNames.has(ispOrgName) && key !== ispOrgName;
     // Build a human-readable display name for ISP individual visitors
