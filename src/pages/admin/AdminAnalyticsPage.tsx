@@ -1287,7 +1287,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const classificationSource = (() => {
     if (override?.found && override?.source === 'manual') return 'manual';
     if (org.hasBot) return 'bot';
-    if (hasAI && effectiveAiConf >= 0.5 && effectiveAiOrgType !== 'unknown') return 'ai';
+    if (hasAI && effectiveAiConf >= 0.5) return 'ai';
     if (ipOrgType !== 'unknown') return 'ip';
     if (org.isAnonymousHighIntent) return 'behavior';
     return 'none';
