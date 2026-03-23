@@ -534,11 +534,12 @@ async function writePageView(
                 await getDynamoClient().send(new UpdateCommand({
                     TableName: tableName,
                     Key: { id: `pv-${pageViewId}` },
-                    UpdateExpression: 'SET #aiOrgType = :aiOrgType, #aiConf = :aiConf, #aiReason = :aiReason, #isTgt = :isTgt, #conf = :conf, #orgType = :orgType, #leadTier = :leadTier, #updatedAt = :updatedAt',
+                    UpdateExpression: 'SET #aiOrgType = :aiOrgType, #aiConf = :aiConf, #aiReason = :aiReason, #provider = :provider, #isTgt = :isTgt, #conf = :conf, #orgType = :orgType, #leadTier = :leadTier, #updatedAt = :updatedAt',
                     ExpressionAttributeNames: {
                         '#aiOrgType': 'aiOrganizationType',
                         '#aiConf': 'aiConfidence',
                         '#aiReason': 'aiReason',
+                        '#provider': 'provider',
                         '#isTgt': 'isTargetCustomer',
                         '#conf': 'confidence',
                         '#orgType': 'organizationType',
@@ -549,6 +550,7 @@ async function writePageView(
                         ':aiOrgType': aiResult.organizationType,
                         ':aiConf': aiResult.confidence,
                         ':aiReason': aiResult.reason,
+                        ':provider': aiResult.provider ?? null,
                         ':isTgt': finalIsTargetCustomer,
                         ':conf': aiResult.confidence,
                         ':orgType': aiResult.organizationType,
