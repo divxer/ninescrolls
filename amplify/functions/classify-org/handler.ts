@@ -191,13 +191,17 @@ async function buildClassificationPrompt(input: ClassifyRequest): Promise<string
     const cleanOrgName = input.orgName.replace(/^AS\d+\s+/i, '').trim() || input.orgName;
 
     // Load manual corrections for few-shot learning
+    // Exclude telecom_isp overrides — they must never override the hard "NEVER target" rule
     const corrections = await getManualCorrections();
     let correctionsBlock = '';
     if (corrections && corrections.length > 0) {
-        const lines = corrections.map(c =>
-            `- "${c.orgName}" → ${c.organizationType}, ${c.isTargetCustomer ? 'IS' : 'NOT'} target (${c.reason})`
-        ).join('\n');
-        correctionsBlock = `\n\nAdmin corrections (use these as ground truth for similar organizations):\n${lines}`;
+        const filtered = corrections.filter(c => c.organizationType !== 'telecom_isp');
+        if (filtered.length > 0) {
+            const lines = filtered.map(c =>
+                `- "${c.orgName}" → ${c.organizationType}, ${c.isTargetCustomer ? 'IS' : 'NOT'} target (${c.reason})`
+            ).join('\n');
+            correctionsBlock = `\n\nAdmin corrections (use these as ground truth for similar organizations):\n${lines}`;
+        }
     }
 
     return `You are classifying organizations that visit NineScrolls, a scientific equipment company selling advanced research instruments (electron microscopes, spectrometers, nanofabrication tools, etc.) to universities, research labs, and R&D departments.

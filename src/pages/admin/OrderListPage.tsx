@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
-import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, formatDate, type OrderStatus } from '../../types/admin';
+import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
 
 const STATUS_ICONS: Record<string, string> = {
   INQUIRY: 'search',

@@ -8,16 +8,6 @@ interface ActivityLogProps {
   loading?: boolean;
 }
 
-function getLogIcon(log: OrderLog): { icon: string; classes: string } {
-  if (log.fromStatus && log.toStatus) {
-    return { icon: 'swap_horiz', classes: 'bg-primary text-white' };
-  }
-  if (log.action?.toLowerCase().includes('note') || log.action?.toLowerCase().includes('comment')) {
-    return { icon: 'sticky_note_2', classes: 'bg-surface-container-high text-on-surface-variant' };
-  }
-  return { icon: 'edit', classes: 'bg-secondary-container text-white' };
-}
-
 export function ActivityLog({ logs, loading }: ActivityLogProps) {
   const [expanded, setExpanded] = useState(false);
 

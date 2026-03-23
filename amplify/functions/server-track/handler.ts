@@ -522,9 +522,11 @@ async function writePageView(
             if (aiResult) {
                 finalAiResult = aiResult;
                 const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
+                const NEVER_TARGET_TYPES = ['telecom_isp'];
                 const isTargetOrgType = TARGET_ORG_TYPES.includes(aiResult.organizationType);
                 const isAITarget = aiResult.isTargetCustomer === true;
-                finalIsTargetCustomer = isTargetOrgType || isAITarget;
+                const isNeverTarget = NEVER_TARGET_TYPES.includes(aiResult.organizationType);
+                finalIsTargetCustomer = !isNeverTarget && (isTargetOrgType || isAITarget);
                 if (finalIsTargetCustomer) {
                     finalLeadTier = (isTargetOrgType || (isAITarget && aiResult.confidence >= 0.5)) ? 'B' : 'C';
                 }
