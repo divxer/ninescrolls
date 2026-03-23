@@ -1303,7 +1303,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const ipOrgType = ipEvent?.organizationType || 'unknown';
   const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
   const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
-    && override?.organizationType && override.organizationType !== 'unknown';
+    && !!(override?.organizationType);
   const hasAI = hasEventAI || hasOverrideAI;
   const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
   const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
