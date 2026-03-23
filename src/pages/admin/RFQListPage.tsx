@@ -129,10 +129,10 @@ export function RFQListPage() {
           {STATUS_OPTIONS.map(s => (
             <button
               key={s}
-              className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors ${
+              className={`px-4 py-1.5 rounded-full text-xs border-none cursor-pointer transition-colors ${
                 statusFilter === s
-                  ? 'bg-surface-container text-on-surface'
-                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                  ? 'bg-primary text-on-primary font-semibold'
+                  : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container'
               }`}
               onClick={() => setStatusFilter(s)}
             >
