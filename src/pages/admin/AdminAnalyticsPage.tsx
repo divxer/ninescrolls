@@ -1721,19 +1721,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                           </span>
                         )}
                         {entryEventIds.has(e.id) && referrerBadge(e)}
-                        <div className="text-right">
+                        <div className="text-right whitespace-nowrap">
                           {e.eventType === 'page_time_flush' ? (
                             <>
-                              {e.activeSeconds != null && (
-                                <p className="text-xs font-bold text-on-surface">{formatDuration(e.activeSeconds)}</p>
-                              )}
-                              {(idleSec != null && idleSec > 0 || hiddenSec != null && hiddenSec > 0) && (
-                                <p className="text-[10px] text-on-surface-variant">
-                                  {[
-                                    idleSec != null && idleSec > 0 ? `${idleSec}s idle` : null,
-                                    hiddenSec != null && hiddenSec > 0 ? `${hiddenSec}s hidden` : null,
-                                  ].filter(Boolean).join(' · ')}
-                                </p>
+                              <p className="text-xs font-bold text-on-surface">
+                                {e.activeSeconds != null ? formatDuration(e.activeSeconds) : ''}
+                                {idleSec != null && idleSec > 0 && (
+                                  <span className="font-normal text-on-surface-variant ml-1">+{formatDuration(idleSec)} idle</span>
+                                )}
+                              </p>
+                              {hiddenSec != null && hiddenSec > 0 && (
+                                <p className="text-[10px] text-on-surface-variant">{formatDuration(hiddenSec)} hidden</p>
                               )}
                               {sd > 0 && (
                                 <p className="text-[10px] text-on-surface-variant">↓{sd}% scroll</p>
