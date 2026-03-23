@@ -688,53 +688,33 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             const validationError = validatePageTimeFlush(properties);
             if (validationError) {
                 console.error(`[PTF] Validation failed: ${validationError}`);
-                // Still forward to Segment even if DDB validation fails
-                const result = await sendToSegment(payload);
                 return {
-                    statusCode: result.status < 400 ? 200 : 502,
+                    statusCode: 400,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ success: result.status < 400, validationError }),
+                    body: JSON.stringify({ success: false, validationError }),
                 };
             }
 
-            // Remap Segment event name for backward compatibility with existing reports.
-            // DDB stores 'page_time_flush' as eventType; Segment gets 'Time on Page'
-            // (matches the event name from sendTimeBeacon in segmentAnalytics.ts).
-            const segmentPayload: SegmentPayload = { ...payload, event: 'Time on Page' };
+            // DDB-only: no longer forwarding to Segment ('Time on Page' events
+            // were drowning out meaningful events). DDB is authoritative for
+            // page time data; admin dashboard reads directly from DDB.
+            const dbResult = await writePageTimeFlush(properties, userAgent, visitorIp)
+                .then(() => ({ ok: true, duplicate: false }))
+                .catch((err: { name?: string }) => ({
+                    ok: false,
+                    duplicate: err.name === 'ConditionalCheckFailedException',
+                }));
 
-            const [segResult, dbResult] = await Promise.allSettled([
-                sendToSegment(segmentPayload),
-                writePageTimeFlush(properties, userAgent, visitorIp),
-            ]);
+            const persisted = dbResult.ok || dbResult.duplicate;
 
-            const segOk = segResult.status === 'fulfilled' && segResult.value.status < 400;
-            const dbOk = dbResult.status === 'fulfilled';
-            const dbDuplicate = dbResult.status === 'rejected' &&
-                (dbResult.reason as { name?: string })?.name === 'ConditionalCheckFailedException';
+            if (!dbResult.ok && !dbResult.duplicate) console.error('[PTF] DDB write failed');
+            if (dbResult.duplicate) console.info('[PTF] DDB idempotent duplicate ignored');
+            if (dbResult.ok) console.info(`[PTF] OK pvid=${properties.pageViewId} seq=${properties.flushSequence}`);
 
-            // Observability logging
-            if (!segOk) console.error('[PTF] Segment forwarding failed:', segResult);
-            if (!dbOk && !dbDuplicate) console.error('[PTF] DDB write failed:', dbResult);
-            if (dbDuplicate) console.info('[PTF] DDB idempotent duplicate ignored');
-            if (dbOk) console.info(`[PTF] OK pvid=${properties.pageViewId} seq=${properties.flushSequence} seg=${segOk}`);
-
-            // DDB is authoritative; Segment is supplementary
-            const authoritativePersisted = dbOk || dbDuplicate;
-            if (!authoritativePersisted && !segOk) {
-                return {
-                    statusCode: 502,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ error: 'Both Segment and DynamoDB failed' }),
-                };
-            }
             return {
-                statusCode: authoritativePersisted ? 200 : 202,
+                statusCode: persisted ? 200 : 502,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    success: authoritativePersisted,
-                    authoritativePersisted,
-                    segmentForwarded: segOk,
-                }),
+                body: JSON.stringify({ success: persisted }),
             };
         }
 
