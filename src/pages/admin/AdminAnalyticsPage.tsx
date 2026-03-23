@@ -1271,17 +1271,32 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   }
 
   // ── Pre-compute detection details (shared between left & right columns) ──
+  // Single source of truth: event data first, override only for manual admin actions
   const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
   const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
   const ipOrgType = ipEvent?.organizationType || 'unknown';
-  const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
+
+  // AI classification: prefer event data, fall back to override for pre-pipeline records
+  const hasEventAI = !!(aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType);
   const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
-    && override?.organizationType && override.organizationType !== 'unknown';
+    && !!(override?.organizationType);
   const hasAI = hasEventAI || hasOverrideAI;
   const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
   const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
   const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
   const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown' && effectiveAiOrgType !== ipOrgType;
+
+  // AI provider: event field (after schema deploy) → override (legacy fallback)
+  const aiProvider = (() => {
+    if (hasEventAI) {
+      const p = (aiEvent as Record<string, unknown>).provider as string | undefined;
+      if (p) return p;
+    }
+    return override?.provider || null;
+  })();
+  const aiProviderLabel = aiProvider === 'bedrock' ? 'Bedrock'
+    : aiProvider === 'anthropic' ? 'Anthropic API'
+    : null;
 
   // Classification source
   const classificationSource = (() => {
@@ -1291,17 +1306,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     if (ipOrgType !== 'unknown') return 'ip';
     if (org.isAnonymousHighIntent) return 'behavior';
     return 'none';
-  })();
-
-  // AI provider label
-  const aiProviderLabel = (() => {
-    if (hasEventAI) {
-      const provider = (aiEvent as Record<string, unknown>).provider as string | undefined;
-      if (provider === 'bedrock') return 'Bedrock';
-      if (provider === 'anthropic') return 'Anthropic API';
-    }
-    if (override?.provider) return override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API';
-    return null;
   })();
 
   // Override state
