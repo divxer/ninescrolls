@@ -1707,7 +1707,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 const sd = (e as Record<string, unknown>).maxScrollDepth as number;
                 const idleSec = (e as Record<string, unknown>).idleSeconds as number | undefined;
                 const hiddenSec = (e as Record<string, unknown>).hiddenSeconds as number | undefined;
-                const wallSec = (e as Record<string, unknown>).wallClockSeconds as number | undefined;
+
                 return (
                   <div key={e.id} className={`relative pl-10 ${isLast ? '' : 'pb-8'}`}>
                     <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center z-10 ${isFinal ? 'bg-primary-fixed' : 'bg-surface-container'}`}>
