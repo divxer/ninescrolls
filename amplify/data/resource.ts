@@ -147,6 +147,7 @@ const schema = a.schema({
       aiOrganizationType: a.string(),
       aiConfidence: a.float(),
       aiReason: a.string(),
+      provider: a.string(),
 
       properties: a.json(),
     })
