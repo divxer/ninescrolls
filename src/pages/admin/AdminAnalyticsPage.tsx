@@ -2705,7 +2705,7 @@ export function AdminAnalyticsPage() {
           </div>
           <div className="absolute right-4 bottom-4 w-32 h-12 opacity-50">
             <svg className="w-full h-full" viewBox="0 0 100 40">
-              <path d="M0 35 Q 25 35, 30 20 T 60 25 T 90 5 T 100 15" fill="none" stroke="white" strokeWidth="2" />
+              <path d="M0 35 C 15 32, 25 28, 35 22 C 45 16, 55 24, 65 20 C 75 16, 85 8, 100 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
