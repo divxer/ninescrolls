@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { useTheme } from '../../contexts/useTheme';
 import '../../styles/admin-tailwind.css';
 import '../../styles/Admin.css';
 
@@ -16,6 +17,13 @@ export function AdminLayout() {
   const { user, signOut } = useAuthenticator();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { effectiveTheme, toggleTheme, preference } = useTheme();
+
+  // Apply data-theme to .admin-root after mount
+  useEffect(() => {
+    const root = document.querySelector('.admin-root');
+    if (root) root.setAttribute('data-theme', effectiveTheme);
+  }, [effectiveTheme]);
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -127,8 +135,18 @@ export function AdminLayout() {
           <button className="border-none bg-transparent hover:bg-surface-container-low rounded-full p-2 transition-all cursor-pointer" aria-label="Notifications">
             <span className="material-symbols-outlined text-[#44474e]" style={{ fontSize: 28, fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 28' }}>notifications</span>
           </button>
-          <button className="border-none bg-transparent hover:bg-surface-container-low rounded-full p-2 transition-all cursor-pointer" aria-label="Toggle dark mode">
-            <span className="material-symbols-outlined text-[#44474e]" style={{ fontSize: 28, fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 28' }}>dark_mode</span>
+          <button
+            className="border-none bg-transparent hover:bg-surface-container-low rounded-full p-2 transition-all cursor-pointer relative"
+            aria-label={`Toggle dark mode (${preference})`}
+            title={preference === 'auto' ? `Auto (${effectiveTheme})` : effectiveTheme}
+            onClick={toggleTheme}
+          >
+            <span className="material-symbols-outlined text-[#44474e]" style={{ fontSize: 28, fontVariationSettings: '"FILL" 1, "wght" 400, "GRAD" 0, "opsz" 28' }}>
+              {effectiveTheme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+            {preference === 'auto' && (
+              <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-secondary rounded-full border border-surface" />
+            )}
           </button>
           <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container text-sm font-bold">
             {(user?.signInDetails?.loginId || 'A').charAt(0).toUpperCase()}
