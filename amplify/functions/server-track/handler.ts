@@ -516,9 +516,17 @@ async function writePageView(
 
     if (ipData && ipData.organizationType && AI_CLASSIFY_ORG_TYPES.has(ipData.organizationType) && !props.isBot) {
         try {
-            const aiResult = await classifyOrgViaLambda(
+            // Try classification, retry once after 2s on failure
+            let aiResult = await classifyOrgViaLambda(
                 ipData.orgName ?? '', ipData.city, ipData.country, ipData.isp,
             );
+            if (!aiResult) {
+                console.info(`[PVS] AI classify returned null, retrying in 2s: "${ipData.orgName}"`);
+                await new Promise(r => setTimeout(r, 2000));
+                aiResult = await classifyOrgViaLambda(
+                    ipData.orgName ?? '', ipData.city, ipData.country, ipData.isp,
+                );
+            }
             if (aiResult) {
                 finalAiResult = aiResult;
                 const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];

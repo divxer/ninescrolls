@@ -1193,7 +1193,34 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       if (!result.found && !org.hasBot) {
         try {
           const classified = await classifyOrg(org.orgName);
-          if (!cancelled) setOverride(classified);
+          if (!cancelled) {
+            setOverride(classified);
+            // Write back AI data to events missing it (backfill on view)
+            if (classified.organizationType) {
+              const eventsToFix = org.events.filter(e =>
+                e.eventType === 'page_view' && !e.aiOrganizationType
+              );
+              for (const e of eventsToFix) {
+                try {
+                  await client.graphql({
+                    query: `mutation UpdateEvent($input: UpdateAnalyticsEventInput!) {
+                      updateAnalyticsEvent(input: $input) { id }
+                    }`,
+                    variables: {
+                      input: {
+                        id: e.id,
+                        aiOrganizationType: classified.organizationType,
+                        aiConfidence: classified.confidence ?? null,
+                        aiReason: classified.reason ?? null,
+                        provider: classified.provider ?? null,
+                      },
+                    },
+                    authMode: 'userPool',
+                  } as any);
+                } catch { /* best-effort backfill */ }
+              }
+            }
+          }
         } catch {
           if (!cancelled) setOverride(result);
         }
