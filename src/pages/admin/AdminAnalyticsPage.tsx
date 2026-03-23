@@ -742,9 +742,17 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
   // Some events lack AI classification and end up keyed by org name even
   // though the org is an ISP.  Re-split those groups by visitorId so each
   // residential user gets their own entry.
+  // Before splitting, capture the org-level AI classification so sub-groups inherit it.
+  const ispAiType = new Map<string, { aiOrganizationType: string; aiConfidence: number }>();
   for (const ispName of ispOrgNames) {
     const ispGroup = groups.get(ispName);
     if (!ispGroup) continue;
+    const aiEvt = ispGroup.find(e =>
+      e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
+    );
+    if (aiEvt) {
+      ispAiType.set(ispName, { aiOrganizationType: aiEvt.aiOrganizationType!, aiConfidence: aiEvt.aiConfidence! });
+    }
     groups.delete(ispName);
     for (const e of ispGroup) {
       const vid = (e as Record<string, unknown>).visitorId as string;
@@ -866,9 +874,26 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
     );
+    // Also check parent ISP AI type and visitorOrgMap (ISP-split groups may lack AI on their own events)
+    const aiFromParentISP = !aiEvent ? (() => {
+      const orgEvent = group.find(e => e.orgName || e.org);
+      const orgName = orgEvent?.orgName || orgEvent?.org || '';
+      if (orgName && ispAiType.has(orgName)) return ispAiType.get(orgName)!;
+      // Also check visitorOrgMap
+      for (const e of group) {
+        const vid = (e as Record<string, unknown>).visitorId as string;
+        if (!vid) continue;
+        const meta = visitorOrgMap.get(vid);
+        if (meta?.aiOrganizationType && meta.aiOrganizationType !== 'unknown'
+            && meta.aiConfidence != null && meta.aiConfidence >= 0.5) {
+          return { aiOrganizationType: meta.aiOrganizationType, aiConfidence: meta.aiConfidence };
+        }
+      }
+      return null;
+    })() : null;
     const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown')?.organizationType ||
       geoEvent.organizationType || '';
-    const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || ipOrgType);
+    const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType);
 
     // Backfill tier for old events that lack leadTier.
     // Two paths mirror the pipeline (segmentAnalytics):
