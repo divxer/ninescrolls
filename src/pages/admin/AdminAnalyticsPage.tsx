@@ -1184,20 +1184,15 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const [overrideLoading, setOverrideLoading] = useState(true);
   const [overrideMsg, setOverrideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Base org name from events (without ISP display suffix like "· City, State")
-  const baseOrgName = org.events.find(e => e.orgName)?.orgName || org.orgName;
-
-  // Fetch override / auto-classify for orgs lacking event-level AI data
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(baseOrgName).then(async (result) => {
+    getOrgOverride(org.orgName).then(async (result) => {
       if (cancelled) return;
-      // Auto-classify if no cached classification and no event-level AI data
-      const hasEventAI = org.events.some(e => e.aiOrganizationType);
-      if (!result.found && !org.hasBot && !hasEventAI) {
+      // Auto-classify if no cached classification exists (skip bots)
+      if (!result.found && !org.hasBot) {
         try {
-          const classified = await classifyOrg(baseOrgName);
+          const classified = await classifyOrg(org.orgName);
           if (!cancelled) setOverride(classified);
         } catch {
           if (!cancelled) setOverride(result);
@@ -1211,7 +1206,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       if (!cancelled) setOverrideLoading(false);
     });
     return () => { cancelled = true; };
-  }, [baseOrgName]);
+  }, [org.orgName]);
 
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
@@ -1276,31 +1271,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   }
 
   // ── Pre-compute detection details (shared between left & right columns) ──
-  // Single source of truth: event data for AI classification, override only for manual admin actions
   const aiEvent = org.events.find((e) => e.aiReason || e.aiOrganizationType);
   const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
   const ipOrgType = ipEvent?.organizationType || 'unknown';
-
-  // AI classification — event data first, override fallback for ISP-split visitors
-  const hasEventAI = !!(aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType);
-  const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found
-    && !!(override?.organizationType) && override?.source !== 'manual';
+  const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
+  const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
+    && override?.organizationType && override.organizationType !== 'unknown';
   const hasAI = hasEventAI || hasOverrideAI;
-  const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType
-    : hasOverrideAI ? override!.organizationType : undefined;
-  const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0)
-    : hasOverrideAI ? (override!.confidence ?? 0) : 0;
-  const effectiveAiReason = hasEventAI ? aiEvent.aiReason
-    : hasOverrideAI ? override!.reason : undefined;
+  const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
+  const effectiveAiConf = hasEventAI ? (aiEvent.aiConfidence ?? 0) : (override?.confidence ?? 0);
+  const effectiveAiReason = hasEventAI ? aiEvent.aiReason : override?.reason;
   const aiUpgraded = hasAI && effectiveAiOrgType !== 'unknown' && effectiveAiOrgType !== ipOrgType;
-
-  // AI provider — event data first, override fallback
-  const aiProvider = hasEventAI
-    ? (aiEvent as Record<string, unknown>).provider as string | null
-    : override?.provider || null;
-  const aiProviderLabel = aiProvider === 'bedrock' ? 'Bedrock'
-    : aiProvider === 'anthropic' ? 'Anthropic API'
-    : null;
 
   // Classification source
   const classificationSource = (() => {
@@ -1312,11 +1293,22 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     return 'none';
   })();
 
+  // AI provider label
+  const aiProviderLabel = (() => {
+    if (hasEventAI) {
+      const provider = (aiEvent as Record<string, unknown>).provider as string | undefined;
+      if (provider === 'bedrock') return 'Bedrock';
+      if (provider === 'anthropic') return 'Anthropic API';
+    }
+    if (override?.provider) return override.provider === 'bedrock' ? 'Bedrock' : 'Anthropic API';
+    return null;
+  })();
+
   // Override state
   const isManualOverride = override?.found && override?.source === 'manual';
   const currentIsTarget = isManualOverride ? override?.isTargetCustomer : org.isTargetCustomer;
 
-  // Display org type: manual override → override AI → org aggregated type
+  // Display org type
   const displayOrgType = org.hasBot ? 'bot'
     : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
       ? override.organizationType
