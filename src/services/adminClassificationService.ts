@@ -58,9 +58,13 @@ export async function getOrgOverride(orgName: string): Promise<OrgOverride> {
 
 /**
  * Trigger AI classification for an org (uses cache if available).
+ * Pass context (isp, country, city) for better classification accuracy.
  */
-export async function classifyOrg(orgName: string): Promise<OrgOverride> {
-  const result = await callClassifyOrg({ orgName });
+export async function classifyOrg(
+  orgName: string,
+  context?: { isp?: string; country?: string; city?: string },
+): Promise<OrgOverride> {
+  const result = await callClassifyOrg({ orgName, ...context });
   return { found: true, ...(result as object) } as OrgOverride;
 }
 

@@ -1192,7 +1192,12 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       // Auto-classify if no cached classification exists (skip bots)
       if (!result.found && !org.hasBot) {
         try {
-          const classified = await classifyOrg(org.orgName);
+          const ctxEvent = org.events.find(e => e.isp || e.country || e.city) || org.events[0];
+          const classified = await classifyOrg(org.orgName, {
+            isp: ctxEvent?.isp || undefined,
+            country: ctxEvent?.country || undefined,
+            city: ctxEvent?.city || undefined,
+          });
           if (!cancelled) {
             setOverride(classified);
             // Write back AI data to events missing it (backfill on view)
