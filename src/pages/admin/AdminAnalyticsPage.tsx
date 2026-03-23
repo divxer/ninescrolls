@@ -2814,7 +2814,7 @@ export function AdminAnalyticsPage() {
           <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mr-1">Active Exclusions:</span>
           {!showBots && (
             <button
-              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border-none cursor-pointer hover:bg-primary/15 transition-colors"
               onClick={() => setShowBots(true)}
             >
               Search Engines
@@ -2823,7 +2823,7 @@ export function AdminAnalyticsPage() {
           )}
           {!showPrivateIPs && (
             <button
-              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border-none cursor-pointer hover:bg-primary/15 transition-colors"
               onClick={() => setShowPrivateIPs(true)}
             >
               Private IPs
@@ -2832,7 +2832,7 @@ export function AdminAnalyticsPage() {
           )}
           {hideSelf && (
             <button
-              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20 cursor-pointer hover:bg-primary/15 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border-none cursor-pointer hover:bg-primary/15 transition-colors"
               onClick={() => setHideSelf(false)}
             >
               Internal Traffic
