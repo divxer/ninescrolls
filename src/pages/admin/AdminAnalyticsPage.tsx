@@ -1274,6 +1274,35 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
   const uniqueISPs = Array.from(new Set(org.events.map((e) => e.isp).filter(Boolean))) as string[];
   const uniqueUAs = Array.from(new Set(org.events.map((e) => e.userAgent).filter(Boolean))) as string[];
+
+  // ── Per-IP network contexts (for multi-network visitors) ──
+  const networkContexts = useMemo(() => {
+    const ipMap = new Map<string, { ip: string; orgName: string; org: string; organizationType: string; isp: string; count: number }>();
+    for (const e of org.events) {
+      if (!e.ip) continue;
+      const existing = ipMap.get(e.ip);
+      if (existing) {
+        existing.count++;
+        if (!existing.orgName && e.orgName) existing.orgName = e.orgName;
+        if (!existing.org && e.org) existing.org = e.org;
+        if (!existing.organizationType && e.organizationType) existing.organizationType = e.organizationType;
+        if (!existing.isp && e.isp) existing.isp = e.isp;
+      } else {
+        ipMap.set(e.ip, {
+          ip: e.ip,
+          orgName: e.orgName || '',
+          org: e.org || '',
+          organizationType: e.organizationType || '',
+          isp: e.isp || '',
+          count: 1,
+        });
+      }
+    }
+    return Array.from(ipMap.values()).sort((a, b) => b.count - a.count);
+  }, [org.events]);
+  const hasMultipleNetworks = networkContexts.length > 1
+    && new Set(networkContexts.map(c => c.orgName || c.org || c.isp).filter(Boolean)).size > 1;
+
   // visitorId is the preferred grouping key; fall back to IP for legacy events
   const visitorKey = (e: AnalyticsEvent) => (e as Record<string, unknown>).visitorId as string || e.ip || 'unknown';
   const uniqueVisitors = Array.from(new Set(org.events.map(visitorKey).filter((v) => v !== 'unknown')));
@@ -1805,6 +1834,11 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                             {new Date(e.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
                             {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </p>
+                          {hasMultipleNetworks && e.ip && (
+                            <p className="text-[10px] font-mono text-on-surface-variant/60">
+                              {showFullIP ? e.ip : maskIP(e.ip)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1860,27 +1894,65 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             <div className="space-y-6">
               {/* IP Details */}
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">IP Lookup</p>
-                <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
-                  <span
-                    className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
-                    onClick={() => setShowFullIP((v) => !v)}
-                    title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-                  >
-                    {uniqueIPs.length > 0
-                      ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
-                      : 'N/A'}
-                  </span>
-                  {aiUpgraded && (
-                    <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
-                  )}
-                </div>
-                <p className="text-xs text-on-surface-variant mt-2">
-                  Type: <span className="text-on-surface font-medium">
-                    {org.companyType || ipOrgType || 'Unknown'}
-                    {uniqueISPs.length > 0 && ` / ${uniqueISPs[0]}`}
-                  </span>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">
+                  {hasMultipleNetworks ? 'Networks Detected' : 'IP Lookup'}
                 </p>
+                {hasMultipleNetworks ? (
+                  <div className="space-y-2">
+                    {networkContexts.map((ctx) => {
+                      const label = ctx.orgName || ctx.org || ctx.isp || 'Unknown';
+                      const typeLabel = ctx.organizationType && ctx.organizationType !== 'unknown'
+                        ? ctx.organizationType : '';
+                      return (
+                        <div key={ctx.ip} className="p-3 bg-surface rounded-lg space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                              onClick={() => setShowFullIP((v) => !v)}
+                              title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                            >
+                              {showFullIP ? ctx.ip : maskIP(ctx.ip)}
+                            </span>
+                            <span className="text-[10px] text-on-surface-variant">
+                              {ctx.count} event{ctx.count !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-on-surface">{label}</span>
+                            {typeLabel && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">
+                                {typeLabel}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
+                      <span
+                        className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                        onClick={() => setShowFullIP((v) => !v)}
+                        title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                      >
+                        {uniqueIPs.length > 0
+                          ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
+                          : 'N/A'}
+                      </span>
+                      {aiUpgraded && (
+                        <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-2">
+                      Type: <span className="text-on-surface font-medium">
+                        {org.companyType || ipOrgType || 'Unknown'}
+                        {uniqueISPs.length > 0 && ` / ${uniqueISPs[0]}`}
+                      </span>
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* AI Classification */}
@@ -2015,7 +2087,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     <p className="text-sm font-semibold">{parsedUA.browser}</p>
                   </div>
                 </div>
-                {uniqueIPs.length > 1 && (
+                {uniqueIPs.length > 1 && !hasMultipleNetworks && (
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">Additional IPs</p>
                     <div className="space-y-1">
@@ -2030,7 +2102,10 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 {org.isISPVisitor && (
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Visitor ID</p>
-                    <p className="text-xs font-mono">{org.key.substring(0, 12)}</p>
+                    <p className="text-xs font-mono">{(() => {
+                      const vid = org.events.find(e => (e as Record<string, unknown>).visitorId);
+                      return vid ? String((vid as Record<string, unknown>).visitorId).substring(0, 12) : org.key.substring(0, 12);
+                    })()}</p>
                   </div>
                 )}
               </div>
