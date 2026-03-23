@@ -98,16 +98,16 @@ export function OrderListPage() {
   return (
     <div className="space-y-10">
       {/* Page Header & Actions */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row gap-4 md:justify-between md:items-end">
         <div className="space-y-1">
           <nav className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-label mb-2">
             <span>Ledger</span>
             <span className="material-symbols-outlined text-[12px]">chevron_right</span>
             <span className="text-secondary font-bold">Order Tracking</span>
           </nav>
-          <h2 className="text-4xl font-headline font-bold text-on-surface tracking-tight">Active Transmissions</h2>
+          <h2 className="text-2xl md:text-4xl font-headline font-bold text-on-surface tracking-tight">Active Transmissions</h2>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4">
           <button className="px-5 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container-low transition-all flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">download</span>
             Export CSV
@@ -124,14 +124,14 @@ export function OrderListPage() {
 
       {/* Global Pipeline Overview (Lifecycle Stepper) */}
       {stats && (
-        <section className="bg-surface-container-lowest p-8 rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.04)]">
+        <section className="bg-surface-container-lowest p-4 md:p-8 rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.04)]">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-headline font-bold text-lg uppercase tracking-wider text-on-primary-fixed-variant">Lifecycle Management</h3>
             <div className="text-[11px] font-label text-on-surface-variant uppercase tracking-widest bg-surface-container-low px-3 py-1 rounded">
               {orders.length} Active Orders
             </div>
           </div>
-          <div className="relative flex justify-between items-start">
+          <div className="relative flex justify-between items-start overflow-x-auto scrollbar-hide min-w-0">
             {/* Progress line */}
             <div className="absolute top-4 left-0 w-full h-[1px] bg-outline-variant/20 z-0" />
             {stepperStatuses.map((status, idx) => {
@@ -182,18 +182,18 @@ export function OrderListPage() {
       )}
 
       {/* Data Table + Summary Panel */}
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-4 md:gap-8">
         {/* Main Data Table */}
         <div className="col-span-12 lg:col-span-9 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_10px_30px_rgba(2,36,72,0.02)]">
           {/* Table header bar */}
-          <div className="p-6 flex items-center justify-between bg-surface-container-low/50">
+          <div className="p-4 md:p-6 flex flex-col md:flex-row gap-3 md:items-center md:justify-between bg-surface-container-low/50">
             <div className="flex items-center gap-4">
               <h4 className="font-headline font-bold text-sm uppercase tracking-widest">Global Order Ledger</h4>
               <span className="text-[10px] bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-full font-bold">
                 {filtered.length} Total
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-sm">search</span>
                 <input
@@ -201,7 +201,7 @@ export function OrderListPage() {
                   placeholder="Search orders..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="bg-surface-container-low border-none rounded-lg py-1.5 pl-9 pr-4 text-sm w-56 focus:ring-1 focus:ring-secondary/20 placeholder:text-on-surface-variant/50 transition-all"
+                  className="bg-surface-container-low border-none rounded-lg py-1.5 pl-9 pr-4 text-sm w-full md:w-56 focus:ring-1 focus:ring-secondary/20 placeholder:text-on-surface-variant/50 transition-all"
                 />
               </div>
               <select
@@ -217,8 +217,38 @@ export function OrderListPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Mobile order cards */}
+          <div className="md:hidden divide-y divide-outline-variant/5">
+            {filtered.map(order => (
+              <div
+                key={order.orderId}
+                className="p-4 cursor-pointer hover:bg-primary-fixed/30 transition-colors"
+                onClick={() => window.location.href = `/admin/orders/${order.orderId}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-on-surface">{order.quoteNumber || order.poNumber || order.orderId.slice(0, 8)}</span>
+                  <StatusBadge status={order.status} />
+                </div>
+                <div className="text-sm font-medium text-on-surface">{order.institution}</div>
+                {order.department && <div className="text-xs text-on-surface-variant">{order.department}</div>}
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-on-surface-variant">{order.productModel}</span>
+                  <span className="font-headline font-bold text-sm text-primary">{formatCurrency(order.quoteAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                    {order.source === 'RFQ_WEBSITE' ? 'Portal' : order.source === 'MANUAL' ? 'Direct' : order.source || '-'}
+                  </span>
+                  <span className="text-xs text-on-surface-variant">{order.daysSinceLastUpdate}d ago</span>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-on-surface-variant text-sm">No orders found.</div>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/30">
@@ -285,7 +315,7 @@ export function OrderListPage() {
           </div>
 
           {/* Pagination footer */}
-          <div className="p-6 border-t border-outline-variant/10 flex items-center justify-between">
+          <div className="p-4 md:p-6 border-t border-outline-variant/10 flex items-center justify-between">
             <span className="text-[11px] font-label uppercase tracking-widest text-on-surface-variant">
               Showing {filtered.length} of {orders.length} Transmissions
             </span>

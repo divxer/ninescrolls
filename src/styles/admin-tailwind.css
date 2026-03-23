@@ -275,3 +275,12 @@
   background-color: var(--color-surface-container);
   color: var(--color-on-surface);
 }
+
+/* Hide scrollbar but keep scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

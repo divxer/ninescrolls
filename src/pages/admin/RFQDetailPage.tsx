@@ -64,7 +64,7 @@ export function RFQDetailPage() {
       </Link>
 
       {/* Page title area */}
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6 md:mb-8">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="font-headline text-3xl font-bold text-primary">RFQ-{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</h1>
@@ -72,7 +72,7 @@ export function RFQDetailPage() {
           </div>
           <p className="text-sm text-on-surface-variant mt-1">Submitted {formatDateTime(rfq.submittedAt)}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {rfq.status === 'pending' && (
             <>
               <button
@@ -119,12 +119,12 @@ export function RFQDetailPage() {
       )}
 
       {/* Contact Information */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+      <div className="bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6">
         <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
           <span className="material-symbols-outlined text-lg">person</span>
           Contact Information
         </h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Name</p>
             <p className="text-sm font-medium text-on-surface">{rfq.name || '-'}</p>
@@ -153,12 +153,12 @@ export function RFQDetailPage() {
       </div>
 
       {/* Equipment Requirements */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+      <div className="bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6">
         <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
           <span className="material-symbols-outlined text-lg">precision_manufacturing</span>
           Equipment Requirements
         </h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Category</p>
             <p className="text-sm font-medium text-on-surface">{rfq.equipmentCategory || '-'}</p>
@@ -188,7 +188,7 @@ export function RFQDetailPage() {
 
       {/* Budgetary Quote */}
       {rfq.needsBudgetaryQuote && (
-        <div className="bg-tertiary-fixed/10 border border-tertiary-fixed-dim/30 rounded-xl p-6 shadow-card mb-6">
+        <div className="bg-tertiary-fixed/10 border border-tertiary-fixed-dim/30 rounded-xl p-4 md:p-6 shadow-card mb-6">
           <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
             <span className="material-symbols-outlined text-lg">request_quote</span>
             Budgetary Quote Requested
@@ -204,12 +204,12 @@ export function RFQDetailPage() {
       )}
 
       {/* Project Context */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-card mb-6">
+      <div className="bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6">
         <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
           <span className="material-symbols-outlined text-lg">info</span>
           Project Context
         </h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Budget Range</p>
             <p className="text-sm font-medium text-on-surface">{rfq.budgetRange || '-'}</p>
@@ -226,7 +226,7 @@ export function RFQDetailPage() {
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Referral Source</p>
             <p className="text-sm font-medium text-on-surface">{rfq.referralSource || '-'}</p>
           </div>
-          <div className="col-span-2">
+          <div className="md:col-span-2">
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Existing Equipment</p>
             <p className="text-sm font-medium text-on-surface">{rfq.existingEquipment || '-'}</p>
           </div>

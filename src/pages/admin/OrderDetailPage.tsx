@@ -114,9 +114,9 @@ export function OrderDetailPage() {
   const orderRef = order.quoteNumber || order.poNumber || order.orderId.slice(0, 12);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
       {/* Header Section */}
-      <section className="flex flex-wrap justify-between items-start gap-6">
+      <section className="flex flex-wrap justify-between items-start gap-4 md:gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-headline font-bold text-primary tracking-tighter">{orderRef}</span>
@@ -195,7 +195,7 @@ export function OrderDetailPage() {
       )}
 
       {/* Lifecycle Stepper */}
-      <section className="bg-surface-container-low rounded-xl p-8 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <section className="bg-surface-container-low rounded-xl p-4 md:p-8 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         <div className="flex justify-between items-start min-w-[800px]">
           {FORWARD_PATH.map((status, idx) => {
             const isCompleted = currentStepIdx >= 0 && idx < currentStepIdx;
@@ -257,11 +257,11 @@ export function OrderDetailPage() {
       </section>
 
       {/* Content Grid: 2/3 + 1/3 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
           {/* Product Specifications Card */}
-          <div className="bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10">
+          <div className="bg-surface-container-lowest rounded-xl p-4 md:p-8 border border-outline-variant/10">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-headline font-bold text-primary">Product Specifications</h2>
               <span className="material-symbols-outlined text-outline-variant cursor-pointer hover:text-primary transition-colors">edit</span>
@@ -303,7 +303,7 @@ export function OrderDetailPage() {
           </div>
 
           {/* Internal Notes */}
-          <div className="bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10">
+          <div className="bg-surface-container-lowest rounded-xl p-4 md:p-8 border border-outline-variant/10">
             <div className="flex items-center gap-2 mb-4">
               <span className="material-symbols-outlined text-primary">description</span>
               <h2 className="text-xl font-headline font-bold text-primary">Internal Notes</h2>
