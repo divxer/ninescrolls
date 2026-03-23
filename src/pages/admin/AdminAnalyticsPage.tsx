@@ -2476,6 +2476,20 @@ export function AdminAnalyticsPage() {
     return { uniqueVisitors, targetCustomers, educationOrgs, hotLeads, returning, businessOrgs, aiReferral, anonymousIntent, ispHighIntent, visitorTrend };
   }, [organizations, filteredEvents, dateRange, customStart, customEnd]);
 
+  // Daily unique visitor counts for sparkline
+  const visitorSparkline = useMemo(() => {
+    const dayMap = new Map<string, Set<string>>();
+    for (const e of filteredEvents) {
+      if (e.eventType !== 'page_view') continue;
+      const day = new Date(e.timestamp).toISOString().slice(0, 10);
+      const org = e.orgName || e.org || e.ip || 'unknown';
+      if (!dayMap.has(day)) dayMap.set(day, new Set());
+      dayMap.get(day)!.add(org);
+    }
+    const sorted = Array.from(dayMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    return sorted.map(([, orgs]) => orgs.size);
+  }, [filteredEvents]);
+
   function exportCSV() {
     const headers = ['Organization', 'Type', 'Location', 'Products', 'Pages', 'Active Time (s)', 'Events', 'Tier', 'Engagement', 'Last Visit'];
     const rows = sortedOrgs.map((o) => [
@@ -2703,11 +2717,22 @@ export function AdminAnalyticsPage() {
               </>
             )}
           </div>
-          <div className="absolute right-4 bottom-4 w-32 h-12 opacity-50">
-            <svg className="w-full h-full" viewBox="0 0 100 40">
-              <path d="M0 35 C 15 32, 25 28, 35 22 C 45 16, 55 24, 65 20 C 75 16, 85 8, 100 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          {visitorSparkline.length >= 2 && (
+            <div className="absolute right-4 bottom-4 w-32 h-12 opacity-50">
+              <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
+                {(() => {
+                  const pts = visitorSparkline;
+                  const max = Math.max(...pts, 1);
+                  const coords = pts.map((v, i) => [
+                    (i / (pts.length - 1)) * 100,
+                    40 - (v / max) * 36 - 2,
+                  ]);
+                  const d = coords.map(([x, y], i) => (i === 0 ? `M${x} ${y}` : `L${x} ${y}`)).join(' ');
+                  return <path d={d} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />;
+                })()}
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* Traffic Channel Attribution — col-span-8 */}
