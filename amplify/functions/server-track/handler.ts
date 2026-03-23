@@ -569,85 +569,6 @@ async function writePageView(
     return { ipData, aiResult: finalAiResult, isTargetCustomer: finalIsTargetCustomer, leadTier: finalLeadTier };
 }
 
-// ─── ai_enrichment validation ───────────────────────────────────────────────
-
-function validateAIEnrichment(p: Record<string, unknown>): string | null {
-    if (typeof p.pageViewId !== 'string' || !p.pageViewId) return 'missing pageViewId';
-    // At least one AI field must be present
-    if (!p.aiOrganizationType && p.aiConfidence == null) return 'no AI data provided';
-    return null;
-}
-
-// ─── DynamoDB AI enrichment update ──────────────────────────────────────────
-// Updates an existing page_view record with AI classification data.
-// Uses ConditionExpression to ensure the record exists; retries once if not.
-
-async function writeAIEnrichment(
-    props: Record<string, unknown>,
-): Promise<{ updated: boolean; retried?: boolean }> {
-    const tableName = process.env.ANALYTICS_EVENT_TABLE;
-    if (!tableName) {
-        console.error('[AIE] ANALYTICS_EVENT_TABLE not set');
-        return { updated: false };
-    }
-    if (process.env.ENABLE_DDB_WRITE !== 'true') {
-        console.info('[AIE] DDB write disabled by feature flag');
-        return { updated: false };
-    }
-
-    const now = new Date().toISOString();
-    const id = `pv-${props.pageViewId}`;
-
-    const doUpdate = () => getDynamoClient().send(new UpdateCommand({
-        TableName: tableName,
-        Key: { id },
-        UpdateExpression: 'SET #aiOrgType = :aiOrgType, #aiConf = :aiConf, #aiReason = :aiReason, #isTgt = :isTgt, #conf = :conf, #orgType = :orgType, #leadTier = :leadTier, #updatedAt = :updatedAt',
-        ExpressionAttributeNames: {
-            '#aiOrgType': 'aiOrganizationType',
-            '#aiConf': 'aiConfidence',
-            '#aiReason': 'aiReason',
-            '#isTgt': 'isTargetCustomer',
-            '#conf': 'confidence',
-            '#orgType': 'organizationType',
-            '#leadTier': 'leadTier',
-            '#updatedAt': 'updatedAt',
-        },
-        ExpressionAttributeValues: {
-            ':aiOrgType': props.aiOrganizationType ?? null,
-            ':aiConf': props.aiConfidence ?? null,
-            ':aiReason': props.aiReason ?? null,
-            ':isTgt': props.isTargetCustomer === true,
-            ':conf': props.confidence ?? null,
-            ':orgType': props.organizationType ?? null,
-            ':leadTier': props.leadTier ?? null,
-            ':updatedAt': now,
-        },
-        ConditionExpression: 'attribute_exists(id)',
-    }));
-
-    try {
-        await doUpdate();
-        return { updated: true };
-    } catch (err) {
-        if ((err as { name?: string })?.name === 'ConditionalCheckFailedException') {
-            // Record may not exist yet (initial write in-flight). Retry once after 500ms.
-            console.info('[AIE] Record not found, retrying in 500ms:', id);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            try {
-                await doUpdate();
-                return { updated: true, retried: true };
-            } catch (retryErr) {
-                if ((retryErr as { name?: string })?.name === 'ConditionalCheckFailedException') {
-                    console.warn('[AIE] Record still not found after retry:', id);
-                    return { updated: false, retried: true };
-                }
-                throw retryErr;
-            }
-        }
-        throw err;
-    }
-}
-
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -903,40 +824,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     statusCode: 500,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ error: 'DDB write failed' }),
-                };
-            }
-        }
-
-        // ─── ai_enrichment: DDB-only update (no Segment forwarding) ─────────
-        if (type === 'track' && trackEvent === 'ai_enrichment' && properties) {
-            const validationError = validateAIEnrichment(properties);
-            if (validationError) {
-                console.error(`[AIE] Validation failed: ${validationError}`);
-                return {
-                    statusCode: 400,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ error: validationError }),
-                };
-            }
-
-            try {
-                const result = await writeAIEnrichment(properties);
-                if (result.updated) {
-                    console.info(`[AIE] OK pvid=${properties.pageViewId} retried=${result.retried || false}`);
-                } else {
-                    console.warn(`[AIE] Not updated pvid=${properties.pageViewId}`);
-                }
-                return {
-                    statusCode: result.updated ? 200 : 404,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ success: result.updated, retried: result.retried }),
-                };
-            } catch (err) {
-                console.error('[AIE] DDB update failed:', err);
-                return {
-                    statusCode: 500,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ error: 'DDB update failed' }),
                 };
             }
         }
