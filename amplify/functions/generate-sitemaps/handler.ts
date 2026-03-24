@@ -273,6 +273,11 @@ function generatePrerenderHTML(post: FullArticle): string {
   </article>
   <nav><a href="${BASE_URL}">NineScrolls Home</a> &middot; <a href="${BASE_URL}/${isNews ? 'news' : 'insights'}">All ${isNews ? 'News' : 'Insights'}</a></nav>
   <img src="/d?t=pixel" width="1" height="1" alt="" style="position:absolute">
+  <script>
+    // JS-enabled browsers (regular users): load the SPA over this page.
+    // Bots don't execute JS, so they see the pre-rendered content above.
+    fetch('/index.html').then(r=>r.text()).then(h=>{document.open();document.write(h);document.close();});
+  </script>
 </body>
 </html>`;
 }
@@ -303,35 +308,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return response(200, INDEXNOW_KEY, 'text/plain', 86400);
   }
 
-  // Pre-rendered article HTML for bots, SPA passthrough for regular users.
+  // Pre-rendered article HTML served to all requests.
   // Amplify rewrites /insights/<slug> and /news/<slug> to this endpoint.
-  // Bot UA → dynamic HTML from DynamoDB; regular UA → serve SPA index.html.
+  // The HTML includes a <script> that instantly loads the SPA for JS-enabled
+  // browsers (regular users), while bots (no JS) see the pre-rendered content
+  // with full meta tags, OG cards, JSON-LD, and article body.
   if (file === 'prerender') {
     const pathParam = event.queryStringParameters?.path || '';
     const pathMatch = pathParam.match(/^(insights|news)\/([a-z0-9][a-z0-9-]*)(?:\.html)?$/);
-
-    // Check User-Agent for bots
-    const ua = (event.headers?.['User-Agent'] || event.headers?.['user-agent'] || '').toLowerCase();
-    const botTokens = ['bot', 'crawl', 'spider', 'slurp', 'facebookexternalhit', 'linkedinbot', 'twitterbot', 'whatsapp', 'telegram', 'discord', 'preview', 'embedly', 'quora', 'pinterest', 'redditbot', 'applebot'];
-    const isBot = botTokens.some(t => ua.includes(t));
-
-    // Regular users: serve SPA shell so React Router handles the route
-    if (!isBot) {
-      try {
-        const spaResponse = await fetch(`${BASE_URL}/index.html`);
-        const spaHtml = await spaResponse.text();
-        return response(200, spaHtml, 'text/html', 0);
-      } catch {
-        // Fallback: redirect to the page (browser will load SPA)
-        return {
-          statusCode: 302,
-          headers: { Location: `${BASE_URL}/${pathParam}`, 'Cache-Control': 'no-store' },
-          body: '',
-        };
-      }
-    }
-
-    // Bot: serve pre-rendered article HTML from DynamoDB
     const slug = event.queryStringParameters?.slug || (pathMatch ? pathMatch[2] : null);
     if (!slug) return response(400, 'slug parameter required');
     try {
