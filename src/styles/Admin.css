@@ -2,6 +2,11 @@
 /* Only styles that Tailwind cannot handle: third-party component overrides,  */
 /* toggle switches, TinyMCE, Recharts, Amplify auth, and animation states.   */
 
+/* ─── Button Reset ───────────────────────────────────────────────────────── */
+.admin-root button {
+  border: none;
+}
+
 /* ─── Toggle Switch (checkbox-based) ──────────────────────────────────────── */
 .admin-root input[type="checkbox"].toggle-switch {
   appearance: none;
