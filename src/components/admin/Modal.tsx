@@ -26,7 +26,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, classN
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.1)] border border-outline-variant/20 max-h-[80vh] flex flex-col${className ? ` ${className}` : ''}`}
+        className={`relative w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(2,36,72,0.1)] border border-outline-variant/20 max-h-[90vh] flex flex-col${className ? ` ${className}` : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}

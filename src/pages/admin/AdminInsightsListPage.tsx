@@ -118,7 +118,7 @@ export function AdminInsightsListPage() {
         </div>
         <Link
           to={contentTypeFilter === 'News' ? '/admin/insights/new?type=news' : '/admin/insights/new'}
-          className="bg-secondary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-secondary/20 hover:opacity-90 transition-opacity"
+          className="px-6 py-2.5 bg-primary text-white rounded text-xs font-label uppercase tracking-widest font-bold hover:shadow-lg transition-all flex items-center gap-2 no-underline"
         >
           <span className="material-symbols-outlined text-lg">add</span>
           Create New Article
@@ -134,10 +134,10 @@ export function AdminInsightsListPage() {
               {CONTENT_TYPES.map((ct) => (
                 <button
                   key={ct}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-1.5 rounded-full text-xs border-none cursor-pointer transition-colors ${
                     contentTypeFilter === ct
-                      ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
-                      : 'hover:bg-surface-container-lowest text-on-surface-variant'
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container'
                   }`}
                   onClick={() => { setContentTypeFilter(ct); setCategoryFilter('All'); }}
                 >
@@ -154,10 +154,10 @@ export function AdminInsightsListPage() {
               {STATUS_FILTERS.map((status) => (
                 <button
                   key={status}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  className={`px-4 py-1.5 rounded-full text-xs border-none cursor-pointer transition-colors flex items-center gap-1.5 ${
                     statusFilter === status
-                      ? 'bg-surface-container-lowest border border-outline-variant/30 text-secondary'
-                      : 'hover:bg-surface-container-lowest text-on-surface-variant'
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container'
                   }`}
                   onClick={() => setStatusFilter(status)}
                 >
@@ -269,7 +269,7 @@ export function AdminInsightsListPage() {
                     </a>
                     <div className="relative" ref={openMenu === post.id ? menuRef : undefined}>
                       <button
-                        className="text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="text-on-surface-variant hover:text-on-surface transition-colors border-none bg-transparent cursor-pointer"
                         onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
                       >
                         <span className="material-symbols-outlined text-xl">more_vert</span>

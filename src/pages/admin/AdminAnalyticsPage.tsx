@@ -2706,18 +2706,18 @@ export function AdminAnalyticsPage() {
             {DATE_RANGES.filter(r => r.value !== 'custom').map((r) => (
               <button
                 key={r.value}
-                className={`px-1.5 md:px-4 py-2 text-[10px] md:text-xs font-medium rounded-lg border-none transition-colors whitespace-nowrap ${dateRange === r.value
+                className={`px-1.5 md:px-4 py-2 text-[10px] md:text-xs font-medium rounded-lg border-none transition-all whitespace-nowrap cursor-pointer ${dateRange === r.value
                   ? 'bg-primary text-on-primary font-bold shadow-sm'
-                  : 'text-on-surface-variant'}`}
+                  : 'text-on-surface-variant hover:bg-primary/10 hover:text-primary'}`}
                 onClick={() => setDateRange(r.value)}
               >
                 {r.label}
               </button>
             ))}
             <button
-              className={`material-symbols-outlined px-2 md:px-3 border-none rounded-lg transition-colors ${dateRange === 'custom'
+              className={`material-symbols-outlined px-2 md:px-3 border-none rounded-lg transition-all cursor-pointer ${dateRange === 'custom'
                 ? 'bg-primary text-on-primary'
-                : 'text-on-surface-variant'}`}
+                : 'text-on-surface-variant hover:bg-primary/10 hover:text-primary'}`}
               onClick={() => setDateRange('custom')}
               title="Custom date range"
             >calendar_today</button>
