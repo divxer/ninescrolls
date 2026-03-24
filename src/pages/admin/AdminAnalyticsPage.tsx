@@ -3009,7 +3009,7 @@ export function AdminAnalyticsPage() {
                         <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
                           {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                         </div>
-                        <span className="font-semibold truncate max-w-[150px]">{org.orgName}</span>
+                        <span className="font-semibold truncate max-w-[150px]" title={org.orgName}>{org.orgName}</span>
                       </div>
                     </td>
                     <td className="px-3 py-4 text-on-surface-variant text-xs">{org.organizationType || '--'}</td>
@@ -3053,7 +3053,7 @@ export function AdminAnalyticsPage() {
                     {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-on-surface truncate">{org.orgName}</div>
+                    <div className="font-semibold text-sm text-on-surface truncate" title={org.orgName}>{org.orgName}</div>
                     <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
                   </div>
                   {org.isTargetCustomer && (
