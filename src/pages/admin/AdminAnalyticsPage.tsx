@@ -1424,6 +1424,27 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     return Array.from(sources.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [org.events]);
 
+  // Search keywords from this org's events
+  const searchKeywords = useMemo(() => {
+    const kws = new Map<string, { count: number; source: 'organic' | 'paid' }>();
+    for (const e of org.events) {
+      const sq = getSearchQuery(e);
+      if (sq) {
+        const key = sq.toLowerCase().trim();
+        const existing = kws.get(key);
+        if (existing) existing.count++;
+        else kws.set(key, { count: 1, source: 'organic' });
+      }
+      if (e.utmTerm) {
+        const key = e.utmTerm.toLowerCase().trim();
+        const existing = kws.get(key);
+        if (existing) existing.count++;
+        else kws.set(key, { count: 1, source: 'paid' });
+      }
+    }
+    return Array.from(kws.entries()).sort((a, b) => b[1].count - a[1].count);
+  }, [org.events]);
+
   // Referrer URL for display
   const primaryReferrer = useMemo(() => {
     const ev = org.events.find((e) => {
@@ -2074,6 +2095,27 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 {primaryReferrer && (
                   <div className="mt-2 p-3 bg-surface rounded text-[10px] font-mono text-on-surface-variant break-all">
                     Referrer: {primaryReferrer}
+                  </div>
+                )}
+                {searchKeywords.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-outline-variant/20">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-3">Search Keywords</p>
+                    <div className="space-y-2">
+                      {searchKeywords.map(([keyword, { count, source }]) => (
+                        <div key={keyword} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="material-symbols-outlined text-sm text-on-surface-variant">{source === 'paid' ? 'paid' : 'search'}</span>
+                            <span className="text-sm font-medium truncate" title={keyword}>{keyword}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${source === 'paid' ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'}`}>
+                              {source}
+                            </span>
+                            <span className="text-[10px] font-bold text-on-surface-variant">{count}x</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
