@@ -16,7 +16,7 @@
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
 const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
@@ -190,33 +190,29 @@ interface FullArticle {
 }
 
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
-  let lastKey: Record<string, any> | undefined;
-  do {
-    const result = await ddbClient.send(new ScanCommand({
-      TableName: TABLE_NAME,
-      FilterExpression: 'slug = :slug AND isDraft <> :true',
-      ExpressionAttributeValues: { ':slug': slug, ':true': true },
-      ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
-    }));
-    if (result.Items && result.Items.length > 0) {
-      const item = result.Items[0];
-      return {
-        slug: item.slug,
-        title: item.title,
-        content: item.content ?? null,
-        excerpt: item.excerpt ?? null,
-        imageUrl: item.imageUrl ?? null,
-        author: item.author ?? 'NineScrolls Team',
-        readTime: item.readTime ?? 5,
-        category: item.category ?? '',
-        publishDate: item.publishDate,
-        contentType: item.contentType ?? 'insight',
-        updatedAt: item.updatedAt ?? item.publishDate,
-      };
-    }
-    lastKey = result.LastEvaluatedKey;
-  } while (lastKey);
-  return null;
+  // Use GSI 'insightsPostsBySlug' for O(1) lookup instead of full table scan
+  const result = await ddbClient.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: 'insightsPostsBySlug',
+    KeyConditionExpression: 'slug = :slug',
+    ExpressionAttributeValues: { ':slug': slug },
+    Limit: 1,
+  }));
+  const item = result.Items?.[0];
+  if (!item || item.isDraft === true) return null;
+  return {
+    slug: item.slug,
+    title: item.title,
+    content: item.content ?? null,
+    excerpt: item.excerpt ?? null,
+    imageUrl: item.imageUrl ?? null,
+    author: item.author ?? 'NineScrolls Team',
+    readTime: item.readTime ?? 5,
+    category: item.category ?? '',
+    publishDate: item.publishDate,
+    contentType: item.contentType ?? 'insight',
+    updatedAt: item.updatedAt ?? item.publishDate,
+  };
 }
 
 function escapeHtmlAttr(str: string): string {
@@ -276,7 +272,27 @@ function generatePrerenderHTML(post: FullArticle): string {
   <script>
     // JS-enabled browsers (regular users): load the SPA over this page.
     // Bots don't execute JS, so they see the pre-rendered content above.
-    fetch('/index.html').then(r=>r.text()).then(h=>{document.open();document.write(h);document.close();});
+    // Fetch index.html, extract its <script>/<link> tags, and inject them
+    // to bootstrap the React app without a full page reload.
+    (function(){
+      var d=document;
+      fetch('/index.html').then(function(r){return r.text()}).then(function(h){
+        var p=new DOMParser().parseFromString(h,'text/html');
+        // Add SPA root container
+        var root=d.createElement('div');root.id='root';d.body.prepend(root);
+        // Remove pre-rendered content
+        var a=d.querySelector('article');if(a)a.remove();
+        var n=d.querySelector('nav');if(n)n.remove();
+        // Inject SPA stylesheets
+        p.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
+          var c=l.cloneNode();d.head.appendChild(c);
+        });
+        // Inject SPA scripts (module type preserves execution order)
+        p.querySelectorAll('script[type="module"]').forEach(function(s){
+          var c=d.createElement('script');c.type='module';c.src=s.src;c.crossOrigin=s.crossOrigin||'';d.body.appendChild(c);
+        });
+      });
+    })();
   </script>
 </body>
 </html>`;
