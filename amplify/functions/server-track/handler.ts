@@ -594,6 +594,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Bots don't execute JS, so the frontend beacon never fires. A <noscript>
     // pixel in index.html triggers this GET handler, recording bot visits in
     // DynamoDB without IP lookup, AI classification, or Segment forwarding.
+    // Bot identity is parsed from User-Agent and stored as orgName.
     if (event.httpMethod === 'GET' && event.queryStringParameters?.t === 'pixel') {
         // 1x1 transparent GIF (43 bytes)
         const PIXEL = Buffer.from(
@@ -627,6 +628,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             let pathname = '/';
             try { pathname = new URL(referer).pathname || '/'; } catch { /* use default */ }
 
+            // Parse bot name from User-Agent string.
+            // Examples: "compatible; Googlebot/2.1" → "Googlebot/2.1"
+            //           "AhrefsBot/7.0" → "AhrefsBot/7.0"
+            //           "facebookexternalhit/1.1" → "facebookexternalhit/1.1"
+            const botNameMatch = userAgent.match(
+                /\b(Googlebot|Bingbot|bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|AhrefsBot|SemrushBot|MJ12bot|DotBot|PetalBot|Bytespider|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Applebot|Discordbot|Sogou|ia_archiver|Pinterestbot|redditbot|Embedly)(\/[\d.]+)?/i
+            );
+            const botName = botNameMatch ? botNameMatch[0] : (isbot(userAgent) ? 'Unknown Bot' : undefined);
+
             const pageViewId = randomUUID();
             const now = new Date().toISOString();
 
@@ -642,13 +652,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     ip: visitorIp || undefined,
                     userAgent,
                     isBot: isbot(userAgent),
+                    orgName: botName,
                     source: 'noscript_pixel',
                     createdAt: now,
                     updatedAt: now,
                 },
             }));
 
-            console.log(`[PIXEL] Bot visit recorded: ${pathname} (${userAgent.substring(0, 80)})`);
+            console.log(`[PIXEL] Bot visit recorded: ${pathname} ${botName || 'unknown'} (${userAgent.substring(0, 80)})`);
         } catch (err) {
             console.error('[PIXEL] DDB write failed:', err);
         }
