@@ -1,4 +1,6 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { randomUUID } from 'crypto';
+import { isbot } from 'isbot';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
@@ -586,6 +588,72 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
+
+    // ─── Noscript pixel: lightweight bot tracking via GET /d?t=pixel ────────
+    // Bots don't execute JS, so the frontend beacon never fires. A <noscript>
+    // pixel in index.html triggers this GET handler, recording bot visits in
+    // DynamoDB without IP lookup, AI classification, or Segment forwarding.
+    if (event.httpMethod === 'GET' && event.queryStringParameters?.t === 'pixel') {
+        // 1x1 transparent GIF (43 bytes)
+        const PIXEL = Buffer.from(
+            'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64',
+        );
+        const pixelHeaders = {
+            'Content-Type': 'image/gif',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+        };
+
+        try {
+            const tableName = process.env.ANALYTICS_EVENT_TABLE;
+            const enableDDB = process.env.ENABLE_DDB_WRITE !== 'false';
+            if (!tableName || !enableDDB) {
+                return { statusCode: 200, headers: pixelHeaders, body: PIXEL.toString('base64'), isBase64Encoded: true };
+            }
+
+            // Extract IP (same logic as POST handler)
+            const cfViewerAddr = event.headers?.['CloudFront-Viewer-Address'] || event.headers?.['cloudfront-viewer-address'];
+            const xForwardedFor = event.headers?.['X-Forwarded-For'] || event.headers?.['x-forwarded-for'];
+            const sourceIp = event.requestContext?.identity?.sourceIp;
+            const visitorIp = cfViewerAddr
+                ? (cfViewerAddr.split(':').slice(0, -1).join(':') || cfViewerAddr)
+                : xForwardedFor
+                    ? (() => { const ips = xForwardedFor.split(',').map((s: string) => s.trim()); return ips.find((ip: string) => !isPrivateIP(ip)) || ips[0]; })()
+                    : sourceIp;
+            const userAgent = event.headers?.['User-Agent'] || event.headers?.['user-agent'] || '';
+
+            // Extract pathname from Referer header
+            const referer = event.headers?.['Referer'] || event.headers?.['referer'] || '';
+            let pathname = '/';
+            try { pathname = new URL(referer).pathname || '/'; } catch { /* use default */ }
+
+            const pageViewId = randomUUID();
+            const now = new Date().toISOString();
+
+            await getDynamoClient().send(new PutCommand({
+                TableName: tableName,
+                Item: {
+                    id: `pv-${pageViewId}`,
+                    eventName: 'page_view_store',
+                    eventType: 'page_view_store',
+                    timestamp: now,
+                    pageViewId,
+                    pathname,
+                    ip: visitorIp || undefined,
+                    userAgent,
+                    isBot: isbot(userAgent),
+                    source: 'noscript_pixel',
+                    createdAt: now,
+                    updatedAt: now,
+                },
+            }));
+
+            console.log(`[PIXEL] Bot visit recorded: ${pathname} (${userAgent.substring(0, 80)})`);
+        } catch (err) {
+            console.error('[PIXEL] DDB write failed:', err);
+        }
+
+        return { statusCode: 200, headers: pixelHeaders, body: PIXEL.toString('base64'), isBase64Encoded: true };
     }
 
     if (event.httpMethod !== 'POST') {

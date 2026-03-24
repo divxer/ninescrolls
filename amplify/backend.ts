@@ -162,6 +162,9 @@ const serverTrackIntegration = new LambdaIntegration(backend.serverTrack.resourc
 // Add POST method for tracking events
 dResource.addMethod('POST', serverTrackIntegration);
 
+// Add GET method for noscript bot-tracking pixel
+dResource.addMethod('GET', serverTrackIntegration);
+
 // Add OPTIONS method for CORS preflight
 dResource.addMethod('OPTIONS', serverTrackIntegration);
 
