@@ -16,7 +16,7 @@
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
@@ -190,15 +190,14 @@ interface FullArticle {
 }
 
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
-  const result = await ddbClient.send(new QueryCommand({
+  const result = await ddbClient.send(new ScanCommand({
     TableName: TABLE_NAME,
-    IndexName: 'insightsPostsBySlug',
-    KeyConditionExpression: 'slug = :slug',
-    ExpressionAttributeValues: { ':slug': slug },
+    FilterExpression: 'slug = :slug AND isDraft <> :true',
+    ExpressionAttributeValues: { ':slug': slug, ':true': true },
     Limit: 1,
   }));
   const item = result.Items?.[0];
-  if (!item || item.isDraft === true) return null;
+  if (!item) return null;
   return {
     slug: item.slug,
     title: item.title,
