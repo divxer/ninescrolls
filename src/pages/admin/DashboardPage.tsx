@@ -52,7 +52,7 @@ export function DashboardPage() {
   const { orders, loading: ordersLoading } = useOrders();
   const { stats, loading: statsLoading } = useOrderStats();
   const { rfqs, loading: rfqsLoading } = useRfqs();
-  const { monthlyVisitors, targetCustomers, visitorTrend, targetTrend, dailyCounts, loading: analyticsLoading } = useDashboardAnalytics();
+  const { monthlyVisitors, targetCustomers, visitorTrend, targetTrend, dailyCounts, trafficInsight, loading: analyticsLoading } = useDashboardAnalytics();
 
   const pendingRfqCount = useMemo(
     () => rfqs.filter((r) => r.status === 'pending').length,
@@ -265,16 +265,49 @@ export function DashboardPage() {
               {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase()}
             </span>
           </div>
-          <div className="mt-8 p-4 bg-surface-container-low rounded-lg flex items-center gap-4">
-            <div className="p-2 bg-secondary/10 text-secondary rounded">
-              <span className="material-symbols-outlined text-lg">insights</span>
+          <div className="mt-8 p-4 bg-surface-container-low rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-secondary/10 text-secondary rounded">
+                <span className="material-symbols-outlined text-lg">insights</span>
+              </div>
+              <p className="text-sm font-semibold text-on-surface">Traffic Insights</p>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-on-surface">Traffic Insight</p>
-              <p className="text-xs text-on-surface-variant">
-                Direct traffic increased by <span className="font-bold text-secondary">18%</span> this week due to the new technical whitepaper release.
-              </p>
-            </div>
+            {analyticsLoading ? (
+              <p className="text-xs text-on-surface-variant">Analyzing traffic data...</p>
+            ) : !trafficInsight.channel && !trafficInsight.section && !trafficInsight.topKeyword ? (
+              <p className="text-xs text-on-surface-variant">Not enough data to generate insights yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {trafficInsight.channel && (
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-xs align-middle mr-1">swap_horiz</span>
+                    {trafficInsight.channel.name} traffic{' '}
+                    {trafficInsight.channel.trend > 0
+                      ? <><span className="font-bold text-green-600">increased by {trafficInsight.channel.trend}%</span> this month.</>
+                      : trafficInsight.channel.trend < 0
+                        ? <><span className="font-bold text-red-600">decreased by {Math.abs(trafficInsight.channel.trend)}%</span> this month.</>
+                        : <span className="font-bold text-on-surface-variant">remained stable</span>}
+                    {' '}({trafficInsight.channel.count} visits)
+                  </p>
+                )}
+                {trafficInsight.section && (
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-xs align-middle mr-1">trending_up</span>
+                    <span className="font-semibold text-on-surface">{trafficInsight.section.name}</span> section saw the highest growth
+                    {trafficInsight.section.trend > 0 && (
+                      <span className="font-bold text-green-600"> (+{trafficInsight.section.trend}%)</span>
+                    )} this month.
+                  </p>
+                )}
+                {trafficInsight.topKeyword && (
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-xs align-middle mr-1">search</span>
+                    Top search keyword: <span className="font-semibold text-on-surface">"{trafficInsight.topKeyword.keyword}"</span>
+                    {' '}({trafficInsight.topKeyword.count} visit{trafficInsight.topKeyword.count !== 1 ? 's' : ''})
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
