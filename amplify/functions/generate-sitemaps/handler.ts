@@ -333,7 +333,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const pathParam = event.queryStringParameters?.path || '';
     const pathMatch = pathParam.match(/^(insights|news)\/([a-z0-9][a-z0-9-]*)(?:\.html)?$/);
     const slug = event.queryStringParameters?.slug || (pathMatch ? pathMatch[2] : null);
-    if (!slug) return response(400, 'slug parameter required');
+
+    // No slug = listing page (/insights/ or /news/) — serve SPA directly
+    if (!slug) {
+      try {
+        const spaRes = await fetch(`${BASE_URL}/index.html`);
+        return response(200, await spaRes.text(), 'text/html', 0);
+      } catch {
+        return response(200, '<html><body><script>location.href=location.pathname</script></body></html>', 'text/html', 0);
+      }
+    }
+
     try {
       const post = await fetchPostBySlug(slug);
       if (!post) return response(404, 'Article not found', 'text/plain', 60);
