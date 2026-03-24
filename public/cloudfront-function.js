@@ -27,7 +27,8 @@ function handler(event) {
 
     // Serve pre-rendered HTML for bots requesting article pages.
     // Bots don't execute JS, so the SPA won't render content for them.
-    // Pre-rendered files are generated at build time by generate-seo.ts.
+    // Routes to static prerender files (build-time) or /seo Lambda (real-time).
+    // Amplify rewrite rules proxy /prerender/* to the /seo Lambda for dynamic rendering.
     var ua = (request.headers['user-agent'] && request.headers['user-agent'].value || '').toLowerCase();
     var botTokens = ['bot', 'crawl', 'spider', 'slurp', 'facebookexternalhit', 'linkedinbot', 'twitterbot', 'whatsapp', 'telegram', 'discord', 'preview', 'embedly', 'quora', 'pinterest', 'redditbot', 'applebot'];
     var isBot = false;
@@ -35,7 +36,7 @@ function handler(event) {
         if (ua.indexOf(botTokens[i]) !== -1) { isBot = true; break; }
     }
     if (isBot) {
-        // Route /insights/{slug} or /news/{slug} to pre-rendered HTML
+        // Route /insights/{slug} or /news/{slug} to prerender path
         var prefix = '';
         if (uri.indexOf('/insights/') === 0) prefix = '/insights/';
         else if (uri.indexOf('/news/') === 0) prefix = '/news/';

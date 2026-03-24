@@ -1,18 +1,22 @@
 /**
- * Lambda: Serve sitemap.xml, news-sitemap.xml, feed.xml dynamically.
+ * Lambda: Serve sitemap.xml, news-sitemap.xml, feed.xml, and pre-rendered
+ * article HTML dynamically from DynamoDB.
  *
  * GET /seo?file=sitemap       → sitemap.xml
  * GET /seo?file=news-sitemap  → news-sitemap.xml
  * GET /seo?file=feed          → feed.xml
  * GET /seo?file=indexnow      → IndexNow verification key
+ * GET /seo?file=prerender&slug=xxx&type=insights|news → pre-rendered article HTML
  *
  * Reads directly from DynamoDB InsightsPost table (no GraphQL needed).
  * Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
+ * CloudFront Function routes bot requests for /insights/:slug and /news/:slug
+ * to /seo?file=prerender&slug=:slug&type=insights|news.
  */
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
 const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
@@ -169,6 +173,105 @@ function generateFeed(newsPosts: ArticleData[]): string {
   return lines.join('\n') + '\n';
 }
 
+// ─── Prerender: dynamic HTML for bots ───────────────────────────────────────
+
+interface FullArticle {
+  slug: string;
+  title: string;
+  content: string | null;
+  excerpt: string | null;
+  imageUrl: string | null;
+  author: string;
+  readTime: number;
+  category: string;
+  publishDate: string;
+  contentType: string;
+  updatedAt: string;
+}
+
+async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
+  const result = await ddbClient.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: 'insightsPostsBySlug',
+    KeyConditionExpression: 'slug = :slug',
+    ExpressionAttributeValues: { ':slug': slug },
+    Limit: 1,
+  }));
+  const item = result.Items?.[0];
+  if (!item || item.isDraft === true) return null;
+  return {
+    slug: item.slug,
+    title: item.title,
+    content: item.content ?? null,
+    excerpt: item.excerpt ?? null,
+    imageUrl: item.imageUrl ?? null,
+    author: item.author ?? 'NineScrolls Team',
+    readTime: item.readTime ?? 5,
+    category: item.category ?? '',
+    publishDate: item.publishDate,
+    contentType: item.contentType ?? 'insight',
+    updatedAt: item.updatedAt ?? item.publishDate,
+  };
+}
+
+function escapeHtmlAttr(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function generatePrerenderHTML(post: FullArticle): string {
+  const isNews = post.contentType === 'news';
+  const urlPath = isNews ? `/news/${post.slug}` : `/insights/${post.slug}`;
+  const fullUrl = `${BASE_URL}${urlPath}`;
+  const fullTitle = `${post.title} | NineScrolls LLC`;
+  const description = post.excerpt || post.title;
+  const imageUrl = post.imageUrl?.startsWith('http') ? post.imageUrl : (post.imageUrl ? `${BASE_URL}${post.imageUrl}` : `${BASE_URL}/assets/images/og-image.jpg`);
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': isNews ? 'NewsArticle' : 'Article',
+    headline: post.title,
+    description,
+    image: imageUrl,
+    author: { '@type': 'Organization', name: post.author },
+    publisher: { '@type': 'Organization', name: 'NineScrolls LLC', url: BASE_URL },
+    datePublished: post.publishDate,
+    dateModified: post.updatedAt?.split('T')[0] || post.publishDate,
+    mainEntityOfPage: fullUrl,
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtmlAttr(fullTitle)}</title>
+  <meta name="description" content="${escapeHtmlAttr(description)}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${fullUrl}">
+  <meta property="og:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta property="og:description" content="${escapeHtmlAttr(description)}">
+  <meta property="og:image" content="${escapeHtmlAttr(imageUrl)}">
+  <meta property="og:url" content="${fullUrl}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="NineScrolls LLC">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta name="twitter:description" content="${escapeHtmlAttr(description)}">
+  <meta name="twitter:image" content="${escapeHtmlAttr(imageUrl)}">
+  <script type="application/ld+json">${jsonLd}</script>
+</head>
+<body>
+  <article>
+    <h1>${escapeHtmlAttr(post.title)}</h1>
+    <p>By ${escapeHtmlAttr(post.author)} &middot; ${post.publishDate} &middot; ${post.readTime} min read &middot; ${escapeHtmlAttr(post.category)}</p>
+    ${post.content || ''}
+  </article>
+  <nav><a href="${BASE_URL}">NineScrolls Home</a> &middot; <a href="${BASE_URL}/${isNews ? 'news' : 'insights'}">All ${isNews ? 'News' : 'Insights'}</a></nav>
+  <img src="/d?t=pixel" width="1" height="1" alt="" style="position:absolute">
+</body>
+</html>`;
+}
+
 // ─── Handler ────────────────────────────────────────────────────────────────
 
 function response(statusCode: number, body: string, contentType = 'text/plain', cacheMaxAge = 3600) {
@@ -195,8 +298,32 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return response(200, INDEXNOW_KEY, 'text/plain', 86400);
   }
 
+  // Pre-rendered article HTML for bots (dynamic from DynamoDB, not cached in S3).
+  // Accepts: ?file=prerender&slug=my-article
+  //      or: ?file=prerender&path=insights/my-article.html (from Amplify rewrite)
+  if (file === 'prerender') {
+    let slug = event.queryStringParameters?.slug;
+
+    // Parse slug from path param (Amplify rewrite sends /prerender/insights/slug.html as path=...)
+    if (!slug) {
+      const pathParam = event.queryStringParameters?.path || event.path || '';
+      const pathMatch = pathParam.match(/(?:insights|news)\/([a-z0-9][a-z0-9-]*)(?:\.html)?$/);
+      if (pathMatch) slug = pathMatch[1];
+    }
+
+    if (!slug) return response(400, 'slug parameter required');
+    try {
+      const post = await fetchPostBySlug(slug);
+      if (!post) return response(404, 'Article not found', 'text/plain', 60);
+      return response(200, generatePrerenderHTML(post), 'text/html', 3600);
+    } catch (err: any) {
+      console.error('Prerender failed:', err);
+      return response(500, 'Internal error');
+    }
+  }
+
   if (!file || !['sitemap', 'news-sitemap', 'feed'].includes(file)) {
-    return response(400, 'file parameter required: sitemap, news-sitemap, feed, or indexnow');
+    return response(400, 'file parameter required: sitemap, news-sitemap, feed, indexnow, or prerender');
   }
 
   try {
