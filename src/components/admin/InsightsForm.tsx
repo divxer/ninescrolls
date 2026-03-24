@@ -420,7 +420,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               {(!initialData || isDraft) && (
                 <button
                   type="button"
-                  className="bg-surface-container-lowest border border-outline-variant text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white transition-all"
+                  className="px-5 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container-low transition-all"
                   disabled={isSubmitting}
                   onClick={(e) => handleSubmit(e as any, true)}
                 >
@@ -429,7 +429,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               )}
               <button
                 type="button"
-                className="bg-primary text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-all"
+                className="px-6 py-2.5 bg-primary text-white rounded text-xs font-label uppercase tracking-widest font-bold hover:shadow-lg transition-all"
                 disabled={isSubmitting}
                 onClick={(e) => handleSubmit(e as any, false)}
               >

@@ -91,6 +91,7 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
   const [showContext, setShowContext] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [importedFile, setImportedFile] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-fill equipment name when model changes (skip if imported)
@@ -103,10 +104,11 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
   }, [productModel, importedFile]);
 
   // -- Import from quote JSON --
-  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  function processFile(file: File) {
+    if (!file.name.endsWith('.json')) {
+      setError('Please select a .json file.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
@@ -134,7 +136,20 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
       }
     };
     reader.readAsText(file);
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
     e.target.value = '';
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   }
 
   const quoteAmountNum = parseFloat(quoteAmountRaw.replace(/[^0-9.]/g, ''));
@@ -188,8 +203,20 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
         Contact: {rfq.name} ({rfq.institution})
       </p>
 
-      {/* Import from quote JSON */}
-      <div className="flex items-center gap-3 mb-5">
+      {/* Import from quote JSON — click or drag & drop */}
+      <div
+        className={`relative mb-5 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+          isDragOver
+            ? 'border-primary bg-primary-fixed/20'
+            : importedFile
+            ? 'border-green-400 bg-green-50'
+            : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container-low'
+        }`}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -197,24 +224,24 @@ export function ConvertToOrderDialog({ open, onClose, rfq, onConfirm }: ConvertT
           onChange={handleImportFile}
           className="hidden"
         />
-        <button
-          type="button"
-          className="bg-surface-container-low border border-outline-variant/30 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-surface-container transition-colors"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <span className="material-symbols-outlined text-sm align-middle mr-1">upload</span>
-          Import from Quote
-        </button>
-        {importedFile ? (
-          <span className="text-xs font-medium text-green-700">
-            <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
-            {importedFile}
-          </span>
-        ) : (
-          <span className="text-[10px] text-on-surface-variant">
-            Select the .json file generated with your quote PDF
-          </span>
-        )}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="material-symbols-outlined text-lg text-on-surface-variant">upload</span>
+          {importedFile ? (
+            <span className="text-xs font-medium text-green-700 flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              {importedFile}
+            </span>
+          ) : (
+            <div>
+              <p className="text-xs font-semibold text-on-surface">
+                {isDragOver ? 'Drop file here' : 'Import from Quote'}
+              </p>
+              <p className="text-[10px] text-on-surface-variant">
+                Drag & drop or click to select the .json file
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Collapsible RFQ context */}
