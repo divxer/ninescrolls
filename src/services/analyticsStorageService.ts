@@ -175,6 +175,10 @@ function buildPageViewPayload(params: SendPageViewBeaconParams): string {
       referrer: params.context?.referrer,
       utmTerm: params.context?.utmTerm,
       searchQuery: params.context?.searchQuery,
+
+      // RFQ linkage (only present for rfq_submission events)
+      rfqId: params.properties?.rfqId || undefined,
+      rfqInstitution: params.properties?.institution || undefined,
     },
     context: collectBrowserContext(),
   });

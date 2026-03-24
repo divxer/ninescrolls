@@ -549,7 +549,7 @@ export function RFQPage() {
       setCurrentStep(1);
       setTurnstileToken(null);
       analytics.trackRFQSubmission(formData.equipmentCategory, formData.specificModel || formData.equipmentCategory);
-      analytics.segment.trackRFQSubmissionWithAnalysis(formData.equipmentCategory, formData.specificModel || formData.equipmentCategory);
+      analytics.segment.trackRFQSubmissionWithAnalysis(formData.equipmentCategory, formData.specificModel || formData.equipmentCategory, result.rfqId, formData.institution);
     } catch (err) {
       console.error('RFQ submission error:', err);
       setSubmitError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again or contact us at sales@ninescrolls.com');
