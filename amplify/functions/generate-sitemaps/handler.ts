@@ -190,15 +190,31 @@ interface FullArticle {
 }
 
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
-  // Use GSI 'insightsPostsBySlug' for O(1) lookup instead of full table scan
-  const result = await ddbClient.send(new QueryCommand({
-    TableName: TABLE_NAME,
-    IndexName: 'insightsPostsBySlug',
-    KeyConditionExpression: 'slug = :slug',
-    ExpressionAttributeValues: { ':slug': slug },
-    Limit: 1,
-  }));
-  const item = result.Items?.[0];
+  // Try GSI query first (fast O(1) lookup), fall back to Scan if GSI fails
+  let item: Record<string, any> | undefined;
+  try {
+    const result = await ddbClient.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'insightsPostsBySlug',
+      KeyConditionExpression: 'slug = :slug',
+      ExpressionAttributeValues: { ':slug': slug },
+      Limit: 1,
+    }));
+    item = result.Items?.[0];
+  } catch (gsiErr) {
+    console.warn('[Prerender] GSI query failed, falling back to Scan:', gsiErr);
+    let lastKey: Record<string, any> | undefined;
+    do {
+      const result = await ddbClient.send(new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: 'slug = :slug',
+        ExpressionAttributeValues: { ':slug': slug },
+        ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
+      }));
+      if (result.Items && result.Items.length > 0) { item = result.Items[0]; break; }
+      lastKey = result.LastEvaluatedKey;
+    } while (lastKey);
+  }
   if (!item || item.isDraft === true) return null;
   return {
     slug: item.slug,
