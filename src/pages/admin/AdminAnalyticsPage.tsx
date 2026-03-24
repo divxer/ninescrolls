@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
+import * as orderAdminService from '../../services/orderAdminService';
+import type { RfqSubmission } from '../../types/admin';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -1254,6 +1256,54 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     return () => { cancelled = true; };
   }, [org.orgName]);
 
+  // ── Linked RFQ lookup ──────────────────────────────────────────────────
+  const [linkedRfqs, setLinkedRfqs] = useState<RfqSubmission[]>([]);
+  const rfqSubmitted = org.events.some((e) => e.eventType === 'rfq_submission');
+
+  useEffect(() => {
+    if (!rfqSubmitted) return;
+    let cancelled = false;
+
+    // 1. Collect rfqIds and timestamps from rfq_submission event properties
+    const rfqIdsFromEvents = new Set<string>();
+    const rfqEventTimestamps: number[] = [];
+    for (const e of org.events) {
+      if (e.eventType !== 'rfq_submission') continue;
+      rfqEventTimestamps.push(new Date(e.timestamp).getTime());
+      const props = typeof e.properties === 'string'
+        ? (() => { try { return JSON.parse(e.properties); } catch { return null; } })()
+        : e.properties;
+      if (props?.rfqId) rfqIdsFromEvents.add(props.rfqId as string);
+    }
+
+    // 2. Fetch individual RFQs by ID (new events with rfqId in properties)
+    const fetchById = Array.from(rfqIdsFromEvents).map(id =>
+      orderAdminService.getRfq(id).catch(() => null)
+    );
+
+    // 3. For legacy events without rfqId, match by timestamp proximity (±60s)
+    const hasLegacyEvents = rfqEventTimestamps.length > rfqIdsFromEvents.size;
+    const fetchByTimestamp = hasLegacyEvents
+      ? orderAdminService.listRfqs().then(data => {
+          const items = (data?.items as RfqSubmission[]) || [];
+          return items.filter(r => {
+            const rfqTime = new Date(r.submittedAt).getTime();
+            return rfqEventTimestamps.some(evtTime => Math.abs(rfqTime - evtTime) < 60_000);
+          });
+        }).catch(() => [] as RfqSubmission[])
+      : Promise.resolve([] as RfqSubmission[]);
+
+    Promise.all([Promise.all(fetchById), fetchByTimestamp]).then(([byId, byTime]) => {
+      if (cancelled) return;
+      const map = new Map<string, RfqSubmission>();
+      for (const r of byId) if (r) map.set((r as RfqSubmission).rfqId, r as RfqSubmission);
+      for (const r of byTime) if (!map.has(r.rfqId)) map.set(r.rfqId, r);
+      setLinkedRfqs(Array.from(map.values()));
+    });
+
+    return () => { cancelled = true; };
+  }, [rfqSubmitted, org.events]);
+
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
     setOverrideMsg(null);
@@ -1328,7 +1378,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     e.eventType === 'pdf_download' || e.eventName === 'Product Downloaded' || e.eventName === 'Datasheet Downloaded'
   );
   const contactFormSubmitted = org.events.some((e) => e.eventType === 'contact_form');
-  const rfqSubmitted = org.events.some((e) => e.eventType === 'rfq_submission');
   const uniqueProductPages = new Set(
     org.events.filter((e) => e.eventType === 'product_view' || e.pathname?.includes('/products/')).map((e) => e.pathname)
   );
@@ -1492,7 +1541,21 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               <span className="material-symbols-outlined text-sm">arrow_back</span>
               Back to list
             </button>
-            <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{org.orgName}</h1>
+            {(() => {
+              const rfqInstitution = linkedRfqs.find(r => r.institution)?.institution;
+              const showRfqName = rfqInstitution && rfqInstitution.toLowerCase() !== org.orgName.toLowerCase();
+              return showRfqName ? (
+                <>
+                  <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{rfqInstitution}</h1>
+                  <p className="text-sm text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[14px] align-middle mr-1">dns</span>
+                    IP: {org.orgName}
+                  </p>
+                </>
+              ) : (
+                <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{org.orgName}</h1>
+              );
+            })()}
             <div className="flex items-center gap-2 text-on-surface-variant">
               {(org.city || org.region || org.country) && (
                 <>
@@ -1829,6 +1892,22 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                         <h4 className="text-sm font-bold text-on-surface">{eventLabel}</h4>
                         {e.pathname && <p className="text-xs text-secondary font-mono">{e.pathname}</p>}
                         {e.productName && <p className="text-xs text-secondary font-medium">{e.productName}</p>}
+                        {e.eventType === 'rfq_submission' && (() => {
+                          const props = typeof e.properties === 'string' ? (() => { try { return JSON.parse(e.properties); } catch { return null; } })() : e.properties;
+                          const rfqId = props?.rfqId as string | undefined;
+                          const rfqInstitution = props?.rfqInstitution as string | undefined;
+                          if (!rfqId && !rfqInstitution) return null;
+                          return (
+                            <div className="mt-1 flex items-center gap-2 text-xs">
+                              {rfqInstitution && <span className="text-on-surface-variant font-medium">{rfqInstitution}</span>}
+                              {rfqId && (
+                                <a href={`/admin/rfqs/${rfqId}`} className="text-primary hover:underline font-mono" onClick={(ev) => { ev.stopPropagation(); }}>
+                                  {rfqId.slice(0, 16)}
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                       <div className="text-right flex items-center gap-4">
                         {e.eventType === 'page_time_flush' && (
@@ -2077,6 +2156,49 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               </div>
             </div>
           </div>
+
+          {/* Linked RFQs Card */}
+          {linkedRfqs.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">request_quote</span>
+                Linked RFQs
+              </h3>
+              <div className="space-y-3">
+                {linkedRfqs.map(rfq => (
+                  <a
+                    key={rfq.rfqId}
+                    href={`/admin/rfqs/${rfq.rfqId}`}
+                    className="block p-3 bg-surface-container-low rounded-lg hover:bg-surface-container transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold text-primary">
+                        {rfq.referenceNumber || rfq.rfqId.slice(0, 12)}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                        rfq.status === 'pending' ? 'bg-tertiary/10 text-tertiary'
+                          : rfq.status === 'converted' ? 'bg-primary/10 text-primary'
+                          : 'bg-surface-container text-on-surface-variant'
+                      }`}>
+                        {rfq.status}
+                      </span>
+                    </div>
+                    {rfq.institution && (
+                      <p className="text-xs font-medium text-on-surface">{rfq.institution}</p>
+                    )}
+                    {rfq.name && (
+                      <p className="text-xs text-on-surface-variant">{rfq.name} {rfq.email && `· ${rfq.email}`}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-1 text-[10px] text-on-surface-variant">
+                      {rfq.equipmentCategory && <span>{rfq.equipmentCategory}</span>}
+                      {rfq.specificModel && <span>· {rfq.specificModel}</span>}
+                      <span>· {new Date(rfq.submittedAt).toLocaleDateString()}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (

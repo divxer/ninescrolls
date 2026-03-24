@@ -272,8 +272,8 @@ class SegmentAnalyticsService {
     this.trackWithIPAnalysis('Contact Form Submitted', { productId, productName, formName: 'contact_form' });
   }
 
-  trackRFQSubmissionWithAnalysis(productId?: string, productName?: string) {
-    this.trackWithIPAnalysis('RFQ Submitted', { productId, productName, formName: 'rfq_submission' });
+  trackRFQSubmissionWithAnalysis(productId?: string, productName?: string, rfqId?: string, institution?: string) {
+    this.trackWithIPAnalysis('RFQ Submitted', { productId, productName, formName: 'rfq_submission', rfqId, institution });
   }
 
 }

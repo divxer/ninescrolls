@@ -497,6 +497,9 @@ async function writePageView(
             userAgent,
             isBot: props.isBot === true,
 
+            // RFQ linkage (rfq_submission events only)
+            ...(props.rfqId ? { properties: JSON.stringify({ rfqId: props.rfqId, rfqInstitution: props.rfqInstitution }) } : {}),
+
             createdAt: now,
             updatedAt: now,
         },
