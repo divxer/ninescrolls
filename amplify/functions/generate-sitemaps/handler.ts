@@ -190,27 +190,33 @@ interface FullArticle {
 }
 
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
-  const result = await ddbClient.send(new ScanCommand({
-    TableName: TABLE_NAME,
-    FilterExpression: 'slug = :slug AND isDraft <> :true',
-    ExpressionAttributeValues: { ':slug': slug, ':true': true },
-    Limit: 1,
-  }));
-  const item = result.Items?.[0];
-  if (!item) return null;
-  return {
-    slug: item.slug,
-    title: item.title,
-    content: item.content ?? null,
-    excerpt: item.excerpt ?? null,
-    imageUrl: item.imageUrl ?? null,
-    author: item.author ?? 'NineScrolls Team',
-    readTime: item.readTime ?? 5,
-    category: item.category ?? '',
-    publishDate: item.publishDate,
-    contentType: item.contentType ?? 'insight',
-    updatedAt: item.updatedAt ?? item.publishDate,
-  };
+  let lastKey: Record<string, any> | undefined;
+  do {
+    const result = await ddbClient.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'slug = :slug AND isDraft <> :true',
+      ExpressionAttributeValues: { ':slug': slug, ':true': true },
+      ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
+    }));
+    if (result.Items && result.Items.length > 0) {
+      const item = result.Items[0];
+      return {
+        slug: item.slug,
+        title: item.title,
+        content: item.content ?? null,
+        excerpt: item.excerpt ?? null,
+        imageUrl: item.imageUrl ?? null,
+        author: item.author ?? 'NineScrolls Team',
+        readTime: item.readTime ?? 5,
+        category: item.category ?? '',
+        publishDate: item.publishDate,
+        contentType: item.contentType ?? 'insight',
+        updatedAt: item.updatedAt ?? item.publishDate,
+      };
+    }
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
+  return null;
 }
 
 function escapeHtmlAttr(str: string): string {
