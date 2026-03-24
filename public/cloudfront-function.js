@@ -24,7 +24,30 @@ function handler(event) {
     if (uri.includes('.')) {
         return request;
     }
-    
+
+    // Serve pre-rendered HTML for bots requesting article pages.
+    // Bots don't execute JS, so the SPA won't render content for them.
+    // Pre-rendered files are generated at build time by generate-seo.ts.
+    var ua = (request.headers['user-agent'] && request.headers['user-agent'].value || '').toLowerCase();
+    var botTokens = ['bot', 'crawl', 'spider', 'slurp', 'facebookexternalhit', 'linkedinbot', 'twitterbot', 'whatsapp', 'telegram', 'discord', 'preview', 'embedly', 'quora', 'pinterest', 'redditbot', 'applebot'];
+    var isBot = false;
+    for (var i = 0; i < botTokens.length; i++) {
+        if (ua.indexOf(botTokens[i]) !== -1) { isBot = true; break; }
+    }
+    if (isBot) {
+        // Route /insights/{slug} or /news/{slug} to pre-rendered HTML
+        var prefix = '';
+        if (uri.indexOf('/insights/') === 0) prefix = '/insights/';
+        else if (uri.indexOf('/news/') === 0) prefix = '/news/';
+        if (prefix) {
+            var slug = uri.slice(prefix.length);
+            if (slug && slug.indexOf('/') === -1) {
+                request.uri = '/prerender' + prefix + slug + '.html';
+                return request;
+            }
+        }
+    }
+
     // 对于SPA路由，返回index.html
     request.uri = '/index.html';
     return request;

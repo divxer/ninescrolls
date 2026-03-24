@@ -2,10 +2,12 @@
  * Post-build SEO asset generator.
  *
  * Generates:
- *   dist/sitemap.xml        — Main sitemap with static + dynamic URLs
- *   dist/news-sitemap.xml   — Google News sitemap (last 2 days)
- *   dist/feed.xml           — RSS 2.0 feed (last 20 news articles)
- *   dist/<indexnow-key>.txt — IndexNow verification file
+ *   dist/sitemap.xml                        — Main sitemap with static + dynamic URLs
+ *   dist/news-sitemap.xml                   — Google News sitemap (last 2 days)
+ *   dist/feed.xml                           — RSS 2.0 feed (last 20 news articles)
+ *   dist/<indexnow-key>.txt                 — IndexNow verification file
+ *   dist/prerender/insights/{slug}.html     — Pre-rendered article HTML for bots
+ *   dist/prerender/news/{slug}.html         — Pre-rendered news HTML for bots
  *
  * Usage:
  *   npx tsx scripts/generate-seo.ts    # write to dist/ (build-time fallback)
@@ -18,7 +20,7 @@
  *   - dist/ directory exists (run after vite build)
  */
 
-import { writeFileSync, existsSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 
@@ -105,6 +107,12 @@ interface ArticleData {
   slug: string;
   title: string;
   excerpt: string | null;
+  content: string | null;
+  imageUrl: string | null;
+  author: string;
+  readTime: number;
+  category: string;
+  tags: string[];
   publishDate: string;
   contentType: string | null;
   updatedAt: string;
@@ -113,7 +121,7 @@ interface ArticleData {
 const LIST_QUERY = `
   query ListPosts($filter: ModelInsightsPostFilterInput, $limit: Int, $nextToken: String) {
     listInsightsPosts(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items { slug title excerpt publishDate contentType updatedAt }
+      items { slug title excerpt content imageUrl author readTime category tags publishDate contentType updatedAt }
       nextToken
     }
   }
@@ -141,6 +149,12 @@ async function fetchPublishedPosts(): Promise<ArticleData[]> {
           slug: item.slug,
           title: item.title,
           excerpt: item.excerpt ?? null,
+          content: item.content ?? null,
+          imageUrl: item.imageUrl ?? null,
+          author: item.author ?? 'NineScrolls Team',
+          readTime: item.readTime ?? 5,
+          category: item.category ?? '',
+          tags: item.tags ?? [],
           publishDate: item.publishDate,
           contentType: item.contentType ?? 'insight',
           updatedAt: item.updatedAt ?? item.publishDate,
@@ -274,6 +288,80 @@ function generateRssFeed(newsPosts: ArticleData[]): string {
   return lines.join('\n') + '\n';
 }
 
+// ─── Prerender HTML for Bots ────────────────────────────────────────────────
+
+function escapeHtmlAttr(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function generatePrerenderHTML(post: ArticleData): string {
+  const isNews = post.contentType === 'news';
+  const urlPath = isNews ? `/news/${post.slug}` : `/insights/${post.slug}`;
+  const fullUrl = `${BASE_URL}${urlPath}`;
+  const fullTitle = `${post.title} | NineScrolls LLC`;
+  const description = post.excerpt || post.title;
+  const imageUrl = post.imageUrl?.startsWith('http') ? post.imageUrl : (post.imageUrl ? `${BASE_URL}${post.imageUrl}` : `${BASE_URL}/assets/images/og-image.jpg`);
+  const schemaType = isNews ? 'NewsArticle' : 'Article';
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': schemaType,
+    headline: post.title,
+    description,
+    image: imageUrl,
+    author: { '@type': 'Organization', name: post.author },
+    publisher: { '@type': 'Organization', name: 'NineScrolls LLC', url: BASE_URL },
+    datePublished: post.publishDate,
+    dateModified: post.updatedAt?.split('T')[0] || post.publishDate,
+    mainEntityOfPage: fullUrl,
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtmlAttr(fullTitle)}</title>
+  <meta name="description" content="${escapeHtmlAttr(description)}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${fullUrl}">
+  <meta property="og:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta property="og:description" content="${escapeHtmlAttr(description)}">
+  <meta property="og:image" content="${escapeHtmlAttr(imageUrl)}">
+  <meta property="og:url" content="${fullUrl}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="NineScrolls LLC">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta name="twitter:description" content="${escapeHtmlAttr(description)}">
+  <meta name="twitter:image" content="${escapeHtmlAttr(imageUrl)}">
+  <script type="application/ld+json">${jsonLd}</script>
+</head>
+<body>
+  <article>
+    <h1>${escapeHtmlAttr(post.title)}</h1>
+    <p>By ${escapeHtmlAttr(post.author)} · ${post.publishDate} · ${post.readTime} min read · ${escapeHtmlAttr(post.category)}</p>
+    ${post.content || ''}
+  </article>
+  <nav><a href="${BASE_URL}">NineScrolls Home</a> · <a href="${BASE_URL}/${isNews ? 'news' : 'insights'}">All ${isNews ? 'News' : 'Insights'}</a></nav>
+  <img src="/d?t=pixel" width="1" height="1" alt="" style="position:absolute">
+</body>
+</html>
+`;
+}
+
+function writePrerenderFiles(posts: ArticleData[]): number {
+  let count = 0;
+  for (const post of posts) {
+    const isNews = post.contentType === 'news';
+    const dir = isNews ? 'dist/prerender/news' : 'dist/prerender/insights';
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(`${dir}/${post.slug}.html`, generatePrerenderHTML(post));
+    count++;
+  }
+  return count;
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -302,6 +390,10 @@ async function main() {
   console.log(`Generated feed.xml (${(feed.match(/<item>/g) || []).length} items)`);
 
   writeFileSync(`dist/${INDEXNOW_KEY}.txt`, INDEXNOW_KEY);
+
+  // Generate pre-rendered HTML files for bots that don't execute JS
+  const prerenderCount = writePrerenderFiles(posts);
+  console.log(`Generated ${prerenderCount} pre-rendered HTML files in dist/prerender/`);
 
   console.log('\nSEO assets written to dist/ (static fallback).');
   console.log('Note: In production, /sitemap.xml etc. are served dynamically via Lambda.');
