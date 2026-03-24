@@ -420,7 +420,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
               {(!initialData || isDraft) && (
                 <button
                   type="button"
-                  className="px-5 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container-low transition-all"
+                  className="px-5 py-2.5 bg-surface-container-lowest border-none rounded text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container-low transition-all"
                   disabled={isSubmitting}
                   onClick={(e) => handleSubmit(e as any, true)}
                 >
