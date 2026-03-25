@@ -53,6 +53,7 @@ interface OrganizationRecord {
   companyType: string;
   hasBot: boolean;
   lifecycleStage: LifecycleStage;
+  rfqInstitution: string | null;
   events: AnalyticsEvent[];
 }
 
@@ -950,6 +951,15 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       ? String((group.find(e => (e as Record<string, unknown>).companyType) as Record<string, unknown>).companyType)
       : '';
 
+    // Extract RFQ institution from rfq_submission event properties
+    const rfqEvent = group.find(e => e.eventType === 'rfq_submission');
+    const rfqProps = rfqEvent?.properties
+      ? (typeof rfqEvent.properties === 'string'
+        ? (() => { try { return JSON.parse(rfqEvent.properties as string); } catch { return null; } })()
+        : rfqEvent.properties)
+      : null;
+    const rfqInstitution = (rfqProps?.rfqInstitution as string) || null;
+
     records.push({
       key,
       orgName: displayName,
@@ -976,6 +986,7 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       companyType,
       hasBot,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
+      rfqInstitution,
       events: sorted,
     });
   }
@@ -3171,9 +3182,16 @@ export function AdminAnalyticsPage() {
                     <td className="pl-5 pr-2 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                          {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                          {(org.rfqInstitution || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                         </div>
-                        <span className="font-semibold truncate max-w-[150px]" title={org.orgName}>{org.orgName}</span>
+                        <div className="min-w-0">
+                          <span className="font-semibold truncate max-w-[150px] block" title={org.rfqInstitution || org.orgName}>{org.rfqInstitution || org.orgName}</span>
+                          {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() && (
+                            <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
+                              <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-3 py-4 text-on-surface-variant text-xs">{org.organizationType || '--'}</td>
@@ -3214,11 +3232,15 @@ export function AdminAnalyticsPage() {
               <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
-                    {org.orgName.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                    {(org.rfqInstitution || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-on-surface truncate" title={org.orgName}>{org.orgName}</div>
-                    <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
+                    <div className="font-semibold text-sm text-on-surface truncate" title={org.rfqInstitution || org.orgName}>{org.rfqInstitution || org.orgName}</div>
+                    {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() ? (
+                      <div className="text-xs text-on-surface-variant truncate"><span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}</div>
+                    ) : (
+                      <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
+                    )}
                   </div>
                   {org.isTargetCustomer && (
                     <span className="material-symbols-outlined text-secondary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>flag</span>
