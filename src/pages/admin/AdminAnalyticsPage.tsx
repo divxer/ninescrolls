@@ -2070,6 +2070,17 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                         <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
                       )}
                     </div>
+                    {uniqueIPs.length > 1 && (
+                      <div className="space-y-1 mt-2">
+                        {uniqueIPs.slice(1).map((ip) => (
+                          <div key={ip} className="flex items-center p-2 bg-surface rounded-lg">
+                            <span className="font-mono text-xs text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
+                              {showFullIP ? ip : maskIP(ip)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-xs text-on-surface-variant mt-2">
                       Type: <span className="text-on-surface font-medium">
                         {org.companyType || ipOrgType || 'Unknown'}
@@ -2276,18 +2287,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     <p className="text-sm font-semibold">{parsedUA.browser}</p>
                   </div>
                 </div>
-                {uniqueIPs.length > 1 && !hasMultipleNetworks && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">Additional IPs</p>
-                    <div className="space-y-1">
-                      {uniqueIPs.slice(1).map((ip) => (
-                        <p key={ip} className="text-xs font-mono text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
-                          {showFullIP ? ip : maskIP(ip)}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {(() => {
                   const vids = [...new Set(org.events.map(e => (e as Record<string, unknown>).visitorId).filter(Boolean).map(String))];
                   // Hide when multiple visitors — Activity Ledger already shows per-group visitorId
