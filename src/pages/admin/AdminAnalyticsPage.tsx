@@ -2288,15 +2288,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     </div>
                   </div>
                 )}
-                {org.isISPVisitor && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Visitor ID</p>
-                    <p className="text-xs font-mono">{(() => {
-                      const vid = org.events.find(e => (e as Record<string, unknown>).visitorId);
-                      return vid ? String((vid as Record<string, unknown>).visitorId).substring(0, 12) : org.key.substring(0, 12);
-                    })()}</p>
-                  </div>
-                )}
+                {(() => {
+                  const vids = [...new Set(org.events.map(e => (e as Record<string, unknown>).visitorId).filter(Boolean).map(String))];
+                  // Hide when multiple visitors — Activity Ledger already shows per-group visitorId
+                  if (vids.length > 1) return null;
+                  return (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Visitor ID</p>
+                      <p className="text-xs font-mono text-on-surface-variant">
+                        {vids.length === 1 ? vids[0].substring(0, 12) : org.key.substring(0, 12)}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
