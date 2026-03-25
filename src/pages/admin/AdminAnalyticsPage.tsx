@@ -2518,6 +2518,19 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  // Load all RFQs for institution name backfill
+  const [allRfqs, setAllRfqs] = useState<RfqSubmission[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    orderAdminService.listRfqs()
+      .then(data => {
+        if (cancelled) return;
+        setAllRfqs((data?.items as RfqSubmission[]) || []);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
   // Auto-refresh every 5 min with countdown
   const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
   const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL);
@@ -2584,6 +2597,40 @@ export function AdminAnalyticsPage() {
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
     const orgs = aggregateByOrg(filteredEvents);
+
+    // Backfill rfqInstitution from RFQ table for orgs missing it in event properties
+    if (allRfqs.length > 0) {
+      const rfqById = new Map<string, string>();
+      for (const r of allRfqs) {
+        if (r.rfqId && r.institution) rfqById.set(r.rfqId, r.institution);
+      }
+
+      for (const org of orgs) {
+        if (org.rfqInstitution) continue;
+        const rfqEvent = org.events.find(e => e.eventType === 'rfq_submission');
+        if (!rfqEvent) continue;
+
+        // Try matching by rfqId in event properties
+        const props = typeof rfqEvent.properties === 'string'
+          ? (() => { try { return JSON.parse(rfqEvent.properties); } catch { return null; } })()
+          : rfqEvent.properties;
+        const rfqId = props?.rfqId as string;
+        if (rfqId && rfqById.has(rfqId)) {
+          org.rfqInstitution = rfqById.get(rfqId)!;
+          continue;
+        }
+
+        // Fallback: match by timestamp proximity (±60s) for legacy events without rfqId
+        const evtTime = new Date(rfqEvent.timestamp).getTime();
+        const matched = allRfqs.find(r =>
+          r.institution && Math.abs(new Date(r.submittedAt).getTime() - evtTime) < 60_000
+        );
+        if (matched?.institution) {
+          org.rfqInstitution = matched.institution;
+        }
+      }
+    }
+
     if (orgOverrides.length === 0) return orgs;
 
     // Build lookup map for O(1) override matching
@@ -2618,7 +2665,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides]);
+  }, [filteredEvents, orgOverrides, allRfqs]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
