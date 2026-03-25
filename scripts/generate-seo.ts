@@ -93,6 +93,8 @@ const STATIC_PAGES: StaticPage[] = [
   { loc: '/careers', lastmod: '2026-03-08', changefreq: 'monthly', priority: '0.6' },
   { loc: '/contact', lastmod: '2026-03-10', changefreq: 'monthly', priority: '0.7' },
   { loc: '/service-support', lastmod: '2025-08-27', changefreq: 'monthly', priority: '0.6' },
+  { loc: '/privacy', lastmod: '2026-03-24', changefreq: 'monthly', priority: '0.5' },
+  { loc: '/request-quote', lastmod: '2026-03-24', changefreq: 'monthly', priority: '0.7' },
   { loc: '/startup-package', lastmod: '2025-09-16', changefreq: 'monthly', priority: '0.8' },
   { loc: '/insights', lastmod: '2026-03-19', changefreq: 'weekly', priority: '0.8' },
   { loc: '/news', lastmod: '2026-03-21', changefreq: 'daily', priority: '0.7' },
