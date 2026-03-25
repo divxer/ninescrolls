@@ -82,8 +82,8 @@ export const useCombinedAnalytics = () => {
       trackContactFormSubmitWithAnalysis: (productId?: string, productName?: string) => {
         segmentAnalytics.trackContactFormSubmitWithAnalysis(productId, productName);
       },
-      trackRFQSubmissionWithAnalysis: (productId?: string, productName?: string) => {
-        segmentAnalytics.trackRFQSubmissionWithAnalysis(productId, productName);
+      trackRFQSubmissionWithAnalysis: (productId?: string, productName?: string, rfqId?: string, institution?: string) => {
+        segmentAnalytics.trackRFQSubmissionWithAnalysis(productId, productName, rfqId, institution);
       },
     },
 
