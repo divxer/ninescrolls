@@ -99,7 +99,7 @@ export const NewsPage: React.FC = () => {
         ) : (
           <div className="space-y-12">
             {filteredPosts.map(post => (
-              <div key={post.id} className="border-b border-outline-variant pb-12 flex gap-12 flex-col md:flex-row">
+              <div key={post.id} className="border-b border-outline-variant pb-12 flex gap-12 flex-col md:flex-row transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
                 <div className="w-32 shrink-0">
                   <time className="font-headline font-bold text-primary" dateTime={post.publishDate}>{formatDate(post.publishDate)}</time>
                   <span className="block mt-2 text-[10px] uppercase font-black text-on-surface-variant tracking-widest">{post.category}</span>

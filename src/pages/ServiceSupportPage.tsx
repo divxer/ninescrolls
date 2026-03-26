@@ -108,10 +108,12 @@ export function ServiceSupportPage() {
             <h2 className="text-4xl font-headline font-bold mb-4">Standard Warranty Coverage</h2>
             <p className="text-on-surface-variant text-lg mb-12 max-w-3xl">Every NineScrolls system includes a 2-year standard warranty — double the industry norm — with parts, labor, and technical support at no extra cost.</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-1 px-1 bg-outline-variant/10 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {services.map(s => (
-                <div key={s.title} className="bg-white p-12 hover:bg-surface-container-low transition-all">
-                  <span className="material-symbols-outlined text-4xl text-primary mb-8 block">{s.icon}</span>
+                <div key={s.title} className="bg-white p-10 rounded-xl border border-outline-variant/10 hover:-translate-y-1 hover:shadow-lg transition-all">
+                  <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
+                    <span className="material-symbols-outlined text-on-primary-container text-2xl">{s.icon}</span>
+                  </div>
                   <h3 className="text-2xl font-headline font-bold mb-4">{s.title}</h3>
                   <p className="text-on-surface-variant">{s.desc}</p>
                 </div>
@@ -120,28 +122,28 @@ export function ServiceSupportPage() {
 
             {/* Detailed warranty features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <div className="bg-surface-container p-8 rounded-xl border border-outline-variant/10">
+              <div className="bg-white p-8 rounded-xl border-l-4 border-l-primary border border-outline-variant/10 shadow-sm">
                 <h4 className="text-lg font-headline font-bold mb-2">Standard Warranty Included</h4>
                 <p className="text-on-surface-variant text-sm mb-4">(Most major manufacturers only provide 1-year coverage. NineScrolls includes 2 years standard warranty with equipment purchase. This is bundled with the sale, not a separately sold extended warranty product.)</p>
                 <ul className="space-y-2">
                   {['Parts and labor coverage', 'Manufacturing defects', 'Component failures', 'Technical support included'].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-primary text-base">check</span>{f}</li>
+                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-green-600 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>{f}</li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-surface-container p-8 rounded-xl border border-outline-variant/10">
+              <div className="bg-white p-8 rounded-xl border-l-4 border-l-primary border border-outline-variant/10 shadow-sm">
                 <h4 className="text-lg font-headline font-bold mb-2">One free PM service included</h4>
                 <ul className="space-y-2">
                   {['System optimization', 'Performance calibration', 'Preventive recommendations', 'Expert technician service'].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-primary text-base">check</span>{f}</li>
+                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-green-600 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>{f}</li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-surface-container p-8 rounded-xl border border-outline-variant/10">
+              <div className="bg-white p-8 rounded-xl border-l-4 border-l-primary border border-outline-variant/10 shadow-sm">
                 <h4 className="text-lg font-headline font-bold mb-2">Optional Service Contracts</h4>
                 <ul className="space-y-2">
                   {['Optional service contracts (billed annually, not prepaid)', 'Annual Maintenance Contracts (AMC) - billed annually', 'Custom service agreements', 'Priority support access'].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-primary text-base">check</span>{f}</li>
+                    <li key={f} className="flex items-center gap-2 text-on-surface"><span className="material-symbols-outlined text-green-600 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>{f}</li>
                   ))}
                 </ul>
               </div>
@@ -152,16 +154,16 @@ export function ServiceSupportPage() {
         {/* Competitive Comparison */}
         <section className="py-24 bg-surface-container-low">
           <div className="max-w-7xl mx-auto px-8">
-            <h2 className="text-4xl font-headline font-bold mb-4">Warranty Coverage – Quick Compare</h2>
-            <p className="text-on-surface-variant text-lg mb-12 max-w-3xl">Most major manufacturers provide only 1-year standard coverage. NineScrolls includes 2 years standard warranty with equipment purchase.</p>
+            <h2 className="text-4xl font-headline font-bold text-primary mb-4 text-center">Warranty Coverage – Quick Compare</h2>
+            <p className="text-on-surface-variant text-lg mb-12 max-w-3xl mx-auto text-center">Most major manufacturers provide only 1-year standard coverage.<br />NineScrolls includes 2 years standard warranty with equipment purchase.</p>
 
-            <div className="overflow-x-auto rounded-xl border border-outline-variant/10">
+            <div className="max-w-5xl mx-auto overflow-x-auto rounded-2xl border border-outline-variant/20 bg-white shadow-lg">
               <table className="w-full text-left" role="table" aria-label="Warranty Coverage Comparison">
                 <thead>
-                  <tr className="bg-surface-container">
-                    <th className="p-4 font-headline font-bold" scope="col">Feature</th>
-                    <th className="p-4 font-headline font-bold" scope="col">Major Manufacturers</th>
-                    <th className="p-4 font-headline font-bold" scope="col">NineScrolls</th>
+                  <tr>
+                    <th className="p-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-primary/5" scope="col">Feature</th>
+                    <th className="p-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-primary/5" scope="col">Major Manufacturers</th>
+                    <th className="p-5 text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 border-l-3 border-primary" scope="col">NineScrolls</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
@@ -173,13 +175,13 @@ export function ServiceSupportPage() {
                     ['Technical Support', 'Limited hours', 'Extended availability'],
                     ['Custom Solutions', 'Standard only', 'Tailored to your needs'],
                   ].map(([feature, competitor, ns]) => (
-                    <tr key={feature} className="bg-white">
-                      <td className="p-4 font-bold">{feature}</td>
-                      <td className="p-4 text-on-surface-variant">{competitor}</td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center gap-2 text-primary font-medium">
-                          <span className="material-symbols-outlined text-base">check_circle</span>
-                          {ns}
+                    <tr key={feature} className="group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-slate-50 cursor-default">
+                      <td className="p-5 font-bold text-sm">{feature}</td>
+                      <td className="p-5 text-on-surface-variant text-sm">{competitor}</td>
+                      <td className="p-5 bg-primary/5 border-l-3 border-primary group-hover:bg-primary/10">
+                        <span className="inline-flex items-center gap-3 font-medium text-sm">
+                          <span className="material-symbols-outlined text-lg text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                          <span className="text-on-surface font-semibold">{ns}</span>
                         </span>
                       </td>
                     </tr>
@@ -188,8 +190,8 @@ export function ServiceSupportPage() {
               </table>
             </div>
 
-            <p className="text-on-surface-variant text-sm mt-6">*Response times apply to continental U.S. locations. Competitor data reflects typical published terms from major semiconductor equipment manufacturers.</p>
-            <div className="mt-8">
+            <p className="text-on-surface-variant/70 text-sm mt-8 text-center italic">*Response times apply to continental U.S. locations. Competitor data reflects typical published terms from major semiconductor equipment manufacturers.</p>
+            <div className="mt-8 text-center">
               <Link to="/contact?topic=compare" className="inline-block px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:opacity-90 transition-opacity">Get Detailed Comparison</Link>
             </div>
           </div>
@@ -201,39 +203,41 @@ export function ServiceSupportPage() {
             <h2 className="text-4xl font-headline font-bold mb-4">Total Cost of Ownership (5-Year)</h2>
             <p className="text-on-surface-variant text-lg mb-12 max-w-3xl">A realistic view of where budgets go helps optimize long-term planning and uptime. With an AMC in place, NineScrolls customers typically see lower maintenance and downtime costs compared to industry averages.</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-              <div className="flex justify-center">
-                <div className="relative w-64 h-64">
-                  <svg className="w-full h-full" viewBox="0 0 200 200" role="img" aria-label="TCO donut chart">
-                    <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="28" />
-                    <circle cx="100" cy="100" r="78" fill="none" stroke="#3b82f6" strokeWidth="28" strokeDasharray="196 293.6" strokeDashoffset="0" />
-                    <circle cx="100" cy="100" r="78" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="122.4 367.2" strokeDashoffset="-196" />
-                    <circle cx="100" cy="100" r="78" fill="none" stroke="#06b6d4" strokeWidth="28" strokeDasharray="122.4 367.2" strokeDashoffset="-318.4" />
-                    <circle cx="100" cy="100" r="78" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="48.96 440.64" strokeDashoffset="-440.8" />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-sm text-on-surface-variant">5-Year TCO</span>
-                    <span className="text-3xl font-headline font-bold">100%</span>
+            <div className="bg-white rounded-2xl border border-outline-variant/10 shadow-lg p-10 md:p-14">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                <div className="flex justify-center">
+                  <div className="relative w-64 h-64">
+                    <svg className="w-full h-full" viewBox="0 0 200 200" role="img" aria-label="TCO donut chart">
+                      <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="28" />
+                      <circle cx="100" cy="100" r="78" fill="none" stroke="#3b82f6" strokeWidth="28" strokeDasharray="196 293.6" strokeDashoffset="0" />
+                      <circle cx="100" cy="100" r="78" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="122.4 367.2" strokeDashoffset="-196" />
+                      <circle cx="100" cy="100" r="78" fill="none" stroke="#06b6d4" strokeWidth="28" strokeDasharray="122.4 367.2" strokeDashoffset="-318.4" />
+                      <circle cx="100" cy="100" r="78" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="48.96 440.64" strokeDashoffset="-440.8" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-sm text-on-surface-variant">5-Year TCO</span>
+                      <span className="text-3xl font-headline font-bold">100%</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                {[
-                  { color: '#3b82f6', label: 'Equipment Purchase – 40%' },
-                  { color: '#10b981', label: 'Maintenance & Service – 25%' },
-                  { color: '#06b6d4', label: 'Operating Costs – 25%' },
-                  { color: '#f59e0b', label: 'Downtime Impact – 10%' },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
-                    <span className="text-on-surface">{item.label}</span>
+                <div className="space-y-4">
+                  {[
+                    { color: '#3b82f6', label: 'Equipment Purchase – 40%' },
+                    { color: '#10b981', label: 'Maintenance & Service – 25%' },
+                    { color: '#06b6d4', label: 'Operating Costs – 25%' },
+                    { color: '#f59e0b', label: 'Downtime Impact – 10%' },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
+                      <span className="text-on-surface font-medium">{item.label}</span>
+                    </div>
+                  ))}
+                  <p className="text-on-surface-variant text-sm mt-4">*Based on industry averages for research-grade plasma processing and thin film deposition equipment.</p>
+                  <div className="flex flex-wrap gap-4 mt-6">
+                    <Link to="/contact?topic=tco" className="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:opacity-90 transition-opacity">Request a TCO Report</Link>
+                    <Link to="/contact?topic=expert" className="px-8 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors">Talk to an Expert</Link>
                   </div>
-                ))}
-                <p className="text-on-surface-variant text-sm mt-4">*Based on industry averages for research-grade plasma processing and thin film deposition equipment.</p>
-                <div className="flex flex-wrap gap-4 mt-6">
-                  <Link to="/contact?topic=tco" className="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:opacity-90 transition-opacity">Request a TCO Report</Link>
-                  <Link to="/contact?topic=expert" className="px-8 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors">Talk to an Expert</Link>
                 </div>
               </div>
             </div>
@@ -248,7 +252,7 @@ export function ServiceSupportPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Basic */}
-              <div className="bg-white p-8 rounded-xl border border-outline-variant/10 flex flex-col">
+              <div className="bg-white p-8 rounded-xl border border-outline-variant/10 flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
                 <span className="inline-block px-4 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold mb-4 w-fit">Basic AMC</span>
                 <p className="text-on-surface-variant text-sm mb-4">Ideal for benchtop and small-footprint systems</p>
                 <div className="text-3xl font-headline font-bold mb-1">Starting from $12,000</div>
@@ -262,7 +266,7 @@ export function ServiceSupportPage() {
               </div>
 
               {/* Premium */}
-              <div className="bg-white p-8 rounded-xl border-2 border-primary flex flex-col relative">
+              <div className="bg-white p-8 rounded-xl border-2 border-primary flex flex-col relative transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-tertiary text-white rounded-full text-xs font-bold">Most Popular</span>
                 <span className="inline-block px-4 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold mb-4 w-fit">Premium AMC</span>
                 <p className="text-on-surface-variant text-sm mb-4">Recommended for production-scale and multi-chamber systems</p>
@@ -277,7 +281,7 @@ export function ServiceSupportPage() {
               </div>
 
               {/* Custom */}
-              <div className="bg-white p-8 rounded-xl border border-outline-variant/10 flex flex-col">
+              <div className="bg-white p-8 rounded-xl border border-outline-variant/10 flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
                 <span className="inline-block px-4 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold mb-4 w-fit">Custom AMC</span>
                 <p className="text-on-surface-variant text-sm mb-4">Tailored for unique configurations or multi-site deployments</p>
                 <div className="text-3xl font-headline font-bold mb-1">Tailored</div>
@@ -303,9 +307,11 @@ export function ServiceSupportPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {processSteps.map((step, i) => (
-                <div key={step.title} className="relative">
-                  <div className="bg-surface-container p-8 rounded-xl border border-outline-variant/10 h-full">
-                    <span className="material-symbols-outlined text-4xl text-primary mb-6 block">{step.icon}</span>
+                <div key={step.title} className="relative group">
+                  <div className="bg-white p-8 rounded-xl border border-outline-variant/10 h-full shadow-sm">
+                    <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6 transition-transform duration-200 group-hover:scale-110">
+                      <span className="material-symbols-outlined text-on-primary-container text-2xl">{step.icon}</span>
+                    </div>
                     <h3 className="text-xl font-headline font-bold mb-3">{step.title}</h3>
                     <p className="text-on-surface-variant text-sm">{step.desc}</p>
                   </div>
