@@ -181,6 +181,7 @@ export function PlutoM() {
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
+            { name: 'Plasma Cleaners', path: '/products/plasma-cleaner' },
             { name: 'PLUTO-M', path: '/products/pluto-m' }
           ]} />
           <div className="max-w-3xl mx-auto text-center mt-6">
