@@ -5,6 +5,10 @@ Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 
+# Disallow feed/sitemap files from being indexed directly
+Disallow: /feed.xml
+Disallow: /news-sitemap.xml
+
 # Disallow PDF files from being indexed to prevent duplicate content issues
 Disallow: /docs/*.pdf
 
