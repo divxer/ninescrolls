@@ -71,28 +71,28 @@ export function AboutPage() {
             <p className="text-lg text-on-surface-variant">End-to-end support from consultation through installation and beyond</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
+            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-on-primary-container text-3xl">forum</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">Pre-Sales Technical Consultation</h3>
               <p className="text-on-surface-variant leading-relaxed">We handle all technical discussions, feasibility assessments, and system configuration consultations directly from the U.S., ensuring you get expert guidance from day one.</p>
             </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
+            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-on-primary-container text-3xl">description</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">System Configuration & Quotation</h3>
               <p className="text-on-surface-variant leading-relaxed">All quotations, pricing, and configuration details are provided by NineScrolls LLC, ensuring consistency, transparency, and full accountability throughout the process.</p>
             </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
+            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-on-primary-container text-3xl">local_shipping</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">Project Coordination & Delivery</h3>
               <p className="text-on-surface-variant leading-relaxed">We manage project timelines, shipping coordination, and delivery logistics to ensure smooth handover and seamless integration into your facility.</p>
             </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
+            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-on-primary-container text-3xl">build</span>
               </div>
@@ -196,7 +196,7 @@ export function AboutPage() {
               <p className="text-lg text-on-surface-variant">The principles that guide every decision we make</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-on-primary-container">language</span>
                 </div>
@@ -205,7 +205,7 @@ export function AboutPage() {
                   <p className="text-on-surface-variant leading-relaxed">We create seamless connections between manufacturers, researchers, and industry professionals to accelerate scientific discovery and simplify procurement.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-on-primary-container">star</span>
                 </div>
@@ -214,7 +214,7 @@ export function AboutPage() {
                   <p className="text-on-surface-variant leading-relaxed">We drive advancement in the scientific equipment industry through innovative solutions, platform integration, and continuous technology evaluation.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-on-primary-container">group</span>
                 </div>
@@ -223,7 +223,7 @@ export function AboutPage() {
                   <p className="text-on-surface-variant leading-relaxed">We foster partnerships and facilitate connections across the scientific community, bringing together research institutions, manufacturers, and domain experts.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-on-primary-container">verified</span>
                 </div>
@@ -270,8 +270,8 @@ export function AboutPage() {
             <h2 className="text-4xl font-headline font-bold mb-6">Ready to Discuss Your Research Needs?</h2>
             <p className="text-xl opacity-80 mb-10">Our team is here to help you find the right equipment platform for your laboratory.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/products" className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary font-bold rounded-lg hover:bg-opacity-90 transition-colors text-lg">Explore Equipment</Link>
-              <Link to="/contact" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors text-lg">Contact Our Team</Link>
+              <Link to="/products" className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary font-bold rounded-lg hover:bg-white/90 transition-colors text-lg">Explore Equipment</Link>
+              <Link to="/contact" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white/10 transition-colors text-lg">Contact Our Team</Link>
             </div>
           </div>
         </section>

@@ -79,14 +79,14 @@ export const InsightsPage: React.FC = () => {
   });
 
   const renderCard = (post: InsightsPost) => (
-    <article key={post.id} className="bg-surface-container-low rounded-xl overflow-hidden group">
-      <div className="aspect-video bg-slate-200">
+    <article key={post.id} className="bg-surface-container-low rounded-xl overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="aspect-video bg-slate-200 overflow-hidden">
         <img
           src={resolveCardImage(post.imageUrl)}
           alt={post.title}
           loading="lazy"
           decoding="async"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
       <div className="p-8">

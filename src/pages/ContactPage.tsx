@@ -240,7 +240,7 @@ export function ContactPage() {
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'feasibility'
                       ? 'border-primary bg-primary-container text-on-primary-container'
-                      : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50'
+                      : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50 hover:shadow-md hover:bg-primary/5'
                   }`}
                 >
                   <span className={`material-symbols-outlined text-3xl mb-3 block ${selectedInquiryType === 'feasibility' ? '' : 'text-primary'}`}>science</span>
@@ -259,7 +259,7 @@ export function ContactPage() {
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'engineer'
                       ? 'border-primary bg-primary-container text-on-primary-container'
-                      : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50'
+                      : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50 hover:shadow-md hover:bg-primary/5'
                   }`}
                 >
                   <span className={`material-symbols-outlined text-3xl mb-3 block ${selectedInquiryType === 'engineer' ? '' : 'text-primary'}`}>engineering</span>
