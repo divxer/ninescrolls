@@ -2534,13 +2534,16 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // Auto-refresh every 5 min with countdown
+  // Auto-refresh every 5 min with countdown — pauses when page is hidden
+  // (e.g. screen lock, tab switch) to avoid auth failures on expired sessions
   const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
   const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL);
   useEffect(() => {
     if (!autoRefresh) { setRefreshCountdown(AUTO_REFRESH_INTERVAL); return; }
     setRefreshCountdown(AUTO_REFRESH_INTERVAL);
+    let paused = false;
     const timer = setInterval(() => {
+      if (paused || document.hidden) return;
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
           setRefreshKey((k) => k + 1);
@@ -2549,7 +2552,20 @@ export function AdminAnalyticsPage() {
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(timer);
+    // Pause countdown while page is hidden; reset countdown on return
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        paused = true;
+      } else {
+        paused = false;
+        setRefreshCountdown(AUTO_REFRESH_INTERVAL);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [autoRefresh]);
 
   // Own visitorId for self-exclusion
