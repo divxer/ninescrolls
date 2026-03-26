@@ -2,7 +2,7 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { randomUUID } from 'crypto';
 import { isbot } from 'isbot';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 /** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
@@ -331,11 +331,43 @@ async function writePageTimeFlush(
     }
 
     const now = new Date().toISOString();
+    const ip = (props.ip as string) || visitorIp;
+
+    // ── Phase 1: Check if parent page_view exists ──────────────────────────
+    // Frontend doesn't send org/geo data in page_time_flush — it's only in the
+    // page_view record. If the parent pv-${pageViewId} is missing (beacon lost),
+    // we do a server-side IP lookup to enrich this flush record.
+    let parentPageViewExists = false;
+    let ipData: IPLookupResult | null = null;
+
+    if (ip && !isPrivateIP(ip) && props.isBot !== true) {
+        try {
+            const pvResult = await getDynamoClient().send(new GetCommand({
+                TableName: tableName,
+                Key: { id: `pv-${props.pageViewId}` },
+                ProjectionExpression: 'id',
+            }));
+            parentPageViewExists = !!pvResult.Item;
+        } catch (err) {
+            console.error('[PTF] Parent page_view check failed:', err);
+        }
+
+        if (!parentPageViewExists) {
+            try {
+                ipData = await lookupIP(ip);
+                console.info(`[PTF] Orphan flush — fallback IP lookup: ${ip} → org="${ipData.orgName}" type=${ipData.organizationType}`);
+            } catch (err) {
+                console.error('[PTF] Fallback IP lookup failed:', err);
+            }
+        }
+    }
+
+    const itemId = `ptf-${props.pageViewId}-${props.flushSequence}`;
 
     await getDynamoClient().send(new PutCommand({
         TableName: tableName,
         Item: {
-            id: `ptf-${props.pageViewId}-${props.flushSequence}`,
+            id: itemId,
             __typename: 'AnalyticsEvent',
             eventName: 'Page Time Flush',
             eventType: 'page_time_flush',
@@ -362,26 +394,110 @@ async function writePageTimeFlush(
             userAgent,
             isBot: props.isBot === true,               // frontend passes isbot() result
 
-            // IP/org/geo enrichment — carried from cached page_view analysis
-            ip: (props.ip as string) || visitorIp || undefined,
-            country: props.country || undefined,
-            region: props.region || undefined,
-            city: props.city || undefined,
-            org: props.org || undefined,
-            isp: props.isp || undefined,
-            companyType: typeof props.companyType === 'string' && props.companyType ? props.companyType : undefined,
-            latitude: props.latitude || undefined,
-            longitude: props.longitude || undefined,
-            orgName: props.orgName || undefined,
-            organizationType: props.organizationType || undefined,
-            isTargetCustomer: props.isTargetCustomer === true || undefined,
-            confidence: props.confidence || undefined,
+            // IP/org/geo enrichment — server-side fallback when parent page_view is missing
+            ip: ip || undefined,
+            country: ipData?.country || undefined,
+            region: ipData?.region || undefined,
+            city: ipData?.city || undefined,
+            org: ipData?.org || undefined,
+            isp: ipData?.isp || undefined,
+            companyType: typeof ipData?.companyType === 'string' && ipData.companyType ? ipData.companyType : undefined,
+            latitude: ipData?.latitude || undefined,
+            longitude: ipData?.longitude || undefined,
+            orgName: ipData?.orgName || undefined,
+            organizationType: ipData?.organizationType || undefined,
 
             createdAt: now,
             updatedAt: now,
         },
         ConditionExpression: 'attribute_not_exists(id)',
     }));
+
+    // ── Phase 2: AI classification (only when we did a fallback IP lookup) ──
+    // Same logic as writePageView Phase 3: enrich the record with AI results.
+    if (ipData && ipData.organizationType && AI_CLASSIFY_ORG_TYPES.has(ipData.organizationType) && props.isBot !== true) {
+        try {
+            let aiResult = await classifyOrgViaLambda(
+                ipData.orgName ?? '', ipData.city, ipData.country, ipData.isp,
+            );
+            if (!aiResult) {
+                console.info(`[PTF] AI classify returned null, retrying in 2s: "${ipData.orgName}"`);
+                await new Promise(r => setTimeout(r, 2000));
+                aiResult = await classifyOrgViaLambda(
+                    ipData.orgName ?? '', ipData.city, ipData.country, ipData.isp,
+                );
+            }
+            if (aiResult) {
+                const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
+                const NEVER_TARGET_TYPES = ['telecom_isp'];
+                const isTargetOrgType = TARGET_ORG_TYPES.includes(aiResult.organizationType);
+                const isAITarget = aiResult.isTargetCustomer === true;
+                const isNeverTarget = NEVER_TARGET_TYPES.includes(aiResult.organizationType);
+                const finalIsTargetCustomer = !isNeverTarget && (isTargetOrgType || isAITarget);
+                const finalLeadTier = finalIsTargetCustomer
+                    ? ((isTargetOrgType || (isAITarget && aiResult.confidence >= 0.5)) ? 'B' : 'C')
+                    : undefined;
+
+                await getDynamoClient().send(new UpdateCommand({
+                    TableName: tableName,
+                    Key: { id: itemId },
+                    UpdateExpression: 'SET #aiOrgType = :aiOrgType, #aiConf = :aiConf, #aiReason = :aiReason, #provider = :provider, #isTgt = :isTgt, #conf = :conf, #orgType = :orgType, #leadTier = :leadTier, #updatedAt = :updatedAt',
+                    ExpressionAttributeNames: {
+                        '#aiOrgType': 'aiOrganizationType',
+                        '#aiConf': 'aiConfidence',
+                        '#aiReason': 'aiReason',
+                        '#provider': 'provider',
+                        '#isTgt': 'isTargetCustomer',
+                        '#conf': 'confidence',
+                        '#orgType': 'organizationType',
+                        '#leadTier': 'leadTier',
+                        '#updatedAt': 'updatedAt',
+                    },
+                    ExpressionAttributeValues: {
+                        ':aiOrgType': aiResult.organizationType,
+                        ':aiConf': aiResult.confidence,
+                        ':aiReason': aiResult.reason,
+                        ':provider': aiResult.provider ?? null,
+                        ':isTgt': finalIsTargetCustomer,
+                        ':conf': aiResult.confidence,
+                        ':orgType': aiResult.organizationType,
+                        ':leadTier': finalLeadTier ?? null,
+                        ':updatedAt': new Date().toISOString(),
+                    },
+                    ConditionExpression: 'attribute_exists(id)',
+                }));
+                console.info(`[PTF] AI enrichment complete: id=${itemId} type=${aiResult.organizationType} target=${finalIsTargetCustomer} provider=${aiResult.provider}`);
+            }
+        } catch (err) {
+            console.error('[PTF] AI classification/enrichment failed (DDB record intact):', err);
+        }
+    } else if (ipData) {
+        // For education/government from IP lookup, mark as target without AI
+        const CATEGORICAL_TARGET_TYPES = ['education', 'government'];
+        if (CATEGORICAL_TARGET_TYPES.includes(ipData.organizationType ?? '')) {
+            try {
+                await getDynamoClient().send(new UpdateCommand({
+                    TableName: tableName,
+                    Key: { id: itemId },
+                    UpdateExpression: 'SET #isTgt = :isTgt, #leadTier = :leadTier, #updatedAt = :updatedAt',
+                    ExpressionAttributeNames: {
+                        '#isTgt': 'isTargetCustomer',
+                        '#leadTier': 'leadTier',
+                        '#updatedAt': 'updatedAt',
+                    },
+                    ExpressionAttributeValues: {
+                        ':isTgt': true,
+                        ':leadTier': 'B',
+                        ':updatedAt': new Date().toISOString(),
+                    },
+                    ConditionExpression: 'attribute_exists(id)',
+                }));
+                console.info(`[PTF] Categorical target: id=${itemId} type=${ipData.organizationType}`);
+            } catch (err) {
+                console.error('[PTF] Categorical target update failed:', err);
+            }
+        }
+    }
 }
 
 // ─── page_view_store validation ──────────────────────────────────────────────
