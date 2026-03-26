@@ -129,43 +129,43 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
   };
 
   return (
-    <div className="modal" data-open={isOpen}>
-      <div className="modal-content" role="dialog" aria-labelledby="quoteModalTitle">
+    <div className="fixed inset-0 z-[1000] bg-black/50 overflow-auto flex items-start justify-center">
+      <div className="bg-white my-[10vh] p-8 rounded-lg w-[90%] max-w-[600px] relative animate-in slide-in-from-bottom-4" role="dialog" aria-labelledby="quoteModalTitle">
         {!isSuccess ? (
           <>
-            <span className="close-button" aria-label="Close" onClick={onClose}>×</span>
+            <span className="absolute top-4 right-4 text-2xl cursor-pointer text-gray-400 hover:text-on-surface bg-transparent border-none p-2 leading-none transition-colors" aria-label="Close" onClick={onClose}>×</span>
             <h2 id="quoteModalTitle">Request Product Information</h2>
-            <p className="modal-subtitle">Please fill out the form below and we'll get back to you shortly.</p>
-            {error && <div className="error-message">{error}</div>}
+            <p className="text-on-surface-variant text-sm mb-4">Please fill out the form below and we'll get back to you shortly.</p>
+            {error && <div className="bg-red-50 text-red-800 p-3 rounded border border-red-200 mb-4 text-sm">{error}</div>}
             <form onSubmit={submit}>
               {productName ? (
-                <div className="form-group"><label>Product</label><input value={productName} readOnly aria-readonly="true" /></div>
+                <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Product</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" value={productName} readOnly aria-readonly="true" /></div>
               ) : (
-                <div className="form-group"><label>Product (optional)</label><input name="product" placeholder="e.g., RIE Etcher Series" value={form.product} onChange={update} /></div>
+                <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Product (optional)</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="product" placeholder="e.g., RIE Etcher Series" value={form.product} onChange={update} /></div>
               )}
-              <div className="form-group"><label>Name</label><input name="name" placeholder="Enter your full name" value={form.name} onChange={update} required /></div>
-              <div className="form-group"><label>Email</label><input type="email" name="email" placeholder="Enter your email address" value={form.email} onChange={update} required /></div>
-              <div className="form-group"><label>Phone:</label><input name="phone" placeholder="Optional: Enter your phone number" value={form.phone} onChange={update} /></div>
-              <div className="form-group"><label>Organization:</label><input name="organization" placeholder="Optional: Enter your organization name" value={form.organization} onChange={update} /></div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+              <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Name</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="name" placeholder="Enter your full name" value={form.name} onChange={update} required /></div>
+              <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Email</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" type="email" name="email" placeholder="Enter your email address" value={form.email} onChange={update} required /></div>
+              <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Phone:</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="phone" placeholder="Optional: Enter your phone number" value={form.phone} onChange={update} /></div>
+              <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Organization:</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="organization" placeholder="Optional: Enter your organization name" value={form.organization} onChange={update} /></div>
+              <div className="mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} className="w-auto m-0" />
                   I need a budgetary quote (requires shipping address for tax calculation)
                 </label>
               </div>
               {isQuote && (
-                <div className="quote-address-fields" style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
-                  <p style={{ fontSize: '13px', color: '#555', marginBottom: '12px' }}>Shipping address is required to calculate applicable taxes.</p>
-                  <div className="form-group"><label>Address *</label><input name="address" placeholder="Street address" value={form.address} onChange={update} required={isQuote} autoComplete="street-address" /></div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group"><label>City *</label><input name="city" placeholder="City" value={form.city} onChange={update} required={isQuote} autoComplete="address-level2" /></div>
-                    <div className="form-group"><label>State/Province *</label><input name="state" placeholder="State" value={form.state} onChange={update} required={isQuote} autoComplete="address-level1" /></div>
+                <div className="bg-gray-50 p-4 rounded-lg mb-2">
+                  <p className="text-[13px] text-gray-600 mb-3">Shipping address is required to calculate applicable taxes.</p>
+                  <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Address *</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="address" placeholder="Street address" value={form.address} onChange={update} required={isQuote} autoComplete="street-address" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">City *</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="city" placeholder="City" value={form.city} onChange={update} required={isQuote} autoComplete="address-level2" /></div>
+                    <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">State/Province *</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="state" placeholder="State" value={form.state} onChange={update} required={isQuote} autoComplete="address-level1" /></div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group"><label>ZIP/Postal Code *</label><input name="zipCode" placeholder="ZIP Code" value={form.zipCode} onChange={update} required={isQuote} autoComplete="postal-code" /></div>
-                    <div className="form-group">
-                      <label>Country *</label>
-                      <select name="country" value={form.country} onChange={update} required={isQuote} autoComplete="country-name">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">ZIP/Postal Code *</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="zipCode" placeholder="ZIP Code" value={form.zipCode} onChange={update} required={isQuote} autoComplete="postal-code" /></div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-on-surface-variant mb-1">Country *</label>
+                      <select className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="country" value={form.country} onChange={update} required={isQuote} autoComplete="country-name">
                         <option value="United States">United States</option>
                         <option value="Canada">Canada</option>
                         <option value="United Kingdom">United Kingdom</option>
@@ -199,20 +199,20 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                   </div>
                 </div>
               )}
-              <div className="form-group"><label>Message</label><textarea name="message" rows={4} placeholder="Please let us know your specific requirements or questions" value={form.message} onChange={update} required /></div>
-              {turnstileSiteKey && (<div className="form-group"><div ref={widgetRef} /></div>)}
-              <div className="form-actions">
-                <button className="btn btn-primary" disabled={isSubmitting || (!!turnstileSiteKey && !token)}>
+              <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Message</label><textarea className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="message" rows={4} placeholder="Please let us know your specific requirements or questions" value={form.message} onChange={update} required /></div>
+              {turnstileSiteKey && (<div className="mb-4"><div ref={widgetRef} /></div>)}
+              <div className="flex gap-4 justify-end mt-6">
+                <button className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-primary text-white border border-primary hover:bg-primary-container hover:-translate-y-0.5 transition-all cursor-pointer text-base" disabled={isSubmitting || (!!turnstileSiteKey && !token)}>
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <div className="form-success" data-success={isSuccess}>
-            <span className="close-button" aria-label="Close" onClick={onClose}>×</span>
-            <div className="success-content">
-              <span className="success-icon">✓</span>
+          <div className="text-center p-8">
+            <span className="absolute top-4 right-4 text-2xl cursor-pointer text-gray-400 hover:text-on-surface bg-transparent border-none p-2 leading-none transition-colors" aria-label="Close" onClick={onClose}>×</span>
+            <div className="relative">
+              <span className="block text-5xl text-green-500 mb-4">✓</span>
               <h3>Thank You for Your Interest!</h3>
               {productName ? (
                 <p>Your request about the {productName} has been submitted successfully.</p>
@@ -220,11 +220,11 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                 <p>Your request has been submitted successfully.</p>
               )}
               {referenceNumber && (
-                <p style={{ fontSize: '14px', color: '#555', margin: '8px 0' }}>
+                <p className="text-sm text-gray-600 my-2">
                   Reference: <strong>{referenceNumber}</strong>
                 </p>
               )}
-              <div className="success-details">
+              <div className="text-left my-6 p-6 bg-gray-100 rounded-lg">
                 <p>What happens next:</p>
                 <ul>
                   <li>You'll receive a confirmation email within the next few minutes</li>
@@ -232,9 +232,9 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                   <li>We'll respond with detailed information within 1–2 business days</li>
                 </ul>
               </div>
-              <div className="success-actions" style={{ marginTop: '12px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
-                <button className="btn btn-secondary" onClick={onDownloadBrochure}>{downloadLabel}</button>
-                <a href="/products" className="btn btn-secondary">Browse Other Products</a>
+              <div className="mt-6 flex gap-4 justify-center flex-wrap">
+                <button className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base" onClick={onDownloadBrochure}>{downloadLabel}</button>
+                <a href="/products" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base">Browse Other Products</a>
               </div>
             </div>
           </div>
