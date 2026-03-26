@@ -1,2 +1,0 @@
-/* Wrap main.css in a CSS layer so Tailwind utilities can override it */
-@import "./main.css" layer(legacy);

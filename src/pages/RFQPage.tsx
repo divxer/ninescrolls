@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
-import '../styles/RFQPage.css';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -53,9 +52,9 @@ const ROLES = [
 const BUDGET_RANGES = [
   { value: '', label: 'Select budget range...' },
   { value: 'Under $10k', label: 'Under $10k' },
-  { value: '$10k - $30k', label: '$10k – $30k' },
-  { value: '$30k - $80k', label: '$30k – $80k' },
-  { value: '$80k - $150k', label: '$80k – $150k' },
+  { value: '$10k - $30k', label: '$10k \u2013 $30k' },
+  { value: '$30k - $80k', label: '$30k \u2013 $80k' },
+  { value: '$80k - $150k', label: '$80k \u2013 $150k' },
   { value: 'Over $150k', label: '$150k+' },
   { value: 'Not yet defined', label: 'Budget not yet defined' },
 ];
@@ -194,6 +193,14 @@ function inferCategory(product: string, explicitCategory?: string): string {
   }
   return '';
 }
+
+// ---------------------------------------------------------------------------
+// Tailwind class constants
+// ---------------------------------------------------------------------------
+const inputClasses = "w-full border-0 border-b border-outline-variant focus:ring-0 focus:border-primary p-3 bg-transparent font-body text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-colors";
+const selectClasses = "w-full border-0 border-b border-outline-variant focus:ring-0 focus:border-primary p-3 bg-transparent font-body text-on-surface outline-none transition-colors";
+const textareaClasses = "w-full border border-outline-variant/20 focus:ring-0 focus:border-primary p-3 bg-surface-container-low rounded-lg font-body text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-colors resize-y";
+const labelClasses = "block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -436,7 +443,7 @@ export function RFQPage() {
     setFieldErrors(errors);
     if (Object.keys(errors).length === 0) {
       setCurrentStep(2);
-      // Scroll to step indicator instead of page top — user already saw the hero
+      // Scroll to step indicator instead of page top -- user already saw the hero
       requestAnimationFrame(() => {
         stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
@@ -445,7 +452,7 @@ export function RFQPage() {
         equipmentCategory: formData.equipmentCategory,
       });
     } else {
-      const firstError = formRef.current?.querySelector('.field-error');
+      const firstError = formRef.current?.querySelector('[data-field-error]');
       firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
@@ -481,7 +488,7 @@ export function RFQPage() {
     e.preventDefault();
     if (honeypot) { setIsSuccess(true); setReferenceNumber('RFQ-000000-XXXX'); return; }
     if (!validateAll()) {
-      const firstError = formRef.current?.querySelector('.field-error');
+      const firstError = formRef.current?.querySelector('[data-field-error]');
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -578,44 +585,58 @@ export function RFQPage() {
           keywords="request quote, RFQ, semiconductor equipment quote, ICP etcher quote, PECVD quote, ALD quote"
           url="/request-quote"
         />
-        <section className="rfq-hero">
-          <div className="container">
-            <h1>Request a Technical Proposal or Quote</h1>
-            <p>Share your process requirements and application goals. Our engineering team will review your inquiry and recommend a suitable equipment configuration.</p>
+        {/* Hero */}
+        <section className="bg-primary py-20 px-8">
+          <div className="max-w-5xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-primary mb-4">Request a Technical Proposal or Quote</h1>
+            <p className="text-lg text-on-primary/80 max-w-2xl mx-auto">
+              Share your process requirements and application goals. Our engineering team will review your inquiry and recommend a suitable equipment configuration.
+            </p>
           </div>
         </section>
-        <section className="rfq-success-section" ref={successRef}>
-          <div className="container">
-            <div className="rfq-success-card">
-              <div className="rfq-success-icon">&#10003;</div>
-              <h2>Thank You for Your Inquiry!</h2>
-              <p>We've received your request and our engineering team will review your requirements.</p>
+
+        {/* Success Card */}
+        <section className="py-16 px-8" ref={successRef}>
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-10 text-center">
+              <span
+                className="material-symbols-outlined text-7xl text-green-500 mb-6 block"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                check_circle
+              </span>
+              <h2 className="text-3xl font-headline font-bold mb-4">Thank You for Your Inquiry!</h2>
+              <p className="text-on-surface-variant text-lg mb-8">
+                We've received your request and our engineering team will review your requirements.
+              </p>
               {referenceNumber && (
-                <div className="rfq-reference">
-                  <span className="rfq-reference-label">Reference Number</span>
-                  <span className="rfq-reference-number">{referenceNumber}</span>
+                <div className="bg-surface-container-low rounded-lg p-4 mb-8 inline-block">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-1">Reference Number</span>
+                  <span className="text-xl font-headline font-bold text-primary">{referenceNumber}</span>
                 </div>
               )}
-              <div className="rfq-next-steps">
-                <h3>What Happens Next</h3>
-                <ol>
-                  <li><strong>Engineering Review</strong> &mdash; Our technical team evaluates your process requirements and constraints</li>
-                  <li><strong>Equipment Recommendation</strong> &mdash; We prepare a suitable configuration or budgetary quotation</li>
-                  <li><strong>Follow-Up Discussion</strong> &mdash; Expect a response within 1 business day</li>
+              <div className="bg-surface-container-low rounded-xl p-6 text-left mb-8">
+                <h3 className="text-lg font-headline font-bold mb-4">What Happens Next</h3>
+                <ol className="space-y-3 text-sm text-on-surface-variant list-decimal list-inside">
+                  <li><span className="font-bold text-on-surface">Engineering Review</span> &mdash; Our technical team evaluates your process requirements and constraints</li>
+                  <li><span className="font-bold text-on-surface">Equipment Recommendation</span> &mdash; We prepare a suitable configuration or budgetary quotation</li>
+                  <li><span className="font-bold text-on-surface">Follow-Up Discussion</span> &mdash; Expect a response within 1 business day</li>
                 </ol>
               </div>
-              <p className="rfq-confirmation-email">A confirmation email has been sent to your email address.</p>
-              <div className="rfq-success-actions">
+              <p className="text-sm text-on-surface-variant mb-8">A confirmation email has been sent to your email address.</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
                 <button
-                  className="btn btn-primary"
+                  className="bg-primary text-white py-3 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors"
                   onClick={() => { setIsSuccess(false); setReferenceNumber(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
                   Submit Another Request
                 </button>
-                <a href="/products" className="btn btn-outline">Browse Equipment</a>
+                <a href="/products" className="border border-outline-variant py-3 px-8 rounded-sm font-bold uppercase text-on-surface hover:bg-surface-container-low transition-colors">
+                  Browse Equipment
+                </a>
               </div>
-              <p className="rfq-urgent-note">
-                For urgent inquiries, contact us directly at <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>
+              <p className="text-xs text-on-surface-variant">
+                For urgent inquiries, contact us directly at <a href="mailto:sales@ninescrolls.com" className="text-primary hover:underline">sales@ninescrolls.com</a>
               </p>
             </div>
           </div>
@@ -637,54 +658,52 @@ export function RFQPage() {
       />
 
       {/* Hero */}
-      <section className="rfq-hero">
-        <div className="container">
-          <h1>Request a Technical Proposal or Budgetary Quote</h1>
-          <p>
+      <section className="bg-primary py-20 px-8">
+        <div className="max-w-5xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-primary mb-4">
+            Request a Technical Proposal or Budgetary Quote
+          </h1>
+          <p className="text-lg text-on-primary/80 max-w-3xl mx-auto mb-8">
             Share your process requirements, application goals, and technical constraints.
             Our engineering team will review your inquiry and recommend a suitable equipment configuration
             or preliminary quotation.
           </p>
-          <div className="rfq-hero-badges">
-            <span className="rfq-badge">Custom Configurations</span>
-            <span className="rfq-badge">Engineering Review</span>
-            <span className="rfq-badge">Response Within 1 Business Day</span>
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
+            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Custom Configurations</span>
+            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Engineering Review</span>
+            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Response Within 1 Business Day</span>
           </div>
-          <div className="rfq-hero-apps">
-            <span className="rfq-hero-apps-label">Typical applications:</span>
-            <span className="rfq-app-tag">Plasma Cleaning</span>
-            <span className="rfq-app-tag">Surface Activation</span>
-            <span className="rfq-app-tag">RIE Etching</span>
-            <span className="rfq-app-tag">Thin Film Deposition</span>
-            <span className="rfq-app-tag">Materials Research</span>
+          <div className="flex flex-wrap gap-2 justify-center items-center">
+            <span className="text-on-primary/60 text-sm">Typical applications:</span>
+            {['Plasma Cleaning', 'Surface Activation', 'RIE Etching', 'Thin Film Deposition', 'Materials Research'].map(app => (
+              <span key={app} className="text-on-primary/80 text-xs bg-on-primary/5 px-3 py-1 rounded-full">{app}</span>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Trust Bar */}
-      <section className="rfq-trust-bar">
-        <div className="container">
-          <div className="rfq-trust-grid">
-            <div className="rfq-trust-item">
-              <div className="rfq-trust-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <strong>Who We Serve</strong>
-              <p>Universities, national labs, R&amp;D centers, and semiconductor pilot-line programs</p>
+      <section className="bg-surface-container-low py-12 px-8 border-b border-outline-variant/10">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex gap-4 items-start">
+            <span className="material-symbols-outlined text-3xl text-primary shrink-0">groups</span>
+            <div>
+              <p className="font-bold text-sm mb-1">Who We Serve</p>
+              <p className="text-xs text-on-surface-variant">Universities, national labs, R&amp;D centers, and semiconductor pilot-line programs</p>
             </div>
-            <div className="rfq-trust-item">
-              <div className="rfq-trust-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              </div>
-              <strong>What You Can Request</strong>
-              <p>Budgetary quote, technical consultation, custom configuration, or platform comparison</p>
+          </div>
+          <div className="flex gap-4 items-start">
+            <span className="material-symbols-outlined text-3xl text-primary shrink-0">description</span>
+            <div>
+              <p className="font-bold text-sm mb-1">What You Can Request</p>
+              <p className="text-xs text-on-surface-variant">Budgetary quote, technical consultation, custom configuration, or platform comparison</p>
             </div>
-            <div className="rfq-trust-item">
-              <div className="rfq-trust-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              </div>
-              <strong>What Happens Next</strong>
-              <ol>
+          </div>
+          <div className="flex gap-4 items-start">
+            <span className="material-symbols-outlined text-3xl text-primary shrink-0">trending_up</span>
+            <div>
+              <p className="font-bold text-sm mb-1">What Happens Next</p>
+              <ol className="text-xs text-on-surface-variant list-decimal list-inside space-y-0.5">
                 <li>Submit your requirements</li>
                 <li>Engineering review by our team</li>
                 <li>Proposal or technical consultation</li>
@@ -695,91 +714,94 @@ export function RFQPage() {
       </section>
 
       {/* Form Section */}
-      <section className="rfq-form-section">
-        <div className="container">
-          <div className="rfq-form-inner">
+      <section className="py-16 px-8">
+        <div className="max-w-3xl mx-auto">
 
-            {/* Step Indicator */}
-            <div className="rfq-steps" ref={stepsRef}>
-              <div className={`rfq-step ${currentStep >= 1 ? 'active' : ''}`}>
-                <span className="rfq-step-number">1</span>
-                <span className="rfq-step-label">Step 1 <span className="rfq-step-title">Your Information</span></span>
-              </div>
-              <div className={`rfq-step-line ${currentStep >= 2 ? 'active' : ''}`} />
-              <div className={`rfq-step ${currentStep >= 2 ? 'active' : ''}`}>
-                <span className="rfq-step-number">2</span>
-                <span className="rfq-step-label">Step 2 <span className="rfq-step-title">Project Details</span></span>
-              </div>
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center gap-4 mb-12" ref={stepsRef}>
+            <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-primary' : 'text-on-surface-variant/40'}`}>
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep >= 1 ? 'bg-primary text-white' : 'bg-outline-variant/20 text-on-surface-variant'}`}>1</span>
+              <span className="text-sm font-bold hidden sm:inline">Your Information</span>
+            </div>
+            <div className={`h-px flex-grow max-w-16 ${currentStep >= 2 ? 'bg-primary' : 'bg-outline-variant/20'}`} />
+            <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-primary' : 'text-on-surface-variant/40'}`}>
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-outline-variant/20 text-on-surface-variant'}`}>2</span>
+              <span className="text-sm font-bold hidden sm:inline">Project Details</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} ref={formRef} noValidate>
+
+            {/* Honeypot */}
+            <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+              <label htmlFor="rfq-website">Website</label>
+              <input type="text" id="rfq-website" name="website" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
             </div>
 
-            <form onSubmit={handleSubmit} ref={formRef} noValidate>
-
-              {/* Honeypot */}
-              <div className="honeypot-field" aria-hidden="true">
-                <label htmlFor="rfq-website">Website</label>
-                <input type="text" id="rfq-website" name="website" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
-              </div>
-
-              {/* ============================================================ */}
-              {/* STEP 1: Your Information & Requirements                      */}
-              {/* ============================================================ */}
-              {currentStep === 1 && (
-                <>
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Contact Information</legend>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-name">Full Name <span className="required">*</span></label>
-                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required />
-                        {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
+            {/* ============================================================ */}
+            {/* STEP 1: Your Information & Requirements                      */}
+            {/* ============================================================ */}
+            {currentStep === 1 && (
+              <>
+                {/* Contact Information */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">Contact Information</h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-name" className={labelClasses}>Full Name <span className="text-red-500">*</span></label>
+                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required className={inputClasses} />
+                        {fieldErrors.name && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.name}</span>}
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="rfq-email">Email <span className="required">*</span></label>
-                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required />
-                        {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
+                      <div>
+                        <label htmlFor="rfq-email" className={labelClasses}>Email <span className="text-red-500">*</span></label>
+                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required className={inputClasses} />
+                        {fieldErrors.email && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.email}</span>}
                       </div>
                     </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-phone">Phone <span className="optional">(optional)</span></label>
-                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" />
-                        {fieldErrors.phone && <span className="field-error">{fieldErrors.phone}</span>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-phone" className={labelClasses}>Phone <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
+                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" className={inputClasses} />
+                        {fieldErrors.phone && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.phone}</span>}
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="rfq-role">Role <span className="optional">(optional)</span></label>
-                        <select id="rfq-role" name="role" value={formData.role} onChange={handleChange}>
+                      <div>
+                        <label htmlFor="rfq-role" className={labelClasses}>Role <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
+                        <select id="rfq-role" name="role" value={formData.role} onChange={handleChange} className={selectClasses}>
                           <option value="">Select your role...</option>
                           {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                         </select>
                       </div>
                     </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-institution">Institution / Organization <span className="required">*</span></label>
-                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required />
-                        {fieldErrors.institution && <span className="field-error">{fieldErrors.institution}</span>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-institution" className={labelClasses}>Institution / Organization <span className="text-red-500">*</span></label>
+                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required className={inputClasses} />
+                        {fieldErrors.institution && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.institution}</span>}
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="rfq-department">Department <span className="optional">(optional)</span></label>
-                        <input type="text" id="rfq-department" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Materials Science & Engineering" />
+                      <div>
+                        <label htmlFor="rfq-department" className={labelClasses}>Department <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
+                        <input type="text" id="rfq-department" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Materials Science & Engineering" className={inputClasses} />
                       </div>
                     </div>
-                  </fieldset>
+                  </div>
+                </div>
 
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Equipment &amp; Application</legend>
-                    <div className="form-group">
-                      <label htmlFor="rfq-equipmentCategory">Equipment Category <span className="required">*</span></label>
-                      <select id="rfq-equipmentCategory" name="equipmentCategory" value={formData.equipmentCategory} onChange={handleChange} onBlur={handleBlur} required>
+                {/* Equipment & Application */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">Equipment &amp; Application</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="rfq-equipmentCategory" className={labelClasses}>Equipment Category <span className="text-red-500">*</span></label>
+                      <select id="rfq-equipmentCategory" name="equipmentCategory" value={formData.equipmentCategory} onChange={handleChange} onBlur={handleBlur} required className={selectClasses}>
                         <option value="">Select equipment type...</option>
                         {EQUIPMENT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
-                      {fieldErrors.equipmentCategory && <span className="field-error">{fieldErrors.equipmentCategory}</span>}
+                      {fieldErrors.equipmentCategory && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.equipmentCategory}</span>}
                     </div>
-
-                    <div className="form-group">
-                      <label htmlFor="rfq-applicationDescription">
-                        Application / Research Goal <span className="required">*</span>
+                    <div>
+                      <label htmlFor="rfq-applicationDescription" className={labelClasses}>
+                        Application / Research Goal <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         id="rfq-applicationDescription"
@@ -790,32 +812,42 @@ export function RFQPage() {
                         placeholder="Describe your intended process, target materials, substrate size, temperature limits, gases, throughput expectations, and any existing process challenges."
                         rows={5}
                         required
+                        className={textareaClasses}
                       />
-                      <span className="field-hint">
+                      <span className="text-xs text-on-surface-variant/60 mt-1 block">
                         {formData.applicationDescription.length}/3000 &mdash; Examples: plasma cleaning before bonding, SiO&#x2082; etching at &lt;100nm features, low-temperature PECVD for a-Si:H, RF sputtering of metal films, surface activation for polymers
                       </span>
-                      {fieldErrors.applicationDescription && <span className="field-error">{fieldErrors.applicationDescription}</span>}
+                      {fieldErrors.applicationDescription && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.applicationDescription}</span>}
                     </div>
-                  </fieldset>
-
-                  <div className="form-actions">
-                    <button type="button" className="btn btn-primary rfq-next-btn" onClick={handleNext}>
-                      Continue to Project Details
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
                   </div>
-                </>
-              )}
+                </div>
 
-              {/* ============================================================ */}
-              {/* STEP 2: Project & Technical Details                          */}
-              {/* ============================================================ */}
-              {currentStep === 2 && (
-                <>
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Technical Details <span className="optional">(optional)</span></legend>
-                    <div className="form-group">
-                      <label htmlFor="rfq-keySpecifications">Technical Requirements</label>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors flex items-center gap-2"
+                    onClick={handleNext}
+                  >
+                    Continue to Project Details
+                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ============================================================ */}
+            {/* STEP 2: Project & Technical Details                          */}
+            {/* ============================================================ */}
+            {currentStep === 2 && (
+              <>
+                {/* Technical Details */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">
+                    Technical Details <span className="text-on-surface-variant/50 text-sm font-normal">(optional)</span>
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="rfq-keySpecifications" className={labelClasses}>Technical Requirements</label>
                       <textarea
                         id="rfq-keySpecifications"
                         name="keySpecifications"
@@ -823,105 +855,114 @@ export function RFQPage() {
                         onChange={handleChange}
                         placeholder="Chamber size, wafer/substrate dimensions, gas lines needed, temperature range, RF power, vacuum level, throughput, automation requirements, etc."
                         rows={4}
+                        className={textareaClasses}
                       />
                     </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-specificModel">Preferred Model <span className="optional">(optional)</span></label>
-                        <input type="text" id="rfq-specificModel" name="specificModel" value={formData.specificModel} onChange={handleChange} placeholder='e.g. "ICP-100A" or "Need recommendation"' />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-specificModel" className={labelClasses}>Preferred Model <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
+                        <input type="text" id="rfq-specificModel" name="specificModel" value={formData.specificModel} onChange={handleChange} placeholder='e.g. "ICP-100A" or "Need recommendation"' className={inputClasses} />
                       </div>
-                      <div className="form-group form-group-narrow">
-                        <label htmlFor="rfq-quantity">Quantity</label>
-                        <input type="number" id="rfq-quantity" name="quantity" value={formData.quantity} onChange={handleChange} onBlur={handleBlur} min={1} step={1} />
-                        {fieldErrors.quantity && <span className="field-error">{fieldErrors.quantity}</span>}
+                      <div>
+                        <label htmlFor="rfq-quantity" className={labelClasses}>Quantity</label>
+                        <input type="number" id="rfq-quantity" name="quantity" value={formData.quantity} onChange={handleChange} onBlur={handleBlur} min={1} step={1} className={inputClasses} />
+                        {fieldErrors.quantity && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.quantity}</span>}
                       </div>
                     </div>
-                  </fieldset>
+                  </div>
+                </div>
 
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Project Planning <span className="optional">(optional)</span></legend>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-budgetRange">Budget Range</label>
-                        <select id="rfq-budgetRange" name="budgetRange" value={formData.budgetRange} onChange={handleChange}>
+                {/* Project Planning */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">
+                    Project Planning <span className="text-on-surface-variant/50 text-sm font-normal">(optional)</span>
+                  </h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-budgetRange" className={labelClasses}>Budget Range</label>
+                        <select id="rfq-budgetRange" name="budgetRange" value={formData.budgetRange} onChange={handleChange} className={selectClasses}>
                           {BUDGET_RANGES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
                         </select>
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="rfq-timeline">Timeline</label>
-                        <select id="rfq-timeline" name="timeline" value={formData.timeline} onChange={handleChange}>
+                      <div>
+                        <label htmlFor="rfq-timeline" className={labelClasses}>Timeline</label>
+                        <select id="rfq-timeline" name="timeline" value={formData.timeline} onChange={handleChange} className={selectClasses}>
                           {TIMELINES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                         </select>
                       </div>
                     </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="rfq-fundingStatus">Funding Status</label>
-                        <select id="rfq-fundingStatus" name="fundingStatus" value={formData.fundingStatus} onChange={handleChange}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="rfq-fundingStatus" className={labelClasses}>Funding Status</label>
+                        <select id="rfq-fundingStatus" name="fundingStatus" value={formData.fundingStatus} onChange={handleChange} className={selectClasses}>
                           {FUNDING_STATUSES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                         </select>
                       </div>
-                      <div className="form-group">
-                        <label htmlFor="rfq-referralSource">How did you hear about us?</label>
-                        <select id="rfq-referralSource" name="referralSource" value={formData.referralSource} onChange={handleChange}>
+                      <div>
+                        <label htmlFor="rfq-referralSource" className={labelClasses}>How did you hear about us?</label>
+                        <select id="rfq-referralSource" name="referralSource" value={formData.referralSource} onChange={handleChange} className={selectClasses}>
                           {REFERRAL_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                         </select>
                       </div>
                     </div>
-                  </fieldset>
+                  </div>
+                </div>
 
-                  {/* Budgetary Quote */}
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Budgetary Quote <span className="optional">(optional)</span></legend>
-                    <div className="form-group">
-                      <label className="checkbox-label">
-                        <input type="checkbox" name="needsBudgetaryQuote" checked={formData.needsBudgetaryQuote} onChange={handleChange} />
-                        <span>I need a budgetary quote (for budgeting or grant planning) &mdash; requires shipping address</span>
-                      </label>
-                    </div>
-                    {formData.needsBudgetaryQuote && (
-                      <div className="rfq-shipping-fields">
-                        <p className="rfq-shipping-hint">Shipping address is required to calculate applicable taxes for your budgetary quote.</p>
-                        <div className="form-group">
-                          <label htmlFor="rfq-shippingAddress">Street Address <span className="required">*</span></label>
-                          <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required />
-                          {fieldErrors.shippingAddress && <span className="field-error">{fieldErrors.shippingAddress}</span>}
+                {/* Budgetary Quote */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">
+                    Budgetary Quote <span className="text-on-surface-variant/50 text-sm font-normal">(optional)</span>
+                  </h2>
+                  <label className="flex items-start gap-3 cursor-pointer mb-4">
+                    <input type="checkbox" name="needsBudgetaryQuote" checked={formData.needsBudgetaryQuote} onChange={handleChange} className="mt-1 w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary" />
+                    <span className="text-sm text-on-surface">I need a budgetary quote (for budgeting or grant planning) &mdash; requires shipping address</span>
+                  </label>
+                  {formData.needsBudgetaryQuote && (
+                    <div className="space-y-4 pt-4 border-t border-outline-variant/10">
+                      <p className="text-xs text-on-surface-variant">Shipping address is required to calculate applicable taxes for your budgetary quote.</p>
+                      <div>
+                        <label htmlFor="rfq-shippingAddress" className={labelClasses}>Street Address <span className="text-red-500">*</span></label>
+                        <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required className={inputClasses} />
+                        {fieldErrors.shippingAddress && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingAddress}</span>}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="rfq-shippingCity" className={labelClasses}>City <span className="text-red-500">*</span></label>
+                          <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required className={inputClasses} />
+                          {fieldErrors.shippingCity && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingCity}</span>}
                         </div>
-                        <div className="form-row">
-                          <div className="form-group">
-                            <label htmlFor="rfq-shippingCity">City <span className="required">*</span></label>
-                            <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required />
-                            {fieldErrors.shippingCity && <span className="field-error">{fieldErrors.shippingCity}</span>}
-                          </div>
-                          <div className="form-group">
-                            <label htmlFor="rfq-shippingState">State / Province <span className="required">*</span></label>
-                            <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required />
-                            {fieldErrors.shippingState && <span className="field-error">{fieldErrors.shippingState}</span>}
-                          </div>
-                        </div>
-                        <div className="form-row">
-                          <div className="form-group">
-                            <label htmlFor="rfq-shippingZipCode">ZIP / Postal Code <span className="required">*</span></label>
-                            <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required />
-                            {fieldErrors.shippingZipCode && <span className="field-error">{fieldErrors.shippingZipCode}</span>}
-                          </div>
-                          <div className="form-group">
-                            <label htmlFor="rfq-shippingCountry">Country <span className="required">*</span></label>
-                            <select id="rfq-shippingCountry" name="shippingCountry" value={formData.shippingCountry} onChange={handleChange} autoComplete="country-name" required>
-                              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </div>
+                        <div>
+                          <label htmlFor="rfq-shippingState" className={labelClasses}>State / Province <span className="text-red-500">*</span></label>
+                          <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required className={inputClasses} />
+                          {fieldErrors.shippingState && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingState}</span>}
                         </div>
                       </div>
-                    )}
-                  </fieldset>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="rfq-shippingZipCode" className={labelClasses}>ZIP / Postal Code <span className="text-red-500">*</span></label>
+                          <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required className={inputClasses} />
+                          {fieldErrors.shippingZipCode && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingZipCode}</span>}
+                        </div>
+                        <div>
+                          <label htmlFor="rfq-shippingCountry" className={labelClasses}>Country <span className="text-red-500">*</span></label>
+                          <select id="rfq-shippingCountry" name="shippingCountry" value={formData.shippingCountry} onChange={handleChange} autoComplete="country-name" required className={selectClasses}>
+                            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Supporting Materials */}
-                  <fieldset className="rfq-fieldset rfq-card">
-                    <legend>Supporting Materials <span className="optional">(optional)</span></legend>
-
-                    <div className="form-group">
-                      <label htmlFor="rfq-existingEquipment">Existing Equipment</label>
+                {/* Supporting Materials */}
+                <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
+                  <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">
+                    Supporting Materials <span className="text-on-surface-variant/50 text-sm font-normal">(optional)</span>
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="rfq-existingEquipment" className={labelClasses}>Existing Equipment</label>
                       <textarea
                         id="rfq-existingEquipment"
                         name="existingEquipment"
@@ -929,38 +970,49 @@ export function RFQPage() {
                         onChange={handleChange}
                         placeholder="List any existing tools relevant to this project (e.g., plasma cleaner, RIE, PECVD, spin coater, vacuum pumps, gas cabinets, substrate sizes supported, or legacy systems)."
                         rows={3}
+                        className={textareaClasses}
                       />
                     </div>
 
                     {/* File Upload */}
-                    <div className="form-group">
-                      <label>Upload Specifications, Drawings, Process Notes, or RFQ Documents <span className="optional">(max 3 files, 10MB each)</span></label>
-                      <div className="file-upload-area">
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" multiple className="file-input-hidden" id="rfq-file-upload" />
-                        <label htmlFor="rfq-file-upload" className="file-upload-label">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                          </svg>
-                          <span>Click to upload or drag and drop</span>
-                          <span className="file-upload-hint">PDF, DOCX, XLSX, JPG, PNG</span>
+                    <div>
+                      <label className={labelClasses}>Upload Specifications, Drawings, Process Notes, or RFQ Documents <span className="text-on-surface-variant/50 text-[10px]">(max 3 files, 10MB each)</span></label>
+                      <div className="mt-2">
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" multiple className="hidden" id="rfq-file-upload" />
+                        <label
+                          htmlFor="rfq-file-upload"
+                          className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-2">upload_file</span>
+                          <span className="text-sm text-on-surface-variant">Click to upload or drag and drop</span>
+                          <span className="text-xs text-on-surface-variant/50 mt-1">PDF, DOCX, XLSX, JPG, PNG</span>
                         </label>
                       </div>
                       {files.length > 0 && (
-                        <ul className="file-list">
+                        <ul className="mt-3 space-y-2">
                           {files.map((file, index) => (
-                            <li key={`${file.name}-${index}`} className="file-item">
-                              <span className="file-name">{file.name}</span>
-                              <span className="file-size">{formatFileSize(file.size)}</span>
-                              <button type="button" className="file-remove" onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`}>&times;</button>
+                            <li key={`${file.name}-${index}`} className="flex items-center justify-between bg-surface-container-low rounded-lg p-3 text-sm">
+                              <span className="font-medium truncate mr-4">{file.name}</span>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className="text-xs text-on-surface-variant">{formatFileSize(file.size)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeFile(index)}
+                                  aria-label={`Remove ${file.name}`}
+                                  className="text-on-surface-variant hover:text-red-500 transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-lg">close</span>
+                                </button>
+                              </div>
                             </li>
                           ))}
                         </ul>
                       )}
-                      {fieldErrors.files && <span className="field-error">{fieldErrors.files}</span>}
+                      {fieldErrors.files && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.files}</span>}
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="rfq-additionalComments">Special Requirements / Additional Notes</label>
+                    <div>
+                      <label htmlFor="rfq-additionalComments" className={labelClasses}>Special Requirements / Additional Notes</label>
                       <textarea
                         id="rfq-additionalComments"
                         name="additionalComments"
@@ -968,65 +1020,74 @@ export function RFQPage() {
                         onChange={handleChange}
                         placeholder="Any additional details, constraints, timeline considerations, or questions for our engineering team."
                         rows={3}
+                        className={textareaClasses}
                       />
                     </div>
-                  </fieldset>
-
-                  {/* Privacy Consent */}
-                  <p className="rfq-consent-text">
-                    By submitting, you agree that NineScrolls may use this information to prepare a quotation and contact you regarding this inquiry.
-                  </p>
-
-                  {/* Turnstile */}
-                  {turnstileSiteKey && <div className="rfq-turnstile" ref={turnstileRef} />}
-
-                  {/* Submit note */}
-                  <div className="rfq-submit-note">
-                    <p>All inquiries are reviewed by our technical team. Typical response time: within 1 business day.</p>
                   </div>
-
-                  {submitError && <div className="form-message error">{submitError}</div>}
-
-                  {/* Actions */}
-                  <div className="form-actions form-actions-split">
-                    <button type="button" className="btn btn-outline rfq-back-btn" onClick={() => { setCurrentStep(1); requestAnimationFrame(() => { stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary rfq-submit-btn"
-                      disabled={isSubmitting || (!!turnstileSiteKey && !turnstileToken)}
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Request Proposal'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </form>
-
-            {/* Need Help + Trust Signal */}
-            <div className="rfq-bottom-bar">
-              <div className="rfq-need-help">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <div>
-                  <strong>Need help defining your requirements?</strong>
-                  <p>Our team can recommend suitable equipment configurations. <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a></p>
                 </div>
-              </div>
-              <div className="rfq-trust-signal">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span>Serving U.S. universities and research labs &bull; San Diego, California</span>
-              </div>
-            </div>
 
-            {/* Privacy Note */}
-            <div className="rfq-privacy-note">
-              <p>
-                Your information is kept confidential and will only be used to prepare your quotation.
-                We do not share your data with third parties. See our <a href="/privacy">Privacy Policy</a>.
-              </p>
+                {/* Privacy Consent */}
+                <p className="text-xs text-on-surface-variant text-center mb-4">
+                  By submitting, you agree that NineScrolls may use this information to prepare a quotation and contact you regarding this inquiry.
+                </p>
+
+                {/* Turnstile */}
+                {turnstileSiteKey && <div className="flex justify-center mb-4" ref={turnstileRef} />}
+
+                {/* Submit note */}
+                <div className="bg-surface-container-low rounded-lg p-4 mb-6 text-center">
+                  <p className="text-xs text-on-surface-variant">All inquiries are reviewed by our technical team. Typical response time: within 1 business day.</p>
+                </div>
+
+                {submitError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
+                    {submitError}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex justify-between items-center gap-4">
+                  <button
+                    type="button"
+                    className="border border-outline-variant py-3 px-6 rounded-sm font-bold uppercase text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-2"
+                    onClick={() => { setCurrentStep(1); requestAnimationFrame(() => { stepsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }}
+                  >
+                    <span className="material-symbols-outlined text-lg">arrow_back</span>
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting || (!!turnstileSiteKey && !turnstileToken)}
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Request Proposal'}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+
+          {/* Need Help + Trust Signal */}
+          <div className="mt-12 space-y-4">
+            <div className="flex gap-4 items-start bg-surface-container-low rounded-xl p-6 border border-outline-variant/10">
+              <span className="material-symbols-outlined text-2xl text-primary shrink-0">help</span>
+              <div>
+                <p className="font-bold text-sm">Need help defining your requirements?</p>
+                <p className="text-xs text-on-surface-variant">Our team can recommend suitable equipment configurations. <a href="mailto:sales@ninescrolls.com" className="text-primary hover:underline">sales@ninescrolls.com</a></p>
+              </div>
             </div>
+            <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-base">shield</span>
+              <span>Serving U.S. universities and research labs &bull; San Diego, California</span>
+            </div>
+          </div>
+
+          {/* Privacy Note */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-on-surface-variant/60">
+              Your information is kept confidential and will only be used to prepare your quotation.
+              We do not share your data with third parties. See our <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
+            </p>
           </div>
         </div>
       </section>

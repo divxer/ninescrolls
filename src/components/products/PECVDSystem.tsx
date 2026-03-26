@@ -93,53 +93,46 @@ export function PECVDSystem() {
           ]
         })}</script>
       </Helmet>
-      <section className="product-detail-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'PECVD System Series', path: '/products/pecvd' }
           ]} />
-          <div className="product-header">
-            <h1>PECVD System Series</h1>
-            <p>Advanced Plasma-Enhanced Chemical Vapor Deposition System for Versatile Film Growth</p>
-            <p className="hero-subtitle-emphasis">
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">PECVD System Series</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Advanced Plasma-Enhanced Chemical Vapor Deposition System for Versatile Film Growth</p>
+            <p className="text-base text-white/80 tracking-wide">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
-              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
+                Request a Quote
+              </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
                 Download Datasheet
               </a>
             </div>
@@ -147,90 +140,134 @@ export function PECVDSystem() {
         </div>
       </section>
 
-      <section className="product-overview">
-        <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <img 
-                src="/assets/images/products/pecvd/main.jpg" 
-                alt="PECVD System" 
-                className="main-product-image" 
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0">
+              <img
+                src="/assets/images/products/pecvd/main.jpg"
+                alt="PECVD System"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
-            <div className="product-info">
-              <h2>Product Description</h2>
-              <p>The PECVD Series utilizes plasma-enhanced chemical vapor deposition (PECVD) technology within a compact uni-body design featuring a small footprint (approx. 1.0m x 1.0m). Engineered for versatile applications in research and production environments, it delivers excellent film quality, superior process flexibility, and precise control with configurable options to optimize performance or cost-efficiency.</p>
-              
-              <h3>Key Features</h3>
-              <ul className="feature-list">
-                <li>Uni-body compact design (footprint: ~1.0m x 1.0m)</li>
-                <li>Variable plasma discharge gap for optimized process performance</li>
-                <li>Electrode RF-driven configuration (13.56 MHz and/or 400 KHz) for low-stress films and precise tuning</li>
-                <li>Chamber liner and electrode temperature control suitable for various deposition processes</li>
-                <li>Integrated gas delivery system (standard: 6 lines, customizable)</li>
-                <li>Optional sample handling system (Open-load or Load-lock)</li>
-                <li>Automated and modular process design kits tailored to specific requirements</li>
-                <li>Cost-performance customization options (RF system, pumps, valves, etc.)</li>
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Product Description</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-6">The PECVD Series utilizes plasma-enhanced chemical vapor deposition (PECVD) technology within a compact uni-body design featuring a small footprint (approx. 1.0m x 1.0m). Engineered for versatile applications in research and production environments, it delivers excellent film quality, superior process flexibility, and precise control with configurable options to optimize performance or cost-efficiency.</p>
+
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Key Features</h3>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Uni-body compact design (footprint: ~1.0m x 1.0m)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Variable plasma discharge gap for optimized process performance
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Electrode RF-driven configuration (13.56 MHz and/or 400 KHz) for low-stress films and precise tuning
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Chamber liner and electrode temperature control suitable for various deposition processes
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Integrated gas delivery system (standard: 6 lines, customizable)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Optional sample handling system (Open-load or Load-lock)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Automated and modular process design kits tailored to specific requirements
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Cost-performance customization options (RF system, pumps, valves, etc.)
+                </li>
               </ul>
 
-              <h3>Target Applications</h3>
-              <ul className="application-list-styled">
-                <li><span className="app-icon">&#x1F4BB;</span> Advanced semiconductor devices</li>
-                <li><span className="app-icon">&#x1F4A1;</span> Optoelectronic components</li>
-                <li><span className="app-icon">&#x1F6E1;</span> Protective coatings</li>
-                <li><span className="app-icon">&#x1F52C;</span> Research & development</li>
-                <li><span className="app-icon">&#x1F9EA;</span> Novel materials synthesis</li>
-                <li><span className="app-icon">&#x2699;</span> Device optimization</li>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Target Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">computer</span>
+                  Advanced semiconductor devices
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">lightbulb</span>
+                  Optoelectronic components
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">shield</span>
+                  Protective coatings
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">science</span>
+                  Research & development
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">biotech</span>
+                  Novel materials synthesis
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">settings</span>
+                  Device optimization
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="detailed-specs">
-        <div className="container">
-          <h2>Technical Specifications</h2>
-          <div className="specs-table-container">
-            <table className="detailed-specs-table">
+      {/* Technical Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Technical Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2}>System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4", 6", 8", 12" wafers or multi-wafer configurations (optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">13.56 MHz and/or 400 KHz, power range 500-2000 W (optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Temperature Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">20°C to 400°C (higher temperature optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Roots pump & mechanical pump</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Gas Distribution</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Up to 6 gas lines (standard), customizable</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Film Uniformity</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Less than 5% (edge exclusion)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Plasma Discharge Gap</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Variable, optimized per process</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Approximately 1.0m x 1.0m</td>
                 </tr>
                 <tr>
-                  <td>Wafer Size</td>
-                  <td>4", 6", 8", 12" wafers or multi-wafer configurations (optional)</td>
-                </tr>
-                <tr>
-                  <td>RF System</td>
-                  <td>13.56 MHz and/or 400 KHz, power range 500-2000 W (optional)</td>
-                </tr>
-                <tr>
-                  <td>Temperature Range</td>
-                  <td>20°C to 400°C (higher temperature optional)</td>
-                </tr>
-                <tr>
-                  <td>Vacuum System</td>
-                  <td>Roots pump & mechanical pump</td>
-                </tr>
-                <tr>
-                  <td>Gas Distribution</td>
-                  <td>Up to 6 gas lines (standard), customizable</td>
-                </tr>
-                <tr>
-                  <td>Film Uniformity</td>
-                  <td>Less than 5% (edge exclusion)</td>
-                </tr>
-                <tr>
-                  <td>Plasma Discharge Gap</td>
-                  <td>Variable, optimized per process</td>
-                </tr>
-                <tr>
-                  <td>Footprint</td>
-                  <td>Approximately 1.0m x 1.0m</td>
-                </tr>
-                <tr>
-                  <td>Sample Loading</td>
-                  <td>Open-Load or Load-Lock (configurable)</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Sample Loading</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Open-Load or Load-Lock (configurable)</td>
                 </tr>
               </tbody>
             </table>
@@ -238,31 +275,32 @@ export function PECVDSystem() {
         </div>
       </section>
 
-      <section className="process-capabilities">
-        <div className="container">
-          <h2>Process Capabilities</h2>
-          <div className="capability-grid">
-            <div className="capability-card">
-              <h3>Performance Features</h3>
-              <ul>
-                <li>Excellent step coverage (gap parameter adjustable)</li>
-                <li>High deposition rates</li>
-                <li>Superior film adhesion and density</li>
-                <li>Precise thickness and stress control</li>
-                <li>Low particle contamination</li>
-                <li>Low-temperature processing capability</li>
-                <li>Process repeatability and multi-layer deposition capability</li>
+      {/* Process Capabilities */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Process Capabilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Performance Features</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Excellent step coverage (gap parameter adjustable)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> High deposition rates</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Superior film adhesion and density</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Precise thickness and stress control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Low particle contamination</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Low-temperature processing capability</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Process repeatability and multi-layer deposition capability</li>
               </ul>
             </div>
-            <div className="capability-card">
-              <h3>Material Systems</h3>
-              <ul>
-                <li>Amorphous Silicon (α-Si:H)</li>
-                <li>Silicon Dioxide (SiO₂)</li>
-                <li>Silicon Nitride (SiNx)</li>
-                <li>Silicon Carbide (SiC)</li>
-                <li>Silicon Oxynitride (SiON)</li>
-                <li>Diamond-like Carbon (DLC, optional)</li>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Material Systems</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Amorphous Silicon (α-Si:H)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon Dioxide (SiO₂)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon Nitride (SiNx)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon Carbide (SiC)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon Oxynitride (SiON)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Diamond-like Carbon (DLC, optional)</li>
               </ul>
             </div>
           </div>
@@ -311,59 +349,59 @@ export function PECVDSystem() {
         ctaLabel="Request a Quote"
       />
 
-      {/* Related equipment & articles */}
-      <section className="related-reading-cards">
-        <div className="container">
-          <h2>Related Equipment & Articles</h2>
-          <div className="related-cards-grid">
-            <a href="/products/ald" className="related-card">
-              <span className="related-card-icon">&#x1F52C;</span>
-              <h3>ALD System Series</h3>
-              <p>Atomic layer precision for conformal films with sub-nanometer thickness control.</p>
-              <span className="related-card-link">View Product &rarr;</span>
+      {/* Related Equipment & Articles */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Related Equipment & Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/products/ald" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">biotech</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">ALD System Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Atomic layer precision for conformal films with sub-nanometer thickness control.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/products/hdp-cvd" className="related-card">
-              <span className="related-card-icon">&#x2699;</span>
-              <h3>HDP-CVD System Series</h3>
-              <p>Gap-fill and dense dielectric films for advanced semiconductor manufacturing.</p>
-              <span className="related-card-link">View Product &rarr;</span>
+            <a href="/products/hdp-cvd" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">settings</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">HDP-CVD System Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Gap-fill and dense dielectric films for advanced semiconductor manufacturing.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="related-card">
-              <span className="related-card-icon">&#x1F4D6;</span>
-              <h3>Plasma Etching Explained</h3>
-              <p>Downstream steps and integration notes for etch/deposition workflows.</p>
-              <span className="related-card-link">Read Article &rarr;</span>
+            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Explained</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Downstream steps and integration notes for etch/deposition workflows.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What films can the PECVD system deposit?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The PECVD system deposits a range of dielectric and semiconductor films including amorphous silicon (a-Si:H), silicon dioxide (SiO2), silicon nitride (SiNx), silicon carbide (SiC), silicon oxynitride (SiON), and diamond-like carbon (DLC). The dual-frequency RF system (13.56 MHz and/or 400 kHz) enables fine-tuned film stress and composition control.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What is the advantage of PECVD over thermal CVD?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: PECVD uses plasma energy to enable film deposition at significantly lower substrate temperatures (20-400°C vs. 600-900°C for thermal CVD). This makes PECVD compatible with temperature-sensitive substrates, metals, and polymers while still achieving high-quality dielectric films suitable for passivation, anti-reflection coatings, and encapsulation.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What RF power configurations are available?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The PECVD system offers dual-frequency capability with 13.56 MHz and/or 400 kHz RF at 500-2000W. The dual-frequency option enables independent control of ion bombardment energy and plasma density, which is critical for tuning film stress from compressive to tensile — essential for applications like MEMS membranes and optical coatings.
               </p>
             </div>
@@ -371,24 +409,43 @@ export function PECVDSystem() {
         </div>
       </section>
 
-      <section className="product-contact">
-        <div className="container">
-          <h2>Request Information</h2>
-          <p>Get detailed specs, pricing & customization options.</p>
-          <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
-            <a href="#" className="btn btn-secondary" onClick={(e)=>{e.preventDefault(); setGateOpen(true);}}>
-              <span className="icon-download"></span> Download Product Datasheet
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Request Information</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Get detailed specs, pricing & customization options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Contact Sales Team
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
             </a>
           </div>
         </div>
       </section>
 
-      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-          Contact Sales Team
-        </button>
-      </div>
+      {/* Floating Contact Button */}
+      {showFloatingContact && (
+        <div className="fixed bottom-6 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
+          <button
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            onClick={() => openContactForm(true)}
+          >
+            <span className="material-symbols-outlined text-[20px]">call</span>
+            Contact Sales Team
+          </button>
+        </div>
+      )}
 
       <QuoteModal
         isOpen={isModalOpen}
@@ -403,4 +460,4 @@ export function PECVDSystem() {
       <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/pecvd-system-datasheet.pdf'} fileName={'NineScrolls-PECVD-Datasheet.pdf'} title={'Download PECVD Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
     </>
   );
-} 
+}

@@ -6,7 +6,6 @@ import { OptimizedImage } from '../common/OptimizedImage';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 
-import '../../styles/ProcessResults.css';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 
 export function CompactRIE() {
@@ -103,87 +102,64 @@ export function CompactRIE() {
         })}</script>
       </Helmet>
 
-      {/* Hero Section - Strong Information Hero with Positioning */}
-      <section className="product-detail-hero product-hero-enhanced">
-        <div className="container">
-          <Breadcrumbs items={[
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'Compact RIE Etcher (SV-RIE)', path: '/products/compact-rie' }
           ]} />
-          <div className="product-header-enhanced">
-            <h1>Compact RIE Etcher (SV-RIE)</h1>
-            <p className="product-subtitle">Ultra-Compact Reactive Ion Etching System</p>
-            <div className="hero-positioning">
-              <p className="hero-tagline">
-                Ultra-small footprint RIE system for research labs. Full reactive ion etching capability in a 630mm × 600mm space.
-              </p>
-              <p className="hero-subtitle-emphasis">
-                US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
-              </p>
-            </div>
-            <div className="hero-bullets">
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">📐</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">630mm × 600mm Footprint</span>
-                  <span className="bullet-text-sub">vs. standard RIE: 50% smaller footprint</span>
-                </div>
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Compact RIE Etcher (SV-RIE)</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Ultra-Compact Reactive Ion Etching System</p>
+            <p className="text-base text-white/90 mb-2">
+              Ultra-small footprint RIE system for research labs. Full reactive ion etching capability in a 630mm × 600mm space.
+            </p>
+            <p className="text-base text-white/80 tracking-wide">
+              US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-3xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+                <span className="material-symbols-outlined text-white text-3xl mb-2 block">straighten</span>
+                <div className="font-semibold text-white">630mm × 600mm Footprint</div>
+                <div className="text-sm text-white/70">vs. standard RIE: 50% smaller footprint</div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">⚡</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">300W / 500W / 1000W RF Power</span>
-                  <span className="bullet-text-sub">research-grade etching performance</span>
-                </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+                <span className="material-symbols-outlined text-white text-3xl mb-2 block">bolt</span>
+                <div className="font-semibold text-white">300W / 500W / 1000W RF Power</div>
+                <div className="text-sm text-white/70">research-grade etching performance</div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">🖥️</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">Touchscreen Control</span>
-                  <span className="bullet-text-sub">fully automated operation system</span>
-                </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+                <span className="material-symbols-outlined text-white text-3xl mb-2 block">touch_app</span>
+                <div className="font-semibold text-white">Touchscreen Control</div>
+                <div className="text-sm text-white/70">fully automated operation system</div>
               </div>
             </div>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            
-            <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={() => openContactForm(false)}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(false)}
+              >
                 Request Information
               </button>
-              <a 
-                href="#" 
-                className="btn btn-secondary btn-large"
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
                 onClick={(e) => {
                   e.preventDefault();
                   setGateOpen(true);
@@ -196,86 +172,82 @@ export function CompactRIE() {
         </div>
       </section>
 
-      {/* System Overview - Left Image, Right Text Layout */}
-      <section className="product-overview product-overview-narrative">
-        <div className="container">
-          <div className="product-hero-layout">
-            <div className="product-hero-image product-image-single">
-              <div className="product-image-main-wrapper">
-                <div className="product-image-main">
-                  {selectedImage === 'main' ? (
-                    <OptimizedImage
-                      src="/assets/images/products/compact-rie/main.jpg"
-                      alt="Compact RIE Etcher (SV-RIE) - ultra-compact reactive ion etching system"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
-                  ) : (
-                    <OptimizedImage
-                      src="/assets/images/products/compact-rie/main-2.jpg"
-                      alt="Compact RIE Etcher (SV-RIE) - additional view"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
-                  )}
-                </div>
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0 overflow-hidden">
+              <div className="rounded-xl overflow-hidden shadow-lg [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
+                {selectedImage === 'main' ? (
+                  <OptimizedImage
+                    src="/assets/images/products/compact-rie/main.jpg"
+                    alt="Compact RIE Etcher (SV-RIE) - ultra-compact reactive ion etching system"
+                    width={800}
+                    height={600}
+                    className="w-full"
+                  />
+                ) : (
+                  <OptimizedImage
+                    src="/assets/images/products/compact-rie/main-2.jpg"
+                    alt="Compact RIE Etcher (SV-RIE) - additional view"
+                    width={800}
+                    height={600}
+                    className="w-full"
+                  />
+                )}
               </div>
-              <div className="product-image-thumbnails-wrapper">
-                <div className="product-image-thumbnails">
-                  <button 
-                    className={`thumbnail-btn ${selectedImage === 'main' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('main')}
-                    type="button"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/compact-rie/main.jpg"
-                      alt="Main View"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
-                  <button 
-                    className={`thumbnail-btn ${selectedImage === 'main2' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('main2')}
-                    type="button"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/compact-rie/main-2.jpg"
-                      alt="Additional View"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
-                </div>
+              <div className="flex gap-3 mt-3 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
+                <button
+                  className={`w-20 h-15 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === 'main' ? 'border-primary shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setSelectedImage('main')}
+                  type="button"
+                >
+                  <OptimizedImage
+                    src="/assets/images/products/compact-rie/main.jpg"
+                    alt="Main View"
+                    width={150}
+                    height={112}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+                <button
+                  className={`w-20 h-15 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === 'main2' ? 'border-primary shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setSelectedImage('main2')}
+                  type="button"
+                >
+                  <OptimizedImage
+                    src="/assets/images/products/compact-rie/main-2.jpg"
+                    alt="Additional View"
+                    width={150}
+                    height={112}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
               </div>
             </div>
-            <div className="product-hero-content">
-              <h2>System Overview</h2>
-              <p className="narrative-text">
-                The Compact RIE Etcher (SV-RIE) is a compact reactive ion etching system designed for research laboratories, 
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">System Overview</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-4">
+                The Compact RIE Etcher (SV-RIE) is a compact reactive ion etching system designed for research laboratories,
                 pilot-scale processes, and failure analysis applications.
               </p>
-              <p className="narrative-text">
-                With an ultra-small footprint of 630mm × 600mm, this one-piece system offers excellent space efficiency 
+              <p className="text-on-surface-variant leading-relaxed mb-6">
+                With an ultra-small footprint of 630mm × 600mm, this one-piece system offers excellent space efficiency
                 while maintaining high performance and reliability—ideal for labs where space is at a premium.
               </p>
-              
-              <div className="comparison-block">
-                <h3>Compared to:</h3>
-                <div className="comparison-items">
-                  <div className="comparison-item">
-                    <div className="comparison-label">Standard RIE systems</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">50% smaller footprint, same performance</div>
+
+              <div className="bg-surface-container-low rounded-xl p-6 mb-6">
+                <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">Compared to:</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-on-surface min-w-[160px]">Standard RIE systems</span>
+                    <span className="text-primary">→</span>
+                    <span className="text-on-surface-variant">50% smaller footprint, same performance</span>
                   </div>
-                  <div className="comparison-item">
-                    <div className="comparison-label">Desktop plasma cleaners</div>
-                    <div className="comparison-arrow">→</div>
-                    <div className="comparison-value">True RIE capability, anisotropic etching</div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-on-surface min-w-[160px]">Desktop plasma cleaners</span>
+                    <span className="text-primary">→</span>
+                    <span className="text-on-surface-variant">True RIE capability, anisotropic etching</span>
                   </div>
                 </div>
               </div>
@@ -284,149 +256,145 @@ export function CompactRIE() {
         </div>
       </section>
 
-      {/* Key Features - Primary and Secondary */}
-      <section className="product-features-section">
-        <div className="container">
-          <h2 className="section-title">Key Features</h2>
-          
+      {/* Key Features */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Key Features</h2>
+
           {/* Primary Features */}
-          <div className="features-primary">
-            <h3 className="features-subtitle">Core Capabilities</h3>
-            <div className="features-grid features-grid-primary">
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">📐</div>
-                <h3>Ultra-Compact Footprint</h3>
-                <p className="feature-highlight">630mm × 600mm—50% smaller than standard RIE systems</p>
-                <p>One-piece design optimizes valuable lab space while maintaining full RIE functionality. Ideal for research environments where space efficiency is critical.</p>
-              </div>
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">⚡</div>
-                <h3>Research-Grade RF Power</h3>
-                <p className="feature-highlight">300W / 500W / 1000W customizable RF power</p>
-                <p>Standard 13.56 MHz RF power source with adjustable output. Stable plasma generation suitable for precise anisotropic etching of silicon, dielectrics, and compound semiconductors.</p>
-              </div>
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">🖥️</div>
-                <h3>Touchscreen Automation</h3>
-                <p className="feature-highlight">Fully automated operation with simple interface</p>
-                <p>Touchscreen control system streamlines workflows. Automatic and manual operation modes with reproducible process parameters for research documentation.</p>
-              </div>
+          <h3 className="font-headline text-xl font-semibold text-on-surface mb-6 text-center">Core Capabilities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">straighten</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Ultra-Compact Footprint</h3>
+              <p className="text-sm font-medium text-primary mb-2">630mm × 600mm—50% smaller than standard RIE systems</p>
+              <p className="text-sm text-on-surface-variant">One-piece design optimizes valuable lab space while maintaining full RIE functionality. Ideal for research environments where space efficiency is critical.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Research-Grade RF Power</h3>
+              <p className="text-sm font-medium text-primary mb-2">300W / 500W / 1000W customizable RF power</p>
+              <p className="text-sm text-on-surface-variant">Standard 13.56 MHz RF power source with adjustable output. Stable plasma generation suitable for precise anisotropic etching of silicon, dielectrics, and compound semiconductors.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">touch_app</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Touchscreen Automation</h3>
+              <p className="text-sm font-medium text-primary mb-2">Fully automated operation with simple interface</p>
+              <p className="text-sm text-on-surface-variant">Touchscreen control system streamlines workflows. Automatic and manual operation modes with reproducible process parameters for research documentation.</p>
             </div>
           </div>
 
           {/* Secondary Features */}
-          <div className="features-secondary">
-            <h3 className="features-subtitle">Additional Features</h3>
-            <div className="features-grid features-grid-secondary">
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">🔄</div>
-                <h3>Modular Design</h3>
-                <p>Easy maintenance and convenient transport. Removable contamination-resistant liner option available.</p>
-              </div>
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">💨</div>
-                <h3>Multi-Gas Capability</h3>
-                <p>Up to 5 process gas lines simultaneously. Flow control range: 0 ~ 1000 sccm (selectable based on application).</p>
-              </div>
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">📦</div>
-                <h3>Flexible Wafer Support</h3>
-                <p>4", 6", 8", 12" wafers (customizable for smaller sizes). Supports various substrate sizes for research flexibility.</p>
-              </div>
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">🔧</div>
-                <h3>Optional Turbo Pump</h3>
-                <p>Mechanical pump standard / optional turbo pump for enhanced vacuum performance and process control.</p>
-              </div>
+          <h3 className="font-headline text-xl font-semibold text-on-surface mb-6 text-center">Additional Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">sync</span>
+              <h3 className="font-headline text-base font-semibold text-on-surface mb-2">Modular Design</h3>
+              <p className="text-sm text-on-surface-variant">Easy maintenance and convenient transport. Removable contamination-resistant liner option available.</p>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">air</span>
+              <h3 className="font-headline text-base font-semibold text-on-surface mb-2">Multi-Gas Capability</h3>
+              <p className="text-sm text-on-surface-variant">Up to 5 process gas lines simultaneously. Flow control range: 0 ~ 1000 sccm (selectable based on application).</p>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">inventory_2</span>
+              <h3 className="font-headline text-base font-semibold text-on-surface mb-2">Flexible Wafer Support</h3>
+              <p className="text-sm text-on-surface-variant">4", 6", 8", 12" wafers (customizable for smaller sizes). Supports various substrate sizes for research flexibility.</p>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">build</span>
+              <h3 className="font-headline text-base font-semibold text-on-surface mb-2">Optional Turbo Pump</h3>
+              <p className="text-sm text-on-surface-variant">Mechanical pump standard / optional turbo pump for enhanced vacuum performance and process control.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Applications - With Real Use Cases */}
-      <section className="product-applications-section">
-        <div className="container">
-          <h2 className="section-title">Typical Applications</h2>
-          <p className="section-intro">
+      {/* Typical Applications */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-4 text-center">Typical Applications</h2>
+          <p className="text-on-surface-variant text-center mb-8 max-w-3xl mx-auto">
             <strong>Commonly installed in:</strong> Research laboratories, failure analysis facilities, and pilot-scale processing environments requiring compact RIE capabilities.
           </p>
-          <div className="applications-grid">
-            <div className="application-card">
-              <div className="application-icon">🔬</div>
-              <h3>Organic Material Etching</h3>
-              <p className="application-use-case">Used for PR removal, PMMA etching, and polymer descumming</p>
-              <p>Photoresist (PR), PMMA, HDMS, and organic polymer etching with precise control. Essential for lithography processes and polymer device fabrication.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">biotech</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Organic Material Etching</h3>
+              <p className="text-sm font-medium text-primary mb-2">Used for PR removal, PMMA etching, and polymer descumming</p>
+              <p className="text-sm text-on-surface-variant">Photoresist (PR), PMMA, HDMS, and organic polymer etching with precise control. Essential for lithography processes and polymer device fabrication.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">⚡</div>
-              <h3>Inorganic Material Rapid Etching</h3>
-              <p className="application-use-case">Fast etching of silicon, SiO₂, SiNx, and compound semiconductors</p>
-              <p>High-rate etching of inorganic materials with excellent selectivity. Typical applications: MEMS fabrication, optoelectronic devices, and compound semiconductor processing.</p>
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Inorganic Material Rapid Etching</h3>
+              <p className="text-sm font-medium text-primary mb-2">Fast etching of silicon, SiO₂, SiNx, and compound semiconductors</p>
+              <p className="text-sm text-on-surface-variant">High-rate etching of inorganic materials with excellent selectivity. Typical applications: MEMS fabrication, optoelectronic devices, and compound semiconductor processing.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">🔍</div>
-              <h3>Failure Analysis (FA)</h3>
-              <p className="application-use-case">Chip decapsulation and package opening for analysis</p>
-              <p>Precise package decapsulation etching for failure analysis workflows. Commonly used in semiconductor testing and quality control laboratories.</p>
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">search</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Failure Analysis (FA)</h3>
+              <p className="text-sm font-medium text-primary mb-2">Chip decapsulation and package opening for analysis</p>
+              <p className="text-sm text-on-surface-variant">Precise package decapsulation etching for failure analysis workflows. Commonly used in semiconductor testing and quality control laboratories.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">🎯</div>
-              <h3>Passivation Layer Removal</h3>
-              <p className="application-use-case">Selective removal of passivation layers for device access</p>
-              <p>Controlled etching of passivation layers to expose underlying device structures. Critical for device characterization and reverse engineering applications.</p>
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">target</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Passivation Layer Removal</h3>
+              <p className="text-sm font-medium text-primary mb-2">Selective removal of passivation layers for device access</p>
+              <p className="text-sm text-on-surface-variant">Controlled etching of passivation layers to expose underlying device structures. Critical for device characterization and reverse engineering applications.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">📊</div>
-              <h3>Research & Development</h3>
-              <p className="application-use-case">Process development and material characterization</p>
-              <p>Ideal for R&D environments requiring flexible etching capabilities. Supports process development for new materials and device structures.</p>
+            <div className="bg-surface-container-low rounded-xl p-6">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">analytics</span>
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-2">Research & Development</h3>
+              <p className="text-sm font-medium text-primary mb-2">Process development and material characterization</p>
+              <p className="text-sm text-on-surface-variant">Ideal for R&D environments requiring flexible etching capabilities. Supports process development for new materials and device structures.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Specifications - Full Width Table */}
-      <section className="product-specs-section">
-        <div className="container">
-          <h2 className="section-title">System Specifications</h2>
-          <div className="specs-table-wrapper">
-            <table className="specs-table">
+      {/* System Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">System Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
-                <tr>
-                  <td className="spec-label">Wafer Size</td>
-                  <td className="spec-value">4", 6", 8", 12" (customizable for smaller sizes)</td>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4", 6", 8", 12" (customizable for smaller sizes)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Power</td>
+                  <td className="px-6 py-3 text-on-surface-variant">300W / 500W / 1000W (customizable)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Frequency</td>
+                  <td className="px-6 py-3 text-on-surface-variant">13.56 MHz</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Process Gases</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Up to 5 gas lines simultaneously</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Flow Control Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">0 ~ 1000 sccm (selectable based on application)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Pump System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Mechanical pump standard / optional turbo pump</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">630mm × 600mm</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Operation</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Touchscreen control, fully automated system</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">300W / 500W / 1000W (customizable)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">RF Frequency</td>
-                  <td className="spec-value">13.56 MHz</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Process Gases</td>
-                  <td className="spec-value">Up to 5 gas lines simultaneously</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Flow Control Range</td>
-                  <td className="spec-value">0 ~ 1000 sccm (selectable based on application)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Pump System</td>
-                  <td className="spec-value">Mechanical pump standard / optional turbo pump</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Footprint</td>
-                  <td className="spec-value">630mm × 600mm</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Operation</td>
-                  <td className="spec-value">Touchscreen control, fully automated system</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Optional Features</td>
-                  <td className="spec-value">Removable contamination-resistant liner, turbo pump option</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Optional Features</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Removable contamination-resistant liner, turbo pump option</td>
                 </tr>
               </tbody>
             </table>
@@ -434,197 +402,197 @@ export function CompactRIE() {
         </div>
       </section>
 
-      {/* Compatible Materials - Full Width */}
-      <section className="product-materials-section">
-        <div className="container">
-          <h2 className="section-title">Compatible Materials</h2>
-          <div className="materials-list">
-            <div className="material-tag">Silicon (Si)</div>
-            <div className="material-tag">Silicon Dioxide (SiO₂)</div>
-            <div className="material-tag">Silicon Nitride (SiNx)</div>
-            <div className="material-tag">Silicon Carbide (SiC)</div>
-            <div className="material-tag">Photoresist (PR)</div>
-            <div className="material-tag">PMMA</div>
-            <div className="material-tag">HDMS</div>
-            <div className="material-tag">Organic Polymers</div>
-            <div className="material-tag">Compound Semiconductors</div>
+      {/* Compatible Materials */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Compatible Materials</h2>
+          <div className="flex flex-wrap justify-center gap-3">
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Silicon (Si)</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Silicon Dioxide (SiO₂)</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Silicon Nitride (SiNx)</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Silicon Carbide (SiC)</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Photoresist (PR)</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">PMMA</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">HDMS</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Organic Polymers</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-4 py-2 rounded-full text-sm font-medium">Compound Semiconductors</span>
           </div>
         </div>
       </section>
 
-      {/* Available Models - Full Width */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Available Models</h2>
-          <div className="functions-grid">
-            <div className="function-card">
-              <h3>SHL100SV-RIE</h3>
-              <p>Base model with 300W RF power, ideal for standard research applications.</p>
+      {/* Available Models */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Available Models</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">SHL100SV-RIE</h3>
+              <p className="text-sm text-on-surface-variant">Base model with 300W RF power, ideal for standard research applications.</p>
             </div>
-            <div className="function-card">
-              <h3>SHL150SV-RIE</h3>
-              <p>Mid-range model with 500W RF power, suitable for enhanced etching performance.</p>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">SHL150SV-RIE</h3>
+              <p className="text-sm text-on-surface-variant">Mid-range model with 500W RF power, suitable for enhanced etching performance.</p>
             </div>
-            <div className="function-card">
-              <h3>SHL200SV-RIE</h3>
-              <p>High-power model with 1000W RF power, designed for demanding etching applications.</p>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">SHL200SV-RIE</h3>
+              <p className="text-sm text-on-surface-variant">High-power model with 1000W RF power, designed for demanding etching applications.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Process Results Section */}
-      <section className="process-results-section">
-        <div className="container">
-          <h2 className="section-title">Process Results</h2>
-          <p className="section-intro">
+      {/* Process Results */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-4 text-center">Process Results</h2>
+          <p className="text-on-surface-variant text-center mb-12 max-w-3xl mx-auto">
             Real-world etching results demonstrating the capabilities of the Compact RIE Etcher (SV-RIE) system across various materials and applications.
           </p>
 
           {/* Quartz/Silicon Grating Etching */}
-          <div className="process-result-category">
-            <h3>Quartz/Silicon Grating Etching</h3>
-            <p>
-              Etching of quartz or silicon material grating arrays using PR (photoresist) masking. 
-              Achieves minimum line widths of 300nm with sidewall verticality close to &gt;89°. 
+          <div className="mb-12">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Quartz/Silicon Grating Etching</h3>
+            <p className="text-on-surface-variant leading-relaxed mb-6">
+              Etching of quartz or silicon material grating arrays using PR (photoresist) masking.
+              Achieves minimum line widths of 300nm with sidewall verticality close to &gt;89°.
               Applications include 3D displays, micro-optical devices, and optoelectronic communications.
             </p>
-            <div className="result-images-grid">
-              <div className="result-image-item">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-1.jpg"
                   alt="Quartz/Silicon grating etching - top view showing parallel vertical trenches"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">Grating structure - top view</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">Grating structure - top view</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-2.jpg"
                   alt="Quartz/Silicon grating etching - cross-sectional view showing deep narrow grooves"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">Cross-sectional view - deep trenches</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">Cross-sectional view - deep trenches</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-3.jpg"
                   alt="Quartz/Silicon grating etching - cross-sectional view showing high aspect ratio features"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">High aspect ratio features</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">High aspect ratio features</p>
               </div>
             </div>
           </div>
 
           {/* Compound Semiconductor Etching */}
-          <div className="process-result-category">
-            <h3>Compound Semiconductor Etching</h3>
-            <p>
-              Precise control over etch profiles for GaN-based, GaAs, InP, and metal materials by accurately 
+          <div className="mb-12">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Compound Semiconductor Etching</h3>
+            <p className="text-on-surface-variant leading-relaxed mb-6">
+              Precise control over etch profiles for GaN-based, GaAs, InP, and metal materials by accurately
               controlling the sample surface temperature. Suitable for blue LED devices, lasers, and optical communication applications.
             </p>
-            <div className="result-images-grid">
-              <div className="result-image-item">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-4.jpg"
                   alt="Indium Phosphide (InP) etching - stepped terraced etch profile"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">InP (Indium Phosphide) - stepped profile</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">InP (Indium Phosphide) - stepped profile</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-5.jpg"
                   alt="Gallium Nitride (GaN) etching - multi-layered etch profile with smooth transitions"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">GaN (Gallium Nitride) - multi-layered profile</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">GaN (Gallium Nitride) - multi-layered profile</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-6.jpg"
                   alt="Sapphire etching - corrugated surface with parallel ridges and valleys"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">Sapphire - corrugated surface</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">Sapphire - corrugated surface</p>
               </div>
             </div>
           </div>
 
           {/* Silicon-based Material Etching */}
-          <div className="process-result-category">
-            <h3>Silicon-based Material Etching</h3>
-            <p>
-              Etching capabilities for silicon (Si), silicon dioxide (SiO₂), silicon nitride (SiNx), and other 
+          <div className="mb-12">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Silicon-based Material Etching</h3>
+            <p className="text-on-surface-variant leading-relaxed mb-6">
+              Etching capabilities for silicon (Si), silicon dioxide (SiO₂), silicon nitride (SiNx), and other
               silicon-based materials. Achieves silicon line etching above 50nm and silicon deep hole etching below 100μm.
             </p>
-            <div className="result-images-grid">
-              <div className="result-image-item">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-7.jpg"
                   alt="SiO2 etching - cross-sectional view showing wide shallow trench"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">SiO₂ Etching</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">SiO₂ Etching</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-8.jpg"
                   alt="Silicon deep hole etching - high aspect ratio trench with vertical sidewalls"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">Silicon Deep Hole Etching (&lt;100μm)</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">Silicon Deep Hole Etching (&lt;100μm)</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-9.jpg"
                   alt="50nm silicon line etching - top view showing extremely fine parallel lines"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">50nm Silicon Line Etching</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">50nm Silicon Line Etching</p>
               </div>
-              <div className="result-image-item">
+              <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
                   src="/assets/images/products/compact-rie/process-results/result-10.jpg"
                   alt="Silicon nanopillar etching - dense array of uniformly sized nanopillars"
                   width={400}
                   height={300}
-                  className="result-image"
+                  className="w-full"
                 />
-                <p className="image-caption">Silicon Nanopillar Etching</p>
+                <p className="text-sm text-on-surface-variant text-center py-3 italic">Silicon Nanopillar Etching</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Branding Notice for Risk Mitigation */}
-      <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
-        <div className="container">
-          <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Branding Notice</h3>
-            <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
-              Semiconductor and etching systems are professionally integrated, configured, and branded by NineScrolls LLC. 
-              Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms. 
+      {/* Branding Notice */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="p-8 bg-surface-container-low rounded-xl border-l-4 border-outline-variant">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-4">Branding Notice</h3>
+            <p className="text-on-surface-variant leading-relaxed m-0">
+              Semiconductor and etching systems are professionally integrated, configured, and branded by NineScrolls LLC.
+              Certain internal components or manufacturing nameplates may reflect our original manufacturing partner platforms.
               All performance specifications, technical warranty, and professional support are fully guaranteed and provided directly by NineScrolls LLC to ensure academic and research compliance.
             </p>
           </div>
@@ -632,31 +600,31 @@ export function CompactRIE() {
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-white rounded-lg shadow-sm">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What makes the Compact RIE different from a standard RIE system?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed m-0">
                 A: The Compact RIE (SV-RIE) has a 50% smaller footprint (630mm x 600mm) compared to standard RIE systems while maintaining full process capability. It is available in three RF power options (300W, 500W, and 1000W) and supports wafer sizes from 4 to 12 inches with fully automated touchscreen operation.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-white rounded-lg shadow-sm">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What can I etch with the Compact RIE?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed m-0">
                 A: The Compact RIE processes Si, SiO2, SiNx, SiC, photoresist (PR), PMMA, HMDS, organic polymers, and compound semiconductors. It achieves minimum line widths of 300nm and sidewall verticality above 89 degrees, making it suitable for photoresist removal, failure analysis, passivation layer removal, and rapid R&D prototyping.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-white rounded-lg shadow-sm">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: Is the Compact RIE suitable for a small research lab?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed m-0">
                 A: Yes, it is specifically designed for space-constrained labs. Its compact footprint fits on a standard lab bench, and the touchscreen interface makes it accessible for multi-user environments. The modular design means you can choose the RF power level (300W/500W/1000W) that matches your process needs and budget.
               </p>
             </div>
@@ -664,27 +632,30 @@ export function CompactRIE() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="product-inquiry-section">
-        <div className="container">
-          <div className="product-inquiry">
-            <h2>Interested in this product?</h2>
-            <p>Contact our team for detailed specifications, pricing information, and configuration options.</p>
-            <div className="inquiry-buttons">
-              <button className="btn btn-primary" onClick={() => openContactForm(false)}>
-                Request Information
-              </button>
-              <a 
-                href="#" 
-                className="btn btn-secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setGateOpen(true);
-                }}
-              >
-                Download Brochure
-              </a>
-            </div>
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Interested in this product?</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Contact our team for detailed specifications, pricing information, and configuration options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(false)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Request Information
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => {
+                e.preventDefault();
+                setGateOpen(true);
+              }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Brochure
+            </a>
           </div>
         </div>
       </section>
