@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
-import { categories, InsightsPost } from '../types';
+import { categories, newsCategories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
-import '../styles/InsightsPage.css';
 
 function resolveCardImage(url: string): string {
   if (!url) return '';
@@ -17,7 +16,8 @@ function resolveCardImage(url: string): string {
 
 export const InsightsPage: React.FC = () => {
   const { posts: allPosts, loading } = useInsightsPosts();
-  const rawPosts = useMemo(() => allPosts.filter(p => p.contentType !== 'news'), [allPosts]);
+  const newsCats = useMemo(() => new Set(newsCategories.filter(c => c !== 'All')), []);
+  const rawPosts = useMemo(() => allPosts.filter(p => !newsCats.has(p.category)), [allPosts, newsCats]);
   const posts = useMemo(
     () => [...rawPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()),
     [rawPosts]
@@ -78,6 +78,40 @@ export const InsightsPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const renderCard = (post: InsightsPost) => (
+    <article key={post.id} className="bg-surface-container-low rounded-xl overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="aspect-video bg-slate-200 overflow-hidden">
+        <img
+          src={resolveCardImage(post.imageUrl)}
+          alt={post.title}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-primary font-bold uppercase text-[10px] tracking-widest">{post.category}</span>
+          <span className="text-on-surface-variant text-xs">{post.readTime} min read</span>
+        </div>
+        <h3 className="text-2xl font-headline font-bold mt-4 mb-4 group-hover:text-primary transition-colors">
+          <Link to={`/insights/${post.slug}`}>{post.title}</Link>
+        </h3>
+        <p className="text-on-surface-variant mb-6">{post.excerpt}</p>
+        <div className="flex items-center justify-between">
+          <div className="text-on-surface-variant text-sm">
+            <span>{post.author}</span>
+            <span className="mx-2">&middot;</span>
+            <span>{new Date(post.publishDate).toLocaleDateString()}</span>
+          </div>
+          <Link to={`/insights/${post.slug}`} className="text-primary font-bold flex items-center gap-2">
+            Read Paper <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+
   return (
     <>
       <SEO
@@ -88,106 +122,61 @@ export const InsightsPage: React.FC = () => {
         url="/insights"
         type="website"
       />
-      <div className="insights-page">
-      {/* Hero Section */}
-      <section className="insights-hero">
-        <div className="container">
-          <h1>NineScrolls Insights</h1>
-          <p>Expert analysis and breakthrough technologies in advanced manufacturing and materials science</p>
-        </div>
-      </section>
+      <main className="py-24 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-5xl font-headline font-bold mb-4">Latest Insights</h1>
+          <p className="text-on-surface-variant text-lg mb-16">Expert analysis and breakthrough technologies in advanced manufacturing and materials science</p>
 
-      {/* Filters and Search */}
-      <section className="insights-filters">
-        <div className="container">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="Search articles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          {/* Filters and Search */}
+          <div className="mb-12 flex flex-col md:flex-row gap-6 items-start md:items-center">
+            <div className="relative w-full md:w-80">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">search</span>
+              <input
+                type="text"
+                placeholder="Search articles..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-outline-variant bg-surface text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
 
-          <div className="category-filters">
-            {categories.map(category => (
-              <button
-                key={category}
-                className={`category-btn ${selectedCategory === category ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Insights Grid */}
-      <section className="insights-grid">
-        <div className="container">
-          {loading ? (
-            <div className="loading">Loading articles...</div>
-          ) : (
-            <div className="posts-grid">
-              {filteredPosts.map(post => (
-                <article key={post.id} className="insights-card">
-                  <div className="insights-card-image">
-                    <img src={resolveCardImage(post.imageUrl)} alt={post.title} loading="lazy" decoding="async" />
-                  </div>
-                  <div className="insights-card-content">
-                    <div className="insights-card-meta">
-                      <span className="category">{post.category}</span>
-                      <span className="read-time">{post.readTime} min read</span>
-                    </div>
-                    <h3 className="insights-card-title">
-                      <Link to={`/insights/${post.slug}`}>{post.title}</Link>
-                    </h3>
-                    <p className="insights-card-excerpt">{post.excerpt}</p>
-                    <div className="insights-card-footer">
-                      <span className="author">{post.author}</span>
-                      <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </article>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-low'
+                  }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
               ))}
+            </div>
+          </div>
+
+          {/* Insights Grid */}
+          {loading ? (
+            <div className="text-center text-on-surface-variant py-20">Loading articles...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {filteredPosts.map(renderCard)}
+            </div>
+          )}
+
+          {/* More Recommendations */}
+          {recommended.length > 0 && (
+            <div className="mt-24">
+              <h2 className="text-3xl font-headline font-bold mb-12">More Recommendations</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {recommended.map(renderCard)}
+              </div>
             </div>
           )}
         </div>
-      </section>
-
-      {/* More Recommendations */}
-      {recommended.length > 0 && (
-        <section className="insights-recommendations">
-          <div className="container">
-            <h2>More Recommendations</h2>
-            <div className="posts-grid">
-              {recommended.map(post => (
-                <article key={post.id} className="insights-card">
-                  <div className="insights-card-image">
-                    <img src={resolveCardImage(post.imageUrl)} alt={post.title} />
-                  </div>
-                  <div className="insights-card-content">
-                    <div className="insights-card-meta">
-                      <span className="category">{post.category}</span>
-                      <span className="read-time">{post.readTime} min read</span>
-                    </div>
-                    <h3 className="insights-card-title">
-                      <Link to={`/insights/${post.slug}`}>{post.title}</Link>
-                    </h3>
-                    <p className="insights-card-excerpt">{post.excerpt}</p>
-                    <div className="insights-card-footer">
-                      <span className="author">{post.author}</span>
-                      <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-      </div>
+      </main>
     </>
   );
 };

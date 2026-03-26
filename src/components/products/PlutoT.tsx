@@ -172,100 +172,85 @@ export function PlutoT() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="product-detail-hero product-hero-enhanced">
-        <div className="container">
-          <Breadcrumbs items={[
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
+            { name: 'Plasma Cleaners', path: '/products/plasma-cleaner' },
             { name: 'PLUTO-T', path: '/products/pluto-t' }
           ]} />
-          <div className="product-header-enhanced">
-            <h1>PLUTO-T</h1>
-            <p className="product-subtitle">200W RF Plasma Cleaner for Research Labs</p>
-            <div className="hero-positioning">
-              <p className="hero-tagline">
-                High-power RF cleaning under $10,000 | Research-validated technology
-              </p>
-              <p className="hero-subtitle-emphasis">
-                US-based scientific equipment provider · Authorized distributor for US research labs & institutions
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">PLUTO-T</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">200W RF Plasma Cleaner for Research Labs</p>
+            <p className="text-base text-white/80 tracking-wide">
+              High-power RF cleaning under $10,000 | Research-validated technology
+            </p>
+            <p className="text-base text-white/80 tracking-wide">
+              US-based scientific equipment provider · Authorized distributor for US research labs & institutions
+            </p>
 
             {/* Cost-Efficiency Hero Card */}
-            <div style={{
-              marginTop: '2rem',
-              padding: '1.5rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.65)',
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{
-                margin: '0 0 0.75rem 0',
-                fontSize: '1.1rem',
-                color: '#EAEAEA',
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 True 13.56 MHz RF performance, accessible pricing
               </h3>
-              <p style={{
-                margin: 0,
-                fontSize: '0.95rem',
-                color: '#EAEAEA',
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
                 PLUTO-T delivers 33% more RF power than comparable entry-level systems with touchscreen automation
                 and a stainless steel chamber — all for under $10,000. Ideal for labs that need real RF capability without overspending.
               </p>
             </div>
 
-            <div className="hero-bullets">
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">⚡</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">200W RF (13.56 MHz)</span>
-                  <span className="bullet-text-sub">continuously adjustable, research-grade power</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 max-w-2xl mx-auto text-left">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[24px] mt-0.5 shrink-0">bolt</span>
+                <div>
+                  <span className="block font-semibold">200W RF (13.56 MHz)</span>
+                  <span className="block text-sm text-white/70">continuously adjustable, research-grade power</span>
                 </div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">📦</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">~4.3L Stainless Steel Chamber</span>
-                  <span className="bullet-text-sub">durable construction for consistent plasma processing</span>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[24px] mt-0.5 shrink-0">inventory_2</span>
+                <div>
+                  <span className="block font-semibold">~4.3L Stainless Steel Chamber</span>
+                  <span className="block text-sm text-white/70">durable construction for consistent plasma processing</span>
                 </div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">🖥️</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">Touchscreen Control</span>
-                  <span className="bullet-text-sub">fully automated operation</span>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[24px] mt-0.5 shrink-0">touch_app</span>
+                <div>
+                  <span className="block font-semibold">Touchscreen Control</span>
+                  <span className="block text-sm text-white/70">fully automated operation</span>
                 </div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">💰</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">Under $10,000</span>
-                  <span className="bullet-text-sub">accessible RF plasma for research budgets</span>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[24px] mt-0.5 shrink-0">savings</span>
+                <div>
+                  <span className="block font-semibold">Under $10,000</span>
+                  <span className="block text-sm text-white/70">accessible RF plasma for research budgets</span>
                 </div>
               </div>
             </div>
 
-            <div className="hero-pricing">
-              <div className="pricing-main">
-                <span className="pricing-label">US Price:</span>
-                <span className="pricing-amount">$9,999 USD</span>
-              </div>
-              <p className="pricing-note">Availability: In Stock</p>
+            <div className="mt-8 text-center">
+              <p className="text-sm text-white/70 mb-1">US Price:</p>
+              <p className="text-3xl font-bold">$9,999 USD</p>
+              <p className="text-sm text-white/70 mt-1">Availability: In Stock</p>
             </div>
 
-            <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={handleAddToCart}
+              >
                 Add to Cart
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+              <button
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
                 Contact Sales
               </button>
             </div>
@@ -273,56 +258,52 @@ export function PlutoT() {
         </div>
       </section>
 
-      {/* System Overview - Left Image, Right Text Layout */}
-      <section className="product-overview product-overview-narrative">
-        <div className="container">
-          <div className="product-hero-layout">
-            <div className="product-hero-image product-image-single">
-              <div className="product-image-main-wrapper">
-                <div className="product-image-main">
-                  {selectedImage === 'main' && (
-                    <OptimizedImage src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T - 200W RF Plasma Cleaner" width={800} height={600} className="main-product-image" />
-                  )}
-                  {selectedImage === 'front-view' && (
-                    <OptimizedImage src="/assets/images/products/pluto-t/front-view.jpg" alt="PLUTO-T - System with Pump" width={800} height={600} className="main-product-image" />
-                  )}
-                  {selectedImage === 'chamber' && (
-                    <OptimizedImage src="/assets/images/products/pluto-t/chamber.jpg" alt="PLUTO-T - Chamber Interior" width={800} height={600} className="main-product-image" />
-                  )}
-                  {selectedImage === 'samples' && (
-                    <OptimizedImage src="/assets/images/products/pluto-t/samples.jpg" alt="PLUTO-T - Sample Processing" width={800} height={600} className="main-product-image" />
-                  )}
-                  {selectedImage === 'with-pump' && (
-                    <OptimizedImage src="/assets/images/products/pluto-t/with-pump.jpg" alt="PLUTO-T - Complete System" width={800} height={600} className="main-product-image" />
-                  )}
-                </div>
+      {/* System Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0 overflow-hidden">
+              <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
+                {selectedImage === 'main' && (
+                  <OptimizedImage src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T - 200W RF Plasma Cleaner" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                )}
+                {selectedImage === 'front-view' && (
+                  <OptimizedImage src="/assets/images/products/pluto-t/front-view.jpg" alt="PLUTO-T - System with Pump" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                )}
+                {selectedImage === 'chamber' && (
+                  <OptimizedImage src="/assets/images/products/pluto-t/chamber.jpg" alt="PLUTO-T - Chamber Interior" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                )}
+                {selectedImage === 'samples' && (
+                  <OptimizedImage src="/assets/images/products/pluto-t/samples.jpg" alt="PLUTO-T - Sample Processing" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                )}
+                {selectedImage === 'with-pump' && (
+                  <OptimizedImage src="/assets/images/products/pluto-t/with-pump.jpg" alt="PLUTO-T - Complete System" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                )}
               </div>
-              <div className="product-image-thumbnails-wrapper">
-                <div className="product-image-thumbnails">
-                  {(['main', 'front-view', 'chamber', 'samples', 'with-pump'] as const).map((img) => (
-                    <button key={img} className={`thumbnail-btn ${selectedImage === img ? 'active' : ''}`} onClick={() => setSelectedImage(img)} type="button">
-                      <OptimizedImage src={`/assets/images/products/pluto-t/${img}.jpg`} alt={img.replace(/-/g, ' ')} width={150} height={112} className="thumbnail-image" />
-                    </button>
-                  ))}
-                </div>
+              <div className="flex gap-2 overflow-x-auto [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
+                {(['main', 'front-view', 'chamber', 'samples', 'with-pump'] as const).map((img) => (
+                  <button key={img} className={`w-20 h-15 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === img ? 'border-primary' : 'border-transparent hover:border-outline-variant'}`} onClick={() => setSelectedImage(img)} type="button">
+                    <OptimizedImage src={`/assets/images/products/pluto-t/${img}.jpg`} alt={img.replace(/-/g, ' ')} width={150} height={112} className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="product-hero-content">
-              <h2>System Overview</h2>
-              <p className="narrative-text">
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">System Overview</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-4">
                 PLUTO-T is a compact, high-performance 200W RF plasma cleaner designed for research laboratories
                 that require true 13.56 MHz RF capability at an accessible price point. With 33% more RF power
                 than comparable entry-level systems, PLUTO-T delivers superior plasma cleaning, surface activation,
                 and polymer treatment performance — all for under $10,000.
               </p>
-              <p className="narrative-text">
+              <p className="text-on-surface-variant leading-relaxed mb-6">
                 The system features a stainless steel chamber (~4.3L), touchscreen-controlled fully automated operation,
                 and a gas line supporting O₂, N₂, and Ar (optional second line available). An oil pump is included as standard, with an optional
                 dry pump upgrade available for oil-free operation.
               </p>
 
-              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
-                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+              <div className="mt-6 p-4 bg-primary/5 rounded-lg border-l-[3px] border-primary">
+                <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                   <strong>Why 200W matters:</strong> Surface treatments that take 10+ min at 50W complete in 2–3 min. More power also means broader recipe flexibility for demanding substrates.
                 </p>
               </div>
@@ -331,236 +312,235 @@ export function PlutoT() {
         </div>
       </section>
 
-      {/* Who Uses This - Use Case Block */}
-      <section className="product-use-cases-section" style={{ padding: '3rem 0', backgroundColor: '#fff' }}>
-        <div className="container">
-          <h2 className="section-title">Who Uses This</h2>
-          <p className="section-intro" style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
+      {/* Who Uses This */}
+      <section className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-2 text-center">Who Uses This</h2>
+          <p className="text-center mb-8 text-on-surface-variant">
             PLUTO-T is commonly installed in:
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎓</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>University Cleanrooms</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Teaching and shared research facilities</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="p-6 bg-surface-container-low rounded-lg text-center">
+              <span className="material-symbols-outlined text-primary text-[32px] mb-2 block">school</span>
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-2">University Cleanrooms</h3>
+              <p className="text-sm text-on-surface-variant">Teaching and shared research facilities</p>
             </div>
-            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔬</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Materials Science Labs</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Surface treatment and sample preparation</p>
+            <div className="p-6 bg-surface-container-low rounded-lg text-center">
+              <span className="material-symbols-outlined text-primary text-[32px] mb-2 block">science</span>
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-2">Materials Science Labs</h3>
+              <p className="text-sm text-on-surface-variant">Surface treatment and sample preparation</p>
             </div>
-            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🧬</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Biomedical Research Labs</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Polymer surface activation and bio-compatibility</p>
+            <div className="p-6 bg-surface-container-low rounded-lg text-center">
+              <span className="material-symbols-outlined text-primary text-[32px] mb-2 block">biotech</span>
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-2">Biomedical Research Labs</h3>
+              <p className="text-sm text-on-surface-variant">Polymer surface activation and bio-compatibility</p>
             </div>
-            <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚗️</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Semiconductor R&D</h3>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Process development and substrate cleaning</p>
+            <div className="p-6 bg-surface-container-low rounded-lg text-center">
+              <span className="material-symbols-outlined text-primary text-[32px] mb-2 block">memory</span>
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-2">Semiconductor R&D</h3>
+              <p className="text-sm text-on-surface-variant">Process development and substrate cleaning</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Key Features - Primary and Secondary */}
-      <section className="product-features-section">
-        <div className="container">
-          <h2 className="section-title">Key Features</h2>
+      {/* Key Features */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Key Features</h2>
 
           {/* Primary Features */}
-          <div className="features-primary">
-            <h3 className="features-subtitle">Core Capabilities</h3>
-            <div className="features-grid features-grid-primary">
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">⚡</div>
-                <h3>200W RF Power at 13.56 MHz</h3>
-                <p className="feature-highlight">33% more power than comparable entry-level RF systems</p>
-                <p>Continuously adjustable 200W RF power source operating at the industry-standard 13.56 MHz frequency. Delivers superior plasma density for faster, more uniform cleaning and surface treatment compared to lower-power alternatives.</p>
-              </div>
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">📦</div>
-                <h3>~4.3L Stainless Steel Chamber</h3>
-                <p className="feature-highlight">Durable, contamination-resistant construction</p>
-                <p>Stainless steel vacuum chamber providing approximately 4.3 liters of process volume. Resistant to chemical attack from process gases and easy to maintain for consistent plasma processing results.</p>
-              </div>
-              <div className="feature-card feature-card-primary feature-card-top">
-                <div className="feature-icon">🖥️</div>
-                <h3>Touchscreen Automated Control</h3>
-                <p className="feature-highlight">Fully automated operation for reproducible results</p>
-                <p>Intuitive touchscreen interface with fully automated process control. Set parameters once and achieve consistent, repeatable results across runs — critical for research documentation and publication-quality data.</p>
-              </div>
+          <h3 className="font-headline text-xl font-semibold text-on-surface mb-4 text-center">Core Capabilities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-white rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">200W RF Power at 13.56 MHz</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">33% more power than comparable entry-level RF systems</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Continuously adjustable 200W RF power source operating at the industry-standard 13.56 MHz frequency. Delivers superior plasma density for faster, more uniform cleaning and surface treatment compared to lower-power alternatives.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">inventory_2</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">~4.3L Stainless Steel Chamber</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Durable, contamination-resistant construction</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Stainless steel vacuum chamber providing approximately 4.3 liters of process volume. Resistant to chemical attack from process gases and easy to maintain for consistent plasma processing results.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">touch_app</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Touchscreen Automated Control</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Fully automated operation for reproducible results</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Intuitive touchscreen interface with fully automated process control. Set parameters once and achieve consistent, repeatable results across runs — critical for research documentation and publication-quality data.</p>
             </div>
           </div>
 
           {/* Secondary Features */}
-          <div className="features-secondary">
-            <h3 className="features-subtitle">Additional Features</h3>
-            <div className="features-grid features-grid-secondary">
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">💨</div>
-                <h3>Flexible Gas Configuration</h3>
-                <p>One gas inlet standard with optional second line, supporting O₂, N₂, and Ar for flexible process configurations. Enables a range of plasma chemistries for cleaning, activation, and treatment applications.</p>
-              </div>
-              <div className="feature-card feature-card-secondary">
-                <div className="feature-icon">🔧</div>
-                <h3>Included Oil Pump + Optional Dry Pump</h3>
-                <p>Mechanical oil pump included as standard. Optional dry pump upgrade (+$2,500) available for oil-free operation in sensitive cleanroom environments.</p>
-              </div>
+          <h3 className="font-headline text-xl font-semibold text-on-surface mb-4 text-center">Additional Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">air</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Flexible Gas Configuration</h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed">One gas inlet standard with optional second line, supporting O₂, N₂, and Ar for flexible process configurations. Enables a range of plasma chemistries for cleaning, activation, and treatment applications.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">build</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Included Oil Pump + Optional Dry Pump</h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Mechanical oil pump included as standard. Optional dry pump upgrade (+$2,500) available for oil-free operation in sensitive cleanroom environments.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Applications */}
-      <section className="product-applications-section">
-        <div className="container">
-          <h2 className="section-title">Typical Applications</h2>
-          <p className="section-intro">
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-4 text-center">Typical Applications</h2>
+          <p className="text-on-surface-variant text-center mb-8 max-w-3xl mx-auto">
             <strong>Designed for:</strong> Research laboratories and cleanroom environments requiring versatile RF plasma processing for surface preparation, cleaning, and material treatment.
           </p>
-          <div className="applications-grid">
-            <div className="application-card">
-              <div className="application-icon">🧹</div>
-              <h3>Plasma Cleaning</h3>
-              <p className="application-use-case">Organic contaminant removal from substrates and components</p>
-              <p>Effective removal of organic residues, photoresist remnants, and surface contaminants. 200W RF power ensures thorough cleaning with faster process times.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">cleaning_services</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Plasma Cleaning</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Organic contaminant removal from substrates and components</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Effective removal of organic residues, photoresist remnants, and surface contaminants. 200W RF power ensures thorough cleaning with faster process times.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">⚡</div>
-              <h3>Surface Activation</h3>
-              <p className="application-use-case">Enhance adhesion prior to bonding, coating, or deposition</p>
-              <p>Improve surface energy and wettability for better adhesion in downstream processes. Essential for thin film deposition, bonding, and coating workflows.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Surface Activation</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Enhance adhesion prior to bonding, coating, or deposition</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Improve surface energy and wettability for better adhesion in downstream processes. Essential for thin film deposition, bonding, and coating workflows.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">🧬</div>
-              <h3>Polymer Treatment</h3>
-              <p className="application-use-case">Surface modification for improved bio-compatibility and wettability</p>
-              <p>Modify polymer surfaces to enhance hydrophilicity, bio-compatibility, and adhesion characteristics without altering bulk material properties.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">biotech</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Polymer Treatment</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Surface modification for improved bio-compatibility and wettability</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Modify polymer surfaces to enhance hydrophilicity, bio-compatibility, and adhesion characteristics without altering bulk material properties.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">🔬</div>
-              <h3>Sample Preparation</h3>
-              <p className="application-use-case">Pre-analysis and pre-deposition substrate cleaning</p>
-              <p>Prepare substrates and samples for characterization, deposition, or bonding steps. Consistent surface preparation ensures reliable experimental results.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">science</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Sample Preparation</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Pre-analysis and pre-deposition substrate cleaning</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Prepare substrates and samples for characterization, deposition, or bonding steps. Consistent surface preparation ensures reliable experimental results.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">📊</div>
-              <h3>Process Development</h3>
-              <p className="application-use-case">Recipe optimization and parameter studies</p>
-              <p>Develop and optimize plasma process recipes with adjustable RF power, gas selection, and process timing. Touchscreen control enables systematic parameter exploration.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">tune</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-2">Process Development</h3>
+              <p className="text-sm font-medium text-primary/80 mb-3">Recipe optimization and parameter studies</p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Develop and optimize plasma process recipes with adjustable RF power, gas selection, and process timing. Touchscreen control enables systematic parameter exploration.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Positioning Block - Strategic Statement */}
-      <section className="product-positioning-section">
-        <div className="container">
-          <div className="positioning-statement positioning-block-strategic">
-            <h2 className="positioning-title">System Positioning</h2>
-            <p className="positioning-lead">
+      {/* System Positioning */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="font-headline text-3xl font-bold text-on-surface mb-4">System Positioning</h2>
+            <p className="text-on-surface-variant text-lg leading-relaxed mb-4">
               PLUTO-T occupies the sweet spot between budget desktop cleaners and premium research-grade systems,
               delivering true 13.56 MHz RF performance with touchscreen automation at a price point accessible
               to grant-funded and budget-conscious research labs.
             </p>
-            <p className="positioning-note">
-              For labs requiring higher power or larger chamber volume, see the <Link to="/products/pluto-m" style={{ color: '#2563eb' }}>PLUTO-M</Link> upgrade path.
+            <p className="text-on-surface-variant">
+              For labs requiring higher power or larger chamber volume, see the <Link to="/products/pluto-m" className="text-primary font-medium hover:underline">PLUTO-M</Link> upgrade path.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Why PLUTO-T - Competitive Differentiators */}
-      <section className="product-features-section product-benefits-section">
-        <div className="container">
-          <h2 className="section-title">Why PLUTO-T</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">📊</div>
-              <h3>vs. HY-4L ($7,999 RF)</h3>
-              <p>33% more RF power (200W vs 150W) with stainless steel chamber construction. The +$2,000 premium is justified by significantly better RF performance and a durable, contamination-resistant chamber.</p>
+      {/* Why PLUTO-T */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Why PLUTO-T</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">analytics</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">vs. HY-4L ($7,999 RF)</h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed">33% more RF power (200W vs 150W) with stainless steel chamber construction. The +$2,000 premium is justified by significantly better RF performance and a durable, contamination-resistant chamber.</p>
             </div>
-            <div className="feature-card">
-              <div className="feature-icon">⚡</div>
-              <h3>True Research-Grade RF</h3>
-              <p>200W at 13.56 MHz with stainless steel chamber and touchscreen automation. Not a desktop cleaner with manual dials — a research-grade instrument designed for reproducible, documented plasma processing.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">True Research-Grade RF</h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed">200W at 13.56 MHz with stainless steel chamber and touchscreen automation. Not a desktop cleaner with manual dials — a research-grade instrument designed for reproducible, documented plasma processing.</p>
             </div>
-            <div className="feature-card">
-              <div className="feature-icon">💰</div>
-              <h3>Accessible RF Performance</h3>
-              <p>Under $10,000 makes PLUTO-T one of the most cost-effective true 13.56 MHz RF plasma cleaners available, suitable for grant-funded labs and institutional procurement.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">savings</span>
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Accessible RF Performance</h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed">Under $10,000 makes PLUTO-T one of the most cost-effective true 13.56 MHz RF plasma cleaners available, suitable for grant-funded labs and institutional procurement.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Specifications - Full Width Table */}
-      <section className="product-specs-section">
-        <div className="container">
-          <h2 className="section-title">System Specifications</h2>
-          <div className="specs-table-wrapper">
-            <table className="specs-table">
+      {/* Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">System Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <td className="spec-label">Model</td>
-                  <td className="spec-value">PLUTO-T</td>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">PLUTO-T Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Model</td>
+                  <td className="px-6 py-3 text-on-surface-variant">PLUTO-T</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">System Dimensions (W×H×D)</td>
+                  <td className="px-6 py-3 text-on-surface-variant">380 × 500 × 490 mm</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber Dimensions</td>
+                  <td className="px-6 py-3 text-on-surface-variant">φ150 mm × 245 mm depth</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber Volume</td>
+                  <td className="px-6 py-3 text-on-surface-variant">~4.3 L</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber Material</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Stainless steel</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Electrode Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">95 × 170 mm, multi-control adaptive flat plate electrode</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Power</td>
+                  <td className="px-6 py-3 text-on-surface-variant">0–200W continuously adjustable, 1W precision</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Frequency</td>
+                  <td className="px-6 py-3 text-on-surface-variant">13.56 MHz, auto-impedance matching</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum Gauge</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Thermocouple vacuum gauge, 0–100 KPa</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Gas Lines</td>
+                  <td className="px-6 py-3 text-on-surface-variant">1 line standard, optional 2nd line (O₂, N₂, Ar supported)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Mechanical pump (oil pump included; dry pump optional +$2,500)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Control</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4.3″ Touchscreen, fully automated</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Power Supply</td>
+                  <td className="px-6 py-3 text-on-surface-variant">110 V</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Optional Accessories</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Dry pump upgrade (Leybold / Agilent DS series); Oxygen generator; Gas mixer; Powder treatment fixture</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">System Dimensions (W×H×D)</td>
-                  <td className="spec-value">380 × 500 × 490 mm</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Chamber Dimensions</td>
-                  <td className="spec-value">φ150 mm × 245 mm depth</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Chamber Volume</td>
-                  <td className="spec-value">~4.3 L</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Chamber Material</td>
-                  <td className="spec-value">Stainless steel</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Electrode Size</td>
-                  <td className="spec-value">95 × 170 mm, multi-control adaptive flat plate electrode</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">0–200W continuously adjustable, 1W precision</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Frequency</td>
-                  <td className="spec-value">13.56 MHz, auto-impedance matching</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Vacuum Gauge</td>
-                  <td className="spec-value">Thermocouple vacuum gauge, 0–100 KPa</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">1 line standard, optional 2nd line (O₂, N₂, Ar supported)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Vacuum System</td>
-                  <td className="spec-value">Mechanical pump (oil pump included; dry pump optional +$2,500)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Control</td>
-                  <td className="spec-value">4.3″ Touchscreen, fully automated</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">110 V</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Optional Accessories</td>
-                  <td className="spec-value">Dry pump upgrade (Leybold / Agilent DS series); Oxygen generator; Gas mixer; Powder treatment fixture</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Manufacturer</td>
-                  <td className="spec-value">Shanghai Peiyuan Instrument Equipment Co., Ltd.</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Manufacturer</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Shanghai Peiyuan Instrument Equipment Co., Ltd.</td>
                 </tr>
               </tbody>
             </table>
@@ -569,36 +549,36 @@ export function PlutoT() {
       </section>
 
       {/* Support & Integration */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Support & Integration</h2>
-          <div className="functions-grid">
-            <div className="function-card">
-              <h3>Application-Oriented Configuration</h3>
-              <p>NineScrolls provides application-oriented system configuration tailored to your specific research needs and process requirements.</p>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Support & Integration</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Application-Oriented Configuration</h3>
+              <p className="text-on-surface-variant leading-relaxed">NineScrolls provides application-oriented system configuration tailored to your specific research needs and process requirements.</p>
             </div>
-            <div className="function-card">
-              <h3>Process Consultation</h3>
-              <p>Expert process consultation for research environments, helping you optimize parameters and achieve desired results with PLUTO-T.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Process Consultation</h3>
+              <p className="text-on-surface-variant leading-relaxed">Expert process consultation for research environments, helping you optimize parameters and achieve desired results with PLUTO-T.</p>
             </div>
-            <div className="function-card">
-              <h3>Installation Guidance</h3>
-              <p>Comprehensive installation guidance and training support to ensure your system is set up correctly and operating at peak performance.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Installation Guidance</h3>
+              <p className="text-on-surface-variant leading-relaxed">Comprehensive installation guidance and training support to ensure your system is set up correctly and operating at peak performance.</p>
             </div>
-            <div className="function-card">
-              <h3>Warranty & Technical Support</h3>
-              <p>US-based warranty service and ongoing technical support provided directly by NineScrolls LLC for all PLUTO Series systems.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Warranty & Technical Support</h3>
+              <p className="text-on-surface-variant leading-relaxed">US-based warranty service and ongoing technical support provided directly by NineScrolls LLC for all PLUTO Series systems.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Distributor Notice */}
-      <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
-        <div className="container">
-          <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Distributor Notice</h3>
-            <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="p-8 bg-surface-container-low rounded-xl border-l-4 border-outline-variant">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-4">Distributor Notice</h3>
+            <p className="text-on-surface-variant leading-relaxed">
               PLUTO Series plasma systems are manufactured by Shanghai Peiyuan Instrument Equipment Co., Ltd. (上海沛沅仪器设备有限公司). NineScrolls LLC is the authorized US distributor, providing local sales, system configuration, technical support, installation guidance, and warranty service for US-based research laboratories and institutions.
             </p>
           </div>
@@ -606,48 +586,48 @@ export function PlutoT() {
       </section>
 
       {/* Cost Advantage Block */}
-      <section className="cost-advantage-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
-        <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>Why Our Systems Are Cost-Efficient</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <p style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1.05rem', color: '#666', lineHeight: '1.7' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Why Our Systems Are Cost-Efficient</h2>
+          <div className="max-w-3xl mx-auto">
+            <p className="text-center mb-8 text-on-surface-variant text-lg leading-relaxed">
               We specialize in connecting US research labs with high-performance plasma equipment at accessible price points. By partnering directly with established manufacturers, we deliver better specifications at lower cost than traditional distribution channels.
             </p>
-            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 list-none p-0 mb-8">
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
                 <div>
-                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Direct manufacturer partnership</strong>
-                  <span style={{ fontSize: '0.95rem', color: '#666' }}>No unnecessary intermediaries</span>
+                  <strong className="block mb-1">Direct manufacturer partnership</strong>
+                  <span className="text-sm text-on-surface-variant">No unnecessary intermediaries</span>
                 </div>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
                 <div>
-                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Research-focused configuration</strong>
-                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Not overbuilt for production</span>
+                  <strong className="block mb-1">Research-focused configuration</strong>
+                  <span className="text-sm text-on-surface-variant">Not overbuilt for production</span>
                 </div>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
                 <div>
-                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>US-based support included</strong>
-                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Local sales, configuration, and warranty</span>
+                  <strong className="block mb-1">US-based support included</strong>
+                  <span className="text-sm text-on-surface-variant">Local sales, configuration, and warranty</span>
                 </div>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#2563eb', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
                 <div>
-                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Lean operational structure</strong>
-                  <span style={{ fontSize: '0.95rem', color: '#666' }}>Savings passed to researchers</span>
+                  <strong className="block mb-1">Lean operational structure</strong>
+                  <span className="text-sm text-on-surface-variant">Savings passed to researchers</span>
                 </div>
               </li>
             </ul>
-            <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#333' }}>Looking at other options?</h3>
-              <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
-                <li><Link to="/products/hy-4l" style={{ color: '#2563eb', textDecoration: 'none' }}>HY-4L ($7,999)</Link> — Budget-friendly 150W RF alternative</li>
-                <li><Link to="/products/pluto-m" style={{ color: '#2563eb', textDecoration: 'none' }}>PLUTO-M</Link> — Upgrade path with higher power and expanded capability</li>
+            <div className="p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-4">Looking at other options?</h3>
+              <ul className="pl-6 text-on-surface-variant leading-loose">
+                <li><Link to="/products/hy-4l" className="text-primary hover:underline">HY-4L ($7,999)</Link> — Budget-friendly 150W RF alternative</li>
+                <li><Link to="/products/pluto-m" className="text-primary hover:underline">PLUTO-M</Link> — Upgrade path with higher power and expanded capability</li>
               </ul>
             </div>
           </div>
@@ -714,31 +694,31 @@ export function PlutoT() {
       {/* Trust Logos Section */}
       <TrustSection />
 
-      {/* Trust Block - What You Can Expect */}
-      <section className="trust-block-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
-        <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>What You Can Expect When Working With Us</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>US-based sales & project coordination</span>
+      {/* Trust Block */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">What You Can Expect When Working With Us</h2>
+          <div className="max-w-3xl mx-auto">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 list-none p-0">
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-600 text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">US-based sales & project coordination</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Installation guidance & training support</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-600 text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Installation guidance & training support</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Engineering-backed system configuration</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-600 text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Engineering-backed system configuration</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>NDA & export compliance supported</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-600 text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">NDA & export compliance supported</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Responsive support before & after delivery</span>
+              <li className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-green-600 text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Responsive support before & after delivery</span>
               </li>
             </ul>
           </div>
@@ -746,31 +726,31 @@ export function PlutoT() {
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: Who is PLUTO-T designed for?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: PLUTO-T is designed as an entry-level research-grade plasma cleaner for labs that need reliable RF plasma cleaning without a large investment. At $9,999, it is ideal for university cleanrooms, materials science labs, biomedical research, and semiconductor R&D where single-sample or small-batch processing is sufficient.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What is the difference between PLUTO-T and PLUTO-M?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: PLUTO-T has a smaller chamber (~4.3L vs ~8L) and a single standard gas line (optional 2nd line). PLUTO-M ($12,999) offers nearly double the chamber volume for batch processing, 2 gas lines standard, a perforated gas-shower electrode for better plasma distribution, and recipe storage capability. Choose PLUTO-T for single-sample work and PLUTO-M for multi-sample batches.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What gases can I use with PLUTO-T?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: PLUTO-T supports O2, N2, Ar, and mixed-gas processes. It comes with 1 gas line standard, with an optional 2nd gas line available. The system uses 13.56 MHz RF at 0-200W with automatic impedance matching.
               </p>
             </div>
@@ -778,27 +758,31 @@ export function PlutoT() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="product-inquiry-section">
-        <div className="container">
-          <div className="product-inquiry">
-            <h2>Ready to order?</h2>
-            <p style={{ marginBottom: '1rem' }}>
-              You don't need a finalized specification or PO to reach out.
-              We often assist labs during early evaluation and proposal stages.
-            </p>
-            <div className="inquiry-buttons">
-              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
-                Add to Cart
-              </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
-                Request a Budgetary Quote
-              </button>
-            </div>
-            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
-            </div>
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Ready to order?</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">
+            You don't need a finalized specification or PO to reach out.
+            We often assist labs during early evaluation and proposal stages.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={handleAddToCart}
+            >
+              Add to Cart
+            </button>
+            <button
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              Request a Budgetary Quote
+            </button>
           </div>
+          <p className="text-sm text-on-surface-variant mt-6">
+            <strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.
+          </p>
         </div>
       </section>
 

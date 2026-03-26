@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import '../../styles/TableOfContents.css';
 
 interface TocItem {
   id: string;
@@ -141,16 +140,46 @@ export function TableOfContents() {
   if (items.length === 0) return null;
 
   return (
-    <nav className="toc-nav" ref={navRef}>
-      <h3>Table of Contents</h3>
-      <ul ref={tocListRef}>
-        {items.map(item => (
-          <li key={item.id} className={`toc-item toc-h${item.level}${activeId === item.id ? ' toc-active' : ''}`}>
-            <a href={`#${item.id}`} onClick={e => handleClick(e, item.id)}>
-              {item.text}
-            </a>
-          </li>
-        ))}
+    <nav
+      className="toc-nav bg-white p-5 rounded-xl shadow-md sticky top-[120px] max-h-[calc(100vh-140px)] flex flex-col overflow-hidden"
+      ref={navRef}
+    >
+      <h3 className="mb-2 text-on-surface text-base font-semibold shrink-0">
+        Table of Contents
+      </h3>
+      <ul
+        ref={tocListRef}
+        className="list-none p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-sm"
+      >
+        {items.map(item => {
+          const isActive = activeId === item.id;
+          return (
+            <li
+              key={item.id}
+              className={`border-l-2 transition-colors duration-200 ${
+                isActive
+                  ? 'toc-active border-l-primary'
+                  : 'border-l-outline-variant'
+              }`}
+            >
+              <a
+                href={`#${item.id}`}
+                onClick={e => handleClick(e, item.id)}
+                className={`block no-underline transition-colors duration-200 leading-[1.35] ${
+                  item.level === 3
+                    ? 'pl-5 pr-2.5 py-[5px] text-[0.78rem]'
+                    : 'px-2.5 py-[5px] text-[0.82rem]'
+                } ${
+                  isActive
+                    ? 'text-primary font-semibold'
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest'
+                }`}
+              >
+                {item.text}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

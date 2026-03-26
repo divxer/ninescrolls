@@ -63,53 +63,46 @@ export function CoaterDeveloper() {
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
-      <section className="product-detail-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'Coater/Developer System Series', path: '/products/coater-developer' }
           ]} />
-          <div className="product-header">
-            <h1>Coater/Developer System Series</h1>
-            <p>Advanced Photoresist Coating and Developing System</p>
-            <p className="hero-subtitle-emphasis">
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Coater/Developer System Series</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Advanced Photoresist Coating and Developing System</p>
+            <p className="text-base text-white/80 tracking-wide">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
-              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
+                Request a Quote
+              </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
                 Download Datasheet
               </a>
             </div>
@@ -117,101 +110,148 @@ export function CoaterDeveloper() {
         </div>
       </section>
 
-      <section className="product-overview">
-        <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <img 
-                src="/assets/images/products/coater-developer/main.jpg" 
-                alt="Coater/Developer System" 
-                className="main-product-image" 
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0">
+              <img
+                src="/assets/images/products/coater-developer/main.jpg"
+                alt="Coater/Developer System"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
-            <div className="product-info">
-              <h2>Product Description</h2>
-              <p>The Coater/Developer Series provides high-precision photoresist coating and developing capabilities within a compact uni-body design (footprint approx. 1.0m x 0.8m). Engineered for advanced lithography applications, it offers exceptional flexibility, customizable module configurations, and precise automated process control, ensuring uniform and reproducible results.</p>
-              
-              <h3>Key Features</h3>
-              <ul className="feature-list">
-                <li>Compact uni-body design (footprint 1.0m x 0.8m)</li>
-                <li>Flexible configuration with customizable numbers of Coater, Developer, and Hotplate modules</li>
-                <li>Advanced dispensing systems with configurable dispense arms (up to 2 photoresist lines and 2 developer lines plus DI water)</li>
-                <li>High-speed spin modules with precise spin profile programming (Coater up to 8000 rpm ±1 rpm; Developer up to 5000 rpm ±1 rpm)</li>
-                <li>Precise temperature control with configurable Hotplate modules (up to 200°C standard; higher temperatures optional)</li>
-                <li>Cost-performance customization (dispense systems, pumps, valves, etc.)</li>
-                <li>Automated open-load sample handling</li>
-                <li>Automated safety interlocks (vacuum pressure, lid interlocks, etc.)</li>
-                <li>Edge bead removal (EBR) capability (optional)</li>
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Product Description</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-6">The Coater/Developer Series provides high-precision photoresist coating and developing capabilities within a compact uni-body design (footprint approx. 1.0m x 0.8m). Engineered for advanced lithography applications, it offers exceptional flexibility, customizable module configurations, and precise automated process control, ensuring uniform and reproducible results.</p>
+
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Key Features</h3>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Compact uni-body design (footprint 1.0m x 0.8m)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Flexible configuration with customizable numbers of Coater, Developer, and Hotplate modules
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Advanced dispensing systems with configurable dispense arms (up to 2 photoresist lines and 2 developer lines plus DI water)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  High-speed spin modules with precise spin profile programming (Coater up to 8000 rpm ±1 rpm; Developer up to 5000 rpm ±1 rpm)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Precise temperature control with configurable Hotplate modules (up to 200°C standard; higher temperatures optional)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Cost-performance customization (dispense systems, pumps, valves, etc.)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Automated open-load sample handling
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Automated safety interlocks (vacuum pressure, lid interlocks, etc.)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Edge bead removal (EBR) capability (optional)
+                </li>
               </ul>
 
-              <h3>Applications</h3>
-              <ul className="application-list-styled">
-                <li><span className="app-icon">&#x1F3A8;</span> Photoresist Coating (positive/negative resists, electron-beam resists)</li>
-                <li><span className="app-icon">&#x1F9EA;</span> HMDS Priming and Adhesion Promotion</li>
-                <li><span className="app-icon">&#x2699;</span> Developer Processing and Lift-off Processes</li>
-                <li><span className="app-icon">&#x1F4CB;</span> Thick Film and Multi-layer Applications</li>
-                <li><span className="app-icon">&#x1F6E1;</span> Anti-reflective and Specialty Polymer Coatings</li>
-                <li><span className="app-icon">&#x1F4E6;</span> Small-piece substrate and wafer processing (up to 12-inch or square substrates)</li>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">palette</span>
+                  Photoresist Coating (positive/negative resists, electron-beam resists)
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">science</span>
+                  HMDS Priming and Adhesion Promotion
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">settings</span>
+                  Developer Processing and Lift-off Processes
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">layers</span>
+                  Thick Film and Multi-layer Applications
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">shield</span>
+                  Anti-reflective and Specialty Polymer Coatings
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">inventory_2</span>
+                  Small-piece substrate and wafer processing (up to 12-inch or square substrates)
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="detailed-specs">
-        <div className="container">
-          <h2>Technical Specifications</h2>
-          <div className="specs-table-container">
-            <table className="detailed-specs-table">
+      {/* Technical Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Technical Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2}>System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
                 </tr>
-                <tr>
-                  <td>Wafer Size Range</td>
-                  <td>Small pieces, 2", 4", 6", 8", 12" wafers or square substrates (optional)</td>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Small pieces, 2", 4", 6", 8", 12" wafers or square substrates (optional)</td>
                 </tr>
-                <tr>
-                  <td>Spin Speed</td>
-                  <td>
-                    <ul>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Spin Speed</td>
+                  <td className="px-6 py-3 text-on-surface-variant">
+                    <ul className="list-disc pl-4 space-y-1">
                       <li>Coater module: up to 8000 rpm ±1 rpm, acceleration up to 8000 rpm/s</li>
                       <li>Developer module: up to 5000 rpm ±1 rpm, acceleration up to 5000 rpm/s</li>
                     </ul>
                   </td>
                 </tr>
-                <tr>
-                  <td>Temperature Control</td>
-                  <td>Room temperature to 200°C standard (hotplate); higher temperature options available</td>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Temperature Control</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Room temperature to 200°C standard (hotplate); higher temperature options available</td>
                 </tr>
-                <tr>
-                  <td>Dispense Arm Configurations</td>
-                  <td>
-                    <ul>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Dispense Arm Configurations</td>
+                  <td className="px-6 py-3 text-on-surface-variant">
+                    <ul className="list-disc pl-4 space-y-1">
                       <li>Coater: up to 2 photoresist lines</li>
                       <li>Developer: up to 2 developer lines plus DI water line</li>
                     </ul>
                   </td>
                 </tr>
-                <tr>
-                  <td>Vacuum System</td>
-                  <td>Mechanical pump (standard), configurable for specific vacuum levels</td>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Mechanical pump (standard), configurable for specific vacuum levels</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Film Uniformity</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Less than 0.5% (3σ typical coating uniformity)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Environmental Control (optional)</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Temperature (23±0.5°C), Humidity (45±5% RH)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Approximately 1.0m x 0.8m</td>
                 </tr>
                 <tr>
-                  <td>Film Uniformity</td>
-                  <td>Less than 0.5% (3σ typical coating uniformity)</td>
-                </tr>
-                <tr>
-                  <td>Environmental Control (optional)</td>
-                  <td>Temperature (23±0.5°C), Humidity (45±5% RH)</td>
-                </tr>
-                <tr>
-                  <td>Footprint</td>
-                  <td>Approximately 1.0m x 0.8m</td>
-                </tr>
-                <tr>
-                  <td>Edge Bead Removal</td>
-                  <td>Optional EBR capability</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Edge Bead Removal</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Optional EBR capability</td>
                 </tr>
               </tbody>
             </table>
@@ -219,28 +259,29 @@ export function CoaterDeveloper() {
         </div>
       </section>
 
-      <section className="process-capabilities">
-        <div className="container">
-          <h2>Process Capabilities</h2>
-          <div className="capability-grid">
-            <div className="capability-card">
-              <h3>Performance Features</h3>
-              <ul>
-                <li>High coating uniformity and precise thickness control</li>
-                <li>Excellent process repeatability and uniform temperature distribution</li>
-                <li>Automated cleaning cycles and advanced developing control</li>
-                <li>Multiple programmable spin and coating profiles</li>
-                <li>Real-time process monitoring and automated control</li>
-                <li>Customizable process recipes tailored to specific applications</li>
+      {/* Process Capabilities */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Process Capabilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Performance Features</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> High coating uniformity and precise thickness control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Excellent process repeatability and uniform temperature distribution</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Automated cleaning cycles and advanced developing control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Multiple programmable spin and coating profiles</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Real-time process monitoring and automated control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Customizable process recipes tailored to specific applications</li>
               </ul>
             </div>
-            <div className="capability-card">
-              <h3>Material Compatibility</h3>
-              <ul>
-                <li>Positive and Negative Photoresists</li>
-                <li>Electron Beam and Thick Film Resists</li>
-                <li>Anti-reflective coatings and specialty polymers</li>
-                <li>Wide compatibility with specialty materials through configurable dispense systems</li>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Material Compatibility</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Positive and Negative Photoresists</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Electron Beam and Thick Film Resists</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Anti-reflective coatings and specialty polymers</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Wide compatibility with specialty materials through configurable dispense systems</li>
               </ul>
             </div>
           </div>
@@ -289,24 +330,43 @@ export function CoaterDeveloper() {
         ctaLabel="Request a Quote"
       />
 
-      <section className="product-contact">
-        <div className="container">
-          <h2>Request Information</h2>
-          <p>Contact our sales team for detailed specifications, pricing, and customization options.</p>
-          <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
-            <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
-              <span className="icon-download"></span> Download Product Datasheet
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Request Information</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Contact our sales team for detailed specifications, pricing, and customization options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Contact Sales Team
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
             </a>
           </div>
         </div>
       </section>
 
-      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-          Contact Sales Team
-        </button>
-      </div>
+      {/* Floating Contact Button */}
+      {showFloatingContact && (
+        <div className="fixed bottom-6 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
+          <button
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            onClick={() => openContactForm(true)}
+          >
+            <span className="material-symbols-outlined text-[20px]">call</span>
+            Contact Sales Team
+          </button>
+        </div>
+      )}
 
       <QuoteModal
         isOpen={isModalOpen}
@@ -328,4 +388,4 @@ export function CoaterDeveloper() {
       />
     </>
   );
-} 
+}

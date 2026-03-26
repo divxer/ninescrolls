@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import '../../styles/Chat.css';
 
 declare global {
   interface Window {
@@ -32,6 +31,31 @@ export function Chat() {
       console.warn('Tawk.to Property ID or Widget ID is not configured. Chat widget will not load.');
       return;
     }
+
+    // Inject Tawk.to iframe position overrides
+    const style = document.createElement('style');
+    style.setAttribute('data-chat-overrides', '');
+    style.textContent = `
+      iframe[id^="tawk-to-"] {
+        bottom: 120px !important;
+        margin: 0 !important;
+        z-index: 999 !important;
+      }
+      @media (max-width: 767px) {
+        iframe[id^="tawk-to-"] {
+          width: 50px !important;
+          height: 50px !important;
+          right: 15px !important;
+          bottom: 80px !important;
+        }
+        .partners,
+        .rd-section,
+        .resources-section {
+          padding-bottom: 120px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
 
     // Initialize Tawk.to
     const w = window;
@@ -88,10 +112,14 @@ export function Chat() {
       if (tawkScript) {
         tawkScript.remove();
       }
+      const chatStyle = document.querySelector('style[data-chat-overrides]');
+      if (chatStyle) {
+        chatStyle.remove();
+      }
       delete w.Tawk_API;
       delete w.Tawk_LoadStart;
     };
   }, []);
 
   return null;
-} 
+}

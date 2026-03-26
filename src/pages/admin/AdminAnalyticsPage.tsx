@@ -1459,7 +1459,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
   // Traffic sources computation
   const channelIcons: Record<string, string> = {
-    paid_search: 'search', organic_search: 'search', ai_referral: 'smart_toy',
+    paid_search: 'paid', organic_search: 'search', ai_referral: 'smart_toy',
     paid_social: 'share', organic_social: 'share', email: 'mail',
     referral: 'link', direct: 'monitor',
   };
@@ -1488,19 +1488,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const searchKeywords = useMemo(() => {
     const kws = new Map<string, { count: number; source: 'organic' | 'paid' }>();
     for (const e of org.events) {
-      const sq = getSearchQuery(e);
-      if (sq) {
-        const key = sq.toLowerCase().trim();
-        const existing = kws.get(key);
-        if (existing) existing.count++;
-        else kws.set(key, { count: 1, source: 'organic' });
-      }
-      if (e.utmTerm) {
-        const key = e.utmTerm.toLowerCase().trim();
-        const existing = kws.get(key);
-        if (existing) existing.count++;
-        else kws.set(key, { count: 1, source: 'paid' });
-      }
+      const keyword = getSearchQuery(e) || e.utmTerm;
+      if (!keyword) continue;
+      const key = keyword.toLowerCase().trim();
+      const channel = resolveTrafficChannel(e);
+      const source = channel === 'paid_search' ? 'paid' : 'organic';
+      const existing = kws.get(key);
+      if (existing) existing.count++;
+      else kws.set(key, { count: 1, source });
     }
     return Array.from(kws.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [org.events]);
@@ -1822,8 +1817,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 else byVisitor.set(key, [e]);
               }
               const channelColorsTimeline: Record<string, { bg: string; color: string; label: string }> = {
-                paid_search: { bg: '#fce4ec', color: '#c62828', label: 'Paid Search' },
-                organic_search: { bg: '#e8f5e9', color: '#2e7d32', label: 'Organic Search' },
+                paid_search: { bg: '#fff3e0', color: '#e65100', label: 'Paid Search' },
+                organic_search: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Search' },
                 ai_referral: { bg: '#ede7f6', color: '#4527a0', label: 'AI Referral' },
                 paid_social: { bg: '#fff3e0', color: '#e65100', label: 'Paid Social' },
                 organic_social: { bg: '#e3f2fd', color: '#1565c0', label: 'Organic Social' },
@@ -1846,13 +1841,20 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                   ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
                   : style.label;
                 const sq = getSearchQuery(e);
+                const isSearch = channel === 'paid_search' || channel === 'organic_search';
+                const isPaid = channel === 'paid_search';
                 return (
                   <>
                     <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: style.bg, color: style.color, padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
                       {label}
                     </span>
+                    {isSearch && (
+                      <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1 font-bold uppercase" style={{ background: isPaid ? '#fff3e0' : '#e3f2fd', color: isPaid ? '#e65100' : '#1565c0', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', marginLeft: '4px' }}>
+                        {isPaid ? 'paid' : 'organic'}
+                      </span>
+                    )}
                     {(sq || e.utmTerm) && (
-                      <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: '#fff8e1', color: '#f57f17', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
+                      <span className="inline-block rounded px-1.5 py-px text-[11px] ml-1" style={{ background: isPaid ? '#fff3e0' : '#e3f2fd', color: isPaid ? '#e65100' : '#1565c0', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}>
                         {sq || e.utmTerm}
                       </span>
                     )}

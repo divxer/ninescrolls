@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import '../styles/NotFoundPage.css';
 
 export const NotFoundPage: React.FC = () => {
   const location = useLocation();
@@ -73,76 +72,71 @@ export const NotFoundPage: React.FC = () => {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      
-      <div className="not-found-page">
-        <div className="container">
-          <div className="not-found-content">
-            <div className="error-code">404</div>
-            <h1>Page Not Found</h1>
-            <p className="error-message">
-              Sorry, the page you're looking for doesn't exist or has been moved.
-            </p>
-            
-            {suggestedPath && (
-              <div className="suggestion-box">
-                <p>Did you mean to visit:</p>
-                <Link to={suggestedPath} className="suggested-link">
-                  {suggestedPath}
-                </Link>
-              </div>
-            )}
 
-            <div className="helpful-links">
-              <h2>Here are some helpful links:</h2>
-              <div className="links-grid">
-                <div className="link-category">
-                  <h3>Products</h3>
-                  <ul>
-                    <li><Link to="/products/ald">ALD Systems</Link></li>
-                    <li><Link to="/products/icp-etcher">ICP Etching Systems</Link></li>
-                    <li><Link to="/products/rie-etcher">RIE Etching Systems</Link></li>
-                    <li><Link to="/products/sputter">Sputter Systems</Link></li>
-                    <li><Link to="/products/pecvd">PECVD Systems</Link></li>
-                  </ul>
-                </div>
-                
-                <div className="link-category">
-                  <h3>Resources</h3>
-                  <ul>
-                    <li><Link to="/insights">Technical Insights</Link></li>
-                    <li><a href="/NineScrolls-Equipment-Guide.pdf" download="NineScrolls-Equipment-Guide.pdf">Equipment Guide</a></li>
-                    <li><Link to="/about">About NineScrolls</Link></li>
-                    <li><Link to="/contact">Contact Us</Link></li>
-                  </ul>
-                </div>
-                
-                <div className="link-category">
-                  <h3>Popular Pages</h3>
-                  <ul>
-                    <li><Link to="/">Home</Link></li>
-                    <li><Link to="/products">All Products</Link></li>
-                    <li><Link to="/insights">Latest Insights</Link></li>
-                    <li><Link to="/contact">Get Quote</Link></li>
-                  </ul>
-                </div>
-              </div>
+      <main className="min-h-[819px] flex flex-col items-center justify-center px-8 text-center">
+        <h1 className="text-[12rem] font-headline font-black text-on-surface/5 leading-none select-none">404</h1>
+        <div className="-mt-20">
+          <h2 className="text-4xl font-headline font-bold mb-4">Precision Segment Missing</h2>
+          <p className="text-on-surface-variant mb-8 max-w-md mx-auto">The data segment you are looking for has been moved or archived.</p>
+
+          {suggestedPath && (
+            <div className="mb-8 bg-surface-container-low p-6 rounded-xl inline-block">
+              <p className="text-on-surface-variant text-sm mb-2">Did you mean to visit:</p>
+              <Link to={suggestedPath} className="text-primary font-bold hover:underline text-lg">
+                {suggestedPath}
+              </Link>
             </div>
+          )}
 
-            <div className="search-section">
-              <h2>Can't find what you're looking for?</h2>
-              <p>Try searching our website or contact our technical team for assistance.</p>
-              <div className="action-buttons">
-                <Link to="/products" className="btn btn-primary">
-                  Browse All Products
-                </Link>
-                <Link to="/contact" className="btn btn-secondary">
-                  Contact Our Team
-                </Link>
+          <div className="mb-12">
+            <h3 className="text-lg font-headline font-bold mb-6 text-on-surface">Helpful Links</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-3xl mx-auto">
+              <div>
+                <h4 className="font-bold text-on-surface mb-3 text-sm uppercase tracking-widest">Products</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><Link to="/products/ald" className="text-on-surface-variant hover:text-primary transition-colors">ALD Systems</Link></li>
+                  <li><Link to="/products/icp-etcher" className="text-on-surface-variant hover:text-primary transition-colors">ICP Etching Systems</Link></li>
+                  <li><Link to="/products/rie-etcher" className="text-on-surface-variant hover:text-primary transition-colors">RIE Etching Systems</Link></li>
+                  <li><Link to="/products/sputter" className="text-on-surface-variant hover:text-primary transition-colors">Sputter Systems</Link></li>
+                  <li><Link to="/products/pecvd" className="text-on-surface-variant hover:text-primary transition-colors">PECVD Systems</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-on-surface mb-3 text-sm uppercase tracking-widest">Resources</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><Link to="/insights" className="text-on-surface-variant hover:text-primary transition-colors">Technical Insights</Link></li>
+                  <li><a href="/NineScrolls-Equipment-Guide.pdf" download="NineScrolls-Equipment-Guide.pdf" className="text-on-surface-variant hover:text-primary transition-colors">Equipment Guide</a></li>
+                  <li><Link to="/about" className="text-on-surface-variant hover:text-primary transition-colors">About NineScrolls</Link></li>
+                  <li><Link to="/contact" className="text-on-surface-variant hover:text-primary transition-colors">Contact Us</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-on-surface mb-3 text-sm uppercase tracking-widest">Popular Pages</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><Link to="/" className="text-on-surface-variant hover:text-primary transition-colors">Home</Link></li>
+                  <li><Link to="/products" className="text-on-surface-variant hover:text-primary transition-colors">All Products</Link></li>
+                  <li><Link to="/insights" className="text-on-surface-variant hover:text-primary transition-colors">Latest Insights</Link></li>
+                  <li><Link to="/contact" className="text-on-surface-variant hover:text-primary transition-colors">Get Quote</Link></li>
+                </ul>
               </div>
             </div>
           </div>
+
+          <div className="mb-8">
+            <p className="text-on-surface-variant mb-6">Can't find what you're looking for? Try browsing or contact our team.</p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link to="/products" className="bg-primary text-white px-8 py-3 rounded-sm font-bold hover:opacity-90 transition-opacity">
+                Browse All Products
+              </Link>
+              <Link to="/contact" className="border border-outline-variant text-on-surface px-8 py-3 rounded-sm font-bold hover:bg-surface-container-low transition-colors">
+                Contact Our Team
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };
