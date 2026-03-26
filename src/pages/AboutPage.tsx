@@ -73,28 +73,28 @@ export function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-primary text-3xl">forum</span>
+                <span className="material-symbols-outlined text-on-primary-container text-3xl">forum</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">Pre-Sales Technical Consultation</h3>
               <p className="text-on-surface-variant leading-relaxed">We handle all technical discussions, feasibility assessments, and system configuration consultations directly from the U.S., ensuring you get expert guidance from day one.</p>
             </div>
             <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-primary text-3xl">description</span>
+                <span className="material-symbols-outlined text-on-primary-container text-3xl">description</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">System Configuration & Quotation</h3>
               <p className="text-on-surface-variant leading-relaxed">All quotations, pricing, and configuration details are provided by NineScrolls LLC, ensuring consistency, transparency, and full accountability throughout the process.</p>
             </div>
             <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-primary text-3xl">local_shipping</span>
+                <span className="material-symbols-outlined text-on-primary-container text-3xl">local_shipping</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">Project Coordination & Delivery</h3>
               <p className="text-on-surface-variant leading-relaxed">We manage project timelines, shipping coordination, and delivery logistics to ensure smooth handover and seamless integration into your facility.</p>
             </div>
             <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-primary text-3xl">build</span>
+                <span className="material-symbols-outlined text-on-primary-container text-3xl">build</span>
               </div>
               <h3 className="text-xl font-headline font-bold mb-3">Post-Installation Support</h3>
               <p className="text-on-surface-variant leading-relaxed">Technical support, maintenance coordination, and service requests are handled through our U.S.-based support team with dedicated response channels.</p>
@@ -156,7 +156,7 @@ export function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="bg-surface-container-lowest p-10 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-primary text-3xl">public</span>
+                  <span className="material-symbols-outlined text-on-primary-container text-3xl">public</span>
                 </div>
                 <h3 className="text-2xl font-headline font-bold mb-4">The Dragon: Cosmic Order</h3>
                 <p className="text-on-surface-variant leading-relaxed">
@@ -168,7 +168,7 @@ export function AboutPage() {
               </div>
               <div className="bg-surface-container-lowest p-10 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-primary text-3xl">menu_book</span>
+                  <span className="material-symbols-outlined text-on-primary-container text-3xl">menu_book</span>
                 </div>
                 <h3 className="text-2xl font-headline font-bold mb-4">The Nine Chapters: Mathematical Order</h3>
                 <p className="text-on-surface-variant leading-relaxed">
@@ -180,7 +180,7 @@ export function AboutPage() {
               </div>
             </div>
             <div className="bg-primary-container rounded-xl p-10 text-center max-w-3xl mx-auto">
-              <p className="text-lg font-medium text-on-surface">
+              <p className="text-lg font-medium text-on-primary-container">
                 NineScrolls exists to translate scientific order into engineering precision. From cosmic order
                 to engineered precision — this is the spirit of NineScrolls.
               </p>
@@ -198,7 +198,7 @@ export function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary">language</span>
+                  <span className="material-symbols-outlined text-on-primary-container">language</span>
                 </div>
                 <div>
                   <h3 className="text-xl font-headline font-bold mb-2">Integration</h3>
@@ -207,7 +207,7 @@ export function AboutPage() {
               </div>
               <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary">star</span>
+                  <span className="material-symbols-outlined text-on-primary-container">star</span>
                 </div>
                 <div>
                   <h3 className="text-xl font-headline font-bold mb-2">Innovation</h3>
@@ -216,7 +216,7 @@ export function AboutPage() {
               </div>
               <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary">group</span>
+                  <span className="material-symbols-outlined text-on-primary-container">group</span>
                 </div>
                 <div>
                   <h3 className="text-xl font-headline font-bold mb-2">Collaboration</h3>
@@ -225,7 +225,7 @@ export function AboutPage() {
               </div>
               <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
                 <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary">verified</span>
+                  <span className="material-symbols-outlined text-on-primary-container">verified</span>
                 </div>
                 <div>
                   <h3 className="text-xl font-headline font-bold mb-2">Expertise</h3>
