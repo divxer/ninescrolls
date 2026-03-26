@@ -8,7 +8,7 @@ interface TrustSectionProps {
   logoImageAlt?: string;
 }
 
-export function TrustSection({ 
+export function TrustSection({
   deploymentCount = 300,
   deploymentText = 'laboratories across universities, national research institutes, and industrial R&D centers',
   showLogos = false,
@@ -18,37 +18,22 @@ export function TrustSection({
   return (
     <>
       {/* Trusted in Academic & Industrial Research Section */}
-      <section className="trust-quantified-section" style={{ padding: '5rem 0', backgroundColor: '#ffffff' }}>
-        <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '2rem', fontWeight: '700', color: '#1f2937' }}>
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-center mb-6 text-3xl font-bold text-on-surface">
             Trusted in Academic & Industrial Research
           </h2>
-          
-          <p style={{ 
-            textAlign: 'center', 
-            maxWidth: '900px', 
-            margin: '0 auto 3rem', 
-            fontSize: '1.1rem', 
-            color: '#4b5563', 
-            lineHeight: '1.7' 
-          }}>
+
+          <p className="text-center max-w-[900px] mx-auto mb-12 text-lg text-on-surface-variant leading-relaxed">
             Our plasma surface treatment systems are widely adopted by
             leading universities, national research institutes, and industrial R&D centers
             for materials science, microelectronics, and advanced surface engineering research.
           </p>
 
           {/* Quantified Trust */}
-          <p style={{ 
-            textAlign: 'center', 
-            maxWidth: '900px', 
-            margin: '0 auto', 
-            fontSize: '1.2rem', 
-            color: '#1f2937', 
-            lineHeight: '1.8',
-            fontWeight: '500'
-          }}>
+          <p className="text-center max-w-[900px] mx-auto text-xl text-on-surface leading-relaxed font-medium">
             Our plasma systems have been deployed in{' '}
-            <strong style={{ color: '#2563eb', fontSize: '1.3rem', fontWeight: '700' }}>
+            <strong className="text-primary text-2xl font-bold">
               {deploymentCount}+
             </strong>{' '}
             {deploymentText},
@@ -58,19 +43,8 @@ export function TrustSection({
           {/* Optional Logo Display */}
           {showLogos && logoImagePath && (
             <>
-              <div style={{ 
-                maxWidth: '1200px', 
-                margin: '2rem auto',
-                padding: '2rem',
-                backgroundColor: '#ffffff',
-                borderRadius: '8px'
-              }}>
-                <div style={{ 
-                  width: '100%', 
-                  height: 'auto', 
-                  display: 'block',
-                  margin: '0 auto'
-                }}>
+              <div className="max-w-[1200px] mx-auto my-8 p-8 bg-white rounded-lg">
+                <div className="w-full block mx-auto">
                   <OptimizedImage
                     src={logoImagePath}
                     alt={logoImageAlt || 'Trusted by leading universities and research institutions'}
@@ -80,14 +54,7 @@ export function TrustSection({
                   />
                 </div>
               </div>
-              <p style={{ 
-                textAlign: 'center', 
-                fontSize: '0.85rem', 
-                color: '#6b7280', 
-                fontStyle: 'italic',
-                maxWidth: '800px',
-                margin: '0 auto'
-              }}>
+              <p className="text-center text-sm text-on-surface-variant italic max-w-[800px] mx-auto">
                 Logos are shown for reference only and represent institutions where similar systems have been used.
                 No endorsement or formal affiliation is implied.
               </p>
@@ -97,75 +64,57 @@ export function TrustSection({
       </section>
 
       {/* Why Research Teams Choose Our Plasma Systems */}
-      <section className="research-trust-section" style={{ padding: '5rem 0', backgroundColor: '#f8f9fa' }}>
-        <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '3rem', fontSize: '2rem', fontWeight: '700', color: '#1f2937' }}>
+      <section className="py-20 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-center mb-12 text-3xl font-bold text-on-surface">
             Why Research Teams Choose Our Plasma Systems
           </h2>
-          
-          <div style={{ 
-            maxWidth: '1000px', 
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '2rem'
-          }}>
-            <div style={{ 
-              padding: '2rem', 
-              backgroundColor: '#ffffff', 
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔬</div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.3rem', fontWeight: '700', color: '#1f2937' }}>
+
+          <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 bg-white rounded-xl shadow-sm">
+              <div className="text-4xl mb-4">
+                <span className="material-symbols-outlined text-[2.5rem]">science</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-4">
                 Research-Oriented Design
               </h3>
-              <p style={{ margin: 0, fontSize: '1rem', color: '#4b5563', lineHeight: '1.6' }}>
+              <p className="text-base text-on-surface-variant leading-relaxed">
                 Designed specifically for laboratory and R&D use, with stable plasma generation, repeatable processes, and flexible parameter control.
               </p>
             </div>
 
-            <div style={{ 
-              padding: '2rem', 
-              backgroundColor: '#ffffff', 
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚙️</div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.3rem', fontWeight: '700', color: '#1f2937' }}>
+            <div className="p-8 bg-white rounded-xl shadow-sm">
+              <div className="text-4xl mb-4">
+                <span className="material-symbols-outlined text-[2.5rem]">settings</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-4">
                 Proven System Architecture
               </h3>
-              <p style={{ margin: 0, fontSize: '1rem', color: '#4b5563', lineHeight: '1.6' }}>
+              <p className="text-base text-on-surface-variant leading-relaxed">
                 RF plasma systems built on mature vacuum, RF power, and gas control platforms, ensuring long-term operational reliability.
               </p>
             </div>
 
-            <div style={{ 
-              padding: '2rem', 
-              backgroundColor: '#ffffff', 
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🧪</div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.3rem', fontWeight: '700', color: '#1f2937' }}>
+            <div className="p-8 bg-white rounded-xl shadow-sm">
+              <div className="text-4xl mb-4">
+                <span className="material-symbols-outlined text-[2.5rem]">biotech</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-4">
                 Application Versatility
               </h3>
-              <p style={{ margin: 0, fontSize: '1rem', color: '#4b5563', lineHeight: '1.6' }}>
+              <p className="text-base text-on-surface-variant leading-relaxed">
                 Suitable for plasma cleaning, surface activation, polymer treatment, and sample preparation prior to coating or bonding.
               </p>
             </div>
 
-            <div style={{ 
-              padding: '2rem', 
-              backgroundColor: '#ffffff', 
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🌍</div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.3rem', fontWeight: '700', color: '#1f2937' }}>
+            <div className="p-8 bg-white rounded-xl shadow-sm">
+              <div className="text-4xl mb-4">
+                <span className="material-symbols-outlined text-[2.5rem]">public</span>
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-4">
                 Global Research Adoption
               </h3>
-              <p style={{ margin: 0, fontSize: '1rem', color: '#4b5563', lineHeight: '1.6' }}>
+              <p className="text-base text-on-surface-variant leading-relaxed">
                 Used across universities, national laboratories, and industrial R&D facilities, supporting both fundamental research and applied development.
               </p>
             </div>
@@ -174,53 +123,29 @@ export function TrustSection({
       </section>
 
       {/* Need Help Selecting the Right Configuration */}
-      <section className="configuration-help-section" style={{ padding: '4rem 0', backgroundColor: '#ffffff' }}>
-        <div className="container">
-          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-            <h2 className="section-title" style={{ marginBottom: '1.5rem', fontSize: '1.8rem', fontWeight: '700', color: '#1f2937' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-[800px] mx-auto text-center">
+            <h2 className="text-center mb-6 text-3xl font-bold text-on-surface">
               Need Help Selecting the Right Configuration?
             </h2>
-            
-            <p style={{ 
-              marginBottom: '2rem', 
-              fontSize: '1.1rem', 
-              color: '#4b5563', 
-              lineHeight: '1.7' 
-            }}>
+
+            <p className="mb-8 text-lg text-on-surface-variant leading-relaxed">
               Every research application is different.
               If you are unsure about chamber size, RF power, or gas configuration,
               our team can help evaluate suitability based on your materials and process goals.
             </p>
 
-            <div style={{ 
-              display: 'flex', 
-              gap: '1rem', 
-              justifyContent: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <a 
-                href="/contact" 
-                className="btn btn-primary"
-                style={{ 
-                  padding: '0.875rem 2rem',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}
+            <div className="flex gap-4 justify-center flex-wrap">
+              <a
+                href="/contact"
+                className="inline-flex items-center px-8 py-3.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-container transition-all no-underline"
               >
                 Contact Us
               </a>
-              <a 
-                href="/contact?topic=application" 
-                className="btn btn-secondary"
-                style={{ 
-                  padding: '0.875rem 2rem',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}
+              <a
+                href="/contact?topic=application"
+                className="inline-flex items-center px-8 py-3.5 rounded-lg font-semibold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 transition-all no-underline"
               >
                 Discuss Your Application
               </a>
@@ -230,19 +155,14 @@ export function TrustSection({
       </section>
 
       {/* Designed for Research, Not Mass Production (Optional) */}
-      <section className="research-focus-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
-        <div className="container">
-          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '700', color: '#1f2937' }}>
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-[800px] mx-auto text-center">
+            <h3 className="mb-6 text-2xl font-bold text-on-surface">
               Designed for Research, Not Mass Production
             </h3>
-            
-            <p style={{ 
-              margin: 0, 
-              fontSize: '1.1rem', 
-              color: '#4b5563', 
-              lineHeight: '1.7' 
-            }}>
+
+            <p className="text-lg text-on-surface-variant leading-relaxed">
               Our systems are engineered for precision, flexibility, and experimental repeatability,
               making them ideal for academic laboratories and R&D environments rather than high-volume manufacturing.
             </p>

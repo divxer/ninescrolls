@@ -94,53 +94,46 @@ export function RIEEtcher() {
           ]
         })}</script>
       </Helmet>
-      <section className="product-detail-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'RIE Etcher Series', path: '/products/rie-etcher' }
           ]} />
-          <div className="product-header">
-            <h1>RIE Etcher Series</h1>
-            <p>High-precision Reactive Ion Etching System with Compact Design</p>
-            <p className="hero-subtitle-emphasis">
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">RIE Etcher Series</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">High-precision Reactive Ion Etching System with Compact Design</p>
+            <p className="text-base text-white/80 tracking-wide">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
-              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
+                Request a Quote
+              </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
                 Download Datasheet
               </a>
             </div>
@@ -148,90 +141,134 @@ export function RIEEtcher() {
         </div>
       </section>
 
-      <section className="product-overview">
-        <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <img 
-                src="/assets/images/products/rie-etcher/main.jpg" 
-                alt="RIE Etcher System" 
-                className="main-product-image" 
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0">
+              <img
+                src="/assets/images/products/rie-etcher/main.jpg"
+                alt="RIE Etcher System"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
-            <div className="product-info">
-              <h2>Product Description</h2>
-              <p>The RIE Etcher Series delivers high-precision reactive ion etching in a compact 1.0m × 1.0m footprint. Designed for research and development environments, it offers exceptional process control and monitoring capabilities.</p>
-              
-              <h3>Key Features</h3>
-              <ul className="feature-list">
-                <li>Compact footprint design (1.0m × 1.0m)</li>
-                <li>Advanced plasma control system</li>
-                <li>Real-time process monitoring</li>
-                <li>Multiple gas line configuration</li>
-                <li>Precise temperature control</li>
-                <li>Flexible RF power options</li>
-                <li>User-friendly interface</li>
-                <li>Comprehensive safety features</li>
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Product Description</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-6">The RIE Etcher Series delivers high-precision reactive ion etching in a compact 1.0m × 1.0m footprint. Designed for research and development environments, it offers exceptional process control and monitoring capabilities.</p>
+
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Key Features</h3>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Compact footprint design (1.0m × 1.0m)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Advanced plasma control system
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Real-time process monitoring
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Multiple gas line configuration
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Precise temperature control
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Flexible RF power options
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  User-friendly interface
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Comprehensive safety features
+                </li>
               </ul>
 
-              <h3>Applications</h3>
-              <ul className="application-list-styled">
-                <li><span className="app-icon">&#x1F4BB;</span> Silicon Processing</li>
-                <li><span className="app-icon">&#x1F4A0;</span> Dielectric Etching</li>
-                <li><span className="app-icon">&#x2699;</span> Metal Etching</li>
-                <li><span className="app-icon">&#x1F9EA;</span> Polymer Processing</li>
-                <li><span className="app-icon">&#x1F3D7;</span> MEMS Fabrication</li>
-                <li><span className="app-icon">&#x1F52C;</span> Research & Development</li>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">memory</span>
+                  Silicon Processing
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">category</span>
+                  Dielectric Etching
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">settings</span>
+                  Metal Etching
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">science</span>
+                  Polymer Processing
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">precision_manufacturing</span>
+                  MEMS Fabrication
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">biotech</span>
+                  Research & Development
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="detailed-specs">
-        <div className="container">
-          <h2>Technical Specifications</h2>
-          <div className="specs-table-container">
-            <table className="detailed-specs-table">
+      {/* Technical Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Technical Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2}>System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4" to 12" compatibility</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Power</td>
+                  <td className="px-6 py-3 text-on-surface-variant">13.56 MHz, up to 600W</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Gas System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4 process gas lines with MFCs</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Temperature Control</td>
+                  <td className="px-6 py-3 text-on-surface-variant">20°C to 80°C</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Base Pressure</td>
+                  <td className="px-6 py-3 text-on-surface-variant">≤ 5×10⁻⁶ Torr</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Process Control</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Automated with endpoint detection</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">1.0m x 1.0m</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Pump System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">TMP & mechanical pump</td>
                 </tr>
                 <tr>
-                  <td>Wafer Size Range</td>
-                  <td>4" to 12" compatibility</td>
-                </tr>
-                <tr>
-                  <td>RF Power</td>
-                  <td>13.56 MHz, up to 600W</td>
-                </tr>
-                <tr>
-                  <td>Gas System</td>
-                  <td>4 process gas lines with MFCs</td>
-                </tr>
-                <tr>
-                  <td>Temperature Control</td>
-                  <td>20°C to 80°C</td>
-                </tr>
-                <tr>
-                  <td>Base Pressure</td>
-                  <td>≤ 5×10⁻⁶ Torr</td>
-                </tr>
-                <tr>
-                  <td>Process Control</td>
-                  <td>Automated with endpoint detection</td>
-                </tr>
-                <tr>
-                  <td>Footprint</td>
-                  <td>1.0m x 1.0m</td>
-                </tr>
-                <tr>
-                  <td>Pump System</td>
-                  <td>TMP & mechanical pump</td>
-                </tr>
-                <tr>
-                  <td>Sample Loading</td>
-                  <td>Open-Load or Load-Lock (configurable)</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Sample Loading</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Open-Load or Load-Lock (configurable)</td>
                 </tr>
               </tbody>
             </table>
@@ -239,32 +276,33 @@ export function RIEEtcher() {
         </div>
       </section>
 
-      <section className="process-capabilities">
-        <div className="container">
-          <h2>Process Capabilities</h2>
-          <div className="capability-grid">
-            <div className="capability-card">
-              <h3>Performance Features</h3>
-              <ul>
-                <li>High etch rate control</li>
-                <li>Excellent process uniformity</li>
-                <li>Advanced endpoint detection (OES/IV/impedance ready)</li>
-                <li>Stable plasma generation</li>
-                <li>Precise pressure control</li>
-                <li>Multiple process recipes storage</li>
-                <li>Real-time parameter monitoring</li>
-                <li>Automated pressure control</li>
+      {/* Process Capabilities */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Process Capabilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Performance Features</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> High etch rate control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Excellent process uniformity</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Advanced endpoint detection (OES/IV/impedance ready)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Stable plasma generation</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Precise pressure control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Multiple process recipes storage</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Real-time parameter monitoring</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Automated pressure control</li>
               </ul>
             </div>
-            <div className="capability-card">
-              <h3>Process Applications</h3>
-              <ul>
-                <li>Silicon dioxide etching</li>
-                <li>Silicon nitride processing</li>
-                <li>Polysilicon etching</li>
-                <li>Metal pattern definition</li>
-                <li>Polymer removal</li>
-                <li>Surface treatment</li>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Process Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon dioxide etching</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Silicon nitride processing</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Polysilicon etching</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Metal pattern definition</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Polymer removal</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Surface treatment</li>
               </ul>
             </div>
           </div>
@@ -337,59 +375,59 @@ export function RIEEtcher() {
         ctaLabel="Request a Quote"
       />
 
-      {/* Related equipment & articles */}
-      <section className="related-reading-cards">
-        <div className="container">
-          <h2>Related Equipment & Articles</h2>
-          <div className="related-cards-grid">
-            <a href="/products/icp-etcher" className="related-card">
-              <span className="related-card-icon">&#x2699;</span>
-              <h3>ICP Etcher Series</h3>
-              <p>High-density plasma etching alternative for advanced applications.</p>
-              <span className="related-card-link">View Product &rarr;</span>
+      {/* Related Equipment & Articles */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Related Equipment & Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/products/icp-etcher" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">settings</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">ICP Etcher Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">High-density plasma etching alternative for advanced applications.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="related-card">
-              <span className="related-card-icon">&#x1F4D6;</span>
-              <h3>Plasma Etching Fundamentals</h3>
-              <p>Key concepts, terms, and control knobs for plasma etch processes.</p>
-              <span className="related-card-link">Read Article &rarr;</span>
+            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Key concepts, terms, and control knobs for plasma etch processes.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
-            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="related-card">
-              <span className="related-card-icon">&#x1F4D6;</span>
-              <h3>Plasma Etching Explained</h3>
-              <p>Practical guidance and applications for plasma etching technology.</p>
-              <span className="related-card-link">Read Article &rarr;</span>
+            <a href="/insights/plasma-etching-explained-fundamentals-applications" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Explained</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Practical guidance and applications for plasma etching technology.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What materials can the RIE etcher process?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The RIE etcher processes a wide range of materials including silicon (Si), silicon dioxide (SiO2), silicon nitride (SiNx), metals, and polymers. Common applications include dielectric patterning, metal etching, polymer removal, and photoresist stripping for semiconductor and MEMS fabrication.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: When should I choose RIE over ICP-RIE?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: RIE is the right choice for standard-depth etching with moderate aspect ratios, general-purpose dielectric and polymer processing, and applications where cost-effectiveness is a priority. Choose ICP-RIE when you need high-aspect-ratio features, higher etch rates, or independent control of plasma density and ion energy for advanced materials like SiC or GaN.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What process control features does the RIE etcher include?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The RIE etcher includes automated process control with endpoint detection, 4 process gas lines with mass flow controllers (MFCs), temperature control from 20°C to 80°C, and RF power up to 600W at 13.56 MHz. The system supports both open-load and load-lock configurations.
               </p>
             </div>
@@ -397,24 +435,43 @@ export function RIEEtcher() {
         </div>
       </section>
 
-      <section className="product-contact">
-        <div className="container">
-          <h2>Request Information</h2>
-          <p>Get detailed specs, pricing & customization options.</p>
-          <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
-            <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
-              <span className="icon-download"></span> Download Product Datasheet
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Request Information</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Get detailed specs, pricing & customization options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Contact Sales Team
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
             </a>
           </div>
         </div>
       </section>
 
-      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-          Contact Sales Team
-        </button>
-      </div>
+      {/* Floating Contact Button */}
+      {showFloatingContact && (
+        <div className="fixed bottom-6 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
+          <button
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            onClick={() => openContactForm(true)}
+          >
+            <span className="material-symbols-outlined text-[20px]">call</span>
+            Contact Sales Team
+          </button>
+        </div>
+      )}
 
       <QuoteModal
         isOpen={isModalOpen}
@@ -438,4 +495,4 @@ export function RIEEtcher() {
       />
     </>
   );
-} 
+}

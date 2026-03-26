@@ -8,7 +8,7 @@ import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
-import '../styles/InsightsPostPage.css';
+import '../styles/article-content.css';
 
 // Consolidated article redirects: weaker → stronger article
 const ARTICLE_REDIRECTS: Record<string, string> = {
@@ -42,13 +42,13 @@ function InsightsHeroImage({ post }: { post: InsightsPost }) {
 function RelatedProductsSidebar({ products }: { products?: RelatedProduct[] }) {
   if (!products || products.length === 0) return null;
   return (
-    <div className="related-products">
-      <h3>Related Products</h3>
-      <ul>
+    <div>
+      <h3 className="mb-2.5 text-on-surface text-lg font-semibold">Related Products</h3>
+      <ul className="list-none p-0 m-0">
         {products.map(p => (
-          <li key={p.href}>
-            <a href={p.href}>{p.label}</a>
-            {p.subtitle && <span className="product-mini">{p.subtitle}</span>}
+          <li key={p.href} className="mb-2 p-2 px-2.5 bg-surface-container-lowest rounded-md border-l-[3px] border-primary">
+            <a href={p.href} className="text-on-surface no-underline font-medium text-sm block hover:text-primary transition-colors">{p.label}</a>
+            {p.subtitle && <span className="block text-xs text-on-surface-variant mt-1 font-normal">{p.subtitle}</span>}
           </li>
         ))}
       </ul>
@@ -60,11 +60,13 @@ function RelatedArticlesSidebar({ post, allPosts }: { post: InsightsPost; allPos
   const related = rankRelatedInsights(allPosts, post, 3);
   if (related.length === 0) return null;
   return (
-    <div className="related-articles">
-      <h3>Related Articles</h3>
-      <ul>
+    <div className="mt-5 pt-4 border-t border-outline-variant/20">
+      <h3 className="mb-2.5 text-on-surface text-lg">Related Articles</h3>
+      <ul className="list-none p-0">
         {related.map(rp => (
-          <li key={rp.slug}><a href={`/insights/${rp.slug}`}>{rp.title}</a></li>
+          <li key={rp.slug} className="mb-2">
+            <a href={`/insights/${rp.slug}`} className="text-primary no-underline text-sm leading-snug hover:text-primary/80 transition-colors">{rp.title}</a>
+          </li>
         ))}
       </ul>
     </div>
@@ -73,8 +75,8 @@ function RelatedArticlesSidebar({ post, allPosts }: { post: InsightsPost; allPos
 
 function PostSidebar({ post, allPosts }: { post: InsightsPost; allPosts?: InsightsPost[] }) {
   return (
-    <div className="sidebar-column">
-      <div className="sidebar-info">
+    <div>
+      <div className="bg-white p-6 rounded-xl shadow-md mb-5">
         <RelatedProductsSidebar products={post.relatedProducts} />
         {allPosts && <RelatedArticlesSidebar post={post} allPosts={allPosts} />}
       </div>
@@ -109,20 +111,16 @@ export const InsightsPostPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="insights-post-page">
-        <div className="container">
-          <div className="loading">Loading...</div>
-        </div>
+      <div className="min-h-screen bg-surface-container-lowest">
+        <div className="text-center py-16 px-5 text-lg text-on-surface-variant">Loading...</div>
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="insights-post-page">
-        <div className="container">
-          <div className="error">Post not found</div>
-        </div>
+      <div className="min-h-screen bg-surface-container-lowest">
+        <div className="text-center py-16 px-5 text-lg text-red-500">Post not found</div>
       </div>
     );
   }
@@ -175,21 +173,24 @@ export const InsightsPostPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-      <div className="insights-post-page">
+      <div className="min-h-screen bg-surface-container-lowest">
         {/* Hero Section */}
-        <section className="insights-post-hero">
-          <div className="container">
-            <div className="hero-content">
-              <div className="hero-text">
-                <h1 className="insights-post-title">{post.title}</h1>
-                <div className="insights-post-meta">
-                  <span className="author">{post.author}</span>
-                  <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
-                  <span className="category">{post.category}</span>
-                  <span className="read-time">{post.readTime} min read</span>
+        <section className="hero-gradient relative py-20 text-white overflow-hidden">
+          <div className="absolute inset-0 opacity-30">
+            <img className="w-full h-full object-cover" src="/assets/images/hero-cleanroom.jpg" alt="" />
+          </div>
+          <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
+            <div className="flex items-center w-full gap-10 md:flex-row flex-col">
+              <div className="flex-1">
+                <h1 className="insights-post-title text-4xl font-bold mb-5 leading-tight relative z-10">{post.title}</h1>
+                <div className="insights-post-meta flex flex-wrap gap-5 mb-8 text-base opacity-90 relative z-10">
+                  <span className="flex items-center gap-1.5 font-semibold">{post.author}</span>
+                  <span className="flex items-center gap-1.5">{new Date(post.publishDate).toLocaleDateString()}</span>
+                  <span className="flex items-center gap-1.5 bg-white/20 px-4 py-1 rounded-full">{post.category}</span>
+                  <span className="flex items-center gap-1.5 opacity-80">{post.readTime} min read</span>
                 </div>
               </div>
-              <div className="hero-image">
+              <div className="flex-1 max-w-[400px]">
                 <InsightsHeroImage post={post} />
               </div>
             </div>
@@ -197,12 +198,12 @@ export const InsightsPostPage: React.FC = () => {
         </section>
 
         {/* Content Section */}
-        <section className="insights-post-content">
+        <section className="py-16">
           {isStandaloneComponent ? (
             /* Two-stage layout with unified alignment */
-            <div className="content-container-unified">
-              <div className="content-wrapper-top">
-                <div className="main-content">
+            <div className="max-w-6xl mx-auto px-6 md:px-6">
+              <div className="grid grid-cols-[2.5fr_1fr] gap-10 mb-8 max-md:grid-cols-1">
+                <div className="bg-white p-10 rounded-xl shadow-md min-w-0 overflow-x-hidden max-md:p-5">
                   <PlasmaCleanerComparisonPage />
                 </div>
                 <PostSidebar post={post} allPosts={allPosts} />
@@ -210,8 +211,8 @@ export const InsightsPostPage: React.FC = () => {
             </div>
           ) : (
             /* Standard single-column layout for regular posts */
-            <div className="content-wrapper">
-              <div className="main-content">
+            <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-md:grid-cols-1">
+              <div className="bg-white p-10 rounded-xl shadow-md min-w-0 overflow-x-hidden max-md:p-5">
                 {post.content ? (
                   <div
                     className="post-content"
@@ -221,23 +222,23 @@ export const InsightsPostPage: React.FC = () => {
 
                 {/* Tags */}
                 {post.tags && post.tags.length > 0 && (
-                  <div className="post-tags">
+                  <div className="mt-10 pt-8 border-t border-outline-variant/20">
                     <h3>Tags:</h3>
-                    <div className="tags">
+                    <div className="flex flex-wrap gap-2.5">
                       {post.tags.map(tag => (
-                        <span key={tag} className="tag">{tag}</span>
+                        <span key={tag} className="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">{tag}</span>
                       ))}
                     </div>
                   </div>
                 )}
 
                 {/* Share Buttons */}
-                <div className="share-section">
+                <div className="mt-10 pt-8 border-t border-outline-variant/20">
                   <h3>Share this article:</h3>
-                  <div className="share-buttons">
-                    <button className="share-btn twitter">Twitter</button>
-                    <button className="share-btn linkedin">LinkedIn</button>
-                    <button className="share-btn email">Email</button>
+                  <div className="flex gap-2.5">
+                    <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-[#1da1f2] text-white hover:-translate-y-0.5 hover:shadow-md transition-all">Twitter</button>
+                    <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-[#0077b5] text-white hover:-translate-y-0.5 hover:shadow-md transition-all">LinkedIn</button>
+                    <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-slate-500 text-white hover:-translate-y-0.5 hover:shadow-md transition-all">Email</button>
                   </div>
                 </div>
               </div>
@@ -259,29 +260,32 @@ export default InsightsPostPage;
  */
 export function InsightsPostPreview({ post }: { post: InsightsPost }) {
   return (
-    <div className="insights-post-page">
-      <section className="insights-post-hero">
-        <div className="container">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1 className="insights-post-title">{post.title || 'Untitled Article'}</h1>
-              <div className="insights-post-meta">
-                <span className="author">{post.author}</span>
-                <span className="date">{new Date(post.publishDate).toLocaleDateString()}</span>
-                <span className="category">{post.category}</span>
-                <span className="read-time">{post.readTime} min read</span>
+    <div className="min-h-screen bg-surface-container-lowest">
+      <section className="hero-gradient relative py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
+          <img className="w-full h-full object-cover" src="/assets/images/hero-cleanroom.jpg" alt="" />
+        </div>
+        <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
+          <div className="flex items-center w-full gap-10 md:flex-row flex-col">
+            <div className="flex-1">
+              <h1 className="insights-post-title text-4xl font-bold mb-5 leading-tight relative z-10">{post.title || 'Untitled Article'}</h1>
+              <div className="insights-post-meta flex flex-wrap gap-5 mb-8 text-base opacity-90 relative z-10">
+                <span className="flex items-center gap-1.5 font-semibold">{post.author}</span>
+                <span className="flex items-center gap-1.5">{new Date(post.publishDate).toLocaleDateString()}</span>
+                <span className="flex items-center gap-1.5 bg-white/20 px-4 py-1 rounded-full">{post.category}</span>
+                <span className="flex items-center gap-1.5 opacity-80">{post.readTime} min read</span>
               </div>
             </div>
-            <div className="hero-image">
+            <div className="flex-1 max-w-[400px]">
               <InsightsHeroImage post={post} />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="insights-post-content">
-        <div className="content-wrapper">
-          <div className="main-content">
+      <section className="py-16">
+        <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-md:grid-cols-1">
+          <div className="bg-white p-10 rounded-xl shadow-md min-w-0 overflow-x-hidden max-md:p-5">
             {post.content ? (
               <div
                 className="post-content"
@@ -292,11 +296,11 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
             )}
 
             {post.tags && post.tags.length > 0 && (
-              <div className="post-tags">
+              <div className="mt-10 pt-8 border-t border-outline-variant/20">
                 <h3>Tags:</h3>
-                <div className="tags">
+                <div className="flex flex-wrap gap-2.5">
                   {post.tags.map(tag => (
-                    <span key={tag} className="tag">{tag}</span>
+                    <span key={tag} className="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">{tag}</span>
                   ))}
                 </div>
               </div>

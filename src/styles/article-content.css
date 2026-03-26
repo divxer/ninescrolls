@@ -1,0 +1,308 @@
+/* Article content styles — for HTML rendered via dangerouslySetInnerHTML */
+/* These styles cannot be converted to Tailwind because they target CMS-generated HTML */
+
+/* Base article text */
+.post-content {
+  line-height: 1.8;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.post-content h2 {
+  color: #2c3e50;
+  margin: 30px 0 15px 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.post-content h3 {
+  font-size: 1.25rem;
+  margin: 1.5em 0 0.6em;
+  color: #1f2937;
+}
+
+.post-content p {
+  margin-bottom: 20px;
+}
+
+.post-content ul {
+  margin: 20px 0;
+  padding-left: 20px;
+}
+
+.post-content li {
+  margin-bottom: 10px;
+}
+
+.post-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.post-content img,
+.post-content table,
+.post-content pre,
+.post-content iframe {
+  max-width: 100%;
+}
+
+.post-content img {
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5em 0;
+}
+
+/* Tables */
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.95em;
+}
+
+.post-content thead tr {
+  background-color: #f5f5f5;
+}
+
+.post-content th,
+.post-content td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+
+.post-content th {
+  font-weight: 600;
+}
+
+.post-content tbody tr:hover {
+  background-color: #fafafa;
+}
+
+/* TL;DR Section */
+.tldr-section {
+  background: #e7f3ff;
+  border-left: 4px solid #2563eb;
+  padding: 1.5rem;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+}
+
+.tldr-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.tldr-section ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.tldr-section li {
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
+  line-height: 1.6;
+  color: #444;
+}
+
+.tldr-section li::before {
+  content: '\2713';
+  position: absolute;
+  left: 0;
+  color: #2563eb;
+  font-weight: bold;
+}
+
+/* Table of Contents (inline in article) */
+.toc-section {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.toc-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.toc-section ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.toc-section li {
+  margin-bottom: 0.5rem;
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.toc-section li::before {
+  content: '\2192';
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-size: 0.9rem;
+}
+
+.toc-section a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.toc-section a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* In-context Product Callout */
+.product-callout {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e7f3ff 100%);
+  border-left: 4px solid #2563eb;
+  padding: 2rem;
+  border-radius: 8px;
+  margin: 3rem 0;
+  text-align: center;
+}
+
+.product-callout h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-callout p {
+  margin: 0 0 1.5rem 0;
+  color: #444;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.product-callout-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.product-callout-buttons a {
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+}
+
+.product-callout-buttons a:hover {
+  background: #1d4ed8;
+}
+
+.product-callout-buttons a.secondary {
+  background: #fff;
+  color: #2563eb;
+  border: 1px solid #2563eb;
+}
+
+.product-callout-buttons a.secondary:hover {
+  background: #f0f4ff;
+}
+
+/* Article figures */
+.post-figure {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.post-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.post-figure-caption {
+  margin-top: 10px;
+  font-style: italic;
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Full-width break-out blocks for tables and comparison sections */
+.full-width-breakout {
+  width: calc(100% + 48px);
+  margin-left: -24px;
+  margin-right: -24px;
+  padding: 2rem 24px;
+  background: #f8f9fa;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.full-width-breakout .breakout-content {
+  max-width: 100%;
+}
+
+/* Unified container layout helpers */
+.content-container-unified {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.content-wrapper-top {
+  display: grid;
+  grid-template-columns: 2.5fr 1fr;
+  gap: 40px;
+  margin-bottom: 2rem;
+}
+
+.content-main-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  background: white;
+}
+
+.content-main-section .article-body-wrapper {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .content-container-unified {
+    padding: 0 16px;
+  }
+
+  .content-wrapper-top {
+    grid-template-columns: 1fr;
+  }
+
+  .content-main-section .article-body-wrapper {
+    padding: 0 16px;
+  }
+
+  .full-width-breakout {
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 1.5rem 16px;
+  }
+
+  .post-content {
+    font-size: 1rem;
+  }
+}
