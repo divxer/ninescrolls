@@ -3,6 +3,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { Helmet } from 'react-helmet-async';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 
 export function PlasmaCleanerOverviewPage() {
   useScrollToTop();
@@ -68,7 +69,12 @@ export function PlasmaCleanerOverviewPage() {
       </Helmet>
 
       <section className="hero-gradient relative min-h-[400px] flex items-center py-20 text-white">
-        <div className="max-w-7xl mx-auto px-6 w-full relative z-10 text-center">
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
+            { name: 'Products', path: '/products' },
+            { name: 'Plasma Cleaners', path: '/products/plasma-cleaner' }
+          ]} />
+          <div className="text-center mt-6">
           <h1 className="text-5xl md:text-5xl font-bold mb-6">Plasma Cleaners</h1>
           <p className="text-2xl md:text-2xl mb-4 opacity-95">
             HY Series & PLUTO Series — RF Plasma Systems for Research Labs
@@ -76,6 +82,7 @@ export function PlasmaCleanerOverviewPage() {
           <p className="text-lg max-w-[700px] mx-auto opacity-90 leading-relaxed">
             From compact teaching systems to 500W flagship cleaners. Six models covering every research plasma cleaning need, from $6,499 to $15,999.
           </p>
+          </div>
         </div>
       </section>
 
