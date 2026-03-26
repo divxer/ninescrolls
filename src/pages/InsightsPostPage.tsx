@@ -47,7 +47,7 @@ function RelatedProductsSidebar({ products }: { products?: RelatedProduct[] }) {
       <ul className="list-none p-0 m-0">
         {products.map(p => (
           <li key={p.href} className="mb-2 p-2 px-2.5 bg-surface-container-lowest rounded-md border-l-[3px] border-primary">
-            <a href={p.href} className="text-on-surface no-underline font-medium text-sm block hover:text-primary transition-colors">{p.label}</a>
+            <a href={p.href} className="text-primary no-underline font-medium text-sm block hover:text-primary/80 transition-colors">{p.label}</a>
             {p.subtitle && <span className="block text-xs text-on-surface-variant mt-1 font-normal">{p.subtitle}</span>}
           </li>
         ))}
