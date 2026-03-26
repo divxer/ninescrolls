@@ -26,13 +26,13 @@ const productToPdfMap: Record<string, string> = {
   'Stripping System Series': 'striper-system-datasheet.pdf'
 };
 
-export function ContactFormModal({ 
-  isOpen, 
-  onClose, 
-  productName, 
-  formData, 
-  onFormDataChange, 
-  onSuccess 
+export function ContactFormModal({
+  isOpen,
+  onClose,
+  productName,
+  formData,
+  onFormDataChange,
+  onSuccess
 }: ContactFormModalProps) {
   const analytics = useCombinedAnalytics();
   const [isSuccess, setIsSuccess] = useState(false);
@@ -142,60 +142,63 @@ export function ContactFormModal({
 
   return (
     <>
-    <div className="modal" data-open={isOpen}>
-      <div className="modal-content" role="dialog" aria-labelledby="modalTitle">
+    <div className="fixed inset-0 z-[1000] bg-black/50 overflow-auto flex items-start justify-center">
+      <div className="bg-white my-[10vh] p-8 rounded-lg w-[90%] max-w-[600px] relative animate-in slide-in-from-bottom-4" role="dialog" aria-labelledby="modalTitle">
         {!isSuccess ? (
           <>
-            <span className="close-button" aria-label="Close" onClick={onClose}>&times;</span>
+            <span className="absolute top-4 right-4 text-2xl cursor-pointer text-gray-400 hover:text-on-surface bg-transparent border-none p-2 leading-none transition-colors" aria-label="Close" onClick={onClose}>&times;</span>
             <h2 id="modalTitle">Request Product Information</h2>
-            <p className="modal-subtitle">Please fill out the form below and we'll get back to you shortly.</p>
-            {error && <div className="error-message">{error}</div>}
+            <p className="text-on-surface-variant text-sm mb-4">Please fill out the form below and we'll get back to you shortly.</p>
+            {error && <div className="bg-red-50 text-red-800 p-3 rounded border border-red-200 mb-4 text-sm">{error}</div>}
             <form id="contactForm" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="productName">Product:</label>
-                <input type="text" id="productName" name="productName" value={productName} readOnly className="form-control-readonly" />
+              <div className="mb-4">
+                <label htmlFor="productName" className="block text-sm font-medium text-on-surface-variant mb-1">Product:</label>
+                <input type="text" id="productName" name="productName" value={productName} readOnly className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors bg-gray-100 cursor-not-allowed" />
               </div>
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  name="name" 
-                  required 
-                  placeholder="Enter your full name" 
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="Enter your full name"
                   autoComplete="name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email" 
-                  required 
-                  placeholder="Enter your email address" 
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-1">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="Enter your email address"
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="phone">Phone:</label>
-                <input 
-                  type="tel" 
-                  id="phone" 
-                  name="phone" 
-                  pattern="[0-9+\-\s()]*" 
-                  placeholder="Optional: Enter your phone number" 
+              <div className="mb-4">
+                <label htmlFor="phone" className="block text-sm font-medium text-on-surface-variant mb-1">Phone:</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  pattern="[0-9+\-\s()]*"
+                  placeholder="Optional: Enter your phone number"
                   autoComplete="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="organization">Organization:</label>
+              <div className="mb-4">
+                <label htmlFor="organization" className="block text-sm font-medium text-on-surface-variant mb-1">Organization:</label>
                 <input
                   type="text"
                   id="organization"
@@ -204,39 +207,40 @@ export function ContactFormModal({
                   autoComplete="organization"
                   value={formData.organization}
                   onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+              <div className="mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isQuote} onChange={(e) => setIsQuote(e.target.checked)} className="w-auto m-0" />
                   I need a budgetary quote (requires shipping address for tax calculation)
                 </label>
               </div>
               {isQuote && (
-                <div className="quote-address-fields" style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px' }}>
-                  <p style={{ fontSize: '13px', color: '#555', marginBottom: '12px' }}>Shipping address is required to calculate applicable taxes.</p>
-                  <div className="form-group">
-                    <label htmlFor="address">Address *</label>
-                    <input type="text" id="address" name="address" placeholder="Street address" value={addressData.address} onChange={handleAddressChange} required autoComplete="street-address" />
+                <div className="bg-gray-50 p-4 rounded-lg mb-2">
+                  <p className="text-[13px] text-gray-600 mb-3">Shipping address is required to calculate applicable taxes.</p>
+                  <div className="mb-4">
+                    <label htmlFor="address" className="block text-sm font-medium text-on-surface-variant mb-1">Address *</label>
+                    <input type="text" id="address" name="address" placeholder="Street address" value={addressData.address} onChange={handleAddressChange} required autoComplete="street-address" className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label htmlFor="city">City *</label>
-                      <input type="text" id="city" name="city" placeholder="City" value={addressData.city} onChange={handleAddressChange} required autoComplete="address-level2" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="mb-4">
+                      <label htmlFor="city" className="block text-sm font-medium text-on-surface-variant mb-1">City *</label>
+                      <input type="text" id="city" name="city" placeholder="City" value={addressData.city} onChange={handleAddressChange} required autoComplete="address-level2" className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" />
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="state">State/Province *</label>
-                      <input type="text" id="state" name="state" placeholder="State" value={addressData.state} onChange={handleAddressChange} required autoComplete="address-level1" />
+                    <div className="mb-4">
+                      <label htmlFor="state" className="block text-sm font-medium text-on-surface-variant mb-1">State/Province *</label>
+                      <input type="text" id="state" name="state" placeholder="State" value={addressData.state} onChange={handleAddressChange} required autoComplete="address-level1" className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label htmlFor="zipCode">ZIP/Postal Code *</label>
-                      <input type="text" id="zipCode" name="zipCode" placeholder="ZIP Code" value={addressData.zipCode} onChange={handleAddressChange} required autoComplete="postal-code" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="mb-4">
+                      <label htmlFor="zipCode" className="block text-sm font-medium text-on-surface-variant mb-1">ZIP/Postal Code *</label>
+                      <input type="text" id="zipCode" name="zipCode" placeholder="ZIP Code" value={addressData.zipCode} onChange={handleAddressChange} required autoComplete="postal-code" className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" />
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="country">Country *</label>
-                      <select id="country" name="country" value={addressData.country} onChange={handleAddressChange} required autoComplete="country-name">
+                    <div className="mb-4">
+                      <label htmlFor="country" className="block text-sm font-medium text-on-surface-variant mb-1">Country *</label>
+                      <select id="country" name="country" value={addressData.country} onChange={handleAddressChange} required autoComplete="country-name" className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors">
                         <option value="United States">United States</option>
                         <option value="Canada">Canada</option>
                         <option value="United Kingdom">United Kingdom</option>
@@ -270,33 +274,34 @@ export function ContactFormModal({
                   </div>
                 </div>
               )}
-              <div className="form-group">
-                <label htmlFor="message">Message</label>
-                <textarea 
-                  id="message" 
-                  name="message" 
-                  rows={4} 
-                  required 
+              <div className="mb-4">
+                <label htmlFor="message" className="block text-sm font-medium text-on-surface-variant mb-1">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={4}
+                  required
                   placeholder="Please let us know your specific requirements or questions"
                   value={formData.message}
                   onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors"
                 ></textarea>
               </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              <div className="flex gap-4 justify-end mt-6">
+                <button type="submit" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-primary text-white border border-primary hover:bg-primary-container hover:-translate-y-0.5 transition-all cursor-pointer text-base" disabled={isSubmitting}>
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <div className="form-success" data-success={isSuccess}>
-            <span className="close-button" aria-label="Close" onClick={onClose}>&times;</span>
-            <div className="success-content">
-              <span className="success-icon">✓</span>
+          <div className="text-center p-8">
+            <span className="absolute top-4 right-4 text-2xl cursor-pointer text-gray-400 hover:text-on-surface bg-transparent border-none p-2 leading-none transition-colors" aria-label="Close" onClick={onClose}>&times;</span>
+            <div className="relative">
+              <span className="block text-5xl text-green-500 mb-4">✓</span>
               <h3>Thank You for Your Interest!</h3>
               <p>Your request about the {productName} has been submitted successfully.</p>
-              <div className="success-details">
+              <div className="text-left my-6 p-6 bg-gray-100 rounded-lg">
                 <p>What happens next:</p>
                 <ul>
                   <li>You'll receive a confirmation email within the next few minutes</li>
@@ -304,17 +309,17 @@ export function ContactFormModal({
                   <li>We'll respond with detailed information within 1–2 business days</li>
                 </ul>
               </div>
-              <div className="success-actions">
+              <div className="mt-6">
                 <p>Meanwhile, you might be interested in:</p>
-                <div className="action-buttons">
-                  <a 
+                <div className="flex gap-4 justify-center flex-wrap">
+                  <a
                     href="#"
-                    className="btn btn-secondary"
+                    className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base"
                     onClick={(e) => { e.preventDefault(); handleDatasheetDownload(); setGateOpen(true); }}
                   >
                     <span className="icon-download"></span> Download Product Datasheet
                   </a>
-                  <Link to="/products" className="btn btn-secondary">
+                  <Link to="/products" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base">
                     <span className="icon-browse"></span> Browse Other Products
                   </Link>
                 </div>
@@ -325,7 +330,7 @@ export function ContactFormModal({
       </div>
     </div>
 
-    <DownloadGateModal 
+    <DownloadGateModal
       isOpen={gateOpen}
       onClose={() => setGateOpen(false)}
       fileUrl={`/docs/${productToPdfMap[productName] || 'equipment-guide.pdf'}`}
@@ -335,4 +340,4 @@ export function ContactFormModal({
     />
     </>
   );
-} 
+}

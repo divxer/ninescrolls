@@ -65,7 +65,7 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
       // Success
       setIsSuccess(true);
       setEmail('');
-      
+
       // Track subscription event
       analytics.trackCustomEvent('newsletter_subscribe', {
         source: variant,
@@ -92,25 +92,18 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
 
   if (variant === 'footer') {
     return (
-      <div className={`newsletter-subscribe ${className}`}>
-        <h5 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>Newsletter</h5>
-        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', marginBottom: '0.75rem' }}>
+      <div className={className}>
+        <h5 className="mb-3 text-[0.95rem]">Newsletter</h5>
+        <p className="text-sm text-white/80 mb-3">
           Stay updated with our latest insights
         </p>
-        
+
         {isSuccess ? (
-          <div style={{ 
-            padding: '0.75rem', 
-            backgroundColor: 'rgba(34, 197, 94, 0.2)', 
-            borderRadius: '6px',
-            border: '1px solid rgba(34, 197, 94, 0.3)',
-            fontSize: '0.85rem',
-            color: '#86efac'
-          }}>
+          <div className="p-3 bg-green-500/20 rounded-md border border-green-500/30 text-sm text-green-300">
             ✓ Successfully subscribed! Check your email to confirm.
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <input
               type="email"
               value={email}
@@ -121,57 +114,24 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
               placeholder="Enter your email"
               required
               disabled={isSubmitting}
-              style={{
-                padding: '0.6rem 0.75rem',
-                fontSize: '0.9rem',
-                borderRadius: '6px',
-                border: error ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.2)',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                color: '#fff',
-                outline: 'none',
-                transition: 'all 0.2s'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = 'rgba(255,255,255,0.4)';
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.15)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(255,255,255,0.2)';
-                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
-              }}
+              className={`px-3 py-2.5 text-sm rounded-md border bg-white/10 text-white outline-none transition-all focus:border-white/40 focus:bg-white/15 ${error ? 'border-red-500' : 'border-white/20'}`}
             />
             {error && (
-              <div style={{ 
-                fontSize: '0.8rem', 
-                color: '#fca5a5',
-                padding: '0.25rem 0'
-              }}>
+              <div className="text-sm text-red-300 py-1">
                 {error}
               </div>
             )}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn btn-secondary"
-              style={{ 
-                fontSize: '0.9rem', 
-                padding: '0.6rem 1rem',
-                width: '100%',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1
-              }}
+              className="text-sm py-2.5 px-4 w-full rounded-md font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 transition-all disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? 'Subscribing...' : 'Subscribe'}
             </button>
           </form>
         )}
-        
-        <p style={{ 
-          fontSize: '0.75rem', 
-          color: 'rgba(255,255,255,0.6)', 
-          marginTop: '0.5rem',
-          lineHeight: '1.4'
-        }}>
+
+        <p className="text-xs text-white/60 mt-2 leading-snug">
           1–2 emails/month. Unsubscribe anytime.
         </p>
       </div>
@@ -180,8 +140,8 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
 
   // Inline variant (for use in other sections)
   return (
-    <div className={`newsletter-subscribe-inline ${className}`}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+    <div className={className}>
+      <form onSubmit={handleSubmit} className="flex gap-2 items-start">
         <input
           type="email"
           value={email}
@@ -192,49 +152,23 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
           placeholder="Enter your email"
           required
           disabled={isSubmitting}
-          style={{
-            flex: 1,
-            padding: '0.75rem',
-            fontSize: '0.95rem',
-            borderRadius: '6px',
-            border: error ? '1px solid #ef4444' : '1px solid #e5e7eb',
-            outline: 'none',
-            transition: 'all 0.2s'
-          }}
+          className={`flex-1 px-3 py-3 text-[0.95rem] rounded-md border outline-none transition-all focus:border-primary ${error ? 'border-red-500' : 'border-gray-200'}`}
         />
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn btn-primary"
-          style={{ 
-            padding: '0.75rem 1.5rem',
-            whiteSpace: 'nowrap',
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            opacity: isSubmitting ? 0.7 : 1
-          }}
+          className="px-6 py-3 whitespace-nowrap rounded-lg font-bold bg-primary text-white hover:bg-primary-container transition-all disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSubmitting ? 'Subscribing...' : 'Subscribe'}
         </button>
       </form>
       {error && (
-        <div style={{ 
-          marginTop: '0.5rem',
-          fontSize: '0.85rem', 
-          color: '#ef4444'
-        }}>
+        <div className="mt-2 text-sm text-red-500">
           {error}
         </div>
       )}
       {isSuccess && (
-        <div style={{ 
-          marginTop: '0.5rem',
-          padding: '0.75rem', 
-          backgroundColor: '#dcfce7', 
-          borderRadius: '6px',
-          border: '1px solid #86efac',
-          fontSize: '0.85rem',
-          color: '#166534'
-        }}>
+        <div className="mt-2 p-3 bg-green-100 rounded-md border border-green-300 text-sm text-green-800">
           ✓ Successfully subscribed! Check your email to confirm.
         </div>
       )}

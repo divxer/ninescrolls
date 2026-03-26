@@ -123,33 +123,33 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   return (
-    <div className="modal" data-open={isOpen}>
-      <div className="modal-content" role="dialog" aria-labelledby="downloadGateTitle">
-        <span className="close-button" aria-label="Close" onClick={onClose}>×</span>
+    <div className="fixed inset-0 z-[1000] bg-black/50 overflow-auto flex items-start justify-center">
+      <div className="bg-white my-[10vh] p-8 rounded-lg w-[90%] max-w-[600px] relative animate-in slide-in-from-bottom-4" role="dialog" aria-labelledby="downloadGateTitle">
+        <span className="absolute top-4 right-4 text-2xl cursor-pointer text-gray-400 hover:text-on-surface bg-transparent border-none p-2 leading-none transition-colors" aria-label="Close" onClick={onClose}>×</span>
         <h2 id="downloadGateTitle">{title}</h2>
         <form onSubmit={submit}>
-          <div className="form-group"><label className="label-strong">Full Name<span className="req">*</span></label><input name="fullName" placeholder="Your full name" value={form.fullName} onChange={update} required /></div>
-          <div className="form-group"><label className="label-strong">Work Email<span className="req">*</span></label><input type="email" name="email" placeholder="name@company.com" value={form.email} onChange={update} required />{emailHint && <div className="input-hint">{emailHint}</div>}</div>
-          <div className="form-group"><label>Company/Organization*</label><input name="organization" value={form.organization} onChange={update} required /></div>
-          <div className="form-group"><label className="label-strong">Research Area(s)<span className="req">*</span></label><input name="researchAreas" placeholder="e.g., MEMS, Photonics, TSV" value={form.researchAreas} onChange={update} required /></div>
-          <div className="form-group"><label>Job Title</label><input name="jobTitle" placeholder="Optional" value={form.jobTitle} onChange={update} /></div>
-          <div className="form-group"><label className="label-strong">How can we help you?<span className="req">*</span></label>
-            <select name="intent" value={form.intent} onChange={update} required>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1 font-semibold">Full Name<span className="text-red-500 ml-0.5">*</span></label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="fullName" placeholder="Your full name" value={form.fullName} onChange={update} required /></div>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1 font-semibold">Work Email<span className="text-red-500 ml-0.5">*</span></label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" type="email" name="email" placeholder="name@company.com" value={form.email} onChange={update} required />{emailHint && <div className="text-xs text-amber-600 mt-1">{emailHint}</div>}</div>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Company/Organization*</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="organization" value={form.organization} onChange={update} required /></div>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1 font-semibold">Research Area(s)<span className="text-red-500 ml-0.5">*</span></label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="researchAreas" placeholder="e.g., MEMS, Photonics, TSV" value={form.researchAreas} onChange={update} required /></div>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1">Job Title</label><input className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="jobTitle" placeholder="Optional" value={form.jobTitle} onChange={update} /></div>
+          <div className="mb-4"><label className="block text-sm font-medium text-on-surface-variant mb-1 font-semibold">How can we help you?<span className="text-red-500 ml-0.5">*</span></label>
+            <select className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-base focus:outline-none focus:border-primary transition-colors" name="intent" value={form.intent} onChange={update} required>
               <option value="">Select an option</option>
               {intents.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
           </div>
-          {turnstileSiteKey && (<div className="form-group"><div ref={widgetRef} /></div>)}
-          <div className="optin-row">
-            <label className="optin">
+          {turnstileSiteKey && (<div className="mb-4"><div ref={widgetRef} /></div>)}
+          <div className="my-2 mb-4">
+            <label className="flex items-start gap-2.5 cursor-pointer max-w-[520px]">
               <input id="subscribe_updates" name="subscribe_updates" type="checkbox" value="yes" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} />
               <span>Send me updates about new products, events, and application insights (1–2 emails/month).</span>
             </label>
           </div>
-          {error && <div className="error-message">{error}</div>}
-          <div className="download-actions">
-            <button className="btn btn-primary btn-full" disabled={submitting || (!!turnstileSiteKey && !token)}>{submitting ? 'Submitting...' : 'Get My Guide Now'}</button>
-            <div className="privacy">By submitting this form, you agree to our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. We respect your privacy. No spam, ever.</div>
+          {error && <div className="bg-red-50 text-red-800 p-3 rounded border border-red-200 mb-4 text-sm">{error}</div>}
+          <div className="text-center mt-5">
+            <button className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-primary text-white border border-primary hover:bg-primary-container hover:-translate-y-0.5 transition-all cursor-pointer text-base w-full justify-center" disabled={submitting || (!!turnstileSiteKey && !token)}>{submitting ? 'Submitting...' : 'Get My Guide Now'}</button>
+            <div className="text-xs text-gray-500 max-w-[320px] mx-auto leading-snug mt-3">By submitting this form, you agree to our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. We respect your privacy. No spam, ever.</div>
           </div>
         </form>
       </div>

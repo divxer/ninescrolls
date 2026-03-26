@@ -187,20 +187,20 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
   };
 
   return (
-    <div className={`contact-form ${className}`}>
+    <div className={className}>
       {isSuccess ? (
-        <div className="success-message" ref={successRef}>
-          <h3>
+        <div className="text-center p-8 bg-green-50 rounded-lg border border-green-200" ref={successRef}>
+          <h3 className="text-xl font-bold text-on-surface mb-3">
             {topic === 'newsletter' ? 'Successfully Subscribed!' : 'Thank You for Your Message!'}
           </h3>
-          <p>
+          <p className="text-on-surface-variant mb-6">
             {topic === 'newsletter'
               ? 'Thank you for subscribing to our newsletter! You\'ll receive our latest insights, product updates, and technical resources (1–2 emails per month). We respect your privacy and you can unsubscribe at any time.'
               : 'We have received your inquiry and will get back to you within 1–2 business days.'
             }
           </p>
           <button
-            className="btn btn-primary"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-container transition-all cursor-pointer"
             onClick={() => setIsSuccess(false)}
           >
             {topic === 'newsletter' ? 'Subscribe Another Email' : 'Send Another Message'}
