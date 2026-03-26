@@ -141,9 +141,9 @@ export function ContactPage() {
 
           {/* Cross-link to RFQ page */}
           <div className="bg-primary-container rounded-lg px-6 py-4 inline-block mb-16">
-            <p className="text-on-surface">
+            <p className="text-on-primary-container">
               Looking for a budgetary quote?{' '}
-              <Link to="/request-quote" className="text-primary font-bold underline hover:no-underline">Use our Request for Quote form</Link>
+              <Link to="/request-quote" className="text-on-primary-container font-bold underline hover:no-underline">Use our Request for Quote form</Link>
             </p>
           </div>
 
@@ -214,8 +214,8 @@ export function ContactPage() {
           <div>
             {topic === 'newsletter' ? (
               <div className="bg-primary-container rounded-xl p-8 mb-10">
-                <h2 className="text-3xl font-headline font-bold mb-4">Subscribe to Our Newsletter</h2>
-                <p className="text-on-surface-variant leading-relaxed">
+                <h2 className="text-3xl font-headline font-bold mb-4 text-on-primary-container">Subscribe to Our Newsletter</h2>
+                <p className="text-on-primary-container/80 leading-relaxed">
                   Stay updated with our latest insights, product updates, and technical resources.
                   We send 1-2 emails per month with valuable content for research professionals.
                 </p>
@@ -239,16 +239,16 @@ export function ContactPage() {
                   onClick={() => handleInquiryTypeClick('feasibility')}
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'feasibility'
-                      ? 'border-primary bg-primary-container'
+                      ? 'border-primary bg-primary-container text-on-primary-container'
                       : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-primary text-3xl mb-3 block">science</span>
+                  <span className={`material-symbols-outlined text-3xl mb-3 block ${selectedInquiryType === 'feasibility' ? '' : 'text-primary'}`}>science</span>
                   <h3 className="text-lg font-headline font-bold mb-2">Technical Feasibility Check</h3>
-                  <p className="text-sm text-on-surface-variant mb-3">
+                  <p className={`text-sm mb-3 ${selectedInquiryType === 'feasibility' ? 'text-on-primary-container/80' : 'text-on-surface-variant'}`}>
                     Share your material or process goals. We'll confirm feasibility.
                   </p>
-                  <p className="text-xs text-on-surface-variant italic">
+                  <p className={`text-xs italic ${selectedInquiryType === 'feasibility' ? 'text-on-primary-container/60' : 'text-on-surface-variant'}`}>
                     Ideal for: Process engineers, PhD / Post-doc researchers
                   </p>
                 </button>
@@ -258,16 +258,16 @@ export function ContactPage() {
                   onClick={() => handleInquiryTypeClick('engineer')}
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'engineer'
-                      ? 'border-primary bg-primary-container'
+                      ? 'border-primary bg-primary-container text-on-primary-container'
                       : 'border-outline-variant bg-surface-container-lowest hover:border-primary/50'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-primary text-3xl mb-3 block">engineering</span>
+                  <span className={`material-symbols-outlined text-3xl mb-3 block ${selectedInquiryType === 'engineer' ? '' : 'text-primary'}`}>engineering</span>
                   <h3 className="text-lg font-headline font-bold mb-2">Talk to an Engineer</h3>
-                  <p className="text-sm text-on-surface-variant mb-3">
+                  <p className={`text-sm mb-3 ${selectedInquiryType === 'engineer' ? 'text-on-primary-container/80' : 'text-on-surface-variant'}`}>
                     Direct technical discussion without sales pressure.
                   </p>
-                  <p className="text-xs text-on-surface-variant italic">
+                  <p className={`text-xs italic ${selectedInquiryType === 'engineer' ? 'text-on-primary-container/60' : 'text-on-surface-variant'}`}>
                     Ideal for: Researchers who prefer technical dialogue
                   </p>
                 </button>
