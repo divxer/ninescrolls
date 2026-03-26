@@ -1,6 +1,5 @@
 import { useState, FormEvent } from 'react';
 import { ContactFormContent } from './common/ContactFormContent';
-import '../styles/ContactForm.css';
 
 interface Product {
   id: string;
@@ -69,11 +68,11 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
   const content = (
     <>
       {isSuccess && !isModal ? (
-        <div className="success-message">
-          <h3>Thank You for Your Message!</h3>
-          <p>We have received your inquiry and will get back to you shortly.</p>
-          <button 
-            className="btn btn-primary" 
+        <div className="text-center py-8">
+          <h3 className="text-green-600 font-headline text-xl font-bold mb-4">Thank You for Your Message!</h3>
+          <p className="text-on-surface-variant mb-6">We have received your inquiry and will get back to you shortly.</p>
+          <button
+            className="w-full bg-primary text-white py-4 rounded-sm font-bold uppercase tracking-widest hover:bg-primary-container transition-colors"
             onClick={() => setIsSuccess(false)}
           >
             Send Another Message
@@ -94,10 +93,19 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
 
   if (isModal) {
     return (
-      <div className="contact-form-overlay">
-        <div className="contact-form-container">
-          {onClose && <button className="close-button" onClick={onClose}>×</button>}
-          <h2>{product ? `Request Information: ${product.name}` : 'Contact Us'}</h2>
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[1000]">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-[600px] relative max-h-[90vh] overflow-y-auto mx-4 md:mx-0">
+          {onClose && (
+            <button
+              className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer text-on-surface-variant leading-none px-2 py-1 hover:text-on-surface transition-colors"
+              onClick={onClose}
+            >
+              &times;
+            </button>
+          )}
+          <h2 className="font-headline text-2xl font-bold text-on-surface mb-6">
+            {product ? `Request Information: ${product.name}` : 'Contact Us'}
+          </h2>
           {content}
         </div>
       </div>
@@ -105,8 +113,8 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
   }
 
   return (
-    <div className={`contact-form ${className}`}>
+    <div className={`bg-white p-8 md:p-6 rounded-lg shadow-sm w-full ${className}`}>
       {content}
     </div>
   );
-} 
+}

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import '../../styles/Breadcrumbs.css';
 
 interface BreadcrumbItem {
   name: string;
@@ -9,9 +8,10 @@ interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
+  variant?: 'light' | 'dark';
 }
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, variant = 'light' }: BreadcrumbsProps) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -25,6 +25,8 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
     }))
   };
 
+  const isDark = variant === 'dark';
+
   return (
     <>
       <Helmet>
@@ -32,17 +34,46 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
           {JSON.stringify(structuredData)}
         </script>
       </Helmet>
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <ol>
-          <li>
-            <Link to="/">Home</Link>
+      <nav
+        className={`w-full py-3 px-8 ${
+          isDark
+            ? 'bg-white/5 border-b border-white/10'
+            : 'bg-surface-container-lowest/80 backdrop-blur-sm border-b border-outline-variant/30'
+        }`}
+        aria-label="Breadcrumb"
+      >
+        <ol className="flex flex-wrap items-center list-none m-0 p-0 max-w-screen-2xl mx-auto">
+          <li className="flex items-center text-sm">
+            <Link
+              to="/"
+              className={`no-underline transition-colors duration-200 hover:underline ${
+                isDark ? 'text-white/70 hover:text-white' : 'text-primary hover:text-primary/80'
+              }`}
+            >
+              Home
+            </Link>
           </li>
           {items.map((item, index) => (
-            <li key={item.path}>
+            <li key={item.path} className="flex items-center text-sm">
+              <span className={`mx-2 material-symbols-outlined text-[18px] ${isDark ? 'text-white/40' : 'text-on-surface-variant'}`}>
+                chevron_right
+              </span>
               {index === items.length - 1 ? (
-                <span aria-current="page">{item.name}</span>
+                <span
+                  className={`font-medium ${isDark ? 'text-white' : 'text-on-surface-variant'}`}
+                  aria-current="page"
+                >
+                  {item.name}
+                </span>
               ) : (
-                <Link to={item.path}>{item.name}</Link>
+                <Link
+                  to={item.path}
+                  className={`no-underline transition-colors duration-200 hover:underline ${
+                    isDark ? 'text-white/70 hover:text-white' : 'text-primary hover:text-primary/80'
+                  }`}
+                >
+                  {item.name}
+                </Link>
               )}
             </li>
           ))}
@@ -50,4 +81,4 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       </nav>
     </>
   );
-} 
+}

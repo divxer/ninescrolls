@@ -7,7 +7,7 @@ import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
-import '../styles/NewsPostPage.css';
+import '../styles/article-content.css';
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
 
@@ -46,13 +46,17 @@ function RelatedNewsSidebar({ post, allPosts }: { post: InsightsPost; allPosts: 
   const related = rankRelatedInsights(allPosts, post, 4);
   if (related.length === 0) return null;
   return (
-    <div className="news-related">
-      <h3>Related News</h3>
-      <div className="news-related-list">
+    <div className="bg-white p-5 rounded-xl shadow-md mb-5">
+      <h3 className="text-base font-semibold text-on-surface mb-3">Related News</h3>
+      <div className="flex flex-col gap-2">
         {related.map(rp => (
-          <a key={rp.slug} href={`/news/${rp.slug}`} className="news-related-item">
-            <span className="news-related-title">{rp.title}</span>
-            <time dateTime={rp.publishDate}>
+          <a
+            key={rp.slug}
+            href={`/news/${rp.slug}`}
+            className="flex flex-col gap-1 p-2.5 px-3 bg-surface-container-lowest rounded-md border-l-[3px] border-teal-500 no-underline hover:bg-slate-100 transition-colors"
+          >
+            <span className="text-on-surface font-medium text-sm leading-snug">{rp.title}</span>
+            <time className="text-slate-400 text-xs" dateTime={rp.publishDate}>
               {new Date(rp.publishDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </time>
           </a>
@@ -74,8 +78,8 @@ export const NewsPostPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="news-post-page">
-        <div className="container">
+      <div className="min-h-screen bg-surface-container-lowest">
+        <div className="max-w-[1200px] mx-auto px-5">
           <div className="loading">Loading...</div>
         </div>
       </div>
@@ -84,8 +88,8 @@ export const NewsPostPage: React.FC = () => {
 
   if (!post) {
     return (
-      <div className="news-post-page">
-        <div className="container">
+      <div className="min-h-screen bg-surface-container-lowest">
+        <div className="max-w-[1200px] mx-auto px-5">
           <div className="error">Article not found</div>
         </div>
       </div>
@@ -145,37 +149,45 @@ export const NewsPostPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-      <div className="news-post-page">
+      <div className="min-h-screen bg-surface-container-lowest">
         {/* Breadcrumb */}
-        <nav className="news-breadcrumb" aria-label="Breadcrumb">
-          <div className="container">
-            <ol>
-              <li><a href="/">Home</a></li>
-              <li><a href="/news">News</a></li>
-              <li aria-current="page">{post.title}</li>
+        <nav className="bg-slate-800 py-3" aria-label="Breadcrumb">
+          <div className="max-w-[1200px] mx-auto px-5">
+            <ol className="list-none m-0 p-0 flex items-center text-sm">
+              <li className="flex items-center text-slate-400">
+                <a href="/" className="text-slate-300 no-underline hover:text-white transition-colors">Home</a>
+                <span className="mx-2.5 text-slate-500">&rsaquo;</span>
+              </li>
+              <li className="flex items-center text-slate-400">
+                <a href="/news" className="text-slate-300 no-underline hover:text-white transition-colors">News</a>
+                <span className="mx-2.5 text-slate-500">&rsaquo;</span>
+              </li>
+              <li className="flex items-center text-slate-200 font-medium overflow-hidden text-ellipsis whitespace-nowrap max-w-[400px]" aria-current="page">
+                {post.title}
+              </li>
             </ol>
           </div>
         </nav>
 
         {/* Hero Section */}
-        <section className="news-post-hero">
-          <div className="container">
-            <div className={`news-hero-content ${hasValidImage(post.imageUrl) ? '' : 'news-hero-no-image'}`}>
-              <div className="news-hero-text">
-                <div className="news-post-meta-top">
-                  <span className="news-post-category">{post.category}</span>
-                  <time dateTime={post.publishDate}>
+        <section className="bg-white border-b border-outline-variant/20 py-10">
+          <div className="max-w-[1200px] mx-auto px-5">
+            <div className={`grid gap-10 items-center ${hasValidImage(post.imageUrl) ? 'grid-cols-2 max-md:grid-cols-1' : 'grid-cols-1'}`}>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-xl font-semibold text-xs uppercase tracking-wide">{post.category}</span>
+                  <time className="text-on-surface-variant text-sm" dateTime={post.publishDate}>
                     {new Date(post.publishDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </time>
                 </div>
-                <h1 className="news-post-title">{post.title}</h1>
-                <div className="news-post-meta">
-                  <span className="author">{post.author}</span>
-                  <span className="read-time">{post.readTime} min read</span>
+                <h1 className="text-3xl font-bold text-on-surface leading-snug mb-4">{post.title}</h1>
+                <div className="flex gap-5 text-on-surface-variant text-sm">
+                  <span>{post.author}</span>
+                  <span>{post.readTime} min read</span>
                 </div>
               </div>
               {hasValidImage(post.imageUrl) && (
-                <div className="news-hero-image">
+                <div className="rounded-lg overflow-hidden">
                   <NewsHeroImage post={post} />
                 </div>
               )}
@@ -184,9 +196,9 @@ export const NewsPostPage: React.FC = () => {
         </section>
 
         {/* Content Section */}
-        <section className="news-post-content">
-          <div className="news-content-layout">
-            <div className="news-main-content">
+        <section className="py-10 pb-20">
+          <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-lg:grid-cols-1">
+            <div className="bg-white rounded-lg p-10 shadow-sm max-md:p-6">
               {post.content ? (
                 <div
                   className="post-content"
@@ -196,28 +208,28 @@ export const NewsPostPage: React.FC = () => {
 
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
-                <div className="post-tags">
-                  <div className="tags">
+                <div className="mt-8 pt-5 border-t border-outline-variant/20">
+                  <div className="flex flex-wrap gap-2">
                     {post.tags.map(tag => (
-                      <span key={tag} className="tag">{tag}</span>
+                      <span key={tag} className="bg-slate-100 text-slate-600 px-3 py-1 rounded-xl text-xs">{tag}</span>
                     ))}
                   </div>
                 </div>
               )}
 
               {/* Share Buttons */}
-              <div className="share-section">
-                <h3>Share this article:</h3>
-                <div className="share-buttons">
-                  <button className="share-btn twitter">Twitter</button>
-                  <button className="share-btn linkedin">LinkedIn</button>
-                  <button className="share-btn email">Email</button>
+              <div className="mt-8 pt-5 border-t border-outline-variant/20">
+                <h3 className="text-sm mb-3 text-on-surface-variant">Share this article:</h3>
+                <div className="flex gap-2.5">
+                  <button className="px-4 py-1.5 border border-slate-300 rounded-md bg-white text-on-surface cursor-pointer text-sm hover:border-teal-500 hover:text-teal-500 transition-all">Twitter</button>
+                  <button className="px-4 py-1.5 border border-slate-300 rounded-md bg-white text-on-surface cursor-pointer text-sm hover:border-teal-500 hover:text-teal-500 transition-all">LinkedIn</button>
+                  <button className="px-4 py-1.5 border border-slate-300 rounded-md bg-white text-on-surface cursor-pointer text-sm hover:border-teal-500 hover:text-teal-500 transition-all">Email</button>
                 </div>
               </div>
             </div>
 
             {/* Sidebar: Related News (static) + TOC (sticky) */}
-            <div className="news-sidebar-column">
+            <div className="max-lg:[&_.toc-nav]:hidden">
               <RelatedNewsSidebar post={post} allPosts={allNewsPosts} />
               <TableOfContents />
             </div>

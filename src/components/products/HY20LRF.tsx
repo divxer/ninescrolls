@@ -76,7 +76,7 @@ export function HY20LRF() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/hy-20lrf#product",
     "name": "HY-20LRF — Research-Grade Batch Plasma Cleaning",
-    "description": "Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O₂/N₂/Ar). US price $14,499.",
+    "description": "Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O\u2082/N\u2082/Ar). US price $14,499.",
     "image": ["https://ninescrolls.com/assets/images/products/ns-plasma-20r-i/main.jpg"],
     "sku": "hy-20lrf",
     "mpn": "HY-20LRF",
@@ -133,7 +133,7 @@ export function HY20LRF() {
     <>
       <SEO
         title="HY-20LRF | 20L RF Vacuum Plasma Cleaner | 13.56MHz 300W | $14,499"
-        description="Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O₂/N₂/Ar). US price $14,499."
+        description="Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O\u2082/N\u2082/Ar). US price $14,499."
         keywords="HY-20LRF, RF Plasma Cleaner, Vacuum Plasma, 20L Chamber, Surface Activation, Batch Processing, Research Lab, Integrated plasma system, 13.56MHz plasma, 300W RF"
         url="/products/hy-20lrf"
         image="/assets/images/products/ns-plasma-20r-i/main.jpg"
@@ -163,7 +163,7 @@ export function HY20LRF() {
                 "name": "What gases can I use with the HY-20LRF?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Common choices include O₂, N₂, Ar, and mixed gases (with 2 gas lines). The system supports flexible gas configurations for various surface treatment applications."
+                  "text": "Common choices include O\u2082, N\u2082, Ar, and mixed gases (with 2 gas lines). The system supports flexible gas configurations for various surface treatment applications."
                 }
               },
               {
@@ -180,107 +180,95 @@ export function HY20LRF() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="product-detail-hero product-hero-enhanced">
-        <div className="container">
-          <Breadcrumbs items={[
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'HY-20LRF', path: '/products/hy-20lrf' }
           ]} />
-          <div className="product-header-enhanced">
-            <h1>HY-20LRF</h1>
-            <p className="product-subtitle">Research-Grade Batch Plasma Cleaning (20 L)</p>
-            <div className="hero-positioning">
-              <p className="hero-tagline">
-                Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.
-              </p>
-              <p className="hero-subtitle-emphasis">
-                US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">HY-20LRF</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Research-Grade Batch Plasma Cleaning (20 L)</p>
+            <p className="text-base text-white/80 tracking-wide mb-1">
+              Higher power + larger chamber + higher throughput for labs needing repeatable plasma surface treatment.
+            </p>
+            <p className="text-base text-white/80 tracking-wide">
+              US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
+            </p>
 
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{
-              marginTop: '2rem',
-              padding: '1.5rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.65)',
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{
-                margin: '0 0 0.75rem 0',
-                fontSize: '1.1rem',
-                color: '#EAEAEA',
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{
-                margin: 0,
-                fontSize: '0.95rem',
-                color: '#EAEAEA',
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
                 We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
 
-            <div className="hero-bullets">
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">📦</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">20 L Stainless-Steel Batch Chamber</span>
-                  <span className="bullet-text-sub">higher throughput for batch processing</span>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-white/90 text-[24px] mt-0.5 shrink-0">inventory_2</span>
+                <div>
+                  <span className="block font-semibold text-white text-sm">20 L Stainless-Steel Batch Chamber</span>
+                  <span className="block text-white/70 text-xs">higher throughput for batch processing</span>
                 </div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">⚡</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">13.56 MHz RF Plasma, up to 300 W</span>
-                  <span className="bullet-text-sub">customizable power for research needs</span>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-white/90 text-[24px] mt-0.5 shrink-0">bolt</span>
+                <div>
+                  <span className="block font-semibold text-white text-sm">13.56 MHz RF Plasma, up to 300 W</span>
+                  <span className="block text-white/70 text-xs">customizable power for research needs</span>
                 </div>
               </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">🖥️</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">PLC + Touchscreen Control</span>
-                  <span className="bullet-text-sub">Auto / Manual modes for reproducibility</span>
-                </div>
-              </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">💨</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">2 Gas Inlets (O₂ / N₂ / Ar)</span>
-                  <span className="bullet-text-sub">mixed gases supported</span>
-                </div>
-              </div>
-              <div className="hero-bullet-item hero-bullet-primary">
-                <span className="bullet-icon">🔬</span>
-                <div className="bullet-content">
-                  <span className="bullet-text-strong">Dry Cleaning & Surface Activation</span>
-                  <span className="bullet-text-sub">without wet chemistry</span>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-white/90 text-[24px] mt-0.5 shrink-0">monitor</span>
+                <div>
+                  <span className="block font-semibold text-white text-sm">PLC + Touchscreen Control</span>
+                  <span className="block text-white/70 text-xs">Auto / Manual modes for reproducibility</span>
                 </div>
               </div>
             </div>
 
-            <div className="hero-pricing">
-              <div className="pricing-main">
-                <span className="pricing-label">US Price:</span>
-                <span className="pricing-amount">$14,499 USD</span>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto text-left">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-white/90 text-[24px] mt-0.5 shrink-0">air</span>
+                <div>
+                  <span className="block font-semibold text-white text-sm">2 Gas Inlets (O&#8322; / N&#8322; / Ar)</span>
+                  <span className="block text-white/70 text-xs">mixed gases supported</span>
+                </div>
               </div>
-              <p className="pricing-note">Availability: In Stock • Ships in 3–4 weeks</p>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-white/90 text-[24px] mt-0.5 shrink-0">science</span>
+                <div>
+                  <span className="block font-semibold text-white text-sm">Dry Cleaning & Surface Activation</span>
+                  <span className="block text-white/70 text-xs">without wet chemistry</span>
+                </div>
+              </div>
             </div>
 
-            <div className="hero-cta">
-              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
+            <div className="mt-8">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <span className="text-white/80 text-sm font-medium">US Price:</span>
+                <span className="text-2xl font-bold text-white">$14,499 USD</span>
+              </div>
+              <p className="text-white/70 text-sm">Availability: In Stock &bull; Ships in 3-4 weeks</p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={handleAddToCart}
+              >
                 Add to Cart
               </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
+              <button
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
                 Contact Sales
               </button>
             </div>
@@ -289,91 +277,81 @@ export function HY20LRF() {
       </section>
 
       {/* System Overview */}
-      <section className="product-overview product-overview-narrative">
-        <div className="container">
-          <div className="product-hero-layout">
-            <div className="product-hero-image product-image-gallery">
-              <div className="product-image-main-wrapper">
-                <div className="product-image-main">
-                  {selectedImage === 'main' && (
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r-i/main.jpg"
-                      alt="HY-20LRF - 20L Batch Plasma Cleaning System"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
-                  )}
-                  {selectedImage === 'front' && (
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
-                      alt="HY-20LRF - Front View"
-                      width={800}
-                      height={600}
-                      className="main-product-image"
-                    />
-                  )}
-                </div>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0 overflow-hidden">
+              <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
+                {selectedImage === 'main' && (
+                  <OptimizedImage
+                    src="/assets/images/products/ns-plasma-20r-i/main.jpg"
+                    alt="HY-20LRF - 20L Batch Plasma Cleaning System"
+                    width={800}
+                    height={600}
+                    className="w-full rounded-xl shadow-lg"
+                  />
+                )}
+                {selectedImage === 'front' && (
+                  <OptimizedImage
+                    src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
+                    alt="HY-20LRF - Front View"
+                    width={800}
+                    height={600}
+                    className="w-full rounded-xl shadow-lg"
+                  />
+                )}
               </div>
-              <div className="product-image-thumbnails-wrapper">
-                <div className="product-image-thumbnails">
-                  <button
-                    className={`thumbnail-btn ${selectedImage === 'main' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('main')}
-                    type="button"
-                    aria-label="Main view"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r-i/main.jpg"
-                      alt="Main View Thumbnail"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
-                  <button
-                    className={`thumbnail-btn ${selectedImage === 'front' ? 'active' : ''}`}
-                    onClick={() => setSelectedImage('front')}
-                    type="button"
-                    aria-label="Front view"
-                  >
-                    <OptimizedImage
-                      src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
-                      alt="Front View Thumbnail"
-                      width={150}
-                      height={112}
-                      className="thumbnail-image"
-                    />
-                  </button>
-                </div>
+              <div className="flex gap-3 mt-3 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
+                <button
+                  className={`w-20 h-15 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === 'main' ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setSelectedImage('main')}
+                  type="button"
+                  aria-label="Main view"
+                >
+                  <OptimizedImage
+                    src="/assets/images/products/ns-plasma-20r-i/main.jpg"
+                    alt="Main View Thumbnail"
+                    width={150}
+                    height={112}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+                <button
+                  className={`w-20 h-15 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === 'front' ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setSelectedImage('front')}
+                  type="button"
+                  aria-label="Front view"
+                >
+                  <OptimizedImage
+                    src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
+                    alt="Front View Thumbnail"
+                    width={150}
+                    height={112}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
               </div>
             </div>
-            <div className="product-hero-content">
-              <h2>System Overview</h2>
-              <p className="narrative-text">
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">System Overview</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-4">
                 HY-20LRF is a compact, research-grade RF vacuum plasma system designed for batch plasma cleaning,
                 surface activation, and adhesion improvement. With a 20-liter chamber and PLC-controlled operation,
                 it delivers repeatable results for academic labs and R&D environments.
               </p>
-              <p className="narrative-text">
+              <p className="text-on-surface-variant leading-relaxed mb-6">
                 The system features a stainless-steel batch chamber, 13.56 MHz RF plasma source with up to 300W power
-                (customizable), and dual gas inlets supporting O₂, N₂, Ar, and mixed gases. PLC + touchscreen control
+                (customizable), and dual gas inlets supporting O&#8322;, N&#8322;, Ar, and mixed gases. PLC + touchscreen control
                 with Auto / Manual modes ensures reproducible processes suitable for research documentation and scale-up studies.
               </p>
 
-              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4ff', borderRadius: '6px', borderLeft: '3px solid #2563eb' }}>
-                <p style={{ margin: 0, fontSize: '0.95rem', color: '#444', lineHeight: '1.6' }}>
+              <div className="p-4 bg-blue-50 rounded-lg border-l-[3px] border-primary">
+                <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                   <Link
                     to="/insights/plasma-cleaner-comparison-research-labs"
-                    style={{
-                      color: '#2563eb',
-                      textDecoration: 'none',
-                      fontWeight: '500'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    className="text-primary font-medium hover:underline no-underline"
                   >
-                    Learn how research-grade batch plasma cleaners differ from desktop systems →
+                    Learn how research-grade batch plasma cleaners differ from desktop systems &rarr;
                   </Link>
                 </p>
               </div>
@@ -383,92 +361,95 @@ export function HY20LRF() {
       </section>
 
       {/* Typical Applications */}
-      <section className="product-applications-section">
-        <div className="container">
-          <h2 className="section-title">Typical Applications</h2>
-          <div className="applications-grid">
-            <div className="application-card">
-              <div className="application-icon">🧹</div>
-              <h3>Surface Cleaning</h3>
-              <p className="application-use-case">Organic removal and residue cleaning</p>
-              <p>Effective removal of organic contaminants, photoresist residues, and surface contaminants from substrates and components.</p>
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Typical Applications</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">cleaning_services</span>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-2">Surface Cleaning</h3>
+              <p className="text-sm text-primary font-medium mb-2">Organic removal and residue cleaning</p>
+              <p className="text-on-surface-variant text-sm">Effective removal of organic contaminants, photoresist residues, and surface contaminants from substrates and components.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">⚡</div>
-              <h3>Surface Activation</h3>
-              <p className="application-use-case">Adhesion improvement before coating/bonding</p>
-              <p>Enhance surface energy and improve adhesion characteristics prior to thin film deposition, coating, or bonding processes.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">bolt</span>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-2">Surface Activation</h3>
+              <p className="text-sm text-primary font-medium mb-2">Adhesion improvement before coating/bonding</p>
+              <p className="text-on-surface-variant text-sm">Enhance surface energy and improve adhesion characteristics prior to thin film deposition, coating, or bonding processes.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">🔬</div>
-              <h3>Polymer/Plastics Treatment</h3>
-              <p className="application-use-case">Pre-bond activation and surface modification</p>
-              <p>Surface treatment of polymers and plastics to improve wettability, adhesion, and bonding characteristics.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">science</span>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-2">Polymer/Plastics Treatment</h3>
+              <p className="text-sm text-primary font-medium mb-2">Pre-bond activation and surface modification</p>
+              <p className="text-on-surface-variant text-sm">Surface treatment of polymers and plastics to improve wettability, adhesion, and bonding characteristics.</p>
             </div>
-            <div className="application-card">
-              <div className="application-icon">📊</div>
-              <h3>Sample Preparation</h3>
-              <p className="application-use-case">Prior to thin film deposition / coating</p>
-              <p>Prepare substrates and samples for subsequent processing steps, ensuring clean and activated surfaces for optimal results.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">assessment</span>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-2">Sample Preparation</h3>
+              <p className="text-sm text-primary font-medium mb-2">Prior to thin film deposition / coating</p>
+              <p className="text-on-surface-variant text-sm">Prepare substrates and samples for subsequent processing steps, ensuring clean and activated surfaces for optimal results.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Specifications */}
-      <section className="product-specs-section">
-        <div className="container">
-          <h2 className="section-title">System Specifications</h2>
-          <div className="specs-table-wrapper">
-            <table className="specs-table">
+      {/* System Specifications */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">System Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <td className="spec-label">Model</td>
-                  <td className="spec-value">HY-20LRF</td>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Model</td>
+                  <td className="px-6 py-3 text-on-surface-variant">HY-20LRF</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Power Supply</td>
+                  <td className="px-6 py-3 text-on-surface-variant">110 V</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Power</td>
+                  <td className="px-6 py-3 text-on-surface-variant">300 W (customizable)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Frequency</td>
+                  <td className="px-6 py-3 text-on-surface-variant">13.56 MHz RF</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">System Dimensions (L x W x H)</td>
+                  <td className="px-6 py-3 text-on-surface-variant">630 x 580 x 810 mm</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">250 x 250 x 320 mm</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber Volume</td>
+                  <td className="px-6 py-3 text-on-surface-variant">20 L</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Sample Tray Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">242 x 250 x 45 mm (4 layers)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Control</td>
+                  <td className="px-6 py-3 text-on-surface-variant">PLC + Touchscreen, Auto / Manual switchable</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Gas Lines</td>
+                  <td className="px-6 py-3 text-on-surface-variant">2 lines</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Compatible Gases</td>
+                  <td className="px-6 py-3 text-on-surface-variant">O&#8322;, N&#8322;, Ar (mixed gases supported)</td>
                 </tr>
                 <tr>
-                  <td className="spec-label">Power Supply</td>
-                  <td className="spec-value">110 V</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">RF Power</td>
-                  <td className="spec-value">300 W (customizable)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Frequency</td>
-                  <td className="spec-value">13.56 MHz RF</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">System Dimensions (L×W×H)</td>
-                  <td className="spec-value">630 × 580 × 810 mm</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Chamber Size</td>
-                  <td className="spec-value">250 × 250 × 320 mm</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Chamber Volume</td>
-                  <td className="spec-value">20 L</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Sample Tray Size</td>
-                  <td className="spec-value">242 × 250 × 45 mm (4 layers)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Control</td>
-                  <td className="spec-value">PLC + Touchscreen, Auto / Manual switchable</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Gas Lines</td>
-                  <td className="spec-value">2 lines</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Compatible Gases</td>
-                  <td className="spec-value">O₂, N₂, Ar (mixed gases supported)</td>
-                </tr>
-                <tr>
-                  <td className="spec-label">Pumping Speed</td>
-                  <td className="spec-value">Mechanical pump 4.4 L/s</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Pumping Speed</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Mechanical pump 4.4 L/s</td>
                 </tr>
               </tbody>
             </table>
@@ -477,81 +458,81 @@ export function HY20LRF() {
       </section>
 
       {/* What's Included */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">What's Included</h2>
-          <div className="functions-grid">
-            <div className="function-card">
-              <h3>HY-20LRF Main System</h3>
-              <p>Integrated RF plasma source and vacuum chamber with stainless-steel construction.</p>
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">What's Included</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">HY-20LRF Main System</h3>
+              <p className="text-on-surface-variant leading-relaxed">Integrated RF plasma source and vacuum chamber with stainless-steel construction.</p>
             </div>
-            <div className="function-card">
-              <h3>PLC Touchscreen Control Interface</h3>
-              <p>User-friendly control system with Auto / Manual operation modes.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">PLC Touchscreen Control Interface</h3>
+              <p className="text-on-surface-variant leading-relaxed">User-friendly control system with Auto / Manual operation modes.</p>
             </div>
-            <div className="function-card">
-              <h3>4-Layer Sample Tray Set</h3>
-              <p>Multi-level sample trays (242 × 250 × 45 mm) for efficient batch processing.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">4-Layer Sample Tray Set</h3>
+              <p className="text-on-surface-variant leading-relaxed">Multi-level sample trays (242 x 250 x 45 mm) for efficient batch processing.</p>
             </div>
-            <div className="function-card">
-              <h3>Standard Vacuum Pump</h3>
-              <p>Mechanical pump with 4.4 L/s pumping speed for optimal process conditions.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Standard Vacuum Pump</h3>
+              <p className="text-on-surface-variant leading-relaxed">Mechanical pump with 4.4 L/s pumping speed for optimal process conditions.</p>
             </div>
-            <div className="function-card">
-              <h3>User Documentation</h3>
-              <p>Comprehensive user manual and basic operation guidance for quick startup.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">User Documentation</h3>
+              <p className="text-on-surface-variant leading-relaxed">Comprehensive user manual and basic operation guidance for quick startup.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Options / Customization */}
-      <section className="product-functions-section" style={{ backgroundColor: '#f8f9fa' }}>
-        <div className="container">
-          <h2 className="section-title">Options / Customization (Recommended)</h2>
-          <div className="functions-grid">
-            <div className="function-card">
-              <h3>Power Customization</h3>
-              <p>Customize RF power output based on your specific process needs and material requirements.</p>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Options / Customization (Recommended)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Power Customization</h3>
+              <p className="text-on-surface-variant leading-relaxed">Customize RF power output based on your specific process needs and material requirements.</p>
             </div>
-            <div className="function-card">
-              <h3>Additional Gas Configuration</h3>
-              <p>Upgrade to 3 gas lines if your processes require more complex gas mixing capabilities.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Additional Gas Configuration</h3>
+              <p className="text-on-surface-variant leading-relaxed">Upgrade to 3 gas lines if your processes require more complex gas mixing capabilities.</p>
             </div>
-            <div className="function-card">
-              <h3>Process Recipe Templates</h3>
-              <p>Pre-configured process recipes and training package for common applications.</p>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Process Recipe Templates</h3>
+              <p className="text-on-surface-variant leading-relaxed">Pre-configured process recipes and training package for common applications.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-3">
                 Q: Is this system suitable for delicate samples?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: Plasma is a dry process; users can tune gas/power/time for gentle activation. The PLC control system allows precise parameter adjustment to minimize sample damage while achieving desired surface modification.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-3">
                 Q: What gases can I use?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
-                A: Common choices include O₂, N₂, Ar, and mixed gases (with 2 gas lines). The system supports flexible gas configurations for various surface treatment applications.
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
+                A: Common choices include O&#8322;, N&#8322;, Ar, and mixed gases (with 2 gas lines). The system supports flexible gas configurations for various surface treatment applications.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-3">
                 Q: Is it repeatable for research data?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: PLC + touchscreen control supports stable, repeatable operation across runs. Process parameters can be saved and recalled, ensuring consistent results for research documentation and publication.
               </p>
             </div>
@@ -560,12 +541,12 @@ export function HY20LRF() {
       </section>
 
       {/* Distributor Notice */}
-      <section className="branding-notice-section" style={{ padding: '4rem 0', backgroundColor: '#fff' }}>
-        <div className="container">
-          <div className="branding-notice-wrapper" style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px', borderLeft: '5px solid #dee2e6' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#333', fontWeight: '600' }}>Distributor Notice</h3>
-            <p style={{ margin: 0, fontSize: '1rem', color: '#666', lineHeight: '1.6' }}>
-              HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. (慧仪智控), a leading plasma equipment manufacturer with 30+ years of industry experience and 1,000+ global installations. NineScrolls LLC is the authorized US distributor, providing local sales, technical support, system configuration, and warranty service.
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="bg-surface-container-low rounded-xl p-8 border-l-[5px] border-outline-variant">
+            <h3 className="font-headline text-xl font-semibold text-on-surface mb-4">Distributor Notice</h3>
+            <p className="text-on-surface-variant leading-relaxed">
+              HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. (&#24935;&#20202;&#26234;&#25511;), a leading plasma equipment manufacturer with 30+ years of industry experience and 1,000+ global installations. NineScrolls LLC is the authorized US distributor, providing local sales, technical support, system configuration, and warranty service.
             </p>
           </div>
         </div>
@@ -574,58 +555,62 @@ export function HY20LRF() {
       {/* Trust Logos Section */}
       <TrustSection />
 
-      {/* Trust Block - What You Can Expect */}
-      <section className="trust-block-section" style={{ padding: '4rem 0', backgroundColor: '#f8f9fa' }}>
-        <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>What You Can Expect When Working With Us</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>US-based sales & project coordination</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Installation & training support available</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Engineering-backed configuration (not off-the-shelf)</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>NDA & export compliance supported</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ color: '#28a745', fontSize: '1.2rem', fontWeight: 'bold' }}>✓</span>
-                <span>Responsive support before & after delivery</span>
-              </li>
-            </ul>
+      {/* What You Can Expect */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">What You Can Expect When Working With Us</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">US-based sales & project coordination</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Installation & training support available</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Engineering-backed configuration (not off-the-shelf)</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">NDA & export compliance supported</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                <span className="text-on-surface-variant">Responsive support before & after delivery</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="product-inquiry-section">
-        <div className="container">
-          <div className="product-inquiry">
-            <h2>Ready to order?</h2>
-            <p style={{ marginBottom: '1rem' }}>
-              You don't need a finalized specification or PO to reach out.
-              We often assist labs during early evaluation and proposal stages.
-            </p>
-            <div className="inquiry-buttons">
-              <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
-                Add to Cart
-              </button>
-              <button className="btn btn-secondary btn-large" onClick={() => openContactForm(true)}>
-                Request a Budgetary Quote
-              </button>
-            </div>
-            <div className="shipping-info" style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              <p><strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.</p>
-            </div>
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Ready to order?</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">
+            You don't need a finalized specification or PO to reach out.
+            We often assist labs during early evaluation and proposal stages.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={handleAddToCart}
+            >
+              Add to Cart
+            </button>
+            <button
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              Request a Budgetary Quote
+            </button>
           </div>
+          <p className="text-sm text-on-surface-variant mt-6">
+            <strong>Shipping:</strong> Free shipping included. Standard delivery: 3-4 weeks after order confirmation.
+          </p>
         </div>
       </section>
 

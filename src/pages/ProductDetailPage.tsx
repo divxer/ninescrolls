@@ -7,7 +7,6 @@ import { ContactFormModal } from '../components/common/ContactFormModal';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { getProductComponent } from '../components/products';
-import '../styles/ProductDetailPage.css';
 import { analytics } from '../services/analytics';
 
 // Product data for structured data and SEO
@@ -290,25 +289,22 @@ export function ProductDetailPage() {
 
   const handleFormSuccess = () => {
     // Form submission tracking is handled by ContactFormModal
-    // No need to track here to avoid duplicate events
   };
 
   useEffect(() => {
     if (product) {
-      // Track product view
       analytics.trackProductView(product.id, product.name);
     }
   }, [product]);
 
-  // Scroll to top when component mounts or productId changes
   useScrollToTop([productId]);
 
   if (!ProductComponent) {
-    return <div className="container">Product not found</div>;
+    return <div className="max-w-7xl mx-auto px-6 py-16 text-center text-on-surface-variant">Product not found</div>;
   }
 
   if (!product) {
-    return <div className="container">Product not found</div>;
+    return <div className="max-w-7xl mx-auto px-6 py-16 text-center text-on-surface-variant">Product not found</div>;
   }
 
   const structuredData = {
@@ -357,7 +353,6 @@ export function ProductDetailPage() {
     ]
   };
 
-  // Breadcrumb structured data for SEO
   const breadcrumbData = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -403,7 +398,7 @@ export function ProductDetailPage() {
 
   return (
     <>
-      <SEO 
+      <SEO
         title={seoData.title}
         description={seoData.description}
         keywords={seoData.keywords}
@@ -421,21 +416,28 @@ export function ProductDetailPage() {
           {JSON.stringify(breadcrumbData)}
         </script>
       </Helmet>
-      <section className="product-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero Section */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: product.name, path: `/products/${productId}` }
           ]} />
-          <h1>{product.name}</h1>
-          <p className="product-description">{product.description}</p>
+          <h1 className="font-headline text-4xl md:text-5xl font-bold mt-6 mb-4">{product.name}</h1>
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl">{product.description}</p>
         </div>
       </section>
 
-      <section className="product-details">
-        <div className="container">
-          <div className="product-grid">
-            <div className="product-images">
+      {/* Product Details */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Product Image */}
+            <div className="min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
               <OptimizedImage
                 src={product.images[0]}
                 alt={`${product.name} - Main View`}
@@ -443,33 +445,44 @@ export function ProductDetailPage() {
                 width={800}
                 height={600}
                 loading="eager"
-                className="main-product-image"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
 
-            <div className="product-info">
-              <div className="info-section">
-                <h2>Key Features</h2>
-                <ul>
+            {/* Product Info */}
+            <div className="space-y-8">
+              <div>
+                <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Key Features</h2>
+                <ul className="space-y-3">
                   {product.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
+                    <li key={index} className="flex items-start gap-3 text-on-surface-variant">
+                      <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                      {feature}
+                    </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="info-section">
-                <h2>Specifications</h2>
-                <ul>
+              <div>
+                <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Specifications</h2>
+                <ul className="space-y-3">
                   {product.specifications.map((spec, index) => (
-                    <li key={index}>{spec}</li>
+                    <li key={index} className="flex items-start gap-3 text-on-surface-variant">
+                      <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">settings</span>
+                      {spec}
+                    </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="product-inquiry">
-                <h2>Interested in this product?</h2>
-                <p>Contact our team for detailed specifications and pricing information.</p>
-                <button className="btn btn-primary" onClick={openContactForm}>
+              <div className="bg-surface-container-low rounded-xl p-6">
+                <h2 className="font-headline text-xl font-semibold text-on-surface mb-2">Interested in this product?</h2>
+                <p className="text-on-surface-variant mb-4">Contact our team for detailed specifications and pricing information.</p>
+                <button
+                  className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  onClick={openContactForm}
+                >
+                  <span className="material-symbols-outlined text-[20px]">mail</span>
                   Request Information
                 </button>
               </div>
@@ -488,4 +501,4 @@ export function ProductDetailPage() {
       />
     </>
   );
-} 
+}

@@ -93,53 +93,46 @@ export function ALDSystem() {
           ]
         })}</script>
       </Helmet>
-      <section className="product-detail-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'ALD System Series', path: '/products/ald' }
           ]} />
-          <div className="product-header">
-            <h1>ALD System Series</h1>
-            <p>Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>
-            <p className="hero-subtitle-emphasis">
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">ALD System Series</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Advanced Atomic Layer Deposition System for Precision Thin Film Growth</p>
+            <p className="text-base text-white/80 tracking-wide">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
-              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
+                Request a Quote
+              </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
                 Download Datasheet
               </a>
             </div>
@@ -147,92 +140,142 @@ export function ALDSystem() {
         </div>
       </section>
 
-      <section className="product-overview">
-        <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <img 
-                src="/assets/images/products/ald/main.jpg" 
-                alt="ALD System" 
-                className="main-product-image" 
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0">
+              <img
+                src="/assets/images/products/ald/main.jpg"
+                alt="ALD System"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
-            <div className="product-info">
-              <h2>Product Description</h2>
-              <p>The ALD Series offers atomic-level precision in thin film deposition through sequential, self-limiting surface reactions within a compact uni-body design (footprint approx. 0.8m x 1.0m). Engineered for both research and production environments, it delivers exceptional film quality, outstanding high-aspect-ratio (AR) step coverage, and configurable options for performance and cost optimization.</p>
-              
-              <h3>Key Features</h3>
-              <ul className="feature-list">
-                <li>Compact uni-body design (0.8m x 1.0m footprint)</li>
-                <li>Box-in-box process chamber for enhanced process stability</li>
-                <li>Showerhead gas feed-in system with independently configurable parameters</li>
-                <li>Excellent high-aspect-ratio (AR) step coverage</li>
-                <li>Multiple gas inlets and vertical precursor flow configuration</li>
-                <li>Optional remote plasma (RF) capability (300-1000W)</li>
-                <li>Precise electrode temperature and chamber liner control for diverse processes</li>
-                <li>Flexible cost-performance customization (RF system, vacuum pumps, valves, etc.)</li>
-                <li>Optional sample handling: Open-load or Load-lock systems</li>
-                <li>User-friendly interface and automated process control</li>
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Product Description</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-6">The ALD Series offers atomic-level precision in thin film deposition through sequential, self-limiting surface reactions within a compact uni-body design (footprint approx. 0.8m x 1.0m). Engineered for both research and production environments, it delivers exceptional film quality, outstanding high-aspect-ratio (AR) step coverage, and configurable options for performance and cost optimization.</p>
+
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Key Features</h3>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Compact uni-body design (0.8m x 1.0m footprint)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Box-in-box process chamber for enhanced process stability
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Showerhead gas feed-in system with independently configurable parameters
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Excellent high-aspect-ratio (AR) step coverage
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Multiple gas inlets and vertical precursor flow configuration
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Optional remote plasma (RF) capability (300-1000W)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Precise electrode temperature and chamber liner control for diverse processes
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Flexible cost-performance customization (RF system, vacuum pumps, valves, etc.)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Optional sample handling: Open-load or Load-lock systems
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  User-friendly interface and automated process control
+                </li>
               </ul>
 
-              <h3>Target Applications</h3>
-              <ul className="application-list-styled">
-                <li><span className="app-icon">&#x1F4BB;</span> Advanced semiconductor devices</li>
-                <li><span className="app-icon">&#x1F52C;</span> Nanotechnology research</li>
-                <li><span className="app-icon">&#x1F50B;</span> Energy storage materials</li>
-                <li><span className="app-icon">&#x1F4A1;</span> Optical applications</li>
-                <li><span className="app-icon">&#x1F6E1;</span> Protective coatings</li>
-                <li><span className="app-icon">&#x1F9EA;</span> Novel materials development</li>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Target Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">computer</span>
+                  Advanced semiconductor devices
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">search</span>
+                  Nanotechnology research
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">bolt</span>
+                  Energy storage materials
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">lightbulb</span>
+                  Optical applications
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">shield</span>
+                  Protective coatings
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">biotech</span>
+                  Novel materials development
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="detailed-specs">
-        <div className="container">
-          <h2>Technical Specifications</h2>
-          <div className="specs-table-container">
-            <table className="detailed-specs-table">
+      {/* Technical Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Technical Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2}>System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4", 6", 8", 12", or supersize configurations (optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Wafer Temperature Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">20°C to 400°C (higher temperature optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Source Temperature</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Standard 20°C-150°C, optional up to 200°C</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Base Pressure</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Less than 5x10^-5 Torr (TMP and mechanical pump)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Growth Rate</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Typical 0.5-2 Å per cycle</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Film Uniformity</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Less than 1% (Al₂O₃, edge exclusion)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Number of Precursor Lines</td>
+                  <td className="px-6 py-3 text-on-surface-variant">2-6 lines (customizable)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Remote Plasma</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Optional RF capability (300-1000W)</td>
                 </tr>
                 <tr>
-                  <td>Wafer Size</td>
-                  <td>4", 6", 8", 12", or supersize configurations (optional)</td>
-                </tr>
-                <tr>
-                  <td>Wafer Temperature Range</td>
-                  <td>20°C to 400°C (higher temperature optional)</td>
-                </tr>
-                <tr>
-                  <td>Source Temperature</td>
-                  <td>Standard 20°C-150°C, optional up to 200°C</td>
-                </tr>
-                <tr>
-                  <td>Base Pressure</td>
-                  <td>Less than 5x10^-5 Torr (TMP and mechanical pump)</td>
-                </tr>
-                <tr>
-                  <td>Growth Rate</td>
-                  <td>Typical 0.5-2 Å per cycle</td>
-                </tr>
-                <tr>
-                  <td>Film Uniformity</td>
-                  <td>Less than 1% (Al₂O₃, edge exclusion)</td>
-                </tr>
-                <tr>
-                  <td>Number of Precursor Lines</td>
-                  <td>2-6 lines (customizable)</td>
-                </tr>
-                <tr>
-                  <td>Remote Plasma</td>
-                  <td>Optional RF capability (300-1000W)</td>
-                </tr>
-                <tr>
-                  <td>Footprint</td>
-                  <td>Approximately 0.8m x 1.0m</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Approximately 0.8m x 1.0m</td>
                 </tr>
               </tbody>
             </table>
@@ -240,30 +283,31 @@ export function ALDSystem() {
         </div>
       </section>
 
-      <section className="process-capabilities">
-        <div className="container">
-          <h2>Process Capabilities</h2>
-          <div className="capability-grid">
-            <div className="capability-card">
-              <h3>Performance Features</h3>
-              <ul>
-                <li>Sub-nanometer thickness control</li>
-                <li>Outstanding high-AR step coverage ({'>'}98%)</li>
-                <li>Exceptional film conformality</li>
-                <li>Precise control of film composition</li>
-                <li>Low impurity and defect content</li>
-                <li>Multi-layer film deposition capability</li>
-                <li>Excellent process repeatability</li>
-                <li>In-situ monitoring capability (optional)</li>
+      {/* Process Capabilities */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Process Capabilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Performance Features</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Sub-nanometer thickness control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Outstanding high-AR step coverage ({'>'}98%)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Exceptional film conformality</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Precise control of film composition</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Low impurity and defect content</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Multi-layer film deposition capability</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Excellent process repeatability</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> In-situ monitoring capability (optional)</li>
               </ul>
             </div>
-            <div className="capability-card">
-              <h3>Material Systems</h3>
-              <ul>
-                <li>Oxides: Al₂O₃, HfO₂, SiO₂, TiO₂, Ga₂O₃, ZnO, etc.</li>
-                <li>Nitrides: TiN, TaN, SiNx, AlN, GaN, etc.</li>
-                <li>Metals: Pt, Pd, W, Ru, etc.</li>
-                <li>Complex oxides and 2D materials (optional)</li>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Material Systems</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Oxides: Al₂O₃, HfO₂, SiO₂, TiO₂, Ga₂O₃, ZnO, etc.</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Nitrides: TiN, TaN, SiNx, AlN, GaN, etc.</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Metals: Pt, Pd, W, Ru, etc.</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Complex oxides and 2D materials (optional)</li>
               </ul>
             </div>
           </div>
@@ -312,59 +356,59 @@ export function ALDSystem() {
         ctaLabel="Request a Quote"
       />
 
-      {/* Related equipment & articles */}
-      <section className="related-reading-cards">
-        <div className="container">
-          <h2>Related Equipment & Articles</h2>
-          <div className="related-cards-grid">
-            <a href="/products/pecvd" className="related-card">
-              <span className="related-card-icon">&#x2699;</span>
-              <h3>PECVD System Series</h3>
-              <p>Plasma-enhanced deposition alternative for versatile thin film growth applications.</p>
-              <span className="related-card-link">View Product &rarr;</span>
+      {/* Related Equipment & Articles */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Related Equipment & Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/products/pecvd" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">settings</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">PECVD System Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Plasma-enhanced deposition alternative for versatile thin film growth applications.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/products/hdp-cvd" className="related-card">
-              <span className="related-card-icon">&#x1F3D7;</span>
-              <h3>HDP-CVD System Series</h3>
-              <p>High-density plasma CVD for superior gap-fill and dense dielectric films.</p>
-              <span className="related-card-link">View Product &rarr;</span>
+            <a href="/products/hdp-cvd" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">precision_manufacturing</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">HDP-CVD System Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">High-density plasma CVD for superior gap-fill and dense dielectric films.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="related-card">
-              <span className="related-card-icon">&#x1F4D6;</span>
-              <h3>Plasma Etching Fundamentals</h3>
-              <p>Terminology and concepts useful for ALD/CVD integration workflows.</p>
-              <span className="related-card-link">Read Article &rarr;</span>
+            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Terminology and concepts useful for ALD/CVD integration workflows.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="product-functions-section">
-        <div className="container">
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What is atomic layer deposition (ALD) and how does it work?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: ALD is a thin-film deposition technique that builds films one atomic layer at a time through sequential, self-limiting surface reactions. Each cycle deposits a precise monolayer (typically 0.5-2 angstroms), enabling exceptional thickness control, conformality ({'>'}98% step coverage), and uniformity ({'<'}1% for Al2O3). This makes ALD ideal for gate dielectrics, passivation, and conformal coatings on 3D structures.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What materials can the ALD system deposit?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The ALD system supports oxides (Al2O3, HfO2, SiO2, TiO2, Ga2O3, ZnO), nitrides (TiN, TaN, SiNx, AlN, GaN), metals (Pt, Pd, W, Ru), and complex oxides. With the optional remote plasma source (300-1000W), plasma-enhanced ALD (PEALD) enables lower-temperature deposition and access to additional materials.
               </p>
             </div>
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#333' }}>
+            <div className="mb-8 p-6 bg-surface-container-low rounded-lg">
+              <h3 className="text-[1.1rem] font-semibold text-on-surface mb-3">
                 Q: What temperature range does the ALD system support?
               </h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
+              <p className="text-[0.95rem] text-on-surface-variant leading-relaxed">
                 A: The wafer temperature range is 20°C to 400°C (higher temperatures available as an option). Source temperatures range from 20°C to 150°C standard, with up to 200°C optional for high-vapor-pressure precursors. The system supports 2 to 6 customizable precursor lines.
               </p>
             </div>
@@ -372,24 +416,43 @@ export function ALDSystem() {
         </div>
       </section>
 
-      <section className="product-contact">
-        <div className="container">
-          <h2>Request Information</h2>
-          <p>Get detailed specs, pricing & customization options.</p>
-          <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
-            <a href="#" className="btn btn-secondary" onClick={(e)=>{e.preventDefault(); setGateOpen(true);}}>
-              <span className="icon-download"></span> Download Product Datasheet
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Request Information</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Get detailed specs, pricing & customization options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Contact Sales Team
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
             </a>
           </div>
         </div>
       </section>
 
-      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-          Contact Sales Team
-        </button>
-      </div>
+      {/* Floating Contact Button */}
+      {showFloatingContact && (
+        <div className="fixed bottom-6 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
+          <button
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            onClick={() => openContactForm(true)}
+          >
+            <span className="material-symbols-outlined text-[20px]">call</span>
+            Contact Sales Team
+          </button>
+        </div>
+      )}
 
       <QuoteModal
         isOpen={isModalOpen}
@@ -404,4 +467,4 @@ export function ALDSystem() {
       <DownloadGateModal isOpen={gateOpen} onClose={()=>setGateOpen(false)} fileUrl={'/docs/ald-system-datasheet.pdf'} fileName={'NineScrolls-ALD-Datasheet.pdf'} title={'Download ALD Datasheet'} turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string} />
     </>
   );
-} 
+}

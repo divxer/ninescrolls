@@ -64,53 +64,46 @@ export function StriperSystem() {
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
-      <section className="product-detail-hero">
-        <div className="container">
-          <Breadcrumbs items={[
+
+      {/* Hero */}
+      <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+        </div>
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <Breadcrumbs variant="dark" items={[
             { name: 'Products', path: '/products' },
             { name: 'Stripping System Series', path: '/products/striper' }
           ]} />
-          <div className="product-header">
-            <h1>Stripping System Series</h1>
-            <p>Advanced photoresist stripping and precision surface cleaning system</p>
-            <p className="hero-subtitle-emphasis">
+          <div className="max-w-3xl mx-auto text-center mt-6">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">Stripping System Series</h1>
+            <p className="text-lg md:text-xl text-white/95 mb-2">Advanced photoresist stripping and precision surface cleaning system</p>
+            <p className="text-base text-white/80 tracking-wide">
               US-based scientific equipment provider · Custom-configured systems for research labs & cleanrooms
             </p>
-            
-            {/* Cost-Efficiency Hero Card */}
-            <div style={{ 
-              marginTop: '2rem', 
-              padding: '1.5rem', 
-              backgroundColor: 'rgba(0, 0, 0, 0.65)', 
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '800px',
-              marginLeft: 'auto',
-              marginRight: 'auto'
-            }}>
-              <h3 style={{ 
-                margin: '0 0 0.75rem 0', 
-                fontSize: '1.1rem', 
-                color: '#EAEAEA', 
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
+
+            <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
+              <h3 className="text-[1.1rem] font-semibold text-white/90 mb-3 text-center">
                 Cost-efficient, research-grade configurations
               </h3>
-              <p style={{ 
-                margin: 0, 
-                fontSize: '0.95rem', 
-                color: '#EAEAEA', 
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                We specialize in cost-efficient configurations for research labs that need to balance performance and budget. 
+              <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
+                We specialize in cost-efficient configurations for research labs that need to balance performance and budget.
                 We help labs avoid paying for unnecessary industrial features and focus on what matters for research applications.
               </p>
             </div>
-            <div className="hero-cta-simple">
-              <button className="btn btn-primary" onClick={() => openContactForm(true)}>Request a Quote</button>
-              <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
+
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                className="inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                onClick={() => openContactForm(true)}
+              >
+                Request a Quote
+              </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
                 Download Datasheet
               </a>
             </div>
@@ -118,91 +111,138 @@ export function StriperSystem() {
         </div>
       </section>
 
-      <section className="product-overview">
-        <div className="container">
-          <div className="product-content">
-            <div className="product-images">
-              <img 
-                src="/assets/images/products/striper/main.jpg" 
-                alt="Plasma photoresist stripping system" 
-                className="main-product-image" 
+      {/* Product Overview */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="min-w-0">
+              <img
+                src="/assets/images/products/striper/main.jpg"
+                alt="Plasma photoresist stripping system"
+                className="w-full rounded-xl shadow-lg"
               />
             </div>
-            <div className="product-info">
-              <h2>Product Description</h2>
-              <p>The Stripping System Series provides efficient photoresist stripping and surface cleaning capabilities within a compact uni-body design (footprint approx. 0.8m x 0.8m). Engineered for flexibility and ease of use in both research and production environments, this system ensures complete removal of organic materials, precise process control, and minimal impact on underlying layers.</p>
-              
-              <h3>Key Features</h3>
-              <ul className="feature-list">
-                <li>Compact uni-body design with minimal footprint (0.8m x 0.8m)</li>
-                <li>Uniform chamber center pump-down design for enhanced process uniformity</li>
-                <li>Configurable gas delivery system with independently adjustable parameters</li>
-                <li>Adjustable plasma discharge gap, configurable for optimal process tuning</li>
-                <li>Flexible cost-performance orientation, customizable RF power, vacuum pumps, and valves</li>
-                <li>Automated open-load sample handling</li>
-                <li>Real-time process monitoring and automated endpoint detection</li>
-                <li>Water-cooled wafer stage with precise temperature control (5°C to 200°C, optional)</li>
+            <div>
+              <h2 className="font-headline text-2xl font-semibold text-on-surface mb-4">Product Description</h2>
+              <p className="text-on-surface-variant leading-relaxed mb-6">The Stripping System Series provides efficient photoresist stripping and surface cleaning capabilities within a compact uni-body design (footprint approx. 0.8m x 0.8m). Engineered for flexibility and ease of use in both research and production environments, this system ensures complete removal of organic materials, precise process control, and minimal impact on underlying layers.</p>
+
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Key Features</h3>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Compact uni-body design with minimal footprint (0.8m x 0.8m)
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Uniform chamber center pump-down design for enhanced process uniformity
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Configurable gas delivery system with independently adjustable parameters
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Adjustable plasma discharge gap, configurable for optimal process tuning
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Flexible cost-performance orientation, customizable RF power, vacuum pumps, and valves
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Automated open-load sample handling
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Real-time process monitoring and automated endpoint detection
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Water-cooled wafer stage with precise temperature control (5°C to 200°C, optional)
+                </li>
               </ul>
 
-              <h3>Applications</h3>
-              <ul className="application-list-styled">
-                <li><span className="app-icon">&#x2728;</span> Photoresist Stripping (positive and negative)</li>
-                <li><span className="app-icon">&#x1F9F9;</span> Post-etch Residue Cleaning</li>
-                <li><span className="app-icon">&#x1F6AB;</span> Organic Contamination Removal</li>
-                <li><span className="app-icon">&#x26A1;</span> Surface Activation and Descum</li>
-                <li><span className="app-icon">&#x1F6E0;</span> Surface Preparation and Pre-metal Cleaning</li>
-                <li><span className="app-icon">&#x1F52C;</span> 2D Materials Etching (e.g., MoS&#x2082;, BN, Graphene)</li>
-                <li><span className="app-icon">&#x1F50D;</span> Failure Analysis Sample Cleaning</li>
+              <h3 className="font-headline text-xl font-semibold text-on-surface mb-3">Applications</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">auto_fix_high</span>
+                  Photoresist Stripping (positive and negative)
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">cleaning_services</span>
+                  Post-etch Residue Cleaning
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">block</span>
+                  Organic Contamination Removal
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">bolt</span>
+                  Surface Activation and Descum
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">build</span>
+                  Surface Preparation and Pre-metal Cleaning
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">science</span>
+                  2D Materials Etching (e.g., MoS&#x2082;, BN, Graphene)
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px]">search</span>
+                  Failure Analysis Sample Cleaning
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="detailed-specs">
-        <div className="container">
-          <h2>Technical Specifications</h2>
-          <div className="specs-table-container">
-            <table className="detailed-specs-table">
+      {/* Technical Specifications */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Technical Specifications</h2>
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2}>System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Wafer Size Range</td>
+                  <td className="px-6 py-3 text-on-surface-variant">4", 6", 8", 12", or multi-wafer configurations available</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Process Modes</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Plasma processing (standard), optional customized configurations</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">RF Power</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Customizable from 300W to 1000W (optional)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Wafer Stage Temperature</td>
+                  <td className="px-6 py-3 text-on-surface-variant">5°C to 200°C (water cooling), optional configurations</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Gas System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">2 lines standard, additional gas lines customizable</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Mechanical pump, customizable vacuum levels</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Film Non-Uniformity</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Less than 5% (edge exclusion)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Approximately 0.8m x 0.8m</td>
                 </tr>
                 <tr>
-                  <td>Wafer Size Range</td>
-                  <td>4", 6", 8", 12", or multi-wafer configurations available</td>
-                </tr>
-                <tr>
-                  <td>Process Modes</td>
-                  <td>Plasma processing (standard), optional customized configurations</td>
-                </tr>
-                <tr>
-                  <td>RF Power</td>
-                  <td>Customizable from 300W to 1000W (optional)</td>
-                </tr>
-                <tr>
-                  <td>Wafer Stage Temperature</td>
-                  <td>5°C to 200°C (water cooling), optional configurations</td>
-                </tr>
-                <tr>
-                  <td>Gas System</td>
-                  <td>2 lines standard, additional gas lines customizable</td>
-                </tr>
-                <tr>
-                  <td>Vacuum System</td>
-                  <td>Mechanical pump, customizable vacuum levels</td>
-                </tr>
-                <tr>
-                  <td>Film Non-Uniformity</td>
-                  <td>Less than 5% (edge exclusion)</td>
-                </tr>
-                <tr>
-                  <td>Footprint</td>
-                  <td>Approximately 0.8m x 0.8m</td>
-                </tr>
-                <tr>
-                  <td>Endpoint Detection</td>
-                  <td>Automated, real-time monitoring</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Endpoint Detection</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Automated, real-time monitoring</td>
                 </tr>
               </tbody>
             </table>
@@ -210,28 +250,29 @@ export function StriperSystem() {
         </div>
       </section>
 
-      <section className="process-capabilities">
-        <div className="container">
-          <h2>Process Capabilities</h2>
-          <div className="capability-grid">
-            <div className="capability-card">
-              <h3>Performance Features</h3>
-              <ul>
-                <li>High stripping rates with minimal surface damage</li>
-                <li>Excellent process uniformity and repeatability</li>
-                <li>Multiple configurable process recipes</li>
-                <li>Adjustable plasma gap and uniform gas distribution for optimized results</li>
-                <li>Automated endpoint detection for precise control</li>
-                <li>Real-time monitoring and automated process management</li>
+      {/* Process Capabilities */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Process Capabilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Performance Features</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> High stripping rates with minimal surface damage</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Excellent process uniformity and repeatability</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Multiple configurable process recipes</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Adjustable plasma gap and uniform gas distribution for optimized results</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Automated endpoint detection for precise control</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Real-time monitoring and automated process management</li>
               </ul>
             </div>
-            <div className="capability-card">
-              <h3>Materials and Processes</h3>
-              <ul>
-                <li>Organic materials (Photoresist, PMMA, PS nanospheres, etc.)</li>
-                <li>Two-dimensional (2D) materials (MoS₂, BN, Graphene, etc.)</li>
-                <li>Surface cleaning for failure analysis</li>
-                <li>General organic contamination removal and activation processes</li>
+            <div className="bg-surface-container-low rounded-xl p-8">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-4">Materials and Processes</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Organic materials (Photoresist, PMMA, PS nanospheres, etc.)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Two-dimensional (2D) materials (MoS₂, BN, Graphene, etc.)</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> Surface cleaning for failure analysis</li>
+                <li className="flex items-start gap-2 text-on-surface-variant"><span className="text-primary mt-1">•</span> General organic contamination removal and activation processes</li>
               </ul>
             </div>
           </div>
@@ -280,24 +321,43 @@ export function StriperSystem() {
         ctaLabel="Request a Quote"
       />
 
-      <section className="product-contact">
-        <div className="container">
-          <h2>Request Information</h2>
-          <p>Get detailed specs, pricing & customization options.</p>
-          <div className="contact-buttons">
-            <button className="btn btn-primary" onClick={() => openContactForm(true)}>Contact Sales Team</button>
-            <a href="#" className="btn btn-secondary" onClick={(e) => { e.preventDefault(); setGateOpen(true); }}>
-              <span className="icon-download"></span> Download Product Datasheet
+      {/* Contact CTA */}
+      <section className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-primary mb-4">Request Information</h2>
+          <p className="text-on-surface-variant text-lg mb-8 max-w-xl mx-auto">Get detailed specs, pricing & customization options.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
+              onClick={() => openContactForm(true)}
+            >
+              <span className="material-symbols-outlined text-[20px]">call</span>
+              Contact Sales Team
+            </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
             </a>
           </div>
         </div>
       </section>
 
-      <div className={`floating-contact ${showFloatingContact ? 'visible' : ''}`}>
-        <button className="btn btn-primary" onClick={() => openContactForm(true)}>
-          Contact Sales Team
-        </button>
-      </div>
+      {/* Floating Contact Button */}
+      {showFloatingContact && (
+        <div className="fixed bottom-6 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
+          <button
+            className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-medium shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            onClick={() => openContactForm(true)}
+          >
+            <span className="material-symbols-outlined text-[20px]">call</span>
+            Contact Sales Team
+          </button>
+        </div>
+      )}
 
       <QuoteModal
         isOpen={isModalOpen}
