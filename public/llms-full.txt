@@ -184,6 +184,10 @@ Summary: Comprehensive technical roadmap covering the key technologies shaping n
 URL: https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization
 Summary: Systematic investigation of CH4/H2/Ar plasma etching for n-type Bi2Te2.7Se0.3 films, revealing synergistic gas roles and optimal parameters for high-AR thermoelectric device fabrication.
 
+**Plasma Cleaner Maintenance Guide: Chamber Cleaning, Electrode Refurbishment & Preventive Schedules**
+URL: https://ninescrolls.com/insights/plasma-cleaner-maintenance-guide
+Summary: Practical guide to plasma cleaner maintenance covering the three pillars of plasma system upkeep (vacuum environment, energy source, process medium). Includes step-by-step chamber cleaning procedures (brush, vacuum, IPA wipe, O2 plasma self-clean), detailed electrode refurbishment process using NaOH/H2SO4 chemical cleaning with safety warnings (hydrogen gas hazard, no mechanical abrasion), vacuum system care (pump oil, leak testing, O-ring inspection), RF power supply verification, gas system checks (MFC calibration, leak detection). Provides a complete preventive maintenance schedule from daily 5-minute checks through annual overhauls, a troubleshooting table mapping symptoms to maintenance actions, and FAQs on refurbishment frequency, acceptable leak rates, and performance degradation diagnosis. Includes three technical diagrams: maintenance schedule overview, electrode cleaning flow chart, and three-pillars system diagram.
+
 ### Deposition & Materials
 
 **HDP-CVD In-Depth Guide**
