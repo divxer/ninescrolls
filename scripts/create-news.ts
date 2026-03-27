@@ -10,6 +10,7 @@
  * Example:
  *   npx tsx scripts/create-news.ts ~/marketing/insight/article.html              # as draft
  *   npx tsx scripts/create-news.ts ~/marketing/insight/article.html --publish    # publish + ping
+ *   npx tsx scripts/create-news.ts ~/marketing/insight/article.html --category Event  # set category
  *
  * The script extracts title, content, and metadata from the HTML file,
  * then creates an InsightsPost record with contentType='news'.
@@ -123,6 +124,10 @@ async function createNews(filePath: string) {
   }
 
   const publish = process.argv.includes('--publish');
+  const categoryIdx = process.argv.indexOf('--category');
+  const category = categoryIdx !== -1 && process.argv[categoryIdx + 1]
+    ? process.argv[categoryIdx + 1]
+    : 'Industry';
 
   const { data, errors } = await client.models.InsightsPost.create({
     slug,
@@ -131,7 +136,7 @@ async function createNews(filePath: string) {
     excerpt,
     author: 'NineScrolls Team',
     publishDate: today,
-    category: 'Industry',
+    category,
     readTime,
     imageUrl: coverImage || `/assets/images/news/${slug}`,
     tags: [],
@@ -188,10 +193,21 @@ async function pingIndexNow(url: string) {
 }
 
 // CLI entry
-const filePath = process.argv.filter(a => !a.startsWith('--'))[2];
+// Skip flags and their values (e.g. --category Event)
+const flagsWithValues = new Set(['--category']);
+const positionalArgs: string[] = [];
+for (let i = 2; i < process.argv.length; i++) {
+  if (process.argv[i].startsWith('--')) {
+    if (flagsWithValues.has(process.argv[i])) i++; // skip value
+  } else {
+    positionalArgs.push(process.argv[i]);
+  }
+}
+const filePath = positionalArgs[0];
 if (!filePath) {
-  console.error('Usage: npx tsx scripts/create-news.ts <html-file> [--publish]');
-  console.error('  --publish  Publish immediately and notify search engines');
+  console.error('Usage: npx tsx scripts/create-news.ts <html-file> [--publish] [--category <cat>]');
+  console.error('  --publish           Publish immediately and notify search engines');
+  console.error('  --category <cat>    Set category (Industry|Product|Event|Partnership)');
   process.exit(1);
 }
 
