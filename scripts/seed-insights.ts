@@ -155,6 +155,12 @@ const RELATED_PRODUCTS_MAP: Record<string, RelatedProduct[]> = {
     { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems' },
     { href: '/products/striper', label: 'Striper Systems' },
   ],
+  'plasma-cleaner-maintenance-guide': [
+    { href: '/products/plasma-cleaner', label: 'Plasma Cleaner Systems', subtitle: 'PLUTO Series Overview' },
+    { href: '/products/pluto-t', label: 'PLUTO-T', subtitle: 'Tabletop / Compact Research' },
+    { href: '/products/pluto-m', label: 'PLUTO-M', subtitle: 'Mid-Range / Versatile Processing' },
+    { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: 'Full-Size / Production Grade' },
+  ],
   'atomic-layer-etching-practical-guide': [
     { href: '/products/icp-etcher', label: 'ICP Etching Systems' },
     { href: '/products/rie-etcher', label: 'RIE Etching Systems' },
@@ -194,6 +200,7 @@ const HERO_IMAGES_MAP: Record<string, HeroImageConfig> = {
   'machine-learning-plasma-etch-optimization': { prefix: 'ml-plasma-etch-cover', fallbackExt: 'png' },
   'etching-beyond-silicon-new-materials': { prefix: 'etching-new-materials-cover', fallbackExt: 'png' },
   'ultra-high-etch-selectivity': { prefix: 'etch-selectivity-cover', fallbackExt: 'png' },
+  'plasma-cleaner-maintenance-guide': { prefix: 'plasma-maintenance-cover', fallbackExt: 'png' },
 };
 
 // ─── Standalone Component Articles ───────────────────────────────────────────
