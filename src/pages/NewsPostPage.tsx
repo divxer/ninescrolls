@@ -19,7 +19,10 @@ function stripInlineToc(html: string): string {
 // ─── Helper Components ───────────────────────────────────────────────────────
 
 function hasValidImage(url: string): boolean {
-  return Boolean(url) && !url.startsWith('/assets/images/news/');
+  if (!url) return false;
+  // Placeholder paths like /assets/images/news/some-slug have no file extension
+  if (url.startsWith('/assets/images/news/') && !/\.\w+$/.test(url)) return false;
+  return true;
 }
 
 function NewsHeroImage({ post }: { post: InsightsPost }) {
