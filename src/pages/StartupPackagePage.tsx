@@ -65,9 +65,9 @@ export function StartupPackagePage() {
                   "@type": "OfferCatalog",
                   "name": "Applicable Products",
                   "itemListElement": [
-                    { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "ICP-RIE / RIE Etching Systems" } },
-                    { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Low-temperature PECVD / ALD Systems" } },
-                    { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Spin Coater" } }
+                    { "@type": "ListItem", "position": 1, "name": "ICP-RIE / RIE Etching Systems", "url": "https://ninescrolls.com/products/icp-etcher" },
+                    { "@type": "ListItem", "position": 2, "name": "Low-temperature PECVD / ALD Systems", "url": "https://ninescrolls.com/products/pecvd" },
+                    { "@type": "ListItem", "position": 3, "name": "Spin Coater", "url": "https://ninescrolls.com/products/coater-developer" }
                   ]
                 }
               }
