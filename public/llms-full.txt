@@ -188,6 +188,10 @@ Summary: Systematic investigation of CH4/H2/Ar plasma etching for n-type Bi2Te2.
 URL: https://ninescrolls.com/insights/plasma-cleaner-maintenance-guide
 Summary: Practical guide to plasma cleaner maintenance covering the three pillars of plasma system upkeep (vacuum environment, energy source, process medium). Includes step-by-step chamber cleaning procedures (brush, vacuum, IPA wipe, O2 plasma self-clean), detailed electrode refurbishment process using NaOH/H2SO4 chemical cleaning with safety warnings (hydrogen gas hazard, no mechanical abrasion), vacuum system care (pump oil, leak testing, O-ring inspection), RF power supply verification, gas system checks (MFC calibration, leak detection). Provides a complete preventive maintenance schedule from daily 5-minute checks through annual overhauls, a troubleshooting table mapping symptoms to maintenance actions, and FAQs on refurbishment frequency, acceptable leak rates, and performance degradation diagnosis. Includes three technical diagrams: maintenance schedule overview, electrode cleaning flow chart, and three-pillars system diagram.
 
+**Ion Beam Etching (IBE) & RIBE: Principles, Applications, and Equipment Guide**
+URL: https://ninescrolls.com/insights/ion-beam-etching-ribe-guide
+Summary: Complete guide to ion beam etching — covers Kaufman and RF ion source architectures, IBE (inert gas physical sputtering), RIBE (reactive ion beam with chemical enhancement), and CAIBE (chemically assisted) operating modes. Detailed comparison with RIE/ICP-RIE across selectivity, damage, and profile control. Material compatibility for magnetic materials (NiFe, CoFe for MRAM), optical materials, metals (Au, Pt, Cu), and 2D/quantum materials. Tilt angle optimization (0-90°) for sidewall control and redeposition management. Applications in magnetic device fabrication, photonics, MEMS, and quantum computing. Equipment selection with NineScrolls IBE/RIBE specs (Kaufman up to 6" wafers, RF up to 12", base pressure <7×10⁻⁷ Torr, <5% non-uniformity). Includes troubleshooting guide and FAQs.
+
 ### Deposition & Materials
 
 **Atomic Layer Deposition (ALD) – Principles, Process Windows, Materials, and Equipment Guide**
@@ -206,6 +210,10 @@ Summary: Comprehensive PECVD guide covering parallel-plate reactor architecture 
 URL: https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook
 Summary: Comprehensive handbook covering HDP-CVD technology for superior gap-fill in high-AR trenches, comparison with PECVD and ALD, process optimization, and equipment selection for semiconductor manufacturing.
 
+**HDP-CVD Applications: Gap Fill, STI, and Advanced Dielectric Deposition**
+URL: https://ninescrolls.com/insights/hdp-cvd-applications-gap-fill-dielectrics
+Summary: Application-focused guide to HDP-CVD — covers the dep/etch competition mechanism (simultaneous deposition and argon ion sputtering for void-free fill), D/S ratio optimization, STI fill process windows, IMD/PMD applications with doped oxides (BSG, PSG, BPSG, FSG). Quantitative comparison of HDP-CVD vs PECVD vs SACVD across gap-fill capability, step coverage, deposition rate, and film quality. Void-free fill strategies including dep-etch-dep cycling, gas optimization, and in-situ monitoring. Advanced packaging applications (TSV fill, MEMS cavity sealing, RDL dielectrics, photonic waveguide cladding). Process parameter optimization hierarchy and troubleshooting. NineScrolls HDP-CVD specs (source 1000-3000W, bias 300-1000W, 20-200°C, 6-line gas system).
+
 **Advanced Materials Processing**
 URL: https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy
 Summary: How thin film deposition, plasma etching, and surface modification enable breakthroughs in materials science, nanotechnology, and energy applications.
@@ -220,11 +228,27 @@ Summary: Precision manufacturing for optical devices — optical coatings, waveg
 
 ### Lithography
 
+**Coater/Developer Systems: Equipment Selection & Process Optimization Guide**
+URL: https://ninescrolls.com/insights/coater-developer-systems-equipment-guide
+Summary: Equipment-focused guide to photolithography track systems — covers integrated track vs manual spin coater comparison, module configurations (coater, developer, hotplate), spin coating equipment design (motor subsystem, dispense arms, bowl/cup, EBR), developer module design (puddle vs spray vs multi-puddle methods), hotplate integration and PEB delay sensitivity. Recipe programming workflow, uniformity optimization hierarchy for achieving <0.5% 3σ, and defect troubleshooting tables for coating and development defects. Equipment selection criteria with NineScrolls Coater/Developer specs (up to 8000 rpm ±1 rpm, up to 12" wafers, RT-200°C hotplate, <0.5% uniformity, 1.0m × 0.8m footprint).
+
+**Lithography Process Integration: From Substrate Preparation to Pattern Transfer**
+URL: https://ninescrolls.com/insights/lithography-process-integration-guide
+Summary: Full lithography-to-etch integration guide covering every step: substrate cleaning, HMDS priming (vapor prime vs liquid spin), spin coating, soft bake, alignment & exposure (contact, proximity, projection, e-beam, laser direct-write), PEB, development, hard bake, pattern transfer via etch, and resist strip. Emphasizes critical interfaces between steps (queue times, temperature transitions, surface chemistry handoffs). CD control budget showing per-step contributions, overlay/alignment considerations. Troubleshooting table for 8 common integration failures. Links coating, etching, and stripping equipment in context.
+
 **Spin Coating & Development: A Complete Guide to Photoresist Processing**
 URL: https://ninescrolls.com/insights/spin-coating-development-guide
 Summary: Comprehensive guide to spin coating and development for photolithography. Covers the four stages of spin coating (dispense → spin-up → spin-off → evaporation), film thickness physics (t ∝ 1/√ω, viscosity dependence), and the complete photolithography process flow (HMDS prime → coat → soft bake → align/expose → PEB → develop → hard bake → inspect). Detailed photoresist selection guide covering positive (DNQ/novolac, chemically amplified DUV) vs negative (SU-8, PMMA, AZ nLOF) resists with application-specific recommendations. Development optimization for puddle vs spray modes, development time, and temperature control. Troubleshooting guide for common defects (comets, edge bead, standing waves, incomplete development). Equipment selection criteria for coater/developer systems. Includes three technical diagrams: spin coating stages, thickness vs speed curves for multiple resists, and lithography process flow with cross-section views.
 
 ### Stripping & Ashing
+
+**Plasma Stripping & Ashing Equipment: Selection Guide for Research Labs**
+URL: https://ninescrolls.com/insights/plasma-stripping-equipment-selection-guide
+Summary: Equipment selection guide for plasma stripping — covers three architectures (barrel/batch, downstream/afterglow, RIE-mode) with comparison table. Gas chemistry selection matrix (O₂, O₂/CF₄, H₂/N₂, forming gas) with application matching. Temperature effects on strip rate with Arrhenius data. Endpoint detection methods (OES vs laser interferometry). Batch vs single-wafer tradeoffs for throughput vs process control. Decision guide for when to use a dedicated striper vs plasma cleaner. Damage-sensitive stripping strategies for gate oxide, Cu, low-k, III-V, 2D materials, and MEMS. NineScrolls Striper specs (300-1000W RF, 5-200°C, 0.8m × 0.8m footprint, automated endpoint).
+
+**Post-Etch Cleaning & Residue Removal: Strategies for Damage-Free Processing**
+URL: https://ninescrolls.com/insights/post-etch-cleaning-residue-removal
+Summary: Comprehensive post-etch cleaning guide — classifies 6 residue types (polymer sidewall, metal halide, organic, inorganic, mixed, native oxide regrowth) with formation mechanisms. Compares 6 dry cleaning methods (O₂ plasma, downstream ashing, forming gas, Ar sputtering, UV/O₃, CO₂ cryogenic) and 6 wet cleaning methods. Damage-free strategies for three sensitive material systems (low-k dielectrics, Cu interconnects, III-V compounds). In-situ vs ex-situ integration tradeoffs. Contamination monitoring techniques. Recommended cleaning workflows for 6 common etch process types.
 
 **Plasma Stripping & Ashing – Principles, Gas Chemistry, and Equipment Guide**
 URL: https://ninescrolls.com/insights/plasma-stripping-ashing-guide
@@ -247,6 +271,20 @@ Summary: Step-by-step selection guide covering cleaning requirements, plasma sou
 **Plasma Cleaner Comparison for Research Labs**
 URL: https://ninescrolls.com/insights/plasma-cleaner-comparison-research-labs
 Summary: Compares quartz vs stainless steel chambers, RF vs mid-frequency sources, and reviews competing brands (Harrick, SPI, Diener, Gatan, Plasma Etch, YES, PVA TePla) vs NineScrolls.
+
+**PLUTO vs HY Series Plasma Cleaners: Design, Performance & Selection Guide**
+URL: https://ninescrolls.com/insights/pluto-vs-hy-plasma-cleaner-comparison
+Summary: Head-to-head comparison of NineScrolls PLUTO and HY series plasma cleaners. Covers architecture differences (stainless steel vs aluminum alloy chambers), electrode design (standard flat plate vs gas-shower perforated), RF vs mid-frequency excitation (13.56 MHz vs 40 kHz). Power density analysis with W/L calculations for all 6 models. Full feature comparison matrix. Application matching for 6 use cases (bonding activation, SEM prep, MEMS/semiconductor, teaching, core facility, biomedical). 5-step decision flowchart. 5-year cost-of-ownership analysis with per-cycle costs. Migration/upgrade paths. All pricing: HY-4L $6,499-$7,999, HY-20L $11,999-$14,999, HY-20LRF $14,499, PLUTO-T $9,999, PLUTO-M $12,999, PLUTO-F $15,999.
+
+### Equipment Fundamentals
+
+**Vacuum System Fundamentals for Semiconductor Processing Equipment**
+URL: https://ninescrolls.com/insights/vacuum-system-fundamentals-semiconductor
+Summary: Comprehensive guide to vacuum technology for semiconductor equipment — covers vacuum regimes (rough >1 Torr, high 10⁻³-10⁻⁸ Torr, UHV <10⁻⁸ Torr), pump technologies (rotary vane, scroll, dry screw, roots blower, turbomolecular, cryogenic, ion, Ti sublimation), pressure measurement (CDG, Pirani, cold cathode, Bayard-Alpert ion gauge). Gas flow regimes (viscous, transitional, molecular) with Knudsen number criteria. Conductance and effective pumping speed calculations with worked examples. Helium leak testing and rate-of-rise methods. Chamber outgassing sources and mitigation. Load-lock design rationale for cycle time and contamination reduction. Vacuum-compatible materials (metals, elastomers, ceramics). Maintenance schedules for each pump type.
+
+**Process Chamber Materials & Contamination Control in Semiconductor Equipment**
+URL: https://ninescrolls.com/insights/process-chamber-materials-contamination-control
+Summary: Guide to chamber design and contamination management — covers body materials (6061-T6 aluminum, 304/316 stainless steel, alumina, quartz, SiC), surface treatments (Type III hard anodization, Y₂O₃ plasma spray, electropolishing), electrode materials (anodized Al, Si, SiC, graphite with selection criteria), liner/shield design principles. Seal materials (Viton, Kalrez, Chemraz, PTFE, metal C-seals/Helicoflex) with temperature and chemical compatibility. Gas delivery materials (316L electropolished tubing, VCR fittings). Five contamination categories (particles, metallic, organic, moisture, cross-contamination) with sources and effects. Chamber seasoning protocol. PM schedules from in-situ plasma clean through heavy PM. Cleaning protocols (plasma, wet chemical, bead blasting). Qualification criteria (base pressure, leak rate, particle count, dummy wafer deposition, TXRF metallic contamination).
 
 ### Energy Applications
 
