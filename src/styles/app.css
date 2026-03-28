@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./main.css" layer(legacy);
 
 @theme {
   /* ── Spacing baseline ── */
@@ -29,20 +28,15 @@
   --font-body: "Inter", sans-serif;
 }
 
-/* ── Body defaults — override legacy main.css ── */
+/* ── Body defaults ── */
 body {
-  font-family: var(--font-body) !important;
-  color: var(--color-on-surface) !important;
-  background-color: var(--color-background) !important;
+  font-family: var(--font-body);
+  color: var(--color-on-surface);
+  background-color: var(--color-background);
   line-height: 1.6;
 }
 
-/* ── Remove legacy fixed-header spacer (now sticky) ── */
-main {
-  margin-top: 0 !important;
-}
-
-/* ── Global overrides for redesign ── */
+/* ── Global utility classes ── */
 .hero-gradient {
   background: linear-gradient(135deg, #1e3a5f 0%, #1a1a2e 100%);
 }
