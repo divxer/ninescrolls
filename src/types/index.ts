@@ -59,6 +59,7 @@ export const insightCategories = [
   'Photonics',
   'Nanotechnology',
   'Energy',
+  'Equipment Maintenance',
   'Publication Spotlight'
 ];
 
