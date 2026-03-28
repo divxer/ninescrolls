@@ -1,3 +1,4 @@
+import { cdnUrl } from '../../config/imageConfig';
 import { OptimizedImage } from './OptimizedImage';
 
 interface TrustSectionProps {
@@ -12,7 +13,7 @@ export function TrustSection({
   deploymentCount = 300,
   deploymentText = 'laboratories across universities, national research institutes, and industrial R&D centers',
   showLogos = false,
-  logoImagePath = '/assets/images/partners/university-logos.png',
+  logoImagePath = cdnUrl('/assets/images/partners/university-logos.png'),
   logoImageAlt = 'Trusted by leading universities and research institutions'
 }: TrustSectionProps) {
   return (

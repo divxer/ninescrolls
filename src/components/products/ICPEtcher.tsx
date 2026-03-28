@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function ICPEtcher() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,7 +99,7 @@ export function ICPEtcher() {
       {/* Hero */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -147,7 +148,7 @@ export function ICPEtcher() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="min-w-0">
               <img
-                src="/assets/images/products/icp-etcher/main.jpg"
+                src={cdnUrl('/assets/images/products/icp-etcher/main.jpg')}
                 alt="ICP Etcher System"
                 className="w-full rounded-xl shadow-lg"
               />
@@ -158,41 +159,41 @@ export function ICPEtcher() {
                 <picture>
                   <source
                     media="(max-width: 768px)"
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-sm.webp"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic-sm.webp')}
                     type="image/webp"
                   />
                   <source
                     media="(max-width: 768px)"
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-sm.png"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic-sm.png')}
                     type="image/png"
                   />
                   <source
                     media="(max-width: 1200px)"
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-md.webp"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic-md.webp')}
                     type="image/webp"
                   />
                   <source
                     media="(max-width: 1200px)"
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic-md.png"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic-md.png')}
                     type="image/png"
                   />
                   <source
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic.webp"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic.webp')}
                     type="image/webp"
                   />
                   <source
-                    srcSet="/assets/images/products/icp-etcher/icp-system-schematic.png"
+                    srcSet={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic.png')}
                     type="image/png"
                   />
                   <img
-                    src="/assets/images/products/icp-etcher/icp-system-schematic.webp"
+                    src={cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic.webp')}
                     alt="Inductively Coupled Plasma (ICP) Etching System Schematic - Showing plasma generation coil, etching stations, RF power connections, and gas flow paths"
                     className="w-full max-w-full h-auto rounded-lg shadow-sm mb-4 bg-surface-container-lowest p-4 block object-contain"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       console.log('Image failed to load:', target.src);
                       // Fallback to PNG if WebP fails
-                      target.src = '/assets/images/products/icp-etcher/icp-system-schematic.png';
+                      target.src = cdnUrl('/assets/images/products/icp-etcher/icp-system-schematic.png');
                     }}
                   />
                 </picture>
