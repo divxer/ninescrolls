@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { cdnUrl } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useNewsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
@@ -109,7 +110,7 @@ export const NewsPage: React.FC = () => {
                   {hasValidImage(post.imageUrl) && (
                     <Link to={`/news/${post.slug}`} className="block mb-6 rounded-lg overflow-hidden">
                       <img
-                        src={resolveCardImage(post.imageUrl)}
+                        src={cdnUrl(resolveCardImage(post.imageUrl))}
                         alt={post.title}
                         loading="lazy"
                         decoding="async"

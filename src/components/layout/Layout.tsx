@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Chat } from '../common/Chat';
 import { CookieBanner } from '../common/CookieBanner';
 import { CartIcon } from '../common/CartIcon';
+import { cdnUrl } from '../../config/imageConfig';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -157,7 +158,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <img src="/assets/images/logo.svg" alt="NineScrolls LLC" className="h-8 w-auto" />
+            <img src={cdnUrl('/assets/images/logo.svg')} alt="NineScrolls LLC" className="h-8 w-auto" />
             <span className="text-2xl font-bold tracking-tighter text-slate-900 font-headline uppercase">NineScrolls</span>
           </Link>
 
@@ -350,7 +351,7 @@ export function Layout({ children }: LayoutProps) {
           {/* Brand */}
           <div className="col-span-1">
             <div className="flex items-center gap-3 mb-6">
-              <img src="/assets/images/logo.svg" alt="NineScrolls LLC" className="h-8 w-auto" />
+              <img src={cdnUrl('/assets/images/logo.svg')} alt="NineScrolls LLC" className="h-8 w-auto" />
               <span className="font-headline font-bold text-lg text-slate-900 uppercase tracking-tighter">NineScrolls</span>
             </div>
             <p className="text-slate-500 text-xs leading-relaxed mb-6">

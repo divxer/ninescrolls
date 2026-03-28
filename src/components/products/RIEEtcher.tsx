@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function RIEEtcher() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,7 +99,7 @@ export function RIEEtcher() {
       {/* Hero */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -147,7 +148,7 @@ export function RIEEtcher() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="min-w-0">
               <img
-                src="/assets/images/products/rie-etcher/main.jpg"
+                src={cdnUrl('/assets/images/products/rie-etcher/main.jpg')}
                 alt="RIE Etcher System"
                 className="w-full rounded-xl shadow-lg"
               />
