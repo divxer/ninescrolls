@@ -190,6 +190,18 @@ Summary: Practical guide to plasma cleaner maintenance covering the three pillar
 
 ### Deposition & Materials
 
+**Atomic Layer Deposition (ALD) – Principles, Process Windows, Materials, and Equipment Guide**
+URL: https://ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide
+Summary: Comprehensive guide to ALD — self-limiting surface chemistry with sequential precursor A pulse → purge → precursor B pulse → purge cycles depositing exactly one monolayer per cycle (~0.5–1.5 Å). Covers thermal ALD vs plasma-enhanced ALD (PEALD), the ALD temperature window (condensation/incomplete reaction/self-limiting/decomposition regions), precursor selection (TMA/H₂O for Al₂O₃, TDMAH/H₂O for HfO₂, TDMAT for TiN), growth rates and uniformity data. Detailed comparison of ALD vs CVD vs PVD across conformality (>99% vs 70-90% vs line-of-sight), thickness control, deposition rate, and temperature requirements. Applications in gate dielectrics, MEMS passivation, energy storage, and optics. Equipment selection framework with FAQs. Includes three technical diagrams: ALD cycle, temperature window, and ALD/CVD/PVD comparison.
+
+**Magnetron Sputtering – Principles, Process Parameters, and Equipment Guide**
+URL: https://ninescrolls.com/insights/magnetron-sputtering-guide
+Summary: Comprehensive guide to magnetron sputtering PVD. Covers sputter yield physics (ion energy, mass, target material, angle), the magnetron advantage (magnetic confinement increasing ionization efficiency), DC vs RF sputtering modes (DC for conductive targets at 300-700 V, RF at 13.56 MHz for insulators like SiO₂/Al₂O₃/ITO), and reactive sputtering for oxides/nitrides. Process parameter windows for power, pressure, gas composition, substrate temperature, and target-substrate distance. Film growth modes (Frank-van der Merwe layer-by-layer, Volmer-Weber island, Stranski-Krastanov layer+island) and Thornton structure zone model. Equipment selection for 4"–12" wafer platforms. Includes three technical diagrams: chamber cross-section, DC vs RF comparison, and film growth modes.
+
+**PECVD Complete Guide — Plasma-Enhanced Chemical Vapor Deposition for Thin Film Engineering**
+URL: https://ninescrolls.com/insights/pecvd-complete-guide-plasma-enhanced-cvd
+Summary: Comprehensive PECVD guide covering parallel-plate reactor architecture (showerhead electrode + heated substrate stage), plasma-assisted dissociation enabling deposition at 200-400°C vs 600-900°C for thermal CVD. Details single-frequency (13.56 MHz) vs dual-frequency (HF 13.56 MHz + LF 100-400 kHz) RF stress control — HF controls plasma density/deposition rate, LF controls ion energy/bombardment for independent stress tuning from compressive to tensile. Provides process recipes for SiO₂, SiNₓ, a-Si:H, SiC, SiON, and DLC films with starter parameter windows. Comprehensive comparison of PECVD vs LPCVD vs ALD across temperature, conformality, deposition rate, film quality, and throughput. Applications in passivation, interlayer dielectrics, anti-reflection coatings, MEMS, and flexible electronics. Equipment selection criteria with FAQs. Includes three technical diagrams: reactor architecture, single vs dual frequency stress control, and PECVD/LPCVD/ALD comparison.
+
 **HDP-CVD In-Depth Guide**
 URL: https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook
 Summary: Comprehensive handbook covering HDP-CVD technology for superior gap-fill in high-AR trenches, comparison with PECVD and ALD, process optimization, and equipment selection for semiconductor manufacturing.
@@ -205,6 +217,18 @@ Summary: Electron beam lithography, nanoimprint, self-assembly techniques, and t
 **Photonics Manufacturing**
 URL: https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering
 Summary: Precision manufacturing for optical devices — optical coatings, waveguide fabrication, photonic crystal patterning, and integrated photonic device production.
+
+### Lithography
+
+**Spin Coating & Development: A Complete Guide to Photoresist Processing**
+URL: https://ninescrolls.com/insights/spin-coating-development-guide
+Summary: Comprehensive guide to spin coating and development for photolithography. Covers the four stages of spin coating (dispense → spin-up → spin-off → evaporation), film thickness physics (t ∝ 1/√ω, viscosity dependence), and the complete photolithography process flow (HMDS prime → coat → soft bake → align/expose → PEB → develop → hard bake → inspect). Detailed photoresist selection guide covering positive (DNQ/novolac, chemically amplified DUV) vs negative (SU-8, PMMA, AZ nLOF) resists with application-specific recommendations. Development optimization for puddle vs spray modes, development time, and temperature control. Troubleshooting guide for common defects (comets, edge bead, standing waves, incomplete development). Equipment selection criteria for coater/developer systems. Includes three technical diagrams: spin coating stages, thickness vs speed curves for multiple resists, and lithography process flow with cross-section views.
+
+### Stripping & Ashing
+
+**Plasma Stripping & Ashing – Principles, Gas Chemistry, and Equipment Guide**
+URL: https://ninescrolls.com/insights/plasma-stripping-ashing-guide
+Summary: Comprehensive guide to plasma stripping and ashing for photoresist removal. Covers O₂ plasma chemistry (photoresist + O* → CO₂ + H₂O), downstream vs direct plasma configurations — downstream plasma uses a remote source with neutral radical transport to the wafer for zero ion damage, while direct plasma provides faster strip rates with higher bombardment. Detailed dry vs wet strip comparison across mechanism, selectivity (PR:Si >1000:1 for plasma), damage risk, residues, throughput, and environmental impact. Gas chemistry selection guide: O₂ for standard PR, O₂/CF₄ for hard-baked resist, O₂/N₂ for low-k compatibility, H₂/N₂ forming gas for metal-sensitive processes, Ar/O₂ for post-etch residue. Process types include PR strip, descum, post-etch residue removal, surface activation, and 2D materials processing. Equipment selection framework with endpoint detection and FAQs. Includes three technical diagrams: downstream plasma chamber architecture, O₂ plasma ashing chemistry flow, and dry vs wet strip comparison.
 
 ### Plasma Cleaning
 

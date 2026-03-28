@@ -62,10 +62,21 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 
 ## Insights — Deposition & Materials
 
+- [Atomic Layer Deposition (ALD) Guide](https://ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide): Comprehensive ALD guide — self-limiting chemistry, thermal vs PEALD, temperature windows, precursor selection, ALD vs CVD vs PVD comparison, applications in semiconductors/MEMS/energy, equipment selection
+- [Magnetron Sputtering Guide](https://ninescrolls.com/insights/magnetron-sputtering-guide): Complete sputtering guide — DC vs RF modes, reactive sputtering for oxides/nitrides, process parameters, film growth modes, quality optimization, equipment selection for 4"–12" wafers
+- [PECVD Complete Guide](https://ninescrolls.com/insights/pecvd-complete-guide-plasma-enhanced-cvd): PECVD handbook — parallel-plate reactor principles, single vs dual-frequency RF stress control, SiO₂/SiNₓ/a-Si:H/SiC/DLC recipes, PECVD vs LPCVD vs ALD comparison, applications and equipment selection
 - [HDP-CVD In-Depth Guide](https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook): Comprehensive HDP-CVD handbook for research and manufacturing
 - [Advanced Materials Processing](https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy): Thin film deposition and plasma etching for materials science
 - [Nanofabrication Techniques](https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future): E-beam lithography, nanoimprint, self-assembly
 - [Photonics Manufacturing](https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering): Precision engineering for optical devices
+
+## Insights — Lithography
+
+- [Spin Coating & Development Guide](https://ninescrolls.com/insights/spin-coating-development-guide): Complete photoresist processing guide — spin coating physics, thickness vs speed, photoresist selection (positive/negative, DNQ, SU-8, PMMA), lithography process flow, development optimization, troubleshooting
+
+## Insights — Stripping & Ashing
+
+- [Plasma Stripping & Ashing Guide](https://ninescrolls.com/insights/plasma-stripping-ashing-guide): Comprehensive stripping guide — O₂ plasma chemistry, downstream vs direct plasma, dry vs wet strip comparison, gas chemistry selection, process types (PR strip, descum, surface activation, 2D materials), equipment selection
 
 ## Insights — Plasma Cleaning
 
