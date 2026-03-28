@@ -24,10 +24,30 @@ const RELATED_PRODUCTS: Record<string, { href: string; label: string; subtitle?:
     { href: '/products/pluto-m', label: 'PLUTO-M', subtitle: 'Mid-Range / Versatile Processing' },
     { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: 'Full-Size / Production Grade' },
   ],
+  'atomic-layer-deposition-ald-comprehensive-guide': [
+    { href: '/products/ald', label: 'ALD Systems', subtitle: 'Atomic Layer Deposition' },
+  ],
+  'magnetron-sputtering-guide': [
+    { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'Magnetron Sputtering' },
+  ],
+  'pecvd-complete-guide-plasma-enhanced-cvd': [
+    { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Plasma-Enhanced CVD' },
+  ],
+  'spin-coating-development-guide': [
+    { href: '/products/coater-developer', label: 'Coater/Developer', subtitle: 'Spin Coating & Development' },
+  ],
+  'plasma-stripping-ashing-guide': [
+    { href: '/products/striper', label: 'Striper Systems', subtitle: 'Plasma Stripping & Ashing' },
+  ],
 };
 
 const HERO_IMAGES: Record<string, { prefix: string; fallbackExt: string }> = {
   'plasma-cleaner-maintenance-guide': { prefix: 'plasma-maintenance-cover', fallbackExt: 'png' },
+  'atomic-layer-deposition-ald-comprehensive-guide': { prefix: 'ald-guide-cover', fallbackExt: 'png' },
+  'magnetron-sputtering-guide': { prefix: 'sputter-guide-cover', fallbackExt: 'png' },
+  'pecvd-complete-guide-plasma-enhanced-cvd': { prefix: 'pecvd-guide-cover', fallbackExt: 'png' },
+  'spin-coating-development-guide': { prefix: 'coater-developer-guide-cover', fallbackExt: 'png' },
+  'plasma-stripping-ashing-guide': { prefix: 'striper-guide-cover', fallbackExt: 'png' },
 };
 
 async function authenticate() {
