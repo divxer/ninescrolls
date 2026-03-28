@@ -308,4 +308,12 @@
   .post-content {
     font-size: 1rem;
   }
+
+  .related-article-card {
+    flex-direction: column;
+  }
+  .related-article-card > div:first-child {
+    width: 100%;
+    min-height: 160px;
+  }
 }
