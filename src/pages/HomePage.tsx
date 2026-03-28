@@ -285,7 +285,7 @@ export function HomePage() {
                 <Link key={post.id} to={`/insights/${post.slug}`} className="group bg-surface-container-lowest rounded-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                   <div className="aspect-[16/10] overflow-hidden">
                     <OptimizedImage
-                      src={post.imageUrl}
+                      src={cdnUrl(post.imageUrl)}
                       alt={post.title}
                       width={400}
                       height={250}

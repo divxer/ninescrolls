@@ -6,13 +6,14 @@ import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
 import { categories, newsCategories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
+import { cdnUrl } from '../config/imageConfig';
 
 function resolveCardImage(url: string): string {
   if (!url) return '';
   // If URL already has an image extension, use as-is
-  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url)) return url;
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url)) return cdnUrl(url);
   // Otherwise append .webp (handles both CDN and local extensionless paths)
-  return `${url}.webp`;
+  return cdnUrl(`${url}.webp`);
 }
 
 export const InsightsPage: React.FC = () => {
