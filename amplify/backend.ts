@@ -34,6 +34,8 @@ import {
     AllowedMethods, CachedMethods, HttpVersion,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { DnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { HostedZone, CnameRecord } from 'aws-cdk-lib/aws-route53';
 
 const backend = defineBackend({
     auth,
@@ -495,6 +497,19 @@ const oai = new OriginAccessIdentity(insightsAssetsStack, 'InsightsAssetsOAI', {
 
 insightsAssetsBucket.grantRead(oai);
 
+// Route 53 hosted zone for ninescrolls.com (DNS validation + CNAME alias)
+const hostedZone = HostedZone.fromLookup(insightsAssetsStack, 'NineScrollsZone', {
+    domainName: 'ninescrolls.com',
+});
+
+// ACM certificate for cdn.ninescrolls.com — created in us-east-1 (required by CloudFront)
+// Auto-validates via Route 53 DNS records
+const cdnCertificate = new DnsValidatedCertificate(insightsAssetsStack, 'CdnCertificate', {
+    domainName: 'cdn.ninescrolls.com',
+    hostedZone,
+    region: 'us-east-1',
+});
+
 const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsCdn', {
     defaultBehavior: {
         origin: new S3Origin(insightsAssetsBucket, { originAccessIdentity: oai }),
@@ -504,8 +519,17 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
         compress: true,
     },
+    domainNames: ['cdn.ninescrolls.com'],
+    certificate: cdnCertificate,
     httpVersion: HttpVersion.HTTP2_AND_3,
     comment: 'NineScrolls insights image assets CDN',
+});
+
+// Route 53 alias record: cdn.ninescrolls.com → CloudFront distribution
+new CnameRecord(insightsAssetsStack, 'CdnCnameRecord', {
+    zone: hostedZone,
+    recordName: 'cdn',
+    domainName: insightsAssetsCdn.distributionDomainName,
 });
 
 // =============================================================================
@@ -514,7 +538,7 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
 
 insightsAssetsBucket.grantReadWrite(backend.optimizeInsightsImage.resources.lambda);
 backend.optimizeInsightsImage.addEnvironment('INSIGHTS_ASSETS_BUCKET', insightsAssetsBucket.bucketName);
-backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', `https://${insightsAssetsCdn.distributionDomainName}`);
+backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', 'https://cdn.ninescrolls.com');
 
 // =============================================================================
 // Lambda Layer: Sharp image processing library (linux-x64)
