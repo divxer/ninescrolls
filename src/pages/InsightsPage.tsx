@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
@@ -122,6 +123,42 @@ export const InsightsPage: React.FC = () => {
         url="/insights"
         type="website"
       />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "NineScrolls Insights",
+            "description": "Expert analysis and breakthrough technologies in advanced manufacturing and materials science",
+            "url": "https://ninescrolls.com/insights",
+            "publisher": {
+              "@type": "Organization",
+              "name": "NineScrolls",
+              "logo": { "@type": "ImageObject", "url": "https://ninescrolls.com/assets/images/logo.png" }
+            },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": posts.length,
+              "itemListElement": posts.slice(0, 20).map((p, i) => ({
+                "@type": "ListItem",
+                "position": i + 1,
+                "url": `https://ninescrolls.com/insights/${p.slug}`,
+                "name": p.title
+              }))
+            }
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ninescrolls.com" },
+              { "@type": "ListItem", "position": 2, "name": "Insights", "item": "https://ninescrolls.com/insights" }
+            ]
+          })}
+        </script>
+      </Helmet>
       <main className="py-24 px-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-5xl font-headline font-bold mb-4">Latest Insights</h1>
