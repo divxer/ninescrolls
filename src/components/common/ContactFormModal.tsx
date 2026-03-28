@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import { DownloadGateModal } from './DownloadGateModal';
+import { submitLead } from '../../services/leadsService';
 
 // Product name to PDF filename mapping
 const productToPdfMap: Record<string, string> = {
@@ -84,18 +85,16 @@ export function ContactFormModal({
     }
 
     try {
-      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formDataToSubmit)
+      await submitLead({
+        type: 'contact',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        organization: formData.organization || undefined,
+        message: formData.message,
+        productName,
+        inquiryType: isQuote ? 'budgetary' : 'general',
       });
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        throw new Error(`Failed to submit form: ${response.status} ${responseText}`);
-      }
       setIsSuccess(true);
       setIsSubmitting(false);
       onFormDataChange({
