@@ -11,6 +11,7 @@ import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function HY4L() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,7 +82,7 @@ export function HY4L() {
       name: `HY-4L - ${frequencyLabel} Plasma Cleaner`,
       price: price,
       quantity: 1,
-      image: '/assets/images/products/ns-plasma-4r/main.jpg',
+      image: cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg'),
       sku: sku,
     });
 
@@ -214,7 +215,7 @@ export function HY4L() {
         description={productDetails.seoDescription}
         keywords={productDetails.seoKeywords}
         url={location.pathname}
-        image="/assets/images/products/ns-plasma-4r/main.jpg"
+        image={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -228,7 +229,7 @@ export function HY4L() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -358,7 +359,7 @@ export function HY4L() {
               <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' && (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
                     alt="HY-4L - Compact RF Plasma System"
                     width={800}
                     height={600}
@@ -367,7 +368,7 @@ export function HY4L() {
                 )}
                 {selectedImage === 'image1' && (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/image-1.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/image-1.jpg')}
                     alt="HY-4L - View 1"
                     width={800}
                     height={600}
@@ -376,7 +377,7 @@ export function HY4L() {
                 )}
                 {selectedImage === 'image2' && (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/image-2.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/image-2.jpg')}
                     alt="HY-4L - View 2"
                     width={800}
                     height={600}
@@ -392,7 +393,7 @@ export function HY4L() {
                   aria-label="Main view"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
                     alt="Main View"
                     width={150}
                     height={112}
@@ -406,7 +407,7 @@ export function HY4L() {
                   aria-label="View 1"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/image-1.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/image-1.jpg')}
                     alt="View 1"
                     width={150}
                     height={112}
@@ -420,7 +421,7 @@ export function HY4L() {
                   aria-label="View 2"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-4r/image-2.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-4r/image-2.jpg')}
                     alt="View 2"
                     width={150}
                     height={112}

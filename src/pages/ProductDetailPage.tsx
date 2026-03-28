@@ -8,6 +8,7 @@ import { OptimizedImage } from '../components/common/OptimizedImage';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { getProductComponent } from '../components/products';
 import { analytics } from '../services/analytics';
+import { cdnUrl } from '../config/imageConfig';
 
 // Product data for structured data and SEO
 const PRODUCTS = {
@@ -27,7 +28,7 @@ const PRODUCTS = {
       'Process Temperature: 20°C to 200°C',
       'Film Uniformity: < 5% (edge exclusion)'
     ],
-    images: ['/assets/images/products/hdp-cvd/main.jpg']
+    images: [cdnUrl('/assets/images/products/hdp-cvd/main.jpg')]
   },
   'pecvd': {
     id: 'pecvd',
@@ -45,7 +46,7 @@ const PRODUCTS = {
       'Temperature Range: 20°C to 400°C',
       'Film Uniformity: < 5% (edge exclusion)'
     ],
-    images: ['/assets/images/products/pecvd/main.jpg']
+    images: [cdnUrl('/assets/images/products/pecvd/main.jpg')]
   },
   'ald': {
     id: 'ald',
@@ -63,7 +64,7 @@ const PRODUCTS = {
       'Growth Rate: 0.5-2 Å per cycle',
       'Film Uniformity: < 1% (Al₂O₃, edge exclusion)'
     ],
-    images: ['/assets/images/products/ald/main.jpg']
+    images: [cdnUrl('/assets/images/products/ald/main.jpg')]
   },
   'sputter': {
     id: 'sputter',
@@ -81,7 +82,7 @@ const PRODUCTS = {
       'Substrate Temperature: Water-cooled to 1200°C',
       'Film Uniformity: < 1% typical, < 5% guaranteed'
     ],
-    images: ['/assets/images/products/sputter/main.jpg']
+    images: [cdnUrl('/assets/images/products/sputter/main.jpg')]
   },
   'ibe-ribe': {
     id: 'ibe-ribe',
@@ -99,7 +100,7 @@ const PRODUCTS = {
       'Base Pressure: < 7×10⁻⁷ Torr',
       'Film Non-Uniformity: < 5% (edge exclusion)'
     ],
-    images: ['/assets/images/products/ibe-ribe/main.jpg']
+    images: [cdnUrl('/assets/images/products/ibe-ribe/main.jpg')]
   },
   'striper': {
     id: 'striper',
@@ -117,7 +118,7 @@ const PRODUCTS = {
       'Stage Temperature: 5°C to 200°C',
       'Film Non-Uniformity: < 5% (edge exclusion)'
     ],
-    images: ['/assets/images/products/striper/main.jpg']
+    images: [cdnUrl('/assets/images/products/striper/main.jpg')]
   },
   'coater-developer': {
     id: 'coater-developer',
@@ -135,7 +136,7 @@ const PRODUCTS = {
       'Developer Speed: Up to 5000 rpm ±1 rpm',
       'Coating Uniformity: < 0.5% (3σ typical)'
     ],
-    images: ['/assets/images/products/coater-developer/main.jpg']
+    images: [cdnUrl('/assets/images/products/coater-developer/main.jpg')]
   },
   'rie-etcher': {
     id: 'rie-etcher',
@@ -153,7 +154,7 @@ const PRODUCTS = {
       'RF power: 600W standard (1000W optional)',
       'Process gases: Up to 4 MFCs standard'
     ],
-    images: ['/assets/images/products/rie-etcher/main.jpg']
+    images: [cdnUrl('/assets/images/products/rie-etcher/main.jpg')]
   },
   'compact-rie': {
     id: 'compact-rie',
@@ -174,7 +175,7 @@ const PRODUCTS = {
       'Pump: Mechanical pump / optional turbo pump',
       'Optional: Removable contamination-resistant liner'
     ],
-    images: ['/assets/images/products/compact-rie/main.jpg']
+    images: [cdnUrl('/assets/images/products/compact-rie/main.jpg')]
   },
   'icp-etcher': {
     id: 'icp-etcher',
@@ -192,7 +193,7 @@ const PRODUCTS = {
       'ICP power: 2000W standard',
       'Bias power: 600W standard'
     ],
-    images: ['/assets/images/products/icp-etcher/main.jpg']
+    images: [cdnUrl('/assets/images/products/icp-etcher/main.jpg')]
   }
 };
 
@@ -403,7 +404,7 @@ export function ProductDetailPage() {
         description={seoData.description}
         keywords={seoData.keywords}
         url={`/products/${productId}`}
-        image={`/assets/images/products/${productId}/main.jpg`}
+        image={cdnUrl(`/assets/images/products/${productId}/main.jpg`)}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -420,7 +421,7 @@ export function ProductDetailPage() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[

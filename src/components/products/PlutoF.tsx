@@ -10,6 +10,7 @@ import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoF() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +47,7 @@ export function PlutoF() {
       name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
       price: 15999,
       quantity: 1,
-      image: '/assets/images/products/pluto-f/main.jpg',
+      image: cdnUrl('/assets/images/products/pluto-f/main.jpg'),
       sku: 'pluto-f',
     });
 
@@ -136,7 +137,7 @@ export function PlutoF() {
         description="The most powerful RF plasma cleaner under $20K. 500W continuously adjustable at 13.56 MHz with ~14.5L 6061-T6 aluminum alloy chamber. Designed for core facilities, advanced materials research, and semiconductor process development. Touchscreen control, advanced recipe management."
         keywords="PLUTO-F, 500W RF Plasma Cleaner, Flagship Plasma Cleaner, 14.5L Chamber, Harrick Alternative, Surface Activation, Batch Processing, Research Lab, 13.56MHz plasma, Advanced Recipe Management"
         url="/products/pluto-f"
-        image="/assets/images/products/pluto-f/main.jpg"
+        image={cdnUrl('/assets/images/products/pluto-f/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -190,7 +191,7 @@ export function PlutoF() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -282,22 +283,22 @@ export function PlutoF() {
             <div className="min-w-0 overflow-hidden">
               <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' && (
-                  <OptimizedImage src="/assets/images/products/pluto-f/main.jpg" alt="PLUTO-F - 500W RF Flagship Plasma Cleaner" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-f/main.jpg')} alt="PLUTO-F - 500W RF Flagship Plasma Cleaner" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'with-pump' && (
-                  <OptimizedImage src="/assets/images/products/pluto-f/with-pump.jpg" alt="PLUTO-F - System with Pump" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-f/with-pump.jpg')} alt="PLUTO-F - System with Pump" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'chamber-open' && (
-                  <OptimizedImage src="/assets/images/products/pluto-f/chamber-open.jpg" alt="PLUTO-F - Chamber Open" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-f/chamber-open.jpg')} alt="PLUTO-F - Chamber Open" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'chamber-interior' && (
-                  <OptimizedImage src="/assets/images/products/pluto-f/chamber-interior.jpg" alt="PLUTO-F - Chamber Interior with Wafers" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-f/chamber-interior.jpg')} alt="PLUTO-F - Chamber Interior with Wafers" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 {(['main', 'with-pump', 'chamber-open', 'chamber-interior'] as const).map((img) => (
                   <button key={img} className={`w-20 h-15 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === img ? 'border-primary' : 'border-transparent hover:border-outline-variant'}`} onClick={() => setSelectedImage(img)} type="button">
-                    <OptimizedImage src={`/assets/images/products/pluto-f/${img}.jpg`} alt={img.replace(/-/g, ' ')} width={150} height={112} className="w-full h-full object-cover" />
+                    <OptimizedImage src={cdnUrl(`/assets/images/products/pluto-f/${img}.jpg`)} alt={img.replace(/-/g, ' ')} width={150} height={112} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

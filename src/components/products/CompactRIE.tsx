@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
 
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function CompactRIE() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +62,7 @@ export function CompactRIE() {
         description="Compact RIE etching system with 630mm×600mm footprint. Ideal for research labs, pilot-scale processes, and failure analysis. Touchscreen control, modular design."
         keywords="compact RIE, SV-RIE, small footprint RIE, compact reactive ion etching, research RIE system, failure analysis equipment"
         url="/products/compact-rie"
-        image="/assets/images/products/compact-rie/main.jpg"
+        image={cdnUrl('/assets/images/products/compact-rie/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -105,7 +106,7 @@ export function CompactRIE() {
       {/* Hero */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -180,7 +181,7 @@ export function CompactRIE() {
               <div className="rounded-xl overflow-hidden shadow-lg [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' ? (
                   <OptimizedImage
-                    src="/assets/images/products/compact-rie/main.jpg"
+                    src={cdnUrl('/assets/images/products/compact-rie/main.jpg')}
                     alt="Compact RIE Etcher (SV-RIE) - ultra-compact reactive ion etching system"
                     width={800}
                     height={600}
@@ -188,7 +189,7 @@ export function CompactRIE() {
                   />
                 ) : (
                   <OptimizedImage
-                    src="/assets/images/products/compact-rie/main-2.jpg"
+                    src={cdnUrl('/assets/images/products/compact-rie/main-2.jpg')}
                     alt="Compact RIE Etcher (SV-RIE) - additional view"
                     width={800}
                     height={600}
@@ -203,7 +204,7 @@ export function CompactRIE() {
                   type="button"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/compact-rie/main.jpg"
+                    src={cdnUrl('/assets/images/products/compact-rie/main.jpg')}
                     alt="Main View"
                     width={150}
                     height={112}
@@ -216,7 +217,7 @@ export function CompactRIE() {
                   type="button"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/compact-rie/main-2.jpg"
+                    src={cdnUrl('/assets/images/products/compact-rie/main-2.jpg')}
                     alt="Additional View"
                     width={150}
                     height={112}
@@ -460,7 +461,7 @@ export function CompactRIE() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-1.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-1.jpg')}
                   alt="Quartz/Silicon grating etching - top view showing parallel vertical trenches"
                   width={400}
                   height={300}
@@ -470,7 +471,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-2.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-2.jpg')}
                   alt="Quartz/Silicon grating etching - cross-sectional view showing deep narrow grooves"
                   width={400}
                   height={300}
@@ -480,7 +481,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-3.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-3.jpg')}
                   alt="Quartz/Silicon grating etching - cross-sectional view showing high aspect ratio features"
                   width={400}
                   height={300}
@@ -501,7 +502,7 @@ export function CompactRIE() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-4.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-4.jpg')}
                   alt="Indium Phosphide (InP) etching - stepped terraced etch profile"
                   width={400}
                   height={300}
@@ -511,7 +512,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-5.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-5.jpg')}
                   alt="Gallium Nitride (GaN) etching - multi-layered etch profile with smooth transitions"
                   width={400}
                   height={300}
@@ -521,7 +522,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-6.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-6.jpg')}
                   alt="Sapphire etching - corrugated surface with parallel ridges and valleys"
                   width={400}
                   height={300}
@@ -542,7 +543,7 @@ export function CompactRIE() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-7.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-7.jpg')}
                   alt="SiO2 etching - cross-sectional view showing wide shallow trench"
                   width={400}
                   height={300}
@@ -552,7 +553,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-8.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-8.jpg')}
                   alt="Silicon deep hole etching - high aspect ratio trench with vertical sidewalls"
                   width={400}
                   height={300}
@@ -562,7 +563,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-9.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-9.jpg')}
                   alt="50nm silicon line etching - top view showing extremely fine parallel lines"
                   width={400}
                   height={300}
@@ -572,7 +573,7 @@ export function CompactRIE() {
               </div>
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <OptimizedImage
-                  src="/assets/images/products/compact-rie/process-results/result-10.jpg"
+                  src={cdnUrl('/assets/images/products/compact-rie/process-results/result-10.jpg')}
                   alt="Silicon nanopillar etching - dense array of uniformly sized nanopillars"
                   width={400}
                   height={300}

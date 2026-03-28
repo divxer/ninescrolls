@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { cdnUrl } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
@@ -96,7 +97,7 @@ export function HomePage() {
         {/* Hero Section */}
         <section className="relative h-screen min-h-[700px] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <img className="w-full h-full object-cover" src="/assets/images/hero-cleanroom.jpg" alt="Semiconductor cleanroom facility" />
+            <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="Semiconductor cleanroom facility" />
             <div className="absolute inset-0 bg-gradient-to-r from-on-surface/80 via-on-surface/45 to-transparent"></div>
           </div>
           <div className="container mx-auto px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -139,7 +140,7 @@ export function HomePage() {
               <Link to="/products/rie-etcher" className="group bg-surface-container-lowest rounded-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                 <div className="aspect-[4/3] overflow-hidden">
                   <OptimizedImage
-                    src="/assets/images/products/rie-etcher/main.jpg"
+                    src={cdnUrl('/assets/images/products/rie-etcher/main.jpg')}
                     alt="RIE Etcher Series"
                     width={400}
                     height={300}
@@ -158,7 +159,7 @@ export function HomePage() {
               <Link to="/products/icp-etcher" className="group bg-surface-container-lowest rounded-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                 <div className="aspect-[4/3] overflow-hidden">
                   <OptimizedImage
-                    src="/assets/images/products/icp-etcher/main.jpg"
+                    src={cdnUrl('/assets/images/products/icp-etcher/main.jpg')}
                     alt="ICP Etcher Series"
                     width={400}
                     height={300}
@@ -177,7 +178,7 @@ export function HomePage() {
               <Link to="/products/ald" className="group bg-surface-container-lowest rounded-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                 <div className="aspect-[4/3] overflow-hidden">
                   <OptimizedImage
-                    src="/assets/images/products/ald/main.jpg"
+                    src={cdnUrl('/assets/images/products/ald/main.jpg')}
                     alt="ALD Systems"
                     width={400}
                     height={300}
@@ -196,7 +197,7 @@ export function HomePage() {
               <Link to="/products/pecvd" className="group bg-surface-container-lowest rounded-sm overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
                 <div className="aspect-[4/3] overflow-hidden">
                   <OptimizedImage
-                    src="/assets/images/products/pecvd/main.jpg"
+                    src={cdnUrl('/assets/images/products/pecvd/main.jpg')}
                     alt="PECVD Systems"
                     width={400}
                     height={300}
@@ -247,7 +248,7 @@ export function HomePage() {
         {/* R&D / Innovation Section */}
         <section className="relative py-32 overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <img className="w-full h-full object-cover" src="/assets/images/research-facility.jpg" alt="Research facility" />
+            <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/research-facility.jpg')} alt="Research facility" />
             <div className="absolute inset-0 bg-on-surface/60"></div>
           </div>
           <div className="container mx-auto px-8 relative z-10 text-center max-w-3xl">

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useState, useMemo } from 'react';
+import { cdnUrl } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
@@ -129,7 +130,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/icp-etcher" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/icp-etcher/main.jpg" alt="ICP‑RIE plasma etching system in cleanroom" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/icp-etcher/main.jpg')} alt="ICP‑RIE plasma etching system in cleanroom" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Etching</span>
@@ -150,7 +151,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/rie-etcher" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/rie-etcher/main.jpg" alt="Reactive Ion Etching system (RIE) for anisotropic etch" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/rie-etcher/main.jpg')} alt="Reactive Ion Etching system (RIE) for anisotropic etch" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Etching</span>
@@ -171,7 +172,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/compact-rie" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/compact-rie/main.jpg" alt="Compact RIE Etcher (SV-RIE) - compact reactive ion etching system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/compact-rie/main.jpg')} alt="Compact RIE Etcher (SV-RIE) - compact reactive ion etching system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Etching</span>
@@ -192,7 +193,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/hdp-cvd" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/hdp-cvd/main.jpg" alt="HDP‑CVD system for high‑density plasma chemical vapor deposition" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/hdp-cvd/main.jpg')} alt="HDP‑CVD system for high‑density plasma chemical vapor deposition" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Deposition</span>
@@ -213,7 +214,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/pecvd" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/pecvd/main.jpg" alt="PECVD thin film deposition system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/pecvd/main.jpg')} alt="PECVD thin film deposition system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Deposition</span>
@@ -234,7 +235,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/ald" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/ald/main.jpg" alt="Atomic Layer Deposition (ALD) system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/ald/main.jpg')} alt="Atomic Layer Deposition (ALD) system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Deposition</span>
@@ -255,7 +256,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/sputter" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/sputter/main.jpg" alt="Sputter deposition system for high‑quality PVD coatings" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/sputter/main.jpg')} alt="Sputter deposition system for high‑quality PVD coatings" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Deposition</span>
@@ -276,7 +277,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/ibe-ribe" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/ibe-ribe/main.jpg" alt="Ion Beam Etching (IBE/RIBE) system for directional etch" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/ibe-ribe/main.jpg')} alt="Ion Beam Etching (IBE/RIBE) system for directional etch" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Etching</span>
@@ -297,7 +298,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/striper" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/striper/main.jpg" alt="Plasma photoresist stripping system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/striper/main.jpg')} alt="Plasma photoresist stripping system" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -318,7 +319,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/hy-20l" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="HY-20L - Compact RF Plasma Processing System" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')} alt="HY-20L - Compact RF Plasma Processing System" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -339,7 +340,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/hy-4l" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="HY-4L - Compact RF Plasma System" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')} alt="HY-4L - Compact RF Plasma System" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -360,7 +361,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/hy-20lrf" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/ns-plasma-20r-i/main.jpg" alt="HY-20LRF - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')} alt="HY-20LRF - Research-Grade Batch Plasma Cleaning" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -381,7 +382,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/pluto-t" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T - Compact RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/pluto-t/main.jpg')} alt="PLUTO-T - Compact RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -402,7 +403,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/pluto-m" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/pluto-m/main.jpg" alt="PLUTO-M - Mid-Size RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/pluto-m/main.jpg')} alt="PLUTO-M - Mid-Size RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -423,7 +424,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/pluto-f" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/pluto-f/main.jpg" alt="PLUTO-F - Flagship RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/pluto-f/main.jpg')} alt="PLUTO-F - Flagship RF Plasma Cleaner" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Cleaning/Stripping</span>
@@ -444,7 +445,7 @@ export function ProductsPage() {
             <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
               <Link to="/products/coater-developer" className="block">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
-                  <img src="/assets/images/products/coater-developer/main.jpg" alt="Coater/Developer system for photolithography" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={cdnUrl('/assets/images/products/coater-developer/main.jpg')} alt="Coater/Developer system for photolithography" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <div className="px-4 pb-6">
                   <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Coating/Developing</span>

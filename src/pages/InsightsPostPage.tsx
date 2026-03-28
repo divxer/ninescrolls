@@ -8,7 +8,21 @@ import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
+import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import '../styles/article-content.css';
+
+/**
+ * Rewrite /assets/images/ paths inside HTML content to CDN URLs.
+ * Only active when VITE_CDN_BASE_URL is set; otherwise returns content as-is.
+ */
+function rewriteContentImages(html: string): string {
+  if (!CDN_BASE_URL) return html;
+  // Match src="..." and srcSet="..." attributes containing /assets/images/
+  return html.replace(
+    /((?:src|srcSet)\s*=\s*")\/assets\/images\//g,
+    `$1${CDN_BASE_URL}/`,
+  );
+}
 
 // Consolidated article redirects: weaker → stronger article
 const ARTICLE_REDIRECTS: Record<string, string> = {
@@ -75,8 +89,8 @@ function RelatedArticlesSidebar({ post, allPosts }: { post: InsightsPost; allPos
 
 function resolveCardImage(url: string): string {
   if (!url) return '';
-  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url)) return url;
-  return `${url}.webp`;
+  const resolved = /\.(png|jpe?g|webp|gif|svg)$/i.test(url) ? url : `${url}.webp`;
+  return cdnUrl(resolved);
 }
 
 function RelatedArticlesBottom({ post, allPosts }: { post: InsightsPost; allPosts: InsightsPost[] }) {
@@ -165,13 +179,16 @@ export const InsightsPostPage: React.FC = () => {
     );
   }
 
+  const heroImageUrl = post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
+  const jsonLdImageUrl = heroImageUrl.startsWith('http') ? heroImageUrl : `https://ninescrolls.com${heroImageUrl}`;
+
   return (
     <>
       <SEO
         title={post.title}
         description={post.excerpt || post.title}
         keywords={post.tags?.join(', ') || ''}
-        image={post.imageUrl}
+        image={heroImageUrl}
         url={`/insights/${post.slug}`}
         type="article"
       />
@@ -182,7 +199,7 @@ export const InsightsPostPage: React.FC = () => {
             "@type": "Article",
             "headline": post.title,
             "description": post.excerpt || post.title,
-            "image": `https://ninescrolls.com${post.imageUrl}`,
+            "image": jsonLdImageUrl,
             "author": {
               "@type": "Organization",
               "name": "NineScrolls Engineering",
@@ -232,7 +249,7 @@ export const InsightsPostPage: React.FC = () => {
         {/* Hero Section */}
         <section className="hero-gradient relative py-20 text-white overflow-hidden">
           <div className="absolute inset-0 opacity-30">
-            <img className="w-full h-full object-cover" src="/assets/images/hero-cleanroom.jpg" alt="" />
+            <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="" />
           </div>
           <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
             <div className="flex items-center w-full gap-10 md:flex-row flex-col">
@@ -255,7 +272,7 @@ export const InsightsPostPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex-1 max-w-[400px]">
-                <InsightsHeroImage post={post} />
+                <InsightsHeroImage post={{ ...post, imageUrl: heroImageUrl }} />
               </div>
             </div>
           </div>
@@ -280,7 +297,7 @@ export const InsightsPostPage: React.FC = () => {
                 {post.content ? (
                   <div
                     className="post-content"
-                    dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;|\u00a0/g, ' ') }}
+                    dangerouslySetInnerHTML={{ __html: rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
                   />
                 ) : null}
 
@@ -330,7 +347,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
     <div className="min-h-screen bg-surface-container-lowest">
       <section className="hero-gradient relative py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <img className="w-full h-full object-cover" src="/assets/images/hero-cleanroom.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="" />
         </div>
         <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
           <div className="flex items-center w-full gap-10 md:flex-row flex-col">
@@ -344,7 +361,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
               </div>
             </div>
             <div className="flex-1 max-w-[400px]">
-              <InsightsHeroImage post={post} />
+              <InsightsHeroImage post={{ ...post, imageUrl: cdnUrl(post.imageUrl || '') }} />
             </div>
           </div>
         </div>
@@ -356,7 +373,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
             {post.content ? (
               <div
                 className="post-content"
-                dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;|\u00a0/g, ' ') }}
+                dangerouslySetInnerHTML={{ __html: rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
               />
             ) : (
               <p style={{ color: '#999' }}>No content yet.</p>
