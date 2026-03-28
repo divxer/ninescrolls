@@ -8184,6 +8184,10 @@ result = differential_evolution(
         <li><strong>Evaporation-dominated thinning:</strong> As the film becomes thin enough that viscous forces dominate centrifugal ejection, further thinning occurs primarily through solvent evaporation. This phase determines the final film thickness.</li>
       </ol>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/coater-spin-coating-stages.png" alt="Four stages of spin coating: dispense, spin-up, spin-off, and evaporation with cross-section diagrams" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>1.2 The Film Thickness Equation</h3>
       <p>The Meyerhofer model provides the foundational relationship for spin-coated film thickness:</p>
       <div style="background: #f8f9fa; border-left: 4px solid #3b82f6; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
@@ -8197,6 +8201,10 @@ result = differential_evolution(
         <li>Fine thickness adjustments (\u00b15%) are more easily achieved by tuning solution concentration or viscosity than spin speed.</li>
       </ul>
       <p>Most photoresist manufacturers provide <strong>spin speed vs thickness curves</strong> for their products. These empirically-derived curves are more accurate than the theoretical model because they account for specific solvent systems, polymer molecular weight distributions, and evaporation kinetics unique to each formulation.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/coater-thickness-vs-speed.png" alt="Film thickness vs spin speed curves for different photoresists showing inverse square root relationship" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <h3>1.3 Viscosity and Spin Speed Relationship</h3>
       <p>Understanding how viscosity interacts with spin speed is essential for process design:</p>
@@ -8255,6 +8263,10 @@ result = differential_evolution(
 
       <h2 id="lithography-flow">2) The Lithography Process Flow</h2>
       <p>Spin coating and development are two steps in the larger photolithography process. Understanding the complete flow is essential because parameters at each step interact \u2014 an apparently good coat can produce poor results if bake or development conditions are wrong.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/coater-lithography-flow.png" alt="Photolithography process flow: HMDS prime, spin coat, soft bake, expose, PEB, develop, hard bake, inspect" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <h3>2.1 Substrate Preparation</h3>
       <p>Proper substrate preparation is the most frequently overlooked step in lithography, yet it has an outsized impact on pattern quality:</p>
@@ -8807,6 +8819,10 @@ result = differential_evolution(
 
       <p>The net result is the deposition of a precisely controlled fraction of a monolayer per cycle, typically 0.5&ndash;2 &Aring; depending on the material system and process temperature.</p>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/ald-cycle-diagram.png" alt="ALD self-limiting growth cycle showing four steps: precursor A pulse, purge, precursor B pulse, purge" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>Why Self-Limiting Chemistry Matters</h3>
       <p>The self-limiting nature of ALD reactions provides several fundamental advantages that no other deposition technique can match simultaneously:</p>
       <ul>
@@ -8909,6 +8925,10 @@ result = differential_evolution(
         <li><strong>Above the window (high T, desorption regime):</strong> Chemisorbed precursor species or surface functional groups desorb before the co-reactant arrives. GPC drops, and films may be incomplete.</li>
       </ul>
       <p>Within the ALD window, GPC is essentially constant and independent of pulse time (beyond the saturation dose), substrate position, and minor temperature fluctuations. This is the operating regime that delivers the hallmark benefits of ALD: digital thickness control, uniformity, and conformality.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/ald-temperature-window.png" alt="ALD temperature window diagram showing condensation, self-limiting growth window, and decomposition regions" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <h3>Typical ALD Temperature Windows</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -9139,6 +9159,10 @@ result = differential_evolution(
 
       <h2>6) ALD vs Other Deposition Techniques</h2>
       <p>Understanding how ALD compares to alternative thin-film deposition methods is essential for selecting the right technique for each application. The following table provides a quantitative comparison across the most important performance metrics:</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/ald-vs-cvd-pvd-comparison.png" alt="Comparison table of ALD vs CVD vs PVD deposition techniques showing key differences in mechanism, conformality, thickness control, rate, and temperature" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -9564,6 +9588,10 @@ result = differential_evolution(
         <strong>\u26A0\uFE0F Engineering Note:</strong> The characteristic \u201Cracetrack\u201D erosion pattern on magnetron targets is a direct consequence of the E\u00D7B electron drift. While this limits target utilization to 25\u201340% for conventional planar magnetrons, creative magnetron target structures\u2014such as those used in NineScrolls sputter systems\u2014can improve utilization to 50\u201360% through optimized magnetic field geometry.
       </div>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/sputter-chamber-cross-section.png" alt="Magnetron sputtering chamber cross-section showing target, magnets, plasma region, sputtered atoms, and substrate" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>1.3 Plasma Generation and Target Erosion</h3>
       <p>When a negative voltage (\u2212300 to \u2212700 V for DC; self-bias for RF) is applied to the target, the process proceeds through several stages:</p>
       <ol>
@@ -9652,6 +9680,10 @@ result = differential_evolution(
           </tr>
         </tbody>
       </table>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/sputter-dc-vs-rf.png" alt="DC vs RF magnetron sputtering comparison showing power modes, target materials, and waveforms" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <h2>3) Reactive Sputtering</h2>
 
@@ -9775,6 +9807,10 @@ result = differential_evolution(
         <li><strong>Zone 3 (T/T\u2098 > 0.6):</strong> Equiaxed recrystallized grains. Lowest resistivity but rougher surfaces</li>
       </ul>
       <p>NineScrolls sputter systems support substrate temperatures from water-cooled (near ambient) up to 1200\u00B0C, covering the full range of thin-film microstructure engineering\u2014from room-temperature amorphous barrier layers to high-temperature epitaxial growth of crystalline films like AlN and PZT.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/sputter-film-growth-modes.png" alt="Three thin film growth modes: Frank-van der Merwe (layer-by-layer), Volmer-Weber (island), and Stranski-Krastanov (layer plus island)" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <h3>4.5 Target\u2013Substrate Distance</h3>
       <p>The throw distance affects deposition rate, uniformity, and film properties:</p>
@@ -10317,6 +10353,10 @@ result = differential_evolution(
         <li><strong>Substrate heating:</strong> Resistive heaters embedded in the susceptor provide 20\u2013400 \u00b0C (higher optional) with \u00b12 \u00b0C uniformity across the wafer.</li>
       </ul>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/pecvd-reactor-architecture.png" alt="PECVD parallel-plate reactor architecture showing showerhead electrode, plasma region, substrate heater, and gas flow" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>1.3 PECVD vs Thermal CVD: Why Plasma Matters</h3>
       <p>In thermal CVD (APCVD or LPCVD), precursor decomposition is driven entirely by substrate temperature. This imposes several constraints that PECVD overcomes:</p>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -10425,6 +10465,10 @@ result = differential_evolution(
         <li><strong>Thick film applications:</strong> Films &gt;2 \u00b5m without cracking or delamination</li>
       </ul>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/pecvd-single-vs-dual-frequency.png" alt="Single vs dual frequency PECVD comparison for film stress control with waveform visualization" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>2.3 Practical Stress Engineering</h3>
       <p>A systematic approach to stress tuning in dual-frequency PECVD:</p>
       <ol>
@@ -10516,6 +10560,10 @@ result = differential_evolution(
 
       <h2>4) PECVD vs Other Deposition Methods</h2>
       <p>Choosing the right deposition technique requires understanding the trade-offs across temperature budget, conformality, throughput, and film quality. The following comparison positions PECVD relative to the five most common alternatives. For an in-depth treatment of HDP-CVD specifically, see our <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook">HDP-CVD In-Depth Guide</a>.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/pecvd-vs-lpcvd-ald.png" alt="PECVD vs LPCVD vs ALD comparison table showing temperature, conformality, deposition rate, and film quality" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em;">
         <thead>
@@ -10865,6 +10913,10 @@ result = differential_evolution(
       </ul>
       <p>All reaction products (CO₂, CO, H₂O) are gases at process conditions and are continuously pumped away, leaving a clean, residue-free surface. This self-cleaning characteristic is a major advantage over wet stripping, where dissolved resist can re-deposit.</p>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-o2-plasma-chemistry.png" alt="O2 plasma ashing chemical reaction process: gas input, plasma dissociation, radical transport, and surface reaction" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>1.2 Downstream vs. Direct Plasma Configurations</h3>
       <p>Plasma strippers operate in two main configurations:</p>
       <ul>
@@ -10873,11 +10925,19 @@ result = differential_evolution(
       </ul>
       <p>NineScrolls Striper systems use an adjustable plasma discharge gap that allows operators to tune the balance between direct and downstream exposure — effectively providing both configurations in a single platform.</p>
 
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-downstream-plasma-chamber.png" alt="Downstream plasma stripping chamber showing remote plasma source, transport tube, O radicals, and wafer with PR being stripped" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
       <h3>1.3 Why "Ashing"?</h3>
       <p>The term "ashing" comes from the analogy to combustion: organic material is oxidized to gaseous products, leaving behind only inorganic residue (the "ash"). In semiconductor processing, this ash consists of metal oxides, ion-implant residues, or inorganic filler particles from the photoresist formulation. A complete strip process often includes an ashing step followed by a residue removal step to handle this inorganic remnant.</p>
 
       <h2>2) Plasma Stripping vs. Wet Chemical Stripping</h2>
       <p>Both plasma (dry) and wet chemical methods can remove photoresist, but they differ significantly in mechanism, performance, and environmental impact. The following table provides a detailed comparison:</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-dry-vs-wet.png" alt="Dry plasma strip vs wet chemical strip comparison showing mechanism, selectivity, damage risk, and best use cases" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
