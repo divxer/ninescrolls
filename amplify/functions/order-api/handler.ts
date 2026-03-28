@@ -9,6 +9,8 @@ import { listOrderDocuments } from './resolvers/listOrderDocuments.js';
 import { getDocumentUploadUrl } from './resolvers/getDocumentUploadUrl.js';
 import { listRfqs } from './resolvers/listRfqs.js';
 import { getRfq } from './resolvers/getRfq.js';
+import { listLeads } from './resolvers/listLeads.js';
+import { getLead } from './resolvers/getLead.js';
 
 // Mutations
 import { createOrder } from './resolvers/createOrder.js';
@@ -35,6 +37,8 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
     getDocumentUploadUrl,
     listRfqs,
     getRfq,
+    listLeads,
+    getLead,
     // Mutations
     createOrder,
     updateOrderStatus,

@@ -1,11 +1,9 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
-import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { ipLookup } from './functions/ip-lookup/resource';
 import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
@@ -40,11 +38,9 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 const backend = defineBackend({
     auth,
     data,
-    sendEmail,
     createCheckoutSession,
     stripeWebhook,
     calculateTax,
-    subscribeNewsletter,
     ipLookup,
     serverTrack,
     classifyOrg,
@@ -76,20 +72,6 @@ const restApi = new RestApi(apiStack, 'RestApi', {
     },
 });
 
-// Create the /sendEmail resource
-const sendEmailResource = restApi.root.addResource('sendEmail');
-
-// Add POST method to /sendEmail - Use Lambda Proxy Integration (proxy: true)
-// This ensures CORS headers from Lambda are properly returned
-sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: true,
-}));
-
-// Add OPTIONS method for CORS preflight - handled by Lambda function
-sendEmailResource.addMethod('OPTIONS', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: true,
-}));
-
 // Create /checkout/session resource for Stripe Checkout
 const checkoutResource = restApi.root.addResource('checkout');
 const checkoutSessionResource = checkoutResource.addResource('session');
@@ -118,28 +100,11 @@ calculateTaxResource.addMethod('OPTIONS', new LambdaIntegration(backend.calculat
     proxy: true,
 }));
 
-// Create /subscribe resource for newsletter subscription
-const subscribeResource = restApi.root.addResource('subscribe');
-
-// Add POST method for newsletter subscription
-subscribeResource.addMethod('POST', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
-    proxy: true,
-}));
-
-// Add OPTIONS method for CORS preflight
-subscribeResource.addMethod('OPTIONS', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
-    proxy: true,
-}));
-
-// Create DynamoDB table for newsletter subscribers
-const subscribeFunctionStack = Stack.of(backend.subscribeNewsletter.resources.lambda);
-const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'NewsletterSubscribers', {
+// Create DynamoDB table for newsletter subscribers (used by submit-lead Lambda)
+const newsletterSubscribersTable = new Table(apiStack, 'NewsletterSubscribers', {
     partitionKey: { name: 'email', type: AttributeType.STRING },
     billingMode: BillingMode.PAY_PER_REQUEST,
 });
-
-newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
-backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
 // Create /geo resource for server-side IP geolocation and target customer analysis
 // Moves IP lookups from frontend (CORS issues, rate limits) to Lambda (no restrictions)

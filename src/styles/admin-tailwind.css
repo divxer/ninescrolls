@@ -84,7 +84,7 @@
 }
 
 /* ── Admin-scoped base styles ── */
-/* These MUST be un-layered to override main.css global rules */
+/* Admin-scoped base styles */
 .admin-root {
   font-family: var(--font-body);
   background-color: var(--color-surface);
@@ -97,7 +97,7 @@
   box-sizing: border-box;
 }
 
-/* ── Admin layout structure (un-layered to beat main.css) ── */
+/* ── Admin layout structure ── */
 .admin-sidebar {
   position: fixed;
   left: 0;
@@ -146,7 +146,7 @@
   }
 }
 
-/* Override global `main { margin-top: 60px }` from main.css */
+/* Admin main content area */
 .admin-root > main {
   margin-top: 0 !important;
   margin-left: 0;

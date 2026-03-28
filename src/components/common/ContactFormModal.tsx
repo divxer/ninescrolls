@@ -316,10 +316,10 @@ export function ContactFormModal({
                     className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base"
                     onClick={(e) => { e.preventDefault(); handleDatasheetDownload(); setGateOpen(true); }}
                   >
-                    <span className="icon-download"></span> Download Product Datasheet
+                    <span className="material-symbols-outlined text-base">download</span> Download Product Datasheet
                   </a>
                   <Link to="/products" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base">
-                    <span className="icon-browse"></span> Browse Other Products
+                    <span className="material-symbols-outlined text-base">search</span> Browse Other Products
                   </Link>
                 </div>
               </div>

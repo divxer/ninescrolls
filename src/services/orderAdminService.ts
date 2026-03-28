@@ -199,6 +199,31 @@ export async function convertRfqToOrder(rfqId: string, overrides?: {
   return data;
 }
 
+// --- Leads ---
+
+export async function listLeads(type?: string, limit?: number, nextToken?: string) {
+  const args: Record<string, unknown> = {};
+  if (type) args.type = type;
+  if (limit) args.limit = limit;
+  if (nextToken) args.nextToken = nextToken;
+  // listLeads may not exist in deployed schema yet — guard against it
+  if (typeof (client.queries as any).listLeads !== 'function') {
+    throw new Error('listLeads query not available. Please deploy the updated backend schema first.');
+  }
+  const { data, errors } = await client.queries.listLeads(args as any, AUTH);
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data;
+}
+
+export async function getLead(leadId: string) {
+  if (typeof (client.queries as any).getLead !== 'function') {
+    throw new Error('getLead query not available. Please deploy the updated backend schema first.');
+  }
+  const { data, errors } = await client.queries.getLead({ leadId } as any, AUTH);
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data;
+}
+
 // --- Direct S3 Upload ---
 
 export async function uploadFileToS3(uploadUrl: string, file: File) {

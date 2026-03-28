@@ -138,6 +138,33 @@ export interface RfqSubmission {
   attachmentKeys?: unknown;
 }
 
+// --- Lead Types ---
+
+export const LEAD_TYPES = ['contact', 'download_gate', 'newsletter'] as const;
+export type LeadType = (typeof LEAD_TYPES)[number];
+
+export interface LeadSubmission {
+  leadId: string;
+  type: LeadType;
+  email: string;
+  submittedAt: string;
+  name?: string | null;
+  phone?: string | null;
+  organization?: string | null;
+  message?: string | null;
+  productName?: string | null;
+  inquiryType?: string | null;
+  topic?: string | null;
+  researchAreas?: string | null;
+  jobTitle?: string | null;
+  intent?: string | null;
+  fileName?: string | null;
+  fileUrl?: string | null;
+  marketingOptIn?: boolean | null;
+  source?: string | null;
+  ipHash?: string | null;
+}
+
 // --- Display Helpers ---
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -191,6 +218,18 @@ export const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   MAINTENANCE: 'Maintenance',
   CORRESPONDENCE: 'Correspondence',
   OTHER: 'Other',
+};
+
+export const LEAD_TYPE_LABELS: Record<LeadType, string> = {
+  contact: 'Contact',
+  download_gate: 'Download',
+  newsletter: 'Newsletter',
+};
+
+export const LEAD_TYPE_COLORS: Record<LeadType, string> = {
+  contact: '#2563eb',
+  download_gate: '#7c3aed',
+  newsletter: '#059669',
 };
 
 export const RFQ_STATUS_COLORS: Record<string, string> = {
