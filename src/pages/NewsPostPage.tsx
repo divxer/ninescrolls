@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useNewsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
@@ -10,6 +11,15 @@ import { rankRelatedInsights } from '../utils/insights';
 import '../styles/article-content.css';
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
+
+/** Rewrite /assets/images/ paths in HTML content to CDN URLs */
+function rewriteContentImages(html: string): string {
+  if (!CDN_BASE_URL) return html;
+  return html.replace(
+    /((?:src|srcSet)\s*=\s*")\/assets\/images\//g,
+    `$1${CDN_BASE_URL}/`,
+  );
+}
 
 /** Strip inline "Table of Contents" heading + its following <ul> from HTML content */
 function stripInlineToc(html: string): string {
@@ -42,7 +52,7 @@ function NewsHeroImage({ post }: { post: InsightsPost }) {
     );
   }
 
-  return <img src={url} alt={post.title} loading="eager" fetchPriority="high" />;
+  return <img src={cdnUrl(url)} alt={post.title} loading="eager" fetchPriority="high" />;
 }
 
 function RelatedNewsSidebar({ post, allPosts }: { post: InsightsPost; allPosts: InsightsPost[] }) {
@@ -205,7 +215,7 @@ export const NewsPostPage: React.FC = () => {
               {post.content ? (
                 <div
                   className="post-content"
-                  dangerouslySetInnerHTML={{ __html: stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
+                  dangerouslySetInnerHTML={{ __html: rewriteContentImages(stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' '))) }}
                 />
               ) : null}
 

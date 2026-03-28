@@ -11,6 +11,7 @@ import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoT() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,7 +39,7 @@ export function PlutoT() {
       name: 'PLUTO-T - 200W RF Plasma Cleaner',
       price: 9999,
       quantity: 1,
-      image: '/assets/images/products/pluto-t/main.jpg',
+      image: cdnUrl('/assets/images/products/pluto-t/main.jpg'),
       sku: 'pluto-t',
     });
 
@@ -128,7 +129,7 @@ export function PlutoT() {
         description="Compact 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 1 gas line (optional 2nd). High-power RF cleaning for research labs under $10,000. Authorized US distributor."
         keywords="PLUTO-T, 200W RF plasma cleaner, 13.56 MHz, plasma cleaning, surface activation, polymer treatment, research lab plasma, affordable RF plasma, touchscreen plasma cleaner"
         url="/products/pluto-t"
-        image="/assets/images/products/pluto-t/main.jpg"
+        image={cdnUrl('/assets/images/products/pluto-t/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -174,7 +175,7 @@ export function PlutoT() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -265,25 +266,25 @@ export function PlutoT() {
             <div className="min-w-0 overflow-hidden">
               <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' && (
-                  <OptimizedImage src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T - 200W RF Plasma Cleaner" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-t/main.jpg')} alt="PLUTO-T - 200W RF Plasma Cleaner" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'front-view' && (
-                  <OptimizedImage src="/assets/images/products/pluto-t/front-view.jpg" alt="PLUTO-T - System with Pump" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-t/front-view.jpg')} alt="PLUTO-T - System with Pump" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'chamber' && (
-                  <OptimizedImage src="/assets/images/products/pluto-t/chamber.jpg" alt="PLUTO-T - Chamber Interior" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-t/chamber.jpg')} alt="PLUTO-T - Chamber Interior" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'samples' && (
-                  <OptimizedImage src="/assets/images/products/pluto-t/samples.jpg" alt="PLUTO-T - Sample Processing" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-t/samples.jpg')} alt="PLUTO-T - Sample Processing" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
                 {selectedImage === 'with-pump' && (
-                  <OptimizedImage src="/assets/images/products/pluto-t/with-pump.jpg" alt="PLUTO-T - Complete System" width={800} height={600} className="w-full rounded-xl shadow-lg" />
+                  <OptimizedImage src={cdnUrl('/assets/images/products/pluto-t/with-pump.jpg')} alt="PLUTO-T - Complete System" width={800} height={600} className="w-full rounded-xl shadow-lg" />
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 {(['main', 'front-view', 'chamber', 'samples', 'with-pump'] as const).map((img) => (
                   <button key={img} className={`w-20 h-15 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === img ? 'border-primary' : 'border-transparent hover:border-outline-variant'}`} onClick={() => setSelectedImage(img)} type="button">
-                    <OptimizedImage src={`/assets/images/products/pluto-t/${img}.jpg`} alt={img.replace(/-/g, ' ')} width={150} height={112} className="w-full h-full object-cover" />
+                    <OptimizedImage src={cdnUrl(`/assets/images/products/pluto-t/${img}.jpg`)} alt={img.replace(/-/g, ' ')} width={150} height={112} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

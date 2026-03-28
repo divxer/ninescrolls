@@ -10,6 +10,7 @@ import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function HY20LRF() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +47,7 @@ export function HY20LRF() {
       name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
       price: 14499,
       quantity: 1,
-      image: '/assets/images/products/ns-plasma-20r-i/main.jpg',
+      image: cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg'),
       sku: 'hy-20lrf',
     });
 
@@ -136,7 +137,7 @@ export function HY20LRF() {
         description="Research-grade 20L RF vacuum plasma cleaner for batch surface cleaning and activation. 13.56MHz up to 300W, PLC touchscreen control, 2 gas lines (O\u2082/N\u2082/Ar). US price $14,499."
         keywords="HY-20LRF, RF Plasma Cleaner, Vacuum Plasma, 20L Chamber, Surface Activation, Batch Processing, Research Lab, Integrated plasma system, 13.56MHz plasma, 300W RF"
         url="/products/hy-20lrf"
-        image="/assets/images/products/ns-plasma-20r-i/main.jpg"
+        image={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -182,7 +183,7 @@ export function HY20LRF() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -285,7 +286,7 @@ export function HY20LRF() {
               <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' && (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r-i/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')}
                     alt="HY-20LRF - 20L Batch Plasma Cleaning System"
                     width={800}
                     height={600}
@@ -294,7 +295,7 @@ export function HY20LRF() {
                 )}
                 {selectedImage === 'front' && (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r-i/front-view.jpg')}
                     alt="HY-20LRF - Front View"
                     width={800}
                     height={600}
@@ -310,7 +311,7 @@ export function HY20LRF() {
                   aria-label="Main view"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r-i/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')}
                     alt="Main View Thumbnail"
                     width={150}
                     height={112}
@@ -324,7 +325,7 @@ export function HY20LRF() {
                   aria-label="Front view"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r-i/front-view.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r-i/front-view.jpg')}
                     alt="Front View Thumbnail"
                     width={150}
                     height={112}

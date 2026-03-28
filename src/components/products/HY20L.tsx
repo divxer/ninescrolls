@@ -11,6 +11,7 @@ import { SEO } from '../common/SEO';
 import { analytics } from '../../services/analytics';
 import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { cdnUrl } from '../../config/imageConfig';
 
 export function HY20L() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,7 +45,7 @@ export function HY20L() {
       name: `HY-20L - ${frequencyLabel} Plasma Processing System`,
       price: price,
       quantity: 1,
-      image: '/assets/images/products/ns-plasma-20r/main.jpg',
+      image: cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg'),
       sku: sku,
     });
 
@@ -144,7 +145,7 @@ export function HY20L() {
         description="Compact, research-grade plasma processing system with 20-liter chamber. Ideal for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, up to 300W, PLC-controlled operation."
         keywords="HY-20L, plasma cleaning, photoresist ashing, surface activation, RF plasma, batch processing, research plasma system"
         url="/products/hy-20l"
-        image="/assets/images/products/ns-plasma-20r/main.jpg"
+        image={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')}
         imageWidth={800}
         imageHeight={600}
         type="product"
@@ -158,7 +159,7 @@ export function HY20L() {
       {/* Hero Section */}
       <section className="hero-gradient relative min-h-[500px] flex items-center py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img className="w-full h-full object-cover" src="/assets/images/products/product-detail-bg.jpg" alt="" />
+          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/products/product-detail-bg.jpg')} alt="" />
         </div>
         <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
           <Breadcrumbs variant="dark" items={[
@@ -278,7 +279,7 @@ export function HY20L() {
               <div className="[&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-auto">
                 {selectedImage === 'main' ? (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')}
                     alt="HY-20L - Compact RF Plasma Processing System"
                     width={800}
                     height={600}
@@ -286,7 +287,7 @@ export function HY20L() {
                   />
                 ) : (
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r/front-view.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r/front-view.jpg')}
                     alt="HY-20L - Front View"
                     width={800}
                     height={600}
@@ -301,7 +302,7 @@ export function HY20L() {
                   type="button"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r/main.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')}
                     alt="Main View"
                     width={150}
                     height={112}
@@ -314,7 +315,7 @@ export function HY20L() {
                   type="button"
                 >
                   <OptimizedImage
-                    src="/assets/images/products/ns-plasma-20r/front-view.jpg"
+                    src={cdnUrl('/assets/images/products/ns-plasma-20r/front-view.jpg')}
                     alt="Front View"
                     width={150}
                     height={112}

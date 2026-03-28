@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { cdnUrl } from '../../config/imageConfig';
 
 interface SEOProps {
   title: string;
@@ -15,7 +16,7 @@ export function SEO({
   title, 
   description, 
   keywords = 'semiconductor equipment, thin film deposition, etching system, coating system',
-  image = '/assets/images/og-image.jpg',
+  image = cdnUrl('/assets/images/og-image.jpg'),
   imageWidth = 1200,
   imageHeight = 630,
   url = '/',
