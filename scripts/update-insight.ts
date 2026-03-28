@@ -70,7 +70,8 @@ async function updateInsight(slug: string) {
     excerpt: localPost.excerpt || null,
     readTime: localPost.readTime,
     tags: localPost.tags,
-    // Keep existing fields unchanged: author, publishDate, category, imageUrl, etc.
+    publishDate: localPost.publishDate,
+    imageUrl: localPost.imageUrl,
   });
 
   if (errors) {
