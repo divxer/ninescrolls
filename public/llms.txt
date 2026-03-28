@@ -59,6 +59,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Plasma Cleaner Maintenance Guide](https://ninescrolls.com/insights/plasma-cleaner-maintenance-guide): Practical maintenance guide — chamber cleaning, electrode refurbishment (NaOH/H2SO4 chemical process), vacuum system upkeep, RF power checks, preventive schedules (daily through annual), troubleshooting, safety warnings
 - [Future of Plasma Etching](https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics): Comprehensive roadmap for next-generation plasma etching — ALE (thermal and plasma-enhanced, 0.5-2 A/cycle EPC), pulsed plasma techniques (synchronous/asynchronous modes, 100 Hz-10 kHz), HAR etching for 3D NAND and DRAM (>50:1 AR, ARDE/bowing/twisting mitigation), low-damage processing, EUV resist removal, cryogenic etching (-100 to +250C), AI-assisted process control with OES/ML, equipment implications and adoption guidance
 - [Dry Etching Thermoelectric Films](https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization): CH4/H2/Ar plasma optimization for Bi2Te3 microstructures
+- [Ion Beam Etching (IBE) & RIBE Guide](https://ninescrolls.com/insights/ion-beam-etching-ribe-guide): Complete IBE/RIBE guide — Kaufman vs RF ion sources, IBE/RIBE/CAIBE modes, tilt angle optimization, material compatibility (magnetic, optical, metals), MRAM/photonics/MEMS applications, comparison with RIE
 
 ## Insights — Deposition & Materials
 
@@ -66,6 +67,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Magnetron Sputtering Guide](https://ninescrolls.com/insights/magnetron-sputtering-guide): Complete sputtering guide — DC vs RF modes, reactive sputtering for oxides/nitrides, process parameters, film growth modes, quality optimization, equipment selection for 4"–12" wafers
 - [PECVD Complete Guide](https://ninescrolls.com/insights/pecvd-complete-guide-plasma-enhanced-cvd): PECVD handbook — parallel-plate reactor principles, single vs dual-frequency RF stress control, SiO₂/SiNₓ/a-Si:H/SiC/DLC recipes, PECVD vs LPCVD vs ALD comparison, applications and equipment selection
 - [HDP-CVD In-Depth Guide](https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook): Comprehensive HDP-CVD handbook for research and manufacturing
+- [HDP-CVD Applications](https://ninescrolls.com/insights/hdp-cvd-applications-gap-fill-dielectrics): Gap fill, STI, IMD/PMD applications — dep/etch competition mechanism, void-free fill strategies, HDP-CVD vs PECVD vs SACVD comparison, advanced packaging
 - [Advanced Materials Processing](https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy): Thin film deposition and plasma etching for materials science
 - [Nanofabrication Techniques](https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future): E-beam lithography, nanoimprint, self-assembly
 - [Photonics Manufacturing](https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering): Precision engineering for optical devices
@@ -73,10 +75,14 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 ## Insights — Lithography
 
 - [Spin Coating & Development Guide](https://ninescrolls.com/insights/spin-coating-development-guide): Complete photoresist processing guide — spin coating physics, thickness vs speed, photoresist selection (positive/negative, DNQ, SU-8, PMMA), lithography process flow, development optimization, troubleshooting
+- [Coater/Developer Equipment Guide](https://ninescrolls.com/insights/coater-developer-systems-equipment-guide): Track system selection — module configurations, spin coating equipment vs manual, developer module design, hotplate integration, recipe programming, uniformity optimization, defect troubleshooting
+- [Lithography Process Integration](https://ninescrolls.com/insights/lithography-process-integration-guide): Full lithography-to-etch flow — substrate prep, HMDS, coating, exposure, development, pattern transfer, resist strip, CD control, process integration challenges
 
 ## Insights — Stripping & Ashing
 
 - [Plasma Stripping & Ashing Guide](https://ninescrolls.com/insights/plasma-stripping-ashing-guide): Comprehensive stripping guide — O₂ plasma chemistry, downstream vs direct plasma, dry vs wet strip comparison, gas chemistry selection, process types (PR strip, descum, surface activation, 2D materials), equipment selection
+- [Stripping Equipment Selection Guide](https://ninescrolls.com/insights/plasma-stripping-equipment-selection-guide): Equipment architectures (barrel/downstream/RIE-mode), gas chemistry selection, temperature effects, endpoint detection, batch vs single-wafer, striper vs plasma cleaner decision guide
+- [Post-Etch Cleaning & Residue Removal](https://ninescrolls.com/insights/post-etch-cleaning-residue-removal): Post-etch residue types, dry/wet cleaning methods, damage-free strategies for low-k/Cu/III-V, in-situ vs ex-situ integration, contamination monitoring
 
 ## Insights — Plasma Cleaning
 
@@ -84,6 +90,12 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Plasma Cleaner Applications](https://ninescrolls.com/insights/plasma-cleaner-applications-guide): Semiconductor, biomedical, optics, automotive, and materials science use cases
 - [Plasma Cleaner Buying Guide](https://ninescrolls.com/insights/plasma-cleaner-buying-guide): Step-by-step selection guide covering chamber sizing, vacuum systems, and TCO
 - [Plasma Cleaner Comparison](https://ninescrolls.com/insights/plasma-cleaner-comparison-research-labs): Quartz vs stainless steel, RF vs mid-frequency, brand comparison
+- [PLUTO vs HY Plasma Cleaners](https://ninescrolls.com/insights/pluto-vs-hy-plasma-cleaner-comparison): Head-to-head comparison — RF vs mid-frequency, chamber architecture, power density, electrode design, application matching, cost-of-ownership, decision flowchart
+
+## Insights — Equipment Fundamentals
+
+- [Vacuum System Fundamentals](https://ninescrolls.com/insights/vacuum-system-fundamentals-semiconductor): Vacuum regimes, pump technologies, pressure measurement, gas flow regimes, conductance calculations, leak detection, load-lock design, vacuum materials, maintenance
+- [Process Chamber Materials & Contamination Control](https://ninescrolls.com/insights/process-chamber-materials-contamination-control): Chamber body materials, surface treatments, electrode materials, seals, contamination sources, chamber seasoning, PM schedules, cleaning protocols, qualification criteria
 
 ## Insights — Energy
 
