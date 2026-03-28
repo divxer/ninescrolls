@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useInsightsPosts } from '../hooks/useInsightsPosts';
@@ -70,6 +70,46 @@ function RelatedArticlesSidebar({ post, allPosts }: { post: InsightsPost; allPos
         ))}
       </ul>
     </div>
+  );
+}
+
+function resolveCardImage(url: string): string {
+  if (!url) return '';
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url)) return url;
+  return `${url}.webp`;
+}
+
+function RelatedArticlesBottom({ post, allPosts }: { post: InsightsPost; allPosts: InsightsPost[] }) {
+  const related = rankRelatedInsights(allPosts, post, 4);
+  if (related.length === 0) return null;
+  return (
+    <section className="mt-16">
+      <h2 className="text-3xl font-headline font-bold mb-8">You May Also Like</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {related.map(rp => (
+          <Link
+            key={rp.slug}
+            to={`/insights/${rp.slug}`}
+            className="related-article-card group flex gap-5 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 no-underline"
+          >
+            <div className="w-36 min-h-[120px] flex-shrink-0 bg-slate-200 overflow-hidden">
+              <img
+                src={resolveCardImage(rp.imageUrl)}
+                alt={rp.title}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            </div>
+            <div className="py-4 pr-4 flex flex-col justify-center min-w-0">
+              <span className="text-primary font-bold uppercase text-[10px] tracking-widest mb-1">{rp.category}</span>
+              <h3 className="text-base font-semibold text-on-surface leading-snug mb-1.5 group-hover:text-primary transition-colors line-clamp-2">{rp.title}</h3>
+              <span className="text-on-surface-variant text-xs">{rp.readTime} min read</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -169,7 +209,22 @@ export const InsightsPostPage: React.FC = () => {
             "speakable": {
               "@type": "SpeakableSpecification",
               "cssSelector": [".insights-post-title", ".insights-post-meta"]
-            }
+            },
+            ...(allPosts.length > 0 ? {
+              "relatedLink": rankRelatedInsights(allPosts, post, 4)
+                .map(rp => `https://ninescrolls.com/insights/${rp.slug}`)
+            } : {})
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ninescrolls.com" },
+              { "@type": "ListItem", "position": 2, "name": "Insights", "item": "https://ninescrolls.com/insights" },
+              { "@type": "ListItem", "position": 3, "name": post.title, "item": `https://ninescrolls.com/insights/${post.slug}` }
+            ]
           })}
         </script>
       </Helmet>
@@ -182,6 +237,15 @@ export const InsightsPostPage: React.FC = () => {
           <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
             <div className="flex items-center w-full gap-10 md:flex-row flex-col">
               <div className="flex-1">
+                <nav aria-label="Breadcrumb" className="mb-4 relative z-10">
+                  <ol className="flex items-center gap-1.5 text-sm text-white/70 list-none p-0 m-0">
+                    <li><Link to="/" className="text-white/70 hover:text-white no-underline transition-colors">Home</Link></li>
+                    <li className="text-white/40">/</li>
+                    <li><Link to="/insights" className="text-white/70 hover:text-white no-underline transition-colors">Insights</Link></li>
+                    <li className="text-white/40">/</li>
+                    <li className="text-white truncate max-w-[300px]">{post.title}</li>
+                  </ol>
+                </nav>
                 <h1 className="insights-post-title text-4xl font-bold mb-5 leading-tight relative z-10">{post.title}</h1>
                 <div className="insights-post-meta flex flex-wrap gap-5 mb-8 text-base opacity-90 relative z-10">
                   <span className="flex items-center gap-1.5 font-semibold">{post.author}</span>
@@ -241,6 +305,9 @@ export const InsightsPostPage: React.FC = () => {
                     <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-slate-500 text-white hover:-translate-y-0.5 hover:shadow-md transition-all">Email</button>
                   </div>
                 </div>
+
+                {/* Related Articles */}
+                {allPosts.length > 0 && <RelatedArticlesBottom post={post} allPosts={allPosts} />}
               </div>
 
               <PostSidebar post={post} allPosts={allPosts} />
