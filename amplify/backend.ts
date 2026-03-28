@@ -17,6 +17,7 @@ import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
+import { submitLead } from './functions/submit-lead/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -55,6 +56,7 @@ const backend = defineBackend({
     orderApi,
     optimizeInsightsImage,
     generateSitemaps,
+    submitLead,
 });
 
 // Create a fixed stage name
@@ -339,6 +341,14 @@ const documentUploadIntegration = new LambdaIntegration(backend.documentUpload.r
 documentsResource.addMethod('POST', documentUploadIntegration);
 documentsResource.addMethod('OPTIONS', documentUploadIntegration);
 
+// Create /api/leads resource for unified lead submissions
+const leadsResource = apiResource.addResource('leads');
+const submitLeadIntegration = new LambdaIntegration(backend.submitLead.resources.lambda, {
+    proxy: true,
+});
+leadsResource.addMethod('POST', submitLeadIntegration);
+leadsResource.addMethod('OPTIONS', submitLeadIntegration);
+
 // =============================================================================
 // NineScrolls-Intelligence: Single-table design for Feedback System
 // Entities: FEEDBACK, ORDER, ORDER_CONTACT, ORDER_LOG, ORDER_DOCUMENT, RFQ_SUBMISSION
@@ -450,6 +460,12 @@ intelligenceTable.grantReadWriteData(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 orderDocumentsBucket.grantReadWrite(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant submit-lead Lambda access to Intelligence table + Newsletter table
+intelligenceTable.grantReadWriteData(backend.submitLead.resources.lambda);
+backend.submitLead.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+newsletterSubscribersTable.grantReadWriteData(backend.submitLead.resources.lambda);
+backend.submitLead.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
 // =============================================================================
 // S3 Bucket: Insights article image assets
