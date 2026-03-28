@@ -34,6 +34,7 @@ import {
     AllowedMethods, CachedMethods, HttpVersion,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 
 const backend = defineBackend({
     auth,
@@ -495,6 +496,13 @@ const oai = new OriginAccessIdentity(insightsAssetsStack, 'InsightsAssetsOAI', {
 
 insightsAssetsBucket.grantRead(oai);
 
+// Existing wildcard cert *.ninescrolls.com in us-east-1 (required by CloudFront)
+const cdnCertificate = Certificate.fromCertificateArn(
+    insightsAssetsStack,
+    'CdnCertificate',
+    'arn:aws:acm:us-east-1:897729106341:certificate/9e1bd92b-c8df-4ad8-aa23-0559db3a82d9',
+);
+
 const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsCdn', {
     defaultBehavior: {
         origin: new S3Origin(insightsAssetsBucket, { originAccessIdentity: oai }),
@@ -504,6 +512,8 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
         compress: true,
     },
+    domainNames: ['cdn.ninescrolls.com'],
+    certificate: cdnCertificate,
     httpVersion: HttpVersion.HTTP2_AND_3,
     comment: 'NineScrolls insights image assets CDN',
 });
@@ -514,7 +524,7 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
 
 insightsAssetsBucket.grantReadWrite(backend.optimizeInsightsImage.resources.lambda);
 backend.optimizeInsightsImage.addEnvironment('INSIGHTS_ASSETS_BUCKET', insightsAssetsBucket.bucketName);
-backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', `https://${insightsAssetsCdn.distributionDomainName}`);
+backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', 'https://cdn.ninescrolls.com');
 
 // =============================================================================
 // Lambda Layer: Sharp image processing library (linux-x64)
