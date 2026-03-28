@@ -83,8 +83,17 @@ async function seedSingle(slug: string) {
     process.exit(1);
   }
 
-  const relatedProducts = RELATED_PRODUCTS[slug] || [];
-  const heroImages = HERO_IMAGES[slug] || null;
+  // Use relatedProducts from the post data first, fall back to hardcoded map
+  const relatedProducts = post.relatedProducts || RELATED_PRODUCTS[slug] || [];
+
+  // Derive heroImages from imageUrl if not in hardcoded map
+  let heroImages = HERO_IMAGES[slug] || null;
+  if (!heroImages && post.imageUrl) {
+    const match = post.imageUrl.match(/\/([^/]+)\.(png|jpe?g|webp)$/);
+    if (match) {
+      heroImages = { prefix: match[1], fallbackExt: match[2] };
+    }
+  }
 
   const { data, errors } = await client.models.InsightsPost.create({
     slug: post.slug,
