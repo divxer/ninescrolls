@@ -11528,6 +11528,16 @@ result = differential_evolution(
 
       <h2>2. Ion Source Physics: How the Beam is Generated</h2>
       <p>The ion source is the heart of any IBE system. Its role is to ionize a working gas (usually argon) and extract the resulting ions as a directed beam with controlled energy and current density. Two architectures dominate the market:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ibe-ribe-ion-source-comparison.png" alt="Kaufman DC vs RF ion source architecture comparison" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Kaufman (DC) vs RF ion source architectures — the Kaufman source uses a thermionic cathode filament and magnetic confinement, while the RF source eliminates consumable filaments by using inductive RF coupling for plasma generation</p>
+      </div>
 
       <h3>2.1 Kaufman-Type (DC Discharge) Ion Source</h3>
       <p>Invented by Harold Kaufman at NASA in the 1960s for spacecraft propulsion, the Kaufman source uses a thermionic cathode (typically a tungsten or LaB&sub6; filament) to emit electrons into a discharge chamber. These electrons are confined by an axial magnetic field, increasing their path length and ionization efficiency. The resulting plasma is then extracted through a set of multi-aperture grids:</p>
@@ -11603,6 +11613,16 @@ result = differential_evolution(
 
       <h2>3. IBE vs RIBE: Operating Modes</h2>
       <p>An IBE/RIBE system can operate in several distinct modes depending on the gas feed configuration:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ibe-ribe-etch-modes.png" alt="Comparison of IBE RIBE and CAIBE etch modes" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Three ion beam etch modes compared — IBE uses pure Ar⁺ physical sputtering, RIBE introduces reactive gas into the ion source, and CAIBE delivers reactive gas separately near the substrate surface</p>
+      </div>
 
       <h3>3.1 Pure IBE (Ion Milling)</h3>
       <p>Only inert gas (Ar, Xe, or Kr) is fed into the ion source. Material removal is entirely by physical sputtering. This is the mode of choice for materials with non-volatile etch products:</p>
@@ -11818,6 +11838,16 @@ result = differential_evolution(
 
       <h2>6. The Critical Role of Angle: Tilt and Rotation</h2>
       <p>Unlike any plasma-based etch technique, IBE provides full control over the ion beam&rsquo;s angle of incidence. This is arguably the single most important process knob in ion beam etching, and it serves multiple functions:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/ibe-tilt-angle-optimization.png" alt="Substrate tilt angle optimization for ion beam etching" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Effect of substrate tilt angle on etch profile — normal incidence (0°) causes trenching and redeposition, optimal angles (30–45°) produce clean sidewalls, and grazing angles (70–80°) enhance surface milling but reduce depth</p>
+      </div>
 
       <h3>6.1 Sputter Yield vs Angle</h3>
       <p>For most materials, the sputter yield peaks at 40&ndash;60&deg; from normal incidence (where the ion&rsquo;s momentum is optimally partitioned between penetration depth and lateral cascade). At normal incidence (0&deg;), ions penetrate deeply but displace fewer surface atoms. At grazing angles (&gt;75&deg;), ions scatter from the surface with minimal energy transfer. This angular dependence is the basis for profile engineering:</p>
@@ -12113,7 +12143,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-22',
     category: 'Materials Science',
     readTime: 16,
     imageUrl: '/assets/images/insights/ibe-ribe-guide-cover.png',
@@ -12239,6 +12269,16 @@ result = differential_evolution(
 
       <h2>3) Module Configurations and System Layout</h2>
       <p>One of the key advantages of modern coater/developer systems is <strong>modular configurability</strong>. Rather than purchasing a fixed-function tool, engineers can specify the exact combination of coater, developer, and hotplate modules to match their process flow.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/coater-developer-module-layout-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-module-layout-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-module-layout-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-module-layout-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/coater-developer-module-layout.png" alt="Coater developer track system module layout" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Typical coater/developer track system layout — modules are connected by a central robot transfer arm for automated wafer handling through the complete lithography process</p>
+      </div>
 
       <h3>Common Configuration Examples</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -12289,6 +12329,16 @@ result = differential_evolution(
 
       <h2>4) Spin Coating Physics: A Recap for Equipment Context</h2>
       <p>Understanding spin coating physics is essential for optimizing coater module performance. For the complete theoretical treatment, see our <a href="/insights/spin-coating-development-guide">Spin Coating & Development Guide</a>. Here we summarize the key relationships as they apply to equipment specification and recipe development.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/coater-developer-spin-curve-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-spin-curve-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-spin-curve-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-spin-curve-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/coater-developer-spin-curve.png" alt="Film thickness versus spin speed curves for different resist viscosities" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Spin coating thickness vs speed relationship — higher viscosity resists produce thicker films at equivalent speeds, following a power-law curve; the green band indicates the typical target thickness window</p>
+      </div>
 
       <h3>The Fundamental Thickness Equation</h3>
       <p>Film thickness <em>t</em> from spin coating follows the Meyerhofer relationship:</p>
@@ -12638,6 +12688,16 @@ result = differential_evolution(
 
       <h2>11) Defect Troubleshooting Guide</h2>
       <p>Even with optimized recipes, defects can occur due to equipment issues, resist degradation, or environmental upsets. Below is a systematic troubleshooting guide for the most common coater/developer defects.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/coater-developer-defect-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-defect-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-defect-types-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/coater-developer-defect-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/coater-developer-defect-types.png" alt="Common spin coating defect types on wafers" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Six common spin coating defects — comets/streaks from particles, edge bead from surface tension, center thin spots from dispense issues, pinholes from contamination, striations from solvent evaporation, and non-uniform coverage from poor wetting</p>
+      </div>
 
       <h3>Coating Defects</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -12866,7 +12926,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-13',
     category: 'Materials Science',
     readTime: 14,
     imageUrl: '/assets/images/insights/coater-developer-equipment-guide-cover.png',
@@ -13071,6 +13131,26 @@ result = differential_evolution(
 
       <h2>4) Power Density Analysis</h2>
       <p>Raw wattage is misleading. What matters for cleaning performance is <strong>power density</strong> \u2014 the RF (or MF) power delivered per unit of chamber volume. Higher power density means more reactive species generated per unit volume, which translates to faster cleaning rates and more thorough contaminant removal.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-power-comparison.png" alt="PLUTO vs HY plasma cleaner specification comparison" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Head-to-head specification comparison — key differences in frequency, power range, chamber materials, electrode design, chamber volume, and starting price between the PLUTO and HY series</p>
+      </div>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-chamber-architecture.png" alt="PLUTO vs HY plasma cleaner chamber architecture comparison" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Chamber architecture comparison — PLUTO uses a quartz chamber with RF gas-shower electrode at 13.56 MHz, while HY uses a stainless steel chamber with internal parallel plates driven at 40 kHz mid-frequency</p>
+      </div>
 
       <table class="insights-table">
         <thead>
@@ -13300,6 +13380,16 @@ result = differential_evolution(
 
       <h2>7) Decision Flowchart</h2>
       <p>Use this structured approach to narrow your selection:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-decision-flowchart.png" alt="PLUTO vs HY plasma cleaner selection decision flowchart" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Selection decision tree — choose between PLUTO (blue) and HY (green) models based on your primary application, sample requirements, and budget constraints</p>
+      </div>
 
       <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
         <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f; margin-top: 0;">Step 1: Do you need mid-frequency (40 kHz) excitation?</p>
@@ -13554,7 +13644,7 @@ result = differential_evolution(
       </div>
   `,
   author: 'NineScrolls Engineering',
-  publishDate: '2026-03-28',
+  publishDate: '2026-03-04',
   category: 'Equipment Maintenance',
   readTime: 12,
   imageUrl: '/assets/images/insights/pluto-vs-hy-comparison-cover.png',
@@ -13586,6 +13676,16 @@ result = differential_evolution(
 
       <h2>2) Equipment Architectures Compared</h2>
       <p>There are three primary plasma stripping architectures, each with distinct advantages. Understanding their operating principles is the first step toward selecting the right tool.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/striper-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/striper-architectures-comparison.png" alt="Comparison of barrel downstream and RIE-mode stripper architectures" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Three stripper architectures compared — barrel/tubular ashers for batch processing, downstream plasma for damage-sensitive applications, and RIE-mode strippers for directional descum and surface preparation</p>
+      </div>
 
       <h3>2.1 Barrel (Tubular) Ashers</h3>
       <p>The barrel asher is the simplest and oldest plasma stripping architecture. A quartz or alumina tube is placed inside an RF coil (typically operating at 13.56 MHz or 2.45 GHz microwave). Wafers are loaded on a boat or rack inside the tube, and the plasma fills the entire tube volume.</p>
@@ -13682,6 +13782,16 @@ result = differential_evolution(
 
       <h2>3) Gas Chemistry Selection</h2>
       <p>The choice of process gas determines the stripping mechanism, rate, selectivity, and residue behavior. Most stripping processes start with O₂, but additives unlock critical capabilities for specific applications.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/striper-gas-chemistry-matrix.png" alt="Stripping gas chemistry selection matrix" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Gas chemistry selection matrix — color-coded ratings for five common stripping chemistries across strip rate, selectivity, residue removal, and metal compatibility metrics</p>
+      </div>
 
       <h3>3.1 Pure O₂</h3>
       <p>Pure oxygen plasma is the default chemistry for photoresist ashing. Atomic oxygen radicals (O*) react with the organic resist to form volatile CO₂ and H₂O. This is the simplest, cleanest, and most widely used stripping chemistry.</p>
@@ -13984,6 +14094,16 @@ result = differential_evolution(
 
       <h2>9) Equipment Specification Checklist</h2>
       <p>When evaluating stripping equipment for your lab, use this checklist to ensure the tool meets your current and anticipated needs.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/striper-selection-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-selection-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-selection-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/striper-selection-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/striper-selection-flowchart.png" alt="Plasma stripping equipment selection decision flowchart" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Equipment selection decision flowchart — systematic path from application requirements to recommended stripper architecture and configuration</p>
+      </div>
 
       <h3>9.1 Must-Have Specifications</h3>
       <ul>
@@ -14117,7 +14237,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-07',
     category: 'Materials Science',
     readTime: 12,
     imageUrl: '/assets/images/insights/striper-equipment-selection-cover.png',
@@ -14140,6 +14260,16 @@ result = differential_evolution(
 
       <h2>1) The HDP-CVD Gap-Fill Mechanism</h2>
       <p>The defining feature of HDP-CVD is simultaneous deposition and sputtering — a process fundamentally different from conventional PECVD, where deposition and any etch steps must be sequential.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/hdp-cvd-dep-etch-mechanism.png" alt="HDP-CVD simultaneous deposition and etch gap fill mechanism" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Simultaneous deposition/etch (D/E) competition mechanism — SiH₄/O₂ deposition flux fills from the bottom while Ar⁺ sputtering clips the top corners, preventing void formation through controlled D/S ratio optimization</p>
+      </div>
 
       <h3>1.1 Deposition/Etch Competition</h3>
       <p>In an HDP-CVD reactor, two RF power sources operate independently:</p>
@@ -14165,6 +14295,16 @@ result = differential_evolution(
 
       <h2>2) Shallow Trench Isolation (STI) Fill</h2>
       <p>STI is the most demanding and highest-volume application for HDP-CVD. Every logic and memory chip manufactured at or below the 0.25 µm node uses STI for electrical isolation between transistors.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/hdp-cvd-sti-fill-process.png" alt="STI shallow trench isolation gap fill process flow using HDP-CVD" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: STI process flow — from trench etch through liner oxidation, HDP-CVD gap fill, CMP planarization, to final nitride strip, producing void-free oxide isolation between active device regions</p>
+      </div>
 
       <h3>2.1 STI Requirements</h3>
       <ul>
@@ -14297,6 +14437,16 @@ result = differential_evolution(
 
       <h2>4) HDP-CVD vs. PECVD vs. SACVD: Quantitative Comparison</h2>
       <p>Choosing the right deposition technique depends on the specific gap-fill requirements, thermal budget, throughput needs, and equipment availability. For a detailed discussion of PECVD capabilities, see our <a href="/insights/pecvd-complete-guide-plasma-enhanced-cvd">PECVD Complete Guide</a>.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd.png" alt="Comparison of HDP-CVD PECVD and SACVD gap fill techniques" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Quantitative comparison of three CVD gap-fill approaches — HDP-CVD excels in film density and bottom-up fill, PECVD offers highest throughput with conformal coverage, and SACVD achieves the highest aspect ratios with conformal deposition</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -14612,7 +14762,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-10',
     category: 'Materials Science',
     readTime: 14,
     imageUrl: '/assets/images/insights/hdp-cvd-applications-cover.png',
@@ -14644,6 +14794,16 @@ result = differential_evolution(
 
       <h2>1) Why Process Integration Matters</h2>
       <p>Individual lithography steps — coating, exposure, development, etching — are well-understood in isolation. The real challenge lies in <strong>integration</strong>: ensuring that each step's output meets the next step's input requirements across the entire wafer, lot after lot. A perfectly optimized spin coat is worthless if the soft bake drives off too much solvent for the chosen exposure dose, or if the develop process creates residue that blocks subsequent etch pattern transfer.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/lithography-full-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-full-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-full-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-full-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/lithography-full-process-flow.png" alt="Complete lithography to etch process flow diagram" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Complete lithography process flow — eight integrated steps from substrate preparation through pattern transfer, with corresponding wafer cross-sections showing the state of resist, oxide, and substrate layers at each stage</p>
+      </div>
       <p>Process integration engineers think in terms of <strong>transfer functions</strong>: how does a change in parameter X at step N propagate to the final CD, profile, and defect density after step N+5? This systems-level perspective distinguishes integration engineering from single-step process development.</p>
       <p>This guide walks through the complete lithography-to-etch integration flow, emphasizing the critical interfaces between steps and providing practical guidance for building robust, manufacturable patterning processes.</p>
 
@@ -14954,6 +15114,16 @@ result = differential_evolution(
 
       <h2>8) Step 8 &mdash; Hard Bake</h2>
       <p>Hard bake (post-develop bake) further densifies the developed resist pattern by driving off remaining solvent and increasing the resist's thermal and chemical stability for the subsequent etch step. Hard bake is not always required &mdash; many modern processes skip it when the soft-baked resist provides sufficient etch resistance &mdash; but it is essential when:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/lithography-exposure-development-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-exposure-development-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-exposure-development-window-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-exposure-development-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/lithography-exposure-development-window.png" alt="Exposure dose versus focus process window Bossung plot" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Exposure-focus process window (Bossung plot) — the central elliptical region defines the acceptable range of dose and focus combinations that maintain CD within specification; DOF and exposure latitude determine manufacturing robustness</p>
+      </div>
       <ul>
         <li>The etch process involves significant substrate heating (&gt;100&deg;C)</li>
         <li>Long etch times (&gt;5 min) require maximum resist durability</li>
@@ -15110,6 +15280,16 @@ result = differential_evolution(
 
       <h2>11) CD Control Through the Full Flow</h2>
       <p>Achieving tight CD control (&plusmn;5% of target) across the entire lithography-etch flow requires understanding how each step contributes to the final CD variation budget. The table below shows typical contributions:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/lithography-cd-control-factors-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-cd-control-factors-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-cd-control-factors-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/lithography-cd-control-factors-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/lithography-cd-control-factors.png" alt="Ishikawa fishbone diagram of CD control factors in lithography" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Ishikawa (fishbone) diagram of CD variation sources — six major categories (resist, exposure, development, bake, environment, substrate) each contribute multiple sub-factors that must be controlled for tight CD uniformity</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -15295,7 +15475,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-16',
     category: 'Nanotechnology',
     readTime: 15,
     imageUrl: '/assets/images/insights/lithography-integration-cover.png',
@@ -15338,6 +15518,16 @@ result = differential_evolution(
 
       <h2>2) Types of Post-Etch Residues</h2>
       <p>Understanding the chemical composition of post-etch residues is essential for selecting the right cleaning approach. The residue type depends on the etch chemistry, the materials being etched, and the mask material.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/post-etch-residue-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-residue-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-residue-types-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-residue-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/post-etch-residue-types.png" alt="Classification of post-etch residue types in etched features" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Post-etch residue classification — four major residue types shown at their typical locations within an etched via: sidewall polymer (fluorocarbon), metal halides at the via bottom, sputtered mask material, and oxide/nitride debris at top corners</p>
+      </div>
 
       <h3>2.1 Residue Classification</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -15407,6 +15597,16 @@ result = differential_evolution(
 
       <h2>3) Dry Cleaning Methods</h2>
       <p>Dry (plasma-based) cleaning is the first-line approach for post-etch residue removal. It offers process control, repeatability, minimal chemical waste, and compatibility with vacuum-based process flows.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/post-etch-dry-vs-wet-cleaning.png" alt="Comparison of dry plasma and wet chemical post-etch cleaning methods" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Dry vs wet cleaning comparison — downstream plasma cleaning offers in-situ integration and damage control, while wet chemical cleaning provides high selectivity and established batch processing with multiple chemistry options</p>
+      </div>
 
       <h3>3.1 Dry Cleaning Method Comparison</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -15728,6 +15928,16 @@ result = differential_evolution(
 
       <h2>8) Process Integration Workflow</h2>
       <p>The following table provides recommended cleaning sequences for common etch process types:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/post-etch-integration-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-integration-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-integration-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/post-etch-integration-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/post-etch-integration-flow.png" alt="In-situ versus ex-situ post-etch cleaning process integration flow" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Process integration pathways — in-situ cleaning within the cluster tool eliminates queue time and air exposure risks, while ex-situ wet cleaning requires careful queue time management to prevent native oxide growth and corrosion</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -15904,7 +16114,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-19',
     category: 'Materials Science',
     readTime: 13,
     imageUrl: '/assets/images/insights/post-etch-cleaning-cover.png',
@@ -15939,6 +16149,16 @@ result = differential_evolution(
 
       <h2>2) Vacuum Regimes and Their Applications</h2>
       <p>Vacuum is conventionally divided into regimes based on pressure range. Each regime has distinct gas dynamics, requires different pump technologies, and serves different semiconductor processes:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/vacuum-regime-pump-map.png" alt="Vacuum pressure regimes and pump technology operating ranges" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Vacuum regime chart — pressure ranges from atmosphere to UHV mapped against pump technology operating ranges, showing the complementary coverage of roughing pumps, turbomolecular pumps, cryopumps, and ion pumps</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -16161,6 +16381,16 @@ result = differential_evolution(
 
       <h2>5) Gas Flow Regimes</h2>
       <p>Understanding gas flow regimes is essential for designing vacuum plumbing, predicting pump-down times, and optimizing gas distribution in process chambers. The flow regime depends on the Knudsen number (Kn), the ratio of molecular mean free path (λ) to the characteristic dimension of the flow channel (D):</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/vacuum-gas-flow-regimes.png" alt="Viscous transition and molecular gas flow regimes" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Three gas flow regimes — viscous flow (molecules interact with each other, Kn < 0.01), transition flow (mixed behavior), and molecular flow (molecules interact only with walls, Kn > 1), determined by the ratio of mean free path to system dimensions</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -16274,6 +16504,16 @@ result = differential_evolution(
 
       <h2>9) Load-Lock Design</h2>
       <p>Load-locks are small-volume intermediate chambers that allow wafer transfer without venting the process chamber to atmosphere. Their inclusion is one of the most impactful design decisions in semiconductor processing equipment.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/vacuum-loadlock-design-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-loadlock-design-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-loadlock-design-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/vacuum-loadlock-design-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/vacuum-loadlock-design.png" alt="Load-lock chamber system schematic for semiconductor equipment" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Load-lock system schematic — a small-volume intermediate chamber cycles between atmosphere and vacuum, protecting the process chamber from contamination while enabling efficient wafer transfer</p>
+      </div>
 
       <h3>Why Load-Locks Matter</h3>
       <ul>
@@ -16619,6 +16859,16 @@ result = differential_evolution(
 
       <h2>3) Surface Treatments</h2>
       <p>Surface treatments transform the properties of base chamber materials, dramatically improving their plasma resistance, particle performance, and corrosion behavior.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/chamber-materials-layers-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-materials-layers-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-materials-layers-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-materials-layers-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/chamber-materials-layers.png" alt="Process chamber cross-section showing material layers and construction" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Chamber construction materials — cross-section showing anodized aluminum body, yttria ceramic liners, silicon or SiC electrode, quartz showerhead, and elastomer seals at each critical interface</p>
+      </div>
 
       <h3>3.1 Hard Anodization (Type III)</h3>
       <p>Hard anodization is the standard surface treatment for aluminum process chambers. The process electrochemically grows a dense Al₂O₃ layer (typically 25–75 µm thick) on the aluminum surface. This layer provides:</p>
@@ -16788,6 +17038,16 @@ result = differential_evolution(
 
       <h2>8) Contamination Sources and Classification</h2>
       <p>Contamination in semiconductor process chambers falls into five categories, each with distinct sources, detection methods, and mitigation strategies:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/chamber-contamination-sources-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-contamination-sources-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-contamination-sources-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-contamination-sources-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/chamber-contamination-sources.png" alt="Contamination sources and transport pathways in a process chamber" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Contamination sources — six major pathways for particles, moisture, organics, and metal contamination entering the process environment, from showerhead flaking to pump oil backstreaming</p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -16836,6 +17096,16 @@ result = differential_evolution(
 
       <h2>9) Chamber Conditioning (Seasoning)</h2>
       <p>After any maintenance event that exposes the chamber interior to atmosphere — liner replacement, electrode change, wet cleaning — the chamber must be re-conditioned before running product wafers. Chamber conditioning (also called "seasoning") establishes a stable, reproducible surface state on all plasma-facing components.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/chamber-seasoning-qualification.png" alt="Chamber cleaning seasoning and qualification process flow" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Chamber conditioning workflow — five-stage process from wet clean through plasma seasoning to qualification, with pass/fail decision gate and recycle loop for out-of-spec results</p>
+      </div>
 
       <h3>Seasoning Process</h3>
       <ol>
@@ -17039,7 +17309,7 @@ result = differential_evolution(
       </div>
     `,
     author: 'NineScrolls Engineering',
-    publishDate: '2026-03-28',
+    publishDate: '2026-03-25',
     category: 'Materials Science',
     readTime: 13,
     imageUrl: '/assets/images/insights/chamber-materials-contamination-cover.png',
