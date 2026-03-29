@@ -17,6 +17,7 @@ import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
+import { submitQuestion } from './functions/submit-question/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -55,6 +56,7 @@ const backend = defineBackend({
     orderApi,
     optimizeInsightsImage,
     generateSitemaps,
+    submitQuestion,
 });
 
 // Create a fixed stage name
@@ -338,6 +340,19 @@ const documentUploadIntegration = new LambdaIntegration(backend.documentUpload.r
 });
 documentsResource.addMethod('POST', documentUploadIntegration);
 documentsResource.addMethod('OPTIONS', documentUploadIntegration);
+
+// Create /api/questions resource for article Q&A submissions
+const questionsResource = apiResource.addResource('questions');
+const submitQuestionIntegration = new LambdaIntegration(backend.submitQuestion.resources.lambda, {
+    proxy: true,
+});
+questionsResource.addMethod('POST', submitQuestionIntegration);
+questionsResource.addMethod('OPTIONS', submitQuestionIntegration);
+
+// Grant submit-question Lambda access to ArticleQuestion table
+const articleQuestionTable = backend.data.resources.tables['ArticleQuestion'];
+articleQuestionTable.grantReadWriteData(backend.submitQuestion.resources.lambda);
+backend.submitQuestion.addEnvironment('ARTICLE_QUESTION_TABLE', articleQuestionTable.tableName);
 
 // =============================================================================
 // NineScrolls-Intelligence: Single-table design for Feedback System
