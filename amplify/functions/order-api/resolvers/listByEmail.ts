@@ -31,7 +31,7 @@ export async function listByEmail(event: AppSyncEvent) {
         ...(nextToken ? { ExclusiveStartKey: JSON.parse(Buffer.from(nextToken, 'base64url').toString()) } : {}),
     }));
 
-    const items = (result.Items || []).map((item) => {
+    const items = (result.Items || []).map((item: Record<string, unknown>) => {
         const pk = item.PK as string;
         if (pk.startsWith('LEAD#')) {
             return {
