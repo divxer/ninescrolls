@@ -126,7 +126,7 @@ export function FloatingAskButton({ slug }: { slug: string }) {
       {/* Fixed sidebar button — visible after 400px scroll, hides near Q&A section */}
       {visible && <button
         onClick={() => setOpen(true)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 pl-3 pr-4 py-3 bg-primary text-on-primary rounded-l-full shadow-lg hover:shadow-xl hover:-translate-y-1/2 hover:pr-5 transition-all text-sm font-medium max-md:pl-2.5 max-md:pr-3 max-md:py-2.5"
+        className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 pl-4 pr-3 py-3 bg-primary text-on-primary rounded-r-full shadow-lg hover:shadow-xl hover:-translate-y-1/2 hover:pl-5 transition-all text-sm font-medium max-md:pl-3 max-md:pr-2.5 max-md:py-2.5"
         aria-label="Ask a question about this article"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
