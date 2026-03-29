@@ -361,6 +361,17 @@ intelligenceTable.addGlobalSecondaryIndex({
     projectionType: ProjectionType.ALL,
 });
 
+// GSI4: Email-based customer timeline (cross-entity aggregation)
+// - LEAD:  GSI4PK=EMAIL#<normalized_email>, GSI4SK=LEAD#<submittedAt>
+// - RFQ:   GSI4PK=EMAIL#<normalized_email>, GSI4SK=RFQ#<submittedAt>
+// - ORDER: GSI4PK=EMAIL#<normalized_email>, GSI4SK=ORDER#<createdAt>
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI4',
+    partitionKey: { name: 'GSI4PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI4SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
 // =============================================================================
 // S3 Bucket: Order & RFQ document storage
 // Directory structure: orders/<orderId>/<stage>/, rfqs/<rfqId>/, temp/

@@ -6,6 +6,8 @@
  * notifications via SendGrid, and pushes contacts to HubSpot CRM.
  */
 
+import { getVisitorId } from './analyticsStorageService';
+
 const LEADS_API_URL = 'https://api.ninescrolls.com/api/leads';
 
 // ---------------------------------------------------------------------------
@@ -68,7 +70,7 @@ export async function submitLead(data: LeadRequest): Promise<LeadResponse> {
     const response = await fetch(LEADS_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, visitorId: getVisitorId() }),
     });
 
     const body = await response.json() as LeadResponse;

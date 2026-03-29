@@ -224,6 +224,20 @@ export async function getLead(leadId: string) {
   return data;
 }
 
+// --- Customer Timeline (GSI4: email-based cross-entity) ---
+
+export async function listByEmail(email: string, limit?: number, nextToken?: string) {
+  const args: Record<string, unknown> = { email };
+  if (limit) args.limit = limit;
+  if (nextToken) args.nextToken = nextToken;
+  if (typeof (client.queries as any).listByEmail !== 'function') {
+    throw new Error('listByEmail query not available. Please deploy the updated backend schema first.');
+  }
+  const { data, errors } = await client.queries.listByEmail(args as any, AUTH);
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data;
+}
+
 // --- Direct S3 Upload ---
 
 export async function uploadFileToS3(uploadUrl: string, file: File) {
