@@ -1,5 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { ContactFormContent } from './common/ContactFormContent';
+import { submitLead } from '../services/leadsService';
 
 interface Product {
   id: string;
@@ -32,20 +33,15 @@ export function ContactForm({ onClose, product, className = '', isModal = false 
     setError(null);
 
     try {
-      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...formData,
-          productName: product?.name
-        })
+      await submitLead({
+        type: 'contact',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        organization: formData.organization || undefined,
+        message: formData.message,
+        productName: product?.name,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
 
       setIsSuccess(true);
       setFormData({

@@ -8,6 +8,7 @@ import { OrderDetailPage } from '../pages/admin/OrderDetailPage';
 import { CreateOrderPage } from '../pages/admin/CreateOrderPage';
 import { RFQListPage } from '../pages/admin/RFQListPage';
 import { RFQDetailPage } from '../pages/admin/RFQDetailPage';
+import { LeadsListPage } from '../pages/admin/LeadsListPage';
 import { DashboardPage } from '../pages/admin/DashboardPage';
 import { AdminQuestionsPage } from '../pages/admin/AdminQuestionsPage';
 import { HomePage } from '../pages/HomePage';
@@ -112,6 +113,7 @@ export function AdminRoutes() {
         <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="rfqs" element={<RFQListPage />} />
         <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
+        <Route path="leads" element={<LeadsListPage />} />
       </Route>
     </Routes>
   );
