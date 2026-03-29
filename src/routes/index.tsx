@@ -9,6 +9,7 @@ import { CreateOrderPage } from '../pages/admin/CreateOrderPage';
 import { RFQListPage } from '../pages/admin/RFQListPage';
 import { RFQDetailPage } from '../pages/admin/RFQDetailPage';
 import { DashboardPage } from '../pages/admin/DashboardPage';
+import { AdminQuestionsPage } from '../pages/admin/AdminQuestionsPage';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { ProductsPage } from '../pages/ProductsPage';
@@ -104,6 +105,7 @@ export function AdminRoutes() {
         <Route path="insights" element={<AdminInsightsListPage />} />
         <Route path="insights/new" element={<AdminInsightsFormPage />} />
         <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
+        <Route path="questions" element={<AdminQuestionsPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
         <Route path="orders" element={<OrderListPage />} />
         <Route path="orders/new" element={<CreateOrderPage />} />
