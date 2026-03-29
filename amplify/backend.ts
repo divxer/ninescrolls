@@ -100,8 +100,9 @@ calculateTaxResource.addMethod('OPTIONS', new LambdaIntegration(backend.calculat
     proxy: true,
 }));
 
-// Create DynamoDB table for newsletter subscribers (used by submit-lead Lambda)
-const newsletterSubscribersTable = new Table(apiStack, 'NewsletterSubscribers', {
+// Create DynamoDB table for newsletter subscribers (in submit-lead stack to avoid circular deps)
+const submitLeadStack = Stack.of(backend.submitLead.resources.lambda);
+const newsletterSubscribersTable = new Table(submitLeadStack, 'NewsletterSubscribers', {
     partitionKey: { name: 'email', type: AttributeType.STRING },
     billingMode: BillingMode.PAY_PER_REQUEST,
 });
