@@ -6,6 +6,55 @@ interface ArticleQASectionProps {
   slug: string;
 }
 
+/** Floating "Ask a Question" button — visible while reading, hides near Q&A section */
+export function FloatingAskButton({ targetId }: { targetId: string }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const targetTop = target.getBoundingClientRect().top + scrollY;
+      // Show after scrolling 400px, hide when Q&A section is near viewport
+      setVisible(scrollY > 400 && scrollY < targetTop - window.innerHeight * 0.5);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [targetId]);
+
+  if (!visible) return null;
+
+  const scrollToQA = () => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Focus the question textarea after scroll
+    setTimeout(() => {
+      const textarea = target.querySelector<HTMLTextAreaElement>('#qa-question');
+      textarea?.focus();
+    }, 600);
+  };
+
+  return (
+    <button
+      onClick={scrollToQA}
+      className="fixed right-6 bottom-6 z-40 flex items-center gap-2 px-5 py-3 bg-primary text-on-primary rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm font-medium max-md:right-4 max-md:bottom-4 max-md:px-4 max-md:py-2.5"
+      aria-label="Ask a question about this article"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <circle cx="12" cy="15" r="0.5" fill="currentColor" />
+      </svg>
+      <span className="max-md:hidden">Ask a Question</span>
+    </button>
+  );
+}
+
 export function ArticleQASection({ slug }: ArticleQASectionProps) {
   const { questions, loading, refetch } = useArticleQuestions(slug);
   const [form, setForm] = useState({ name: '', email: '', question: '' });
@@ -88,7 +137,7 @@ export function ArticleQASection({ slug }: ArticleQASectionProps) {
   };
 
   return (
-    <section className="mt-10 pt-8 border-t border-outline-variant/20">
+    <section id="article-qa-section" className="mt-10 pt-8 border-t border-outline-variant/20">
       <h3 className="text-xl font-semibold mb-6 text-on-surface">Questions & Answers</h3>
 
       {/* Q&A List */}

@@ -8,7 +8,7 @@ import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
-import { ArticleQASection } from '../components/insights/ArticleQASection';
+import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import '../styles/article-content.css';
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
@@ -253,6 +253,7 @@ export const NewsPostPage: React.FC = () => {
           </div>
         </section>
       </div>
+      <FloatingAskButton targetId="article-qa-section" />
     </>
   );
 };

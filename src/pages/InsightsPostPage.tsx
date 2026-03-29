@@ -9,7 +9,7 @@ import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
-import { ArticleQASection } from '../components/insights/ArticleQASection';
+import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import '../styles/article-content.css';
 
 /**
@@ -336,6 +336,7 @@ export const InsightsPostPage: React.FC = () => {
           )}
         </section>
       </div>
+      <FloatingAskButton targetId="article-qa-section" />
     </>
   );
 };
