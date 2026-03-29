@@ -9,6 +9,7 @@ import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
+import { ArticleQASection } from '../components/insights/ArticleQASection';
 import '../styles/article-content.css';
 
 /**
@@ -322,6 +323,9 @@ export const InsightsPostPage: React.FC = () => {
                     <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-slate-500 text-white hover:-translate-y-0.5 hover:shadow-md transition-all">Email</button>
                   </div>
                 </div>
+
+                {/* Q&A Section */}
+                <ArticleQASection slug={post.slug} />
 
                 {/* Related Articles */}
                 {allPosts.length > 0 && <RelatedArticlesBottom post={post} allPosts={allPosts} />}

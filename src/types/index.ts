@@ -53,6 +53,25 @@ export interface InsightsPost {
   contentType?: ContentType;
 }
 
+// Q&A types
+export type QuestionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ArticleQuestion {
+  id: string;
+  articleSlug: string;
+  name: string;
+  question: string;
+  answer?: string;
+  status: QuestionStatus;
+  submittedAt: string;
+  answeredAt?: string;
+  answeredBy?: string;
+}
+
+export interface ArticleQuestionAdmin extends ArticleQuestion {
+  email: string;
+}
+
 export const insightCategories = [
   'All',
   'Materials Science',

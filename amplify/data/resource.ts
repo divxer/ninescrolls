@@ -83,6 +83,28 @@ const schema = a.schema({
     ])
     .secondaryIndexes((index) => [index('slug')]),
 
+  ArticleQuestion: a
+    .model({
+      id: a.id().required(),
+      articleSlug: a.string().required(),
+      name: a.string().required(),
+      email: a.string().required(),
+      question: a.string().required(),
+      answer: a.string(),
+      status: a.string().default('pending'), // pending | approved | rejected
+      submittedAt: a.string().required(),
+      answeredAt: a.string(),
+      answeredBy: a.string(),
+    })
+    .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.authenticated(),
+    ])
+    .secondaryIndexes((index) => [
+      index('articleSlug').sortKeys(['submittedAt']),
+      index('status').sortKeys(['submittedAt']),
+    ]),
+
   AnalyticsEvent: a
     .model({
       id: a.id().required(),
