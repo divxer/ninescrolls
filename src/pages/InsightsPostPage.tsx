@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
-import { useInsightsPost, useInsightsPosts } from '../hooks/useInsightsPosts';
+import { useInsightsPost, useInsightsPosts, useNewsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost, RelatedProduct } from '../types';
@@ -347,7 +347,39 @@ export default InsightsPostPage;
  * Standalone preview component reusing the real article layout.
  * Used by the admin edit form's Preview modal.
  */
+function PreviewNewsSidebar({ post }: { post: InsightsPost }) {
+  const { posts: allNewsPosts } = useNewsPosts();
+  const related = rankRelatedInsights(allNewsPosts, post, 4);
+  return (
+    <div>
+      {related.length > 0 && (
+        <div className="bg-white p-5 rounded-xl shadow-md mb-5">
+          <h3 className="text-base font-semibold text-on-surface mb-3">Related News</h3>
+          <div className="flex flex-col gap-2">
+            {related.map(rp => (
+              <a
+                key={rp.slug}
+                href={`/news/${rp.slug}`}
+                className="flex flex-col gap-1 p-2.5 px-3 bg-surface-container-lowest rounded-md border-l-[3px] border-teal-500 no-underline hover:bg-slate-100 transition-colors"
+                onClick={e => e.preventDefault()}
+              >
+                <span className="text-on-surface font-medium text-sm leading-snug">{rp.title}</span>
+                <time className="text-slate-400 text-xs" dateTime={rp.publishDate}>
+                  {new Date(rp.publishDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </time>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+      <TableOfContents />
+    </div>
+  );
+}
+
 export function InsightsPostPreview({ post }: { post: InsightsPost }) {
+  const isNews = post.contentType === 'news';
+
   return (
     <div className="min-h-screen bg-surface-container-lowest">
       <section className="hero-gradient relative py-20 text-white overflow-hidden">
@@ -396,7 +428,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
             )}
           </div>
 
-          <PostSidebar post={post} />
+          {isNews ? <PreviewNewsSidebar post={post} /> : <PostSidebar post={post} />}
         </div>
       </section>
     </div>
