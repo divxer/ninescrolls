@@ -8,6 +8,7 @@ import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
+import { ArticleQASection } from '../components/insights/ArticleQASection';
 import '../styles/article-content.css';
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
@@ -239,6 +240,9 @@ export const NewsPostPage: React.FC = () => {
                   <button className="px-4 py-1.5 border border-slate-300 rounded-md bg-white text-on-surface cursor-pointer text-sm hover:border-teal-500 hover:text-teal-500 transition-all">Email</button>
                 </div>
               </div>
+
+              {/* Q&A Section */}
+              <ArticleQASection slug={post.slug} />
             </div>
 
             {/* Sidebar: Related News (static) + TOC (sticky) */}

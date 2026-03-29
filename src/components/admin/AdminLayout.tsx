@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
   { path: '/admin/insights', label: 'Insights', icon: 'insights' },
+  { path: '/admin/questions', label: 'Q&A', icon: 'forum' },
   { path: '/admin/analytics', label: 'Analytics', icon: 'analytics' },
 ];
 
