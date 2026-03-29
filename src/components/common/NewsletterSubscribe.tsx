@@ -1,5 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
+import { submitLead } from '../../services/leadsService';
 
 interface NewsletterSubscribeProps {
   className?: string;
@@ -36,30 +37,15 @@ export function NewsletterSubscribe({ className = '', variant = 'footer' }: News
     setIsSubmitting(true);
 
     try {
-      // Call newsletter subscription API
-      const response = await fetch('https://api.ninescrolls.com/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          source: variant,
-          timestamp: new Date().toISOString()
-        })
+      const result = await submitLead({
+        type: 'newsletter',
+        email: email.trim(),
+        source: variant,
       });
 
-      // Handle 404 or 501 - API not implemented yet, use fallback
-      if (response.status === 404 || response.status === 501) {
-        console.warn('Newsletter API not implemented, using fallback to contact form');
-        // Fallback: redirect to contact page with newsletter topic
-        window.location.href = `/contact?topic=newsletter&email=${encodeURIComponent(email.trim())}`;
+      if (result.alreadySubscribed) {
+        setError('You are already subscribed to our newsletter.');
         return;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Subscription failed' }));
-        throw new Error(errorData.message || 'Failed to subscribe. Please try again.');
       }
 
       // Success
