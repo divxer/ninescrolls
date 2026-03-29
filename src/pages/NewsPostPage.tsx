@@ -253,7 +253,7 @@ export const NewsPostPage: React.FC = () => {
           </div>
         </section>
       </div>
-      <FloatingAskButton targetId="article-qa-section" />
+      <FloatingAskButton slug={post.slug} />
     </>
   );
 };

@@ -336,7 +336,7 @@ export const InsightsPostPage: React.FC = () => {
           )}
         </section>
       </div>
-      <FloatingAskButton targetId="article-qa-section" />
+      <FloatingAskButton slug={post.slug} />
     </>
   );
 };
