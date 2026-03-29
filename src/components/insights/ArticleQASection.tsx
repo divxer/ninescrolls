@@ -8,6 +8,7 @@ interface ArticleQASectionProps {
 
 /** Fixed sidebar "Ask" button + popup form modal */
 export function FloatingAskButton({ slug }: { slug: string }) {
+  const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', question: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,6 +19,24 @@ export function FloatingAskButton({ slug }: { slug: string }) {
   const widgetIdRef = useRef<string | null>(null);
 
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+
+  // Show after 400px scroll, hide when Q&A section is near viewport
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const qaSection = document.getElementById('article-qa-section');
+      if (!qaSection) {
+        setVisible(scrollY > 400);
+        return;
+      }
+      const qaSectionTop = qaSection.getBoundingClientRect().top + scrollY;
+      setVisible(scrollY > 400 && scrollY < qaSectionTop - window.innerHeight * 0.5);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Load Turnstile when modal opens
   useEffect(() => {
@@ -104,8 +123,8 @@ export function FloatingAskButton({ slug }: { slug: string }) {
 
   return (
     <>
-      {/* Fixed sidebar button */}
-      <button
+      {/* Fixed sidebar button — visible after 400px scroll, hides near Q&A section */}
+      {visible && <button
         onClick={() => setOpen(true)}
         className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 pl-3 pr-4 py-3 bg-primary text-on-primary rounded-l-full shadow-lg hover:shadow-xl hover:-translate-y-1/2 hover:pr-5 transition-all text-sm font-medium max-md:pl-2.5 max-md:pr-3 max-md:py-2.5"
         aria-label="Ask a question about this article"
@@ -116,7 +135,7 @@ export function FloatingAskButton({ slug }: { slug: string }) {
           <circle cx="12" cy="15" r="0.5" fill="currentColor" />
         </svg>
         <span className="max-md:hidden">Ask</span>
-      </button>
+      </button>}
 
       {/* Modal overlay + form */}
       {open && (
