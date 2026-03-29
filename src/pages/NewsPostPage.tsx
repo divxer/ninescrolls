@@ -246,7 +246,7 @@ export const NewsPostPage: React.FC = () => {
             </div>
 
             {/* Sidebar: Related News (static) + TOC (sticky) */}
-            <div className="max-lg:[&_.toc-nav]:hidden">
+            <div className="max-lg:[&_.toc-nav]:hidden self-start">
               <RelatedNewsSidebar post={post} allPosts={allNewsPosts} />
               <TableOfContents />
             </div>
