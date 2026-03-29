@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
+import { submitLead } from '../../services/leadsService';
 
 interface DownloadGateModalProps {
   isOpen: boolean;
@@ -95,6 +96,26 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
       return;
     }
     setSubmitting(true);
+
+    // Submit lead to backend (DynamoDB + HubSpot + email notification)
+    try {
+      await submitLead({
+        type: 'download_gate',
+        fullName: form.fullName,
+        email: form.email,
+        organization: form.organization,
+        researchAreas: form.researchAreas,
+        jobTitle: form.jobTitle || undefined,
+        intent: form.intent as 'Actively looking to buy' | 'Looking to buy within 1 year' | 'Investigating technologies for my application' | 'Expanding my knowledge',
+        fileName: fileName || undefined,
+        fileUrl: fileUrl || undefined,
+        marketingOptIn,
+        turnstileToken: token || undefined,
+      });
+    } catch (err) {
+      // Log but don't block the download — lead capture failure is non-critical
+      console.warn('Lead submission failed (non-blocking):', err);
+    }
 
     analytics.trackCustomEvent('Lead Captured', {
       source: 'Download Gate',

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ContactFormModalProps } from '../../types';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import { DownloadGateModal } from './DownloadGateModal';
+import { submitLead } from '../../services/leadsService';
 
 // Product name to PDF filename mapping
 const productToPdfMap: Record<string, string> = {
@@ -84,18 +85,16 @@ export function ContactFormModal({
     }
 
     try {
-      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formDataToSubmit)
+      await submitLead({
+        type: 'contact',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        organization: formData.organization || undefined,
+        message: formData.message,
+        productName,
+        inquiryType: isQuote ? 'budgetary' : 'general',
       });
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        throw new Error(`Failed to submit form: ${response.status} ${responseText}`);
-      }
       setIsSuccess(true);
       setIsSubmitting(false);
       onFormDataChange({
@@ -317,10 +316,10 @@ export function ContactFormModal({
                     className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base"
                     onClick={(e) => { e.preventDefault(); handleDatasheetDownload(); setGateOpen(true); }}
                   >
-                    <span className="icon-download"></span> Download Product Datasheet
+                    <span className="material-symbols-outlined text-base">download</span> Download Product Datasheet
                   </a>
                   <Link to="/products" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base">
-                    <span className="icon-browse"></span> Browse Other Products
+                    <span className="material-symbols-outlined text-base">search</span> Browse Other Products
                   </Link>
                 </div>
               </div>
