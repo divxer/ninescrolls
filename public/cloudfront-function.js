@@ -20,6 +20,22 @@ function handler(event) {
         };
     }
     
+    // Redirect /index.html to / (canonical homepage URL)
+    if (uri === '/index.html') {
+        return {
+            statusCode: 301,
+            statusDescription: 'Moved Permanently',
+            headers: {
+                'location': {
+                    value: '/'
+                },
+                'cache-control': {
+                    value: 'max-age=3600'
+                }
+            }
+        };
+    }
+
     // 检查是否是文件请求
     if (uri.includes('.')) {
         return request;
