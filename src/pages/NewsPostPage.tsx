@@ -92,7 +92,7 @@ export const NewsPostPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-container-lowest overflow-x-hidden">
+      <div className="min-h-screen bg-surface-container-lowest">
         <div className="max-w-[1200px] mx-auto px-5">
           <div className="loading">Loading...</div>
         </div>
@@ -102,7 +102,7 @@ export const NewsPostPage: React.FC = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-surface-container-lowest overflow-x-hidden">
+      <div className="min-h-screen bg-surface-container-lowest">
         <div className="max-w-[1200px] mx-auto px-5">
           <div className="error">Article not found</div>
         </div>
@@ -163,7 +163,7 @@ export const NewsPostPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-      <div className="min-h-screen bg-surface-container-lowest overflow-x-hidden">
+      <div className="min-h-screen bg-surface-container-lowest">
         {/* Breadcrumb */}
         <nav className="bg-slate-800 py-3" aria-label="Breadcrumb">
           <div className="max-w-[1200px] mx-auto px-5">
@@ -246,7 +246,7 @@ export const NewsPostPage: React.FC = () => {
             </div>
 
             {/* Sidebar: Related News (static) + TOC (sticky) */}
-            <div className="max-lg:[&_.toc-nav]:hidden self-start">
+            <div className="max-lg:[&_.toc-nav]:hidden">
               <RelatedNewsSidebar post={post} allPosts={allNewsPosts} />
               <TableOfContents />
             </div>
