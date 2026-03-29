@@ -362,10 +362,26 @@ const schema = a.schema({
     marketingOptIn: a.boolean(),
     source: a.string(),
     ipHash: a.string(),
+    visitorId: a.string(),
   }),
 
   LeadConnection: a.customType({
     items: a.ref('LeadSubmission').array().required(),
+    nextToken: a.string(),
+  }),
+
+  CustomerTimelineEntry: a.customType({
+    entityType: a.string().required(),
+    entityId: a.string().required(),
+    email: a.string().required(),
+    timestamp: a.string().required(),
+    summary: a.string().required(),
+    status: a.string(),
+    detail: a.string(),
+  }),
+
+  CustomerTimeline: a.customType({
+    items: a.ref('CustomerTimelineEntry').array().required(),
     nextToken: a.string(),
   }),
 
@@ -459,6 +475,17 @@ const schema = a.schema({
     .query()
     .arguments({ leadId: a.id().required() })
     .returns(a.ref('LeadSubmission'))
+    .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listByEmail: a
+    .query()
+    .arguments({
+      email: a.string().required(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('CustomerTimeline').required())
     .handler(a.handler.function(orderApi))
     .authorization((allow) => [allow.authenticated()]),
 

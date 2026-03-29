@@ -51,6 +51,7 @@ const contactSchema = z.object({
     inquiryType: z.string().max(50).optional(),
     topic: z.string().max(50).optional(),
     turnstileToken: z.string().optional(),
+    visitorId: z.string().max(100).optional(),
 });
 
 const downloadGateSchema = z.object({
@@ -65,12 +66,14 @@ const downloadGateSchema = z.object({
     fileUrl: z.string().max(1000).optional(),
     marketingOptIn: z.boolean().default(false),
     turnstileToken: z.string().optional(),
+    visitorId: z.string().max(100).optional(),
 });
 
 const newsletterSchema = z.object({
     type: z.literal('newsletter'),
     email: z.string().email().max(254),
     source: z.string().max(50).optional(),
+    visitorId: z.string().max(100).optional(),
 });
 
 const leadSchema = z.discriminatedUnion('type', [
@@ -235,16 +238,20 @@ async function pushToHubSpot(data: LeadInput, leadId: string): Promise<void> {
 async function storeLead(data: LeadInput, leadId: string, ipHash: string): Promise<void> {
     const submittedAt = new Date().toISOString();
 
+    const normalizedEmail = data.email.trim().toLowerCase();
     const item: Record<string, unknown> = {
         PK: `LEAD#${leadId}`,
         SK: 'META',
         GSI1PK: `LEAD_TYPE#${data.type}`,
         GSI1SK: `${submittedAt}#${leadId}`,
+        GSI4PK: `EMAIL#${normalizedEmail}`,
+        GSI4SK: `LEAD#${submittedAt}`,
         leadId,
         type: data.type,
         email: data.email,
         submittedAt,
         ipHash,
+        visitorId: data.visitorId,
         TTL: 0,
     };
 

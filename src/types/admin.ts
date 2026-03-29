@@ -163,6 +163,7 @@ export interface LeadSubmission {
   marketingOptIn?: boolean | null;
   source?: string | null;
   ipHash?: string | null;
+  visitorId?: string | null;
 }
 
 // --- Display Helpers ---
@@ -230,6 +231,30 @@ export const LEAD_TYPE_COLORS: Record<LeadType, string> = {
   contact: '#2563eb',
   download_gate: '#7c3aed',
   newsletter: '#059669',
+};
+
+// --- Customer Timeline (GSI4: cross-entity email aggregation) ---
+
+export interface CustomerTimelineEntry {
+  entityType: 'LEAD' | 'RFQ' | 'ORDER' | string;
+  entityId: string;
+  email: string;
+  timestamp: string;
+  summary: string;
+  status?: string | null;
+  detail?: string | null;
+}
+
+export const ENTITY_TYPE_COLORS: Record<string, string> = {
+  LEAD: '#2563eb',
+  RFQ: '#7c3aed',
+  ORDER: '#059669',
+};
+
+export const ENTITY_TYPE_ICONS: Record<string, string> = {
+  LEAD: 'contact_mail',
+  RFQ: 'request_quote',
+  ORDER: 'shopping_cart',
 };
 
 export const RFQ_STATUS_COLORS: Record<string, string> = {

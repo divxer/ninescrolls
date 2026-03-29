@@ -63,11 +63,14 @@ export async function convertRfqToOrder(event: AppSyncEvent) {
 
     // 2. Create ORDER entity (status: INQUIRY)
     const productModel = args.productModel || rfq.specificModel || rfq.equipmentCategory;
+    const normalizedEmail = (rfq.email as string).trim().toLowerCase();
     const orderItem: Record<string, unknown> = {
         PK: `ORDER#${orderId}`,
         SK: 'META',
         GSI1PK: 'ORDER_STATUS#INQUIRY',
         GSI1SK: `${now}#${orderId}`,
+        GSI4PK: `EMAIL#${normalizedEmail}`,
+        GSI4SK: `ORDER#${now}`,
         orderId,
         status: 'INQUIRY',
         institution: rfq.institution,

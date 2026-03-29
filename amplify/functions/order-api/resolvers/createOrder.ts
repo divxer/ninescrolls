@@ -47,11 +47,14 @@ export async function createOrder(event: AppSyncEvent) {
     const { sub: operatorId, email: operator } = getOperatorInfo(event);
 
     // Create ORDER entity
+    const normalizedEmail = input.primaryContact.contactEmail.trim().toLowerCase();
     const orderItem: Record<string, unknown> = {
         PK: `ORDER#${orderId}`,
         SK: 'META',
         GSI1PK: 'ORDER_STATUS#INQUIRY',
         GSI1SK: `${now}#${orderId}`,
+        GSI4PK: `EMAIL#${normalizedEmail}`,
+        GSI4SK: `ORDER#${now}`,
         orderId,
         status: 'INQUIRY',
         institution: input.institution,
