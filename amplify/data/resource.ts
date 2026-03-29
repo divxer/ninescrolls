@@ -364,6 +364,49 @@ const schema = a.schema({
     nextToken: a.string(),
   }),
 
+  LeadSubmission: a.customType({
+    leadId: a.id().required(),
+    type: a.string().required(),
+    email: a.string().required(),
+    submittedAt: a.datetime().required(),
+    name: a.string(),
+    phone: a.string(),
+    organization: a.string(),
+    message: a.string(),
+    productName: a.string(),
+    inquiryType: a.string(),
+    topic: a.string(),
+    researchAreas: a.string(),
+    jobTitle: a.string(),
+    intent: a.string(),
+    fileName: a.string(),
+    fileUrl: a.string(),
+    marketingOptIn: a.boolean(),
+    source: a.string(),
+    ipHash: a.string(),
+    visitorId: a.string(),
+  }),
+
+  LeadConnection: a.customType({
+    items: a.ref('LeadSubmission').array().required(),
+    nextToken: a.string(),
+  }),
+
+  CustomerTimelineEntry: a.customType({
+    entityType: a.string().required(),
+    entityId: a.string().required(),
+    email: a.string().required(),
+    timestamp: a.string().required(),
+    summary: a.string().required(),
+    status: a.string(),
+    detail: a.string(),
+  }),
+
+  CustomerTimeline: a.customType({
+    items: a.ref('CustomerTimelineEntry').array().required(),
+    nextToken: a.string(),
+  }),
+
   // =========================================================================
   // Queries — §12.4
   // =========================================================================
@@ -436,6 +479,35 @@ const schema = a.schema({
     .query()
     .arguments({ rfqId: a.id().required() })
     .returns(a.ref('RfqSubmission'))
+    .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listLeads: a
+    .query()
+    .arguments({
+      type: a.string(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('LeadConnection').required())
+    .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getLead: a
+    .query()
+    .arguments({ leadId: a.id().required() })
+    .returns(a.ref('LeadSubmission'))
+    .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listByEmail: a
+    .query()
+    .arguments({
+      email: a.string().required(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('CustomerTimeline').required())
     .handler(a.handler.function(orderApi))
     .authorization((allow) => [allow.authenticated()]),
 

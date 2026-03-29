@@ -607,11 +607,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         const matchedOrgId = await matchOrg(emailDomain, data.institution);
 
         // 6. Create RFQ_SUBMISSION entity in DynamoDB — §12.10.4
+        const normalizedEmail = data.email.trim().toLowerCase();
         const item: Record<string, unknown> = {
             PK: `RFQ#${rfqId}`,
             SK: 'META',
             GSI1PK: 'RFQ_STATUS#pending',
             GSI1SK: `${submittedAt}#${rfqId}`,
+            GSI4PK: `EMAIL#${normalizedEmail}`,
+            GSI4SK: `RFQ#${submittedAt}`,
             rfqId,
             referenceNumber,
             status: 'pending',

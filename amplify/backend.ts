@@ -1,11 +1,9 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { sendEmail } from './functions/send-email/resource';
 import { createCheckoutSession } from './functions/create-checkout-session/resource';
 import { stripeWebhook } from './functions/stripe-webhook/resource';
 import { calculateTax } from './functions/calculate-tax/resource';
-import { subscribeNewsletter } from './functions/subscribe-newsletter/resource';
 import { ipLookup } from './functions/ip-lookup/resource';
 import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
@@ -17,6 +15,7 @@ import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
+import { submitLead } from './functions/submit-lead/resource';
 import { submitQuestion } from './functions/submit-question/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
@@ -40,11 +39,9 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 const backend = defineBackend({
     auth,
     data,
-    sendEmail,
     createCheckoutSession,
     stripeWebhook,
     calculateTax,
-    subscribeNewsletter,
     ipLookup,
     serverTrack,
     classifyOrg,
@@ -56,6 +53,7 @@ const backend = defineBackend({
     orderApi,
     optimizeInsightsImage,
     generateSitemaps,
+    submitLead,
     submitQuestion,
 });
 
@@ -75,20 +73,6 @@ const restApi = new RestApi(apiStack, 'RestApi', {
         stageName: STAGE_NAME,
     },
 });
-
-// Create the /sendEmail resource
-const sendEmailResource = restApi.root.addResource('sendEmail');
-
-// Add POST method to /sendEmail - Use Lambda Proxy Integration (proxy: true)
-// This ensures CORS headers from Lambda are properly returned
-sendEmailResource.addMethod('POST', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: true,
-}));
-
-// Add OPTIONS method for CORS preflight - handled by Lambda function
-sendEmailResource.addMethod('OPTIONS', new LambdaIntegration(backend.sendEmail.resources.lambda, {
-    proxy: true,
-}));
 
 // Create /checkout/session resource for Stripe Checkout
 const checkoutResource = restApi.root.addResource('checkout');
@@ -118,28 +102,12 @@ calculateTaxResource.addMethod('OPTIONS', new LambdaIntegration(backend.calculat
     proxy: true,
 }));
 
-// Create /subscribe resource for newsletter subscription
-const subscribeResource = restApi.root.addResource('subscribe');
-
-// Add POST method for newsletter subscription
-subscribeResource.addMethod('POST', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
-    proxy: true,
-}));
-
-// Add OPTIONS method for CORS preflight
-subscribeResource.addMethod('OPTIONS', new LambdaIntegration(backend.subscribeNewsletter.resources.lambda, {
-    proxy: true,
-}));
-
-// Create DynamoDB table for newsletter subscribers
-const subscribeFunctionStack = Stack.of(backend.subscribeNewsletter.resources.lambda);
-const newsletterSubscribersTable = new Table(subscribeFunctionStack, 'NewsletterSubscribers', {
+// Create DynamoDB table for newsletter subscribers (in submit-lead stack to avoid circular deps)
+const submitLeadStack = Stack.of(backend.submitLead.resources.lambda);
+const newsletterSubscribersTable = new Table(submitLeadStack, 'NewsletterSubscribers', {
     partitionKey: { name: 'email', type: AttributeType.STRING },
     billingMode: BillingMode.PAY_PER_REQUEST,
 });
-
-newsletterSubscribersTable.grantReadWriteData(backend.subscribeNewsletter.resources.lambda);
-backend.subscribeNewsletter.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
 // Create /geo resource for server-side IP geolocation and target customer analysis
 // Moves IP lookups from frontend (CORS issues, rate limits) to Lambda (no restrictions)
@@ -341,6 +309,14 @@ const documentUploadIntegration = new LambdaIntegration(backend.documentUpload.r
 documentsResource.addMethod('POST', documentUploadIntegration);
 documentsResource.addMethod('OPTIONS', documentUploadIntegration);
 
+// Create /api/leads resource for unified lead submissions
+const leadsResource = apiResource.addResource('leads');
+const submitLeadIntegration = new LambdaIntegration(backend.submitLead.resources.lambda, {
+    proxy: true,
+});
+leadsResource.addMethod('POST', submitLeadIntegration);
+leadsResource.addMethod('OPTIONS', submitLeadIntegration);
+
 // Create /api/questions resource for article Q&A submissions
 const questionsResource = apiResource.addResource('questions');
 const submitQuestionIntegration = new LambdaIntegration(backend.submitQuestion.resources.lambda, {
@@ -398,6 +374,17 @@ intelligenceTable.addGlobalSecondaryIndex({
     indexName: 'GSI3',
     partitionKey: { name: 'GSI3PK', type: AttributeType.STRING },
     sortKey: { name: 'GSI3SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
+// GSI4: Email-based customer timeline (cross-entity aggregation)
+// - LEAD:  GSI4PK=EMAIL#<normalized_email>, GSI4SK=LEAD#<submittedAt>
+// - RFQ:   GSI4PK=EMAIL#<normalized_email>, GSI4SK=RFQ#<submittedAt>
+// - ORDER: GSI4PK=EMAIL#<normalized_email>, GSI4SK=ORDER#<createdAt>
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI4',
+    partitionKey: { name: 'GSI4PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI4SK', type: AttributeType.STRING },
     projectionType: ProjectionType.ALL,
 });
 
@@ -465,6 +452,12 @@ intelligenceTable.grantReadWriteData(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 orderDocumentsBucket.grantReadWrite(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant submit-lead Lambda access to Intelligence table + Newsletter table
+intelligenceTable.grantReadWriteData(backend.submitLead.resources.lambda);
+backend.submitLead.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+newsletterSubscribersTable.grantReadWriteData(backend.submitLead.resources.lambda);
+backend.submitLead.addEnvironment('NEWSLETTER_SUBSCRIBERS_TABLE', newsletterSubscribersTable.tableName);
 
 // =============================================================================
 // S3 Bucket: Insights article image assets

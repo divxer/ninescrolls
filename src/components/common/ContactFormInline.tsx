@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ContactFormContent } from './ContactFormContent';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../../services/behaviorAnalytics';
+import { submitLead } from '../../services/leadsService';
 
 interface ContactFormInlineProps {
   className?: string;
@@ -135,22 +136,17 @@ export function ContactFormInline({ className = '', topic, inquiryType, onInquir
 
     try {
       const { website: _honeypot, ...submitData } = formData;
-      const response = await fetch('https://api.ninescrolls.com/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...submitData,
-          productName: 'General Inquiry',
-          topic: topic || 'general',
-          inquiryType: inquiryType || 'general',
-        })
+      await submitLead({
+        type: 'contact',
+        name: submitData.name,
+        email: submitData.email,
+        phone: submitData.phone || undefined,
+        organization: submitData.organization || undefined,
+        message: submitData.message,
+        productName: 'General Inquiry',
+        topic: topic || 'general',
+        inquiryType: inquiryType || 'general',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
 
       setIsSuccess(true);
       behaviorAnalytics.trackFormCompleted('contact');
