@@ -622,6 +622,24 @@ async function writePageView(
         ConditionExpression: 'attribute_not_exists(id)',
     }));
 
+    // ── Notify AppSync (fire-and-forget, non-blocking) ─────────────────
+    notifyAppSync({
+        id: `pv-${pageViewId}`,
+        eventType: props.eventType,
+        timestamp: (props.timestamp as string) || now,
+        pathname: props.pathname || null,
+        pageTitle: props.pageTitle || null,
+        orgName: mergedOrgName || null,
+        organizationType: mergedOrgType || null,
+        isTargetCustomer: false,
+        leadTier: null,
+        country: mergedCountry || null,
+        region: mergedRegion || null,
+        city: mergedCity || null,
+        visitorId: props.visitorId || null,
+        isBot: props.isBot === true,
+    });
+
     // ── Phase 3: AI classification (if org type warrants it) ────────────
     // Runs after DDB write — even if AI fails, the record already exists.
     let finalAiResult: AIClassifyResult | null = null;
@@ -689,6 +707,24 @@ async function writePageView(
                     ConditionExpression: 'attribute_exists(id)',
                 }));
                 console.info(`[PVS] AI enrichment complete: pvid=${pageViewId} type=${aiResult.organizationType} target=${finalIsTargetCustomer} provider=${aiResult.provider}`);
+
+                // Send enriched notification with AI results
+                notifyAppSync({
+                    id: `pv-${pageViewId}`,
+                    eventType: props.eventType,
+                    timestamp: (props.timestamp as string) || now,
+                    pathname: props.pathname || null,
+                    pageTitle: props.pageTitle || null,
+                    orgName: mergedOrgName || null,
+                    organizationType: aiResult.organizationType,
+                    isTargetCustomer: finalIsTargetCustomer,
+                    leadTier: finalLeadTier ?? null,
+                    country: mergedCountry || null,
+                    region: mergedRegion || null,
+                    city: mergedCity || null,
+                    visitorId: props.visitorId || null,
+                    isBot: props.isBot === true,
+                });
             }
         } catch (err) {
             console.error('[PVS] AI classification/enrichment failed (DDB record intact):', err);
@@ -696,6 +732,47 @@ async function writePageView(
     }
 
     return { ipData, aiResult: finalAiResult, isTargetCustomer: finalIsTargetCustomer, leadTier: finalLeadTier };
+}
+
+// ─── Real-time notification via AppSync subscription ────────────────────────
+
+const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
+const GRAPHQL_API_KEY = process.env.GRAPHQL_API_KEY;
+
+const PUBLISH_MUTATION = /* GraphQL */ `
+  mutation PublishAnalyticsEvent(
+    $id: String!, $eventType: String!, $timestamp: AWSDateTime!,
+    $pathname: String, $pageTitle: String, $orgName: String,
+    $organizationType: String, $isTargetCustomer: Boolean,
+    $leadTier: String, $country: String, $region: String,
+    $city: String, $visitorId: String, $isBot: Boolean
+  ) {
+    publishAnalyticsEvent(
+      id: $id, eventType: $eventType, timestamp: $timestamp,
+      pathname: $pathname, pageTitle: $pageTitle, orgName: $orgName,
+      organizationType: $organizationType, isTargetCustomer: $isTargetCustomer,
+      leadTier: $leadTier, country: $country, region: $region,
+      city: $city, visitorId: $visitorId, isBot: $isBot
+    ) {
+      id eventType timestamp pathname pageTitle orgName
+      organizationType isTargetCustomer leadTier country region city visitorId isBot
+    }
+  }
+`;
+
+/** Fire-and-forget notification to AppSync so admin dashboard receives live updates. */
+function notifyAppSync(vars: Record<string, unknown>): void {
+    if (!GRAPHQL_ENDPOINT || !GRAPHQL_API_KEY) return;
+    fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': GRAPHQL_API_KEY,
+        },
+        body: JSON.stringify({ query: PUBLISH_MUTATION, variables: vars }),
+    }).catch((err) => {
+        console.warn('[AppSync] notification failed:', err);
+    });
 }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
