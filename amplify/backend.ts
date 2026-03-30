@@ -153,9 +153,9 @@ backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
 
 // Pass GraphQL endpoint + API key so server-track can call publishAnalyticsEvent mutation
 // (triggers onAnalyticsEvent subscription for real-time admin dashboard)
-const graphqlApi = backend.data.resources.graphqlApi;
+const graphqlApi = backend.data.resources.graphqlApi as unknown as { graphqlUrl: string };
 backend.serverTrack.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
-backend.serverTrack.addEnvironment('GRAPHQL_API_KEY', backend.data.apiKey);
+backend.serverTrack.addEnvironment('GRAPHQL_API_KEY', backend.data.apiKey ?? '');
 
 // Grant server-track Lambda permission to invoke classify-org Lambda
 // (server-side IP lookup + AI classification pipeline)
