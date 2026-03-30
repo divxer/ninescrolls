@@ -157,7 +157,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
           setUseCustomUrl(true);
           setImageUploadState('done');
           const url = initialData.imageUrl;
-          setImagePreviewUrl(url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') ? url : `${url}-lg.webp`);
+          setImagePreviewUrl(url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') ? url : url.endsWith('-lg') ? `${url}.webp` : `${url}-lg.webp`);
         } else {
           setImageUploadState('done');
           setImagePreviewUrl(initialData.imageUrl);
