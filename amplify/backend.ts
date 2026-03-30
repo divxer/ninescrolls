@@ -151,6 +151,12 @@ backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.
 // Feature flag: set to 'false' to disable ALL DDB writes (page_view, page_time_flush, ai_enrichment)
 backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
 
+// Pass GraphQL endpoint + API key so server-track can call publishAnalyticsEvent mutation
+// (triggers onAnalyticsEvent subscription for real-time admin dashboard)
+const graphqlApi = backend.data.resources.graphqlApi;
+backend.serverTrack.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
+backend.serverTrack.addEnvironment('GRAPHQL_API_KEY', backend.data.apiKey);
+
 // Grant server-track Lambda permission to invoke classify-org Lambda
 // (server-side IP lookup + AI classification pipeline)
 backend.serverTrack.resources.lambda.addToRolePolicy(new PolicyStatement({
