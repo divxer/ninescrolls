@@ -714,6 +714,59 @@ const schema = a.schema({
     .for(a.ref('updateOrderStatus'))
     .handler(a.handler.function(orderApi))
     .authorization((allow) => [allow.authenticated()]),
+
+  // =========================================================================
+  // Real-time Analytics — Live event notifications via AppSync Subscriptions
+  // =========================================================================
+
+  // Lightweight notification type (subset of AnalyticsEvent)
+  AnalyticsEventNotification: a.customType({
+    id: a.string(),
+    eventType: a.string(),
+    timestamp: a.datetime(),
+    pathname: a.string(),
+    pageTitle: a.string(),
+    orgName: a.string(),
+    organizationType: a.string(),
+    isTargetCustomer: a.boolean(),
+    leadTier: a.string(),
+    country: a.string(),
+    region: a.string(),
+    city: a.string(),
+    visitorId: a.string(),
+    isBot: a.boolean(),
+  }),
+
+  // Mutation called by server-track Lambda after DDB write.
+  // Uses NONE data source (pass-through) — no data write, just triggers subscription.
+  publishAnalyticsEvent: a
+    .mutation()
+    .arguments({
+      id: a.string().required(),
+      eventType: a.string().required(),
+      timestamp: a.datetime().required(),
+      pathname: a.string(),
+      pageTitle: a.string(),
+      orgName: a.string(),
+      organizationType: a.string(),
+      isTargetCustomer: a.boolean(),
+      leadTier: a.string(),
+      country: a.string(),
+      region: a.string(),
+      city: a.string(),
+      visitorId: a.string(),
+      isBot: a.boolean(),
+    })
+    .returns(a.ref('AnalyticsEventNotification'))
+    .handler(a.handler.custom({ entry: './resolvers/publish-analytics.js' }))
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  // Subscription — fires when publishAnalyticsEvent mutation is called.
+  // Admin-only (authenticated via Cognito user pool).
+  onAnalyticsEvent: a
+    .subscription()
+    .for(a.ref('publishAnalyticsEvent'))
+    .authorization((allow) => [allow.authenticated()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

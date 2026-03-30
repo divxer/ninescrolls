@@ -2353,8 +2353,9 @@ export function AdminAnalyticsPage() {
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
+  const [liveMode, setLiveMode] = useState(false);
+  const [liveNewCount, setLiveNewCount] = useState(0); // new events since live mode started
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
   const [keywordSectionOpen, setKeywordSectionOpen] = useState(false);
@@ -2536,39 +2537,149 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // Auto-refresh every 5 min with countdown — pauses when page is hidden
-  // (e.g. screen lock, tab switch) to avoid auth failures on expired sessions
-  const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
-  const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL);
+  // ── Live Mode: AppSync Subscription + incremental polling fallback ────
+  // Primary: subscribes to onAnalyticsEvent (fires when server-track Lambda
+  // calls publishAnalyticsEvent mutation after DDB write).
+  // Fallback: incremental polling every 30s catches events the subscription
+  // misses (e.g. before backend deployment, connection drops).
+  // Handles sleep/wake: reconnects subscription + immediate poll on visibility restore.
   useEffect(() => {
-    if (!autoRefresh) { setRefreshCountdown(AUTO_REFRESH_INTERVAL); return; }
-    setRefreshCountdown(AUTO_REFRESH_INTERVAL);
-    let paused = false;
-    const timer = setInterval(() => {
-      if (paused || document.hidden) return;
-      setRefreshCountdown((prev) => {
-        if (prev <= 1) {
-          setRefreshKey((k) => k + 1);
-          return AUTO_REFRESH_INTERVAL;
-        }
-        return prev - 1;
+    if (!liveMode) {
+      setLiveNewCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+    let subscriptionAvailable = false;
+
+    const EVENT_TYPES = [
+      'page_view', 'page_time_flush', 'product_view', 'pdf_download',
+      'contact_form', 'target_customer', 'search', 'add_to_cart',
+      'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
+    ];
+
+    const lastPollRef = { current: new Date().toISOString() };
+
+    // Handler for incoming subscription events
+    const handleSubscriptionEvent = (event: { data: { id: string; eventType: string; timestamp: string } }) => {
+      if (cancelled) return;
+      const notification = event.data;
+      if (!notification?.id) return;
+
+      (client.models.AnalyticsEvent as any).get(
+        { id: notification.id },
+        { authMode: 'userPool' },
+      ).then((result: { data: AnalyticsEvent | null }) => {
+        if (cancelled || !result.data) return;
+        const fullEvent = result.data;
+
+        setAllEvents((prev) => {
+          const existingIdx = prev.findIndex((e) => e.id === fullEvent.id);
+          if (existingIdx >= 0) {
+            const updated = [...prev];
+            updated[existingIdx] = fullEvent;
+            return updated;
+          }
+          setLiveNewCount((c) => c + 1);
+          return [...prev, fullEvent];
+        });
+      }).catch((err: unknown) => {
+        console.warn('[Live] failed to fetch full event:', err);
       });
-    }, 1000);
-    // Pause countdown while page is hidden; reset countdown on return
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        paused = true;
-      } else {
-        paused = false;
-        setRefreshCountdown(AUTO_REFRESH_INTERVAL);
+    };
+
+    // Connect (or reconnect) AppSync subscription
+    function connectSubscription(): void {
+      subscription?.unsubscribe();
+      subscription = null;
+      try {
+        const subscriptions = (client as any).subscriptions;
+        if (!subscriptions?.onAnalyticsEvent) {
+          console.info('[Live] Subscription not available yet, using polling only');
+          return;
+        }
+        subscription = subscriptions.onAnalyticsEvent({
+          authMode: 'userPool',
+        }).subscribe({
+          next: handleSubscriptionEvent,
+          error: (err: unknown) => {
+            console.warn('[Live] subscription error:', err);
+            subscription = null;
+          },
+        });
+        subscriptionAvailable = true;
+        console.info('[Live] AppSync subscription connected');
+      } catch (err) {
+        console.warn('[Live] Failed to set up subscription, using polling only:', err);
       }
+    }
+
+    connectSubscription();
+
+    // Incremental poll — fetches events since last poll
+    async function pollNewEvents(): Promise<void> {
+      if (cancelled) return;
+      const since = lastPollRef.current;
+      const now = new Date().toISOString();
+      lastPollRef.current = now;
+
+      try {
+        const perType = await Promise.all(
+          EVENT_TYPES.map(async (eventType) => {
+            const result = await (client.models.AnalyticsEvent as any)
+              .listAnalyticsEventByEventTypeAndTimestamp(
+                { eventType, timestamp: { between: [since, now] } },
+                { authMode: 'userPool', limit: 200 },
+              );
+            return ((result.data || []) as AnalyticsEvent[]);
+          }),
+        );
+        if (cancelled) return;
+        const newEvents = perType.flat();
+        if (newEvents.length > 0) {
+          setAllEvents((prev) => {
+            const existingIds = new Set(prev.map((e) => e.id));
+            const unique = newEvents.filter((e) => !existingIds.has(e.id));
+            if (unique.length === 0) return prev;
+            setLiveNewCount((c) => c + unique.length);
+            return [...prev, ...unique];
+          });
+        }
+      } catch (err) {
+        console.warn('[Live] poll failed:', err);
+      }
+    }
+
+    // Regular polling interval
+    const POLL_INTERVAL = subscriptionAvailable ? 30_000 : 15_000;
+    const timer = setInterval(() => {
+      if (cancelled || document.hidden) return;
+      pollNewEvents();
+    }, POLL_INTERVAL);
+
+    // Reconnect subscription + immediate poll when returning from sleep/hidden
+    const onVisibilityChange = () => {
+      if (cancelled || document.hidden) return;
+      console.info('[Live] tab visible — reconnecting subscription + polling missed events');
+      connectSubscription();
+      pollNewEvents();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
       clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [autoRefresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveMode]);
+
+  // Reset live new-event counter when date range changes or full refresh happens
+  useEffect(() => {
+    setLiveNewCount(0);
+  }, [dateRange, customStart, customEnd, refreshKey]);
 
   // Own visitorId for self-exclusion
   const selfVisitorId = useMemo(() => {
@@ -2965,14 +3076,17 @@ export function AdminAnalyticsPage() {
               title="Custom date range"
             >calendar_today</button>
           </div>
-          {/* Auto-refresh toggle + countdown */}
+          {/* Live mode toggle */}
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Auto Refresh</span>
-            <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="toggle-switch" />
+            {liveMode && <span className="live-dot" />}
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${liveMode ? 'text-error' : 'text-on-surface-variant'}`}>
+              Live
+            </span>
+            <input type="checkbox" checked={liveMode} onChange={(e) => setLiveMode(e.target.checked)} className="toggle-switch" />
           </label>
-          {autoRefresh && (
-            <span className="text-[10px] font-medium text-on-surface-variant tabular-nums">
-              Next refresh in: {String(Math.floor(refreshCountdown / 60)).padStart(2, '0')}:{String(refreshCountdown % 60).padStart(2, '0')}
+          {liveMode && liveNewCount > 0 && (
+            <span className="text-[10px] font-bold text-error tabular-nums animate-pulse">
+              +{liveNewCount} new
             </span>
           )}
           <button
