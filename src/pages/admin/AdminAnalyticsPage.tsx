@@ -2550,6 +2550,7 @@ export function AdminAnalyticsPage() {
 
     let cancelled = false;
     let subscription: { unsubscribe: () => void } | null = null;
+    let hiddenSince: string | null = null; // ISO timestamp when tab went hidden
 
     // Handler for incoming subscription events
     const handleSubscriptionEvent = (event: { data: { id: string; eventType: string; timestamp: string } }) => {
@@ -2579,6 +2580,45 @@ export function AdminAnalyticsPage() {
       });
     };
 
+    // Fetch events since a given timestamp and merge into state (incremental catch-up)
+    async function fetchEventsSince(sinceISO: string): Promise<void> {
+      const EVENT_TYPES = [
+        'page_view', 'page_time_flush', 'product_view', 'pdf_download',
+        'contact_form', 'target_customer', 'search', 'add_to_cart',
+        'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
+      ];
+      const nowISO = new Date().toISOString();
+
+      const perType = await Promise.all(EVENT_TYPES.map(async (eventType) => {
+        const results: AnalyticsEvent[] = [];
+        let nextToken: string | undefined;
+        do {
+          if (cancelled) return results;
+          const result = await (client.models.AnalyticsEvent as any)
+            .listAnalyticsEventByEventTypeAndTimestamp(
+              { eventType, timestamp: { between: [sinceISO, nowISO] } },
+              { authMode: 'userPool', limit: 500, nextToken },
+            );
+          results.push(...((result.data || []) as AnalyticsEvent[]));
+          nextToken = result.nextToken || undefined;
+        } while (nextToken);
+        return results;
+      }));
+
+      if (cancelled) return;
+      const fetched = perType.flat();
+      if (fetched.length === 0) return;
+
+      setAllEvents((prev) => {
+        const existingIds = new Set(prev.map((e) => e.id));
+        const newEvents = fetched.filter((e) => !existingIds.has(e.id));
+        if (newEvents.length === 0) return prev;
+        setLiveNewCount((c) => c + newEvents.length);
+        return [...prev, ...newEvents];
+      });
+      console.info(`[Live] caught up ${fetched.length} events since tab was hidden`);
+    }
+
     // Connect (or reconnect) AppSync subscription
     function connectSubscription(): void {
       subscription?.unsubscribe();
@@ -2606,11 +2646,21 @@ export function AdminAnalyticsPage() {
 
     connectSubscription();
 
-    // Reconnect subscription when returning from sleep/hidden
+    // Reconnect subscription + incremental catch-up when returning from sleep/hidden
     const onVisibilityChange = () => {
-      if (cancelled || document.hidden) return;
+      if (cancelled) return;
+      if (document.hidden) {
+        hiddenSince = new Date().toISOString();
+        return;
+      }
       console.info('[Live] tab visible — reconnecting subscription');
       connectSubscription();
+      // Incremental fetch: only query events since tab went hidden
+      if (hiddenSince) {
+        const since = hiddenSince;
+        hiddenSince = null;
+        fetchEventsSince(since);
+      }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
 
