@@ -2537,12 +2537,11 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // ── Live Mode: AppSync Subscription + incremental polling fallback ────
-  // Primary: subscribes to onAnalyticsEvent (fires when server-track Lambda
-  // calls publishAnalyticsEvent mutation after DDB write).
-  // Fallback: incremental polling every 30s catches events the subscription
-  // misses (e.g. before backend deployment, connection drops).
-  // Handles sleep/wake: reconnects subscription + immediate poll on visibility restore.
+  // ── Live Mode: AppSync Subscription (no polling) ────
+  // Subscribes to onAnalyticsEvent (fires when server-track Lambda calls
+  // publishAnalyticsEvent mutation after DDB write).
+  // Reconnects on sleep/wake via visibilitychange. Manual Refresh button
+  // covers any edge cases where subscription silently drops.
   useEffect(() => {
     if (!liveMode) {
       setLiveNewCount(0);
@@ -2551,15 +2550,6 @@ export function AdminAnalyticsPage() {
 
     let cancelled = false;
     let subscription: { unsubscribe: () => void } | null = null;
-    let subscriptionAvailable = false;
-
-    const EVENT_TYPES = [
-      'page_view', 'page_time_flush', 'product_view', 'pdf_download',
-      'contact_form', 'target_customer', 'search', 'add_to_cart',
-      'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
-    ];
-
-    const lastPollRef = { current: new Date().toISOString() };
 
     // Handler for incoming subscription events
     const handleSubscriptionEvent = (event: { data: { id: string; eventType: string; timestamp: string } }) => {
@@ -2596,7 +2586,7 @@ export function AdminAnalyticsPage() {
       try {
         const subscriptions = (client as any).subscriptions;
         if (!subscriptions?.onAnalyticsEvent) {
-          console.info('[Live] Subscription not available yet, using polling only');
+          console.info('[Live] Subscription not available yet — use Refresh button to update');
           return;
         }
         subscription = subscriptions.onAnalyticsEvent({
@@ -2608,69 +2598,25 @@ export function AdminAnalyticsPage() {
             subscription = null;
           },
         });
-        subscriptionAvailable = true;
         console.info('[Live] AppSync subscription connected');
       } catch (err) {
-        console.warn('[Live] Failed to set up subscription, using polling only:', err);
+        console.warn('[Live] Failed to set up subscription:', err);
       }
     }
 
     connectSubscription();
 
-    // Incremental poll — fetches events since last poll
-    async function pollNewEvents(): Promise<void> {
-      if (cancelled) return;
-      const since = lastPollRef.current;
-      const now = new Date().toISOString();
-      lastPollRef.current = now;
-
-      try {
-        const perType = await Promise.all(
-          EVENT_TYPES.map(async (eventType) => {
-            const result = await (client.models.AnalyticsEvent as any)
-              .listAnalyticsEventByEventTypeAndTimestamp(
-                { eventType, timestamp: { between: [since, now] } },
-                { authMode: 'userPool', limit: 200 },
-              );
-            return ((result.data || []) as AnalyticsEvent[]);
-          }),
-        );
-        if (cancelled) return;
-        const newEvents = perType.flat();
-        if (newEvents.length > 0) {
-          setAllEvents((prev) => {
-            const existingIds = new Set(prev.map((e) => e.id));
-            const unique = newEvents.filter((e) => !existingIds.has(e.id));
-            if (unique.length === 0) return prev;
-            setLiveNewCount((c) => c + unique.length);
-            return [...prev, ...unique];
-          });
-        }
-      } catch (err) {
-        console.warn('[Live] poll failed:', err);
-      }
-    }
-
-    // Regular polling interval
-    const POLL_INTERVAL = subscriptionAvailable ? 30_000 : 15_000;
-    const timer = setInterval(() => {
-      if (cancelled || document.hidden) return;
-      pollNewEvents();
-    }, POLL_INTERVAL);
-
-    // Reconnect subscription + immediate poll when returning from sleep/hidden
+    // Reconnect subscription when returning from sleep/hidden
     const onVisibilityChange = () => {
       if (cancelled || document.hidden) return;
-      console.info('[Live] tab visible — reconnecting subscription + polling missed events');
+      console.info('[Live] tab visible — reconnecting subscription');
       connectSubscription();
-      pollNewEvents();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       cancelled = true;
       subscription?.unsubscribe();
-      clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
