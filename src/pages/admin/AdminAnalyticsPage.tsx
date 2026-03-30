@@ -2354,7 +2354,7 @@ export function AdminAnalyticsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false); // soft refresh indicator
-  const [liveMode, setLiveMode] = useState(false);
+  const [liveMode, setLiveMode] = useState(true);
   const [liveNewCount, setLiveNewCount] = useState(0); // new events since live mode started
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
