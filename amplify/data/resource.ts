@@ -766,6 +766,7 @@ const schema = a.schema({
   onAnalyticsEvent: a
     .subscription()
     .for(a.ref('publishAnalyticsEvent'))
+    .handler(a.handler.custom({ entry: './resolvers/publish-analytics.js' }))
     .authorization((allow) => [allow.authenticated()]),
 });
 
