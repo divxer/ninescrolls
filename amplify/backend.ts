@@ -25,7 +25,6 @@ import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cd
 import { Duration } from 'aws-cdk-lib';
 import { LayerVersion, Code, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
-import { GraphqlApi } from 'aws-cdk-lib/aws-appsync';
 import type { ILocalBundling } from 'aws-cdk-lib';
 import { execSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -154,8 +153,8 @@ backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
 
 // Pass GraphQL endpoint + API key so server-track can call publishAnalyticsEvent mutation
 // (triggers onAnalyticsEvent subscription for real-time admin dashboard)
-const graphqlApi = backend.data.resources.graphqlApi as unknown as GraphqlApi;
-backend.serverTrack.addEnvironment('GRAPHQL_ENDPOINT', graphqlApi.graphqlUrl);
+const cfnGraphqlApi = backend.data.resources.cfnResources.cfnGraphqlApi;
+backend.serverTrack.addEnvironment('GRAPHQL_ENDPOINT', cfnGraphqlApi.attrGraphQlUrl);
 backend.serverTrack.addEnvironment('GRAPHQL_API_KEY', backend.data.apiKey ?? '');
 
 // Grant server-track Lambda permission to invoke classify-org Lambda
