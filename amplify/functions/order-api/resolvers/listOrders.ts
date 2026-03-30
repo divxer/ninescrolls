@@ -31,18 +31,27 @@ export async function listOrders(event: AppSyncEvent) {
         lastEvaluatedKey = result.LastEvaluatedKey;
     } else {
         // Scan for all orders (SK=META and PK starts with ORDER#)
-        const result = await docClient.send(new ScanCommand({
-            TableName: TABLE_NAME(),
-            FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-            ExpressionAttributeValues: {
-                ':pk': 'ORDER#',
-                ':sk': 'META',
-            },
-            Limit: effectiveLimit * 3, // overscan since filter reduces results
-            ExclusiveStartKey: exclusiveStartKey,
-        }));
-        items = result.Items || [];
-        lastEvaluatedKey = result.LastEvaluatedKey;
+        // DynamoDB Scan Limit caps raw items read (before filtering), so we
+        // must loop until we collect enough matching results or exhaust the table.
+        items = [];
+        let scanKey = exclusiveStartKey;
+        const MAX_SCAN_PAGES = 10; // safety cap
+        for (let page = 0; page < MAX_SCAN_PAGES; page++) {
+            const result = await docClient.send(new ScanCommand({
+                TableName: TABLE_NAME(),
+                FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
+                ExpressionAttributeValues: {
+                    ':pk': 'ORDER#',
+                    ':sk': 'META',
+                },
+                Limit: effectiveLimit * 3,
+                ExclusiveStartKey: scanKey,
+            }));
+            items.push(...(result.Items || []));
+            scanKey = result.LastEvaluatedKey;
+            if (!scanKey || items.length >= effectiveLimit) break;
+        }
+        lastEvaluatedKey = scanKey;
         // Sort by updatedAt descending
         items.sort((a, b) => ((b.updatedAt as string) || '').localeCompare((a.updatedAt as string) || ''));
         items = items.slice(0, effectiveLimit);
