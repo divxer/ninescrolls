@@ -30,9 +30,8 @@ export async function listOrders(event: AppSyncEvent) {
         items = result.Items || [];
         lastEvaluatedKey = result.LastEvaluatedKey;
     } else {
-        // Scan for all orders (SK=META and PK starts with ORDER#)
-        // DynamoDB Scan Limit caps raw items read (before filtering), so we
-        // must loop until we collect enough matching results or exhaust the table.
+        // Scan for all orders — paginate because Limit caps scanned rows,
+        // not filtered results, and the single-table has many non-order items.
         items = [];
         let scanKey = exclusiveStartKey;
         const MAX_SCAN_PAGES = 10; // safety cap
@@ -44,7 +43,6 @@ export async function listOrders(event: AppSyncEvent) {
                     ':pk': 'ORDER#',
                     ':sk': 'META',
                 },
-                Limit: effectiveLimit * 3,
                 ExclusiveStartKey: scanKey,
             }));
             items.push(...(result.Items || []));
