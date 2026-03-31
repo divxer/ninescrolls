@@ -29,19 +29,24 @@ export async function listLeads(event: AppSyncEvent) {
         items = result.Items || [];
         lastEvaluatedKey = result.LastEvaluatedKey;
     } else {
-        // Scan for all leads
-        const result = await docClient.send(new ScanCommand({
-            TableName: TABLE_NAME(),
-            FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-            ExpressionAttributeValues: {
-                ':pk': 'LEAD#',
-                ':sk': 'META',
-            },
-            Limit: effectiveLimit * 3,
-            ExclusiveStartKey: exclusiveStartKey,
-        }));
-        items = result.Items || [];
-        lastEvaluatedKey = result.LastEvaluatedKey;
+        // Scan for all leads — paginate because Limit caps scanned rows,
+        // not filtered results, and the single-table has many non-lead items.
+        items = [];
+        let scanStartKey = exclusiveStartKey;
+        do {
+            const result = await docClient.send(new ScanCommand({
+                TableName: TABLE_NAME(),
+                FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
+                ExpressionAttributeValues: {
+                    ':pk': 'LEAD#',
+                    ':sk': 'META',
+                },
+                ExclusiveStartKey: scanStartKey,
+            }));
+            items.push(...(result.Items || []));
+            scanStartKey = result.LastEvaluatedKey;
+        } while (scanStartKey && items.length < effectiveLimit);
+        lastEvaluatedKey = scanStartKey;
         items.sort((a, b) => ((b.submittedAt as string) || '').localeCompare((a.submittedAt as string) || ''));
         items = items.slice(0, effectiveLimit);
     }
