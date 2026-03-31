@@ -28,19 +28,26 @@ export async function listRfqs(event: AppSyncEvent) {
         items = result.Items || [];
         lastEvaluatedKey = result.LastEvaluatedKey;
     } else {
-        // Scan for all RFQs
-        const result = await docClient.send(new ScanCommand({
-            TableName: TABLE_NAME(),
-            FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-            ExpressionAttributeValues: {
-                ':pk': 'RFQ#',
-                ':sk': 'META',
-            },
-            Limit: effectiveLimit * 3,
-            ExclusiveStartKey: exclusiveStartKey,
-        }));
-        items = result.Items || [];
-        lastEvaluatedKey = result.LastEvaluatedKey;
+        // Scan for all RFQs — paginate because Limit caps scanned rows,
+        // not filtered results, and the single-table has many non-RFQ items.
+        items = [];
+        let scanKey = exclusiveStartKey;
+        const MAX_SCAN_PAGES = 10; // safety cap
+        for (let page = 0; page < MAX_SCAN_PAGES; page++) {
+            const result = await docClient.send(new ScanCommand({
+                TableName: TABLE_NAME(),
+                FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
+                ExpressionAttributeValues: {
+                    ':pk': 'RFQ#',
+                    ':sk': 'META',
+                },
+                ExclusiveStartKey: scanKey,
+            }));
+            items.push(...(result.Items || []));
+            scanKey = result.LastEvaluatedKey;
+            if (!scanKey || items.length >= effectiveLimit) break;
+        }
+        lastEvaluatedKey = scanKey;
         items.sort((a, b) => ((b.submittedAt as string) || '').localeCompare((a.submittedAt as string) || ''));
         items = items.slice(0, effectiveLimit);
     }
