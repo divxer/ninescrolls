@@ -33,8 +33,9 @@ export async function listOrders(event: AppSyncEvent) {
         // Scan for all orders — paginate because Limit caps scanned rows,
         // not filtered results, and the single-table has many non-order items.
         items = [];
-        let scanStartKey = exclusiveStartKey;
-        do {
+        let scanKey = exclusiveStartKey;
+        const MAX_SCAN_PAGES = 10; // safety cap
+        for (let page = 0; page < MAX_SCAN_PAGES; page++) {
             const result = await docClient.send(new ScanCommand({
                 TableName: TABLE_NAME(),
                 FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
@@ -42,12 +43,13 @@ export async function listOrders(event: AppSyncEvent) {
                     ':pk': 'ORDER#',
                     ':sk': 'META',
                 },
-                ExclusiveStartKey: scanStartKey,
+                ExclusiveStartKey: scanKey,
             }));
             items.push(...(result.Items || []));
-            scanStartKey = result.LastEvaluatedKey;
-        } while (scanStartKey && items.length < effectiveLimit);
-        lastEvaluatedKey = scanStartKey;
+            scanKey = result.LastEvaluatedKey;
+            if (!scanKey || items.length >= effectiveLimit) break;
+        }
+        lastEvaluatedKey = scanKey;
         // Sort by updatedAt descending
         items.sort((a, b) => ((b.updatedAt as string) || '').localeCompare((a.updatedAt as string) || ''));
         items = items.slice(0, effectiveLimit);
