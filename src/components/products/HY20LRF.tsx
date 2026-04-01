@@ -101,6 +101,10 @@ export function HY20LRF() {
       },
       "shippingDetails": {
         "@type": "OfferShippingDetails",
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "US"
+        },
         "shippingRate": {
           "@type": "MonetaryAmount",
           "value": "0",
