@@ -12,12 +12,12 @@ export function PlasmaSystemsComparePage() {
     "@type": "ItemList",
     "name": "Plasma Cleaners Comparison — HY & PLUTO Series",
     "itemListElement": [
-      { "@type": "Product", "name": "HY-4L", "url": "https://ninescrolls.com/products/hy-4l" },
-      { "@type": "Product", "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
-      { "@type": "Product", "name": "HY-20L", "url": "https://ninescrolls.com/products/hy-20l" },
-      { "@type": "Product", "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
-      { "@type": "Product", "name": "HY-20LRF", "url": "https://ninescrolls.com/products/hy-20lrf" },
-      { "@type": "Product", "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" }
+      { "@type": "ListItem", "position": 1, "name": "HY-4L", "url": "https://ninescrolls.com/products/hy-4l" },
+      { "@type": "ListItem", "position": 2, "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
+      { "@type": "ListItem", "position": 3, "name": "HY-20L", "url": "https://ninescrolls.com/products/hy-20l" },
+      { "@type": "ListItem", "position": 4, "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
+      { "@type": "ListItem", "position": 5, "name": "HY-20LRF", "url": "https://ninescrolls.com/products/hy-20lrf" },
+      { "@type": "ListItem", "position": 6, "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" }
     ]
   };
 
