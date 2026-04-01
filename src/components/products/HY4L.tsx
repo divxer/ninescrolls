@@ -179,6 +179,10 @@ export function HY4L() {
       },
       "shippingDetails": {
         "@type": "OfferShippingDetails",
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "US"
+        },
         "shippingRate": {
           "@type": "MonetaryAmount",
           "value": "0",
