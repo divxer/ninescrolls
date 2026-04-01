@@ -95,6 +95,10 @@ export function PlutoM() {
       },
       "shippingDetails": {
         "@type": "OfferShippingDetails",
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "US"
+        },
         "shippingRate": {
           "@type": "MonetaryAmount",
           "value": "0",

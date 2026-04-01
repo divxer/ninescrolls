@@ -101,6 +101,10 @@ export function PlutoF() {
       },
       "shippingDetails": {
         "@type": "OfferShippingDetails",
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "US"
+        },
         "shippingRate": {
           "@type": "MonetaryAmount",
           "value": "0",
