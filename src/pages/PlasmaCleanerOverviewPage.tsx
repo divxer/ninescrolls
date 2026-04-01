@@ -16,40 +16,40 @@ export function PlasmaCleanerOverviewPage() {
     "description": "RF plasma cleaners for research laboratories. HY Series (慧仪智控) and PLUTO Series (沛沅仪器) available through NineScrolls LLC.",
     "itemListElement": [
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 1,
         "name": "HY-4L",
-        "url": "https://ninescrolls.com/products/hy-4l",
-        "description": "Compact RF/MF plasma cleaner for teaching and validation (~4L chamber)"
+        "url": "https://ninescrolls.com/products/hy-4l"
       },
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 2,
         "name": "PLUTO-T",
-        "url": "https://ninescrolls.com/products/pluto-t",
-        "description": "200W RF plasma cleaner with ~4.3L stainless steel chamber"
+        "url": "https://ninescrolls.com/products/pluto-t"
       },
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 3,
         "name": "HY-20L",
-        "url": "https://ninescrolls.com/products/hy-20l",
-        "description": "Research-grade batch plasma processing system with 20L chamber"
+        "url": "https://ninescrolls.com/products/hy-20l"
       },
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 4,
         "name": "PLUTO-M",
-        "url": "https://ninescrolls.com/products/pluto-m",
-        "description": "200W RF plasma cleaner with ~8L stainless steel chamber"
+        "url": "https://ninescrolls.com/products/pluto-m"
       },
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 5,
         "name": "HY-20LRF",
-        "url": "https://ninescrolls.com/products/hy-20lrf",
-        "description": "Integrated RF vacuum plasma cleaner with 20L batch chamber"
+        "url": "https://ninescrolls.com/products/hy-20lrf"
       },
       {
-        "@type": "Product",
+        "@type": "ListItem",
+        "position": 6,
         "name": "PLUTO-F",
-        "url": "https://ninescrolls.com/products/pluto-f",
-        "description": "500W RF flagship plasma cleaner with ~14.5L aluminum alloy chamber"
+        "url": "https://ninescrolls.com/products/pluto-f"
       }
     ]
   };
