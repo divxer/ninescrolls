@@ -6,6 +6,13 @@ const client = generateClient<Schema>();
 
 type DynamoInsightsPost = Schema['InsightsPost']['type'];
 
+/** Fields to fetch when listing posts (excludes heavy `content` field) */
+const LISTING_SELECTION_SET = [
+  'id', 'slug', 'title', 'excerpt', 'author', 'publishDate',
+  'category', 'readTime', 'imageUrl', 'tags', 'relatedProducts',
+  'heroImages', 'isStandaloneComponent', 'isDraft', 'contentType',
+] as const;
+
 function mapToInsightsPost(item: DynamoInsightsPost): InsightsPost {
   return {
     id: item.id,
@@ -46,18 +53,20 @@ export async function fetchAllInsightsPosts(options?: {
 
   const firstPage = await client.models.InsightsPost.list({
     limit: 100,
+    selectionSet: [...LISTING_SELECTION_SET],
     ...(filter ? { filter } : {}),
   });
-  const allPosts: InsightsPost[] = firstPage.data.map(mapToInsightsPost);
+  const allPosts: InsightsPost[] = (firstPage.data as DynamoInsightsPost[]).map(mapToInsightsPost);
   let cursor = firstPage.nextToken;
 
   while (cursor) {
     const page = await client.models.InsightsPost.list({
       limit: 100,
+      selectionSet: [...LISTING_SELECTION_SET],
       nextToken: cursor,
       ...(filter ? { filter } : {}),
     });
-    allPosts.push(...page.data.map(mapToInsightsPost));
+    allPosts.push(...(page.data as DynamoInsightsPost[]).map(mapToInsightsPost));
     cursor = page.nextToken;
   }
 
