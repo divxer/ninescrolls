@@ -592,6 +592,7 @@ if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
 const insightsPostTable = backend.data.resources.tables['InsightsPost'];
 insightsPostTable.grantReadData(backend.generateSitemaps.resources.lambda);
 backend.generateSitemaps.addEnvironment('INSIGHTS_POST_TABLE', insightsPostTable.tableName);
+backend.generateSitemaps.addEnvironment('INDEXNOW_KEY', 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b');
 
 const seoResource = restApi.root.addResource('seo');
 seoResource.addMethod('GET', new LambdaIntegration(backend.generateSitemaps.resources.lambda, { proxy: true }));
