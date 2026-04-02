@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useNewsPosts } from '../hooks/useInsightsPosts';
@@ -37,9 +38,23 @@ function hasValidImage(url: string): boolean {
 }
 
 function NewsHeroImage({ post }: { post: InsightsPost }) {
+  // Prefer heroImages metadata when available (authoritative responsive config)
+  if (post.heroImages?.prefix) {
+    const { prefix, fallbackExt } = post.heroImages;
+    return (
+      <picture>
+        <source srcSet={`${prefix}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet={`${prefix}-lg.webp`} media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet={`${prefix}-md.webp`} media="(min-width: 768px)" type="image/webp" />
+        <source srcSet={`${prefix}-sm.webp`} media="(max-width: 767px)" type="image/webp" />
+        <img src={`${prefix}-lg.${fallbackExt || 'webp'}`} alt={post.title} loading="eager" fetchPriority="high" decoding="sync" />
+      </picture>
+    );
+  }
+
   const url = post.imageUrl;
 
-  // CDN URLs (e.g. https://cdn/insights/slug/cover-lg): render responsive <picture>
+  // Fallback: infer responsive variants from CDN URL shape (e.g. .../cover-lg)
   if (url.startsWith('http') && url.endsWith('-lg')) {
     const base = url.slice(0, -3);
     return (
@@ -216,7 +231,7 @@ export const NewsPostPage: React.FC = () => {
               {post.content ? (
                 <div
                   className="post-content"
-                  dangerouslySetInnerHTML={{ __html: rewriteContentImages(stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' '))) }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rewriteContentImages(stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' '))), { ADD_TAGS: ['picture', 'source'], ADD_ATTR: ['srcset', 'media', 'loading', 'decoding', 'fetchpriority'] }) }}
                 />
               ) : null}
 
