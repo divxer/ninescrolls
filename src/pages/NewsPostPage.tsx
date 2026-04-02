@@ -125,13 +125,20 @@ export const NewsPostPage: React.FC = () => {
     );
   }
 
+  const heroImageUrl = post.heroImages?.prefix
+    ? `${post.heroImages.prefix}-lg.webp`
+    : post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
+  const jsonLdImageUrl = heroImageUrl.startsWith('http')
+    ? (heroImageUrl.endsWith('-lg') ? `${heroImageUrl}.webp` : heroImageUrl)
+    : `https://ninescrolls.com${heroImageUrl}`;
+
   return (
     <>
       <SEO
         title={post.title}
         description={post.excerpt || post.title}
         keywords={post.tags?.join(', ') || ''}
-        image={post.imageUrl}
+        image={heroImageUrl}
         url={`/news/${post.slug}`}
         type="article"
       />
@@ -142,7 +149,7 @@ export const NewsPostPage: React.FC = () => {
             "@type": "NewsArticle",
             "headline": post.title,
             "description": post.excerpt || post.title,
-            "image": `https://ninescrolls.com${post.imageUrl}`,
+            "image": jsonLdImageUrl,
             "author": {
               "@type": "Organization",
               "name": "NineScrolls",
