@@ -13,6 +13,7 @@
     "seed-insights": "npx tsx scripts/seed-insights.ts",
     "seed-single-insight": "npx tsx scripts/seed-single-insight.ts",
     "update-insight": "npx tsx scripts/update-insight.ts",
+    "create-insight": "npx tsx scripts/create-insight.ts",
     "create-news": "npx tsx scripts/create-news.ts",
     "upload-news-image": "npx tsx scripts/upload-news-image.ts",
     "ping-search-engines": "npx tsx scripts/ping-search-engines.ts",
