@@ -7,9 +7,9 @@
 
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
-import { signIn } from 'aws-amplify/auth';
 import type { Schema } from '../amplify/data/resource';
 import { insightsPosts } from './insightsPostsData';
+import { authenticate } from './lib/auth';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
@@ -49,22 +49,6 @@ const HERO_IMAGES: Record<string, { prefix: string; fallbackExt: string }> = {
   'spin-coating-development-guide': { prefix: 'coater-developer-guide-cover', fallbackExt: 'png' },
   'plasma-stripping-ashing-guide': { prefix: 'striper-guide-cover', fallbackExt: 'png' },
 };
-
-async function authenticate() {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) {
-    console.error('Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables.');
-    process.exit(1);
-  }
-  console.log(`Signing in as ${email}...`);
-  const { isSignedIn } = await signIn({ username: email, password });
-  if (!isSignedIn) {
-    console.error('Sign-in failed.');
-    process.exit(1);
-  }
-  console.log('Authenticated.\n');
-}
 
 async function seedSingle(slug: string) {
   await authenticate();
