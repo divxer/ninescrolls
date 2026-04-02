@@ -5098,6 +5098,348 @@ export const insightsPosts: InsightsPost[] = [
     id: 'plasma-cleaner-comparison',
     title: 'Plasma Cleaner Comparison for Research Laboratories',
     excerpt: 'How to choose the right plasma cleaner for academic & institutional labs. Compare quartz vs stainless steel chambers, RF vs mid-frequency, and batch plasma cleaner selection guide.',
+    content: `
+      <p>Research laboratories face a bewildering range of plasma cleaner options — from compact benchtop units with quartz chambers to fully automated batch systems with stainless steel or aluminum chambers. Prices span from under $5,000 to over $30,000, and every vendor claims their design is "ideal for research." This guide cuts through the marketing to help you compare the architectures, capabilities, and trade-offs that actually matter for academic and institutional lab environments.</p>
+
+      <h2>The Two Dominant Chamber Architectures</h2>
+      <p>The single most important design choice in any plasma cleaner is the chamber material. It determines durability, process flexibility, contamination risk, and long-term cost of ownership. Research-grade plasma cleaners fall into two broad categories: <strong>quartz (glass) chambers</strong> and <strong>metal chambers</strong> (stainless steel or aluminum alloy).</p>
+
+      <div class="post-figure">
+        <picture>
+          <source srcSet="https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-research-labs/quartz-vs-metal-chamber-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-research-labs/quartz-vs-metal-chamber-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-research-labs/quartz-vs-metal-chamber-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-research-labs/quartz-vs-metal-chamber-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-research-labs/quartz-vs-metal-chamber-comparison-lg.png" alt="Quartz chamber vs metal chamber plasma cleaner architecture comparison — structure, specs, and trade-offs" loading="lazy" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Quartz chamber vs metal chamber architecture comparison — external coil ICP design (left) vs internal parallel-plate CCP design (right)</p>
+      </div>
+
+      <h3>Quartz-Chamber Systems</h3>
+      <p>Quartz-chamber plasma cleaners — commonly associated with brands like Harrick Plasma and Diener Electronic — use a tubular or cylindrical glass vessel as both the vacuum enclosure and the plasma containment zone. The RF coil is typically wrapped around the outside of the quartz tube (inductively coupled), generating plasma inside the tube without electrodes in contact with the process gas.</p>
+      <p><strong>Advantages:</strong></p>
+      <ul>
+        <li><strong>Visual process monitoring.</strong> The transparent chamber lets you see the plasma glow directly — useful for confirming ignition and qualitatively assessing plasma uniformity.</li>
+        <li><strong>Low metallic contamination.</strong> Since the chamber wall is dielectric and no metal electrodes are exposed to the plasma, sputtered metal contamination is essentially zero. This matters for surface science experiments where trace metal deposition could confound results.</li>
+        <li><strong>Simple, proven design.</strong> Quartz-tube systems have been available for decades and are well understood. Many published protocols reference quartz-chamber cleaners by name.</li>
+      </ul>
+      <p><strong>Limitations:</strong></p>
+      <ul>
+        <li><strong>Fragility.</strong> Quartz chambers are glass — they can crack from thermal shock, mechanical impact, or improper handling during cleaning. Replacement quartz tubes typically cost $300–$800 and may require vendor service to install.</li>
+        <li><strong>Size constraints.</strong> Quartz tubes are typically limited to small diameters (50–150 mm ID). This restricts the size and quantity of samples you can process per cycle.</li>
+        <li><strong>Limited power handling.</strong> Most quartz-chamber systems operate at 30–200 W. The external coil design and glass wall limit power transfer efficiency at higher wattages.</li>
+        <li><strong>No electrode-based processes.</strong> Because the electrodes are external, you cannot run capacitively coupled (CCP) plasma modes or achieve the directional ion bombardment that parallel-plate electrode configurations provide.</li>
+      </ul>
+
+      <h3>Metal-Chamber Systems (Stainless Steel / Aluminum)</h3>
+      <p>Metal-chamber plasma cleaners use a stainless steel or aluminum alloy vacuum vessel with internal electrodes. The plasma is generated between parallel plates or between the chamber wall and an internal electrode, using RF (13.56 MHz) or mid-frequency (40 kHz) excitation.</p>
+
+      <figure style="margin: 2em 0; text-align: center;">
+        <img src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T benchtop RF plasma cleaner — a metal-chamber system with internal electrodes" style="max-width: 100%; border-radius: 8px;" />
+        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A benchtop RF plasma cleaner (PLUTO-T) — a typical metal-chamber system with stainless steel construction and internal parallel-plate electrodes. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
+      </figure>
+      <p><strong>Advantages:</strong></p>
+      <ul>
+        <li><strong>Durability.</strong> Metal chambers are essentially indestructible under normal lab conditions. No risk of cracking from thermal cycling or accidental bumps.</li>
+        <li><strong>Larger chamber volumes.</strong> Metal construction supports chambers from 4 L to 20 L and beyond, enabling batch processing of multiple samples per cycle.</li>
+        <li><strong>Higher power capability.</strong> Internal electrode designs support higher RF power (up to 500 W in benchtop systems) with better coupling efficiency, enabling faster and more aggressive cleaning.</li>
+        <li><strong>Versatile plasma modes.</strong> Parallel-plate electrode configurations allow both chemical (radical-driven) and physical (ion bombardment) cleaning mechanisms. This is important for stubborn contaminants or for applications requiring surface etching rather than just surface activation.</li>
+        <li><strong>Gas-shower electrodes.</strong> Advanced metal-chamber systems use perforated gas-distribution electrodes to deliver process gas uniformly across the sample surface — significantly improving treatment uniformity compared to side-entry gas injection in quartz tubes.</li>
+      </ul>
+      <p><strong>Limitations:</strong></p>
+      <ul>
+        <li><strong>No visual monitoring.</strong> You cannot see the plasma directly. Process verification relies on instrument readings (pressure, reflected power) and results-based validation (contact angle measurement, etc.).</li>
+        <li><strong>Potential for sputtered metal contamination.</strong> In aggressive sputtering conditions (high power, pure argon), trace amounts of electrode or chamber wall material can be deposited on samples. This is mitigated by proper process parameter selection (using O₂ or O₂/Ar mixtures instead of pure Ar for cleaning).</li>
+      </ul>
+
+      <h2>RF (13.56 MHz) vs Mid-Frequency (40 kHz)</h2>
+      <p>Within the metal-chamber category, labs also need to decide between RF and mid-frequency excitation. This choice is less dramatic than the chamber material decision but still matters for certain applications.</p>
+
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>RF (13.56 MHz)</th>
+            <th>Mid-Frequency (40 kHz)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Industry standard</td>
+            <td>Yes — the global ISM frequency for plasma processing</td>
+            <td>No — less common in published protocols</td>
+          </tr>
+          <tr>
+            <td>Plasma density</td>
+            <td>Higher — more efficient ionization at RF frequencies</td>
+            <td>Lower — adequate for routine cleaning</td>
+          </tr>
+          <tr>
+            <td>Substrate compatibility</td>
+            <td>Conductive and insulating substrates</td>
+            <td>Best with conductive substrates; insulating substrates may charge</td>
+          </tr>
+          <tr>
+            <td>Cleaning uniformity</td>
+            <td>Better — more uniform plasma distribution</td>
+            <td>Acceptable for most batch cleaning</td>
+          </tr>
+          <tr>
+            <td>Cost</td>
+            <td>Higher — RF generators and matching networks add cost</td>
+            <td>Lower — simpler power supply design</td>
+          </tr>
+          <tr>
+            <td>Publication compatibility</td>
+            <td>Most published plasma cleaning protocols specify 13.56 MHz RF</td>
+            <td>Fewer published references — may require process re-optimization</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Recommendation:</strong> For research labs that publish results or need to reproduce published protocols, <strong>RF (13.56 MHz) is the safer default</strong>. Mid-frequency systems are a cost-effective alternative for routine cleaning tasks (pre-bonding, pre-coating) where exact protocol matching is not critical.</p>
+
+      <h2>Key Specifications to Compare</h2>
+      <p>When evaluating plasma cleaners side by side, focus on these specifications rather than marketing claims.</p>
+
+      <h3>1. Chamber Volume and Usable Area</h3>
+      <p>Chamber volume determines how many samples you can process per cycle. But <strong>usable area</strong> — the flat surface area between the electrodes or within the plasma zone — matters more than raw volume. A 10 L chamber with poor gas distribution may treat samples less uniformly than a 5 L chamber with a gas-shower electrode.</p>
+      <p>Typical research lab requirements:</p>
+      <ul>
+        <li><strong>SEM/TEM stubs, small coupons:</strong> 2–5 L chamber is sufficient</li>
+        <li><strong>Multiple wafers (2"–4"), PDMS devices, batched samples:</strong> 5–10 L</li>
+        <li><strong>6" wafers, large PCBs, high-throughput batch processing:</strong> 10–20 L</li>
+      </ul>
+
+      <h3>2. RF Power and Power Density</h3>
+      <p>Higher power is not always better — what matters is <strong>power density</strong> (W/L), which determines the intensity of the plasma treatment per unit of chamber volume.</p>
+
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>System Type</th>
+            <th>Typical Power</th>
+            <th>Chamber Volume</th>
+            <th>Power Density</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Quartz-tube benchtop</td>
+            <td>30–200 W</td>
+            <td>0.5–2 L</td>
+            <td>15–100 W/L</td>
+          </tr>
+          <tr>
+            <td>Compact metal chamber</td>
+            <td>150–200 W</td>
+            <td>4–8 L</td>
+            <td>25–47 W/L</td>
+          </tr>
+          <tr>
+            <td>Batch metal chamber</td>
+            <td>150–500 W</td>
+            <td>14–20 L</td>
+            <td>7.5–35 W/L</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>For most research cleaning applications (contaminant removal, surface activation), 10–30 W/L is sufficient. For aggressive ashing or etching, higher power densities (30–50+ W/L) are needed.</p>
+
+      <h3>3. Gas Configuration</h3>
+      <p>At minimum, a research-grade plasma cleaner should support <strong>two independent gas lines</strong> with mass flow controllers. This enables:</p>
+      <ul>
+        <li><strong>O₂ plasma</strong> for organic contaminant removal and hydrophilic surface activation</li>
+        <li><strong>Ar plasma</strong> for physical sputtering of inorganic contaminants and native oxides</li>
+        <li><strong>O₂/Ar mixtures</strong> for optimized cleaning that combines chemical and physical mechanisms</li>
+      </ul>
+      <p>Some applications also require N₂ (nitrogen functionalization), H₂ (oxide reduction), or CF₄ (fluorination). If you anticipate needing specialty gases, confirm the system supports them and check the vendor's gas-compatibility statement.</p>
+
+      <h3>4. Vacuum System Quality</h3>
+      <p>The vacuum system is often the differentiator between a $5,000 and a $12,000 plasma cleaner — and it directly affects process reproducibility.</p>
+      <ul>
+        <li><strong>Base pressure.</strong> Better systems reach &lt;10 Pa (75 mTorr) base pressure. Systems that can only reach 50–100 Pa have higher residual gas contamination, leading to less reproducible results.</li>
+        <li><strong>Pump type.</strong> Oil-sealed rotary vane pumps are standard and adequate for most research use. Dry (oil-free) scroll pumps eliminate backstreaming contamination risk and are preferred for sensitive applications.</li>
+        <li><strong>Pump-down time.</strong> Faster pump-down means higher throughput. For a 4 L chamber, expect 1–3 minutes to reach process pressure. For a 20 L chamber, 3–8 minutes is typical.</li>
+      </ul>
+
+      <h3>5. Process Control and Reproducibility</h3>
+      <p>For research applications, process reproducibility is paramount. Key features to evaluate:</p>
+      <ul>
+        <li><strong>Recipe storage.</strong> The ability to save and recall process recipes (gas type, flow rate, power, pressure, time) ensures consistent treatment across users, sessions, and sample batches.</li>
+        <li><strong>Automated process sequencing.</strong> Systems that automate the full cycle (pump-down → gas stabilization → plasma on → cool-down → vent) reduce operator variability.</li>
+        <li><strong>Pressure control.</strong> Active pressure regulation (via throttle valve or automatic gas flow adjustment) is better than relying on manual needle valve settings.</li>
+      </ul>
+
+      <h2>Common Research Lab Scenarios</h2>
+      <p>Here are practical recommendations for the most common use cases in academic and institutional laboratories.</p>
+
+      <h3>Scenario 1: TEM/SEM Sample Preparation</h3>
+      <p><strong>Requirement:</strong> Brief (30–120 s) O₂ or Ar/O₂ plasma treatment to remove hydrocarbon contamination from TEM grids and SEM stubs before imaging.</p>
+      <p><strong>Best fit:</strong> A compact system with 2–5 L chamber, RF excitation, and at least one gas line. This is the most common use case for quartz-chamber systems — but metal-chamber systems in the same size range work equally well and are more durable.</p>
+
+      <h3>Scenario 2: PDMS Bonding for Microfluidics</h3>
+      <p><strong>Requirement:</strong> O₂ plasma activation of PDMS and glass surfaces before bonding. Typical process: 30–90 s at 50–150 W.</p>
+      <p><strong>Best fit:</strong> RF system with good treatment uniformity. Gas-shower electrode designs improve bonding consistency across the full PDMS surface. Mid-size chambers (5–10 L) are ideal for processing multiple devices per cycle.</p>
+
+      <h3>Scenario 3: Wire Bonding / Die Attach Pre-Treatment</h3>
+      <p><strong>Requirement:</strong> Remove organic residues from bond pads and lead frames before wire bonding. O₂ or Ar plasma, 1–3 minutes.</p>
+      <p><strong>Best fit:</strong> Metal-chamber RF system with recipe management for SOP compliance. Batch capacity (10–20 L) is important for production-adjacent labs processing multiple packages per cycle.</p>
+
+      <h3>Scenario 4: Surface Science Research</h3>
+      <p><strong>Requirement:</strong> Controlled surface modification with specific gas chemistries. Requires precise power and pressure control, multiple gas lines, and excellent reproducibility.</p>
+      <p><strong>Best fit:</strong> RF system with 2+ gas lines, recipe management, and pressure regulation. Metal chambers offer more process flexibility; quartz chambers may be preferred if metallic contamination is a concern.</p>
+
+      <h2>Market Overview: Representative Systems</h2>
+      <p>The following table provides a broad comparison of plasma cleaner architectures commonly found in research laboratories. Specifications are generalized from publicly available datasheets.</p>
+
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>Chamber</th>
+            <th>Typical Power</th>
+            <th>Volume Range</th>
+            <th>Price Range (USD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Quartz tube, external coil</td>
+            <td>Quartz glass</td>
+            <td>30–200 W RF</td>
+            <td>0.5–2 L</td>
+            <td>$4,000–$12,000</td>
+          </tr>
+          <tr>
+            <td>Compact metal, internal electrodes</td>
+            <td>Stainless steel</td>
+            <td>150–200 W RF</td>
+            <td>4–8 L</td>
+            <td>$6,500–$13,000</td>
+          </tr>
+          <tr>
+            <td>Batch metal, internal electrodes</td>
+            <td>Stainless steel or aluminum</td>
+            <td>150–500 W RF or 300 W MF</td>
+            <td>14–20 L</td>
+            <td>$12,000–$16,000</td>
+          </tr>
+          <tr>
+            <td>High-end production</td>
+            <td>Stainless steel / aluminum</td>
+            <td>300–1000 W RF</td>
+            <td>20–50+ L</td>
+            <td>$20,000–$50,000+</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Within the metal-chamber category, NineScrolls offers both compact and batch systems across the <a href="/products/plasma-cleaner">PLUTO and HY product lines</a>. For a detailed head-to-head comparison of these models, see our <a href="/insights/ninescrolls-plasma-cleaner-comparison">NineScrolls Plasma Cleaner Lineup Comparison</a>.</p>
+
+      <h2>Decision Framework</h2>
+      <p>Use these questions to narrow your selection:</p>
+
+      <figure style="margin: 2em 0; text-align: center;">
+        <img src="/assets/images/insights/diagram-plasma-cleaner-selection-flowchart.svg" alt="Plasma Cleaner Selection Decision Flowchart" style="max-width: 100%; border-radius: 8px;" />
+        <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Decision flowchart for selecting the right plasma cleaner type and configuration for your research lab.</figcaption>
+      </figure>
+
+      <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f; margin-top: 0;">1. Is metallic contamination a critical concern?</p>
+        <ul>
+          <li><strong>Yes</strong> (surface science, catalysis, ultra-sensitive TEM) → Consider quartz-chamber systems or metal-chamber systems with proper process gas selection (O₂-based, not pure Ar)</li>
+          <li><strong>No</strong> (bonding, general cleaning, most applications) → Metal-chamber systems offer better durability and flexibility</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">2. How many samples per cycle?</p>
+        <ul>
+          <li><strong>1–3 small samples</strong> → Compact system (4–5 L)</li>
+          <li><strong>Multiple samples or larger parts</strong> → Mid-size (8–10 L) or batch (14–20 L)</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">3. Do you need to match published protocols?</p>
+        <ul>
+          <li><strong>Yes</strong> → Choose 13.56 MHz RF excitation for best compatibility</li>
+          <li><strong>No</strong> → Mid-frequency (40 kHz) is a cost-effective option for routine cleaning</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">4. Is this a multi-user or shared facility?</p>
+        <ul>
+          <li><strong>Yes</strong> → Prioritize recipe management, automated sequencing, and robust construction</li>
+          <li><strong>No</strong> → Simpler systems with manual control may be sufficient</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">5. What is your budget?</p>
+        <ul>
+          <li><strong>Under $8,000</strong> → Quartz-tube systems or entry-level metal-chamber (e.g., <a href="/products/hy-4l">HY-4L</a> from $6,499)</li>
+          <li><strong>$8,000–$13,000</strong> → Compact RF metal-chamber systems (e.g., <a href="/products/pluto-t">PLUTO-T</a> at $9,999 or <a href="/products/pluto-m">PLUTO-M</a> at $12,999)</li>
+          <li><strong>$13,000–$16,000</strong> → Batch RF systems (e.g., <a href="/products/hy-20lrf">HY-20LRF</a> at $14,499 or <a href="/products/pluto-f">PLUTO-F</a> at $15,999)</li>
+        </ul>
+      </div>
+
+      <h2>Frequently Asked Questions</h2>
+
+      <div itemscope itemtype="https://schema.org/FAQPage">
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Is a quartz-chamber plasma cleaner better than a metal-chamber system for research?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Not inherently. Quartz chambers offer visual monitoring and zero metallic contamination, but metal chambers provide greater durability, larger capacity, higher power handling, and more process flexibility. For most research applications — PDMS bonding, pre-bonding cleaning, surface activation — metal-chamber systems are the more practical and cost-effective choice. Quartz chambers are primarily advantageous when metallic contamination must be absolutely eliminated.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can I reproduce published protocols that reference a quartz-chamber plasma cleaner on a metal-chamber system?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Yes, in most cases. The key process parameters — gas chemistry, pressure, RF power, and treatment time — determine the outcome, not the chamber material. You may need to adjust power and time slightly because of differences in plasma coupling efficiency and chamber geometry, but the results are functionally equivalent for cleaning and surface activation applications. Use contact angle measurement to calibrate your process against published benchmarks.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How often does a quartz chamber need replacement?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Under careful use, a quartz chamber can last several years. However, quartz is susceptible to thermal shock (rapid heating/cooling cycles), mechanical impact, and gradual devitrification from prolonged plasma exposure. Labs that process fluorine-containing gases or use aggressive cleaning protocols may see faster degradation. Metal chambers, by contrast, have an essentially unlimited service life under normal operating conditions.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What is the minimum system I need for TEM sample preparation?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>A compact system with RF excitation, at least one gas line (O₂ or Ar/O₂ mix), and a 2–5 L chamber is sufficient. TEM sample cleaning is a light-duty application — you don't need high power or large capacity. The most important factors are fast pump-down (to minimize wait time before loading) and consistent, gentle plasma treatment to avoid damaging delicate grid membranes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>Summary</h2>
+      <p>Choosing a plasma cleaner for a research laboratory comes down to matching the system architecture — chamber material, excitation frequency, chamber size, and process control — to your specific applications and workflow. Quartz-chamber systems remain popular for their simplicity and visual appeal, but metal-chamber systems offer superior durability, capacity, and process versatility that make them the more practical choice for most multi-application research labs.</p>
+      <p>Whichever architecture you choose, prioritize RF excitation for protocol compatibility, adequate chamber volume for your workload, and sufficient process control for reproducible results. These fundamentals matter far more than brand names or marketing claims.</p>
+
+      <div style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #854d0e;">Related Articles</h3>
+        <ul>
+          <li><a href="/insights/what-is-plasma-cleaner-principles-types">What Is a Plasma Cleaner? Principles, Types & How It Works</a> — foundational guide to plasma cleaning technology</li>
+          <li><a href="/insights/plasma-cleaner-buying-guide">Plasma Cleaner Buying Guide</a> — step-by-step framework for evaluating and purchasing a plasma cleaner</li>
+          <li><a href="/insights/plasma-cleaner-applications-guide">Plasma Cleaner Applications Guide</a> — industry-by-industry overview of plasma cleaning use cases</li>
+          <li><a href="/insights/plasma-cleaner-maintenance-guide">Plasma Cleaner Maintenance Guide</a> — preventive maintenance, electrode refurbishment, and troubleshooting</li>
+        </ul>
+      </div>
+
+      <h2>References</h2>
+      <ol style="font-size: 0.95em; line-height: 1.8;">
+        <li>Lieberman, M. A. & Lichtenberg, A. J. <em>Principles of Plasma Discharges and Materials Processing</em>, 2nd ed. Wiley-Interscience (2005). ISBN 978-0471720010.</li>
+        <li>Fridman, A. <em>Plasma Chemistry</em>. Cambridge University Press (2008). ISBN 978-0521847353.</li>
+        <li>Hegemann, D., Brunner, H. & Oehr, C. "Plasma treatment of polymers for surface and adhesion improvement." <em>Nuclear Instruments and Methods in Physics Research B</em>, 208, 281–286 (2003). <a href="https://doi.org/10.1016/S0168-583X(03)00644-X" target="_blank" rel="noopener noreferrer">doi:10.1016/S0168-583X(03)00644-X</a></li>
+      </ol>
+    `,
     author: 'NineScrolls Engineering',
     publishDate: '2025-01-15',
     category: 'Materials Science',
