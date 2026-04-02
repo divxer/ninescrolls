@@ -10,6 +10,12 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "optimize-images": "node scripts/optimize-images.js",
+    "seed-insights": "npx tsx scripts/seed-insights.ts",
+    "seed-single-insight": "npx tsx scripts/seed-single-insight.ts",
+    "update-insight": "npx tsx scripts/update-insight.ts",
+    "create-news": "npx tsx scripts/create-news.ts",
+    "upload-news-image": "npx tsx scripts/upload-news-image.ts",
+    "ping-search-engines": "npx tsx scripts/ping-search-engines.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

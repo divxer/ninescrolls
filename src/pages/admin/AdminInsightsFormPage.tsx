@@ -9,7 +9,7 @@ import {
 import { fetchInsightsPostBySlug } from '../../services/insightsService';
 import type { InsightsPost, ContentType } from '../../types';
 
-const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+const INDEXNOW_KEY = import.meta.env.VITE_INDEXNOW_KEY ?? '';
 
 function pingIndexNow(url: string) {
   fetch('https://api.indexnow.org/indexnow', {
