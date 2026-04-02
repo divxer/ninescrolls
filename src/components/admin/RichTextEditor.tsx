@@ -27,7 +27,7 @@ import 'tinymce/plugins/autoresize';
 // Import skin CSS directly (avoids needing static file copy)
 import 'tinymce/skins/ui/oxide/skin.min.css';
 
-import { getContentImageUploadUrl, uploadImageToS3 } from '../../services/insightsImageService';
+import { getImageUploadUrl, uploadImageToS3, processImage } from '../../services/insightsImageService';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -70,8 +70,11 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
 
         setUploading(true);
         try {
-          const { uploadUrl, cdnUrl } = await getContentImageUploadUrl(slug, file.name, file.type);
+          // Upload to temp/ then process (resize + WebP) via Lambda
+          const { uploadUrl, s3Key } = await getImageUploadUrl(slug, `content-${file.name}`, file.type);
           await uploadImageToS3(uploadUrl, file);
+          const result = await processImage(s3Key, slug);
+          const cdnUrl = `${result.cdnBaseUrl}/insights/${slug}/${result.heroPrefix}-lg.webp`;
           cb(cdnUrl, { alt: file.name });
         } catch (err) {
           alert(`Image upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
