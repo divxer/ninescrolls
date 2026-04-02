@@ -14,7 +14,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
-const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY ?? '';
 const BASE_URL = 'https://ninescrolls.com';
 
 async function pingIndexNow(urls: string[]): Promise<void> {
