@@ -20,7 +20,7 @@ import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-
 
 const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
-const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY ?? '';
 
 const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

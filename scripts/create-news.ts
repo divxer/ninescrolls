@@ -168,7 +168,7 @@ async function createNews(filePath: string) {
   }
 }
 
-const INDEXNOW_KEY = 'b8f4e2a1c7d94f3e8a6b0c5d7e9f1a2b';
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY ?? '';
 
 async function pingIndexNow(url: string) {
   try {
