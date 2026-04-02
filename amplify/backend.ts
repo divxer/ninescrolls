@@ -36,6 +36,9 @@ import {
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 
+/** Single source of truth for the CDN custom domain */
+const CDN_DOMAIN = 'cdn.ninescrolls.com';
+
 const backend = defineBackend({
     auth,
     data,
@@ -526,7 +529,7 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
         compress: true,
     },
-    domainNames: ['cdn.ninescrolls.com'],
+    domainNames: [CDN_DOMAIN],
     certificate: cdnCertificate,
     httpVersion: HttpVersion.HTTP2_AND_3,
     comment: 'NineScrolls insights image assets CDN',
@@ -538,7 +541,7 @@ const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsC
 
 insightsAssetsBucket.grantReadWrite(backend.optimizeInsightsImage.resources.lambda);
 backend.optimizeInsightsImage.addEnvironment('INSIGHTS_ASSETS_BUCKET', insightsAssetsBucket.bucketName);
-backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', 'https://cdn.ninescrolls.com');
+backend.optimizeInsightsImage.addEnvironment('CDN_BASE_URL', `https://${CDN_DOMAIN}`);
 
 // =============================================================================
 // Lambda Layer: Sharp image processing library (linux-x64)
