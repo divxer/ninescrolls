@@ -36,3 +36,8 @@ amplifyconfiguration*
 .npm
 /.npmrc
 /.claude
+
+# Large image assets (served from CDN)
+public/assets/images/insights/
+public/assets/images/products/
+public/assets/images/news/
