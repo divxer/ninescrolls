@@ -1,15 +1,17 @@
 /**
- * Upload a cover image for a news article to the CDN (S3 + Lambda resize).
+ * Upload an image for an insights article to the CDN (S3 + Lambda resize).
  *
  * Usage:
- *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/upload-news-image.ts <slug> <image-file> [--name <name>]
+ *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/upload-insights-image.ts <slug> <image-file> [--name <name>] [--no-update-cover]
  *
  * Options:
- *   --name <name>  Custom filename prefix for the image (default: derived from file name)
- *                   e.g. --name cover → cover-sm.webp, cover-lg.webp, etc.
+ *   --name <name>       Custom filename prefix for the image (default: derived from file name)
+ *                        e.g. --name cover → cover-sm.webp, cover-lg.webp, etc.
+ *   --no-update-cover   Skip updating the article's imageUrl (use for inline/content images)
  *
  * Example:
- *   npx tsx scripts/upload-news-image.ts my-article ~/path/to/photo.png --name cover
+ *   npx tsx scripts/upload-insights-image.ts my-article ~/path/to/photo.png --name cover
+ *   npx tsx scripts/upload-insights-image.ts my-article ~/path/to/diagram.png --name diagram --no-update-cover
  *
  * The script:
  *   1. Gets a presigned URL via GraphQL (getInsightsImageUploadUrl)
@@ -61,7 +63,7 @@ function getMimeType(filePath: string): string {
   }
 }
 
-async function uploadNewsImage(slug: string, imagePath: string, customName?: string) {
+async function uploadNewsImage(slug: string, imagePath: string, customName?: string, updateCover = true) {
   await authenticate();
 
   // 1. Verify the article exists
@@ -127,28 +129,32 @@ async function uploadNewsImage(slug: string, imagePath: string, customName?: str
     console.log(`    ${cdnBaseUrl}/${f}`);
   }
 
-  // 6. Update the article's imageUrl
+  // 6. Update the article's imageUrl (unless --no-update-cover)
   const cdnImageUrl = `${cdnBaseUrl}/insights/${slug}/${heroPrefix}-lg`;
-  console.log(`\nUpdating imageUrl to: ${cdnImageUrl}`);
 
-  const { errors: updateErrors } = await client.models.InsightsPost.update({
-    id: post.id,
-    imageUrl: cdnImageUrl,
-  });
-  if (updateErrors?.length) {
-    console.error('Failed to update imageUrl:', updateErrors);
-    process.exit(1);
+  if (updateCover) {
+    console.log(`\nUpdating imageUrl to: ${cdnImageUrl}`);
+    const { errors: updateErrors } = await client.models.InsightsPost.update({
+      id: post.id,
+      imageUrl: cdnImageUrl,
+    });
+    if (updateErrors?.length) {
+      console.error('Failed to update imageUrl:', updateErrors);
+      process.exit(1);
+    }
+    console.log('\nDone! Cover image uploaded and article updated.');
+  } else {
+    console.log('\nDone! Image uploaded (cover imageUrl not changed).');
   }
-
-  console.log('\nDone! Cover image uploaded and article updated.');
   console.log(`  CDN URL: ${cdnImageUrl}.webp`);
 }
 
 // CLI entry
 const nameIdx = process.argv.indexOf('--name');
 const customName = nameIdx !== -1 ? process.argv[nameIdx + 1] : undefined;
+const noUpdateCover = process.argv.includes('--no-update-cover');
 const positionalArgs = process.argv.slice(2).filter((arg, i, arr) => {
-  if (arg === '--name') return false;
+  if (arg === '--name' || arg === '--no-update-cover') return false;
   if (i > 0 && arr[i - 1] === '--name') return false;
   return true;
 });
@@ -156,11 +162,11 @@ const slug = positionalArgs[0];
 const imagePath = positionalArgs[1];
 
 if (!slug || !imagePath) {
-  console.error('Usage: npx tsx scripts/upload-news-image.ts <slug> <image-file> [--name <name>]');
+  console.error('Usage: npx tsx scripts/upload-insights-image.ts <slug> <image-file> [--name <name>] [--no-update-cover]');
   process.exit(1);
 }
 
-uploadNewsImage(slug, imagePath, customName).catch((err) => {
+uploadNewsImage(slug, imagePath, customName, !noUpdateCover).catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
