@@ -297,14 +297,21 @@ export const processInsightsImage: Schema['processInsightsImage']['functionHandl
 export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandler'] =
     async (event) => {
         const { slug } = event.arguments;
+        const dryRun = (event.arguments as any).dryRun ?? false;
 
         if (!slug) {
             throw new Error('slug is required');
         }
 
+        // Validate slug format: alphanumeric, hyphens, underscores only
+        if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
+            throw new Error('Invalid slug format. Only alphanumeric characters, hyphens, and underscores are allowed.');
+        }
+
         const bucket = BUCKET_NAME();
         const prefix = `insights/${slug}/`;
         let deletedCount = 0;
+        const keys: string[] = [];
 
         try {
             // List all objects under the prefix (paginated)
@@ -319,20 +326,29 @@ export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandl
                 const objects = listResponse.Contents;
                 if (!objects || objects.length === 0) break;
 
-                // Batch delete (up to 1000 per request)
-                await s3Client.send(new DeleteObjectsCommand({
-                    Bucket: bucket,
-                    Delete: {
-                        Objects: objects.map((obj) => ({ Key: obj.Key! })),
-                        Quiet: true,
-                    },
-                }));
+                if (dryRun) {
+                    keys.push(...objects.map((obj) => obj.Key!));
+                    deletedCount += objects.length;
+                } else {
+                    // Batch delete (up to 1000 per request)
+                    await s3Client.send(new DeleteObjectsCommand({
+                        Bucket: bucket,
+                        Delete: {
+                            Objects: objects.map((obj) => ({ Key: obj.Key! })),
+                            Quiet: true,
+                        },
+                    }));
+                    deletedCount += objects.length;
+                }
 
-                deletedCount += objects.length;
                 continuationToken = listResponse.NextContinuationToken;
             } while (continuationToken);
 
-            console.log(`Deleted ${deletedCount} objects under ${prefix}`);
+            if (dryRun) {
+                console.log(`[DRY RUN] Would delete ${deletedCount} objects under ${prefix}:`, keys);
+            } else {
+                console.log(`Deleted ${deletedCount} objects under ${prefix}`);
+            }
         } catch (err) {
             console.error(`Failed to delete objects under ${prefix}:`, err);
             return { deletedCount, error: err instanceof Error ? err.message : 'Delete failed' };
