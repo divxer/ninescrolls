@@ -195,8 +195,13 @@ export const InsightsPostPage: React.FC = () => {
     );
   }
 
-  const heroImageUrl = post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
-  const jsonLdImageUrl = heroImageUrl.startsWith('http') ? heroImageUrl : `https://ninescrolls.com${heroImageUrl}`;
+  const heroImageUrl = post.heroImages?.prefix
+    ? `${post.heroImages.prefix}-lg.webp`
+    : post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
+  // Ensure JSON-LD image URL is absolute and has a valid extension
+  const jsonLdImageUrl = heroImageUrl.startsWith('http')
+    ? (heroImageUrl.endsWith('-lg') ? `${heroImageUrl}.webp` : heroImageUrl)
+    : `https://ninescrolls.com${heroImageUrl}`;
 
   return (
     <>
