@@ -111,9 +111,6 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'custom', label: 'Custom' },
 ];
 
-// Known bot / crawler organizations — filtered alongside isBot
-// Use specific org names to avoid false positives on ISPs (e.g. Google Fiber, Apple iCloud Private Relay)
-
 
 const SEARCH_ENGINE_NAMES: Record<string, string> = {
   'google.': 'Google',
