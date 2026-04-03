@@ -111,29 +111,6 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'custom', label: 'Custom' },
 ];
 
-// Known bot / crawler organizations — filtered alongside isBot
-// Use specific org names to avoid false positives on ISPs (e.g. Google Fiber, Apple iCloud Private Relay)
-const BOT_ORG_PATTERNS = [
-  'google llc', 'googlebot',
-  'microsoft corporation', 'msn',
-  'ahrefs', 'semrush', 'moz.com', 'majestic',
-  'yandex', 'baidu', 'bytedance', 'bytespider',
-  'meta platforms',
-  'applebot',
-  'amazonaws', 'amazon.com',
-  'cloudflare', 'fastly',
-  'datadome', 'imperva', 'sucuri',
-  'censys', 'shodan', 'netcraft',
-  'pingdom', 'uptimerobot', 'statuscake',
-  'petalbot', 'sogou', 'duckduckgo',
-  'archive.org', 'ia_archiver',
-  'zayo bandwidth',
-];
-
-function isKnownBotOrg(orgName: string): boolean {
-  const lower = orgName.toLowerCase();
-  return BOT_ORG_PATTERNS.some((pattern) => lower.includes(pattern));
-}
 
 const SEARCH_ENGINE_NAMES: Record<string, string> = {
   'google.': 'Google',
@@ -878,9 +855,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
-    // Detect bot visitors — by isBot flag OR known bot org name
-    const orgKey = geoEvent.orgName || geoEvent.org || '';
-    const hasBot = group.some((e) => e.isBot) || (orgKey ? isKnownBotOrg(orgKey) : false);
+    // Detect bot visitors by isBot flag (User-Agent detection)
+    const hasBot = group.some((e) => e.isBot);
 
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
@@ -2119,10 +2095,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 const botEvent = org.events.find((e) => e.isBot);
                 const ua = botEvent?.userAgent || '';
                 const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
-                const detectedByUA = !!botEvent;
-                const orgKey = org.events[0]?.orgName || org.events[0]?.org || '';
-                const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
-                const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
+                const botName = botMatch ? botMatch[1] : 'Unknown Bot';
+                const detectionMethod = 'User-Agent match';
                 return (
                   <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
                     <div className="flex justify-between items-center">
@@ -2702,16 +2676,11 @@ export function AdminAnalyticsPage() {
     return ids;
   }, [allEvents, selfVisitorId]);
 
-  // Filter bots — by isBot flag OR known bot org name
+  // Filter bots by isBot flag (User-Agent detection)
   const filteredEvents = useMemo(() => {
     let events = allEvents;
     if (!showBots) {
-      events = events.filter((e) => {
-        if (e.isBot) return false;
-        const orgKey = e.orgName || e.org || '';
-        if (orgKey && isKnownBotOrg(orgKey)) return false;
-        return true;
-      });
+      events = events.filter((e) => !e.isBot);
     }
     if (!showPrivateIPs) {
       events = events.filter((e) => !e.ip || !isPrivateIP(e.ip));
