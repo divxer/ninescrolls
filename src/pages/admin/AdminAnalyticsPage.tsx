@@ -2009,12 +2009,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       return (
                         <div key={ctx.ip} className="p-3 bg-surface rounded-lg space-y-1">
                           <div className="flex items-center justify-between">
-                            <span
-                              className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
-                              onClick={() => setShowFullIP((v) => !v)}
-                              title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-                            >
-                              {showFullIP ? ctx.ip : maskIP(ctx.ip)}
+                            <span className="flex items-center gap-1.5">
+                              <span
+                                className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                                onClick={() => setShowFullIP((v) => !v)}
+                                title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                              >
+                                {showFullIP ? ctx.ip : maskIP(ctx.ip)}
+                              </span>
+                              {showFullIP && (
+                                <a href={`https://ipinfo.io/${ctx.ip}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                              )}
                             </span>
                             <span className="text-[10px] text-on-surface-variant">
                               {ctx.count} event{ctx.count !== 1 ? 's' : ''}
@@ -2035,14 +2042,21 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 ) : (
                   <>
                     <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
-                      <span
-                        className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
-                        onClick={() => setShowFullIP((v) => !v)}
-                        title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-                      >
-                        {uniqueIPs.length > 0
-                          ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
-                          : 'N/A'}
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                          onClick={() => setShowFullIP((v) => !v)}
+                          title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                        >
+                          {uniqueIPs.length > 0
+                            ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
+                            : 'N/A'}
+                        </span>
+                        {showFullIP && uniqueIPs.length > 0 && (
+                          <a href={`https://ipinfo.io/${uniqueIPs[0]}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </a>
+                        )}
                       </span>
                       {aiUpgraded && (
                         <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
@@ -2052,8 +2066,15 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       <div className="space-y-1 mt-2">
                         {uniqueIPs.slice(1).map((ip) => (
                           <div key={ip} className="flex items-center p-2 bg-surface rounded-lg">
-                            <span className="font-mono text-xs text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
-                              {showFullIP ? ip : maskIP(ip)}
+                            <span className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
+                                {showFullIP ? ip : maskIP(ip)}
+                              </span>
+                              {showFullIP && (
+                                <a href={`https://ipinfo.io/${ip}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                              )}
                             </span>
                           </div>
                         ))}
