@@ -140,7 +140,13 @@ function generateSitemap(posts: ArticleData[]): string {
 function generateNewsSitemap(newsPosts: ArticleData[]): string {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 2);
-  const recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= cutoff);
+  let recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= cutoff);
+  // If no articles within 2 days, include the most recent one to avoid an empty
+  // sitemap (Google flags empty news sitemaps as format errors).
+  if (recent.length === 0 && newsPosts.length > 0) {
+    const sorted = [...newsPosts].sort((a, b) => b.publishDate.localeCompare(a.publishDate));
+    recent = [sorted[0]];
+  }
   const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'];
   for (const post of recent) {
     lines.push(`  <url><loc>${BASE_URL}/news/${post.slug}</loc><news:news><news:publication><news:name>NineScrolls</news:name><news:language>en</news:language></news:publication><news:publication_date>${toIsoDate(post.publishDate)}</news:publication_date><news:title>${escapeXml(post.title)}</news:title></news:news></url>`);
