@@ -299,6 +299,9 @@ function generatePrerenderHTML(post: FullArticle): string {
         // Remove pre-rendered content
         var a=d.querySelector('article');if(a)a.remove();
         var n=d.querySelector('nav');if(n)n.remove();
+        // Remove prerender meta/link tags so React Helmet owns them (avoids duplicate canonicals)
+        d.querySelectorAll('link[rel="canonical"],meta[name="description"],meta[name="robots"],meta[property^="og:"],meta[name^="twitter:"]').forEach(function(el){el.remove()});
+        var ld=d.querySelector('script[type="application/ld+json"]');if(ld)ld.remove();
         // Inject SPA stylesheets
         p.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
           var c=l.cloneNode();d.head.appendChild(c);
