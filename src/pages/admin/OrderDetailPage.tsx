@@ -6,6 +6,7 @@ import { ContactsPanel } from '../../components/admin/ContactsPanel';
 import { DocumentsPanel } from '../../components/admin/DocumentsPanel';
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { DeclineDialog } from '../../components/admin/DeclineDialog';
+import { EditSpecsDialog } from '../../components/admin/EditSpecsDialog';
 import { formatDate, getNextStatus, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
 
@@ -39,6 +40,7 @@ export function OrderDetailPage() {
   const [notesInitialized, setNotesInitialized] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showEditSpecs, setShowEditSpecs] = useState(false);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -109,6 +111,12 @@ export function OrderDetailPage() {
     } finally {
       setSavingNotes(false);
     }
+  }
+
+  async function handleSaveSpecs(updates: Record<string, unknown>) {
+    if (!orderId) return;
+    await svc.updateOrder(orderId, updates);
+    refresh();
   }
 
   const orderRef = order.quoteNumber || order.poNumber || order.orderId.slice(0, 12);
@@ -264,7 +272,10 @@ export function OrderDetailPage() {
           <div className="bg-surface-container-lowest rounded-xl p-4 md:p-8 border border-outline-variant/10">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-headline font-bold text-primary">Product Specifications</h2>
-              <span className="material-symbols-outlined text-outline-variant cursor-pointer hover:text-primary transition-colors">edit</span>
+              <span
+                className="material-symbols-outlined text-outline-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => setShowEditSpecs(true)}
+              >edit</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
               <div className="space-y-1">
@@ -352,6 +363,24 @@ export function OrderDetailPage() {
           open={showDecline}
           onClose={() => setShowDecline(false)}
           onConfirm={handleDecline}
+        />
+      )}
+
+      {/* Edit Specs Dialog */}
+      {showEditSpecs && (
+        <EditSpecsDialog
+          open={showEditSpecs}
+          onClose={() => setShowEditSpecs(false)}
+          initial={{
+            productModel: order.productModel,
+            productName: order.productName,
+            configuration: order.configuration,
+            quoteAmount: order.quoteAmount,
+            quoteNumber: order.quoteNumber,
+            poNumber: order.poNumber,
+            department: order.department,
+          }}
+          onSave={handleSaveSpecs}
         />
       )}
     </div>
