@@ -1,8 +1,11 @@
 /**
- * Seed a single insights post to DynamoDB by slug.
+ * Create a single insights post in DynamoDB from insightsPostsData.ts by slug.
  *
  * Usage:
- *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/seed-single-insight.ts <slug>
+ *   npx tsx scripts/seed-single-insight.ts <slug>
+ *
+ * Example:
+ *   npx tsx scripts/seed-single-insight.ts mems-fabrication-process-guide
  */
 
 import { Amplify } from 'aws-amplify';
@@ -16,68 +19,32 @@ Amplify.configure(amplifyOutputs as any);
 
 const client = generateClient<Schema>({ authMode: 'userPool' });
 
-// Related products for the new article
-const RELATED_PRODUCTS: Record<string, { href: string; label: string; subtitle?: string }[]> = {
-  'plasma-cleaner-maintenance-guide': [
-    { href: '/products/plasma-cleaner', label: 'Plasma Cleaner Systems', subtitle: 'PLUTO Series Overview' },
-    { href: '/products/pluto-t', label: 'PLUTO-T', subtitle: 'Tabletop / Compact Research' },
-    { href: '/products/pluto-m', label: 'PLUTO-M', subtitle: 'Mid-Range / Versatile Processing' },
-    { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: 'Full-Size / Production Grade' },
-  ],
-  'atomic-layer-deposition-ald-comprehensive-guide': [
-    { href: '/products/ald', label: 'ALD Systems', subtitle: 'Atomic Layer Deposition' },
-  ],
-  'magnetron-sputtering-guide': [
-    { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'Magnetron Sputtering' },
-  ],
-  'pecvd-complete-guide-plasma-enhanced-cvd': [
-    { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Plasma-Enhanced CVD' },
-  ],
-  'spin-coating-development-guide': [
-    { href: '/products/coater-developer', label: 'Coater/Developer', subtitle: 'Spin Coating & Development' },
-  ],
-  'plasma-stripping-ashing-guide': [
-    { href: '/products/striper', label: 'Striper Systems', subtitle: 'Plasma Stripping & Ashing' },
-  ],
-};
-
-const HERO_IMAGES: Record<string, { prefix: string; fallbackExt: string }> = {
-  'plasma-cleaner-maintenance-guide': { prefix: 'plasma-maintenance-cover', fallbackExt: 'png' },
-  'atomic-layer-deposition-ald-comprehensive-guide': { prefix: 'ald-guide-cover', fallbackExt: 'png' },
-  'magnetron-sputtering-guide': { prefix: 'sputter-guide-cover', fallbackExt: 'png' },
-  'pecvd-complete-guide-plasma-enhanced-cvd': { prefix: 'pecvd-guide-cover', fallbackExt: 'png' },
-  'spin-coating-development-guide': { prefix: 'coater-developer-guide-cover', fallbackExt: 'png' },
-  'plasma-stripping-ashing-guide': { prefix: 'striper-guide-cover', fallbackExt: 'png' },
-};
-
-async function seedSingle(slug: string) {
+async function seedSingleInsight(slug: string) {
   await authenticate();
 
+  // Find the post in local data
   const post = insightsPosts.find((p) => p.slug === slug);
   if (!post) {
     console.error(`No local post found with slug: "${slug}"`);
+    console.error(`Available slugs:\n${insightsPosts.map((p) => `  ${p.slug}`).join('\n')}`);
     process.exit(1);
   }
 
-  // Check if already exists
+  // Check if it already exists in DynamoDB
   const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug });
   if (existing && existing.length > 0) {
-    console.error(`Post already exists in DynamoDB: "${slug}" (id: ${existing[0].id})`);
-    console.error('Use update-insight.ts instead.');
+    console.error(`Record already exists with slug: "${slug}" (id: ${existing[0].id})`);
+    console.error('Use update-insight.ts instead to update it.');
     process.exit(1);
   }
 
-  // Use relatedProducts from the post data first, fall back to hardcoded map
-  const relatedProducts = post.relatedProducts || RELATED_PRODUCTS[slug] || [];
-
-  // Derive heroImages from imageUrl if not in hardcoded map
-  let heroImages = HERO_IMAGES[slug] || null;
-  if (!heroImages && post.imageUrl) {
-    const match = post.imageUrl.match(/\/([^/]+)\.(png|jpe?g|webp)$/);
-    if (match) {
-      heroImages = { prefix: match[1], fallbackExt: match[2] };
-    }
-  }
+  console.log(`Creating: ${post.title}`);
+  console.log(`  slug: ${post.slug}`);
+  console.log(`  category: ${post.category}`);
+  console.log(`  readTime: ${post.readTime} min`);
+  console.log(`  tags: ${post.tags?.join(', ')}`);
+  console.log(`  relatedProducts: ${post.relatedProducts?.length || 0}`);
+  console.log(`  content length: ${(post.content || '').length} chars\n`);
 
   const { data, errors } = await client.models.InsightsPost.create({
     slug: post.slug,
@@ -90,8 +57,8 @@ async function seedSingle(slug: string) {
     readTime: post.readTime,
     imageUrl: post.imageUrl,
     tags: post.tags,
-    relatedProducts: JSON.stringify(relatedProducts),
-    heroImages: heroImages ? JSON.stringify(heroImages) : null,
+    relatedProducts: post.relatedProducts ? JSON.stringify(post.relatedProducts) : null,
+    heroImages: null,
     isStandaloneComponent: false,
   });
 
@@ -107,13 +74,14 @@ async function seedSingle(slug: string) {
   console.log(`  content length: ${(data?.content || '').length} chars`);
 }
 
+// CLI entry
 const slug = process.argv[2];
 if (!slug) {
   console.error('Usage: npx tsx scripts/seed-single-insight.ts <slug>');
   process.exit(1);
 }
 
-seedSingle(slug).catch((err) => {
+seedSingleInsight(slug).catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
