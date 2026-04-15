@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react';
 import type { InsightsPost, ContentType } from '../types';
-import { fetchAllInsightsPosts, fetchInsightsPostBySlug } from '../services/insightsService';
+import {
+  fetchAllInsightsPosts,
+  fetchInsightsPostBySlug,
+  getCachedPosts,
+  getCachedPostBySlug,
+} from '../services/insightsService';
 
 export function useInsightsPosts(options?: {
   includeDrafts?: boolean;
   contentType?: ContentType;
 }) {
-  const [posts, setPosts] = useState<InsightsPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Initialise from cache synchronously — avoids loading flash on repeat visits
+  const cached = getCachedPosts(options);
+
+  const [posts, setPosts] = useState<InsightsPost[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+
+    // If we already have cached data, skip loading state
+    const alreadyCached = getCachedPosts(options);
+    if (alreadyCached) {
+      setPosts(alreadyCached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     fetchAllInsightsPosts(options)
       .then((data) => {
@@ -34,8 +51,11 @@ export function useInsightsPosts(options?: {
 }
 
 export function useInsightsPost(slug: string | undefined) {
-  const [post, setPost] = useState<InsightsPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialise from cache synchronously
+  const cached = slug ? getCachedPostBySlug(slug) : undefined;
+
+  const [post, setPost] = useState<InsightsPost | null>(cached ?? null);
+  const [loading, setLoading] = useState(slug ? !cached : false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -45,7 +65,14 @@ export function useInsightsPost(slug: string | undefined) {
     }
 
     let cancelled = false;
-    setLoading(true);
+
+    const alreadyCached = getCachedPostBySlug(slug);
+    if (alreadyCached !== undefined) {
+      setPost(alreadyCached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     fetchInsightsPostBySlug(slug)
       .then((data) => {

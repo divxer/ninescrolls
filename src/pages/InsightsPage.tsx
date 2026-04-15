@@ -7,6 +7,7 @@ import { SEO } from '../components/common/SEO';
 import { categories, newsCategories, InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { cdnUrl } from '../config/imageConfig';
+import { prefetchInsightsPost } from '../services/insightsService';
 
 function resolveCardImage(url: string): string {
   if (!url) return '';
@@ -80,8 +81,10 @@ export const InsightsPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const handlePrefetch = (slug: string) => () => prefetchInsightsPost(slug);
+
   const renderCard = (post: InsightsPost) => (
-    <article key={post.id} className="bg-surface-container-low rounded-xl overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <article key={post.id} className="bg-surface-container-low rounded-xl overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" onMouseEnter={handlePrefetch(post.slug)}>
       <div className="aspect-video bg-slate-200 overflow-hidden">
         <img
           src={resolveCardImage(post.imageUrl)}
