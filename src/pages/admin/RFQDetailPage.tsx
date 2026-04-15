@@ -67,7 +67,7 @@ export function RFQDetailPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6 md:mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-headline text-3xl font-bold text-primary">RFQ-{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</h1>
+            <h1 className="font-headline text-3xl font-bold text-primary">{rfq.referenceNumber || rfq.rfqId.slice(0, 8)}</h1>
             <StatusBadge status={rfq.status} size="lg" />
           </div>
           <p className="text-sm text-on-surface-variant mt-1">Submitted {formatDateTime(rfq.submittedAt)}</p>
