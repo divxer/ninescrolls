@@ -62,7 +62,22 @@ export function StartupPackagePage() {
                   "eligibleCustomerType": "New customers (new faculty)"
                 },
                 "description": "Special discounts, standard warranty, and complimentary accessories on ICP-RIE/RIE etching systems, low-temperature PECVD/ALD systems, and spin coaters for new faculty labs."
-              }
+              },
+              ...productCards.map(p => ({
+                "@type": "Product",
+                "name": p.title,
+                "description": p.desc,
+                "url": `https://ninescrolls.com${p.link}`,
+                "brand": { "@type": "Brand", "name": "NineScrolls" },
+                "manufacturer": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" },
+                "category": "Laboratory Equipment",
+                "offers": {
+                  "@type": "Offer",
+                  "url": `https://ninescrolls.com${p.link}`,
+                  "availability": "https://schema.org/InStock",
+                  "seller": { "@type": "Organization", "name": "NineScrolls LLC" }
+                }
+              }))
             ]
           })}
         </script>
