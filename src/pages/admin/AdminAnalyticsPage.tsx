@@ -2354,6 +2354,11 @@ export function AdminAnalyticsPage() {
   const [orgOverrides, setOrgOverrides] = useState<OrgOverrideSummary[]>([]);
   const [keywordSourceFilter, setKeywordSourceFilter] = useState<KeywordSourceFilter>('all');
   const [keywordSectionOpen, setKeywordSectionOpen] = useState(false);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const keywordSectionRef = useRef<HTMLElement>(null);
   const [pageAnalyticsTab, setPageAnalyticsTab] = useState<PageAnalyticsTab>('topPages');
   const [pageAnalyticsSectionOpen, setPageAnalyticsSectionOpen] = useState(true);
