@@ -184,6 +184,18 @@ Summary: Comprehensive technical roadmap covering the key technologies shaping n
 URL: https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization
 Summary: Systematic investigation of CH4/H2/Ar plasma etching for n-type Bi2Te2.7Se0.3 films, revealing synergistic gas roles and optimal parameters for high-AR thermoelectric device fabrication.
 
+**Wafer Loading Effect in Plasma Etching: Causes, Types, and Mitigation Strategies**
+URL: https://ninescrolls.com/insights/wafer-loading-effect-plasma-etching
+Summary: Comprehensive guide to how etch rates decrease as more material is exposed to plasma. Distinguishes three manifestations — macro loading (wafer-level etch rate changes with exposed area), micro loading (pattern-level rate variations between dense and isolated features), and ARDE (aspect-ratio dependent etching where deep/narrow features etch slower). Provides quantitative models for each effect and practical mitigation strategies including gas flow optimization, pressure tuning, endpoint detection, and ALE approaches.
+
+**III-V Compound Semiconductor Etching — Gas Chemistry, Process Windows, and Equipment Guide**
+URL: https://ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide
+Summary: Comprehensive guide to plasma etching of III-V compound semiconductors including GaAs, InP, GaN, AlGaN, InGaAs, and GaSb. Covers gas chemistries (Cl₂, BCl₃, SiCl₄, CH₄/H₂) with material-specific etch mechanisms, selectivity strategies for heterostructure device fabrication, plasma-induced damage mitigation techniques, and process windows for each material system. Applications span photonics, RF/power electronics, and quantum devices. Includes equipment selection guidance for ICP-RIE systems.
+
+**Diamond Semiconductor Processing: ICP Etching, Thin Film Deposition & Device Fabrication**
+URL: https://ninescrolls.com/insights/diamond-semiconductor-processing-icp-etching-deposition
+Summary: Guide to diamond as an ultra-wide bandgap semiconductor covering exceptional material properties (5.5 eV bandgap, 22 W/cm·K thermal conductivity, 10 MV/cm breakdown field), CVD growth techniques, ICP plasma etching optimization with O₂/Ar chemistry, PECVD deposition of diamond-like carbon (DLC) films, and device architectures including power diodes, FETs, and radiation detectors. Includes process recipes and equipment selection for diamond processing.
+
 **Plasma Cleaner Maintenance Guide: Chamber Cleaning, Electrode Refurbishment & Preventive Schedules**
 URL: https://ninescrolls.com/insights/plasma-cleaner-maintenance-guide
 Summary: Practical guide to plasma cleaner maintenance covering the three pillars of plasma system upkeep (vacuum environment, energy source, process medium). Includes step-by-step chamber cleaning procedures (brush, vacuum, IPA wipe, O2 plasma self-clean), detailed electrode refurbishment process using NaOH/H2SO4 chemical cleaning with safety warnings (hydrogen gas hazard, no mechanical abrasion), vacuum system care (pump oil, leak testing, O-ring inspection), RF power supply verification, gas system checks (MFC calibration, leak detection). Provides a complete preventive maintenance schedule from daily 5-minute checks through annual overhauls, a troubleshooting table mapping symptoms to maintenance actions, and FAQs on refurbishment frequency, acceptable leak rates, and performance degradation diagnosis. Includes three technical diagrams: maintenance schedule overview, electrode cleaning flow chart, and three-pillars system diagram.
@@ -193,6 +205,10 @@ URL: https://ninescrolls.com/insights/ion-beam-etching-ribe-guide
 Summary: Complete guide to ion beam etching — covers Kaufman and RF ion source architectures, IBE (inert gas physical sputtering), RIBE (reactive ion beam with chemical enhancement), and CAIBE (chemically assisted) operating modes. Detailed comparison with RIE/ICP-RIE across selectivity, damage, and profile control. Material compatibility for magnetic materials (NiFe, CoFe for MRAM), optical materials, metals (Au, Pt, Cu), and 2D/quantum materials. Tilt angle optimization (0-90°) for sidewall control and redeposition management. Applications in magnetic device fabrication, photonics, MEMS, and quantum computing. Equipment selection with NineScrolls IBE/RIBE specs (Kaufman up to 6" wafers, RF up to 12", base pressure <7×10⁻⁷ Torr, <5% non-uniformity). Includes troubleshooting guide and FAQs.
 
 ### Deposition & Materials
+
+**PECVD vs ALD vs Sputtering — How to Choose the Right Thin Film Deposition Technology**
+URL: https://ninescrolls.com/insights/pecvd-vs-ald-vs-sputtering-comparison
+Summary: Decision guide comparing three major thin-film deposition technologies. PECVD delivers high-rate dielectric and semiconductor films with tunable stress; ALD provides atomic-level thickness control and perfect conformality on 3D structures; sputtering offers broad material versatility for metals and dielectrics. Covers performance metrics (deposition rate, uniformity, conformality, stress control), material applicability, process trade-offs (temperature, throughput, cost), and application-specific recommendations with decision frameworks for equipment selection.
 
 **Atomic Layer Deposition (ALD) – Principles, Process Windows, Materials, and Equipment Guide**
 URL: https://ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide
@@ -278,6 +294,10 @@ Summary: Head-to-head comparison of NineScrolls PLUTO and HY series plasma clean
 
 ### Equipment Fundamentals
 
+**RIE & ICP-RIE System Maintenance and Troubleshooting Handbook**
+URL: https://ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting
+Summary: Comprehensive maintenance and troubleshooting guide for reactive ion etching systems. Covers tiered preventive maintenance schedules (daily through annual), vacuum system care (pump oil, leak testing, O-ring inspection), RF power system diagnostics, gas delivery system verification, and chamber conditioning protocols. Includes troubleshooting decision trees for common faults (etch rate drift, non-uniformity, arcing, particle contamination), post-maintenance qualification procedures, and spare parts management guidance.
+
 **Vacuum System Fundamentals for Semiconductor Processing Equipment**
 URL: https://ninescrolls.com/insights/vacuum-system-fundamentals-semiconductor
 Summary: Comprehensive guide to vacuum technology for semiconductor equipment — covers vacuum regimes (rough >1 Torr, high 10⁻³-10⁻⁸ Torr, UHV <10⁻⁸ Torr), pump technologies (rotary vane, scroll, dry screw, roots blower, turbomolecular, cryogenic, ion, Ti sublimation), pressure measurement (CDG, Pirani, cold cathode, Bayard-Alpert ion gauge). Gas flow regimes (viscous, transitional, molecular) with Knudsen number criteria. Conductance and effective pumping speed calculations with worked examples. Helium leak testing and rate-of-rise methods. Chamber outgassing sources and mitigation. Load-lock design rationale for cycle time and contamination reduction. Vacuum-compatible materials (metals, elastomers, ceramics). Maintenance schedules for each pump type.
@@ -285,6 +305,16 @@ Summary: Comprehensive guide to vacuum technology for semiconductor equipment �
 **Process Chamber Materials & Contamination Control in Semiconductor Equipment**
 URL: https://ninescrolls.com/insights/process-chamber-materials-contamination-control
 Summary: Guide to chamber design and contamination management — covers body materials (6061-T6 aluminum, 304/316 stainless steel, alumina, quartz, SiC), surface treatments (Type III hard anodization, Y₂O₃ plasma spray, electropolishing), electrode materials (anodized Al, Si, SiC, graphite with selection criteria), liner/shield design principles. Seal materials (Viton, Kalrez, Chemraz, PTFE, metal C-seals/Helicoflex) with temperature and chemical compatibility. Gas delivery materials (316L electropolished tubing, VCR fittings). Five contamination categories (particles, metallic, organic, moisture, cross-contamination) with sources and effects. Chamber seasoning protocol. PM schedules from in-situ plasma clean through heavy PM. Cleaning protocols (plasma, wet chemical, bead blasting). Qualification criteria (base pressure, leak rate, particle count, dummy wafer deposition, TXRF metallic contamination).
+
+### Process Integration & Applications
+
+**MEMS Fabrication Process Guide — From Design to Device**
+URL: https://ninescrolls.com/insights/mems-fabrication-process-guide
+Summary: Complete guide to MEMS fabrication covering the full process chain from substrate selection through packaging. Addresses bulk micromachining (KOH/TMAH wet etching, DRIE) and surface micromachining (sacrificial layer deposition and release) techniques. Covers thin-film deposition methods (PECVD, LPCVD, sputtering, ALD) for structural and functional layers, wafer bonding (fusion, anodic, eutectic), and release etching with stiction mitigation. Includes device-specific process flows for accelerometers, pressure sensors, microfluidics, and RF MEMS. Equipment selection guidance and troubleshooting for common MEMS fabrication challenges.
+
+**Quantum Device Micro- & Nanofabrication — Processes, Challenges, and Equipment Guide**
+URL: https://ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide
+Summary: Comprehensive fabrication guide for quantum devices including superconducting qubits (transmon, flux), spin qubits (Si/SiGe quantum dots), and photonic quantum circuits. Covers substrate preparation and surface treatment for coherence preservation, thin-film deposition (Al, Nb, NbN, NbTiN via sputtering and e-beam evaporation), lithography (optical and e-beam for nm-scale Josephson junctions), pattern transfer via RIE/ICP etching with minimal damage, and multi-layer process integration. Addresses fabrication tolerances far beyond conventional microelectronics and includes practical recipes, contamination control strategies, and equipment selection criteria for quantum hardware labs.
 
 ### Energy Applications
 
