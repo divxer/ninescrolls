@@ -111,29 +111,6 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: 'custom', label: 'Custom' },
 ];
 
-// Known bot / crawler organizations — filtered alongside isBot
-// Use specific org names to avoid false positives on ISPs (e.g. Google Fiber, Apple iCloud Private Relay)
-const BOT_ORG_PATTERNS = [
-  'google llc', 'googlebot',
-  'microsoft corporation', 'msn',
-  'ahrefs', 'semrush', 'moz.com', 'majestic',
-  'yandex', 'baidu', 'bytedance', 'bytespider',
-  'meta platforms',
-  'applebot',
-  'amazonaws', 'amazon.com',
-  'cloudflare', 'fastly',
-  'datadome', 'imperva', 'sucuri',
-  'censys', 'shodan', 'netcraft',
-  'pingdom', 'uptimerobot', 'statuscake',
-  'petalbot', 'sogou', 'duckduckgo',
-  'archive.org', 'ia_archiver',
-  'zayo bandwidth',
-];
-
-function isKnownBotOrg(orgName: string): boolean {
-  const lower = orgName.toLowerCase();
-  return BOT_ORG_PATTERNS.some((pattern) => lower.includes(pattern));
-}
 
 const SEARCH_ENGINE_NAMES: Record<string, string> = {
   'google.': 'Google',
@@ -878,9 +855,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
-    // Detect bot visitors — by isBot flag OR known bot org name
-    const orgKey = geoEvent.orgName || geoEvent.org || '';
-    const hasBot = group.some((e) => e.isBot) || (orgKey ? isKnownBotOrg(orgKey) : false);
+    // Detect bot visitors by isBot flag (User-Agent detection)
+    const hasBot = group.some((e) => e.isBot);
 
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
@@ -2033,12 +2009,19 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       return (
                         <div key={ctx.ip} className="p-3 bg-surface rounded-lg space-y-1">
                           <div className="flex items-center justify-between">
-                            <span
-                              className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
-                              onClick={() => setShowFullIP((v) => !v)}
-                              title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-                            >
-                              {showFullIP ? ctx.ip : maskIP(ctx.ip)}
+                            <span className="flex items-center gap-1.5">
+                              <span
+                                className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                                onClick={() => setShowFullIP((v) => !v)}
+                                title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                              >
+                                {showFullIP ? ctx.ip : maskIP(ctx.ip)}
+                              </span>
+                              {showFullIP && (
+                                <a href={`https://ipinfo.io/${ctx.ip}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                              )}
                             </span>
                             <span className="text-[10px] text-on-surface-variant">
                               {ctx.count} event{ctx.count !== 1 ? 's' : ''}
@@ -2059,14 +2042,21 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 ) : (
                   <>
                     <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
-                      <span
-                        className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
-                        onClick={() => setShowFullIP((v) => !v)}
-                        title={showFullIP ? 'Click to mask' : 'Click to reveal'}
-                      >
-                        {uniqueIPs.length > 0
-                          ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
-                          : 'N/A'}
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="font-mono text-xs font-bold cursor-pointer hover:text-on-surface"
+                          onClick={() => setShowFullIP((v) => !v)}
+                          title={showFullIP ? 'Click to mask' : 'Click to reveal'}
+                        >
+                          {uniqueIPs.length > 0
+                            ? (showFullIP ? uniqueIPs[0] : maskIP(uniqueIPs[0]))
+                            : 'N/A'}
+                        </span>
+                        {showFullIP && uniqueIPs.length > 0 && (
+                          <a href={`https://ipinfo.io/${uniqueIPs[0]}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </a>
+                        )}
                       </span>
                       {aiUpgraded && (
                         <span className="text-[10px] font-bold bg-primary-fixed text-primary px-2 py-0.5 rounded">UPGRADED</span>
@@ -2076,8 +2066,15 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                       <div className="space-y-1 mt-2">
                         {uniqueIPs.slice(1).map((ip) => (
                           <div key={ip} className="flex items-center p-2 bg-surface rounded-lg">
-                            <span className="font-mono text-xs text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
-                              {showFullIP ? ip : maskIP(ip)}
+                            <span className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs text-on-surface-variant cursor-pointer hover:text-on-surface" onClick={() => setShowFullIP((v) => !v)}>
+                                {showFullIP ? ip : maskIP(ip)}
+                              </span>
+                              {showFullIP && (
+                                <a href={`https://ipinfo.io/${ip}`} target="_blank" rel="noopener noreferrer" title="Lookup on ipinfo.io" className="text-on-surface-variant hover:text-primary transition-colors">
+                                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                              )}
                             </span>
                           </div>
                         ))}
@@ -2119,10 +2116,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 const botEvent = org.events.find((e) => e.isBot);
                 const ua = botEvent?.userAgent || '';
                 const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
-                const detectedByUA = !!botEvent;
-                const orgKey = org.events[0]?.orgName || org.events[0]?.org || '';
-                const botName = botMatch ? botMatch[1] : (detectedByUA ? 'Unknown Bot' : orgKey || 'Unknown Bot');
-                const detectionMethod = detectedByUA ? 'User-Agent match' : 'Known bot organization';
+                const botName = botMatch ? botMatch[1] : 'Unknown Bot';
+                const detectionMethod = 'User-Agent match';
                 return (
                   <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
                     <div className="flex justify-between items-center">
@@ -2702,16 +2697,11 @@ export function AdminAnalyticsPage() {
     return ids;
   }, [allEvents, selfVisitorId]);
 
-  // Filter bots — by isBot flag OR known bot org name
+  // Filter bots by isBot flag (User-Agent detection)
   const filteredEvents = useMemo(() => {
     let events = allEvents;
     if (!showBots) {
-      events = events.filter((e) => {
-        if (e.isBot) return false;
-        const orgKey = e.orgName || e.org || '';
-        if (orgKey && isKnownBotOrg(orgKey)) return false;
-        return true;
-      });
+      events = events.filter((e) => !e.isBot);
     }
     if (!showPrivateIPs) {
       events = events.filter((e) => !e.ip || !isPrivateIP(e.ip));

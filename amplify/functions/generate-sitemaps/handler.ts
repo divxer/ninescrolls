@@ -64,8 +64,6 @@ const STATIC_PAGES = [
   { loc: '/products/plasma-cleaner', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/plasma-cleaner/compare', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/hy-4l', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
-  { loc: '/products/hy-4l-rf', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
-  { loc: '/products/hy-4l-mf', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/hy-20l', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/hy-20lrf', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/pluto-t', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
@@ -142,7 +140,13 @@ function generateSitemap(posts: ArticleData[]): string {
 function generateNewsSitemap(newsPosts: ArticleData[]): string {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 2);
-  const recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= cutoff);
+  let recent = newsPosts.filter(p => new Date(p.publishDate + 'T00:00:00Z') >= cutoff);
+  // If no articles within 2 days, include the most recent one to avoid an empty
+  // sitemap (Google flags empty news sitemaps as format errors).
+  if (recent.length === 0 && newsPosts.length > 0) {
+    const sorted = [...newsPosts].sort((a, b) => b.publishDate.localeCompare(a.publishDate));
+    recent = [sorted[0]];
+  }
   const lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'];
   for (const post of recent) {
     lines.push(`  <url><loc>${BASE_URL}/news/${post.slug}</loc><news:news><news:publication><news:name>NineScrolls</news:name><news:language>en</news:language></news:publication><news:publication_date>${toIsoDate(post.publishDate)}</news:publication_date><news:title>${escapeXml(post.title)}</news:title></news:news></url>`);
@@ -299,6 +303,9 @@ function generatePrerenderHTML(post: FullArticle): string {
         // Remove pre-rendered content
         var a=d.querySelector('article');if(a)a.remove();
         var n=d.querySelector('nav');if(n)n.remove();
+        // Remove prerender meta/link tags so React Helmet owns them (avoids duplicate canonicals)
+        d.querySelectorAll('link[rel="canonical"],meta[name="description"],meta[name="robots"],meta[property^="og:"],meta[name^="twitter:"]').forEach(function(el){el.remove()});
+        var ld=d.querySelector('script[type="application/ld+json"]');if(ld)ld.remove();
         // Inject SPA stylesheets
         p.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
           var c=l.cloneNode();d.head.appendChild(c);

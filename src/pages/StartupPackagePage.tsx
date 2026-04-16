@@ -61,16 +61,23 @@ export function StartupPackagePage() {
                   "availability": "https://schema.org/InStock",
                   "eligibleCustomerType": "New customers (new faculty)"
                 },
-                "hasOfferCatalog": {
-                  "@type": "OfferCatalog",
-                  "name": "Applicable Products",
-                  "itemListElement": [
-                    { "@type": "ListItem", "position": 1, "name": "ICP-RIE / RIE Etching Systems", "url": "https://ninescrolls.com/products/icp-etcher" },
-                    { "@type": "ListItem", "position": 2, "name": "Low-temperature PECVD / ALD Systems", "url": "https://ninescrolls.com/products/pecvd" },
-                    { "@type": "ListItem", "position": 3, "name": "Spin Coater", "url": "https://ninescrolls.com/products/coater-developer" }
-                  ]
+                "description": "Special discounts, standard warranty, and complimentary accessories on ICP-RIE/RIE etching systems, low-temperature PECVD/ALD systems, and spin coaters for new faculty labs."
+              },
+              ...productCards.map(p => ({
+                "@type": "Product",
+                "name": p.title,
+                "description": p.desc,
+                "url": `https://ninescrolls.com${p.link}`,
+                "brand": { "@type": "Brand", "name": "NineScrolls" },
+                "manufacturer": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" },
+                "category": "Laboratory Equipment",
+                "offers": {
+                  "@type": "Offer",
+                  "url": `https://ninescrolls.com${p.link}`,
+                  "availability": "https://schema.org/InStock",
+                  "seller": { "@type": "Organization", "name": "NineScrolls LLC" }
                 }
-              }
+              }))
             ]
           })}
         </script>

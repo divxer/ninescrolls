@@ -35,8 +35,8 @@ export function AdminLayout() {
       <aside className={`admin-sidebar ${mobileMenuOpen ? 'admin-sidebar-open' : ''}`}>
         {/* Logo */}
         <div className="mb-10 px-2 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-white">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>history_edu</span>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+            <img src="/assets/images/logo.svg" alt="NineScrolls" className="w-8 h-8 object-contain dark:invert dark:brightness-200" style={{ filter: effectiveTheme === 'dark' ? 'invert(1) brightness(2)' : 'none' }} />
           </div>
           <div>
             <h1 className="font-headline text-lg font-bold tracking-tighter text-primary">NineScrolls LLC</h1>

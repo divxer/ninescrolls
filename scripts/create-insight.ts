@@ -40,11 +40,12 @@ Amplify.configure(amplifyOutputs as any);
 const client = generateClient<Schema>({ authMode: 'userPool' });
 
 function generateSlug(title: string): string {
-  return title
+  const raw = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 80);
+    .replace(/^-|-$/g, '');
+  if (raw.length <= 80) return raw;
+  return raw.slice(0, 80).replace(/-[^-]*$/, '');
 }
 
 function stripHtml(html: string): string {

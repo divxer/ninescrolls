@@ -218,7 +218,7 @@ export function HY4L() {
         title={productDetails.seoTitle}
         description={productDetails.seoDescription}
         keywords={productDetails.seoKeywords}
-        url={location.pathname}
+        url="/products/hy-4l"
         image={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
         imageWidth={800}
         imageHeight={600}

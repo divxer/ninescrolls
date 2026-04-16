@@ -192,10 +192,6 @@ Summary: Comprehensive guide to how etch rates decrease as more material is expo
 URL: https://ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide
 Summary: Comprehensive guide to plasma etching of III-V compound semiconductors including GaAs, InP, GaN, AlGaN, InGaAs, and GaSb. Covers gas chemistries (Cl₂, BCl₃, SiCl₄, CH₄/H₂) with material-specific etch mechanisms, selectivity strategies for heterostructure device fabrication, plasma-induced damage mitigation techniques, and process windows for each material system. Applications span photonics, RF/power electronics, and quantum devices. Includes equipment selection guidance for ICP-RIE systems.
 
-**Diamond Semiconductor Processing: ICP Etching, Thin Film Deposition & Device Fabrication**
-URL: https://ninescrolls.com/insights/diamond-semiconductor-processing-icp-etching-deposition
-Summary: Guide to diamond as an ultra-wide bandgap semiconductor covering exceptional material properties (5.5 eV bandgap, 22 W/cm·K thermal conductivity, 10 MV/cm breakdown field), CVD growth techniques, ICP plasma etching optimization with O₂/Ar chemistry, PECVD deposition of diamond-like carbon (DLC) films, and device architectures including power diodes, FETs, and radiation detectors. Includes process recipes and equipment selection for diamond processing.
-
 **Plasma Cleaner Maintenance Guide: Chamber Cleaning, Electrode Refurbishment & Preventive Schedules**
 URL: https://ninescrolls.com/insights/plasma-cleaner-maintenance-guide
 Summary: Practical guide to plasma cleaner maintenance covering the three pillars of plasma system upkeep (vacuum environment, energy source, process medium). Includes step-by-step chamber cleaning procedures (brush, vacuum, IPA wipe, O2 plasma self-clean), detailed electrode refurbishment process using NaOH/H2SO4 chemical cleaning with safety warnings (hydrogen gas hazard, no mechanical abrasion), vacuum system care (pump oil, leak testing, O-ring inspection), RF power supply verification, gas system checks (MFC calibration, leak detection). Provides a complete preventive maintenance schedule from daily 5-minute checks through annual overhauls, a troubleshooting table mapping symptoms to maintenance actions, and FAQs on refurbishment frequency, acceptable leak rates, and performance degradation diagnosis. Includes three technical diagrams: maintenance schedule overview, electrode cleaning flow chart, and three-pillars system diagram.
@@ -203,6 +199,10 @@ Summary: Practical guide to plasma cleaner maintenance covering the three pillar
 **Ion Beam Etching (IBE) & RIBE: Principles, Applications, and Equipment Guide**
 URL: https://ninescrolls.com/insights/ion-beam-etching-ribe-guide
 Summary: Complete guide to ion beam etching — covers Kaufman and RF ion source architectures, IBE (inert gas physical sputtering), RIBE (reactive ion beam with chemical enhancement), and CAIBE (chemically assisted) operating modes. Detailed comparison with RIE/ICP-RIE across selectivity, damage, and profile control. Material compatibility for magnetic materials (NiFe, CoFe for MRAM), optical materials, metals (Au, Pt, Cu), and 2D/quantum materials. Tilt angle optimization (0-90°) for sidewall control and redeposition management. Applications in magnetic device fabrication, photonics, MEMS, and quantum computing. Equipment selection with NineScrolls IBE/RIBE specs (Kaufman up to 6" wafers, RF up to 12", base pressure <7×10⁻⁷ Torr, <5% non-uniformity). Includes troubleshooting guide and FAQs.
+
+**Diamond Semiconductor Processing: ICP Etching, Thin Film Deposition & Device Fabrication**
+URL: https://ninescrolls.com/insights/diamond-semiconductor-processing-icp-etching-deposition
+Summary: Technical guide to diamond as an ultra-wide bandgap semiconductor — CVD growth methods, ICP plasma etching optimization (O₂/Ar, Cl₂-based chemistries), thin-film deposition on diamond substrates, doping strategies (boron, phosphorus, nitrogen), device architectures (Schottky diodes, FETs, radiation detectors), quantum device fabrication (NV centers), and equipment selection.
 
 ### Deposition & Materials
 

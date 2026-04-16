@@ -1,5 +1,6 @@
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
+import { invalidateInsightsCache } from './insightsService';
 
 const client = generateClient<Schema>();
 
@@ -30,6 +31,7 @@ export async function createInsightsPost(input: CreateInsightsPostInput) {
     authMode: 'userPool',
   });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+  invalidateInsightsCache();
   return data;
 }
 
@@ -38,6 +40,7 @@ export async function updateInsightsPost(input: UpdateInsightsPostInput) {
     authMode: 'userPool',
   });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+  invalidateInsightsCache();
   return data;
 }
 
@@ -47,6 +50,7 @@ export async function deleteInsightsPost(id: string) {
     { authMode: 'userPool' }
   );
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+  invalidateInsightsCache();
 }
 
 export async function fetchInsightsPostById(id: string) {
