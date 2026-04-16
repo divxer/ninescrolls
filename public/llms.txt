@@ -60,18 +60,18 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Future of Plasma Etching](https://ninescrolls.com/insights/future-of-plasma-etching-microelectronics): Comprehensive roadmap for next-generation plasma etching — ALE (thermal and plasma-enhanced, 0.5-2 A/cycle EPC), pulsed plasma techniques (synchronous/asynchronous modes, 100 Hz-10 kHz), HAR etching for 3D NAND and DRAM (>50:1 AR, ARDE/bowing/twisting mitigation), low-damage processing, EUV resist removal, cryogenic etching (-100 to +250C), AI-assisted process control with OES/ML, equipment implications and adoption guidance
 - [Dry Etching Thermoelectric Films](https://ninescrolls.com/insights/dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization): CH4/H2/Ar plasma optimization for Bi2Te3 microstructures
 - [Ion Beam Etching (IBE) & RIBE Guide](https://ninescrolls.com/insights/ion-beam-etching-ribe-guide): Complete IBE/RIBE guide — Kaufman vs RF ion sources, IBE/RIBE/CAIBE modes, tilt angle optimization, material compatibility (magnetic, optical, metals), MRAM/photonics/MEMS applications, comparison with RIE
-- [Wafer Loading Effect in Plasma Etching](https://ninescrolls.com/insights/wafer-loading-effect-plasma-etching): How reactive species depletion affects etch rates at different spatial scales, uniformity control strategies for semiconductor manufacturing
+- [Wafer Loading Effect in Plasma Etching](https://ninescrolls.com/insights/wafer-loading-effect-plasma-etching): Macro loading, micro loading, and ARDE — causes, quantitative models, and mitigation strategies for etch rate non-uniformity
+- [III-V Compound Semiconductor Etching Guide](https://ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide): Plasma etching of GaAs, InP, GaN, AlGaN, InGaAs, GaSb — gas chemistries (Cl₂, BCl₃, SiCl₄, CH₄/H₂), selectivity, damage mitigation, equipment selection for photonics/RF/power/quantum
 - [Diamond Semiconductor Processing](https://ninescrolls.com/insights/diamond-semiconductor-processing-icp-etching-deposition): Diamond UWBG semiconductor — CVD growth, ICP plasma etching optimization, thin-film deposition, doping strategies, device architectures, quantum device fabrication
-- [Quantum Device Micro- & Nanofabrication Guide](https://ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide): Fabrication methods for quantum processors — thin-film deposition, lithography, etching, Josephson junction formation across multiple quantum platforms
 
 ## Insights — Deposition & Materials
 
 - [Atomic Layer Deposition (ALD) Guide](https://ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide): Comprehensive ALD guide — self-limiting chemistry, thermal vs PEALD, temperature windows, precursor selection, ALD vs CVD vs PVD comparison, applications in semiconductors/MEMS/energy, equipment selection
 - [Magnetron Sputtering Guide](https://ninescrolls.com/insights/magnetron-sputtering-guide): Complete sputtering guide — DC vs RF modes, reactive sputtering for oxides/nitrides, process parameters, film growth modes, quality optimization, equipment selection for 4"–12" wafers
 - [PECVD Complete Guide](https://ninescrolls.com/insights/pecvd-complete-guide-plasma-enhanced-cvd): PECVD handbook — parallel-plate reactor principles, single vs dual-frequency RF stress control, SiO₂/SiNₓ/a-Si:H/SiC/DLC recipes, PECVD vs LPCVD vs ALD comparison, applications and equipment selection
+- [PECVD vs ALD vs Sputtering Comparison](https://ninescrolls.com/insights/pecvd-vs-ald-vs-sputtering-comparison): Decision guide comparing three major deposition technologies — performance metrics, material applicability, process trade-offs, and application-specific recommendations
 - [HDP-CVD In-Depth Guide](https://ninescrolls.com/insights/hdp-cvd-in-depth-guide-practical-handbook): Comprehensive HDP-CVD handbook for research and manufacturing
 - [HDP-CVD Applications](https://ninescrolls.com/insights/hdp-cvd-applications-gap-fill-dielectrics): Gap fill, STI, IMD/PMD applications — dep/etch competition mechanism, void-free fill strategies, HDP-CVD vs PECVD vs SACVD comparison, advanced packaging
-- [PECVD vs ALD vs Sputtering Comparison](https://ninescrolls.com/insights/pecvd-vs-ald-vs-sputtering-comparison): Comprehensive comparison of three thin-film deposition techniques — performance metrics, material-specific recommendations, decision frameworks for technology selection
 - [Advanced Materials Processing](https://ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy): Thin film deposition and plasma etching for materials science
 - [Nanofabrication Techniques](https://ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future): E-beam lithography, nanoimprint, self-assembly
 - [Photonics Manufacturing](https://ninescrolls.com/insights/photonics-manufacturing-precision-engineering): Precision engineering for optical devices
@@ -100,7 +100,12 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 
 - [Vacuum System Fundamentals](https://ninescrolls.com/insights/vacuum-system-fundamentals-semiconductor): Vacuum regimes, pump technologies, pressure measurement, gas flow regimes, conductance calculations, leak detection, load-lock design, vacuum materials, maintenance
 - [Process Chamber Materials & Contamination Control](https://ninescrolls.com/insights/process-chamber-materials-contamination-control): Chamber body materials, surface treatments, electrode materials, seals, contamination sources, chamber seasoning, PM schedules, cleaning protocols, qualification criteria
-- [RIE & ICP-RIE Maintenance & Troubleshooting](https://ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting): Preventive maintenance schedules, vacuum and RF power system care, gas delivery inspection, temperature control calibration, fault diagnosis with root-cause analysis, safety protocols
+- [RIE & ICP System Maintenance & Troubleshooting](https://ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting): Tiered preventive maintenance schedules, vacuum and RF power system care, troubleshooting decision trees for common faults, post-maintenance qualification protocols
+
+## Insights — Process Integration & Applications
+
+- [MEMS Fabrication Process Guide](https://ninescrolls.com/insights/mems-fabrication-process-guide): Complete MEMS fabrication chain — bulk/surface micromachining, DRIE, thin-film deposition, wafer bonding, release etching, device-specific flows for accelerometers, pressure sensors, microfluidics, RF MEMS
+- [Quantum Device Micro- & Nanofabrication Guide](https://ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide): Fabrication chain for superconducting qubits, spin qubits, and photonic circuits — substrate prep, thin-film deposition, lithography, pattern transfer, process integration, equipment selection
 
 ## Insights — Energy
 
