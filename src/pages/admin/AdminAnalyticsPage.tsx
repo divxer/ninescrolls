@@ -2369,6 +2369,9 @@ export function AdminAnalyticsPage() {
   const [scoreMin, setScoreMin] = useState<string>('');
   const [scoreMax, setScoreMax] = useState<string>('');
   const [lifecycleFilter, setLifecycleFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   const prevDateRange = useRef(dateRange);
@@ -2381,6 +2384,17 @@ export function AdminAnalyticsPage() {
       window.history.pushState({ orgDetail: true }, '');
     }
     setSelectedOrg(org);
+  }, []);
+
+  // Close type dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
+        setTypeDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   // Browser back button → close dossier
@@ -2858,8 +2872,12 @@ export function AdminAnalyticsPage() {
       result = result.filter((o) => o.lifecycleStage === lifecycleFilter);
     }
 
+    if (typeFilter.size > 0) {
+      result = result.filter((o) => typeFilter.has(o.organizationType || 'unknown'));
+    }
+
     return result;
-  }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
+  }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter, typeFilter]);
 
   // Unique countries for region filter dropdown
   const availableCountries = useMemo(() => {
@@ -2870,6 +2888,29 @@ export function AdminAnalyticsPage() {
     return Array.from(countries).sort();
   }, [organizations]);
 
+  const availableTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const o of organizations) {
+      types.add(o.organizationType || 'unknown');
+    }
+    return Array.from(types).sort();
+  }, [organizations]);
+
+  const typeFilterLabel = useMemo(() => {
+    if (typeFilter.size === 0) return 'All Types';
+    if (typeFilter.size === 1) return Array.from(typeFilter)[0].replace(/_/g, ' ');
+    return `${typeFilter.size} types`;
+  }, [typeFilter]);
+
+  const toggleType = useCallback((t: string) => {
+    setTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  }, []);
+
   // Active filter count + summary for collapsible filter bar
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -2878,8 +2919,9 @@ export function AdminAnalyticsPage() {
     if (scoreMin !== '') count++;
     if (scoreMax !== '') count++;
     if (lifecycleFilter !== 'all') count++;
+    if (typeFilter.size > 0) count++;
     return count;
-  }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter]);
+  }, [channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter, typeFilter]);
 
 
   // Sort organizations
@@ -3280,7 +3322,7 @@ export function AdminAnalyticsPage() {
             </div>
             {/* Collapsible Filters */}
             {filtersOpen && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-outline-variant/10">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-outline-variant/10">
                 <select className="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-xs" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
                   <option value="all">All Channels</option>
                   <option value="paid_search">Paid Search</option>
@@ -3305,10 +3347,34 @@ export function AdminAnalyticsPage() {
                   <option value="consideration">Consideration</option>
                   <option value="intent">Intent</option>
                 </select>
+                <div className="relative" ref={typeDropdownRef}>
+                  <button
+                    className="w-full bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-xs text-left cursor-pointer flex items-center justify-between"
+                    onClick={() => setTypeDropdownOpen((v) => !v)}
+                  >
+                    <span className={typeFilter.size === 0 ? 'text-on-surface-variant' : 'text-on-surface font-medium'}>{typeFilterLabel}</span>
+                    <span className="material-symbols-outlined text-sm">{typeDropdownOpen ? 'expand_less' : 'expand_more'}</span>
+                  </button>
+                  {typeDropdownOpen && (
+                    <div className="absolute z-50 top-full left-0 mt-1 w-full bg-surface-container rounded-lg shadow-lg border border-outline-variant/20 py-1 max-h-60 overflow-y-auto">
+                      {availableTypes.map((t) => (
+                        <label key={t} className="flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-surface-container-low">
+                          <input
+                            type="checkbox"
+                            checked={typeFilter.has(t)}
+                            onChange={() => toggleType(t)}
+                            className="accent-secondary"
+                          />
+                          <span>{t.replace(/_/g, ' ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {activeFilterCount > 0 && (
                   <button
                     className="text-xs text-secondary font-medium border-none bg-transparent cursor-pointer hover:underline"
-                    onClick={() => { setChannelFilter('all'); setRegionFilter('all'); setScoreMin(''); setScoreMax(''); setLifecycleFilter('all'); }}
+                    onClick={() => { setChannelFilter('all'); setRegionFilter('all'); setScoreMin(''); setScoreMax(''); setLifecycleFilter('all'); setTypeFilter(new Set()); }}
                   >
                     Clear all
                   </button>
