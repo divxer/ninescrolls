@@ -37,7 +37,8 @@ const ARTICLE_REDIRECTS: Record<string, string> = {
 function InsightsHeroImage({ post }: { post: InsightsPost }) {
   // Prefer heroImages metadata when available (authoritative responsive config)
   if (post.heroImages?.prefix) {
-    const { prefix, fallbackExt } = post.heroImages;
+    const { fallbackExt } = post.heroImages;
+    const prefix = post.heroImages.prefix.startsWith('http') ? post.heroImages.prefix : cdnUrl(`/assets/images/insights/${post.heroImages.prefix}`);
     return (
       <picture>
         <source srcSet={`${prefix}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
@@ -196,7 +197,7 @@ export const InsightsPostPage: React.FC = () => {
   }
 
   const heroImageUrl = post.heroImages?.prefix
-    ? `${post.heroImages.prefix}-lg.webp`
+    ? (post.heroImages.prefix.startsWith('http') ? `${post.heroImages.prefix}-lg.webp` : cdnUrl(`/assets/images/insights/${post.heroImages.prefix}-lg.webp`))
     : post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
   // Ensure JSON-LD image URL is absolute and has a valid extension
   const jsonLdImageUrl = heroImageUrl.startsWith('http')
