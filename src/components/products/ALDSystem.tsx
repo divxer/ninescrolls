@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function ALDSystem() {
@@ -93,6 +94,14 @@ export function ALDSystem() {
 
   return (
     <>
+      <SEO
+        title="ALD System - Atomic Layer Deposition Equipment"
+        description="ALD systems with sub-nanometer thickness control and <1% uniformity. Thermal and plasma-enhanced modes for Al₂O₃, HfO₂, TiN. 4&quot;–12&quot; wafers."
+        keywords="ALD, atomic layer deposition, ALD system, ALD equipment, Al2O3 deposition, thin film deposition, conformal coating"
+        url="/products/ald"
+        image={cdnUrl('/assets/images/products/ald/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <script type="application/ld+json">{JSON.stringify({

@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function SputterSystem() {
@@ -93,6 +94,14 @@ export function SputterSystem() {
 
   return (
     <>
+      <SEO
+        title="Sputter Deposition System - PVD Magnetron Sputtering Equipment"
+        description="PVD magnetron sputtering systems with 2–6 configurable targets. <1% film uniformity, substrate temperature up to 1200°C. Metals, oxides, and nitrides."
+        keywords="sputter system, sputtering equipment, PVD system, magnetron sputtering, physical vapor deposition, thin film sputtering"
+        url="/products/sputter"
+        image={cdnUrl('/assets/images/products/sputter/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>

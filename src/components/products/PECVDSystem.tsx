@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function PECVDSystem() {
@@ -93,6 +94,14 @@ export function PECVDSystem() {
 
   return (
     <>
+      <SEO
+        title="PECVD System - Plasma-Enhanced Chemical Vapor Deposition Equipment"
+        description="PECVD systems with dual RF (13.56 MHz / 400 KHz) for SiO₂, SiNx, and a-Si thin films. Compact design, 4&quot;–12&quot; wafer capability, <5% uniformity."
+        keywords="PECVD, PECVD system, plasma enhanced CVD, PECVD equipment, thin film deposition, silicon nitride deposition"
+        url="/products/pecvd"
+        image={cdnUrl('/assets/images/products/pecvd/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <script type="application/ld+json">{JSON.stringify({

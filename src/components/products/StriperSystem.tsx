@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function StriperSystem() {
@@ -94,6 +95,14 @@ export function StriperSystem() {
 
   return (
     <>
+      <SEO
+        title="Plasma Striper - Photoresist Stripping & Ashing System"
+        description="Plasma photoresist stripping systems for complete organic removal. 300–1000W RF power, 4&quot;–12&quot; wafers. Fast, clean resist ashing with real-time monitoring."
+        keywords="plasma stripper, photoresist stripping, resist ashing, plasma ashing, wafer cleaning, semiconductor stripping equipment"
+        url="/products/striper"
+        image={cdnUrl('/assets/images/products/striper/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
