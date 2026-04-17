@@ -52,10 +52,10 @@ function handler(event) {
         if (ua.indexOf(botTokens[i]) !== -1) { isBot = true; break; }
     }
     if (isBot) {
-        // Route /insights/{slug} or /news/{slug} to prerender path
         var prefix = '';
         if (uri.indexOf('/insights/') === 0) prefix = '/insights/';
         else if (uri.indexOf('/news/') === 0) prefix = '/news/';
+        else if (uri.indexOf('/products/') === 0) prefix = '/products/';
         if (prefix) {
             var slug = uri.slice(prefix.length);
             if (slug && slug.indexOf('/') === -1) {

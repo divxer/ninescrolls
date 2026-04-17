@@ -7,6 +7,7 @@ import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
 import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
+import { detectRelatedProducts } from '../utils/relatedProducts';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import DOMPurify from 'dompurify';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
@@ -144,10 +145,13 @@ function RelatedArticlesBottom({ post, allPosts }: { post: InsightsPost; allPost
 }
 
 function PostSidebar({ post, allPosts }: { post: InsightsPost; allPosts?: InsightsPost[] }) {
+  const products = post.relatedProducts?.length
+    ? post.relatedProducts
+    : post.content ? detectRelatedProducts(post.content) : [];
   return (
     <div>
       <div className="bg-white p-6 rounded-xl shadow-md mb-5">
-        <RelatedProductsSidebar products={post.relatedProducts} />
+        <RelatedProductsSidebar products={products} />
         {allPosts && <RelatedArticlesSidebar post={post} allPosts={allPosts} />}
       </div>
       <TableOfContents />

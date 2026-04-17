@@ -7,11 +7,12 @@
  * GET /seo?file=feed          → feed.xml
  * GET /seo?file=indexnow      → IndexNow verification key
  * GET /seo?file=prerender&slug=xxx&type=insights|news → pre-rendered article HTML
+ * GET /seo?file=prerender&path=products/slug → pre-rendered product page HTML
  *
  * Reads directly from DynamoDB InsightsPost table (no GraphQL needed).
  * Amplify rewrites proxy /sitemap.xml → /seo?file=sitemap etc.
- * CloudFront Function routes bot requests for /insights/:slug and /news/:slug
- * to /seo?file=prerender&slug=:slug&type=insights|news.
+ * CloudFront Function routes bot requests for /insights/:slug, /news/:slug,
+ * and /products/:slug to /seo?file=prerender&path=<type>/<slug>.
  */
 
 import type { APIGatewayProxyHandler } from 'aws-lambda';
@@ -321,6 +322,128 @@ function generatePrerenderHTML(post: FullArticle): string {
 </html>`;
 }
 
+// ─── Product prerender (static data, no DynamoDB needed) ────────────────────
+
+const PRODUCT_SEO: Record<string, { title: string; description: string; image: string }> = {
+  'rie-etcher': {
+    title: 'RIE Etcher - Reactive Ion Etching System for Plasma Etching',
+    description: 'Reactive ion etching (RIE) systems for precise plasma etching of semiconductors, dielectrics, and polymers. Up to 12" wafers, 600–1000W RF, automated recipe control.',
+    image: '/assets/images/products/rie-etcher/main.jpg',
+  },
+  'icp-etcher': {
+    title: 'ICP Etcher - Inductively Coupled Plasma Etching System',
+    description: 'ICP-RIE etching systems with independent ion energy and density control. 2000W ICP + 600W bias for high-aspect-ratio deep etching on 12" wafers.',
+    image: '/assets/images/products/icp-etcher/main.jpg',
+  },
+  'compact-rie': {
+    title: 'Compact RIE Etcher (SV-RIE) - Small Footprint Reactive Ion Etching',
+    description: 'Ultra-compact RIE system with 630×600mm footprint. Touchscreen control, 300–1000W RF, 4"–12" wafers. Ideal for research labs and failure analysis.',
+    image: '/assets/images/products/compact-rie/main.jpg',
+  },
+  'ald': {
+    title: 'ALD System - Atomic Layer Deposition Equipment',
+    description: 'ALD systems with sub-nanometer thickness control and <1% uniformity. Thermal and plasma-enhanced modes for Al₂O₃, HfO₂, TiN. 4"–12" wafers.',
+    image: '/assets/images/products/ald/main.jpg',
+  },
+  'hdp-cvd': {
+    title: 'HDP-CVD System - High-Density Plasma Chemical Vapor Deposition',
+    description: 'HDP-CVD systems with compact uni-body design for superior gap-fill and film quality. SiO₂, SiNx, SiC deposition on 4"–12" wafers.',
+    image: '/assets/images/products/hdp-cvd/main.jpg',
+  },
+  'pecvd': {
+    title: 'PECVD System - Plasma-Enhanced Chemical Vapor Deposition Equipment',
+    description: 'PECVD systems with dual RF (13.56 MHz / 400 KHz) for SiO₂, SiNx, and a-Si thin films. Compact design, 4"–12" wafer capability, <5% uniformity.',
+    image: '/assets/images/products/pecvd/main.jpg',
+  },
+  'sputter': {
+    title: 'Sputter Deposition System - PVD Magnetron Sputtering Equipment',
+    description: 'PVD magnetron sputtering systems with 2–6 configurable targets. <1% film uniformity, substrate temperature up to 1200°C. Metals, oxides, and nitrides.',
+    image: '/assets/images/products/sputter/main.jpg',
+  },
+  'ibe-ribe': {
+    title: 'IBE/RIBE System - Ion Beam Etching Equipment',
+    description: 'Ion beam etching systems with IBE and RIBE dual-mode operation. Variable angle 0–90°, Kaufman/RF ion sources. Precision etching for magnetic and optical materials.',
+    image: '/assets/images/products/ibe-ribe/main.jpg',
+  },
+  'striper': {
+    title: 'Plasma Striper - Photoresist Stripping & Ashing System',
+    description: 'Plasma photoresist stripping systems for complete organic removal. 300–1000W RF power, 4"–12" wafers. Fast, clean resist ashing with real-time monitoring.',
+    image: '/assets/images/products/striper/main.jpg',
+  },
+  'coater-developer': {
+    title: 'Spin Coater & Developer System - Photoresist Coating Equipment',
+    description: 'Precision spin coater and developer systems with <0.5% coating uniformity. Modular hotplate, EBR options. 2"–12" wafers and square substrates.',
+    image: '/assets/images/products/coater-developer/main.jpg',
+  },
+};
+
+function generateProductPrerenderHTML(slug: string): string | null {
+  const product = PRODUCT_SEO[slug];
+  if (!product) return null;
+
+  const fullUrl = `${BASE_URL}/products/${slug}`;
+  const fullTitle = `${product.title} | NineScrolls LLC`;
+  const imageUrl = `https://cdn.ninescrolls.com${product.image}`;
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description,
+    image: imageUrl,
+    brand: { '@type': 'Brand', name: 'NineScrolls LLC' },
+    manufacturer: { '@type': 'Organization', name: 'NineScrolls LLC', url: BASE_URL },
+    category: 'Semiconductor Manufacturing Equipment',
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtmlAttr(fullTitle)}</title>
+  <meta name="description" content="${escapeHtmlAttr(product.description)}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="${fullUrl}">
+  <meta property="og:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta property="og:description" content="${escapeHtmlAttr(product.description)}">
+  <meta property="og:image" content="${escapeHtmlAttr(imageUrl)}">
+  <meta property="og:url" content="${fullUrl}">
+  <meta property="og:type" content="product">
+  <meta property="og:site_name" content="NineScrolls LLC">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtmlAttr(fullTitle)}">
+  <meta name="twitter:description" content="${escapeHtmlAttr(product.description)}">
+  <meta name="twitter:image" content="${escapeHtmlAttr(imageUrl)}">
+  <script type="application/ld+json">${jsonLd}</script>
+</head>
+<body>
+  <h1>${escapeHtmlAttr(product.title)}</h1>
+  <p>${escapeHtmlAttr(product.description)}</p>
+  <nav><a href="${BASE_URL}">NineScrolls Home</a> &middot; <a href="${BASE_URL}/products">All Products</a></nav>
+  <script>
+    (function(){
+      var d=document;
+      fetch('/index.html').then(function(r){return r.text()}).then(function(h){
+        var p=new DOMParser().parseFromString(h,'text/html');
+        var root=d.createElement('div');root.id='root';d.body.prepend(root);
+        d.querySelector('h1')?.remove();
+        d.querySelectorAll('p,nav').forEach(function(el){el.remove()});
+        d.querySelectorAll('link[rel="canonical"],meta[name="description"],meta[name="robots"],meta[property^="og:"],meta[name^="twitter:"]').forEach(function(el){el.remove()});
+        var ld=d.querySelector('script[type="application/ld+json"]');if(ld)ld.remove();
+        p.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
+          var c=l.cloneNode();d.head.appendChild(c);
+        });
+        p.querySelectorAll('script[type="module"]').forEach(function(s){
+          var c=d.createElement('script');c.type='module';c.src=s.src;c.crossOrigin=s.crossOrigin||'';d.body.appendChild(c);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>`;
+}
+
 // ─── Handler ────────────────────────────────────────────────────────────────
 
 function response(statusCode: number, body: string, contentType = 'text/plain', cacheMaxAge = 3600) {
@@ -354,8 +477,16 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   // with full meta tags, OG cards, JSON-LD, and article body.
   if (file === 'prerender') {
     const pathParam = event.queryStringParameters?.path || '';
-    const pathMatch = pathParam.match(/^(insights|news)\/([a-z0-9][a-z0-9-]*)(?:\.html)?$/);
+    const pathMatch = pathParam.match(/^(insights|news|products)\/([a-z0-9][a-z0-9-]*)(?:\.html)?$/);
+    const matchType = pathMatch ? pathMatch[1] : null;
     const slug = event.queryStringParameters?.slug || (pathMatch ? pathMatch[2] : null);
+
+    // Product pages: static data, no DynamoDB lookup
+    if (matchType === 'products' && slug) {
+      const html = generateProductPrerenderHTML(slug);
+      if (!html) return response(404, 'Product not found', 'text/plain', 60);
+      return response(200, html, 'text/html', 86400);
+    }
 
     // No slug = listing page (/insights/ or /news/) — serve SPA directly
     if (!slug) {
