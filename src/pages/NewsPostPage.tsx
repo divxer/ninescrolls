@@ -40,7 +40,8 @@ function hasValidImage(url: string): boolean {
 function NewsHeroImage({ post }: { post: InsightsPost }) {
   // Prefer heroImages metadata when available (authoritative responsive config)
   if (post.heroImages?.prefix) {
-    const { prefix, fallbackExt } = post.heroImages;
+    const { fallbackExt } = post.heroImages;
+    const prefix = post.heroImages.prefix.startsWith('http') ? post.heroImages.prefix : cdnUrl(`/assets/images/news/${post.heroImages.prefix}`);
     return (
       <picture>
         <source srcSet={`${prefix}-xl.webp`} media="(min-width: 1280px)" type="image/webp" />
@@ -126,7 +127,7 @@ export const NewsPostPage: React.FC = () => {
   }
 
   const heroImageUrl = post.heroImages?.prefix
-    ? `${post.heroImages.prefix}-lg.webp`
+    ? (post.heroImages.prefix.startsWith('http') ? `${post.heroImages.prefix}-lg.webp` : cdnUrl(`/assets/images/news/${post.heroImages.prefix}-lg.webp`))
     : post.imageUrl?.startsWith('http') ? post.imageUrl : cdnUrl(post.imageUrl || '');
   const jsonLdImageUrl = heroImageUrl.startsWith('http')
     ? (heroImageUrl.endsWith('-lg') ? `${heroImageUrl}.webp` : heroImageUrl)
