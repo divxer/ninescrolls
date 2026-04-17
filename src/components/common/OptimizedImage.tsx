@@ -1,6 +1,3 @@
-import { LazyLoadImage } from 'react-lazy-load-image-component';
-import 'react-lazy-load-image-component/src/effects/blur.css';
-
 interface ImageSizes {
   sm?: string;
   md?: string;
@@ -33,41 +30,41 @@ export function OptimizedImage({
   height,
   loading = 'lazy'
 }: OptimizedImageProps) {
-  // Convert regular image path to WebP
   const getWebPPath = (path: string) => {
-    // If path has no image extension (CDN URLs), just append .webp
     if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(path)) {
       return `${path}.webp`;
     }
     const parts = path.split('.');
-    parts.pop(); // Remove extension
+    parts.pop();
     return `${parts.join('.')}.webp`;
   };
 
+  // Fallback src: ensure it has an extension so S3 can serve it
+  const getFallbackSrc = (path: string) => {
+    if (/\.(png|jpe?g|webp|gif|svg)$/i.test(path)) return path;
+    return `${path}.png`;
+  };
+
   if (!sizes) {
-    // Simple image with WebP fallback
     return (
       <picture>
         <source srcSet={getWebPPath(src)} type="image/webp" />
-        <LazyLoadImage
-          src={src}
+        <img
+          src={getFallbackSrc(src)}
           alt={alt}
           className={className}
           width={width}
           height={height}
           loading={loading}
-          effect="blur"
         />
       </picture>
     );
   }
 
-  // Construct srcSet for WebP
   const webpSrcSet = Object.entries(sizes.webp || {})
     .map(([size, path]) => `${path} ${size === 'sm' ? '640w' : size === 'md' ? '768w' : size === 'lg' ? '1024w' : '1280w'}`)
     .join(', ');
 
-  // Construct srcSet for fallback images
   const fallbackSrcSet = Object.entries(sizes)
     .filter(([key]) => key !== 'webp')
     .map(([size, path]) => `${path} ${size === 'sm' ? '640w' : size === 'md' ? '768w' : size === 'lg' ? '1024w' : '1280w'}`)
@@ -83,9 +80,9 @@ export function OptimizedImage({
                1280px"
         type="image/webp"
       />}
-      <LazyLoadImage
+      <img
         srcSet={fallbackSrcSet}
-        src={src}
+        src={getFallbackSrc(src)}
         alt={alt}
         sizes="(max-width: 640px) 100vw,
                (max-width: 768px) 768px,
@@ -95,7 +92,6 @@ export function OptimizedImage({
         width={width}
         height={height}
         loading={loading}
-        effect="blur"
       />
     </picture>
   );
