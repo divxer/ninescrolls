@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function CoaterDeveloper() {
@@ -93,6 +94,14 @@ export function CoaterDeveloper() {
 
   return (
     <>
+      <SEO
+        title="Spin Coater & Developer System - Photoresist Coating Equipment"
+        description="Precision spin coater and developer systems with <0.5% coating uniformity. Modular hotplate, EBR options. 2&quot;–12&quot; wafers and square substrates."
+        keywords="spin coater, photoresist coater, wafer developer, coating system, lithography equipment, resist coating, spin coating"
+        url="/products/coater-developer"
+        image={cdnUrl('/assets/images/products/coater-developer/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>

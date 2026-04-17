@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function HDPCVDSystem() {
@@ -90,6 +91,14 @@ export function HDPCVDSystem() {
 
   return (
     <>
+      <SEO
+        title="HDP-CVD System - High-Density Plasma Chemical Vapor Deposition"
+        description="HDP-CVD systems with compact uni-body design for superior gap-fill and film quality. SiO₂, SiNx, SiC deposition on 4&quot;–12&quot; wafers."
+        keywords="HDP-CVD, HDPCVD, high density plasma CVD, chemical vapor deposition, gap fill CVD, semiconductor deposition equipment"
+        url="/products/hdp-cvd"
+        image={cdnUrl('/assets/images/products/hdp-cvd/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>

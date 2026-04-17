@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function IBERIBESystem() {
@@ -93,6 +94,14 @@ export function IBERIBESystem() {
 
   return (
     <>
+      <SEO
+        title="IBE/RIBE System - Ion Beam Etching Equipment"
+        description="Ion beam etching systems with IBE and RIBE dual-mode operation. Variable angle 0–90°, Kaufman/RF ion sources. Precision etching for magnetic and optical materials."
+        keywords="IBE, RIBE, ion beam etching, ion beam etch, ion milling, reactive ion beam etching, semiconductor etching"
+        url="/products/ibe-ribe"
+        image={cdnUrl('/assets/images/products/ibe-ribe/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>

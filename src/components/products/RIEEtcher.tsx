@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function RIEEtcher() {
@@ -94,6 +95,14 @@ export function RIEEtcher() {
 
   return (
     <>
+      <SEO
+        title="RIE Etcher - Reactive Ion Etching System for Plasma Etching"
+        description="Reactive ion etching (RIE) systems for precise plasma etching of semiconductors, dielectrics, and polymers. Up to 12&quot; wafers, 600–1000W RF, automated recipe control."
+        keywords="RIE etcher, reactive ion etching, reactive ion etch, plasma etching, plasma etch, RIE system, semiconductor etcher"
+        url="/products/rie-etcher"
+        image={cdnUrl('/assets/images/products/rie-etcher/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <script type="application/ld+json">{JSON.stringify({

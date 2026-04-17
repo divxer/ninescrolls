@@ -5,6 +5,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
+import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function ICPEtcher() {
@@ -94,6 +95,14 @@ export function ICPEtcher() {
 
   return (
     <>
+      <SEO
+        title="ICP Etcher - Inductively Coupled Plasma Etching System"
+        description="ICP-RIE etching systems with independent ion energy and density control. 2000W ICP + 600W bias for high-aspect-ratio deep etching on 12&quot; wafers."
+        keywords="ICP etcher, ICP-RIE, ICP RIE etching, inductively coupled plasma, plasma etching, deep reactive ion etching, DRIE, semiconductor etcher"
+        url="/products/icp-etcher"
+        image={cdnUrl('/assets/images/products/icp-etcher/main.jpg')}
+        type="product"
+      />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
         <script type="application/ld+json">{JSON.stringify({
