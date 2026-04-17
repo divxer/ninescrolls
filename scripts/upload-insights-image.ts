@@ -114,7 +114,7 @@ async function uploadNewsImage(slug: string, imagePath: string, customName?: str
   }
 
   // 6. Update the article's imageUrl (unless --no-update-cover)
-  const cdnImageUrl = `${cdnBaseUrl}/insights/${slug}/${heroPrefix}-lg`;
+  const cdnImageUrl = `${cdnBaseUrl}/insights/${slug}/${heroPrefix}-lg.png`;
 
   if (updateCover) {
     console.log(`\nUpdating imageUrl to: ${cdnImageUrl}`);
