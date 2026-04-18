@@ -345,9 +345,20 @@ async function writePageTimeFlush(
             const pvResult = await getDynamoClient().send(new GetCommand({
                 TableName: tableName,
                 Key: { id: `pv-${props.pageViewId}` },
-                ProjectionExpression: 'id',
+                ProjectionExpression: 'id, ip',
             }));
             parentPageViewExists = !!pvResult.Item;
+
+            // IP changed (e.g. user switched from cellular to campus WiFi)
+            const parentIp = pvResult.Item?.ip as string | undefined;
+            if (parentPageViewExists && parentIp && parentIp !== ip) {
+                try {
+                    ipData = await lookupIP(ip);
+                    console.info(`[PTF] IP changed ${parentIp} → ${ip}, org="${ipData.orgName}" type=${ipData.organizationType}`);
+                } catch (err) {
+                    console.error('[PTF] IP-change lookup failed:', err);
+                }
+            }
         } catch (err) {
             console.error('[PTF] Parent page_view check failed:', err);
         }

@@ -700,12 +700,27 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     }
   }
 
-  // ── Collect ISP org names (AI telecom_isp + IP-level isp) ───────────
+  // ── Collect ISP org names (AI telecom_isp + IP-level isp + name keywords) ──
   // Used to split ISP visitors and prevent merge-back.
   const ISP_ORG_TYPES = new Set(['telecom_isp', 'isp']);
+  const ISP_NAME_KEYWORDS = [
+    't-mobile', 'at&t', 'verizon', 'comcast', 'cox communications',
+    'charter communications', 'spectrum', 'vodafone', 'sprint',
+    'cricket wireless', 'centurylink', 'frontier communications',
+    'windstream', 'mediacom', 'altice', 'optimum', 'cablevision',
+    'brighthouse', 'suddenlink', 'consolidated communications',
+    'lumen technologies', 'boost mobile', 'metro pcs', 'tracfone',
+    'visible wireless', 'xfinity', 'rogers', 'bell canada', 'telus',
+  ];
+  const isLikelyISPName = (name: string) => {
+    if (!name) return false;
+    const lower = name.toLowerCase();
+    return ISP_NAME_KEYWORDS.some(k => lower.includes(k));
+  };
   const ispOrgNames = new Set<string>();
   const addIfISP = (orgName: string, org: string, aiType: string | null | undefined, ipType: string | undefined) => {
-    if (ISP_ORG_TYPES.has(aiType || '') || ISP_ORG_TYPES.has(ipType || '')) {
+    if (ISP_ORG_TYPES.has(aiType || '') || ISP_ORG_TYPES.has(ipType || '')
+        || isLikelyISPName(orgName) || isLikelyISPName(org)) {
       if (orgName) ispOrgNames.add(orgName);
       if (org) ispOrgNames.add(org);
     }
