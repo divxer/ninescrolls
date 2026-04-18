@@ -881,21 +881,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     const hasBot = group.some((e) => e.isBot);
 
     // Promote AI classification when IP-based org type is unknown
-    // In consolidated groups (ISP + non-ISP merged), skip AI from ISP events
-    // so e.g. T-Mobile's "telecom_isp" doesn't override UCI's "education"
-    const groupHasNonISP = group.some(e => {
-      const name = e.orgName || e.org || '';
-      return name && !ispOrgNames.has(name);
-    });
-    const groupHasISP = group.some(e => ispOrgNames.has(e.orgName || e.org || ''));
-    const isMixedGroup = groupHasNonISP && groupHasISP;
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
-      && !(isMixedGroup && ispOrgNames.has(e.orgName || e.org || ''))
     );
     // Also check parent ISP AI type and visitorOrgMap (ISP-split groups may lack AI on their own events)
-    // Skip for mixed groups — ISP AI shouldn't override institutional classification
-    const aiFromParentISP = !aiEvent && !isMixedGroup ? (() => {
+    const aiFromParentISP = !aiEvent ? (() => {
       const orgEvent = group.find(e => e.orgName || e.org);
       const orgName = orgEvent?.orgName || orgEvent?.org || '';
       if (orgName && ispAiType.has(orgName)) return ispAiType.get(orgName)!;
