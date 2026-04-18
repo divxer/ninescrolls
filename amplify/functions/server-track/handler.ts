@@ -1,5 +1,6 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { randomUUID } from 'crypto';
+import { reverse } from 'dns/promises';
 import { isbot } from 'isbot';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
@@ -174,6 +175,99 @@ async function fetchFromIPAPI(ip: string): Promise<Record<string, unknown> | nul
 const EDUCATION_KEYWORDS = /\b(university|universidade|universidad|universit[aàe]t|universit[eé]|college|polytechnic)\b/i;
 const GOVERNMENT_KEYWORDS = /\b(government|ministry|department of|national lab)\b/i;
 
+const PTR_TIMEOUT = 2000;
+
+const EDU_DOMAIN_NAMES: Record<string, string> = {
+    'uci.edu': 'University of California, Irvine',
+    'ucla.edu': 'University of California, Los Angeles',
+    'ucsd.edu': 'University of California, San Diego',
+    'ucsb.edu': 'University of California, Santa Barbara',
+    'ucsc.edu': 'University of California, Santa Cruz',
+    'ucr.edu': 'University of California, Riverside',
+    'ucdavis.edu': 'University of California, Davis',
+    'berkeley.edu': 'University of California, Berkeley',
+    'ucmerced.edu': 'University of California, Merced',
+    'ucsf.edu': 'University of California, San Francisco',
+    'mit.edu': 'Massachusetts Institute of Technology',
+    'stanford.edu': 'Stanford University',
+    'harvard.edu': 'Harvard University',
+    'caltech.edu': 'California Institute of Technology',
+    'cmu.edu': 'Carnegie Mellon University',
+    'gatech.edu': 'Georgia Institute of Technology',
+    'umich.edu': 'University of Michigan',
+    'wisc.edu': 'University of Wisconsin-Madison',
+    'purdue.edu': 'Purdue University',
+    'illinois.edu': 'University of Illinois Urbana-Champaign',
+    'umn.edu': 'University of Minnesota',
+    'utexas.edu': 'University of Texas at Austin',
+    'cornell.edu': 'Cornell University',
+    'columbia.edu': 'Columbia University',
+    'upenn.edu': 'University of Pennsylvania',
+    'princeton.edu': 'Princeton University',
+    'yale.edu': 'Yale University',
+    'uchicago.edu': 'University of Chicago',
+    'northwestern.edu': 'Northwestern University',
+    'duke.edu': 'Duke University',
+    'jhu.edu': 'Johns Hopkins University',
+    'rice.edu': 'Rice University',
+    'tamu.edu': 'Texas A&M University',
+    'psu.edu': 'Pennsylvania State University',
+    'osu.edu': 'Ohio State University',
+    'asu.edu': 'Arizona State University',
+    'colorado.edu': 'University of Colorado Boulder',
+    'washington.edu': 'University of Washington',
+    'oregonstate.edu': 'Oregon State University',
+    'virginia.edu': 'University of Virginia',
+    'ufl.edu': 'University of Florida',
+    'ncsu.edu': 'North Carolina State University',
+    'unc.edu': 'University of North Carolina at Chapel Hill',
+    'vanderbilt.edu': 'Vanderbilt University',
+    'wustl.edu': 'Washington University in St. Louis',
+    'rochester.edu': 'University of Rochester',
+    'rpi.edu': 'Rensselaer Polytechnic Institute',
+};
+
+async function reverseDNS(ip: string): Promise<{ hostname: string; domain: string; orgName: string; organizationType: string } | null> {
+    try {
+        const hostnames = await Promise.race([
+            reverse(ip),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('PTR timeout')), PTR_TIMEOUT)),
+        ]);
+        if (!hostnames || hostnames.length === 0) return null;
+
+        const hostname = hostnames[0].toLowerCase().replace(/\.$/, '');
+        const parts = hostname.split('.');
+        if (parts.length < 2) return null;
+
+        const tld = parts[parts.length - 1];
+        const sld = parts[parts.length - 2];
+        const domain2 = `${sld}.${tld}`;
+        const domain3 = parts.length >= 3 ? `${parts[parts.length - 3]}.${domain2}` : domain2;
+
+        const isEdu = tld === 'edu'
+            || hostname.endsWith('.ac.uk') || hostname.endsWith('.ac.jp')
+            || hostname.endsWith('.ac.cn') || hostname.endsWith('.edu.cn')
+            || hostname.endsWith('.edu.au') || hostname.endsWith('.edu.tw');
+        if (isEdu) {
+            const domain = tld === 'edu' ? domain2 : domain3;
+            const knownName = EDU_DOMAIN_NAMES[domain];
+            return { hostname, domain, orgName: knownName || domain, organizationType: 'education' };
+        }
+
+        const isGov = tld === 'gov'
+            || hostname.endsWith('.gov.uk') || hostname.endsWith('.gov.cn')
+            || hostname.endsWith('.gov.au');
+        if (isGov) {
+            const domain = tld === 'gov' ? domain2 : domain3;
+            return { hostname, domain, orgName: domain, organizationType: 'government' };
+        }
+
+        return { hostname, domain: domain2, orgName: domain2, organizationType: 'unknown' };
+    } catch {
+        return null;
+    }
+}
+
 async function lookupIP(ip: string): Promise<IPLookupResult> {
     const responses = await Promise.allSettled([
         fetchWithTimeout(fetchFromIPInfo(ip), IP_LOOKUP_TIMEOUT),
@@ -204,6 +298,17 @@ async function lookupIP(ip: string): Promise<IPLookupResult> {
     else if (!companyType) {
         if (EDUCATION_KEYWORDS.test(orgName)) organizationType = 'education';
         else if (GOVERNMENT_KEYWORDS.test(orgName)) organizationType = 'government';
+    }
+
+    // PTR lookup: when IP lookup can't identify the org, reverse DNS often reveals
+    // academic (.edu) and government (.gov) institutions behind ISP/unknown IPs.
+    if (organizationType === 'unknown' || organizationType === 'isp') {
+        const ptr = await reverseDNS(ip);
+        if (ptr && (ptr.organizationType === 'education' || ptr.organizationType === 'government')) {
+            orgName = ptr.orgName;
+            organizationType = ptr.organizationType;
+            console.info(`[IP] PTR upgrade: ${ip} → ${ptr.hostname} → org="${orgName}" type=${organizationType}`);
+        }
     }
 
     return {
