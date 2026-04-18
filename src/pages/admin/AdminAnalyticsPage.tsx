@@ -782,11 +782,17 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     if (existing && groups.has(existing)) {
       // Prefer non-ISP group as primary so the org name reflects the
       // real institution rather than a residential ISP connection.
-      if (ispOrgNames.has(existing) && !ispOrgNames.has(key)) {
-        // Current key is non-ISP, swap: move existing into current
+      // Check event-level orgName (not just the key) because ISP-split
+      // groups are re-keyed by visitorId and lose their ISP key identity.
+      const existingHasISP = groups.get(existing)!.some(e => ispOrgNames.has(e.orgName || e.org || ''));
+      const currentHasISP = group.some(e => ispOrgNames.has(e.orgName || e.org || ''));
+      if (existingHasISP && !currentHasISP) {
         groups.get(key)!.push(...groups.get(existing)!);
         consolidateKeys.push(existing);
         vidPrimaryKey.set(vid, key);
+      } else if (!existingHasISP && currentHasISP) {
+        groups.get(existing)!.push(...group);
+        consolidateKeys.push(key);
       } else {
         groups.get(existing)!.push(...group);
         consolidateKeys.push(key);
