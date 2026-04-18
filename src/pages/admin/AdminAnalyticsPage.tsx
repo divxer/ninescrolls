@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
+import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
@@ -30,6 +30,7 @@ const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
 interface OrganizationRecord {
   key: string;
   orgName: string;
+  displayName?: string;
   organizationType: string;
   country: string;
   region: string;
@@ -1186,6 +1187,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const [override, setOverride] = useState<OrgOverride | null>(null);
   const [overrideLoading, setOverrideLoading] = useState(true);
   const [overrideMsg, setOverrideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [renameLoading, setRenameLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1318,6 +1322,25 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
       setOverrideMsg({ type: 'error', text: 'Failed to undo override' });
     } finally {
       setOverrideLoading(false);
+    }
+  }
+
+  async function handleRename() {
+    const trimmed = editedName.trim();
+    if (!trimmed || trimmed === (override?.displayName || org.orgName)) {
+      setEditingName(false);
+      return;
+    }
+    setRenameLoading(true);
+    try {
+      await renameOrg(org.orgName, trimmed);
+      setOverride((prev) => prev ? { ...prev, displayName: trimmed } : { found: true, displayName: trimmed });
+      setEditingName(false);
+      setOverrideMsg({ type: 'success', text: `Renamed to "${trimmed}"` });
+    } catch {
+      setOverrideMsg({ type: 'error', text: 'Failed to rename organization' });
+    } finally {
+      setRenameLoading(false);
     }
   }
 
@@ -1526,6 +1549,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             {(() => {
               const rfqInstitution = linkedRfqs.find(r => r.institution)?.institution;
               const showRfqName = rfqInstitution && rfqInstitution.toLowerCase() !== org.orgName.toLowerCase();
+              const displayOrgName = override?.displayName || org.orgName;
+              const hasDisplayName = !!override?.displayName;
               return showRfqName ? (
                 <>
                   <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{rfqInstitution}</h1>
@@ -1534,8 +1559,40 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     IP: {org.orgName}
                   </p>
                 </>
+              ) : editingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setEditingName(false); }}
+                    className="text-2xl font-bold tracking-tight text-on-surface font-headline bg-surface-container px-3 py-1 rounded-lg border border-outline-variant focus:border-primary focus:outline-none w-full max-w-lg"
+                    autoFocus
+                    disabled={renameLoading}
+                  />
+                  <button onClick={handleRename} disabled={renameLoading} className="p-1.5 rounded-full hover:bg-secondary/10 text-secondary border-none bg-transparent cursor-pointer disabled:opacity-50" title="Save">
+                    <span className="material-symbols-outlined text-xl">check</span>
+                  </button>
+                  <button onClick={() => setEditingName(false)} disabled={renameLoading} className="p-1.5 rounded-full hover:bg-error/10 text-error border-none bg-transparent cursor-pointer disabled:opacity-50" title="Cancel">
+                    <span className="material-symbols-outlined text-xl">close</span>
+                  </button>
+                </div>
               ) : (
-                <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{org.orgName}</h1>
+                <div className="flex items-center gap-2 group">
+                  <h1 className="text-3xl font-bold tracking-tight text-on-surface font-headline">{displayOrgName}</h1>
+                  <button
+                    onClick={() => { setEditedName(displayOrgName); setEditingName(true); }}
+                    className="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer"
+                    title="Rename organization"
+                  >
+                    <span className="material-symbols-outlined text-lg">edit</span>
+                  </button>
+                  {hasDisplayName && (
+                    <span className="text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
+                      {org.orgName}
+                    </span>
+                  )}
+                </div>
               );
             })()}
             <div className="flex items-center gap-2 text-on-surface-variant">
@@ -2777,8 +2834,12 @@ export function AdminAnalyticsPage() {
     }
 
     for (const org of orgs) {
-      const ov = overrideMap.get(org.orgName);
+      const ov = overrideMap.get(org.orgName) || overrideMap.get(org.key);
       if (!ov) continue;
+
+      if (ov.displayName) {
+        org.displayName = ov.displayName;
+      }
 
       if (ov.source === 'manual') {
         // Apply manual override data
@@ -3421,10 +3482,10 @@ export function AdminAnalyticsPage() {
                     <td className="pl-5 pr-2 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                          {(org.rfqInstitution || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                          {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                         </div>
                         <div className="min-w-0">
-                          <span className="font-semibold truncate max-w-[150px] block" title={org.rfqInstitution || org.orgName}>{org.rfqInstitution || org.orgName}</span>
+                          <span className="font-semibold truncate max-w-[150px] block" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</span>
                           {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() && (
                             <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
                               <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
@@ -3471,10 +3532,10 @@ export function AdminAnalyticsPage() {
               <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
-                    {(org.rfqInstitution || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                    {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-on-surface truncate" title={org.rfqInstitution || org.orgName}>{org.rfqInstitution || org.orgName}</div>
+                    <div className="font-semibold text-sm text-on-surface truncate" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</div>
                     {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() ? (
                       <div className="text-xs text-on-surface-variant truncate"><span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}</div>
                     ) : (

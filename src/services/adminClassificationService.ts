@@ -5,6 +5,7 @@
 export interface OrgOverride {
   found: boolean;
   orgName?: string;
+  displayName?: string;
   organizationType?: string;
   isTargetCustomer?: boolean;
   confidence?: number;
@@ -95,8 +96,17 @@ export async function undoOrgOverride(orgName: string): Promise<OrgOverride> {
   return { found: true, ...(result as object) } as OrgOverride;
 }
 
+/**
+ * Rename an organization (set a display name override).
+ */
+export async function renameOrg(orgName: string, displayName: string): Promise<{ orgName: string; displayName: string }> {
+  const result = await callClassifyOrg({ action: 'rename', orgName, displayName });
+  return result as { orgName: string; displayName: string };
+}
+
 export interface OrgOverrideSummary {
   orgName: string;
+  displayName?: string;
   organizationType: string;
   isTargetCustomer: boolean;
   confidence: number;

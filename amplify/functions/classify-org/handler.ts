@@ -6,7 +6,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface ClassifyRequest {
-    action?: 'classify' | 'override' | 'undo' | 'get-override' | 'list-overrides';
+    action?: 'classify' | 'override' | 'undo' | 'get-override' | 'list-overrides' | 'rename';
     orgName: string;
     country?: string;
     city?: string;
@@ -16,6 +16,7 @@ interface ClassifyRequest {
     isTargetCustomer?: boolean;
     organizationType?: string;
     reason?: string;
+    displayName?: string;
     adminToken?: string;
 }
 
@@ -66,6 +67,7 @@ const CACHE_TTL_DAYS = 7;
 
 interface CachedItem {
     orgName: string;
+    displayName?: string;
     organizationType: string;
     isTargetCustomer: boolean;
     confidence: number;
@@ -509,6 +511,7 @@ async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<stri
         body: JSON.stringify({
             found: true,
             orgName: item.orgName,
+            displayName: item.displayName,
             organizationType: item.organizationType,
             isTargetCustomer: item.isTargetCustomer,
             confidence: item.confidence,
@@ -556,6 +559,7 @@ async function handleListOverrides(body: ClassifyRequest, corsHeaders: Record<st
 
         const overrides = items.map((item) => ({
             orgName: item.orgName,
+            displayName: item.displayName,
             organizationType: item.organizationType,
             isTargetCustomer: item.isTargetCustomer,
             confidence: item.confidence,
@@ -578,6 +582,52 @@ async function handleListOverrides(body: ClassifyRequest, corsHeaders: Record<st
             body: JSON.stringify({ error: 'Failed to list overrides' }),
         };
     }
+}
+
+async function handleRename(body: ClassifyRequest, corsHeaders: Record<string, string>) {
+    if (!verifyAdminToken(body.adminToken)) {
+        return {
+            statusCode: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'Unauthorized' }),
+        };
+    }
+
+    if (!body.displayName || body.displayName.trim().length < 1) {
+        return {
+            statusCode: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'displayName is required' }),
+        };
+    }
+
+    const existing = await getCachedItem(body.orgName);
+    if (existing) {
+        await ddbClient.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: { ...existing, displayName: body.displayName.trim() },
+        }));
+    } else {
+        await ddbClient.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: {
+                orgName: body.orgName,
+                displayName: body.displayName.trim(),
+                organizationType: 'unknown',
+                isTargetCustomer: false,
+                confidence: 0,
+                reason: '',
+                classifiedAt: new Date().toISOString(),
+                source: 'manual' as const,
+            },
+        }));
+    }
+
+    return {
+        statusCode: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgName: body.orgName, displayName: body.displayName.trim() }),
+    };
 }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
@@ -609,6 +659,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         if (body.action === 'override') return handleOverride(body, corsHeaders);
         if (body.action === 'undo') return handleUndo(body, corsHeaders);
         if (body.action === 'get-override') return handleGetOverride(body, corsHeaders);
+        if (body.action === 'rename') return handleRename(body, corsHeaders);
 
         // Default: classify flow
         // Check DynamoDB cache first
