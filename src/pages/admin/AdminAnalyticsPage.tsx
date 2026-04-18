@@ -879,7 +879,8 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       && !(isMixedGroup && ispOrgNames.has(e.orgName || e.org || ''))
     );
     // Also check parent ISP AI type and visitorOrgMap (ISP-split groups may lack AI on their own events)
-    const aiFromParentISP = !aiEvent ? (() => {
+    // Skip for mixed groups — ISP AI shouldn't override institutional classification
+    const aiFromParentISP = !aiEvent && !isMixedGroup ? (() => {
       const orgEvent = group.find(e => e.orgName || e.org);
       const orgName = orgEvent?.orgName || orgEvent?.org || '';
       if (orgName && ispAiType.has(orgName)) return ispAiType.get(orgName)!;
