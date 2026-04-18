@@ -192,7 +192,7 @@ async function lookupIP(ip: string): Promise<IPLookupResult> {
 
     // Org type analysis (same logic as /geo Lambda)
     const orgNameRaw = (merged.org as string) || (merged.isp as string) || 'Unknown';
-    const orgName = orgNameRaw.replace(/^AS\d+\s+/i, '').trim() || orgNameRaw;
+    let orgName = orgNameRaw.replace(/^AS\d+\s+/i, '').trim() || orgNameRaw;
     const companyType = merged.companyType as string | undefined;
 
     let organizationType = 'unknown';
