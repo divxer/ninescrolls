@@ -106,6 +106,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 
 - [MEMS Fabrication Process Guide](https://ninescrolls.com/insights/mems-fabrication-process-guide): Complete MEMS fabrication chain — bulk/surface micromachining, DRIE, thin-film deposition, wafer bonding, release etching, device-specific flows for accelerometers, pressure sensors, microfluidics, RF MEMS
 - [Quantum Device Micro- & Nanofabrication Guide](https://ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide): Fabrication chain for superconducting qubits, spin qubits, and photonic circuits — substrate prep, thin-film deposition, lithography, pattern transfer, process integration, equipment selection
+- [Wide Bandgap Semiconductor Fabrication Guide](https://ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide): GaN & SiC power device fabrication — SiC ICP-RIE (SF₆/O₂), GaN gate recess (digital etch, low-bias ICP-RIE), PECVD SiNx passivation, ALD Al₂O₃ gate dielectrics, complete process flows for GaN HEMTs and SiC MOSFETs, equipment selection, emerging UWBG materials (β-Ga₂O₃, AlN, diamond)
 
 ## Insights — Energy
 
