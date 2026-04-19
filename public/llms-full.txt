@@ -316,6 +316,10 @@ Summary: Complete guide to MEMS fabrication covering the full process chain from
 URL: https://ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide
 Summary: Comprehensive fabrication guide for quantum devices including superconducting qubits (transmon, flux), spin qubits (Si/SiGe quantum dots), and photonic quantum circuits. Covers substrate preparation and surface treatment for coherence preservation, thin-film deposition (Al, Nb, NbN, NbTiN via sputtering and e-beam evaporation), lithography (optical and e-beam for nm-scale Josephson junctions), pattern transfer via RIE/ICP etching with minimal damage, and multi-layer process integration. Addresses fabrication tolerances far beyond conventional microelectronics and includes practical recipes, contamination control strategies, and equipment selection criteria for quantum hardware labs.
 
+**Wide Bandgap Semiconductor Fabrication Guide — GaN & SiC Power Device Processing**
+URL: https://ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide
+Summary: Complete fabrication guide for wide bandgap (WBG) semiconductor power devices covering GaN and SiC material properties, etching, deposition, and process integration. SiC ICP-RIE etching with SF₆/O₂ and Cl₂/Ar chemistries, GaN gate recess via low-bias ICP-RIE and digital etch techniques, PECVD SiNx passivation for GaN HEMTs, ALD Al₂O₃ and HfO₂ gate dielectrics, ohmic and Schottky contact metallization. Includes complete process flows for GaN HEMT and SiC MOSFET fabrication, equipment selection criteria (ICP-RIE, PECVD, ALD, sputter), troubleshooting guide for common WBG processing issues, and overview of emerging ultra-wide bandgap materials (β-Ga₂O₃, AlN, diamond).
+
 ### Energy Applications
 
 **Solar Cell Manufacturing**
