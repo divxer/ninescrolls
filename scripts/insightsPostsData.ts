@@ -21324,11 +21324,11 @@ result = differential_evolution(
       <p>SiC device fabrication routinely involves temperatures that would destroy silicon devices: ion implantation activation at 1600–1700°C, thermal oxidation at 1200–1300°C, and ohmic contact annealing at 900–1050°C. These high-temperature steps constrain the process integration sequence and limit material choices for masking and passivation layers.</p>
 
       <picture>
-        <source srcSet="/assets/images/insights/wbg-material-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-material-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-material-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-material-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="/assets/images/insights/wbg-material-comparison.png" alt="Comparison of silicon, 4H-SiC, and GaN material properties for power electronics showing bandgap, critical field, thermal conductivity, and electron velocity" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison.png" alt="Comparison of silicon, 4H-SiC, and GaN material properties for power electronics showing bandgap, critical field, thermal conductivity, and electron velocity" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 1: Wide Bandgap Material Property Comparison — SiC and GaN offer 3× the bandgap and 10× the critical electric field of silicon, enabling fundamentally different power device architectures</p>
 
@@ -21523,11 +21523,11 @@ result = differential_evolution(
       <p><strong>Approach 3 — Selective etch with etch-stop:</strong> BCl₃/SF₆ chemistry exploits AlF₃ formation as a natural etch-stop on aluminum-containing layers. Selectivity of GaN over AlGaN can reach 5–20:1, enabling endpoint-free processing. Requires careful SF₆ flow optimization — too much SF₆ attacks the AlGaN.</p>
 
       <picture>
-        <source srcSet="/assets/images/insights/wbg-sic-gan-etch-process-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-sic-gan-etch-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-sic-gan-etch-process-md.webp" media="(min-width: 768px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-sic-gan-etch-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="/assets/images/insights/wbg-sic-gan-etch-process.png" alt="Side-by-side comparison of SiC and GaN ICP-RIE etch processes showing gas chemistry, DC bias ranges, and etch rate differences" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-md.webp" media="(min-width: 768px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process.png" alt="Side-by-side comparison of SiC and GaN ICP-RIE etch processes showing gas chemistry, DC bias ranges, and etch rate differences" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 2: SiC vs GaN ICP-RIE Etch Process Comparison — SiC requires fluorine-based chemistry with high ion energy, while GaN uses chlorine-based chemistry with lower damage thresholds</p>
 
@@ -21635,11 +21635,11 @@ result = differential_evolution(
       <p><strong>SiC ohmic contacts:</strong> Ni (100 nm) on n-type SiC, annealed at 950–1050°C to form Ni₂Si. Contact resistance < 10⁻⁵ Ω·cm². Ti/Al on p-type SiC requires higher anneal temperatures (1000–1100°C).</p>
 
       <picture>
-        <source srcSet="/assets/images/insights/wbg-device-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-device-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-device-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-device-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="/assets/images/insights/wbg-device-process-flow.png" alt="Complete fabrication process flow for GaN HEMT and SiC MOSFET power devices showing major steps from substrate to packaging" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow.png" alt="Complete fabrication process flow for GaN HEMT and SiC MOSFET power devices showing major steps from substrate to packaging" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 3: WBG Device Fabrication Process Flows — GaN HEMT (top) and SiC MOSFET (bottom) share similar unit processes but differ significantly in process temperatures and integration sequence</p>
 
@@ -21743,11 +21743,11 @@ result = differential_evolution(
       </ul>
 
       <picture>
-        <source srcSet="/assets/images/insights/wbg-equipment-overview-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-equipment-overview-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-equipment-overview-md.webp" media="(min-width: 768px)" type="image/webp" />
-        <source srcSet="/assets/images/insights/wbg-equipment-overview-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="/assets/images/insights/wbg-equipment-overview.png" alt="Equipment ecosystem for wide bandgap semiconductor fabrication showing ICP-RIE, PECVD, ALD, sputtering, and characterization tools" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-md.webp" media="(min-width: 768px)" type="image/webp" />
+        <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-sm.webp" media="(max-width: 767px)" type="image/webp" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview.png" alt="Equipment ecosystem for wide bandgap semiconductor fabrication showing ICP-RIE, PECVD, ALD, sputtering, and characterization tools" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 4: WBG Device Fabrication Equipment Ecosystem — From ICP-RIE etching through deposition and characterization, each tool must meet the demanding requirements of wide bandgap materials</p>
 
@@ -21848,7 +21848,7 @@ result = differential_evolution(
     publishDate: '2026-04-19',
     category: 'Materials Science',
     readTime: 26,
-    imageUrl: '/assets/images/insights/wbg-cover',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/cover-lg',
     tags: [
       'Wide Bandgap',
       'GaN',
