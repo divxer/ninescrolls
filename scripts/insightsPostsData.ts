@@ -758,7 +758,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 15,
     imageUrl: '/assets/images/insights/rie-cover.png',
     slug: 'reactive-ion-etching-guide',
-    tags: ['reactive ion etching','RIE','plasma etching','ICP-RIE','DRIE','CCP-RIE','gas chemistry','process parameters','equipment selection','MEMS','semiconductor etching']
+    tags: ['reactive ion etching','RIE','plasma etching','ICP-RIE','DRIE','CCP-RIE','gas chemistry','process parameters','equipment selection','MEMS','semiconductor etching'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'General-purpose reactive ion etching for Si, SiO₂, polymers' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for deep etching and III-V processing' },
+      { href: '/products/compact-rie', label: 'Compact RIE', subtitle: 'Space-efficient RIE for rapid prototyping and failure analysis' }
+    ]
   },
   {
     id: '21',
@@ -967,7 +972,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 18,
     imageUrl: '/assets/images/insights/drie-cover-lg.webp',
     slug: 'deep-reactive-ion-etching-bosch-process',
-    tags: ['DRIE','Bosch process','reactive ion etching','MEMS','TSV','silicon etching','high aspect ratio','ICP-RIE','scalloping','ARDE']
+    tags: ['DRIE','Bosch process','reactive ion etching','MEMS','TSV','silicon etching','high aspect ratio','ICP-RIE','scalloping','ARDE'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'DRIE Bosch and cryogenic etching for MEMS and TSV' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Standard RIE for shallow trench and dielectric etching' }
+    ]
   },
   {
     id: '22',
@@ -1109,7 +1118,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 12,
     imageUrl: '/assets/images/insights/icp-rie-cover-lg.webp',
     slug: 'icp-rie-technology-advanced-etching',
-    tags: ['ICP','ICP-RIE','inductively coupled plasma etching']
+    tags: ['ICP','ICP-RIE','inductively coupled plasma etching'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density ICP-RIE for deep etching and III-V materials' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Conventional CCP-RIE for general-purpose etching' }
+    ]
   },
   {
     id: '23',
@@ -1469,7 +1482,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 15,
     imageUrl: '/assets/images/insights/rie-vs-milling-cover-lg.webp',
     slug: 'reactive-ion-etching-vs-ion-milling',
-    tags: ['reactive ion etching','ion milling','RIE vs ion milling','ion beam etching','IBE vs RIE','dry etching comparison','semiconductor etching techniques','plasma etching vs ion milling','microfabrication etching methods','DRIE','RIBE','deep reactive ion etching']
+    tags: ['reactive ion etching','ion milling','RIE vs ion milling','ion beam etching','IBE vs RIE','dry etching comparison','semiconductor etching techniques','plasma etching vs ion milling','microfabrication etching methods','DRIE','RIBE','deep reactive ion etching'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Chemical-dominant reactive ion etching' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for deep and high-AR etching' },
+      { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Physical ion beam etching for metals and complex materials' }
+    ]
   },
   {
     id: '24',
@@ -1658,7 +1676,13 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 10,
     imageUrl: '/assets/images/insights/etchers-overview-cover-lg.webp',
     slug: 'semiconductor-etchers-overview',
-    tags: ['semiconductor etcher','plasma etcher','RIE','ICP']
+    tags: ['semiconductor etcher','plasma etcher','RIE','ICP'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma etching for advanced applications' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'General-purpose reactive ion etching' },
+      { href: '/products/compact-rie', label: 'Compact RIE', subtitle: '50% smaller footprint for space-constrained labs' },
+      { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Ion beam etching for metals and magnetic materials' }
+    ]
   },
   {
     id: '14',
@@ -1965,7 +1989,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 15,
     imageUrl: '/assets/images/insights/hdp-cvd-guide-cover-optimized.webp',
     slug: 'hdp-cvd-in-depth-guide-practical-handbook',
-    tags: ['HDP-CVD', 'High-Density Plasma', 'Chemical Vapor Deposition', 'Semiconductor Manufacturing', 'Thin Film Deposition', 'Gap-Fill Technology', 'Dielectric Films', 'Process Engineering', 'Equipment Selection', 'Cost of Ownership']
+    tags: ['HDP-CVD', 'High-Density Plasma', 'Chemical Vapor Deposition', 'Semiconductor Manufacturing', 'Thin Film Deposition', 'Gap-Fill Technology', 'Dielectric Films', 'Process Engineering', 'Equipment Selection', 'Cost of Ownership'],
+    relatedProducts: [
+      { href: '/products/hdp-cvd', label: 'HDP-CVD Systems', subtitle: 'High-density plasma CVD for void-free gap fill' },
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Plasma-enhanced CVD for dielectric and passivation films' }
+    ]
   },
   {
     id: '16',
@@ -2282,7 +2310,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 17,
     imageUrl: '/assets/images/insights/plasma-uniformity-cover.webp',
     slug: 'plasma-non-uniform-etch-chamber-solutions',
-    tags: ['Plasma Etching', 'Plasma Uniformity', 'Etch Chamber', 'Semiconductor Manufacturing', 'Process Control', 'Equipment Optimization', 'Gas Flow Distribution', 'Temperature Gradient', 'Etch Rate Diagnostics']
+    tags: ['Plasma Etching', 'Plasma Uniformity', 'Etch Chamber', 'Semiconductor Manufacturing', 'Process Control', 'Equipment Optimization', 'Gas Flow Distribution', 'Temperature Gradient', 'Etch Rate Diagnostics'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'Optimized gas distribution for uniform high-density plasma' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Engineered electrode design for etch uniformity' }
+    ]
   },
   {
     id: '12',
@@ -2620,7 +2652,13 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 15,
     imageUrl: '/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png',
     slug: 'plasma-etching-explained-fundamentals-applications',
-    tags: ['Plasma Etching', 'Semiconductor Manufacturing', 'Materials Science', 'RIE', 'ICP-RIE', 'Microfabrication']
+    tags: ['Plasma Etching', 'Semiconductor Manufacturing', 'Materials Science', 'RIE', 'ICP-RIE', 'Microfabrication'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'General-purpose reactive ion etching' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for advanced etching' },
+      { href: '/products/compact-rie', label: 'Compact RIE', subtitle: 'Space-efficient RIE for smaller labs' },
+      { href: '/products/striper', label: 'Striper Systems', subtitle: 'Plasma stripping and resist removal' }
+    ]
   },
   {
     id: '11',
@@ -3053,7 +3091,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 22,
     imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
-    tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology', 'Bosch Process', 'DRIE', 'ICP Etching']
+    tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology', 'Bosch Process', 'DRIE', 'ICP Etching'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'CCP-RIE for dielectric and polymer etching' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE for high-density plasma etching and DRIE' },
+      { href: '/products/compact-rie', label: 'Compact RIE', subtitle: 'Cost-effective RIE for R&D and failure analysis' }
+    ]
   },
   {
     id: '1',
@@ -3311,7 +3354,13 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 8,
     imageUrl: '/assets/images/insights/advanced-materials.jpg',
     slug: 'advanced-materials-processing-nanotechnology-energy',
-    tags: ['Advanced Materials', 'Nanotechnology', 'Energy Applications', 'Materials Science']
+    tags: ['Advanced Materials', 'Nanotechnology', 'Energy Applications', 'Materials Science'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'Advanced etching for nanomaterials and compound semiconductors' },
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Thin film deposition for energy and electronics applications' },
+      { href: '/products/ald', label: 'ALD Systems', subtitle: 'Atomic-scale conformal coatings for nanotechnology' },
+      { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'PVD thin films for advanced materials research' }
+    ]
   },
   {
     id: '2',
@@ -3579,7 +3628,14 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 12,
     imageUrl: '/assets/images/insights/photonics-manufacturing.jpg',
     slug: 'photonics-manufacturing-precision-engineering',
-    tags: ['Photonics', 'Optical Devices', 'Precision Manufacturing', 'Optics']
+    tags: ['Photonics', 'Optical Devices', 'Precision Manufacturing', 'Optics'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'Precision etching for waveguides and photonic crystals' },
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Dielectric films for optical waveguide cladding' },
+      { href: '/products/ald', label: 'ALD Systems', subtitle: 'Ultra-thin optical coatings with angstrom control' },
+      { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Ion beam etching for optical device fabrication' },
+      { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'Metal and dielectric films for photonic devices' }
+    ]
   },
   {
     id: '3',
@@ -3878,7 +3934,14 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 10,
     imageUrl: '/assets/images/insights/nanofabrication.jpg',
     slug: 'nanofabrication-techniques-nanoscale-future',
-    tags: ['Nanofabrication', 'Nanotechnology', 'Microfabrication', 'Advanced Manufacturing']
+    tags: ['Nanofabrication', 'Nanotechnology', 'Microfabrication', 'Advanced Manufacturing'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-resolution plasma etching for nanostructures' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Pattern transfer for nanoscale features' },
+      { href: '/products/ald', label: 'ALD Systems', subtitle: 'Angstrom-precise thin films for nanoscale devices' },
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Dielectric and functional films for nanofabrication' },
+      { href: '/products/coater-developer', label: 'Coater/Developer Systems', subtitle: 'Precision resist processing for nanolithography' }
+    ]
   },
   {
     id: '6',
@@ -4253,7 +4316,13 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 10,
     imageUrl: '/assets/images/insights/fuel-cells.jpg',
     slug: 'fuel-cell-technology-hydrogen-economy',
-    tags: ['Fuel Cells', 'Hydrogen Economy', 'Clean Energy', 'Energy Technology']
+    tags: ['Fuel Cells', 'Hydrogen Economy', 'Clean Energy', 'Energy Technology'],
+    relatedProducts: [
+      { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'Catalyst and electrode thin film deposition' },
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Protective and functional coatings for fuel cell components' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'MEA patterning and flow field structuring' },
+      { href: '/products/plasma-cleaner', label: 'Plasma Cleaners', subtitle: 'Surface activation for membrane and catalyst preparation' }
+    ]
   },
   {
     id: '10',
@@ -4614,7 +4683,13 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 8,
     imageUrl: '/assets/images/insights/solar-cells.jpg',
     slug: 'solar-cell-manufacturing-renewable-energy',
-    tags: ['Solar Cells', 'Renewable Energy', 'Photovoltaics', 'Clean Energy']
+    tags: ['Solar Cells', 'Renewable Energy', 'Photovoltaics', 'Clean Energy'],
+    relatedProducts: [
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Anti-reflection coatings and passivation for solar cells' },
+      { href: '/products/sputter', label: 'Sputter Systems', subtitle: 'TCO and metal contact deposition' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Surface texturing and patterning for photovoltaics' },
+      { href: '/products/ald', label: 'ALD Systems', subtitle: 'Ultra-thin passivation layers for high-efficiency cells' }
+    ]
   },
   {
     id: '26',
@@ -4893,7 +4968,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 18,
     imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'future-of-plasma-etching-microelectronics',
-    tags: ['plasma etching','ALE','atomic layer etching','pulsed plasma','pulsed plasma etching','low-damage etch','EUV','HAR','high aspect ratio etch','cryogenic etching','AI process control','semiconductor etching','3D NAND etching','microelectronics','ICP-RIE']
+    tags: ['plasma etching','ALE','atomic layer etching','pulsed plasma','pulsed plasma etching','low-damage etch','EUV','HAR','high aspect ratio etch','cryogenic etching','AI process control','semiconductor etching','3D NAND etching','microelectronics','ICP-RIE'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'Next-gen ICP-RIE for ALE, cryogenic, and HAR etching' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Versatile RIE for advanced process development' },
+      { href: '/products/compact-rie', label: 'Compact RIE', subtitle: 'Rapid prototyping for emerging etch processes' }
+    ]
   },
   {
     id: '27',
@@ -5092,7 +5172,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 12,
     imageUrl: '/assets/images/insights/thermoelectric-dry-etching-cover-lg.webp',
     slug: 'dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization',
-    tags: ['thermoelectric', 'dry etching', 'plasma etching', 'Bi2Te3', 'MEMS', 'CH4/H2/Ar', 'microfabrication', 'materials science']
+    tags: ['thermoelectric', 'dry etching', 'plasma etching', 'Bi2Te3', 'MEMS', 'CH4/H2/Ar', 'microfabrication', 'materials science'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'CH₄/H₂/Ar plasma etching for thermoelectric films' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for advanced material etching' }
+    ]
   },
   {
     id: 'plasma-cleaner-comparison',
@@ -5446,7 +5530,15 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 8,
     imageUrl: '/assets/images/insights/plasma-cleaner-comparison-cover-lg.png',
     slug: 'plasma-cleaner-comparison-research-labs',
-    tags: ['plasma cleaner comparison', 'plasma cleaner for research laboratories', 'RF plasma cleaner vs quartz plasma cleaner', 'batch plasma cleaner academic lab', 'research grade plasma cleaner', 'plasma cleaning', 'surface activation']
+    tags: ['plasma cleaner comparison', 'plasma cleaner for research laboratories', 'RF plasma cleaner vs quartz plasma cleaner', 'batch plasma cleaner academic lab', 'research grade plasma cleaner', 'plasma cleaning', 'surface activation'],
+    relatedProducts: [
+      { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: '500W RF flagship plasma cleaner (~14.5L)' },
+      { href: '/products/pluto-m', label: 'PLUTO-M', subtitle: '200W RF mid-range plasma cleaner (~8L)' },
+      { href: '/products/pluto-t', label: 'PLUTO-T', subtitle: '200W RF compact plasma cleaner (~4.3L)' },
+      { href: '/products/hy-20lrf', label: 'HY-20LRF', subtitle: '300W RF research-grade batch cleaner (20L)' },
+      { href: '/products/hy-20l', label: 'HY-20L', subtitle: 'RF/MF batch plasma cleaner (20L)' },
+      { href: '/products/hy-4l', label: 'HY-4L', subtitle: 'Compact RF/MF plasma cleaner (~4L)' }
+    ]
   },
   {
     id: '28',
@@ -5616,7 +5708,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 12,
     imageUrl: '/assets/images/insights/plasma-cleaner-principles-cover.svg',
     slug: 'what-is-plasma-cleaner-principles-types',
-    tags: ['plasma cleaner', 'plasma cleaning', 'RF plasma', 'DC plasma', 'microwave plasma', 'surface preparation', 'vacuum plasma', 'plasma cleaning principles']
+    tags: ['plasma cleaner', 'plasma cleaning', 'RF plasma', 'DC plasma', 'microwave plasma', 'surface preparation', 'vacuum plasma', 'plasma cleaning principles'],
+    relatedProducts: [
+      { href: '/products/plasma-cleaner', label: 'Plasma Cleaners Overview', subtitle: 'Compare PLUTO and HY series plasma cleaners' },
+      { href: '/products/pluto-t', label: 'PLUTO-T', subtitle: '200W RF compact plasma cleaner' },
+      { href: '/products/hy-4l', label: 'HY-4L', subtitle: 'Compact RF/MF plasma cleaner' }
+    ]
   },
   {
     id: '29',
@@ -5761,7 +5858,12 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 14,
     imageUrl: '/assets/images/insights/plasma-cleaner-applications-cover.svg',
     slug: 'plasma-cleaner-applications-guide',
-    tags: ['plasma cleaner', 'plasma cleaning applications', 'semiconductor cleaning', 'medical device', 'surface treatment', 'wire bonding', 'microfluidics', 'PDMS bonding', 'TEM sample preparation']
+    tags: ['plasma cleaner', 'plasma cleaning applications', 'semiconductor cleaning', 'medical device', 'surface treatment', 'wire bonding', 'microfluidics', 'PDMS bonding', 'TEM sample preparation'],
+    relatedProducts: [
+      { href: '/products/plasma-cleaner', label: 'Plasma Cleaners Overview', subtitle: 'PLUTO and HY series for all cleaning applications' },
+      { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: '500W flagship for demanding applications' },
+      { href: '/products/hy-20l', label: 'HY-20L', subtitle: 'Batch processing for multi-sample workflows' }
+    ]
   },
   {
     id: '30',
@@ -5883,7 +5985,16 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 14,
     imageUrl: '/assets/images/insights/plasma-cleaner-buying-guide-cover.svg',
     slug: 'plasma-cleaner-buying-guide',
-    tags: ['plasma cleaner', 'buying guide', 'plasma cleaner selection', 'vacuum system', 'RF plasma cleaner', 'chamber size', 'process control', 'total cost of ownership']
+    tags: ['plasma cleaner', 'buying guide', 'plasma cleaner selection', 'vacuum system', 'RF plasma cleaner', 'chamber size', 'process control', 'total cost of ownership'],
+    relatedProducts: [
+      { href: '/products/plasma-cleaner', label: 'Plasma Cleaners Overview', subtitle: 'Compare all models side by side' },
+      { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: '500W RF flagship (~14.5L), $15,999' },
+      { href: '/products/pluto-m', label: 'PLUTO-M', subtitle: '200W RF mid-range (~8L), $12,999' },
+      { href: '/products/pluto-t', label: 'PLUTO-T', subtitle: '200W RF compact (~4.3L), $9,999' },
+      { href: '/products/hy-20lrf', label: 'HY-20LRF', subtitle: '300W RF batch (20L), $14,499' },
+      { href: '/products/hy-20l', label: 'HY-20L', subtitle: 'RF/MF batch (20L), from $11,999' },
+      { href: '/products/hy-4l', label: 'HY-4L', subtitle: 'Compact RF/MF (~4L), from $6,499' }
+    ]
   },
   {
     id: '31',
@@ -5993,7 +6104,10 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 6,
     imageUrl: '/assets/images/insights/rie150-soft-actuator-cover.png',
     slug: 'rie150-nanoforest-soft-actuator',
-    tags: ['RIE-150', 'reactive ion etching', 'nanoforest', 'soft actuator', 'humidity sensor', 'photothermal', 'ACS Applied Nano Materials', 'publication spotlight']
+    tags: ['RIE-150', 'reactive ion etching', 'nanoforest', 'soft actuator', 'humidity sensor', 'photothermal', 'ACS Applied Nano Materials', 'publication spotlight'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'RIE-150 used in this research for O₂ plasma nanoforest fabrication' }
+    ]
   },
   {
     id: '32',
@@ -6099,7 +6213,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 7,
     imageUrl: '/assets/images/insights/pecvd-icp-photodetector-cover.png',
     slug: 'pecvd-icp-ptse2-photodetector',
-    tags: ['PECVD-150LL', 'ICP-100', 'photodetector', 'PtSe2', 'broadband', 'polarization', 'Applied Surface Science', 'publication spotlight']
+    tags: ['PECVD-150LL', 'ICP-100', 'photodetector', 'PtSe2', 'broadband', 'polarization', 'Applied Surface Science', 'publication spotlight'],
+    relatedProducts: [
+      { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'PECVD-150LL used for PtSe₂ film growth in this research' },
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-100 used for device mesa etching' }
+    ]
   },
   {
     id: '33',
@@ -6209,7 +6327,10 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 6,
     imageUrl: '/assets/images/insights/rie150a-color-router-cover.png',
     slug: 'rie150a-metasurface-color-router',
-    tags: ['RIE-150A', 'reactive ion etching', 'metasurface', 'color router', 'q-BIC', 'photonics', 'Light Science Applications', 'publication spotlight']
+    tags: ['RIE-150A', 'reactive ion etching', 'metasurface', 'color router', 'q-BIC', 'photonics', 'Light Science Applications', 'publication spotlight'],
+    relatedProducts: [
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'RIE-150A used for precision Si₃N₄ metasurface etching' }
+    ]
   },
   {
     id: '34',
@@ -6323,7 +6444,10 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 6,
     imageUrl: '/assets/images/insights/icp200-flow-visualization-cover.png',
     slug: 'icp200-metasurface-flow-visualization',
-    tags: ['ICP-200', 'ICP etching', 'metasurface', 'flow visualization', 'silicon nanopillars', 'photonics', 'Light Science Applications', 'publication spotlight']
+    tags: ['ICP-200', 'ICP etching', 'metasurface', 'flow visualization', 'silicon nanopillars', 'photonics', 'Light Science Applications', 'publication spotlight'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-200 used for silicon nanopillar metasurface fabrication' }
+    ]
   },
   {
     id: '35',
@@ -6601,7 +6725,11 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 22,
     imageUrl: '/assets/images/insights/ale-guide-cover.png',
     slug: 'atomic-layer-etching-practical-guide',
-    tags: ['ALE', 'atomic layer etching', 'ICP-RIE', 'self-limiting etch', 'plasma etching', 'nanotechnology', 'semiconductor', 'precision etching', 'cryogenic ALE', 'area-selective ALE']
+    tags: ['ALE', 'atomic layer etching', 'ICP-RIE', 'self-limiting etch', 'plasma etching', 'nanotechnology', 'semiconductor', 'precision etching', 'cryogenic ALE', 'area-selective ALE'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE platform for ALE process implementation' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'CCP-RIE for thermal ALE and surface modification steps' }
+    ]
   },
   {
     id: '36',
@@ -6888,7 +7016,10 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 19,
     imageUrl: '/assets/images/insights/cryo-vs-bosch-cover.png',
     slug: 'cryogenic-etching-vs-bosch-process',
-    tags: ['cryogenic etching', 'Bosch process', 'DRIE', 'ICP-RIE', 'high-aspect-ratio', 'MEMS', 'silicon etching', 'photonics', 'quantum devices', 'sidewall smoothness']
+    tags: ['cryogenic etching', 'Bosch process', 'DRIE', 'ICP-RIE', 'high-aspect-ratio', 'MEMS', 'silicon etching', 'photonics', 'quantum devices', 'sidewall smoothness'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE with cryo-cooling for both Bosch and cryogenic DRIE' }
+    ]
   },
   {
     id: '37',
@@ -7254,7 +7385,11 @@ result = differential_evolution(
     readTime: 23,
     imageUrl: '/assets/images/insights/ml-plasma-etch-cover.png',
     slug: 'machine-learning-plasma-etch-optimization',
-    tags: ['machine learning', 'AI', 'plasma etching', 'Bayesian optimization', 'virtual metrology', 'OES', 'ICP-RIE', 'process optimization', 'digital twin', 'predictive maintenance']
+    tags: ['machine learning', 'AI', 'plasma etching', 'Bayesian optimization', 'virtual metrology', 'OES', 'ICP-RIE', 'process optimization', 'digital twin', 'predictive maintenance'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE with OES for ML-driven process optimization' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'RIE with process data logging for ML integration' }
+    ]
   },
   {
     id: '38',
@@ -7698,7 +7833,12 @@ result = differential_evolution(
     readTime: 24,
     imageUrl: '/assets/images/insights/etching-new-materials-cover.png',
     slug: 'etching-beyond-silicon-new-materials',
-    tags: ['SiC', 'GaN', '2D materials', 'MoS2', 'HfO2', 'high-k dielectrics', 'ruthenium', 'ferroelectric', 'ICP-RIE', 'plasma etching']
+    tags: ['SiC', 'GaN', '2D materials', 'MoS2', 'HfO2', 'high-k dielectrics', 'ruthenium', 'ferroelectric', 'ICP-RIE', 'plasma etching'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE for SiC, GaN, 2D materials, and high-k dielectrics' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'RIE for polymer and dielectric patterning' },
+      { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Ion beam etching for metals and non-volatile etch products' }
+    ]
   },
   {
     id: '39',
@@ -8078,7 +8218,11 @@ result = differential_evolution(
     readTime: 22,
     imageUrl: '/assets/images/insights/etch-selectivity-cover.png',
     slug: 'ultra-high-etch-selectivity',
-    tags: ['etch selectivity', 'ICP-RIE', 'ALE', 'pulsed plasma', '3D NAND', 'GAA', 'HEMT', 'MEMS', 'silicon photonics', 'fluorocarbon']
+    tags: ['etch selectivity', 'ICP-RIE', 'ALE', 'pulsed plasma', '3D NAND', 'GAA', 'HEMT', 'MEMS', 'silicon photonics', 'fluorocarbon'],
+    relatedProducts: [
+      { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'ICP-RIE with pulsed plasma for ultra-high selectivity' },
+      { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'CCP-RIE for selectivity-critical dielectric etching' }
+    ]
   },
   {
     id: '40',
@@ -8488,7 +8632,12 @@ result = differential_evolution(
     readTime: 12,
     imageUrl: '/assets/images/insights/plasma-maintenance-cover.png',
     slug: 'plasma-cleaner-maintenance-guide',
-    tags: ['plasma cleaner', 'maintenance', 'electrode refurbishment', 'chamber cleaning', 'vacuum system', 'preventive maintenance', 'equipment care', 'plasma cleaning', 'O-ring replacement', 'RF power']
+    tags: ['plasma cleaner', 'maintenance', 'electrode refurbishment', 'chamber cleaning', 'vacuum system', 'preventive maintenance', 'equipment care', 'plasma cleaning', 'O-ring replacement', 'RF power'],
+    relatedProducts: [
+      { href: '/products/plasma-cleaner', label: 'Plasma Cleaners Overview', subtitle: 'All PLUTO and HY series plasma cleaners' },
+      { href: '/products/pluto-f', label: 'PLUTO-F', subtitle: '500W RF flagship with aluminum alloy chamber' },
+      { href: '/products/hy-20lrf', label: 'HY-20LRF', subtitle: '300W RF research-grade batch cleaner' }
+    ]
   },
   {
     id: '44',
@@ -9135,7 +9284,11 @@ result = differential_evolution(
     readTime: 16,
     imageUrl: '/assets/images/insights/coater-developer-guide-cover.png',
     slug: 'spin-coating-development-guide',
-    tags: ['spin coating', 'photoresist', 'photolithography', 'development', 'coater developer', 'film thickness', 'HMDS', 'SU-8', 'edge bead removal', 'process optimization', 'wafer processing', 'semiconductor fabrication']
+    tags: ['spin coating', 'photoresist', 'photolithography', 'development', 'coater developer', 'film thickness', 'HMDS', 'SU-8', 'edge bead removal', 'process optimization', 'wafer processing', 'semiconductor fabrication'],
+    relatedProducts: [
+      { href: '/products/coater-developer', label: 'Coater/Developer Systems', subtitle: 'Automated spin coating and development track systems' },
+      { href: '/products/striper', label: 'Striper Systems', subtitle: 'Photoresist removal after pattern transfer' }
+    ]
   },
 {
     id: '41',
