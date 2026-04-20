@@ -24340,6 +24340,21 @@ result = differential_evolution(
 
       <h2>1. Materials for Bio-MEMS and Microfluidics</h2>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/bio-mems-materials-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/bio-mems-materials-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/bio-mems-materials-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/bio-mems-materials-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/bio-mems-materials-lg.png"
+            alt="Bio-MEMS substrate materials comparison — silicon, glass, PDMS, and thermoplastics with key properties for microfluidic device fabrication"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Bio-MEMS Substrate Materials — Comparison of silicon, glass, PDMS, and thermoplastic properties for microfluidic device fabrication</figcaption>
+      </figure>
+
       <h3>1.1 Silicon</h3>
       <p>Silicon remains the material of choice when Bio-MEMS devices require integrated electronics, precise mechanical properties, or high-aspect-ratio microstructures. Its well-established fabrication infrastructure (DRIE, thermal oxidation, thin-film deposition) enables channels with sub-micron dimensional control and atomically smooth surfaces.</p>
       <p><strong>Advantages:</strong> Excellent dimensional control via DRIE (±0.5 µm); well-characterized mechanical properties (Young's modulus ~170 GPa); mature surface chemistry for functionalization (silane SAMs); compatible with CMOS integration for smart biosensors.</p>
@@ -24478,6 +24493,22 @@ result = differential_evolution(
       <p><strong>Dry etching of glass:</strong> For higher aspect ratios, ICP-RIE with fluorine-based chemistry (SF₆, C₄F₈, or CHF₃) can achieve anisotropic profiles in glass, though etch rates are low (50–200 nm/min) and mask selectivity is challenging. Ni hard masks (sputtered, 500 nm–2 µm) provide the best selectivity (>20:1) for deep glass etching.</p>
 
       <h3>2.3 Soft Lithography and PDMS Molding</h3>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/soft-lithography-process-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/soft-lithography-process-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/soft-lithography-process-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/soft-lithography-process-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/soft-lithography-process-lg.png"
+            alt="Soft lithography process flow — SU-8 master mold fabrication, PDMS casting and curing, and oxygen plasma bonding for microfluidic chip assembly"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Soft Lithography Process Flow — SU-8 master mold fabrication, PDMS replica molding, and O₂ plasma bonding sequence</figcaption>
+      </figure>
+
       <p>Soft lithography is the dominant fabrication method for PDMS microfluidics. The process uses a photolithographically defined master mold — typically SU-8 epoxy resist on a silicon wafer — as a reusable template for PDMS replica molding.</p>
       <p><strong>Master mold fabrication (SU-8 process):</strong></p>
       <ol>
@@ -24575,6 +24606,21 @@ result = differential_evolution(
       </ul>
 
       <h2>4. Surface Functionalization</h2>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/surface-functionalization-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/surface-functionalization-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/surface-functionalization-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/surface-functionalization-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/surface-functionalization-lg.png"
+            alt="Surface functionalization pipeline — plasma activation, silane SAM deposition, and anti-biofouling coating for Bio-MEMS biocompatibility"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Surface Functionalization Pipeline — Plasma activation → silane SAM deposition → anti-biofouling coating for biocompatible microfluidic surfaces</figcaption>
+      </figure>
 
       <h3>4.1 Plasma Surface Activation</h3>
       <p>Plasma treatment is the essential first step for almost all Bio-MEMS surface engineering. By introducing reactive functional groups (–OH, –NH₂, –COOH) to material surfaces, plasma activation enables subsequent chemical functionalization and bonding.</p>
@@ -24691,6 +24737,22 @@ result = differential_evolution(
       </ol>
 
       <h3>6.2 Organ-on-a-Chip (OoC) Platforms</h3>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/organ-on-chip-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/organ-on-chip-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/organ-on-chip-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/organ-on-chip-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/organ-on-chip-lg.png"
+            alt="Organ-on-chip platforms — lung, liver, and kidney modules integrated in a multi-organ microfluidic system for drug screening"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Organ-on-Chip Platforms — Lung, liver, and kidney modules integrated in a multi-organ recirculating system for drug screening and disease modeling</figcaption>
+      </figure>
+
       <p>Organ-on-chip devices recreate the physiological microenvironment of human organs (lung, liver, kidney, gut, heart, blood-brain barrier) in a microfluidic format for drug screening and disease modeling. These devices are among the most fabrication-intensive Bio-MEMS, combining multi-layer channel architectures with porous membranes and living cell cultures.</p>
       <p><strong>Lung-on-a-Chip architecture (Wyss Institute design):</strong></p>
       <ul>
@@ -24993,6 +25055,21 @@ result = differential_evolution(
 
     <h2>Introduction: Why 2D Materials Demand a Different Fabrication Approach</h2>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/2d-materials-family-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/2d-materials-family-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/2d-materials-family-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/2d-materials-family-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/2d-materials-family-lg.png"
+          alt="2D materials family overview — graphene honeycomb lattice, TMD sandwich structure, and h-BN alternating boron-nitrogen lattice with electronic properties comparison"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: 2D Materials Family — Crystal structures and electronic properties of graphene (semimetal), TMDs (semiconductors), and h-BN (insulator)</figcaption>
+    </figure>
+
     <p>Two-dimensional (2D) materials — graphene, transition metal dichalcogenides (TMDs such as MoS₂, WS₂, WSe₂, MoSe₂), and hexagonal boron nitride (h-BN) — have moved from laboratory curiosities to serious candidates for next-generation electronics, photonics, and sensing. Their atomically thin nature enables extreme electrostatic control, while their diverse electronic properties (semimetallic graphene, semiconducting TMDs, insulating h-BN) provide a complete materials palette for heterostructure device engineering.</p>
 
     <p>However, the same properties that make 2D materials technologically exciting also make them extraordinarily challenging to fabricate into devices. Traditional silicon fabrication assumes bulk, mechanically robust substrates that can tolerate aggressive plasma exposure, high-temperature processing, and standard wet chemistries. None of these assumptions hold for materials that are one to a few atoms thick.</p>
@@ -25115,6 +25192,21 @@ result = differential_evolution(
 
     <h2>2) Material Sourcing: Exfoliation, CVD Growth, and Emerging Methods</h2>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cvd-growth-process-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cvd-growth-process-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cvd-growth-process-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cvd-growth-process-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cvd-growth-process-lg.png"
+          alt="CVD growth process flow for 2D materials — substrate preparation, chamber setup, growth phase, and cool-down with key temperature and gas ratio parameters"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: CVD Growth Process Flow — Four-stage process from substrate preparation through growth and cool-down with key parameters</figcaption>
+    </figure>
+
     <p>The choice between exfoliated and CVD-grown materials represents a fundamental trade-off between crystal quality and scalability. Understanding this trade-off is essential for selecting the right sourcing approach for your application.</p>
 
     <h3>2.1 Mechanical Exfoliation (Scotch Tape Method)</h3>
@@ -25163,6 +25255,21 @@ result = differential_evolution(
     </ul>
 
     <h2>3) Material Transfer Techniques</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/transfer-techniques-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/transfer-techniques-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/transfer-techniques-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/transfer-techniques-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/transfer-techniques-lg.png"
+          alt="2D material transfer techniques comparison — wet PMMA-assisted, dry PDMS stamp, and semi-dry electrochemical delamination methods with process steps and quality ratings"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Transfer Techniques — Wet (PMMA), dry (PDMS stamp), and semi-dry (electrochemical) methods with pros, cons, and interface quality ratings</figcaption>
+    </figure>
 
     <p>Transfer — moving 2D materials from their growth substrate (Cu foil, sapphire) to the target device substrate — is often the most yield-limiting step in the entire fabrication flow. Residues from transfer polymers, wrinkles from mechanical handling, and tears from surface tension forces are the primary failure modes.</p>
 
@@ -25607,6 +25714,21 @@ result = differential_evolution(
     </ol>
 
     <h2>8) Complete Device Fabrication Flows</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/device-fabrication-flow-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/device-fabrication-flow-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/device-fabrication-flow-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/device-fabrication-flow-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/device-fabrication-flow-lg.png"
+          alt="Complete 2D materials device fabrication flow — seven-step pipeline from substrate prep through characterization with equipment requirements and example device platforms"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Complete Device Fabrication Flow — Seven-step pipeline with equipment mapping and example device platforms (MoS₂ FET, graphene Hall bar, vertical photodetector)</figcaption>
+    </figure>
 
     <p>This section provides end-to-end fabrication flows for three representative 2D material devices, with specific equipment and process parameters at each step.</p>
 
