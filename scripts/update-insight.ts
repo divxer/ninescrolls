@@ -56,6 +56,7 @@ async function updateInsight(slug: string) {
     tags: localPost.tags,
     publishDate: localPost.publishDate,
     imageUrl: localPost.imageUrl,
+    relatedProducts: localPost.relatedProducts ? JSON.stringify(localPost.relatedProducts) : null,
   });
 
   if (errors) {
