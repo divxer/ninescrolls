@@ -25993,7 +25993,7 @@ result = differential_evolution(
     publishDate: '2026-04-19',
     category: 'Process Integration',
     readTime: 35,
-    imageUrl: '/assets/images/insights/2d-materials-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cover-lg.png',
     tags: [
       '2D Materials',
       'Graphene',
