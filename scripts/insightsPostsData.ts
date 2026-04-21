@@ -88,15 +88,20 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>Because electrons are far more mobile than ions, they quickly charge the powered electrode negatively, creating a <strong>DC self‑bias</strong> (typically −100 to −500 V). This self‑bias accelerates positive ions across the plasma sheath toward the wafer surface, providing the directional energy that distinguishes RIE from isotropic plasma etching.</p>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <img
-          src="/assets/images/insights/rie-chamber-schematic-optimized.webp"
-          alt="RIE Chamber Schematic — Parallel-plate reactor cross-section showing RF-powered electrode, grounded electrode, plasma sheath, DC self-bias formation, and gas inlet/exhaust paths"
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: RIE Chamber Schematic — Cross-section of a parallel-plate reactor showing plasma generation, sheath formation, and DC self-bias at the powered electrode</p>
-      </div>
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-lg.png"
+            alt="Parallel-plate RIE reactor cross-section schematic showing plasma generation, sheath physics, DC self-bias, ion trajectories, and reactive radical pathways"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: RIE Chamber Schematic — Cross-section of a parallel-plate reactor showing plasma generation, sheath formation, and DC self-bias at the powered electrode</figcaption>
+      </figure>
 
       <h3>2.2 The Coburn‑Winters Synergy</h3>
       <p>The key insight behind RIE is that chemical etching and physical bombardment are not simply additive — they are <strong>synergistic</strong>. Ion bombardment enhances chemical etching by:</p>
@@ -120,7 +125,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <div style="text-align: center; margin: 30px 0;">
         <img
-          src="/assets/images/insights/rie-coburn-winters-synergy-optimized.webp"
+          src="https://cdn.ninescrolls.com/insights/rie-coburn-winters-synergy-optimized.webp"
           alt="Coburn-Winters Synergy Effect — Bar chart comparing etch rates of chemical etching alone (XeF₂), physical sputtering alone (Ar⁺), and combined ion-assisted etching, demonstrating the synergistic enhancement"
           style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
           loading="lazy"
@@ -351,15 +356,20 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <img
-          src="/assets/images/insights/rie-ccp-vs-icp-structure-optimized.webp"
-          alt="CCP-RIE vs ICP-RIE Reactor Structure Comparison — Side-by-side cross-sections showing capacitively coupled parallel-plate design (single RF) versus inductively coupled design (ICP coil + separate bias RF) with independent plasma density and ion energy control"
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 3: CCP-RIE vs ICP-RIE Reactor Structure — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</p>
-      </div>
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-lg.png"
+            alt="CCP-RIE vs ICP-RIE reactor architecture comparison showing capacitively coupled parallel-plate design versus inductively coupled design with independent plasma density and ion energy control"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: CCP-RIE vs ICP-RIE Reactor Architecture — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</figcaption>
+      </figure>
 
       <p><strong>Key distinction — independent ion energy control:</strong> In CCP‑RIE, a single RF source controls both plasma density and ion energy simultaneously, so increasing etch rate also increases ion damage. ICP‑RIE decouples these: the ICP coil sets plasma density (radical supply, etch rate) while a separate RF bias sets ion energy (directionality, damage). This independent control is why ICP‑RIE is preferred for damage‑sensitive or HAR applications.</p>
 
@@ -371,7 +381,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <div style="text-align: center; margin: 30px 0;">
         <img
-          src="/assets/images/insights/rie-etch-profiles-sem-optimized.webp"
+          src="https://cdn.ninescrolls.com/insights/rie-etch-profiles-sem-optimized.webp"
           alt="RIE Etch Profile Examples — SEM cross-section images showing anisotropic trench profiles, high-aspect-ratio vias, and Bosch process scalloping in deep silicon etching"
           style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
           loading="lazy"
@@ -675,15 +685,20 @@ export const insightsPosts: InsightsPost[] = [
         <li>Ideal for precision patterning, MEMS/DRIE, III‑V compounds, photonics, and HAR structures</li>
       </ul>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <img
-          src="/assets/images/insights/rie-ninescrolls-system-optimized.webp"
-          alt="NineScrolls RIE & ICP Etcher Systems — Product photo or modular structure diagram showing compact uni-body design, chamber, RF system, gas delivery, and control modules"
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-          loading="lazy"
-        />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 5: NineScrolls RIE & ICP Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</p>
-      </div>
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-lg.png"
+            alt="NineScrolls ICP & RIE Etcher modular system architecture showing RF power system, process chamber, gas delivery, vacuum system, and control system modules"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 5: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
+      </figure>
 
       <p><strong>Product pages:</strong> <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">RIE Etcher Series</a> · <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">ICP Etcher Series</a></p>
 
@@ -756,7 +771,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-28',
     category: 'Nanotechnology',
     readTime: 15,
-    imageUrl: '/assets/images/insights/rie-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/rie-cover.png',
     slug: 'reactive-ion-etching-guide',
     tags: ['reactive ion etching','RIE','plasma etching','ICP-RIE','DRIE','CCP-RIE','gas chemistry','process parameters','equipment selection','MEMS','semiconductor etching'],
     relatedProducts: [
@@ -790,11 +805,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/drie-bosch-cycle-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-bosch-cycle-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-bosch-cycle-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-bosch-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/drie-bosch-cycle.png" alt="Bosch process cycle diagram showing three steps: C4F8 passivation polymer deposition, SF6 plasma etching with ion bombardment, and repeated cycles forming a deep vertical trench with scalloped sidewalls" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-bosch-cycle-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-bosch-cycle-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-bosch-cycle-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-bosch-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/drie-bosch-cycle.png" alt="Bosch process cycle diagram showing three steps: C4F8 passivation polymer deposition, SF6 plasma etching with ion bombardment, and repeated cycles forming a deep vertical trench with scalloped sidewalls" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Bosch Process Cycle — Step 1 deposits a protective C₄F₈ polymer; Step 2 uses SF₆ plasma with directional ion bombardment to etch the trench bottom; repeated cycling produces deep vertical features with characteristic sidewall scalloping</p>
       </div>
@@ -893,11 +908,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/drie-scalloping-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-scalloping-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-scalloping-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-scalloping-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/drie-scalloping.png" alt="Sidewall scalloping diagram showing close-up of periodic waviness from Bosch process cycles, cycle duration vs scallop depth chart, mitigation strategies, and comparison of Bosch vs cryogenic DRIE sidewall quality" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-scalloping-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-scalloping-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-scalloping-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-scalloping-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/drie-scalloping.png" alt="Sidewall scalloping diagram showing close-up of periodic waviness from Bosch process cycles, cycle duration vs scallop depth chart, mitigation strategies, and comparison of Bosch vs cryogenic DRIE sidewall quality" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 2: Sidewall Scalloping — Close‑up of periodic sidewall roughness from Bosch cycles, effect of cycle duration on scallop depth, mitigation strategies, and comparison of Bosch (scalloped, Ra 50–200 nm) vs cryogenic DRIE (smooth, Ra < 10 nm)</p>
       </div>
@@ -907,11 +922,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/drie-arde-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-arde-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-arde-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/drie-arde-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/drie-arde.png" alt="Aspect Ratio Dependent Etching diagram showing trenches of different widths etched to different depths under identical conditions, etch rate vs aspect ratio curve, and ARDE mitigation approaches" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-arde-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-arde-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-arde-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/drie-arde-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/drie-arde.png" alt="Aspect Ratio Dependent Etching diagram showing trenches of different widths etched to different depths under identical conditions, etch rate vs aspect ratio curve, and ARDE mitigation approaches" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 3: ARDE (RIE Lag) — Wider trenches etch significantly deeper than narrow ones in the same process time. The etch rate vs aspect ratio curve shows exponential roll‑off due to Knudsen diffusion transport limitation of reactive species</p>
       </div>
@@ -970,7 +985,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 18,
-    imageUrl: '/assets/images/insights/drie-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/drie-cover-lg.webp',
     slug: 'deep-reactive-ion-etching-bosch-process',
     tags: ['DRIE','Bosch process','reactive ion etching','MEMS','TSV','silicon etching','high aspect ratio','ICP-RIE','scalloping','ARDE'],
     relatedProducts: [
@@ -1017,11 +1032,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/icp-rie-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/icp-rie-reactor-architecture.png" alt="ICP-RIE dual-source reactor architecture showing ICP coil for plasma density control and RF-biased substrate electrode for ion energy control" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/icp-rie-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/icp-rie-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/icp-rie-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/icp-rie-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/icp-rie-reactor-architecture.png" alt="ICP-RIE dual-source reactor architecture showing ICP coil for plasma density control and RF-biased substrate electrode for ion energy control" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: ICP-RIE Dual-Source Reactor Architecture — independent ICP coil controls plasma density while RF-biased substrate electrode controls ion energy</p>
       </div>
@@ -1116,7 +1131,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 12,
-    imageUrl: '/assets/images/insights/icp-rie-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/icp-rie-cover-lg.webp',
     slug: 'icp-rie-technology-advanced-etching',
     tags: ['ICP','ICP-RIE','inductively coupled plasma etching'],
     relatedProducts: [
@@ -1146,9 +1161,19 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p><strong>Key takeaway:</strong> RIE is best seen as a hybrid process: physical sputtering enhances anisotropy, while chemical reactions provide high selectivity. The combination of both mechanisms makes RIE the workhorse of semiconductor pattern transfer.</p>
 
-      <figure style="margin: 24px 0; text-align: center;">
-        <img src="/assets/images/insights/rie-vs-milling-rie-chamber.png" alt="RIE process chamber cross-section schematic showing plasma generation, ion trajectory, reactive gas flow, and substrate positioning for reactive ion etching" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
-        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 1: RIE Process Chamber Schematic — Cross-section view showing plasma generation, directed ion bombardment, and reactive radical pathways that enable the hybrid chemical + physical etching mechanism.</figcaption>
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-rie-chamber-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-rie-chamber-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-rie-chamber-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-rie-chamber-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-rie-chamber-lg.png"
+            alt="RIE process chamber cross-section schematic showing plasma generation, ion trajectory, reactive gas flow, and substrate positioning for reactive ion etching"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: RIE Process Chamber Schematic — Cross-section view showing plasma generation, directed ion bombardment, and reactive radical pathways that enable the hybrid chemical + physical etching mechanism.</figcaption>
       </figure>
 
       <h4>DRIE: Deep Reactive Ion Etching (Bosch Process)</h4>
@@ -1170,9 +1195,19 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p><strong>Key takeaway:</strong> Ion Milling is essentially a "sandblasting" process at the nanoscale, offering precise directional control but no inherent chemical selectivity. Its universality — the ability to etch virtually any material — is its defining strength.</p>
 
-      <figure style="margin: 24px 0; text-align: center;">
-        <img src="/assets/images/insights/rie-vs-milling-ibe-system.png" alt="Ion Beam Etching (IBE) system schematic showing ion source, beam collimation optics, adjustable sample stage angle, and secondary ion mass spectrometry endpoint detection" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
-        <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: IBE System Schematic — Illustrating the ion source, beam collimation, adjustable-angle sample stage, and the directional sputtering mechanism that enables precise physical etching of any material.</figcaption>
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-ibe-system-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-ibe-system-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-ibe-system-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-ibe-system-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling/rie-vs-milling-ibe-system-lg.png"
+            alt="Ion Beam Etching (IBE) system cross-section schematic showing ion source, extraction grid, beam collimation, adjustable-angle sample stage, and sputtering mechanism"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: IBE System Schematic — Illustrating the ion source, beam collimation, adjustable-angle sample stage, and the directional sputtering mechanism that enables precise physical etching of any material.</figcaption>
       </figure>
       <hr/>
 
@@ -1212,7 +1247,7 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
 
       <figure style="margin: 24px 0; text-align: center;">
-        <img src="/assets/images/insights/rie-vs-milling-radar-comparison.png" alt="Radar chart comparing RIE and Ion Beam Etching across six dimensions: selectivity, etch rate, material versatility, profile control, surface damage, and throughput" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/rie-vs-milling-radar-comparison.png" alt="Radar chart comparing RIE and Ion Beam Etching across six dimensions: selectivity, etch rate, material versatility, profile control, surface damage, and throughput" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
         <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 3: RIE vs. IBE Performance Comparison — Radar chart illustrating the complementary strengths of each technique across key process dimensions.</figcaption>
       </figure>
       <hr/>
@@ -1388,7 +1423,7 @@ export const insightsPosts: InsightsPost[] = [
       </table>
 
       <figure style="margin: 24px 0; text-align: center;">
-        <img src="/assets/images/insights/rie-vs-milling-decision-flowchart.png" alt="Decision flowchart for choosing between RIE and Ion Milling based on material type, selectivity requirements, and throughput needs" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/rie-vs-milling-decision-flowchart.png" alt="Decision flowchart for choosing between RIE and Ion Milling based on material type, selectivity requirements, and throughput needs" style="max-width: 100%; height: auto; border-radius: 8px;" loading="lazy" />
         <figcaption style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 4: Decision Flowchart — A simplified guide to selecting between RIE, DRIE, IBE, and RIBE based on your material, selectivity, and throughput requirements.</figcaption>
       </figure>
       <hr/>
@@ -1480,7 +1515,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 15,
-    imageUrl: '/assets/images/insights/rie-vs-milling-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/rie-vs-milling-cover-lg.webp',
     slug: 'reactive-ion-etching-vs-ion-milling',
     tags: ['reactive ion etching','ion milling','RIE vs ion milling','ion beam etching','IBE vs RIE','dry etching comparison','semiconductor etching techniques','plasma etching vs ion milling','microfabrication etching methods','DRIE','RIBE','deep reactive ion etching'],
     relatedProducts: [
@@ -1623,11 +1658,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/etcher-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etcher-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etcher-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etcher-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/etcher-architectures-comparison.png" alt="Comparison of four semiconductor etcher architectures: RIE, ICP-RIE, DRIE, and IBE" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etcher-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etcher-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etcher-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etcher-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/etcher-architectures-comparison.png" alt="Comparison of four semiconductor etcher architectures: RIE, ICP-RIE, DRIE, and IBE" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Etcher Architecture Comparison — side-by-side view of RIE, ICP-RIE, DRIE, and IBE systems</p>
       </div>
@@ -1674,7 +1709,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-29',
     category: 'Nanotechnology',
     readTime: 10,
-    imageUrl: '/assets/images/insights/etchers-overview-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/etchers-overview-cover-lg.webp',
     slug: 'semiconductor-etchers-overview',
     tags: ['semiconductor etcher','plasma etcher','RIE','ICP'],
     relatedProducts: [
@@ -1720,7 +1755,7 @@ export const insightsPosts: InsightsPost[] = [
        
        <div style="text-align: center; margin: 30px 0;">
          <img 
-           src="/assets/images/insights/hdp-cvd-process-flow-optimized.webp" 
+           src="https://cdn.ninescrolls.com/insights/hdp-cvd-process-flow-optimized.webp" 
            alt="HDP-CVD Process Flow Diagram - High-Density Plasma Chemical Vapor Deposition process flow diagram showing plasma generation, ion bombardment, and film deposition mechanisms" 
            style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
            loading="lazy"
@@ -1790,7 +1825,7 @@ export const insightsPosts: InsightsPost[] = [
        
        <div style="text-align: center; margin: 30px 0;">
          <img 
-           src="/assets/images/insights/pecvd-hdp-cvd-comparison-optimized.webp" 
+           src="https://cdn.ninescrolls.com/insights/pecvd-hdp-cvd-comparison-optimized.webp" 
            alt="PECVD vs HDP-CVD Gap-Fill Comparison - Comparison showing gap-fill performance between PECVD and HDP-CVD technologies in high-aspect-ratio trenches" 
            style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
            loading="lazy"
@@ -1922,7 +1957,7 @@ export const insightsPosts: InsightsPost[] = [
        
        <div style="text-align: center; margin: 30px 0;">
          <img 
-           src="/assets/images/insights/hdp-cvd-system-structure-optimized.webp" 
+           src="https://cdn.ninescrolls.com/insights/hdp-cvd-system-structure-optimized.webp" 
            alt="NineScrolls HDP-CVD System Modular Structure - Modular system architecture diagram showing chamber design, RF systems, gas delivery, and control modules" 
            style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
            loading="lazy"
@@ -1987,7 +2022,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-01-28',
     category: 'Materials Science',
     readTime: 15,
-    imageUrl: '/assets/images/insights/hdp-cvd-guide-cover-optimized.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/hdp-cvd-guide-cover-optimized.webp',
     slug: 'hdp-cvd-in-depth-guide-practical-handbook',
     tags: ['HDP-CVD', 'High-Density Plasma', 'Chemical Vapor Deposition', 'Semiconductor Manufacturing', 'Thin Film Deposition', 'Gap-Fill Technology', 'Dielectric Films', 'Process Engineering', 'Equipment Selection', 'Cost of Ownership'],
     relatedProducts: [
@@ -2040,7 +2075,7 @@ export const insightsPosts: InsightsPost[] = [
       
       <div style="text-align: center; margin: 30px 0;">
         <img 
-          src="/assets/images/insights/plasma-uniformity-cover.webp" 
+          src="https://cdn.ninescrolls.com/insights/plasma-uniformity-cover.webp" 
           alt="Plasma Uniformity Analysis - Visual representation of uniform vs non-uniform plasma distribution" 
           style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" 
           loading="lazy"
@@ -2308,7 +2343,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-08-19',
     category: 'Materials Science',
     readTime: 17,
-    imageUrl: '/assets/images/insights/plasma-uniformity-cover.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-uniformity-cover.webp',
     slug: 'plasma-non-uniform-etch-chamber-solutions',
     tags: ['Plasma Etching', 'Plasma Uniformity', 'Etch Chamber', 'Semiconductor Manufacturing', 'Process Control', 'Equipment Optimization', 'Gas Flow Distribution', 'Temperature Gradient', 'Etch Rate Diagnostics'],
     relatedProducts: [
@@ -2348,16 +2383,20 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Photons:</strong> Emitted during recombination processes</li>
       </ul>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Plasma etching reactor chamber diagram illustrating RF electrodes, gas inlet, plasma region, and substrate stage" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-lg.png"
+            alt="Plasma etching reactor chamber diagram illustrating RF electrodes, gas inlet, plasma region, and substrate stage"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Plasma Etching Reactor Architecture — Cross-section showing RF electrodes, gas inlet system, plasma generation region, and substrate stage with bias control</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Plasma Etching Reactor Architecture — Cross-section showing RF electrodes, gas inlet system, plasma generation region, and substrate stage with bias control</figcaption>
+      </figure>
 
       <h3>2.2 Etching Mechanisms</h3>
       <p>Plasma etching involves two primary mechanisms working together:</p>
@@ -2378,16 +2417,20 @@ export const insightsPosts: InsightsPost[] = [
         <li>Provides directional (anisotropic) etching</li>
       </ul>
       
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-fundamentals-cover-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png" alt="Plasma etching fundamentals — interaction between chemical radical reactions and directional ion bombardment on substrate surface" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-coburn-winters-synergy-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-coburn-winters-synergy-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-coburn-winters-synergy-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-coburn-winters-synergy-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-coburn-winters-synergy-lg.png"
+            alt="Coburn-Winters ion-neutral synergy in reactive ion etching — mechanism of ion-enhanced chemical etching, experimental evidence, and key process parameters"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 2: Plasma Etching Fundamentals — The synergistic interaction between chemical radical reactions and directional ion bombardment, first demonstrated by Coburn and Winters (1979) to achieve etch rates up to 10× higher than either mechanism alone</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Plasma Etching Fundamentals — The synergistic interaction between chemical radical reactions and directional ion bombardment, first demonstrated by Coburn and Winters (1979) to achieve etch rates up to 10× higher than either mechanism alone</figcaption>
+      </figure>
       
       <h2>3) Types of Plasma Etching: PE vs RIE vs ICP-RIE</h2>
       <p>Plasma etching encompasses several distinct techniques with fundamentally different mechanisms and capabilities. For a detailed technical comparison of process parameters, reactor architectures, and selection guidelines, see our in-depth guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE Plasma Etching</a>.</p>
@@ -2430,16 +2473,20 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p><strong>Best for:</strong> High-aspect-ratio features (&gt;10:1, up to 50:1+), deep silicon etching (DRIE), III-V compound semiconductors, and photonic device fabrication.</p>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch profile comparison — isotropic (PE), anisotropic (RIE), and high-aspect-ratio (ICP-RIE) cross-section diagrams showing photoresist, film, and substrate layers" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-etch-profiles-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-etch-profiles-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-etch-profiles-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-etch-profiles-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-etch-profiles-lg.png"
+            alt="Etch profile comparison — isotropic (PE), anisotropic (RIE), and high-aspect-ratio (ICP-RIE) cross-section diagrams showing photoresist, film, and substrate layers"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 3: Etch Profile Comparison — Isotropic (PE/chemical etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Etch Profile Comparison — Isotropic (PE/chemical etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</figcaption>
+      </figure>
       
       <h2>4) Process Parameters and Control</h2>
       
@@ -2481,16 +2528,20 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-comparison-chart.png" alt="Plasma etching technology comparison chart showing etch rate, selectivity, and anisotropy across PE, RIE, and ICP-RIE" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-comparison-chart-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-comparison-chart-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-comparison-chart-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-comparison-chart-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-comparison-chart-lg.png"
+            alt="Plasma etching technology comparison chart showing etch rate, selectivity, and anisotropy across PE, RIE, and ICP-RIE"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 4: Plasma Etching Technology Comparison — Etch rate, selectivity, and anisotropy characteristics across PE, RIE, and ICP-RIE platforms</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Plasma Etching Technology Comparison — Etch rate, selectivity, and anisotropy characteristics across PE, RIE, and ICP-RIE platforms</figcaption>
+      </figure>
       
       <h3>4.2 Gas Chemistry Selection</h3>
       <p>The choice of gas chemistry is critical for achieving desired etch characteristics. For advanced selectivity optimization techniques, see our guide on <a href="/insights/ultra-high-etch-selectivity">Ultra-High Etch Selectivity</a>.</p>
@@ -2650,7 +2701,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-01-26',
     category: 'Materials Science',
     readTime: 15,
-    imageUrl: '/assets/images/insights/plasma-etching-fundamentals-cover-optimized.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-etching-fundamentals-cover-optimized.png',
     slug: 'plasma-etching-explained-fundamentals-applications',
     tags: ['Plasma Etching', 'Semiconductor Manufacturing', 'Materials Science', 'RIE', 'ICP-RIE', 'Microfabrication'],
     relatedProducts: [
@@ -2727,16 +2778,20 @@ export const insightsPosts: InsightsPost[] = [
         <li>Descum and residue removal</li>
       </ul>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-etch-profiles-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-etch-profiles.png" alt="Etch Profile Comparison — Isotropic vs Anisotropic vs High Aspect Ratio cross-section diagrams showing photoresist, film, and substrate layers" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-etch-profiles-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-etch-profiles-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-etch-profiles-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-etch-profiles-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-etch-profiles-lg.png"
+            alt="Etch Profile Comparison — Isotropic vs Anisotropic vs High Aspect Ratio cross-section diagrams showing photoresist, film, and substrate layers"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 1: Etch Profile Comparison — Isotropic (PE/wet etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Etch Profile Comparison — Isotropic (PE/wet etch), Anisotropic (RIE), and High Aspect Ratio (ICP-RIE/DRIE) profiles through film layers</figcaption>
+      </figure>
 
       <h2>3. Reactive Ion Etching (RIE) — The Evolution</h2>
       <p>RIE overcomes PE's fundamental limitation — the lack of directional control. In a capacitively coupled plasma (CCP) reactor, the substrate sits on the powered electrode, developing a DC self-bias that accelerates ions perpendicular to the surface. This <strong>dual mechanism</strong> of chemical reaction plus physical ion bombardment produces anisotropic etch profiles that are essential for pattern transfer in semiconductor fabrication.</p>
@@ -2749,16 +2804,20 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Lower Pressure Operation:</strong> RIE typically operates at 10–200 mTorr (vs. 300–1000 mTorr for PE), increasing ion mean free path and directionality.</li>
       </ul>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-principles-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-principles-optimized.png" alt="Plasma Etching Principles Comparison — visual comparison of PE, RIE, and ICP-RIE reactor architectures and etch profiles" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/etching-mechanisms-comparison-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/etching-mechanisms-comparison-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/etching-mechanisms-comparison-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/etching-mechanisms-comparison-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/etching-mechanisms-comparison-lg.png"
+            alt="Plasma etching mechanisms comparison — ion etching (physical sputtering), chemical plasma etching (radical-dominated), and reactive ion etching (RIE) with process characteristics, etch profiles, and typical applications"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 2: PE/RIE/ICP-RIE Reactor Architectures — chamber cross-sections and resulting etch profiles</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Etching Mechanisms Comparison — Ion etching, chemical plasma etching, and reactive ion etching (RIE) with key characteristics and etch profiles</figcaption>
+      </figure>
 
       <h3>Typical RIE Process Parameters</h3>
       <table>
@@ -2816,16 +2875,20 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Decoupled Control:</strong> High etch rate with low damage (high density, low bias) or high aspect ratio with controlled passivation — simultaneously optimizable.</li>
       </ul>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-reactor-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-reactor-architecture.png" alt="Reactor Architecture Comparison — PE vs RIE vs ICP-RIE chamber cross-sections showing electrodes, plasma regions, gas flow, and etch profiles" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-reactor-architecture-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-reactor-architecture-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-reactor-architecture-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-reactor-architecture-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-reactor-architecture-lg.png"
+            alt="Reactor Architecture Comparison — PE vs RIE vs ICP-RIE chamber cross-sections showing electrodes, plasma regions, gas flow, and etch profiles"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 3: Reactor Architecture Comparison — PE (Chemical Dry Etch) uses grounded electrodes with low-density plasma; RIE (CCP) adds RF bias for directional etching; ICP-RIE decouples plasma density and ion energy via an inductive coil + separate bias electrode</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Reactor Architecture Comparison — PE (Chemical Dry Etch) uses grounded electrodes with low-density plasma; RIE (CCP) adds RF bias for directional etching; ICP-RIE decouples plasma density and ion energy via an inductive coil + separate bias electrode</figcaption>
+      </figure>
 
       <h3>Typical ICP-RIE Process Parameters</h3>
       <table>
@@ -2984,16 +3047,20 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>For guidance on selecting the right system for your lab, see our <a href="/insights/semiconductor-etchers-overview">Semiconductor Etcher Selection Guide</a>.</p>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-chart-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-comparison-chart.png" alt="Quantitative Comparison Matrix — bar chart comparing PE, RIE, and ICP-RIE across plasma density, ion energy, etch rate, selectivity, anisotropy, and aspect ratio" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-chart-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-chart-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-chart-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-chart-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-chart-lg.png"
+            alt="Quantitative Comparison Matrix — bar chart comparing PE, RIE, and ICP-RIE across plasma density, ion energy, etch rate, selectivity, anisotropy, and aspect ratio"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 5: Quantitative Comparison Matrix — Key performance parameters across PE, RIE, and ICP-RIE technologies</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 5: Quantitative Comparison Matrix — Key performance parameters across PE, RIE, and ICP-RIE technologies</figcaption>
+      </figure>
 
       <h2>9. Frequently Asked Questions</h2>
 
@@ -3037,16 +3104,20 @@ export const insightsPosts: InsightsPost[] = [
         <li>Laser interferometry endpoint detection (optional OES)</li>
       </ul>
 
-      <div class="post-figure">
+      <figure style="margin:2rem 0;text-align:center">
         <picture>
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/plasma-etching-comparison-optimized-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/plasma-etching-comparison-optimized.png" alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities" loading="lazy" />
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-optimized-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-optimized-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-optimized-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-optimized-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/understanding-differences-pe-rie-icp-rie-plasma-etching/plasma-etching-comparison-optimized-lg.png"
+            alt="Plasma Etching Comparison — side-by-side comparison of PE, RIE, and ICP-RIE etching profiles and capabilities"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <p class="post-figure-caption">Figure 4: Etching Capabilities Comparison — PE, RIE, and ICP-RIE performance characteristics</p>
-      </div>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Etching Capabilities Comparison — PE, RIE, and ICP-RIE performance characteristics</figcaption>
+      </figure>
 
       <h2>11. Future Trends in Plasma Etching</h2>
       <ul>
@@ -3089,7 +3160,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-01-25',
     category: 'Materials Science',
     readTime: 22,
-    imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
     tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology', 'Bosch Process', 'DRIE', 'ICP Etching'],
     relatedProducts: [
@@ -3114,6 +3185,21 @@ export const insightsPosts: InsightsPost[] = [
     <p>This guide bridges that gap. Rather than surveying processing techniques at a conceptual level, we provide actionable process recipes for the material systems most commonly encountered in advanced materials research: energy storage coatings, catalytic and protective surfaces, nanostructured devices, and flexible electronics. Each recipe includes specific equipment parameters tested on production-grade tools, with guidance on how to adapt them for different substrate geometries and film requirements.</p>
 
     <h2>1) Thin Film Deposition for Advanced Materials</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/deposition-methods-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/deposition-methods-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/deposition-methods-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/deposition-methods-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/deposition-methods-lg.png"
+          alt="Thin film deposition technologies comparison — ALD, PECVD, and sputtering with key performance parameters for advanced materials processing"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Thin Film Deposition Technologies — ALD vs. PECVD vs. Sputtering performance comparison for process and tool selection</figcaption>
+    </figure>
 
     <p>The choice of deposition technique determines not just the film's composition and thickness, but its microstructure, stress state, defect density, and ultimately its functional performance. The table below provides a decision framework based on the key requirements of each application.</p>
 
@@ -3376,6 +3462,21 @@ export const insightsPosts: InsightsPost[] = [
 
     <h2>3) Energy Storage: Battery and Supercapacitor Materials</h2>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/battery-flow-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/battery-flow-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/battery-flow-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/battery-flow-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/battery-flow-lg.png"
+          alt="Energy storage materials thin-film processing pipeline — substrate preparation, active layer deposition, solid electrolyte, protective coating, and characterization"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Energy Storage Materials — End-to-end thin-film battery process and equipment solutions</figcaption>
+    </figure>
+
     <p>Thin-film processing is transforming energy storage by enabling precise control over electrode architectures, solid electrolyte interfaces, and protective coatings that extend cycle life and improve safety.</p>
 
     <h3>3.1 Lithium-Ion Battery Electrode Coatings</h3>
@@ -3447,6 +3548,21 @@ export const insightsPosts: InsightsPost[] = [
     </ul>
 
     <h2>4) Protective and Functional Coatings</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/coatings-map-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/coatings-map-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/coatings-map-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/coatings-map-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/coatings-map-lg.png"
+          alt="Protective and functional coatings application map — corrosion protection, wear resistance, catalytic surfaces, and barrier films with layer structures and key applications"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Protective & Functional Coatings — Application map showing layer structures, performance, and process integration</figcaption>
+    </figure>
 
     <p>Thin-film coatings protect materials from corrosion, wear, and environmental degradation while adding functional properties such as catalytic activity, hydrophobicity, or biocompatibility.</p>
 
@@ -3592,6 +3708,21 @@ export const insightsPosts: InsightsPost[] = [
     <p><a href="/products/plasma-cleaner">Plasma cleaners</a> are particularly valuable in flexible electronics processing: brief, low-power O₂ or Ar plasma treatment before each deposition step improves adhesion to polymer surfaces without thermal damage.</p>
 
     <h2>6) Surface Engineering and Plasma Treatment</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/plasma-surface-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/plasma-surface-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/plasma-surface-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/plasma-surface-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/advanced-materials-processing-nanotechnology-energy/plasma-surface-lg.png"
+          alt="Plasma surface modification mechanisms by process gas — O₂, Ar, N₂, and CF₄ plasma effects on surface chemistry, wettability, and typical applications"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Plasma Surface Modification — Comparative effects of O₂, Ar, N₂, and CF₄ process gases on surface chemistry and wettability</figcaption>
+    </figure>
 
     <p>Plasma surface modification is often the most time-efficient way to alter surface properties without changing bulk material characteristics.</p>
 
@@ -3768,7 +3899,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2024-01-15',
     category: 'Materials Science',
     readTime: 22,
-    imageUrl: '/assets/images/insights/advanced-materials.jpg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/advanced-materials.jpg',
     slug: 'advanced-materials-processing-nanotechnology-energy',
     tags: ['Advanced Materials', 'Nanotechnology', 'Energy Storage', 'Thin Film Deposition', 'ALD', 'PECVD', 'Sputtering', 'Surface Engineering', 'Battery Materials', 'Catalysis'],
     relatedProducts: [
@@ -3798,6 +3929,21 @@ export const insightsPosts: InsightsPost[] = [
     <p>This guide focuses on the plasma etching and thin-film deposition processes that determine photonic device performance, with specific recipes and parameters for each major photonic platform.</p>
 
     <h2>1) Waveguide Fabrication: The Core of Integrated Photonics</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/waveguide-platforms-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/waveguide-platforms-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/waveguide-platforms-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/waveguide-platforms-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/waveguide-platforms-lg.png"
+          alt="Integrated photonic waveguide platforms comparison — SOI, SiN, and III-V material stacks, cross-sections, performance metrics, and etch processes"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Integrated Photonic Waveguide Platforms — SOI vs. SiN vs. III-V trade-offs in integration density, propagation loss, and active functionality</figcaption>
+    </figure>
 
     <p>Optical waveguides confine and route light on chip. The waveguide platform determines the available process window, minimum bend radius, and integration density. The three dominant platforms — silicon-on-insulator (SOI), silicon nitride (SiN), and III-V compounds — each impose distinct fabrication requirements.</p>
 
@@ -3943,6 +4089,21 @@ export const insightsPosts: InsightsPost[] = [
     </ul>
 
     <h2>2) Optical Coating Deposition</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/optical-coatings-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/optical-coatings-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/optical-coatings-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/optical-coatings-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/optical-coatings-lg.png"
+          alt="Optical thin-film architectures — anti-reflection coatings, distributed Bragg reflectors, and Fabry-Pérot bandpass filters with layer structures and performance specifications"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Optical Thin-Film Architectures — AR coatings, DBRs, and Fabry-Pérot bandpass filters with design principles and performance targets</figcaption>
+    </figure>
 
     <p>Optical thin-film coatings control reflection, transmission, and absorption at surfaces. Performance depends on precise thickness control, refractive index accuracy, and ultra-low absorption — requirements that map directly to deposition process parameters.</p>
 
@@ -4095,6 +4256,21 @@ export const insightsPosts: InsightsPost[] = [
 
     <h2>4) Integrated Photonic Circuit Process Flows</h2>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/photonic-process-flow-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/photonic-process-flow-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/photonic-process-flow-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/photonic-process-flow-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/photonic-process-flow-lg.png"
+          alt="Silicon photonic transceiver fabrication flow — from SOI wafer through waveguide etch, grating coupler, implant doping, Ge photodetector integration, to BEOL metallization"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Silicon Photonic Transceiver — Representative fabrication flow from SOI wafer to waveguide-integrated photodetector (pre-BEOL)</figcaption>
+    </figure>
+
     <p>Complete photonic circuits combine waveguides, couplers, modulators, and detectors on a single chip. Below are representative process flows with specific equipment at each step.</p>
 
     <h3>4.1 Silicon Photonic Transceiver (SOI Platform)</h3>
@@ -4123,6 +4299,21 @@ export const insightsPosts: InsightsPost[] = [
     </ol>
 
     <h2>5) Surface Quality and Loss Optimization</h2>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/loss-budget-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/loss-budget-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/loss-budget-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/loss-budget-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/photonics-manufacturing-precision-engineering/loss-budget-lg.png"
+          alt="Waveguide loss budget — RMS sidewall roughness and propagation loss comparison across SOI, SiN (LPCVD/PECVD), InP, and TFLN platforms with scattering mechanism illustration"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Waveguide Loss Budget — Surface roughness vs. propagation loss across photonic platforms with scattering mechanism</figcaption>
+    </figure>
 
     <p>Optical loss in photonic devices comes from three sources: material absorption, radiation (bending) loss, and scattering loss. Fabrication primarily controls scattering loss, which is determined by surface roughness and dimensional variations.</p>
 
@@ -4342,7 +4533,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2024-01-10',
     category: 'Photonics',
     readTime: 24,
-    imageUrl: '/assets/images/insights/photonics-manufacturing.jpg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/photonics-manufacturing.jpg',
     slug: 'photonics-manufacturing-precision-engineering',
     tags: ['Photonics', 'Silicon Photonics', 'Optical Coatings', 'Waveguides', 'ICP-RIE', 'Photonic Crystals', 'Metasurfaces', 'SiN', 'DBR', 'Integrated Photonics'],
     relatedProducts: [
@@ -5150,7 +5341,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2024-01-08',
     category: 'Nanotechnology',
     readTime: 22,
-    imageUrl: '/assets/images/insights/nanofabrication.jpg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/nanofabrication.jpg',
     slug: 'nanofabrication-techniques-nanoscale-future',
     tags: ['nanofabrication', 'e-beam lithography', 'nanoimprint lithography', 'liftoff metallization', 'block copolymer DSA', 'plasma etching', 'ICP-RIE', 'HSQ resist', 'PMMA resist', 'pattern transfer', 'nanostructures', 'process recipes'],
     relatedProducts: [
@@ -6157,7 +6348,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2024-01-20',
     category: 'Energy',
     readTime: 21,
-    imageUrl: '/assets/images/insights/fuel-cells.jpg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/fuel-cells.jpg',
     slug: 'fuel-cell-technology-hydrogen-economy',
     tags: ['Fuel Cells', 'Hydrogen Economy', 'PEM Fuel Cell', 'SOFC', 'Sputter Deposition', 'Catalyst Layer', 'Bipolar Plate Coating', 'PEM Electrolyzer', 'Thin Film Processing'],
     relatedProducts: [
@@ -6973,7 +7164,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2024-01-12',
     category: 'Energy',
     readTime: 21,
-    imageUrl: '/assets/images/insights/solar-cells.jpg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/solar-cells.jpg',
     slug: 'solar-cell-manufacturing-renewable-energy',
     tags: ['Solar Cells', 'PECVD', 'ALD', 'Sputtering', 'Photovoltaics', 'Perovskite', 'CIGS', 'CdTe', 'Tandem Solar Cell', 'Silicon Nitride', 'Anti-Reflection Coating', 'Surface Passivation', 'ICP-RIE', 'Black Silicon', 'Thin Film Deposition'],
     relatedProducts: [
@@ -7021,11 +7212,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/future-plasma-ale-cycle-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-ale-cycle-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-ale-cycle-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-ale-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/future-plasma-ale-cycle.png" alt="Atomic Layer Etching (ALE) four-step cycle diagram showing surface modification, purge, removal, and purge phases with self-limiting reactions" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-ale-cycle-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-ale-cycle-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-ale-cycle-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-ale-cycle-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/future-plasma-ale-cycle.png" alt="Atomic Layer Etching (ALE) four-step cycle diagram showing surface modification, purge, removal, and purge phases with self-limiting reactions" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: The ALE Cycle — Four-step self-limiting process consisting of surface modification (reactive adsorption), purge, energetic removal of the modified layer, and a final purge. Each cycle removes a precisely controlled amount of material, typically 0.5–2 Å per cycle</p>
       </div>
@@ -7060,11 +7251,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/future-plasma-pulsed-timing-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-pulsed-timing-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-pulsed-timing-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-pulsed-timing-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/future-plasma-pulsed-timing.png" alt="Pulsed plasma timing diagram showing synchronous and asynchronous pulsing of source RF and bias RF with labeled duty cycles and frequencies" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-pulsed-timing-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-pulsed-timing-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-pulsed-timing-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-pulsed-timing-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/future-plasma-pulsed-timing.png" alt="Pulsed plasma timing diagram showing synchronous and asynchronous pulsing of source RF and bias RF with labeled duty cycles and frequencies" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 2: Pulsed Plasma Operating Modes — Timing diagrams comparing synchronous pulsing (source and bias in phase) and asynchronous pulsing (independent frequencies), illustrating how duty cycle and phase offset provide additional process control dimensions beyond CW operation</p>
       </div>
@@ -7088,11 +7279,11 @@ export const insightsPosts: InsightsPost[] = [
 
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/future-plasma-har-challenges-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-har-challenges-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-har-challenges-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/future-plasma-har-challenges-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/future-plasma-har-challenges.png" alt="High aspect ratio etch defect mechanisms — cross-section diagrams showing ARDE, bowing, twisting, and necking in deep silicon features" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-har-challenges-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-har-challenges-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-har-challenges-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/future-plasma-har-challenges-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/future-plasma-har-challenges.png" alt="High aspect ratio etch defect mechanisms — cross-section diagrams showing ARDE, bowing, twisting, and necking in deep silicon features" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 3: HAR Etch Defect Mechanisms — Cross-section views illustrating (a) ARDE: reduced etch rate in narrower features, (b) bowing: lateral widening from scattered ions, (c) twisting: angular deviation of the feature axis, and (d) necking: constriction near the feature opening due to polymer buildup</p>
       </div>
@@ -7263,7 +7454,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-09-08',
     category: 'Nanotechnology',
     readTime: 18,
-    imageUrl: '/assets/images/insights/future-of-plasma-etching-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'future-of-plasma-etching-microelectronics',
     tags: ['plasma etching','ALE','atomic layer etching','pulsed plasma','pulsed plasma etching','low-damage etch','EUV','HAR','high aspect ratio etch','cryogenic etching','AI process control','semiconductor etching','3D NAND etching','microelectronics','ICP-RIE'],
     relatedProducts: [
@@ -7371,11 +7562,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/thermoelectric-ch4-h2-ar-roles-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/thermoelectric-ch4-h2-ar-roles.png" alt="Roles of CH4, H2, and Ar gases in dry etching of Bi2Te3 thermoelectric films" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/thermoelectric-ch4-h2-ar-roles-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/thermoelectric-ch4-h2-ar-roles-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/thermoelectric-ch4-h2-ar-roles-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/thermoelectric-ch4-h2-ar-roles-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/thermoelectric-ch4-h2-ar-roles.png" alt="Roles of CH4, H2, and Ar gases in dry etching of Bi2Te3 thermoelectric films" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: CH₄/H₂/Ar Gas Roles — synergistic functions of each gas species in dry etching of Bi₂Te₃-based thermoelectric films</p>
       </div>
@@ -7467,7 +7658,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-11-13',
     category: 'Materials Science',
     readTime: 12,
-    imageUrl: '/assets/images/insights/thermoelectric-dry-etching-cover-lg.webp',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/thermoelectric-dry-etching-cover-lg.webp',
     slug: 'dry-etching-thermoelectric-films-ch4-h2-ar-plasma-optimization',
     tags: ['thermoelectric', 'dry etching', 'plasma etching', 'Bi2Te3', 'MEMS', 'CH4/H2/Ar', 'microfabrication', 'materials science'],
     relatedProducts: [
@@ -7516,7 +7707,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Metal-chamber plasma cleaners use a stainless steel or aluminum alloy vacuum vessel with internal electrodes. The plasma is generated between parallel plates or between the chamber wall and an internal electrode, using RF (13.56 MHz) or mid-frequency (40 kHz) excitation.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/pluto-t/main.jpg" alt="PLUTO-T benchtop RF plasma cleaner — a metal-chamber system with internal electrodes" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/pluto-t/main.jpg" alt="PLUTO-T benchtop RF plasma cleaner — a metal-chamber system with internal electrodes" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A benchtop RF plasma cleaner (PLUTO-T) — a typical metal-chamber system with stainless steel construction and internal parallel-plate electrodes. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
       </figure>
       <p><strong>Advantages:</strong></p>
@@ -7723,7 +7914,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Use these questions to narrow your selection:</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/diagram-plasma-cleaner-selection-flowchart.svg" alt="Plasma Cleaner Selection Decision Flowchart" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/diagram-plasma-cleaner-selection-flowchart.svg" alt="Plasma Cleaner Selection Decision Flowchart" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Decision flowchart for selecting the right plasma cleaner type and configuration for your research lab.</figcaption>
       </figure>
 
@@ -7825,7 +8016,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-01-15',
     category: 'Materials Science',
     readTime: 8,
-    imageUrl: '/assets/images/insights/plasma-cleaner-comparison-cover-lg.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-cleaner-comparison-cover-lg.png',
     slug: 'plasma-cleaner-comparison-research-labs',
     tags: ['plasma cleaner comparison', 'plasma cleaner for research laboratories', 'RF plasma cleaner vs quartz plasma cleaner', 'batch plasma cleaner academic lab', 'research grade plasma cleaner', 'plasma cleaning', 'surface activation'],
     relatedProducts: [
@@ -7845,7 +8036,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Plasma cleaning has become a critical step in modern manufacturing — from semiconductor fabrication to medical device assembly. But what exactly happens inside a plasma cleaner, and why does it matter for your process? This guide breaks down the working principles, compares the major types of plasma cleaners, and helps you understand which technology best fits your application.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/pluto-t/main.jpg" alt="A benchtop RF plasma cleaner — the PLUTO-T from NineScrolls" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/pluto-t/main.jpg" alt="A benchtop RF plasma cleaner — the PLUTO-T from NineScrolls" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A benchtop RF plasma cleaner (PLUTO-T) — a typical compact system used in research and production labs. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
       </figure>
 
@@ -7862,7 +8053,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>The result is a surface that is ultraclean, chemically activated, and ready for subsequent processing steps like bonding, coating, or wire bonding.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/diagram-plasma-cleaning-principle.svg" alt="How Plasma Cleaning Works — Schematic of a parallel-plate RF plasma cleaning system" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/diagram-plasma-cleaning-principle.svg" alt="How Plasma Cleaning Works — Schematic of a parallel-plate RF plasma cleaning system" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Schematic of a parallel-plate RF plasma cleaning system showing the basic operating principle.</figcaption>
       </figure>
 
@@ -7881,7 +8072,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>In practice, most plasma cleaning processes use a combination of these mechanisms. A common approach is to use an O₂/Ar gas mixture, combining the chemical reactivity of oxygen with the physical bombardment of argon for thorough surface preparation.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/oxygen-plasma-cleaning.jpg" alt="Oxygen plasma cleaning in action — the characteristic blue-violet glow of an oxygen plasma inside a reactor chamber" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/oxygen-plasma-cleaning.jpg" alt="Oxygen plasma cleaning in action — the characteristic blue-violet glow of an oxygen plasma inside a reactor chamber" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Oxygen plasma cleaning in action: the characteristic blue-violet glow of an O₂ plasma inside a reactor chamber. (Image: Maxfisch / <a href="https://commons.wikimedia.org/wiki/File:Oxygen_Plasma_Cleaning.JPG" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, CC0 1.0)</figcaption>
       </figure>
 
@@ -7906,7 +8097,7 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Best for:</strong> Semiconductor wafer cleaning, PCB surface preparation, medical device treatment, and research applications requiring precise control.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/pluto-m/main.jpg" alt="A mid-size RF plasma cleaner (PLUTO-M)" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/pluto-m/main.jpg" alt="A mid-size RF plasma cleaner (PLUTO-M)" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A mid-size RF plasma cleaner (PLUTO-M) with an 8-liter chamber for batch processing. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
       </figure>
 
@@ -7946,7 +8137,7 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Best for:</strong> Cleaning of delicate or damage-sensitive substrates, III-V semiconductor processing, and applications requiring very high radical flux with minimal ion damage.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/diagram-rf-dc-microwave-comparison.svg" alt="RF vs DC vs Microwave Plasma Cleaner — Structural Comparison" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/diagram-rf-dc-microwave-comparison.svg" alt="RF vs DC vs Microwave Plasma Cleaner — Structural Comparison" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Structural comparison of RF, DC, and microwave plasma cleaner designs.</figcaption>
       </figure>
 
@@ -8003,7 +8194,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-02-10',
     category: 'Materials Science',
     readTime: 12,
-    imageUrl: '/assets/images/insights/plasma-cleaner-principles-cover.svg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-cleaner-principles-cover.svg',
     slug: 'what-is-plasma-cleaner-principles-types',
     tags: ['plasma cleaner', 'plasma cleaning', 'RF plasma', 'DC plasma', 'microwave plasma', 'surface preparation', 'vacuum plasma', 'plasma cleaning principles'],
     relatedProducts: [
@@ -8020,7 +8211,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Plasma cleaners are used across a wide spectrum of industries — anywhere surface cleanliness and activation are critical to product performance and reliability. This guide walks through the major application areas, explaining why plasma cleaning matters in each context and what specific processes benefit most from this technology.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/diagram-plasma-cleaner-applications.svg" alt="Plasma Cleaner Applications Across Industries" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/diagram-plasma-cleaner-applications.svg" alt="Plasma Cleaner Applications Across Industries" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Overview of plasma cleaner application areas across major industries.</figcaption>
       </figure>
 
@@ -8030,7 +8221,7 @@ export const insightsPosts: InsightsPost[] = [
       <h3>Wafer Surface Preparation</h3>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/wire-bonding-semiconductor-die.jpg" alt="Semiconductor die with wire bonds" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wire-bonding-semiconductor-die.jpg" alt="Semiconductor die with wire bonds" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Close-up of a semiconductor die with gold wire bonds connecting the chip to package leads. Surface cleanliness of bond pads is critical for reliable bonding. (Image: Mister rf / <a href="https://commons.wikimedia.org/wiki/File:National_Semiconductor_J_2N2222A.png" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>)</figcaption>
       </figure>
 
@@ -8057,7 +8248,7 @@ export const insightsPosts: InsightsPost[] = [
       <h3>Implant Surface Treatment</h3>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/ns-plasma-4r/main.jpg" alt="A compact RF plasma cleaner used in biomedical research" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg" alt="A compact RF plasma cleaner used in biomedical research" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A compact RF plasma cleaner (HY-4L) commonly used in biomedical and materials research labs. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
       </figure>
 
@@ -8102,7 +8293,7 @@ export const insightsPosts: InsightsPost[] = [
       <h3>TEM and SEM Sample Preparation</h3>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/wire-bonding-detail.jpg" alt="Wire bonding detail on a semiconductor package" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wire-bonding-detail.jpg" alt="Wire bonding detail on a semiconductor package" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Detailed view of wire bonds on a semiconductor package. Even trace contamination on bond pads can cause bond failures — making plasma cleaning an essential pre-bonding step. (Image: Mister rf / <a href="https://commons.wikimedia.org/wiki/File:EXP416.jpg" rel="noopener noreferrer" target="_blank">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>)</figcaption>
       </figure>
 
@@ -8153,7 +8344,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-02-12',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/plasma-cleaner-applications-cover.svg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-cleaner-applications-cover.svg',
     slug: 'plasma-cleaner-applications-guide',
     tags: ['plasma cleaner', 'plasma cleaning applications', 'semiconductor cleaning', 'medical device', 'surface treatment', 'wire bonding', 'microfluidics', 'PDMS bonding', 'TEM sample preparation'],
     relatedProducts: [
@@ -8170,7 +8361,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Selecting a plasma cleaner is a significant investment — whether for a research lab or a production line. The wrong choice can mean inadequate cleaning performance, unnecessary downtime, or overspending on capabilities you don't need. This guide walks through the key decision factors and practical considerations to help you choose a system that fits your specific requirements.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/diagram-plasma-cleaner-selection-flowchart.svg" alt="Plasma Cleaner Selection Decision Flowchart" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/diagram-plasma-cleaner-selection-flowchart.svg" alt="Plasma Cleaner Selection Decision Flowchart" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Decision flowchart for selecting the right plasma cleaner type and configuration.</figcaption>
       </figure>
 
@@ -8199,14 +8390,14 @@ export const insightsPosts: InsightsPost[] = [
       <p>Match the chamber size to your typical workload. Benchtop plasma cleaners with small chambers (1–5 liters) are ideal for research labs processing individual samples or small batches. Mid-size systems (10–30 liters) serve R&amp;D and low-volume production. Large production systems (50+ liters) handle high-volume batch processing or inline configurations.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/ns-plasma-20r/main.jpg" alt="A 20-liter batch plasma processing system" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/ns-plasma-20r/main.jpg" alt="A 20-liter batch plasma processing system" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">A 20-liter batch plasma processing system (HY-20L) designed for higher-throughput research and production applications. <a href="/products/plasma-cleaner">Compare all models →</a></figcaption>
       </figure>
 
       <p>Oversizing the chamber "just in case" increases gas consumption, pump-down time, and cost. Undersizing limits your throughput and flexibility.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/insights/plutovac-chamber-interior.jpg" alt="Interior view of a plasma cleaner chamber" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/plutovac-chamber-interior.jpg" alt="Interior view of a plasma cleaner chamber" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Interior view of a plasma cleaner chamber (PLUTO-M), showing the cylindrical vacuum chamber and electrode configuration.</figcaption>
       </figure>
 
@@ -8250,7 +8441,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>When comparing specific systems, these practical steps can reveal differences that spec sheets don't show.</p>
 
       <figure style="margin: 2em 0; text-align: center;">
-        <img src="/assets/images/products/pluto-f/main.jpg" alt="The PLUTO-F flagship plasma cleaner" style="max-width: 100%; border-radius: 8px;" />
+        <img src="https://cdn.ninescrolls.com/products/pluto-f/main.jpg" alt="The PLUTO-F flagship plasma cleaner" style="max-width: 100%; border-radius: 8px;" />
         <figcaption style="margin-top: 0.5em; font-size: 0.9em; color: #666;">The PLUTO-F — a 500W RF flagship plasma cleaner with advanced recipe management, representing the high-performance end of benchtop systems. <a href="/products/plasma-cleaner">View product details →</a></figcaption>
       </figure>
 
@@ -8280,7 +8471,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-02-15',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/plasma-cleaner-buying-guide-cover.svg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-cleaner-buying-guide-cover.svg',
     slug: 'plasma-cleaner-buying-guide',
     tags: ['plasma cleaner', 'buying guide', 'plasma cleaner selection', 'vacuum system', 'RF plasma cleaner', 'chamber size', 'process control', 'total cost of ownership'],
     relatedProducts: [
@@ -8333,11 +8524,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/nanoforest-fabrication-actuation-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/nanoforest-fabrication-actuation.png" alt="Nanoforest fabrication via RIE-150 oxygen plasma etching and dual-mode soft actuator mechanism" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/nanoforest-fabrication-actuation-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/nanoforest-fabrication-actuation-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/nanoforest-fabrication-actuation-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/nanoforest-fabrication-actuation-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/nanoforest-fabrication-actuation.png" alt="Nanoforest fabrication via RIE-150 oxygen plasma etching and dual-mode soft actuator mechanism" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Nanoforest Fabrication and Actuation — RIE-150 oxygen plasma creates nanoforest structures enabling humidity-driven and photothermal response</p>
       </div>
@@ -8399,7 +8590,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-02-28',
     category: 'Publication Spotlight',
     readTime: 6,
-    imageUrl: '/assets/images/insights/rie150-soft-actuator-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/rie150-soft-actuator-cover.png',
     slug: 'rie150-nanoforest-soft-actuator',
     tags: ['RIE-150', 'reactive ion etching', 'nanoforest', 'soft actuator', 'humidity sensor', 'photothermal', 'ACS Applied Nano Materials', 'publication spotlight'],
     relatedProducts: [
@@ -8446,11 +8637,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ptse2-photodetector-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ptse2-photodetector-architecture.png" alt="PtSe2/Si PIN photodetector device architecture with PECVD SiO2 passivation and ICP-100 patterning" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ptse2-photodetector-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ptse2-photodetector-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ptse2-photodetector-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ptse2-photodetector-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ptse2-photodetector-architecture.png" alt="PtSe2/Si PIN photodetector device architecture with PECVD SiO2 passivation and ICP-100 patterning" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: p-PtSe₂/n⁻-Si/n⁺-Si PIN photodetector architecture — PECVD-150LL provides SiO₂ passivation while ICP-100 defines precision device features</p>
       </div>
@@ -8508,7 +8699,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-02-28',
     category: 'Publication Spotlight',
     readTime: 7,
-    imageUrl: '/assets/images/insights/pecvd-icp-photodetector-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/pecvd-icp-photodetector-cover.png',
     slug: 'pecvd-icp-ptse2-photodetector',
     tags: ['PECVD-150LL', 'ICP-100', 'photodetector', 'PtSe2', 'broadband', 'polarization', 'Applied Surface Science', 'publication spotlight'],
     relatedProducts: [
@@ -8566,11 +8757,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/metasurface-color-router-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-color-router-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-color-router-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-color-router-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/metasurface-color-router.png" alt="q-BIC metasurface color routing principle with cascading meta-diatom pairs on waveguide" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-color-router-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-color-router-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-color-router-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-color-router-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/metasurface-color-router.png" alt="q-BIC metasurface color routing principle with cascading meta-diatom pairs on waveguide" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: q-BIC metasurface color routing — cascading meta-diatom pairs achieve wavelength-selective extraction with near-unity energy utilization</p>
       </div>
@@ -8622,7 +8813,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2026-01-12',
     category: 'Publication Spotlight',
     readTime: 6,
-    imageUrl: '/assets/images/insights/rie150a-color-router-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/rie150a-color-router-cover.png',
     slug: 'rie150a-metasurface-color-router',
     tags: ['RIE-150A', 'reactive ion etching', 'metasurface', 'color router', 'q-BIC', 'photonics', 'Light Science Applications', 'publication spotlight'],
     relatedProducts: [
@@ -8680,11 +8871,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/metasurface-flow-visualization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-flow-visualization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-flow-visualization-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/metasurface-flow-visualization-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/metasurface-flow-visualization.png" alt="Metasurface-based flow visualization system using photonic spin-decoupled silicon nanopillars" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-flow-visualization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-flow-visualization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-flow-visualization-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/metasurface-flow-visualization-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/metasurface-flow-visualization.png" alt="Metasurface-based flow visualization system using photonic spin-decoupled silicon nanopillars" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Metasurface Flow Visualization — photonic spin-decoupled metasurface enables non-invasive 2D visualization of transparent flow fields</p>
       </div>
@@ -8739,7 +8930,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-03-05',
     category: 'Publication Spotlight',
     readTime: 6,
-    imageUrl: '/assets/images/insights/icp200-flow-visualization-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/icp200-flow-visualization-cover.png',
     slug: 'icp200-metasurface-flow-visualization',
     tags: ['ICP-200', 'ICP etching', 'metasurface', 'flow visualization', 'silicon nanopillars', 'photonics', 'Light Science Applications', 'publication spotlight'],
     relatedProducts: [
@@ -8844,11 +9035,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ale-cycle-energy-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ale-cycle-energy-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ale-cycle-energy-window-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ale-cycle-energy-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ale-cycle-energy-window.png" alt="ALE two-step cycle diagram showing surface modification and removal steps with energy window" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ale-cycle-energy-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ale-cycle-energy-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ale-cycle-energy-window-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ale-cycle-energy-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ale-cycle-energy-window.png" alt="ALE two-step cycle diagram showing surface modification and removal steps with energy window" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: ALE Two-Step Cycle — surface modification and low-energy removal steps with the self-limiting energy window</p>
       </div>
@@ -9020,7 +9211,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-10-15',
     category: 'Nanotechnology',
     readTime: 22,
-    imageUrl: '/assets/images/insights/ale-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/ale-guide-cover.png',
     slug: 'atomic-layer-etching-practical-guide',
     tags: ['ALE', 'atomic layer etching', 'ICP-RIE', 'self-limiting etch', 'plasma etching', 'nanotechnology', 'semiconductor', 'precision etching', 'cryogenic ALE', 'area-selective ALE'],
     relatedProducts: [
@@ -9121,11 +9312,11 @@ export const insightsPosts: InsightsPost[] = [
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/cryo-vs-bosch-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/cryo-vs-bosch-comparison.png" alt="Side-by-side comparison of cryogenic etching vs Bosch process trench profiles in silicon" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/cryo-vs-bosch-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/cryo-vs-bosch-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/cryo-vs-bosch-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/cryo-vs-bosch-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/cryo-vs-bosch-comparison.png" alt="Side-by-side comparison of cryogenic etching vs Bosch process trench profiles in silicon" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Cryogenic Etching vs. Bosch Process — smooth sidewalls vs. scalloped profiles in high-aspect-ratio silicon trenches</p>
       </div>
@@ -9311,7 +9502,7 @@ export const insightsPosts: InsightsPost[] = [
     publishDate: '2025-11-05',
     category: 'Nanotechnology',
     readTime: 19,
-    imageUrl: '/assets/images/insights/cryo-vs-bosch-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/cryo-vs-bosch-cover.png',
     slug: 'cryogenic-etching-vs-bosch-process',
     tags: ['cryogenic etching', 'Bosch process', 'DRIE', 'ICP-RIE', 'high-aspect-ratio', 'MEMS', 'silicon etching', 'photonics', 'quantum devices', 'sidewall smoothness'],
     relatedProducts: [
@@ -9583,11 +9774,11 @@ result = differential_evolution(
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ml-etch-optimization-workflow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ml-etch-optimization-workflow.png" alt="Bayesian optimization workflow for plasma etch process development" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ml-etch-optimization-workflow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ml-etch-optimization-workflow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ml-etch-optimization-workflow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ml-etch-optimization-workflow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ml-etch-optimization-workflow.png" alt="Bayesian optimization workflow for plasma etch process development" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: ML-Driven Etch Optimization Workflow — from initial experimental design through Bayesian optimization to validated recipes</p>
       </div>
@@ -9680,7 +9871,7 @@ result = differential_evolution(
     publishDate: '2025-12-10',
     category: 'Nanotechnology',
     readTime: 23,
-    imageUrl: '/assets/images/insights/ml-plasma-etch-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/ml-plasma-etch-cover.png',
     slug: 'machine-learning-plasma-etch-optimization',
     tags: ['machine learning', 'AI', 'plasma etching', 'Bayesian optimization', 'virtual metrology', 'OES', 'ICP-RIE', 'process optimization', 'digital twin', 'predictive maintenance'],
     relatedProducts: [
@@ -9717,11 +9908,11 @@ result = differential_evolution(
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/emerging-materials-etch-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/emerging-materials-etch-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/emerging-materials-etch-map-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/emerging-materials-etch-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/emerging-materials-etch-map.png" alt="Etch chemistry map for emerging semiconductor materials including SiC, GaN, MoS2, HfO2, Ru, and HZO" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/emerging-materials-etch-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/emerging-materials-etch-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/emerging-materials-etch-map-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/emerging-materials-etch-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/emerging-materials-etch-map.png" alt="Etch chemistry map for emerging semiconductor materials including SiC, GaN, MoS2, HfO2, Ru, and HZO" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Emerging Materials Etch Chemistry — recommended chemistries and key challenges for emerging semiconductor materials</p>
       </div>
@@ -10128,7 +10319,7 @@ result = differential_evolution(
     publishDate: '2026-01-20',
     category: 'Materials Science',
     readTime: 24,
-    imageUrl: '/assets/images/insights/etching-new-materials-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/etching-new-materials-cover.png',
     slug: 'etching-beyond-silicon-new-materials',
     tags: ['SiC', 'GaN', '2D materials', 'MoS2', 'HfO2', 'high-k dielectrics', 'ruthenium', 'ferroelectric', 'ICP-RIE', 'plasma etching'],
     relatedProducts: [
@@ -10192,11 +10383,11 @@ result = differential_evolution(
       
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/etch-selectivity-mechanisms-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/etch-selectivity-mechanisms.png" alt="Four mechanisms of etch selectivity: chemical, ion-energy, passivation, and temperature-dependent" loading="lazy" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etch-selectivity-mechanisms-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etch-selectivity-mechanisms-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etch-selectivity-mechanisms-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/etch-selectivity-mechanisms-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/etch-selectivity-mechanisms.png" alt="Four mechanisms of etch selectivity: chemical, ion-energy, passivation, and temperature-dependent" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Etch Selectivity Mechanisms — four fundamental mechanisms controlling selectivity in plasma processes</p>
       </div>
@@ -10513,7 +10704,7 @@ result = differential_evolution(
     publishDate: '2026-02-25',
     category: 'Materials Science',
     readTime: 22,
-    imageUrl: '/assets/images/insights/etch-selectivity-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/etch-selectivity-cover.png',
     slug: 'ultra-high-etch-selectivity',
     tags: ['etch selectivity', 'ICP-RIE', 'ALE', 'pulsed plasma', '3D NAND', 'GAA', 'HEMT', 'MEMS', 'silicon photonics', 'fluorocarbon'],
     relatedProducts: [
@@ -10555,7 +10746,7 @@ result = differential_evolution(
       <p>Every plasma cleaning system, regardless of manufacturer or configuration, depends on three fundamental subsystems. Understanding these \u201cpillars\u201d helps organize your maintenance program and ensures nothing is overlooked.</p>
 
       <figure class="post-figure">
-        <img src="/assets/images/insights/plasma-system-three-pillars.png" alt="Three pillars of plasma cleaning system maintenance: vacuum environment, energy source, and process medium" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/plasma-system-three-pillars.png" alt="Three pillars of plasma cleaning system maintenance: vacuum environment, energy source, and process medium" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
         <figcaption class="post-figure-caption">The three interconnected subsystems that determine plasma cleaner performance and reliability.</figcaption>
       </figure>
 
@@ -10591,7 +10782,7 @@ result = differential_evolution(
       <p>During plasma processing, most reaction byproducts are at the molecular level and are evacuated through the vacuum pump. However, larger particulate contaminants inevitably accumulate on chamber walls, the chamber floor, electrode surfaces, and tray racks. These particles can eventually detach and contaminate workpieces.</p>
 
       <figure class="post-figure">
-        <img src="/assets/images/insights/plasma-chamber-interior.webp" alt="Interior view of a plasma cleaner chamber showing electrode shelves and tray racks" style="width:100%; max-width:800px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/plasma-chamber-interior.webp" alt="Interior view of a plasma cleaner chamber showing electrode shelves and tray racks" style="width:100%; max-width:800px; border-radius:8px;" loading="lazy" />
         <figcaption class="post-figure-caption">Interior of a plasma cleaner chamber showing the electrode shelf structure and tray racks where contaminant buildup occurs over time.</figcaption>
       </figure>
 
@@ -10621,7 +10812,7 @@ result = differential_evolution(
       <p>The following procedure restores electrodes and tray racks to like-new condition. It applies to aluminum electrodes, which are the most common material in plasma cleaners.</p>
 
       <figure class="post-figure">
-        <img src="/assets/images/insights/plasma-electrode-cleaning-flow.png" alt="Six-step electrode refurbishment process flow diagram" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/plasma-electrode-cleaning-flow.png" alt="Six-step electrode refurbishment process flow diagram" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
         <figcaption class="post-figure-caption">The complete electrode refurbishment process \u2014 from removal through chemical cleaning to reinstallation.</figcaption>
       </figure>
 
@@ -10767,7 +10958,7 @@ result = differential_evolution(
       <p>The following schedule provides a comprehensive framework. Adjust frequencies based on your specific usage intensity, process chemistry, and environmental conditions.</p>
 
       <figure class="post-figure">
-        <img src="/assets/images/insights/plasma-maintenance-schedule.png" alt="Plasma cleaner preventive maintenance schedule showing daily, weekly, monthly, semi-annual, and annual tasks" style="width:100%; max-width:1100px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/plasma-maintenance-schedule.png" alt="Plasma cleaner preventive maintenance schedule showing daily, weekly, monthly, semi-annual, and annual tasks" style="width:100%; max-width:1100px; border-radius:8px;" loading="lazy" />
         <figcaption class="post-figure-caption">Complete preventive maintenance schedule organized by frequency \u2014 from daily checks to annual overhauls.</figcaption>
       </figure>
 
@@ -10927,7 +11118,7 @@ result = differential_evolution(
     publishDate: '2026-03-26',
     category: 'Equipment Maintenance',
     readTime: 12,
-    imageUrl: '/assets/images/insights/plasma-maintenance-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/plasma-maintenance-cover.png',
     slug: 'plasma-cleaner-maintenance-guide',
     tags: ['plasma cleaner', 'maintenance', 'electrode refurbishment', 'chamber cleaning', 'vacuum system', 'preventive maintenance', 'equipment care', 'plasma cleaning', 'O-ring replacement', 'RF power'],
     relatedProducts: [
@@ -10973,7 +11164,7 @@ result = differential_evolution(
       </ol>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/coater-spin-coating-stages.png" alt="Four stages of spin coating: dispense, spin-up, spin-off, and evaporation with cross-section diagrams" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/coater-spin-coating-stages.png" alt="Four stages of spin coating: dispense, spin-up, spin-off, and evaporation with cross-section diagrams" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.2 The Film Thickness Equation</h3>
@@ -10991,7 +11182,7 @@ result = differential_evolution(
       <p>Most photoresist manufacturers provide <strong>spin speed vs thickness curves</strong> for their products. These empirically-derived curves are more accurate than the theoretical model because they account for specific solvent systems, polymer molecular weight distributions, and evaporation kinetics unique to each formulation.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/coater-thickness-vs-speed.png" alt="Film thickness vs spin speed curves for different photoresists showing inverse square root relationship" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/coater-thickness-vs-speed.png" alt="Film thickness vs spin speed curves for different photoresists showing inverse square root relationship" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.3 Viscosity and Spin Speed Relationship</h3>
@@ -11053,7 +11244,7 @@ result = differential_evolution(
       <p>Spin coating and development are two steps in the larger photolithography process. Understanding the complete flow is essential because parameters at each step interact \u2014 an apparently good coat can produce poor results if bake or development conditions are wrong.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/coater-lithography-flow.png" alt="Photolithography process flow: HMDS prime, spin coat, soft bake, expose, PEB, develop, hard bake, inspect" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/coater-lithography-flow.png" alt="Photolithography process flow: HMDS prime, spin coat, soft bake, expose, PEB, develop, hard bake, inspect" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>2.1 Substrate Preparation</h3>
@@ -11579,7 +11770,7 @@ result = differential_evolution(
     publishDate: '2026-03-27',
     category: 'Nanotechnology',
     readTime: 16,
-    imageUrl: '/assets/images/insights/coater-developer-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/coater-developer-guide-cover.png',
     slug: 'spin-coating-development-guide',
     tags: ['spin coating', 'photoresist', 'photolithography', 'development', 'coater developer', 'film thickness', 'HMDS', 'SU-8', 'edge bead removal', 'process optimization', 'wafer processing', 'semiconductor fabrication'],
     relatedProducts: [
@@ -11612,7 +11803,7 @@ result = differential_evolution(
       <p>The net result is the deposition of a precisely controlled fraction of a monolayer per cycle, typically 0.5&ndash;2 &Aring; depending on the material system and process temperature.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/ald-cycle-diagram.png" alt="ALD self-limiting growth cycle showing four steps: precursor A pulse, purge, precursor B pulse, purge" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/ald-cycle-diagram.png" alt="ALD self-limiting growth cycle showing four steps: precursor A pulse, purge, precursor B pulse, purge" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>Why Self-Limiting Chemistry Matters</h3>
@@ -11719,7 +11910,7 @@ result = differential_evolution(
       <p>Within the ALD window, GPC is essentially constant and independent of pulse time (beyond the saturation dose), substrate position, and minor temperature fluctuations. This is the operating regime that delivers the hallmark benefits of ALD: digital thickness control, uniformity, and conformality.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/ald-temperature-window.png" alt="ALD temperature window diagram showing condensation, self-limiting growth window, and decomposition regions" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/ald-temperature-window.png" alt="ALD temperature window diagram showing condensation, self-limiting growth window, and decomposition regions" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>Typical ALD Temperature Windows</h3>
@@ -11953,7 +12144,7 @@ result = differential_evolution(
       <p>Understanding how ALD compares to alternative thin-film deposition methods is essential for selecting the right technique for each application. The following table provides a quantitative comparison across the most important performance metrics:</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/ald-vs-cvd-pvd-comparison.png" alt="Comparison table of ALD vs CVD vs PVD deposition techniques showing key differences in mechanism, conformality, thickness control, rate, and temperature" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/ald-vs-cvd-pvd-comparison.png" alt="Comparison table of ALD vs CVD vs PVD deposition techniques showing key differences in mechanism, conformality, thickness control, rate, and temperature" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -12338,7 +12529,7 @@ result = differential_evolution(
     publishDate: '2026-03-27',
     category: 'Materials Science',
     readTime: 18,
-    imageUrl: '/assets/images/insights/ald-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/ald-guide-cover.png',
     slug: 'atomic-layer-deposition-ald-comprehensive-guide',
     tags: ['ALD', 'atomic layer deposition', 'PEALD', 'thin film deposition', 'semiconductor', 'high-k dielectrics', 'MEMS passivation', 'precursor chemistry', 'conformal coating', 'ALD temperature window', 'HfO2', 'Al2O3']
   },
@@ -12381,7 +12572,7 @@ result = differential_evolution(
       </div>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/sputter-chamber-cross-section.png" alt="Magnetron sputtering chamber cross-section showing target, magnets, plasma region, sputtered atoms, and substrate" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/sputter-chamber-cross-section.png" alt="Magnetron sputtering chamber cross-section showing target, magnets, plasma region, sputtered atoms, and substrate" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.3 Plasma Generation and Target Erosion</h3>
@@ -12474,7 +12665,7 @@ result = differential_evolution(
       </table>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/sputter-dc-vs-rf.png" alt="DC vs RF magnetron sputtering comparison showing power modes, target materials, and waveforms" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/sputter-dc-vs-rf.png" alt="DC vs RF magnetron sputtering comparison showing power modes, target materials, and waveforms" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h2>3) Reactive Sputtering</h2>
@@ -12601,7 +12792,7 @@ result = differential_evolution(
       <p>NineScrolls sputter systems support substrate temperatures from water-cooled (near ambient) up to 1200\u00B0C, covering the full range of thin-film microstructure engineering\u2014from room-temperature amorphous barrier layers to high-temperature epitaxial growth of crystalline films like AlN and PZT.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/sputter-film-growth-modes.png" alt="Three thin film growth modes: Frank-van der Merwe (layer-by-layer), Volmer-Weber (island), and Stranski-Krastanov (layer plus island)" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/sputter-film-growth-modes.png" alt="Three thin film growth modes: Frank-van der Merwe (layer-by-layer), Volmer-Weber (island), and Stranski-Krastanov (layer plus island)" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>4.5 Target\u2013Substrate Distance</h3>
@@ -13108,7 +13299,7 @@ result = differential_evolution(
     publishDate: '2026-03-27',
     category: 'Materials Science',
     readTime: 18,
-    imageUrl: '/assets/images/insights/sputter-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/sputter-guide-cover.png',
     slug: 'magnetron-sputtering-guide',
     tags: ['magnetron sputtering', 'PVD', 'thin film deposition', 'DC sputtering', 'RF sputtering', 'reactive sputtering', 'film uniformity', 'sputter target', 'vacuum deposition', 'semiconductor fabrication', 'materials science']
   },
@@ -13146,7 +13337,7 @@ result = differential_evolution(
       </ul>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/pecvd-reactor-architecture.png" alt="PECVD parallel-plate reactor architecture showing showerhead electrode, plasma region, substrate heater, and gas flow" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/pecvd-reactor-architecture.png" alt="PECVD parallel-plate reactor architecture showing showerhead electrode, plasma region, substrate heater, and gas flow" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.3 PECVD vs Thermal CVD: Why Plasma Matters</h3>
@@ -13258,7 +13449,7 @@ result = differential_evolution(
       </ul>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/pecvd-single-vs-dual-frequency.png" alt="Single vs dual frequency PECVD comparison for film stress control with waveform visualization" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/pecvd-single-vs-dual-frequency.png" alt="Single vs dual frequency PECVD comparison for film stress control with waveform visualization" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>2.3 Practical Stress Engineering</h3>
@@ -13354,7 +13545,7 @@ result = differential_evolution(
       <p>Choosing the right deposition technique requires understanding the trade-offs across temperature budget, conformality, throughput, and film quality. The following comparison positions PECVD relative to the five most common alternatives. For an in-depth treatment of HDP-CVD specifically, see our <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook">HDP-CVD In-Depth Guide</a>.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/pecvd-vs-lpcvd-ald.png" alt="PECVD vs LPCVD vs ALD comparison table showing temperature, conformality, deposition rate, and film quality" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/pecvd-vs-lpcvd-ald.png" alt="PECVD vs LPCVD vs ALD comparison table showing temperature, conformality, deposition rate, and film quality" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em;">
@@ -13670,7 +13861,7 @@ result = differential_evolution(
     publishDate: '2026-03-27',
     category: 'Materials Science',
     readTime: 18,
-    imageUrl: '/assets/images/insights/pecvd-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/pecvd-guide-cover.png',
     slug: 'pecvd-complete-guide-plasma-enhanced-cvd',
     tags: ['PECVD', 'thin film deposition', 'dual-frequency RF', 'silicon nitride', 'silicon oxide', 'amorphous silicon', 'DLC', 'film stress', 'CVD', 'MEMS', 'passivation', 'semiconductor processing']
   },
@@ -13706,7 +13897,7 @@ result = differential_evolution(
       <p>All reaction products (CO₂, CO, H₂O) are gases at process conditions and are continuously pumped away, leaving a clean, residue-free surface. This self-cleaning characteristic is a major advantage over wet stripping, where dissolved resist can re-deposit.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/striper-o2-plasma-chemistry.png" alt="O2 plasma ashing chemical reaction process: gas input, plasma dissociation, radical transport, and surface reaction" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/striper-o2-plasma-chemistry.png" alt="O2 plasma ashing chemical reaction process: gas input, plasma dissociation, radical transport, and surface reaction" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.2 Downstream vs. Direct Plasma Configurations</h3>
@@ -13718,7 +13909,7 @@ result = differential_evolution(
       <p>NineScrolls Striper systems use an adjustable plasma discharge gap that allows operators to tune the balance between direct and downstream exposure — effectively providing both configurations in a single platform.</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/striper-downstream-plasma-chamber.png" alt="Downstream plasma stripping chamber showing remote plasma source, transport tube, O radicals, and wafer with PR being stripped" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/striper-downstream-plasma-chamber.png" alt="Downstream plasma stripping chamber showing remote plasma source, transport tube, O radicals, and wafer with PR being stripped" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <h3>1.3 Why "Ashing"?</h3>
@@ -13728,7 +13919,7 @@ result = differential_evolution(
       <p>Both plasma (dry) and wet chemical methods can remove photoresist, but they differ significantly in mechanism, performance, and environmental impact. The following table provides a detailed comparison:</p>
 
       <figure style="text-align:center; margin:2rem 0;">
-        <img src="/assets/images/insights/striper-dry-vs-wet.png" alt="Dry plasma strip vs wet chemical strip comparison showing mechanism, selectivity, damage risk, and best use cases" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+        <img src="https://cdn.ninescrolls.com/insights/striper-dry-vs-wet.png" alt="Dry plasma strip vs wet chemical strip comparison showing mechanism, selectivity, damage risk, and best use cases" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
       </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -14284,7 +14475,7 @@ result = differential_evolution(
     publishDate: '2026-03-27',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/striper-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/striper-guide-cover.png',
     slug: 'plasma-stripping-ashing-guide',
     tags: ['plasma stripping', 'plasma ashing', 'photoresist removal', 'O₂ plasma', 'descum', 'surface activation', '2D materials', 'post-etch residue', 'gas chemistry', 'endpoint detection', 'MoS₂', 'graphene']
   }
@@ -14322,11 +14513,11 @@ result = differential_evolution(
       <p>The ion source is the heart of any IBE system. Its role is to ionize a working gas (usually argon) and extract the resulting ions as a directed beam with controlled energy and current density. Two architectures dominate the market:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-ion-source-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ibe-ribe-ion-source-comparison.png" alt="Kaufman DC vs RF ion source architecture comparison" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-ion-source-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-ion-source-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-ion-source-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-ion-source-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ibe-ribe-ion-source-comparison.png" alt="Kaufman DC vs RF ion source architecture comparison" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Kaufman (DC) vs RF ion source architectures — the Kaufman source uses a thermionic cathode filament and magnetic confinement, while the RF source eliminates consumable filaments by using inductive RF coupling for plasma generation</p>
       </div>
@@ -14407,11 +14598,11 @@ result = differential_evolution(
       <p>An IBE/RIBE system can operate in several distinct modes depending on the gas feed configuration:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-ribe-etch-modes-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ibe-ribe-etch-modes.png" alt="Comparison of IBE RIBE and CAIBE etch modes" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-etch-modes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-etch-modes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-etch-modes-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-ribe-etch-modes-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ibe-ribe-etch-modes.png" alt="Comparison of IBE RIBE and CAIBE etch modes" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Three ion beam etch modes compared — IBE uses pure Ar⁺ physical sputtering, RIBE introduces reactive gas into the ion source, and CAIBE delivers reactive gas separately near the substrate surface</p>
       </div>
@@ -14632,11 +14823,11 @@ result = differential_evolution(
       <p>Unlike any plasma-based etch technique, IBE provides full control over the ion beam&rsquo;s angle of incidence. This is arguably the single most important process knob in ion beam etching, and it serves multiple functions:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/ibe-tilt-angle-optimization-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/ibe-tilt-angle-optimization.png" alt="Substrate tilt angle optimization for ion beam etching" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-tilt-angle-optimization-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-tilt-angle-optimization-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-tilt-angle-optimization-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/ibe-tilt-angle-optimization-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/ibe-tilt-angle-optimization.png" alt="Substrate tilt angle optimization for ion beam etching" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Effect of substrate tilt angle on etch profile — normal incidence (0°) causes trenching and redeposition, optimal angles (30–45°) produce clean sidewalls, and grazing angles (70–80°) enhance surface milling but reduce depth</p>
       </div>
@@ -14938,7 +15129,7 @@ result = differential_evolution(
     publishDate: '2026-03-22',
     category: 'Materials Science',
     readTime: 16,
-    imageUrl: '/assets/images/insights/ibe-ribe-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/ibe-ribe-guide-cover.png',
     slug: 'ion-beam-etching-ribe-guide',
     tags: ['ion beam etching', 'IBE', 'RIBE', 'ion milling', 'reactive ion beam etching', 'magnetic etching', 'MRAM', 'MTJ', 'noble metals', 'spintronics', 'photonics', 'Kaufman ion source', 'RF ion source', 'physical sputtering', 'redeposition', 'equipment guide'],
     relatedProducts: [
@@ -15063,11 +15254,11 @@ result = differential_evolution(
       <p>One of the key advantages of modern coater/developer systems is <strong>modular configurability</strong>. Rather than purchasing a fixed-function tool, engineers can specify the exact combination of coater, developer, and hotplate modules to match their process flow.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/coater-developer-module-layout-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-module-layout-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-module-layout-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-module-layout-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/coater-developer-module-layout.png" alt="Coater developer track system module layout" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-module-layout-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-module-layout-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-module-layout-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-module-layout-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/coater-developer-module-layout.png" alt="Coater developer track system module layout" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Typical coater/developer track system layout — modules are connected by a central robot transfer arm for automated wafer handling through the complete lithography process</p>
       </div>
@@ -15123,11 +15314,11 @@ result = differential_evolution(
       <p>Understanding spin coating physics is essential for optimizing coater module performance. For the complete theoretical treatment, see our <a href="/insights/spin-coating-development-guide">Spin Coating & Development Guide</a>. Here we summarize the key relationships as they apply to equipment specification and recipe development.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/coater-developer-spin-curve-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-spin-curve-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-spin-curve-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-spin-curve-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/coater-developer-spin-curve.png" alt="Film thickness versus spin speed curves for different resist viscosities" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-spin-curve-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-spin-curve-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-spin-curve-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-spin-curve-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/coater-developer-spin-curve.png" alt="Film thickness versus spin speed curves for different resist viscosities" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Spin coating thickness vs speed relationship — higher viscosity resists produce thicker films at equivalent speeds, following a power-law curve; the green band indicates the typical target thickness window</p>
       </div>
@@ -15482,11 +15673,11 @@ result = differential_evolution(
       <p>Even with optimized recipes, defects can occur due to equipment issues, resist degradation, or environmental upsets. Below is a systematic troubleshooting guide for the most common coater/developer defects.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/coater-developer-defect-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-defect-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-defect-types-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/coater-developer-defect-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/coater-developer-defect-types.png" alt="Common spin coating defect types on wafers" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-defect-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-defect-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-defect-types-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/coater-developer-defect-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/coater-developer-defect-types.png" alt="Common spin coating defect types on wafers" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Six common spin coating defects — comets/streaks from particles, edge bead from surface tension, center thin spots from dispense issues, pinholes from contamination, striations from solvent evaporation, and non-uniform coverage from poor wetting</p>
       </div>
@@ -15721,7 +15912,7 @@ result = differential_evolution(
     publishDate: '2026-03-13',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/coater-developer-equipment-guide-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/coater-developer-equipment-guide-cover.png',
     slug: 'coater-developer-systems-equipment-guide',
     tags: ['coater developer', 'spin coating', 'photolithography', 'track system', 'photoresist', 'developer', 'hotplate', 'film uniformity', 'edge bead removal', 'process optimization', 'wafer processing', 'semiconductor equipment', 'cleanroom', 'recipe programming'],
     relatedProducts: [
@@ -15925,21 +16116,21 @@ result = differential_evolution(
       <p>Raw wattage is misleading. What matters for cleaning performance is <strong>power density</strong> \u2014 the RF (or MF) power delivered per unit of chamber volume. Higher power density means more reactive species generated per unit volume, which translates to faster cleaning rates and more thorough contaminant removal.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/pluto-vs-hy-power-comparison.png" alt="PLUTO vs HY plasma cleaner specification comparison" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-power-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-power-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-power-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-power-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/pluto-vs-hy-power-comparison.png" alt="PLUTO vs HY plasma cleaner specification comparison" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Head-to-head specification comparison — key differences in frequency, power range, chamber materials, electrode design, chamber volume, and starting price between the PLUTO and HY series</p>
       </div>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/pluto-vs-hy-chamber-architecture.png" alt="PLUTO vs HY plasma cleaner chamber architecture comparison" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-chamber-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-chamber-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-chamber-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-chamber-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/pluto-vs-hy-chamber-architecture.png" alt="PLUTO vs HY plasma cleaner chamber architecture comparison" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Chamber architecture comparison — PLUTO uses a quartz chamber with RF gas-shower electrode at 13.56 MHz, while HY uses a stainless steel chamber with internal parallel plates driven at 40 kHz mid-frequency</p>
       </div>
@@ -16174,11 +16365,11 @@ result = differential_evolution(
       <p>Use this structured approach to narrow your selection:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/pluto-vs-hy-decision-flowchart.png" alt="PLUTO vs HY plasma cleaner selection decision flowchart" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-decision-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-decision-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-decision-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/pluto-vs-hy-decision-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/pluto-vs-hy-decision-flowchart.png" alt="PLUTO vs HY plasma cleaner selection decision flowchart" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Selection decision tree — choose between PLUTO (blue) and HY (green) models based on your primary application, sample requirements, and budget constraints</p>
       </div>
@@ -16439,7 +16630,7 @@ result = differential_evolution(
   publishDate: '2026-03-04',
   category: 'Equipment Maintenance',
   readTime: 12,
-  imageUrl: '/assets/images/insights/pluto-vs-hy-comparison-cover.png',
+  imageUrl: 'https://cdn.ninescrolls.com/insights/pluto-vs-hy-comparison-cover.png',
   slug: 'pluto-vs-hy-plasma-cleaner-comparison',
   tags: ['plasma cleaner', 'plasma cleaner comparison', 'PLUTO series', 'HY series', 'RF plasma cleaner', 'mid-frequency plasma cleaner', 'surface activation', 'plasma cleaning', 'equipment selection', 'benchtop plasma cleaner', 'gas-shower electrode', 'recipe management'],
   relatedProducts: [
@@ -16470,11 +16661,11 @@ result = differential_evolution(
       <p>There are three primary plasma stripping architectures, each with distinct advantages. Understanding their operating principles is the first step toward selecting the right tool.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/striper-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/striper-architectures-comparison.png" alt="Comparison of barrel downstream and RIE-mode stripper architectures" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-architectures-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-architectures-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-architectures-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-architectures-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/striper-architectures-comparison.png" alt="Comparison of barrel downstream and RIE-mode stripper architectures" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Three stripper architectures compared — barrel/tubular ashers for batch processing, downstream plasma for damage-sensitive applications, and RIE-mode strippers for directional descum and surface preparation</p>
       </div>
@@ -16576,11 +16767,11 @@ result = differential_evolution(
       <p>The choice of process gas determines the stripping mechanism, rate, selectivity, and residue behavior. Most stripping processes start with O₂, but additives unlock critical capabilities for specific applications.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-gas-chemistry-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/striper-gas-chemistry-matrix.png" alt="Stripping gas chemistry selection matrix" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-gas-chemistry-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-gas-chemistry-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-gas-chemistry-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-gas-chemistry-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/striper-gas-chemistry-matrix.png" alt="Stripping gas chemistry selection matrix" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Gas chemistry selection matrix — color-coded ratings for five common stripping chemistries across strip rate, selectivity, residue removal, and metal compatibility metrics</p>
       </div>
@@ -16888,11 +17079,11 @@ result = differential_evolution(
       <p>When evaluating stripping equipment for your lab, use this checklist to ensure the tool meets your current and anticipated needs.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/striper-selection-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-selection-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-selection-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/striper-selection-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/striper-selection-flowchart.png" alt="Plasma stripping equipment selection decision flowchart" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-selection-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-selection-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-selection-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/striper-selection-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/striper-selection-flowchart.png" alt="Plasma stripping equipment selection decision flowchart" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Equipment selection decision flowchart — systematic path from application requirements to recommended stripper architecture and configuration</p>
       </div>
@@ -17032,7 +17223,7 @@ result = differential_evolution(
     publishDate: '2026-03-07',
     category: 'Materials Science',
     readTime: 12,
-    imageUrl: '/assets/images/insights/striper-equipment-selection-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/striper-equipment-selection-cover.png',
     slug: 'plasma-stripping-equipment-selection-guide',
     tags: ['plasma stripping', 'plasma ashing', 'equipment selection', 'barrel asher', 'downstream plasma', 'RIE-mode', 'endpoint detection', 'OES', 'photoresist removal', 'gas chemistry', 'O₂ plasma', 'damage-sensitive stripping'],
     relatedProducts: [
@@ -17054,11 +17245,11 @@ result = differential_evolution(
       <p>The defining feature of HDP-CVD is simultaneous deposition and sputtering — a process fundamentally different from conventional PECVD, where deposition and any etch steps must be sequential.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-dep-etch-mechanism-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/hdp-cvd-dep-etch-mechanism.png" alt="HDP-CVD simultaneous deposition and etch gap fill mechanism" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-dep-etch-mechanism-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-dep-etch-mechanism-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-dep-etch-mechanism-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-dep-etch-mechanism-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/hdp-cvd-dep-etch-mechanism.png" alt="HDP-CVD simultaneous deposition and etch gap fill mechanism" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Simultaneous deposition/etch (D/E) competition mechanism — SiH₄/O₂ deposition flux fills from the bottom while Ar⁺ sputtering clips the top corners, preventing void formation through controlled D/S ratio optimization</p>
       </div>
@@ -17089,11 +17280,11 @@ result = differential_evolution(
       <p>STI is the most demanding and highest-volume application for HDP-CVD. Every logic and memory chip manufactured at or below the 0.25 µm node uses STI for electrical isolation between transistors.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-sti-fill-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/hdp-cvd-sti-fill-process.png" alt="STI shallow trench isolation gap fill process flow using HDP-CVD" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-sti-fill-process-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-sti-fill-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-sti-fill-process-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-sti-fill-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/hdp-cvd-sti-fill-process.png" alt="STI shallow trench isolation gap fill process flow using HDP-CVD" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: STI process flow — from trench etch through liner oxidation, HDP-CVD gap fill, CMP planarization, to final nitride strip, producing void-free oxide isolation between active device regions</p>
       </div>
@@ -17231,11 +17422,11 @@ result = differential_evolution(
       <p>Choosing the right deposition technique depends on the specific gap-fill requirements, thermal budget, throughput needs, and equipment availability. For a detailed discussion of PECVD capabilities, see our <a href="/insights/pecvd-complete-guide-plasma-enhanced-cvd">PECVD Complete Guide</a>.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/hdp-cvd-vs-pecvd-sacvd.png" alt="Comparison of HDP-CVD PECVD and SACVD gap fill techniques" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-vs-pecvd-sacvd-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-vs-pecvd-sacvd-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-vs-pecvd-sacvd-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/hdp-cvd-vs-pecvd-sacvd-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/hdp-cvd-vs-pecvd-sacvd.png" alt="Comparison of HDP-CVD PECVD and SACVD gap fill techniques" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Quantitative comparison of three CVD gap-fill approaches — HDP-CVD excels in film density and bottom-up fill, PECVD offers highest throughput with conformal coverage, and SACVD achieves the highest aspect ratios with conformal deposition</p>
       </div>
@@ -17557,7 +17748,7 @@ result = differential_evolution(
     publishDate: '2026-03-10',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/hdp-cvd-applications-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/hdp-cvd-applications-cover.png',
     slug: 'hdp-cvd-applications-gap-fill-dielectrics',
     tags: ['HDP-CVD', 'gap fill', 'STI', 'shallow trench isolation', 'IMD', 'PMD', 'dielectric deposition', 'void-free fill', 'PECVD comparison', 'SACVD', 'advanced packaging', 'D/S ratio', 'SiO₂', 'doped oxide'],
     relatedProducts: [
@@ -17588,11 +17779,11 @@ result = differential_evolution(
       <p>Individual lithography steps — coating, exposure, development, etching — are well-understood in isolation. The real challenge lies in <strong>integration</strong>: ensuring that each step's output meets the next step's input requirements across the entire wafer, lot after lot. A perfectly optimized spin coat is worthless if the soft bake drives off too much solvent for the chosen exposure dose, or if the develop process creates residue that blocks subsequent etch pattern transfer.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/lithography-full-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-full-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-full-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-full-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/lithography-full-process-flow.png" alt="Complete lithography to etch process flow diagram" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-full-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-full-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-full-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-full-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/lithography-full-process-flow.png" alt="Complete lithography to etch process flow diagram" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Complete lithography process flow — eight integrated steps from substrate preparation through pattern transfer, with corresponding wafer cross-sections showing the state of resist, oxide, and substrate layers at each stage</p>
       </div>
@@ -17908,11 +18099,11 @@ result = differential_evolution(
       <p>Hard bake (post-develop bake) further densifies the developed resist pattern by driving off remaining solvent and increasing the resist's thermal and chemical stability for the subsequent etch step. Hard bake is not always required &mdash; many modern processes skip it when the soft-baked resist provides sufficient etch resistance &mdash; but it is essential when:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/lithography-exposure-development-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-exposure-development-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-exposure-development-window-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-exposure-development-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/lithography-exposure-development-window.png" alt="Exposure dose versus focus process window Bossung plot" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-exposure-development-window-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-exposure-development-window-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-exposure-development-window-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-exposure-development-window-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/lithography-exposure-development-window.png" alt="Exposure dose versus focus process window Bossung plot" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Exposure-focus process window (Bossung plot) — the central elliptical region defines the acceptable range of dose and focus combinations that maintain CD within specification; DOF and exposure latitude determine manufacturing robustness</p>
       </div>
@@ -18074,11 +18265,11 @@ result = differential_evolution(
       <p>Achieving tight CD control (&plusmn;5% of target) across the entire lithography-etch flow requires understanding how each step contributes to the final CD variation budget. The table below shows typical contributions:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/lithography-cd-control-factors-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-cd-control-factors-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-cd-control-factors-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/lithography-cd-control-factors-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/lithography-cd-control-factors.png" alt="Ishikawa fishbone diagram of CD control factors in lithography" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-cd-control-factors-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-cd-control-factors-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-cd-control-factors-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/lithography-cd-control-factors-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/lithography-cd-control-factors.png" alt="Ishikawa fishbone diagram of CD control factors in lithography" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Ishikawa (fishbone) diagram of CD variation sources — six major categories (resist, exposure, development, bake, environment, substrate) each contribute multiple sub-factors that must be controlled for tight CD uniformity</p>
       </div>
@@ -18270,7 +18461,7 @@ result = differential_evolution(
     publishDate: '2026-03-16',
     category: 'Nanotechnology',
     readTime: 15,
-    imageUrl: '/assets/images/insights/lithography-integration-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/lithography-integration-cover.png',
     slug: 'lithography-process-integration-guide',
     tags: ['lithography', 'process integration', 'spin coating', 'HMDS', 'photoresist', 'exposure', 'alignment', 'overlay', 'CD control', 'pattern transfer', 'hard bake', 'development', 'RIE', 'etch'],
     relatedProducts: [
@@ -18312,11 +18503,11 @@ result = differential_evolution(
       <p>Understanding the chemical composition of post-etch residues is essential for selecting the right cleaning approach. The residue type depends on the etch chemistry, the materials being etched, and the mask material.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/post-etch-residue-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-residue-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-residue-types-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-residue-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/post-etch-residue-types.png" alt="Classification of post-etch residue types in etched features" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-residue-types-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-residue-types-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-residue-types-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-residue-types-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/post-etch-residue-types.png" alt="Classification of post-etch residue types in etched features" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Post-etch residue classification — four major residue types shown at their typical locations within an etched via: sidewall polymer (fluorocarbon), metal halides at the via bottom, sputtered mask material, and oxide/nitride debris at top corners</p>
       </div>
@@ -18391,11 +18582,11 @@ result = differential_evolution(
       <p>Dry (plasma-based) cleaning is the first-line approach for post-etch residue removal. It offers process control, repeatability, minimal chemical waste, and compatibility with vacuum-based process flows.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-dry-vs-wet-cleaning-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/post-etch-dry-vs-wet-cleaning.png" alt="Comparison of dry plasma and wet chemical post-etch cleaning methods" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-dry-vs-wet-cleaning-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-dry-vs-wet-cleaning-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-dry-vs-wet-cleaning-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-dry-vs-wet-cleaning-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/post-etch-dry-vs-wet-cleaning.png" alt="Comparison of dry plasma and wet chemical post-etch cleaning methods" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Dry vs wet cleaning comparison — downstream plasma cleaning offers in-situ integration and damage control, while wet chemical cleaning provides high selectivity and established batch processing with multiple chemistry options</p>
       </div>
@@ -18722,11 +18913,11 @@ result = differential_evolution(
       <p>The following table provides recommended cleaning sequences for common etch process types:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/post-etch-integration-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-integration-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-integration-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/post-etch-integration-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/post-etch-integration-flow.png" alt="In-situ versus ex-situ post-etch cleaning process integration flow" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-integration-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-integration-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-integration-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/post-etch-integration-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/post-etch-integration-flow.png" alt="In-situ versus ex-situ post-etch cleaning process integration flow" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Process integration pathways — in-situ cleaning within the cluster tool eliminates queue time and air exposure risks, while ex-situ wet cleaning requires careful queue time management to prevent native oxide growth and corrosion</p>
       </div>
@@ -18909,7 +19100,7 @@ result = differential_evolution(
     publishDate: '2026-03-19',
     category: 'Materials Science',
     readTime: 13,
-    imageUrl: '/assets/images/insights/post-etch-cleaning-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/post-etch-cleaning-cover.png',
     slug: 'post-etch-cleaning-residue-removal',
     tags: ['post-etch cleaning', 'residue removal', 'plasma cleaning', 'O\u2082 plasma', 'forming gas', 'low-k dielectric', 'copper', 'III-V', 'downstream ashing', 'contamination', 'sidewall polymer', 'metal halide', 'damage-free'],
     relatedProducts: [
@@ -18943,11 +19134,11 @@ result = differential_evolution(
       <p>Vacuum is conventionally divided into regimes based on pressure range. Each regime has distinct gas dynamics, requires different pump technologies, and serves different semiconductor processes:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-regime-pump-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/vacuum-regime-pump-map.png" alt="Vacuum pressure regimes and pump technology operating ranges" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-regime-pump-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-regime-pump-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-regime-pump-map-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-regime-pump-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/vacuum-regime-pump-map.png" alt="Vacuum pressure regimes and pump technology operating ranges" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Vacuum regime chart — pressure ranges from atmosphere to UHV mapped against pump technology operating ranges, showing the complementary coverage of roughing pumps, turbomolecular pumps, cryopumps, and ion pumps</p>
       </div>
@@ -19175,11 +19366,11 @@ result = differential_evolution(
       <p>Understanding gas flow regimes is essential for designing vacuum plumbing, predicting pump-down times, and optimizing gas distribution in process chambers. The flow regime depends on the Knudsen number (Kn), the ratio of molecular mean free path (λ) to the characteristic dimension of the flow channel (D):</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-gas-flow-regimes-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/vacuum-gas-flow-regimes.png" alt="Viscous transition and molecular gas flow regimes" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-gas-flow-regimes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-gas-flow-regimes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-gas-flow-regimes-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-gas-flow-regimes-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/vacuum-gas-flow-regimes.png" alt="Viscous transition and molecular gas flow regimes" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Three gas flow regimes — viscous flow (molecules interact with each other, Kn < 0.01), transition flow (mixed behavior), and molecular flow (molecules interact only with walls, Kn > 1), determined by the ratio of mean free path to system dimensions</p>
       </div>
@@ -19298,11 +19489,11 @@ result = differential_evolution(
       <p>Load-locks are small-volume intermediate chambers that allow wafer transfer without venting the process chamber to atmosphere. Their inclusion is one of the most impactful design decisions in semiconductor processing equipment.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/vacuum-loadlock-design-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-loadlock-design-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-loadlock-design-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/vacuum-loadlock-design-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/vacuum-loadlock-design.png" alt="Load-lock chamber system schematic for semiconductor equipment" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-loadlock-design-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-loadlock-design-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-loadlock-design-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/vacuum-loadlock-design-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/vacuum-loadlock-design.png" alt="Load-lock chamber system schematic for semiconductor equipment" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Load-lock system schematic — a small-volume intermediate chamber cycles between atmosphere and vacuum, protecting the process chamber from contamination while enabling efficient wafer transfer</p>
       </div>
@@ -19560,7 +19751,7 @@ result = differential_evolution(
     publishDate: '2026-03-28',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: '/assets/images/insights/vacuum-fundamentals-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/vacuum-fundamentals-cover.png',
     slug: 'vacuum-system-fundamentals-semiconductor',
     tags: ['vacuum systems', 'semiconductor equipment', 'turbo pump', 'cryopump', 'leak detection', 'pressure measurement', 'outgassing', 'load-lock', 'vacuum materials', 'equipment maintenance', 'gas flow', 'conductance'],
     relatedProducts: [
@@ -19653,11 +19844,11 @@ result = differential_evolution(
       <p>Surface treatments transform the properties of base chamber materials, dramatically improving their plasma resistance, particle performance, and corrosion behavior.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/chamber-materials-layers-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-materials-layers-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-materials-layers-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-materials-layers-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/chamber-materials-layers.png" alt="Process chamber cross-section showing material layers and construction" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-materials-layers-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-materials-layers-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-materials-layers-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-materials-layers-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/chamber-materials-layers.png" alt="Process chamber cross-section showing material layers and construction" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 1: Chamber construction materials — cross-section showing anodized aluminum body, yttria ceramic liners, silicon or SiC electrode, quartz showerhead, and elastomer seals at each critical interface</p>
       </div>
@@ -19832,11 +20023,11 @@ result = differential_evolution(
       <p>Contamination in semiconductor process chambers falls into five categories, each with distinct sources, detection methods, and mitigation strategies:</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/chamber-contamination-sources-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-contamination-sources-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-contamination-sources-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-contamination-sources-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/chamber-contamination-sources.png" alt="Contamination sources and transport pathways in a process chamber" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-contamination-sources-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-contamination-sources-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-contamination-sources-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-contamination-sources-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/chamber-contamination-sources.png" alt="Contamination sources and transport pathways in a process chamber" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 2: Contamination sources — six major pathways for particles, moisture, organics, and metal contamination entering the process environment, from showerhead flaking to pump oil backstreaming</p>
       </div>
@@ -19890,11 +20081,11 @@ result = differential_evolution(
       <p>After any maintenance event that exposes the chamber interior to atmosphere — liner replacement, electrode change, wet cleaning — the chamber must be re-conditioned before running product wafers. Chamber conditioning (also called "seasoning") establishes a stable, reproducible surface state on all plasma-facing components.</p>
       <div class="post-figure">
         <picture>
-          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-xl.webp" media="(min-width: 1280px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-lg.webp" media="(min-width: 1024px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-md.webp" media="(min-width: 768px)" type="image/webp" />
-          <source srcSet="/assets/images/insights/chamber-seasoning-qualification-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="/assets/images/insights/chamber-seasoning-qualification.png" alt="Chamber cleaning seasoning and qualification process flow" loading="lazy" decoding="async" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-seasoning-qualification-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-seasoning-qualification-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-seasoning-qualification-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="https://cdn.ninescrolls.com/insights/chamber-seasoning-qualification-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/chamber-seasoning-qualification.png" alt="Chamber cleaning seasoning and qualification process flow" loading="lazy" decoding="async" />
         </picture>
         <p class="post-figure-caption">Figure 3: Chamber conditioning workflow — five-stage process from wet clean through plasma seasoning to qualification, with pass/fail decision gate and recycle loop for out-of-spec results</p>
       </div>
@@ -20104,7 +20295,7 @@ result = differential_evolution(
     publishDate: '2026-03-25',
     category: 'Materials Science',
     readTime: 13,
-    imageUrl: '/assets/images/insights/chamber-materials-contamination-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/chamber-materials-contamination-cover.png',
     slug: 'process-chamber-materials-contamination-control',
     tags: ['chamber materials', 'contamination control', 'anodization', 'yttria coating', 'electropolishing', 'chamber cleaning', 'chamber seasoning', 'particle control', 'O-ring materials', 'preventive maintenance', 'semiconductor equipment', 'process qualification'],
     relatedProducts: [
@@ -20587,7 +20778,7 @@ result = differential_evolution(
     publishDate: '2026-04-03',
     category: 'Materials Science',
     readTime: 14,
-    imageUrl: 'https://cdn.ninescrolls.com/insights/wafer-loading-effect-plasma-etching/cover-lg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/wafer-loading-effect-plasma-etching/cover-lg.webp',
     slug: 'wafer-loading-effect-plasma-etching',
     tags: ['wafer loading', 'loading effect', 'macro loading', 'micro loading', 'ARDE', 'aspect ratio dependent etching', 'RIE lag', 'etch uniformity', 'CD uniformity', 'pattern dependent etching', 'plasma etching', 'RIE', 'ICP-RIE', 'DRIE', 'etch rate'],
     relatedProducts: [
@@ -21232,7 +21423,7 @@ result = differential_evolution(
     publishDate: '2026-04-03',
     category: 'Nanotechnology',
     readTime: 14,
-    imageUrl: 'https://cdn.ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting/cover-lg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting/cover-lg.webp',
     slug: 'rie-icp-system-maintenance-troubleshooting',
     tags: ['RIE maintenance', 'ICP-RIE maintenance', 'plasma etcher troubleshooting', 'preventive maintenance', 'vacuum system', 'RF power diagnostics', 'matching network', 'etch rate drift', 'particle control', 'chamber cleaning', 'equipment qualification', 'semiconductor equipment maintenance'],
     relatedProducts: [
@@ -21309,7 +21500,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-structure-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-structure-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-structure-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-structure.png" alt="Transmon qubit structure diagram showing cross-shaped capacitor pads connected by a Josephson junction on a sapphire substrate, with CPW readout resonator and Nb ground plane" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-structure-lg.png" alt="Transmon qubit structure diagram showing cross-shaped capacitor pads connected by a Josephson junction on a sapphire substrate, with CPW readout resonator and Nb ground plane" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Transmon Qubit Structure — Two Al capacitor pads connected by an Al/AlOₓ/Al Josephson junction on a sapphire substrate, capacitively coupled to a λ/4 CPW readout resonator. The Nb ground plane surrounds the qubit with controlled gap spacing (~20 µm).</p>
       </div>
@@ -21439,7 +21630,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-etch-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-etch-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-etch-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-etch-comparison.png" alt="Side-by-side comparison of RIE (CCP) and ICP-RIE chamber architectures showing differences in plasma density, ion energy coupling, and damage to superconducting films" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-etch-comparison-lg.png" alt="Side-by-side comparison of RIE (CCP) and ICP-RIE chamber architectures showing differences in plasma density, ion energy coupling, and damage to superconducting films" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 2: RIE vs ICP-RIE for Superconducting Film Etching — In RIE (left), ion energy and plasma density are coupled via a single RF source, leading to higher damage. In ICP-RIE (right), independent ICP and bias RF sources enable high-density plasma with low ion energy — ideal for minimizing TLS defects in qubit ground planes.</p>
       </div>
@@ -21533,7 +21724,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-dolan-bridge-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-dolan-bridge-process-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-dolan-bridge-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-dolan-bridge-process.png" alt="Four-step Dolan bridge double-angle evaporation process: EBL patterning of bilayer resist with bridge, first Al evaporation at +α angle, controlled O₂ oxidation forming AlOₓ tunnel barrier, second Al evaporation at −α angle creating the junction overlap" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-dolan-bridge-process-lg.png" alt="Four-step Dolan bridge double-angle evaporation process: EBL patterning of bilayer resist with bridge, first Al evaporation at +α angle, controlled O₂ oxidation forming AlOₓ tunnel barrier, second Al evaporation at −α angle creating the junction overlap" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 3: Dolan Bridge Process — (Step 1) EBL patterns a ~100 nm bridge in PMMA over MMA undercut. (Step 2) First Al layer evaporated at angle +α. (Step 3) Controlled O₂ exposure forms the AlOₓ tunnel barrier. (Step 4) Second Al layer at −α; the overlap region defines the Josephson junction area.</p>
       </div>
@@ -21641,7 +21832,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-process-flow.png" alt="Complete transmon qubit fabrication process flow showing four levels: ground plane (Nb sputtering + ICP-RIE), Josephson junction (EBL + double-angle evaporation), airbridges, and packaging with color-coded process categories" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/quantum-device-micro-nanofabrication-guide/quantum-transmon-process-flow-lg.png" alt="Complete transmon qubit fabrication process flow showing four levels: ground plane (Nb sputtering + ICP-RIE), Josephson junction (EBL + double-angle evaporation), airbridges, and packaging with color-coded process categories" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 4: Transmon Qubit Complete Fabrication Flow — Four process levels from substrate preparation through cryogenic testing. Color coding indicates process category: cleaning (yellow), deposition (blue), lithography (purple), etching (orange), evaporation (green), packaging/test (gray).</p>
       </div>
@@ -22001,7 +22192,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-device-platforms-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-device-platforms-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-device-platforms-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-device-platforms.png" alt="Overview of five major MEMS device platforms: inertial sensors with comb-drive structures, pressure sensors with piezoresistive membranes, microfluidic channels, RF MEMS switches, and optical micromirrors on torsion hinges" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-device-platforms-lg.png" alt="Overview of five major MEMS device platforms: inertial sensors with comb-drive structures, pressure sensors with piezoresistive membranes, microfluidic channels, RF MEMS switches, and optical micromirrors on torsion hinges" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: Major MEMS Device Platforms — From left: capacitive accelerometer with comb-drive sensing, piezoresistive pressure sensor membrane, microfluidic channel cross-section, RF MEMS capacitive switch, and electrostatic torsion micromirror. Each platform requires a distinct fabrication flow optimized for its specific mechanical and functional requirements.</p>
       </div>
@@ -22117,7 +22308,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-drie-bosch-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-drie-bosch-process-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-drie-bosch-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-drie-bosch-process.png" alt="Bosch DRIE process diagram showing alternating SF6 etch and C4F8 passivation cycles producing high-aspect-ratio trenches with characteristic scalloped sidewalls in silicon" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-drie-bosch-process-lg.png" alt="Bosch DRIE process diagram showing alternating SF6 etch and C4F8 passivation cycles producing high-aspect-ratio trenches with characteristic scalloped sidewalls in silicon" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 2: DRIE Bosch Process — Alternating etch (SF₆) and passivation (C₄F₈) cycles create high-aspect-ratio structures in silicon. The characteristic scalloped sidewall morphology (50–200 nm) results from the cyclic nature; scallop depth is reduced by shortening cycle times at the expense of etch rate.</p>
       </div>
@@ -22363,7 +22554,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-etch-process-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-etch-process-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-etch-process-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-etch-process-comparison.png" alt="Comparison of MEMS etching approaches: wet anisotropic KOH etch showing 54.7-degree sidewalls, Bosch DRIE with vertical scalloped walls, cryogenic DRIE with smooth vertical walls, and isotropic release etch creating undercut cavities" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-etch-process-comparison-lg.png" alt="Comparison of MEMS etching approaches: wet anisotropic KOH etch showing 54.7-degree sidewalls, Bosch DRIE with vertical scalloped walls, cryogenic DRIE with smooth vertical walls, and isotropic release etch creating undercut cavities" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 3: MEMS Etching Approaches — (a) Anisotropic wet etch (KOH) with crystal-plane-defined 54.7° sidewalls, (b) Bosch DRIE with vertical scalloped sidewalls, (c) Cryogenic DRIE with smooth vertical walls, (d) Isotropic release etch creating undercut cavities beneath structural layers.</p>
       </div>
@@ -22564,7 +22755,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-accelerometer-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-accelerometer-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-accelerometer-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-accelerometer-process-flow.png" alt="SOI-based MEMS accelerometer fabrication process flow showing 8 steps from SOI wafer preparation through DRIE, metallization, HF vapor release, anti-stiction coating, cap wafer bonding, and final dicing" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/mems-fabrication-process-guide/mems-accelerometer-process-flow-lg.png" alt="SOI-based MEMS accelerometer fabrication process flow showing 8 steps from SOI wafer preparation through DRIE, metallization, HF vapor release, anti-stiction coating, cap wafer bonding, and final dicing" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 4: SOI Accelerometer Process Flow — Eight-step fabrication sequence from SOI wafer selection through DRIE patterning, metallization, HF vapor release, anti-stiction SAM coating, eutectic cap wafer bonding, and backside thinning/dicing.</p>
       </div>
@@ -23047,7 +23238,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gas-chemistry-overview-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gas-chemistry-overview-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gas-chemistry-overview-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gas-chemistry-overview.png" alt="Overview of III-V semiconductor etch gas chemistries showing Cl2-based, CH4/H2-based, and BCl3-based approaches mapped to material systems GaAs, InP, GaN, and their etch product volatilities" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gas-chemistry-overview-lg.png" alt="Overview of III-V semiconductor etch gas chemistries showing Cl2-based, CH4/H2-based, and BCl3-based approaches mapped to material systems GaAs, InP, GaN, and their etch product volatilities" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 1: III-V Etch Gas Chemistry Map — Chlorine-based chemistries dominate for GaAs and GaN, while CH₄/H₂ is preferred for InP and low-damage photonic applications. Etch product volatility (especially InCl₃) drives the need for elevated substrate temperatures in In-containing compounds.</p>
       </div>
@@ -23161,7 +23352,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gan-hemt-gate-recess-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gan-hemt-gate-recess-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gan-hemt-gate-recess-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gan-hemt-gate-recess.png" alt="Cross-section diagram of AlGaN/GaN HEMT gate recess etching process showing the precise etch stop requirement at the AlGaN barrier layer with 2DEG channel beneath" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-gan-hemt-gate-recess-lg.png" alt="Cross-section diagram of AlGaN/GaN HEMT gate recess etching process showing the precise etch stop requirement at the AlGaN barrier layer with 2DEG channel beneath" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 2: GaN HEMT Gate Recess Etch — The gate recess must precisely stop in/on the thin AlGaN barrier (15–25 nm) to control threshold voltage. Over-etching degrades the 2DEG; under-etching produces normally-on operation. Digital etching (O₂ oxidation + HCl strip) achieves ~1 nm/cycle precision.</p>
       </div>
@@ -23323,7 +23514,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-damage-depth-profile-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-damage-depth-profile-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-damage-depth-profile-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-damage-depth-profile.png" alt="Diagram showing etch damage depth profile in III-V semiconductors comparing high-bias ICP-RIE, low-bias ICP-RIE, and digital etching, with damage zones ranging from surface amorphization to deep point defects" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-damage-depth-profile-lg.png" alt="Diagram showing etch damage depth profile in III-V semiconductors comparing high-bias ICP-RIE, low-bias ICP-RIE, and digital etching, with damage zones ranging from surface amorphization to deep point defects" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 3: Etch Damage Depth Profiles — Subsurface damage extends 50–100 nm under high-bias conditions, 10–30 nm under optimized low-bias ICP-RIE, and < 5 nm with digital etching. The damaged region contains point defects, implanted species, and non-stoichiometric composition.</p>
       </div>
@@ -23400,7 +23591,7 @@ result = differential_evolution(
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-device-applications-lg.webp" media="(min-width: 1024px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-device-applications-md.webp" media="(min-width: 768px)" type="image/webp" />
           <source srcSet="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-device-applications-sm.webp" media="(max-width: 767px)" type="image/webp" />
-          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-device-applications.png" alt="Four III-V device application examples showing InP photonic integrated circuit cross-section, GaN HEMT power device, VCSEL mesa with DBR mirrors, and infrared detector pixel array" loading="lazy" />
+          <img src="https://cdn.ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide/iii-v-device-applications-lg.png" alt="Four III-V device application examples showing InP photonic integrated circuit cross-section, GaN HEMT power device, VCSEL mesa with DBR mirrors, and infrared detector pixel array" loading="lazy" />
         </picture>
         <p class="post-figure-caption">Figure 4: III-V Device Applications Requiring Precision Etching — (a) InP-based photonic integrated circuit with ridge waveguides, (b) AlGaN/GaN HEMT with gate recess, (c) GaAs VCSEL with DBR mesa, (d) InAs/GaSb superlattice infrared detector pixel. Each application demands specific etch depth, profile, damage, and selectivity control.</p>
       </div>
@@ -23778,7 +23969,7 @@ result = differential_evolution(
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison.png" alt="Comparison of silicon, 4H-SiC, and GaN material properties for power electronics showing bandgap, critical field, thermal conductivity, and electron velocity" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-material-comparison-lg.png" alt="Comparison of silicon, 4H-SiC, and GaN material properties for power electronics showing bandgap, critical field, thermal conductivity, and electron velocity" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 1: Wide Bandgap Material Property Comparison — SiC and GaN offer 3× the bandgap and 10× the critical electric field of silicon, enabling fundamentally different power device architectures</p>
 
@@ -23977,7 +24168,7 @@ result = differential_evolution(
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-lg.webp" media="(min-width: 1024px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-md.webp" media="(min-width: 768px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process.png" alt="Side-by-side comparison of SiC and GaN ICP-RIE etch processes showing gas chemistry, DC bias ranges, and etch rate differences" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-sic-gan-etch-process-lg.png" alt="Side-by-side comparison of SiC and GaN ICP-RIE etch processes showing gas chemistry, DC bias ranges, and etch rate differences" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 2: SiC vs GaN ICP-RIE Etch Process Comparison — SiC requires fluorine-based chemistry with high ion energy, while GaN uses chlorine-based chemistry with lower damage thresholds</p>
 
@@ -24089,7 +24280,7 @@ result = differential_evolution(
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-md.webp" media="(min-width: 768px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow.png" alt="Complete fabrication process flow for GaN HEMT and SiC MOSFET power devices showing major steps from substrate to packaging" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-lg.png" alt="Complete fabrication process flow for GaN HEMT and SiC MOSFET power devices showing major steps from substrate to packaging" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 3: WBG Device Fabrication Process Flows — GaN HEMT (top) and SiC MOSFET (bottom) share similar unit processes but differ significantly in process temperatures and integration sequence</p>
 
@@ -24197,7 +24388,7 @@ result = differential_evolution(
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-lg.webp" media="(min-width: 1024px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-md.webp" media="(min-width: 768px)" type="image/webp" />
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-sm.webp" media="(max-width: 767px)" type="image/webp" />
-        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview.png" alt="Equipment ecosystem for wide bandgap semiconductor fabrication showing ICP-RIE, PECVD, ALD, sputtering, and characterization tools" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
+        <img src="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-equipment-overview-lg.png" alt="Equipment ecosystem for wide bandgap semiconductor fabrication showing ICP-RIE, PECVD, ALD, sputtering, and characterization tools" loading="lazy" decoding="async" style="width:100%;border-radius:8px;" />
       </picture>
       <p style="text-align:center;font-style:italic;color:#666;font-size:0.9em;">Figure 4: WBG Device Fabrication Equipment Ecosystem — From ICP-RIE etching through deposition and characterization, each tool must meet the demanding requirements of wide bandgap materials</p>
 
@@ -24298,7 +24489,7 @@ result = differential_evolution(
     publishDate: '2026-04-19',
     category: 'Materials Science',
     readTime: 26,
-    imageUrl: 'https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/cover-lg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/cover-lg.webp',
     tags: [
       'Wide Bandgap',
       'GaN',
@@ -25012,7 +25203,7 @@ result = differential_evolution(
     publishDate: '2026-04-19',
     category: 'Process Integration',
     readTime: 28,
-    imageUrl: 'https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/cover-lg',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/bio-mems-microfluidic-chip-fabrication-guide/cover-lg.webp',
     tags: [
       'Bio-MEMS',
       'Microfluidics',
@@ -26115,7 +26306,7 @@ result = differential_evolution(
     publishDate: '2026-04-19',
     category: 'Process Integration',
     readTime: 35,
-    imageUrl: '/assets/images/insights/2d-materials-cover.png',
+    imageUrl: 'https://cdn.ninescrolls.com/insights/2d-materials-device-fabrication-guide/cover-lg.webp',
     tags: [
       '2D Materials',
       'Graphene',
