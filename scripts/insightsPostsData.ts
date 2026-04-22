@@ -6769,6 +6769,21 @@ export const insightsPosts: InsightsPost[] = [
       <h3>2.5 Metallization</h3>
       <p>Front and rear contacts are formed by screen printing of Ag (front) and Al (rear) pastes, followed by a fast-firing step (700&ndash;800 &deg;C peak, 1&ndash;3 s) that drives the Ag paste through the SiN<sub>x</sub> ARC to contact the emitter and simultaneously sinters the rear Al contact. For advanced cell architectures (HJT, IBC), sputtered metal stacks (e.g., ITO/Ag or ITO/Cu by <a href="/products/sputter">magnetron sputtering</a>) replace screen printing to achieve finer line widths (&lt; 30 &mu;m vs. 40&ndash;60 &mu;m for screen print) and lower contact resistance.</p>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/cSi-perc-fabrication-flow-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/cSi-perc-fabrication-flow-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/cSi-perc-fabrication-flow-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/cSi-perc-fabrication-flow-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/cSi-perc-fabrication-flow-lg.png"
+            alt="High-efficiency c-Si PERC solar cell fabrication flow — texturing, POCl3 emitter diffusion, SiNx ARC by PECVD, Al2O3 rear passivation by ALD, SiNx capping, and screen-print metallization with co-firing"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: High-Efficiency c-Si PERC Cell — Five-step fabrication flow (texturing → emitter diffusion → SiNx ARC → Al2O3/SiNx rear passivation → metallization) with representative process parameters and target metrics</figcaption>
+      </figure>
+
       <h2>3) Perovskite Solar Cell Fabrication</h2>
 
       <p>Metal halide perovskite solar cells (PSCs) have achieved certified efficiencies above 26% in single-junction and above 33% in tandem configurations. Unlike c-Si cells where the absorber is a bulk wafer, perovskite cells are entirely thin-film devices — every layer from electrode to absorber to transport layer is deposited, making plasma and thin-film processing central to the entire device.</p>
@@ -6840,6 +6855,21 @@ export const insightsPosts: InsightsPost[] = [
 
       <h3>3.4 Top Electrode</h3>
       <p>The top electrode is typically a thin metal layer (Ag or Au, 80&ndash;120 nm) deposited by thermal evaporation through a shadow mask. For semi-transparent perovskite cells (used in tandem architectures), a sputtered ITO top electrode (50&ndash;80 nm) replaces the metal, requiring careful control of sputter damage to the underlying organic/perovskite layers. Buffer layers (SnO<sub>2</sub> by ALD, 10&ndash;20 nm, or MoO<sub>x</sub> by evaporation, 5&ndash;10 nm) protect the perovskite from sputter damage during ITO deposition.</p>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/perovskite-layer-structure-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/perovskite-layer-structure-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/perovskite-layer-structure-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/perovskite-layer-structure-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/perovskite-layer-structure-lg.png"
+            alt="Perovskite solar cell n-i-p layer structure — glass/TCO substrate, ALD SnO2 electron transport layer, perovskite absorber, spin-coated hole transport layer, and evaporated back electrode with deposition methods and thicknesses"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Perovskite Solar Cell — n-i-p layer structure from TCO substrate through ETL / absorber / HTL to back electrode, with deposition methods, thicknesses, and record PCE references (NREL 2025)</figcaption>
+      </figure>
 
       <h2>4) CIGS and CdTe Thin-Film Solar Cells</h2>
 
@@ -6928,6 +6958,21 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Contact layer etch:</strong> Selective removal of the GaAs cap layer after front metallization using <a href="/products/rie-etcher">RIE</a> or wet etching (citric acid/H<sub>2</sub>O<sub>2</sub>).</li>
         <li><strong>ALD passivation:</strong> Al<sub>2</sub>O<sub>3</sub> or AlN passivation of III-V surfaces (5&ndash;10 nm by <a href="/products/ald">ALD</a>) to reduce surface recombination at mesa sidewalls.</li>
       </ul>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/tandem-multi-junction-architectures-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/tandem-multi-junction-architectures-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/tandem-multi-junction-architectures-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/tandem-multi-junction-architectures-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/tandem-multi-junction-architectures-lg.png"
+            alt="Tandem solar cell architectures — 2-terminal perovskite/Si tandem with recombination layer, and III-V GaInP/GaAs/Ge triple-junction with tunnel junctions, showing carrier flow, polarity, and target PCE"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Tandem &amp; Multi-Junction Architectures — Perovskite/Si 2-terminal tandem (targeting &gt;30% PCE) and III-V triple-junction (GaInP/GaAs/Ge, 44% under concentration) with tunnel junction coupling</figcaption>
+      </figure>
 
       <h2>6) Process Comparison: Deposition Methods for Solar Cell Layers</h2>
 
@@ -7043,6 +7088,21 @@ export const insightsPosts: InsightsPost[] = [
           </tr>
         </tbody>
       </table>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/solar-layer-deposition-matrix-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/solar-layer-deposition-matrix-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/solar-layer-deposition-matrix-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/solar-layer-deposition-matrix-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/solar-cell-manufacturing-renewable-energy/solar-layer-deposition-matrix-lg.png"
+            alt="Solar cell layer deposition method comparison matrix — SiNx ARC, Al2O3 passivation, ITO TCO, perovskite, and SnO2 ETL across PECVD, ALD/PEALD, sputter, evaporation, and solution processing"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Solar Cell Layer Deposition — Method comparison matrix (PECVD / ALD / sputter / evaporation / solution) for each functional layer, highlighting the best-choice technique and common alternatives</figcaption>
+      </figure>
 
       <h2>7) Equipment Selection for Solar Cell Fabrication</h2>
 
