@@ -11,6 +11,7 @@ import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import DOMPurify from 'dompurify';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
+import { LightboxContainer } from '../components/common/ImageLightbox';
 import '../styles/article-content.css';
 
 /**
@@ -317,10 +318,12 @@ export const InsightsPostPage: React.FC = () => {
             <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-md:grid-cols-1">
               <div className="bg-white p-10 rounded-xl shadow-md min-w-0 overflow-x-hidden max-md:p-5">
                 {post.content ? (
-                  <div
-                    className="post-content"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')), { ADD_TAGS: ['picture', 'source'], ADD_ATTR: ['srcset', 'media', 'loading', 'decoding', 'fetchpriority'] }) }}
-                  />
+                  <LightboxContainer>
+                    <div
+                      className="post-content"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')), { ADD_TAGS: ['picture', 'source'], ADD_ATTR: ['srcset', 'media', 'loading', 'decoding', 'fetchpriority'] }) }}
+                    />
+                  </LightboxContainer>
                 ) : null}
 
                 {/* Tags */}
@@ -429,10 +432,12 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
         <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-md:grid-cols-1">
           <div className="bg-white p-10 rounded-xl shadow-md min-w-0 overflow-x-hidden max-md:p-5">
             {post.content ? (
-              <div
-                className="post-content"
-                dangerouslySetInnerHTML={{ __html: rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
-              />
+              <LightboxContainer>
+                <div
+                  className="post-content"
+                  dangerouslySetInnerHTML={{ __html: rewriteContentImages(post.content.replace(/&nbsp;|\u00a0/g, ' ')) }}
+                />
+              </LightboxContainer>
             ) : (
               <p style={{ color: '#999' }}>No content yet.</p>
             )}
