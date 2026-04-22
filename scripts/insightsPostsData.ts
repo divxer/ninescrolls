@@ -2386,16 +2386,16 @@ export const insightsPosts: InsightsPost[] = [
       <figure style="margin:2rem 0;text-align:center">
         <picture>
           <source type="image/webp"
-            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-sm.webp 640w,
-                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-md.webp 768w,
-                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-lg.webp 1024w,
-                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-xl.webp 1280w"
+            srcset="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architectures-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architectures-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architectures-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architectures-xl.webp 1280w"
             sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
-          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architecture-lg.png"
-            alt="Plasma etching reactor chamber diagram illustrating RF electrodes, gas inlet, plasma region, and substrate stage"
+          <img src="https://cdn.ninescrolls.com/insights/plasma-etching-explained-fundamentals-applications/plasma-etching-reactor-architectures-lg.png"
+            alt="PE vs RIE vs ICP-RIE reactor architecture comparison showing chamber cross-sections, bias/density control, and characteristic etch profiles (isotropic, anisotropic, high aspect ratio)"
             style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
         </picture>
-        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Plasma Etching Reactor Architecture — Cross-section showing RF electrodes, gas inlet system, plasma generation region, and substrate stage with bias control</figcaption>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: Plasma Etching Reactor Architectures — Side-by-side comparison of PE (chemical dry etch), RIE (capacitively coupled) and ICP-RIE (inductively coupled) chambers with their bias/density control and resulting etch profiles</figcaption>
       </figure>
 
       <h3>2.2 Etching Mechanisms</h3>
