@@ -4736,6 +4736,21 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/ebeam-lithography-process-flow-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/ebeam-lithography-process-flow-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/ebeam-lithography-process-flow-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/ebeam-lithography-process-flow-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/ebeam-lithography-process-flow-lg.png"
+            alt="E-beam lithography complete process flow showing substrate cleaning, PMMA resist coating, e-beam exposure, development, and pattern transfer via etch or liftoff"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: E-Beam Lithography Complete Process Flow — Five-step PMMA-based EBL process from substrate clean through pattern transfer, with typical process parameters and compatible platforms</figcaption>
+      </figure>
+
       <hr/>
 
       <h2>2) Pattern Transfer by Plasma Etching</h2>
@@ -4861,6 +4876,21 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Low bias power:</strong> Reducing RF bias below 20 W decreases ion-induced roughening at the cost of lower etch rate</li>
       </ul>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/plasma-etch-recipes-by-material-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/plasma-etch-recipes-by-material-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/plasma-etch-recipes-by-material-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/plasma-etch-recipes-by-material-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/plasma-etch-recipes-by-material-lg.png"
+            alt="Nanoscale pattern transfer plasma etch recipes by material — Si, SiO2, Si3N4, metal, and III-V with gas chemistry, rate, selectivity, LER, and etch mechanism"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Nanoscale Pattern Transfer — Plasma etch recipes by material with representative process windows for ICP-RIE and their underlying etch mechanisms</figcaption>
+      </figure>
+
       <hr/>
 
       <h2>3) Liftoff Metallization for Nanostructures</h2>
@@ -4919,6 +4949,21 @@ export const insightsPosts: InsightsPost[] = [
         <li>Rinse: IPA, then DI water; blow dry with N\u2082</li>
         <li>Inspect by optical microscope and SEM for incomplete liftoff, re-deposition, or edge burrs</li>
       </ul>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/liftoff-metallization-steps-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/liftoff-metallization-steps-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/liftoff-metallization-steps-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/liftoff-metallization-steps-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/liftoff-metallization-steps-lg.png"
+            alt="Liftoff metallization process — bilayer resist coating, e-beam exposure, develop with undercut, metal evaporation, and liftoff plus clean, showing PMMA/LOR resist profile"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Liftoff Metallization — Five-step PMMA/LOR bilayer process and the resist undercut profile needed for clean metal liftoff without sidewall smear</figcaption>
+      </figure>
 
       <hr/>
 
@@ -5011,6 +5056,21 @@ export const insightsPosts: InsightsPost[] = [
         <li>Target: complete removal of residual layer without significant lateral erosion of feature edges</li>
         <li>Monitor by SEM cross-section or etch rate calibration on unpatterned witness sample</li>
       </ul>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/nanoimprint-tnil-vs-uvnil-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/nanoimprint-tnil-vs-uvnil-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/nanoimprint-tnil-vs-uvnil-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/nanoimprint-tnil-vs-uvnil-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/nanofabrication-techniques-nanoscale-future/nanoimprint-tnil-vs-uvnil-lg.png"
+            alt="Nanoimprint lithography Thermal NIL vs UV-NIL comparison — process steps, key parameters, advantages, and limitations of each variant"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Nanoimprint Lithography — Thermal NIL (T-NIL) vs. UV-NIL process flow, key parameters, and trade-offs between throughput, template compatibility, and resolution</figcaption>
+      </figure>
 
       <hr/>
 
@@ -11802,8 +11862,19 @@ result = differential_evolution(
 
       <p>The net result is the deposition of a precisely controlled fraction of a monolayer per cycle, typically 0.5&ndash;2 &Aring; depending on the material system and process temperature.</p>
 
-      <figure style="text-align:center; margin:2rem 0;">
-        <img src="https://cdn.ninescrolls.com/insights/ald-cycle-diagram.png" alt="ALD self-limiting growth cycle showing four steps: precursor A pulse, purge, precursor B pulse, purge" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-self-limiting-growth-cycle-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-self-limiting-growth-cycle-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-self-limiting-growth-cycle-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-self-limiting-growth-cycle-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-self-limiting-growth-cycle-lg.png"
+            alt="ALD self-limiting growth cycle — four steps (TMA precursor A pulse, purge, H2O precursor B pulse, purge) depositing one atomic monolayer per cycle with layer-by-layer film growth"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure: ALD Self-Limiting Growth Cycle — Each ALD cycle deposits exactly one monolayer (~0.5–1.5 Å), enabling atomic-scale thickness control, excellent conformality, and high uniformity on complex 3D structures</figcaption>
       </figure>
 
       <h3>Why Self-Limiting Chemistry Matters</h3>
@@ -11909,8 +11980,19 @@ result = differential_evolution(
       </ul>
       <p>Within the ALD window, GPC is essentially constant and independent of pulse time (beyond the saturation dose), substrate position, and minor temperature fluctuations. This is the operating regime that delivers the hallmark benefits of ALD: digital thickness control, uniformity, and conformality.</p>
 
-      <figure style="text-align:center; margin:2rem 0;">
-        <img src="https://cdn.ninescrolls.com/insights/ald-temperature-window.png" alt="ALD temperature window diagram showing condensation, self-limiting growth window, and decomposition regions" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-temperature-window-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-temperature-window-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-temperature-window-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-temperature-window-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-temperature-window-lg.png"
+            alt="ALD temperature window diagram showing low-temperature precursor condensation, self-limiting ALD window with constant GPC, and high-temperature thermal decomposition/desorption regimes"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure: ALD Temperature Window — Growth per cycle (GPC) vs. substrate temperature, showing the ideal ALD window (~150–300 °C) where self-limiting reactions produce saturated, conformal films with high uniformity</figcaption>
       </figure>
 
       <h3>Typical ALD Temperature Windows</h3>
@@ -12143,8 +12225,19 @@ result = differential_evolution(
       <h2>6) ALD vs Other Deposition Techniques</h2>
       <p>Understanding how ALD compares to alternative thin-film deposition methods is essential for selecting the right technique for each application. The following table provides a quantitative comparison across the most important performance metrics:</p>
 
-      <figure style="text-align:center; margin:2rem 0;">
-        <img src="https://cdn.ninescrolls.com/insights/ald-vs-cvd-pvd-comparison.png" alt="Comparison table of ALD vs CVD vs PVD deposition techniques showing key differences in mechanism, conformality, thickness control, rate, and temperature" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-vs-cvd-vs-pvd-comparison-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-vs-cvd-vs-pvd-comparison-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-vs-cvd-vs-pvd-comparison-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-vs-cvd-vs-pvd-comparison-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide/ald-vs-cvd-vs-pvd-comparison-lg.png"
+            alt="ALD vs CVD vs PVD comparison — self-limiting surface reaction vs gas-phase chemical reaction vs physical bombardment, with key differences in conformality, thickness control, deposition rate, and temperature"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure: ALD vs CVD vs PVD — Key differences in mechanism, conformality, thickness control, deposition rate, temperature, and best-fit applications</figcaption>
       </figure>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
