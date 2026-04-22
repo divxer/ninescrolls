@@ -7,6 +7,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPost, useNewsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
 import { TableOfContents } from '../components/common/TableOfContents';
+import { LightboxContainer } from '../components/common/ImageLightbox';
 import type { InsightsPost } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
@@ -237,10 +238,12 @@ export const NewsPostPage: React.FC = () => {
           <div className="grid grid-cols-[2.5fr_1fr] gap-10 max-w-[1280px] mx-auto px-5 max-lg:grid-cols-1">
             <div className="bg-white rounded-lg p-10 shadow-sm max-md:p-6 min-w-0 overflow-x-hidden">
               {post.content ? (
-                <div
-                  className="post-content"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rewriteContentImages(stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' '))), { ADD_TAGS: ['picture', 'source'], ADD_ATTR: ['srcset', 'media', 'loading', 'decoding', 'fetchpriority'] }) }}
-                />
+                <LightboxContainer>
+                  <div
+                    className="post-content"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rewriteContentImages(stripInlineToc(post.content.replace(/&nbsp;|\u00a0/g, ' '))), { ADD_TAGS: ['picture', 'source'], ADD_ATTR: ['srcset', 'media', 'loading', 'decoding', 'fetchpriority'] }) }}
+                  />
+                </LightboxContainer>
               ) : null}
 
               {/* Tags */}
