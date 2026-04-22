@@ -5457,6 +5457,21 @@ export const insightsPosts: InsightsPost[] = [
 
     <p>Thin-film deposition addresses each of these limitations by placing catalyst atoms precisely where they are electrochemically active, achieving equivalent or superior performance at 5-20x lower Pt loading.</p>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/pemfc-mea-layer-structure-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/pemfc-mea-layer-structure-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/pemfc-mea-layer-structure-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/pemfc-mea-layer-structure-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/pemfc-mea-layer-structure-lg.png"
+          alt="PEMFC membrane electrode assembly (MEA) layer structure — bipolar plates, GDL, MPL, anode/cathode catalyst layers, and Nafion proton exchange membrane with their functions and process notes"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: PEMFC Membrane Electrode Assembly (MEA) — Cross-section layer structure showing anode/cathode catalyst layers, GDL/MPL, and proton-exchange membrane with electrochemical reactions and reactant gas flow</figcaption>
+    </figure>
+
     <h2>2) Catalyst Layer Fabrication by Sputter Deposition</h2>
 
     <p>Magnetron <a href="/products/sputter">sputtering</a> is the most mature thin-film technique for fuel cell catalyst layers. The key advantage: every deposited Pt atom is on the surface and accessible to reactant gases, achieving near-100% utilization compared to 20-40% for ink-based methods.</p>
@@ -5598,6 +5613,21 @@ export const insightsPosts: InsightsPost[] = [
     </ol>
 
     <p>Result: ECSA of 10-15 m²/g<sub>Pt</sub> (lower than Pt/C due to larger crystallites), but specific activity 5-10x higher than conventional Pt/C, yielding net mass activity improvement of 2-4x. Durability is exceptional: &lt; 10% ECSA loss after 30,000 voltage cycles (0.6-1.0 V at 80°C), compared to 40-60% loss for conventional Pt/C.</p>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/catalyst-layer-sputter-recipes-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/catalyst-layer-sputter-recipes-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/catalyst-layer-sputter-recipes-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/catalyst-layer-sputter-recipes-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/catalyst-layer-sputter-recipes-lg.png"
+          alt="Catalyst layer fabrication sputter deposition recipes — Pure Pt baseline, Pt3Co alloy co-sputtering, and 3M NSTF whisker approach with target, power, pressure, rate, thickness, loading, and ECSA"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: Catalyst Layer Fabrication — Sputter deposition recipes for high-activity, durable ORR catalysts: Pure Pt, Pt3Co alloy, and 3M NSTF whisker architectures</figcaption>
+    </figure>
 
     <h2>3) GDL Surface Modification by Plasma Treatment</h2>
 
@@ -5902,6 +5932,21 @@ export const insightsPosts: InsightsPost[] = [
 
     <p>Omitting the in-situ sputter etch is the single most common cause of coating delamination on bipolar plates. The native oxide re-grows within seconds of air exposure, so the etch-to-deposition sequence must occur in the same vacuum cycle.</p>
 
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/bipolar-plate-coatings-comparison-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/bipolar-plate-coatings-comparison-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/bipolar-plate-coatings-comparison-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/bipolar-plate-coatings-comparison-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/bipolar-plate-coatings-comparison-lg.png"
+          alt="Bipolar plate protective coatings performance comparison — TiN, CrN, a-C:H (DLC), and Cr/C multilayer on interfacial contact resistance, corrosion current, thickness, durability, and cost"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: Bipolar Plate Protective Coatings — Performance comparison of TiN, CrN, a-C:H (DLC), and Cr/C multilayer coatings across deposition method, ICR, corrosion resistance, thickness, durability, and cost</figcaption>
+    </figure>
+
     <h2>5) Solid Oxide Fuel Cell (SOFC) Thin Films</h2>
 
     <p>SOFCs operate at 600-900°C and use ceramic electrolytes and electrodes. Conventional SOFCs use thick (&gt; 10 µm) electrolytes fabricated by tape casting and sintering at 1400-1600°C. Thin-film electrolytes (0.1-5 µm) deposited by <a href="/products/ald">ALD</a>, <a href="/products/pecvd">PECVD</a>, or sputtering enable intermediate-temperature operation (400-600°C) by dramatically reducing ohmic resistance — the primary loss mechanism in SOFCs at reduced temperatures.</p>
@@ -6035,6 +6080,21 @@ export const insightsPosts: InsightsPost[] = [
       <li><strong>Pt current collector:</strong> DC sputtering, 100 W, 5 mTorr Ar, room temperature. 100-200 nm thick. Patterned by lift-off or shadow mask to define electrode area for electrochemical testing.</li>
       <li><strong>NiO-YSZ anode:</strong> Co-sputtering from NiO and YSZ targets. After reduction in H₂ at 600°C, NiO converts to Ni, creating a porous Ni-YSZ cermet with controlled Ni:YSZ ratio.</li>
     </ul>
+
+    <figure style="margin:2rem 0;text-align:center">
+      <picture>
+        <source type="image/webp"
+          srcset="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/sofc-thin-film-architecture-sm.webp 640w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/sofc-thin-film-architecture-md.webp 768w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/sofc-thin-film-architecture-lg.webp 1024w,
+                  https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/sofc-thin-film-architecture-xl.webp 1280w"
+          sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+        <img src="https://cdn.ninescrolls.com/insights/fuel-cell-technology-hydrogen-economy/sofc-thin-film-architecture-lg.png"
+          alt="Solid Oxide Fuel Cell (SOFC) thin-film layer architecture — cathode current collector, LSCF/LSM cathode, GDC interlayer, YSZ electrolyte, Ni-YSZ anode functional and support layers with materials and thicknesses"
+          style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+      </picture>
+      <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: Solid Oxide Fuel Cell (SOFC) Thin-Film Architecture — Six-layer stack from porous Ni-YSZ anode support to Ag/Pt current collector, operating at 500–800 °C with fabrication methods and thickness ranges</figcaption>
+    </figure>
 
     <h2>6) PEM Electrolyzer Components</h2>
 
