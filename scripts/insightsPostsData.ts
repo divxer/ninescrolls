@@ -183,6 +183,21 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
+      <figure class="post-figure">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-parameter-matrix-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-parameter-matrix-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-parameter-matrix-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-parameter-matrix-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-parameter-matrix-lg.png"
+            alt="RIE parameter interaction matrix heatmap showing the qualitative effect of pressure, RF/bias power, gas flow, polymer-forming gas, and substrate temperature on etch rate, anisotropy, selectivity, and ion damage, with a legend and summary tips"
+            loading="lazy" />
+        </picture>
+        <figcaption class="post-figure-caption">Figure 3: Parameter Interaction Matrix — qualitative heatmap of how each primary RIE parameter moves the four key outcomes (etch rate, anisotropy, selectivity, ion damage)</figcaption>
+      </figure>
+
       <h3>Parameter Interaction Guidelines</h3>
       <ul>
         <li><strong>Anisotropy optimization:</strong> Reduce pressure (5–30 mTorr) + moderate RF power + add passivation gas (CHF₃, C₄F₈) + cool substrate</li>
@@ -372,7 +387,7 @@ export const insightsPosts: InsightsPost[] = [
             alt="CCP-RIE vs ICP-RIE reactor architecture comparison showing capacitively coupled parallel-plate design versus inductively coupled design with independent plasma density and ion energy control"
             loading="lazy" />
         </picture>
-        <figcaption class="post-figure-caption">Figure 3: CCP-RIE vs ICP-RIE Reactor Architecture — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</figcaption>
+        <figcaption class="post-figure-caption">Figure 4: CCP-RIE vs ICP-RIE Reactor Architecture — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</figcaption>
       </figure>
 
       <p><strong>Key distinction — independent ion energy control:</strong> In CCP‑RIE, a single RF source controls both plasma density and ion energy simultaneously, so increasing etch rate also increases ion damage. ICP‑RIE decouples these: the ICP coil sets plasma density (radical supply, etch rate) while a separate RF bias sets ion energy (directionality, damage). This independent control is why ICP‑RIE is preferred for damage‑sensitive or HAR applications.</p>
@@ -389,7 +404,7 @@ export const insightsPosts: InsightsPost[] = [
           alt="Illustrative cross-section schematics of RIE, ICP-RIE, and DRIE etch profiles showing anisotropic trenches, high-aspect-ratio vias, and characteristic Bosch-process sidewall scalloping in deep silicon features"
           loading="lazy"
         />
-        <figcaption class="post-figure-caption">Figure 4: Etch profile comparison — illustrative cross-sections of the anisotropic profiles typically achieved with RIE, ICP-RIE, and DRIE (Bosch process)</figcaption>
+        <figcaption class="post-figure-caption">Figure 5: Etch profile comparison — illustrative cross-sections of the anisotropic profiles typically achieved with RIE, ICP-RIE, and DRIE (Bosch process)</figcaption>
       </figure>
 
       <h3>6.1 Semiconductor Device Fabrication</h3>
@@ -489,6 +504,21 @@ export const insightsPosts: InsightsPost[] = [
       </table>
 
       <p><strong>Prevention tips:</strong> Many of these issues can be avoided by establishing a robust SPC (Statistical Process Control) program — monitor etch rate, uniformity, and selectivity on dummy wafers before running device wafers, and track trends over time to catch chamber drift early.</p>
+
+      <figure class="post-figure">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-troubleshooting-tree-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-troubleshooting-tree-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-troubleshooting-tree-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-troubleshooting-tree-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-troubleshooting-tree-lg.png"
+            alt="RIE troubleshooting decision tree mapping eight common symptoms (ARDE, micro-masking, notching, sidewall roughness, loading effect, selectivity loss, non-uniformity, plasma damage) to their root causes, first-line fixes, and escalation criteria"
+            loading="lazy" />
+        </picture>
+        <figcaption class="post-figure-caption">Figure 6: RIE Troubleshooting Decision Tree — read left to right: observed symptom → most likely root cause → first-line fix → escalation criterion</figcaption>
+      </figure>
 
       <h2>8) Equipment Selection Checklist</h2>
       <p>Use the following checklist when evaluating RIE systems for your lab or fab:</p>
@@ -700,7 +730,7 @@ export const insightsPosts: InsightsPost[] = [
             alt="NineScrolls ICP & RIE Etcher modular system architecture showing RF power system, process chamber, gas delivery, vacuum system, and control system modules"
             loading="lazy" />
         </picture>
-        <figcaption class="post-figure-caption">Figure 5: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
+        <figcaption class="post-figure-caption">Figure 7: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
       </figure>
 
       <p><strong>Product pages:</strong> <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/products/icp-etcher">ICP Etcher Series</a></p>
