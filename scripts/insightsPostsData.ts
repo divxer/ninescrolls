@@ -10,63 +10,68 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Target Readers:</strong> Semiconductor/MEMS process engineers, equipment engineers, PIs/lab managers, R&D procurement teams, and technical decision-makers evaluating dry-etching solutions. Newcomers to plasma processing will find the fundamentals sections and glossary helpful; experienced engineers can skip to the process parameter tables and troubleshooting guide.</p>
 
       <h2>TL;DR Summary</h2>
-      <p>Reactive Ion Etching (RIE) combines chemical reactions with directional ion bombardment to transfer patterns into silicon, dielectrics, metals, and polymers with superior profile control. By tuning pressure, RF power, gas chemistry, and substrate temperature, engineers achieve the right balance of etch rate, selectivity, and anisotropy. This guide covers the underlying plasma physics, compares CCP‑RIE / ICP‑RIE / DRIE architectures, provides starter process windows and gas‑selection decision guidance, and offers a full troubleshooting reference — everything needed to select, set up, and optimize an RIE process.</p>
+      <ul>
+        <li><strong>What it is:</strong> RIE combines chemical reactions with directional ion bombardment to pattern silicon, dielectrics, metals, and polymers with near‑vertical sidewalls.</li>
+        <li><strong>Levers that matter:</strong> pressure, RF power, gas chemistry, and substrate temperature — tuned together to balance etch rate, selectivity, and anisotropy.</li>
+        <li><strong>Three architectures:</strong> CCP‑RIE (cost‑effective, general‑purpose), ICP‑RIE (high density, independent ion energy, precision work), and DRIE/Bosch (deep Si, HAR &gt; 20:1).</li>
+        <li><strong>What this guide delivers:</strong> plasma physics fundamentals, gas‑chemistry decision framework, starter process windows, troubleshooting reference, and equipment‑selection checklist.</li>
+      </ul>
 
       <h2>1) What is Reactive Ion Etching?</h2>
       <p>Reactive Ion Etching (RIE) is a dry‑etching technique in which a low‑pressure plasma of reactive gases is used to remove material from a substrate in a controlled, directional manner. Unlike isotropic wet etching (which undercuts mask features) or purely physical ion milling (which offers no chemical selectivity), RIE exploits the synergy between chemical volatilization and energetic ion bombardment — a phenomenon first quantified by Coburn and Winters in 1979. This synergy enables anisotropic profiles with high selectivity, making RIE indispensable for sub‑micron patterning.</p>
 
       <h3>RIE vs Other Etching Techniques</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Technique</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Mechanism</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Profile</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Selectivity</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Damage</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Best For</th>
+          <tr>
+            <th>Technique</th>
+            <th>Mechanism</th>
+            <th>Profile</th>
+            <th>Selectivity</th>
+            <th>Damage</th>
+            <th>Best For</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Wet Etching</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Chemical only</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Very high</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Minimal</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Large features, cleaning, blanket strip</td>
+            <td><strong>Wet Etching</strong></td>
+            <td>Chemical only</td>
+            <td>Isotropic</td>
+            <td>Very high</td>
+            <td>Minimal</td>
+            <td>Large features, cleaning, blanket strip</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Ion Milling</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Physical only (Ar⁺)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Anisotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Poor</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Non-volatile materials (Pt, Au, ferrites)</td>
+            <td><strong>Ion Milling</strong></td>
+            <td>Physical only (Ar⁺)</td>
+            <td>Anisotropic</td>
+            <td>Poor</td>
+            <td>High</td>
+            <td>Non-volatile materials (Pt, Au, ferrites)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Etching (PE)</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Chemical (radicals)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Isotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Resist strip, descum, surface cleaning</td>
+            <td><strong>Plasma Etching (PE)</strong></td>
+            <td>Chemical (radicals)</td>
+            <td>Isotropic</td>
+            <td>High</td>
+            <td>Low</td>
+            <td>Resist strip, descum, surface cleaning</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RIE</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Chemical + physical</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Anisotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate–High</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Sub‑µm patterning, dielectric/Si etch</td>
+            <td><strong>RIE</strong></td>
+            <td>Chemical + physical</td>
+            <td>Anisotropic</td>
+            <td>Moderate–High</td>
+            <td>Moderate</td>
+            <td>Sub‑µm patterning, dielectric/Si etch</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>ICP‑RIE</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Chemical + physical (high density)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Highly anisotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low–Moderate</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">HAR structures, MEMS, advanced devices</td>
+            <td><strong>ICP‑RIE</strong></td>
+            <td>Chemical + physical (high density)</td>
+            <td>Highly anisotropic</td>
+            <td>High</td>
+            <td>Low–Moderate</td>
+            <td>HAR structures, MEMS, advanced devices</td>
           </tr>
         </tbody>
       </table>
@@ -88,7 +93,7 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>Because electrons are far more mobile than ions, they quickly charge the powered electrode negatively, creating a <strong>DC self‑bias</strong> (typically −100 to −500 V). This self‑bias accelerates positive ions across the plasma sheath toward the wafer surface, providing the directional energy that distinguishes RIE from isotropic plasma etching.</p>
 
-      <figure style="margin:2rem 0;text-align:center">
+      <figure class="post-figure">
         <picture>
           <source type="image/webp"
             srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-sm.webp 640w,
@@ -98,9 +103,9 @@ export const insightsPosts: InsightsPost[] = [
             sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
           <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-chamber-schematic-lg.png"
             alt="Parallel-plate RIE reactor cross-section schematic showing plasma generation, sheath physics, DC self-bias, ion trajectories, and reactive radical pathways"
-            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+            loading="lazy" />
         </picture>
-        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: RIE Chamber Schematic — Cross-section of a parallel-plate reactor showing plasma generation, sheath formation, and DC self-bias at the powered electrode</figcaption>
+        <figcaption class="post-figure-caption">Figure 1: RIE Chamber Schematic — Cross-section of a parallel-plate reactor showing plasma generation, sheath formation, and DC self-bias at the powered electrode</figcaption>
       </figure>
 
       <h3>2.2 The Coburn‑Winters Synergy</h3>
@@ -123,58 +128,57 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
       <p>If by‑products are non‑volatile (e.g., InCl₃ from InP etching in pure Cl₂), they re‑deposit as micro‑masks, causing surface roughening. In such cases, adding CH₄/H₂ chemistry or switching to BCl₃‑based processes is necessary.</p>
 
-      <div style="text-align: center; margin: 30px 0;">
+      <figure class="post-figure">
         <img
           src="https://cdn.ninescrolls.com/insights/rie-coburn-winters-synergy-optimized.webp"
-          alt="Coburn-Winters Synergy Effect — Bar chart comparing etch rates of chemical etching alone (XeF₂), physical sputtering alone (Ar⁺), and combined ion-assisted etching, demonstrating the synergistic enhancement"
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+          alt="Coburn-Winters synergy bar chart comparing silicon etch rates under XeF₂ chemical exposure alone, Ar⁺ ion sputtering alone, and the combined XeF₂ + Ar⁺ condition, showing a roughly 10× enhancement from the synergistic mechanism"
           loading="lazy"
         />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 2: Coburn-Winters Synergy — Combined chemical + physical etching yields significantly higher rates than either mechanism alone</p>
-      </div>
+        <figcaption class="post-figure-caption">Figure 2: Coburn-Winters Synergy — Combined chemical + physical etching yields significantly higher rates than either mechanism alone</figcaption>
+      </figure>
 
       <h2>3) Process Parameters & Control</h2>
       <p>RIE performance is governed by the interplay of five primary parameters. Understanding their interactions is critical for process optimization:</p>
 
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Effect on Etching</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Typical Range</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Trade‑off</th>
+          <tr>
+            <th>Parameter</th>
+            <th>Effect on Etching</th>
+            <th>Typical Range</th>
+            <th>Trade‑off</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Pressure</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Controls mean free path (MFP) and ion directionality. Lower pressure → longer MFP → more anisotropic etch.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">5–200 mTorr</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low pressure improves anisotropy but reduces etch rate and may cause plasma instability.</td>
+            <td><strong>Pressure</strong></td>
+            <td>Controls mean free path (MFP) and ion directionality. Lower pressure → longer MFP → more anisotropic etch.</td>
+            <td>5–200 mTorr</td>
+            <td>Low pressure improves anisotropy but reduces etch rate and may cause plasma instability.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RF Power</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Sets plasma density and DC self‑bias. Higher power → more ions/radicals → higher etch rate and more physical sputtering.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">50–600 W (CCP‑RIE)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Higher RF increases etch rate but also increases damage, mask erosion, and heat load.</td>
+            <td><strong>RF Power</strong></td>
+            <td>Sets plasma density and DC self‑bias. Higher power → more ions/radicals → higher etch rate and more physical sputtering.</td>
+            <td>50–600 W (CCP‑RIE)</td>
+            <td>Higher RF increases etch rate but also increases damage, mask erosion, and heat load.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Gas Flow Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Determines radical supply, residence time, and by‑product removal efficiency.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">10–200 sccm</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Too low → radical starvation and loading effects; too high → reduced residence time, wasted gas.</td>
+            <td><strong>Gas Flow Rate</strong></td>
+            <td>Determines radical supply, residence time, and by‑product removal efficiency.</td>
+            <td>10–200 sccm</td>
+            <td>Too low → radical starvation and loading effects; too high → reduced residence time, wasted gas.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Gas Composition</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Determines chemical selectivity, etch rate, and sidewall passivation behavior.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Application‑dependent</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Adding O₂ increases F radical density but reduces polymer passivation; adding H₂/CHF₃ improves selectivity but reduces rate.</td>
+            <td><strong>Gas Composition</strong></td>
+            <td>Determines chemical selectivity, etch rate, and sidewall passivation behavior.</td>
+            <td>Application‑dependent</td>
+            <td>Adding O₂ increases F radical density but reduces polymer passivation; adding H₂/CHF₃ improves selectivity but reduces rate.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Substrate Temperature</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Affects reaction kinetics, by‑product volatility, and sidewall passivation stability.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">−20 to 80 °C (typical); up to 250 °C (metals)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Lower temp stabilizes sidewall polymer → better anisotropy; higher temp helps volatile by‑product desorption for metals.</td>
+            <td><strong>Substrate Temperature</strong></td>
+            <td>Affects reaction kinetics, by‑product volatility, and sidewall passivation stability.</td>
+            <td>−20 to 80 °C (typical); up to 250 °C (metals)</td>
+            <td>Lower temp stabilizes sidewall polymer → better anisotropy; higher temp helps volatile by‑product desorption for metals.</td>
           </tr>
         </tbody>
       </table>
@@ -191,72 +195,72 @@ export const insightsPosts: InsightsPost[] = [
       <p>Choosing the correct gas chemistry is the most critical decision in RIE process development. The guiding principle is simple: the etch product must be volatile at the process temperature. Below is a material-by-material guide:</p>
 
       <h3>4.1 Silicon Etching</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Gas System</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Etch Product</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Typical Rate</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Profile</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes</th>
+          <tr>
+            <th>Gas System</th>
+            <th>Etch Product</th>
+            <th>Typical Rate</th>
+            <th>Profile</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>SF₆</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">SiF₄</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">200–800 nm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Near-isotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Very high F radical yield; add O₂ for passivation or C₄F₈ for Bosch process</td>
+            <td><strong>SF₆</strong></td>
+            <td>SiF₄</td>
+            <td>200–800 nm/min</td>
+            <td>Near-isotropic</td>
+            <td>Very high F radical yield; add O₂ for passivation or C₄F₈ for Bosch process</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>CF₄ / CF₄+O₂</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">SiF₄</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">100–400 nm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate anisotropy</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">O₂ addition scavenges CF₂ polymer, increasing free F; classic workhorse</td>
+            <td><strong>CF₄ / CF₄+O₂</strong></td>
+            <td>SiF₄</td>
+            <td>100–400 nm/min</td>
+            <td>Moderate anisotropy</td>
+            <td>O₂ addition scavenges CF₂ polymer, increasing free F; classic workhorse</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Cl₂ / Cl₂+HBr</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">SiCl₄</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">100–500 nm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Highly anisotropic</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">HBr sidewall passivation gives excellent CD control; preferred for gate etch</td>
+            <td><strong>Cl₂ / Cl₂+HBr</strong></td>
+            <td>SiCl₄</td>
+            <td>100–500 nm/min</td>
+            <td>Highly anisotropic</td>
+            <td>HBr sidewall passivation gives excellent CD control; preferred for gate etch</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>SF₆/C₄F₈ (Bosch)</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">SiF₄</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">2–20 µm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Vertical (scalloped)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Alternating etch/passivation cycles; AR &gt;20:1 possible; DRIE</td>
+            <td><strong>SF₆/C₄F₈ (Bosch)</strong></td>
+            <td>SiF₄</td>
+            <td>2–20 µm/min</td>
+            <td>Vertical (scalloped)</td>
+            <td>Alternating etch/passivation cycles; AR &gt;20:1 possible; DRIE</td>
           </tr>
         </tbody>
       </table>
 
       <h3>4.2 SiO₂ and Dielectric Etching</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Gas System</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Selectivity (SiO₂:Si)</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes</th>
+          <tr>
+            <th>Gas System</th>
+            <th>Selectivity (SiO₂:Si)</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>CHF₃ / CHF₃+CF₄</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">5:1 – 10:1</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">H scavenges F, deposits polymer on Si but not on oxide → selectivity; workhorse for contact/via etch</td>
+            <td><strong>CHF₃ / CHF₃+CF₄</strong></td>
+            <td>5:1 – 10:1</td>
+            <td>H scavenges F, deposits polymer on Si but not on oxide → selectivity; workhorse for contact/via etch</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>C₄F₈ / C₄F₈+O₂+Ar</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">10:1 – 20:1</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High selectivity for HAR oxide etch; used in ICP‑RIE for advanced via/trench</td>
+            <td><strong>C₄F₈ / C₄F₈+O₂+Ar</strong></td>
+            <td>10:1 – 20:1</td>
+            <td>High selectivity for HAR oxide etch; used in ICP‑RIE for advanced via/trench</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>CF₄+H₂</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">8:1 – 15:1</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">H₂ addition reduces F radical concentration → polymer deposition on Si surface → high selectivity</td>
+            <td><strong>CF₄+H₂</strong></td>
+            <td>8:1 – 15:1</td>
+            <td>H₂ addition reduces F radical concentration → polymer deposition on Si surface → high selectivity</td>
           </tr>
         </tbody>
       </table>
@@ -289,74 +293,74 @@ export const insightsPosts: InsightsPost[] = [
       <h2>5) Types of RIE Systems</h2>
       <p>Three main RIE architectures exist, each with distinct plasma characteristics and application niches:</p>
 
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Feature</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">CCP‑RIE</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ICP‑RIE</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">DRIE (Bosch)</th>
+          <tr>
+            <th>Feature</th>
+            <th>CCP‑RIE</th>
+            <th>ICP‑RIE</th>
+            <th>DRIE (Bosch)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Source</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Parallel‑plate RF (13.56 MHz)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Inductive coil (ICP source) + separate RF bias</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">ICP source with time‑multiplexed gas switching</td>
+            <td><strong>Plasma Source</strong></td>
+            <td>Parallel‑plate RF (13.56 MHz)</td>
+            <td>Inductive coil (ICP source) + separate RF bias</td>
+            <td>ICP source with time‑multiplexed gas switching</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Density</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">~10⁹–10¹⁰ cm⁻³</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">~10¹¹–10¹² cm⁻³</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">~10¹¹–10¹² cm⁻³</td>
+            <td><strong>Plasma Density</strong></td>
+            <td>~10⁹–10¹⁰ cm⁻³</td>
+            <td>~10¹¹–10¹² cm⁻³</td>
+            <td>~10¹¹–10¹² cm⁻³</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Ion Energy Control</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Coupled to plasma density (single RF)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Independent (separate ICP + bias RF)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Independent per cycle phase</td>
+            <td><strong>Ion Energy Control</strong></td>
+            <td>Coupled to plasma density (single RF)</td>
+            <td>Independent (separate ICP + bias RF)</td>
+            <td>Independent per cycle phase</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>DC Self‑Bias</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">−100 to −500 V (high)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">−10 to −200 V (independently tunable)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Varies per phase</td>
+            <td><strong>DC Self‑Bias</strong></td>
+            <td>−100 to −500 V (high)</td>
+            <td>−10 to −200 V (independently tunable)</td>
+            <td>Varies per phase</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Typical Etch Rate (Si)</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">100–500 nm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">200–2,000 nm/min</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">2–20 µm/min</td>
+            <td><strong>Typical Etch Rate (Si)</strong></td>
+            <td>100–500 nm/min</td>
+            <td>200–2,000 nm/min</td>
+            <td>2–20 µm/min</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>HAR Capability</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Up to ~5:1</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Up to ~20:1+</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Up to ~50:1+ (with optimization)</td>
+            <td><strong>HAR Capability</strong></td>
+            <td>Up to ~5:1</td>
+            <td>Up to ~20:1+</td>
+            <td>Up to ~50:1+ (with optimization)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Substrate Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Moderate–High (ion energy coupled)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low–Moderate (tunable)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low–Moderate</td>
+            <td><strong>Substrate Damage</strong></td>
+            <td>Moderate–High (ion energy coupled)</td>
+            <td>Low–Moderate (tunable)</td>
+            <td>Low–Moderate</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Best For</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">General‑purpose etching, dielectrics, polymers, cost‑sensitive R&D</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Precision patterning, III‑V etching, photonics, HAR structures, damage‑sensitive devices</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">MEMS, TSV, deep Si trenches, through‑wafer vias</td>
+            <td><strong>Best For</strong></td>
+            <td>General‑purpose etching, dielectrics, polymers, cost‑sensitive R&D</td>
+            <td>Precision patterning, III‑V etching, photonics, HAR structures, damage‑sensitive devices</td>
+            <td>MEMS, TSV, deep Si trenches, through‑wafer vias</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Relative Cost</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">$</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">$$</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">$$$</td>
+            <td><strong>Relative Cost</strong></td>
+            <td>$</td>
+            <td>$$</td>
+            <td>$$$</td>
           </tr>
         </tbody>
       </table>
 
-      <figure style="margin:2rem 0;text-align:center">
+      <figure class="post-figure">
         <picture>
           <source type="image/webp"
             srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-sm.webp 640w,
@@ -366,28 +370,27 @@ export const insightsPosts: InsightsPost[] = [
             sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
           <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-ccp-vs-icp-comparison-lg.png"
             alt="CCP-RIE vs ICP-RIE reactor architecture comparison showing capacitively coupled parallel-plate design versus inductively coupled design with independent plasma density and ion energy control"
-            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+            loading="lazy" />
         </picture>
-        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: CCP-RIE vs ICP-RIE Reactor Architecture — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</figcaption>
+        <figcaption class="post-figure-caption">Figure 3: CCP-RIE vs ICP-RIE Reactor Architecture — CCP uses a single RF source coupling density and energy; ICP decouples them via an inductive coil + separate bias electrode</figcaption>
       </figure>
 
       <p><strong>Key distinction — independent ion energy control:</strong> In CCP‑RIE, a single RF source controls both plasma density and ion energy simultaneously, so increasing etch rate also increases ion damage. ICP‑RIE decouples these: the ICP coil sets plasma density (radical supply, etch rate) while a separate RF bias sets ion energy (directionality, damage). This independent control is why ICP‑RIE is preferred for damage‑sensitive or HAR applications.</p>
 
       <p><strong>HAR (High Aspect Ratio) explained:</strong> The aspect ratio is the depth‑to‑width ratio of an etched feature. A 1 µm wide trench etched 10 µm deep has an AR of 10:1. High‑AR etching is challenging because ions must reach the bottom of narrow features, and by‑products must escape. ICP‑RIE and DRIE are engineered to handle these challenges through high plasma density and passivation‑controlled sidewalls.</p>
 
-      <p>For a deeper dive into each system type, see our related guides: <a href="/insights/icp-rie-technology-guide">ICP‑RIE Technology Guide</a> and <a href="/insights/drie-bosch-process-explained">DRIE – The Bosch Process Explained</a>.</p>
+      <p>For a deeper dive into each system type, see our related guides: <a href="/insights/icp-rie-technology-advanced-etching">ICP‑RIE Technology Guide</a> and <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE – The Bosch Process Explained</a>.</p>
 
       <h2>6) Applications of RIE</h2>
 
-      <div style="text-align: center; margin: 30px 0;">
+      <figure class="post-figure">
         <img
           src="https://cdn.ninescrolls.com/insights/rie-etch-profiles-sem-optimized.webp"
-          alt="RIE Etch Profile Examples — SEM cross-section images showing anisotropic trench profiles, high-aspect-ratio vias, and Bosch process scalloping in deep silicon etching"
-          style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+          alt="Illustrative cross-section schematics of RIE, ICP-RIE, and DRIE etch profiles showing anisotropic trenches, high-aspect-ratio vias, and characteristic Bosch-process sidewall scalloping in deep silicon features"
           loading="lazy"
         />
-        <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 0.9em;">Figure 4: RIE Etch Profile Examples — Cross-section SEM images demonstrating anisotropic profiles achievable with RIE, ICP-RIE, and DRIE (Bosch process)</p>
-      </div>
+        <figcaption class="post-figure-caption">Figure 4: Etch profile comparison — illustrative cross-sections of the anisotropic profiles typically achieved with RIE, ICP-RIE, and DRIE (Bosch process)</figcaption>
+      </figure>
 
       <h3>6.1 Semiconductor Device Fabrication</h3>
       <ul>
@@ -433,54 +436,54 @@ export const insightsPosts: InsightsPost[] = [
       <h2>7) Common Challenges & Troubleshooting</h2>
       <p>The following table covers the most frequently encountered RIE process issues, their root causes, and actionable solutions:</p>
 
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Issue</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Root Cause</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Solution</th>
+          <tr>
+            <th>Issue</th>
+            <th>Root Cause</th>
+            <th>Solution</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RIE Lag (ARDE)</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Narrower features etch slower because ions and radicals have difficulty reaching the bottom of narrow trenches; by‑products are slow to escape (aspect‑ratio‑dependent etching).</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Lower pressure to improve ion directionality; increase bias; use ICP‑RIE for higher plasma density; optimize gas flow for efficient by‑product removal.</td>
+            <td><strong>RIE Lag (ARDE)</strong></td>
+            <td>Narrower features etch slower because ions and radicals have difficulty reaching the bottom of narrow trenches; by‑products are slow to escape (aspect‑ratio‑dependent etching).</td>
+            <td>Lower pressure to improve ion directionality; increase bias; use ICP‑RIE for higher plasma density; optimize gas flow for efficient by‑product removal.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Micro‑masking</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Non‑volatile etch by‑products or sputtered mask material re‑deposit as micro‑pillars ("grass") on the etch surface.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reduce ion energy to minimize mask sputtering; add O₂ to volatilize organics; switch mask material (e.g., SiO₂ instead of metal); clean chamber more frequently.</td>
+            <td><strong>Micro‑masking</strong></td>
+            <td>Non‑volatile etch by‑products or sputtered mask material re‑deposit as micro‑pillars ("grass") on the etch surface.</td>
+            <td>Reduce ion energy to minimize mask sputtering; add O₂ to volatilize organics; switch mask material (e.g., SiO₂ instead of metal); clean chamber more frequently.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Notching / Footing</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Charge accumulation at insulator interfaces deflects ions sideways at the feature bottom, undercutting the profile.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Use pulsed bias or pulsed plasma to dissipate charge; reduce bias power; switch to ICP‑RIE with lower sheath voltage.</td>
+            <td><strong>Notching / Footing</strong></td>
+            <td>Charge accumulation at insulator interfaces deflects ions sideways at the feature bottom, undercutting the profile.</td>
+            <td>Use pulsed bias or pulsed plasma to dissipate charge; reduce bias power; switch to ICP‑RIE with lower sheath voltage.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Sidewall Roughness</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Mask edge roughness transfers into the etch; Bosch scalloping; inadequate passivation.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Improve mask (use hardmask, reduce LER); for Bosch, shorten cycle times; add passivation gas; consider cryogenic etch (−100 °C with SF₆/O₂).</td>
+            <td><strong>Sidewall Roughness</strong></td>
+            <td>Mask edge roughness transfers into the etch; Bosch scalloping; inadequate passivation.</td>
+            <td>Improve mask (use hardmask, reduce LER); for Bosch, shorten cycle times; add passivation gas; consider cryogenic etch (−100 °C with SF₆/O₂).</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Loading Effect</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Etch rate varies with exposed area: more exposed material consumes more radicals, depleting them across the wafer.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Increase gas flow to ensure radical supply exceeds consumption; add dummy patterns to equalize open area; use endpoint detection per feature.</td>
+            <td><strong>Loading Effect</strong></td>
+            <td>Etch rate varies with exposed area: more exposed material consumes more radicals, depleting them across the wafer.</td>
+            <td>Increase gas flow to ensure radical supply exceeds consumption; add dummy patterns to equalize open area; use endpoint detection per feature.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Selectivity Loss</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Mask erodes faster than expected due to high ion energy or wrong chemistry; stop-layer is attacked.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reduce bias power; increase polymer‑forming gas (CHF₃, C₄F₈); switch to harder mask (SiO₂, Cr, Ni); implement reliable endpoint detection.</td>
+            <td><strong>Selectivity Loss</strong></td>
+            <td>Mask erodes faster than expected due to high ion energy or wrong chemistry; stop-layer is attacked.</td>
+            <td>Reduce bias power; increase polymer‑forming gas (CHF₃, C₄F₈); switch to harder mask (SiO₂, Cr, Ni); implement reliable endpoint detection.</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Non‑uniformity</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Uneven gas distribution, plasma asymmetry, or thermal gradients across the wafer.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Check showerhead clogging; verify electrode planarity and grounding; use multi-zone gas delivery; ensure good thermal contact (He backside cooling).</td>
+            <td><strong>Non‑uniformity</strong></td>
+            <td>Uneven gas distribution, plasma asymmetry, or thermal gradients across the wafer.</td>
+            <td>Check showerhead clogging; verify electrode planarity and grounding; use multi-zone gas delivery; ensure good thermal contact (He backside cooling).</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High‑energy ion bombardment causes lattice damage, trap states, or surface amorphization in the substrate.</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reduce DC self‑bias (use ICP‑RIE); use pulsed bias; lower RF power; implement soft‑landing endpoint strategy; consider post‑etch anneal.</td>
+            <td><strong>Plasma Damage</strong></td>
+            <td>High‑energy ion bombardment causes lattice damage, trap states, or surface amorphization in the substrate.</td>
+            <td>Reduce DC self‑bias (use ICP‑RIE); use pulsed bias; lower RF power; implement soft‑landing endpoint strategy; consider post‑etch anneal.</td>
           </tr>
         </tbody>
       </table>
@@ -540,34 +543,34 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
 
       <h3>R&D vs Production Considerations</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Consideration</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">R&D / University</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Production / Pilot Line</th>
+          <tr>
+            <th>Consideration</th>
+            <th>R&D / University</th>
+            <th>Production / Pilot Line</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Flexibility</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High priority — multi-material, frequent recipe changes</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Less critical — dedicated to specific process</td>
+            <td><strong>Flexibility</strong></td>
+            <td>High priority — multi-material, frequent recipe changes</td>
+            <td>Less critical — dedicated to specific process</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Throughput</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Low (single-wafer OK)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">High (load-lock, automation, fast pump-down)</td>
+            <td><strong>Throughput</strong></td>
+            <td>Low (single-wafer OK)</td>
+            <td>High (load-lock, automation, fast pump-down)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Repeatability</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Important but secondary</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Critical — SPC, drift compensation</td>
+            <td><strong>Repeatability</strong></td>
+            <td>Important but secondary</td>
+            <td>Critical — SPC, drift compensation</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Budget</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Cost-sensitive; open-load acceptable</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Reliability and uptime justify higher cost</td>
+            <td><strong>Budget</strong></td>
+            <td>Cost-sensitive; open-load acceptable</td>
+            <td>Reliability and uptime justify higher cost</td>
           </tr>
         </tbody>
       </table>
@@ -608,49 +611,49 @@ export const insightsPosts: InsightsPost[] = [
       <h2>10) Metrology & Validation</h2>
       <p>After etching, the following measurement techniques verify that the process meets specifications:</p>
 
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <table>
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Measurement</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Technique</th>
-            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">What It Tells You</th>
+          <tr>
+            <th>Measurement</th>
+            <th>Technique</th>
+            <th>What It Tells You</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Etch Depth / Rate</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Stylus profilometer, optical profilometer</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Step height and rate across wafer → uniformity</td>
+            <td><strong>Etch Depth / Rate</strong></td>
+            <td>Stylus profilometer, optical profilometer</td>
+            <td>Step height and rate across wafer → uniformity</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Sidewall Profile</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Cross-section SEM (XSEM)</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Sidewall angle, undercut, scalloping, roughness</td>
+            <td><strong>Sidewall Profile</strong></td>
+            <td>Cross-section SEM (XSEM)</td>
+            <td>Sidewall angle, undercut, scalloping, roughness</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>CD / Feature Width</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Top-down SEM, CD-SEM</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Critical dimension accuracy and line-edge roughness (LER)</td>
+            <td><strong>CD / Feature Width</strong></td>
+            <td>Top-down SEM, CD-SEM</td>
+            <td>Critical dimension accuracy and line-edge roughness (LER)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Film Thickness (remaining)</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Spectroscopic ellipsometry</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Remaining mask/stop-layer thickness → selectivity verification</td>
+            <td><strong>Film Thickness (remaining)</strong></td>
+            <td>Spectroscopic ellipsometry</td>
+            <td>Remaining mask/stop-layer thickness → selectivity verification</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Surface Composition</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">XPS, EDS</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Residual polymer, contamination, surface chemistry changes</td>
+            <td><strong>Surface Composition</strong></td>
+            <td>XPS, EDS</td>
+            <td>Residual polymer, contamination, surface chemistry changes</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Surface Roughness</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">AFM</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">RMS roughness of etch floor (critical for photonics, MEMS)</td>
+            <td><strong>Surface Roughness</strong></td>
+            <td>AFM</td>
+            <td>RMS roughness of etch floor (critical for photonics, MEMS)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Electrical Damage</strong></td>
-            <td style="border: 1px solid #ddd; padding: 12px;">CV, IV measurements</td>
-            <td style="border: 1px solid #ddd; padding: 12px;">Interface trap density, leakage current — indicates plasma-induced damage</td>
+            <td><strong>Electrical Damage</strong></td>
+            <td>CV, IV measurements</td>
+            <td>Interface trap density, leakage current — indicates plasma-induced damage</td>
           </tr>
         </tbody>
       </table>
@@ -685,7 +688,7 @@ export const insightsPosts: InsightsPost[] = [
         <li>Ideal for precision patterning, MEMS/DRIE, III‑V compounds, photonics, and HAR structures</li>
       </ul>
 
-      <figure style="margin:2rem 0;text-align:center">
+      <figure class="post-figure">
         <picture>
           <source type="image/webp"
             srcset="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-sm.webp 640w,
@@ -695,12 +698,12 @@ export const insightsPosts: InsightsPost[] = [
             sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
           <img src="https://cdn.ninescrolls.com/insights/reactive-ion-etching-guide/rie-icp-modular-system-lg.png"
             alt="NineScrolls ICP & RIE Etcher modular system architecture showing RF power system, process chamber, gas delivery, vacuum system, and control system modules"
-            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+            loading="lazy" />
         </picture>
-        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 5: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
+        <figcaption class="post-figure-caption">Figure 5: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
       </figure>
 
-      <p><strong>Product pages:</strong> <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">RIE Etcher Series</a> · <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">ICP Etcher Series</a></p>
+      <p><strong>Product pages:</strong> <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/products/icp-etcher">ICP Etcher Series</a></p>
 
       <h2>12) Future Trends in RIE</h2>
       <ul>
@@ -754,7 +757,7 @@ export const insightsPosts: InsightsPost[] = [
       </ul>
 
       <p><strong>Contact:</strong><br>
-      <a href="/products/rie-etcher" style="color: #007bff; text-decoration: none;">RIE Etcher Series</a> · <a href="/products/icp-etcher" style="color: #007bff; text-decoration: none;">ICP Etcher Series</a> · <a href="/contact?topic=Etching%20Inquiry" style="color: #007bff; text-decoration: none;">Contact us</a> · Email: <a href="mailto:info@ninescrolls.com" style="color: #007bff; text-decoration: none;">info@ninescrolls.com</a></p>
+      <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/products/icp-etcher">ICP Etcher Series</a> · <a href="/contact?topic=Etching%20Inquiry">Contact us</a> · Email: <a href="mailto:info@ninescrolls.com">info@ninescrolls.com</a></p>
 
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
