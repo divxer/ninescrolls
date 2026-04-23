@@ -81,6 +81,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Spin Coating & Development Guide](https://ninescrolls.com/insights/spin-coating-development-guide): Complete photoresist processing guide — spin coating physics, thickness vs speed, photoresist selection (positive/negative, DNQ, SU-8, PMMA), lithography process flow, development optimization, troubleshooting
 - [Coater/Developer Equipment Guide](https://ninescrolls.com/insights/coater-developer-systems-equipment-guide): Track system selection — module configurations, spin coating equipment vs manual, developer module design, hotplate integration, recipe programming, uniformity optimization, defect troubleshooting
 - [Lithography Process Integration](https://ninescrolls.com/insights/lithography-process-integration-guide): Full lithography-to-etch flow — substrate prep, HMDS, coating, exposure, development, pattern transfer, resist strip, CD control, process integration challenges
+- [Hard Mask Processing: Materials, Integration, and Pattern Transfer Strategies](https://ninescrolls.com/insights/hard-mask-processing-materials-integration-and-pattern-transfer-strategies): Hard mask selection and integration for deep/selective etches — SiO₂, SiNₓ, amorphous carbon, metal hard masks (Cr, Ti, TiN, Al, W), DLC; deposition methods (PECVD, ALD, sputter, evaporation), mask opening chemistries, selectivity budgeting, stress and adhesion control, mask removal (wet strip, plasma ash, CMP), troubleshooting sidewall roughness, undercut, mask erosion
 
 ## Insights — Stripping & Ashing
 
