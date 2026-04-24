@@ -30,34 +30,25 @@ export function OptimizedImage({
   height,
   loading = 'lazy'
 }: OptimizedImageProps) {
-  const getWebPPath = (path: string) => {
-    if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(path)) {
-      return `${path}.webp`;
-    }
-    const parts = path.split('.');
-    parts.pop();
-    return `${parts.join('.')}.webp`;
-  };
-
   // Fallback src: ensure it has an extension so S3 can serve it
   const getFallbackSrc = (path: string) => {
     if (/\.(png|jpe?g|webp|gif|svg)$/i.test(path)) return path;
     return `${path}.png`;
   };
 
+  // No responsive variants provided: render a plain <img>. Do NOT speculate a
+  // sibling .webp — a <source srcSet=missing.webp> inside <picture> hides the
+  // <img> fallback when the .webp 404s, producing a broken image.
   if (!sizes) {
     return (
-      <picture>
-        <source srcSet={getWebPPath(src)} type="image/webp" />
-        <img
-          src={getFallbackSrc(src)}
-          alt={alt}
-          className={className}
-          width={width}
-          height={height}
-          loading={loading}
-        />
-      </picture>
+      <img
+        src={getFallbackSrc(src)}
+        alt={alt}
+        className={className}
+        width={width}
+        height={height}
+        loading={loading}
+      />
     );
   }
 
