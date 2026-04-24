@@ -665,6 +665,33 @@ export function CompactRIE() {
         </div>
       </section>
 
+      {/* Related Equipment & Articles */}
+      <section className="py-16 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Related Equipment & Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/products/rie-etcher" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">settings</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">RIE Etcher Series</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Full-size RIE platform with larger chamber and higher-power configurations.</p>
+              <span className="text-sm text-primary font-medium">View Product →</span>
+            </a>
+            <a href="/insights/reactive-ion-etching-guide" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">RIE Principles & Equipment Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Principles, applications, and equipment selection for reactive ion etching.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
+            </a>
+            <a href="/insights/semiconductor-etchers-overview" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">How to Choose an Etcher for Your Lab</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Decision framework covering RIE, ICP-RIE, and compact systems for research labs.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Contact CTA */}
       <section className="py-16 bg-white text-center">
         <div className="max-w-7xl mx-auto px-6">

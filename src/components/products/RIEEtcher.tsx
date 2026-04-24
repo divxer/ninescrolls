@@ -428,10 +428,10 @@ export function RIEEtcher() {
               <p className="text-sm text-on-surface-variant mb-3">High-density plasma etching alternative for advanced applications.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+            <a href="/insights/reactive-ion-etching-guide" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
-              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
-              <p className="text-sm text-on-surface-variant mb-3">Key concepts, terms, and control knobs for plasma etch processes.</p>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">RIE Principles & Equipment Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Principles, applications, and equipment selection for reactive ion etching.</p>
               <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
             <a href="/insights/plasma-etching-explained-fundamentals-applications" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
