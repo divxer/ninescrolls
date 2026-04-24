@@ -690,32 +690,123 @@ export const insightsPosts: InsightsPost[] = [
 
       <p><strong>Metrology selection tip:</strong> For routine process monitoring, profilometry + top-down SEM are sufficient. Add XSEM for profile development, ellipsometry for endpoint/selectivity verification, and AFM/XPS only when surface quality or contamination is a concern.</p>
 
-      <h2>11) NineScrolls RIE & ICP Etcher Highlights</h2>
+      <h2>11) NineScrolls Etcher Portfolio</h2>
 
-      <h3>RIE Etcher Series</h3>
-      <ul>
-        <li>Compact uni-body design (~1.0 m × 1.0 m footprint); fits in most university cleanrooms</li>
-        <li>RF power: 50–600 W at 13.56 MHz with fast auto-match</li>
-        <li>4–6 standard MFC gas lines (expandable)</li>
-        <li>Open-load or load-lock configuration</li>
-        <li>Electrode temperature control with He backside cooling</li>
-        <li>Multi-material compatibility: Si, SiO₂, SiNₓ, polymers, metals</li>
-        <li>OES endpoint detection option</li>
-        <li>Ideal for general-purpose R&D etching, dielectric patterning, resist stripping</li>
-      </ul>
+      <p>Our etching systems cover the full spectrum from general-purpose dielectric work to precision photonics and chemistry-free ion-beam milling. Backed by our manufacturing partner's three decades of semiconductor equipment experience and a global install base spanning leading research institutions, every configuration is tailored to specific material sets, throughput targets, and cleanroom constraints.</p>
 
-      <h3>ICP Etcher Series</h3>
+      <div class="trust-stats">
+        <div class="trust-stat">
+          <span class="trust-stat-number">30+</span>
+          <span class="trust-stat-label">Years of semiconductor equipment experience</span>
+        </div>
+        <div class="trust-stat">
+          <span class="trust-stat-number">1,000+</span>
+          <span class="trust-stat-label">Global installations</span>
+        </div>
+        <div class="trust-stat">
+          <span class="trust-stat-number">300+</span>
+          <span class="trust-stat-label">Research institutions served</span>
+        </div>
+      </div>
+
+      <h3>Equipment Comparison</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Specification</th>
+            <th>RIE Etcher</th>
+            <th>ICP Etcher</th>
+            <th>IBE / RIBE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Reactor Type</strong></td>
+            <td>CCP parallel plate</td>
+            <td>ICP source + independent RF bias</td>
+            <td>Kaufman or RF ion source (beam)</td>
+          </tr>
+          <tr>
+            <td><strong>Footprint (typical)</strong></td>
+            <td>1.0 m × 1.0 m</td>
+            <td>1.0 m × 1.5 m</td>
+            <td>1.0 m × 0.8 m</td>
+          </tr>
+          <tr>
+            <td><strong>Wafer Size</strong></td>
+            <td>4 / 6 / 8 / 12″ or multi-wafer</td>
+            <td>4 / 6 / 8 / 12″ or multi-wafer</td>
+            <td>Up to 6″ (Kaufman) · up to 12″ (RF)</td>
+          </tr>
+          <tr>
+            <td><strong>RF Power</strong></td>
+            <td>300 – 1,000 W (single-source)</td>
+            <td>Source 1,000 – 3,000 W + Bias 300 – 1,000 W</td>
+            <td>Ion source dependent (swappable)</td>
+          </tr>
+          <tr>
+            <td><strong>Gas Lines</strong></td>
+            <td>4 standard (customizable)</td>
+            <td>5 standard + He backside (customizable)</td>
+            <td>1 (Kaufman) or 3 (RF), customizable</td>
+          </tr>
+          <tr>
+            <td><strong>Wafer Stage Temp</strong></td>
+            <td>−70 °C to 200 °C</td>
+            <td>−70 °C to 200 °C</td>
+            <td>5 – 20 °C (He backside optional)</td>
+          </tr>
+          <tr>
+            <td><strong>Stage Motion</strong></td>
+            <td>Fixed</td>
+            <td>Fixed</td>
+            <td>Tilt 0 – 90°, rotation 1 – 10 rpm</td>
+          </tr>
+          <tr>
+            <td><strong>Vacuum</strong></td>
+            <td>TMP + mechanical pump</td>
+            <td>TMP + mechanical pump</td>
+            <td>TMP + mechanical; base &lt; 7×10⁻⁷ Torr</td>
+          </tr>
+          <tr>
+            <td><strong>Non-Uniformity</strong></td>
+            <td>&lt; ±5% (edge exclusion)</td>
+            <td>&lt; ±5% (edge exclusion)</td>
+            <td>&lt; ±5% (edge exclusion)</td>
+          </tr>
+          <tr>
+            <td><strong>Wafer Handling</strong></td>
+            <td>Open-load or load-lock</td>
+            <td>Open-load or load-lock</td>
+            <td>Open-load or load-lock</td>
+          </tr>
+          <tr>
+            <td><strong>Typical Materials</strong></td>
+            <td>Si, SiO₂, SiNₓ, SiC, quartz, III‑V, metals, polymers</td>
+            <td>Si (DRIE/Bosch), SiO₂, III‑V, 2D materials, diamond, W/Ta/Mo</td>
+            <td>Metals, oxides, magnetic films, compound semiconductors (physical mill)</td>
+          </tr>
+          <tr>
+            <td><strong>Best For</strong></td>
+            <td>General-purpose R&amp;D etching, dielectric patterning, resist stripping</td>
+            <td>Precision patterning, MEMS/DRIE, photonics, HAR structures, low-damage processes</td>
+            <td>Chemistry-free milling, sloped sidewalls, magnetic &amp; optical device fabrication</td>
+          </tr>
+          <tr>
+            <td><strong>Product Page</strong></td>
+            <td><a href="/products/rie-etcher">RIE Etcher →</a></td>
+            <td><a href="/products/icp-etcher">ICP Etcher →</a></td>
+            <td><a href="/products/ibe-ribe">IBE / RIBE →</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Selecting the Right System</h3>
       <ul>
-        <li>Uni-body design (~1.0 m × 1.5 m footprint) with independent ICP source + bias RF</li>
-        <li>ICP source: 500–3,000 W; Bias: 0–600 W</li>
-        <li>High plasma density (~10¹² cm⁻³) for fast, damage-controlled etching</li>
-        <li>6–8 gas lines with multi-zone distribution</li>
-        <li>Electrostatic chuck with He backside cooling (−20 to 250 °C range)</li>
-        <li>Pulsed RF capability for charge-sensitive and low-damage applications</li>
-        <li>DRIE (Bosch) process-capable with fast gas-switching MFCs</li>
-        <li>OES + laser endpoint detection</li>
-        <li>Multiple process design kits available (Si, SiO₂, III‑V, photonics)</li>
-        <li>Ideal for precision patterning, MEMS/DRIE, III‑V compounds, photonics, and HAR structures</li>
+        <li><strong>Choose RIE Etcher</strong> if you need a cost-effective single-source CCP reactor for general dielectric and polymer work, teaching labs, or R&D groups running a broad mix of materials.</li>
+        <li><strong>Choose ICP Etcher</strong> if your workload demands independent control of plasma density and ion energy — DRIE/Bosch, III‑V and photonic materials, HAR features &gt; 10:1, or charge-sensitive devices.</li>
+        <li><strong>Choose IBE / RIBE</strong> if you need chemistry-free physical milling, angled or sloped sidewalls, or material sets (permanent magnets, noble metals, multilayer stacks) that lack viable reactive chemistries.</li>
       </ul>
 
       <figure class="post-figure">
@@ -733,7 +824,7 @@ export const insightsPosts: InsightsPost[] = [
         <figcaption class="post-figure-caption">Figure 7: NineScrolls ICP & RIE Etcher Systems — Compact uni-body design with modular RF, gas delivery, and vacuum subsystems</figcaption>
       </figure>
 
-      <p><strong>Product pages:</strong> <a href="/products/rie-etcher">RIE Etcher Series</a> · <a href="/products/icp-etcher">ICP Etcher Series</a></p>
+      <p><strong>Product pages:</strong> <a href="/products/rie-etcher">RIE Etcher</a> · <a href="/products/icp-etcher">ICP Etcher</a> · <a href="/products/ibe-ribe">IBE / RIBE</a> · <a href="/NineScrolls-Equipment-Guide.pdf" target="_blank" rel="noopener noreferrer">📥 Download full Equipment Guide (PDF)</a></p>
 
       <h2>12) Future Trends in RIE</h2>
       <ul>
