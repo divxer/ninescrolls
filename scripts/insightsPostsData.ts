@@ -692,7 +692,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>11) NineScrolls Etcher Portfolio</h2>
 
-      <p>Our etching systems cover the full spectrum from general-purpose dielectric work to precision photonics and chemistry-free ion-beam milling. Backed by our manufacturing partner's three decades of semiconductor equipment experience and a global install base spanning leading research institutions, every configuration is tailored to specific material sets, throughput targets, and cleanroom constraints.</p>
+      <p>Our etching systems cover the full spectrum from general-purpose dielectric work to precision photonics and chemistry-free ion-beam milling. Backed by three decades of semiconductor equipment engineering and a global install base spanning leading research institutions, every configuration is tailored to specific material sets, throughput targets, and cleanroom constraints.</p>
 
       <div class="trust-stats">
         <div class="trust-stat">
