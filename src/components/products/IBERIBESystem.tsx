@@ -396,10 +396,10 @@ export function IBERIBESystem() {
               <p className="text-sm text-on-surface-variant mb-3">High-density plasma etching alternative for advanced semiconductor processing.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+            <a href="/insights/ion-beam-etching-ribe-guide" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
-              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
-              <p className="text-sm text-on-surface-variant mb-3">Process basics and terminology for understanding etch technologies.</p>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Ion Beam Etching & RIBE Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Principles, materials, and applications of IBE and reactive ion beam etching.</p>
               <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>

@@ -374,10 +374,10 @@ export function HDPCVDSystem() {
               <p className="text-sm text-on-surface-variant mb-3">Atomic-level conformal deposition for ultra-thin films with precise thickness control.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+            <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
-              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
-              <p className="text-sm text-on-surface-variant mb-3">Understanding etch and deposition integration for advanced semiconductor processes.</p>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">HDP-CVD In-Depth Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Practical handbook for high-density plasma CVD processes and gap-fill applications.</p>
               <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>

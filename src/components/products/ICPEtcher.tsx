@@ -474,10 +474,10 @@ export function ICPEtcher() {
               <p className="text-sm text-on-surface-variant mb-3">Compact RIE platform for research labs with high-precision etching.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-cleaning-precision-surface-preparation" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+            <a href="/insights/icp-rie-technology-advanced-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">auto_awesome</span>
-              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Cleaning for Surface Preparation</h3>
-              <p className="text-sm text-on-surface-variant mb-3">Improves adhesion and yield through precision surface preparation.</p>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">ICP-RIE Technology Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">High-density plasma etching for deep, anisotropic, and III-V processing.</p>
               <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
             <a href="/insights/future-of-plasma-etching-microelectronics" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">

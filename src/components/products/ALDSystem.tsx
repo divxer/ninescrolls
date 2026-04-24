@@ -415,10 +415,10 @@ export function ALDSystem() {
               <p className="text-sm text-on-surface-variant mb-3">High-density plasma CVD for superior gap-fill and dense dielectric films.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
             </a>
-            <a href="/insights/plasma-etching" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+            <a href="/insights/atomic-layer-deposition-ald-comprehensive-guide" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
-              <h3 className="font-headline text-lg font-semibold text-primary mb-2">Plasma Etching Fundamentals</h3>
-              <p className="text-sm text-on-surface-variant mb-3">Terminology and concepts useful for ALD/CVD integration workflows.</p>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">ALD Comprehensive Guide</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Principles, precursor chemistries, and process windows for atomic layer deposition.</p>
               <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>
