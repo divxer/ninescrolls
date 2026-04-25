@@ -37,7 +37,8 @@ export function ProductsPage() {
       { "@type": "ListItem", "position": 13, "name": "PLUTO-T", "url": "https://ninescrolls.com/products/pluto-t" },
       { "@type": "ListItem", "position": 14, "name": "PLUTO-M", "url": "https://ninescrolls.com/products/pluto-m" },
       { "@type": "ListItem", "position": 15, "name": "PLUTO-F", "url": "https://ninescrolls.com/products/pluto-f" },
-      { "@type": "ListItem", "position": 16, "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" }
+      { "@type": "ListItem", "position": 16, "name": "Coater/Developer System", "url": "https://ninescrolls.com/products/coater-developer" },
+      { "@type": "ListItem", "position": 17, "name": "E-Beam Evaporation System (MEB-600)", "url": "https://ninescrolls.com/products/e-beam-evaporator" }
     ]
   }), []);
 
@@ -266,6 +267,27 @@ export function ProductsPage() {
                     <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>Multiple target positions</li>
                     <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>DC/RF capability</li>
                     <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>Co-sputtering option</li>
+                  </ul>
+                  <span className="w-full bg-primary text-white py-3 rounded-sm font-bold text-sm block text-center">View Specification</span>
+                </div>
+              </Link>
+            </article>
+            )}
+
+            {(selected === 'All' || selected === 'Deposition') && (
+            <article className="bg-surface-container-low hover:bg-surface-container-lowest transition-all p-2 rounded-xl group">
+              <Link to="/products/e-beam-evaporator" className="block">
+                <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6">
+                  <img src={cdnUrl('/assets/images/products/e-beam/main.jpg')} alt="MEB-600 e-beam and thermal evaporation system for IR and photonic thin films" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                </div>
+                <div className="px-4 pb-6">
+                  <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Deposition</span>
+                  <h3 className="text-xl font-headline font-bold text-on-surface mb-2 mt-2">E-Beam Evaporation System (MEB-600)</h3>
+                  <p className="text-sm text-on-surface-variant font-body mb-3">Multi-source e-beam + thermal evaporator for IR sensors, photonic crystals and optical multilayers.</p>
+                  <ul className="text-xs text-on-surface-variant font-body space-y-1 mb-4">
+                    <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>6-pocket e-gun crucible</li>
+                    <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>±3% film uniformity, in-situ QCM</li>
+                    <li className="flex items-center gap-1.5"><span className="material-symbols-outlined text-tertiary text-sm">bolt</span>Cited in ACS Appl. Mater. Interfaces (2024)</li>
                   </ul>
                   <span className="w-full bg-primary text-white py-3 rounded-sm font-bold text-sm block text-center">View Specification</span>
                 </div>

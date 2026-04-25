@@ -122,6 +122,7 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/pecvd', label: 'PECVD' },
         { to: '/products/ald', label: 'ALD' },
         { to: '/products/hdp-cvd', label: 'HDP‑CVD' },
+        { to: '/products/e-beam-evaporator', label: 'E-Beam Evaporator' },
       ]
     },
     {

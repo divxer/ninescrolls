@@ -36,6 +36,7 @@ const ALDSystem = lazy(() => import('../components/products').then(m => ({ defau
 const StriperSystem = lazy(() => import('../components/products').then(m => ({ default: m.StriperSystem })));
 const HDPCVDSystem = lazy(() => import('../components/products').then(m => ({ default: m.HDPCVDSystem })));
 const SputterSystem = lazy(() => import('../components/products').then(m => ({ default: m.SputterSystem })));
+const EBeamEvaporator = lazy(() => import('../components/products').then(m => ({ default: m.EBeamEvaporator })));
 const CoaterDeveloper = lazy(() => import('../components/products').then(m => ({ default: m.CoaterDeveloper })));
 const PECVDSystem = lazy(() => import('../components/products').then(m => ({ default: m.PECVDSystem })));
 const HY4L = lazy(() => import('../components/products').then(m => ({ default: m.HY4L })));
@@ -97,6 +98,8 @@ export function AppRoutes() {
         <Route path="/products/striper" element={<StriperSystem />} />
         <Route path="/products/hdp-cvd" element={<HDPCVDSystem />} />
         <Route path="/products/sputter" element={<SputterSystem />} />
+        <Route path="/products/e-beam-evaporator" element={<EBeamEvaporator />} />
+        <Route path="/products/meb-600" element={<EBeamEvaporator />} />
         <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
         <Route path="/products/pecvd" element={<PECVDSystem />} />
         <Route path="/products/plasma-cleaner" element={<PlasmaCleanerOverviewPage />} />
