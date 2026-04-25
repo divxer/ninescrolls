@@ -25,6 +25,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [PECVD Systems](https://ninescrolls.com/products/pecvd): Plasma-enhanced chemical vapor deposition
 - [HDP-CVD Systems](https://ninescrolls.com/products/hdp-cvd): High-density plasma CVD for gap-fill applications
 - [Sputter Systems](https://ninescrolls.com/products/sputter): PVD sputtering for metal and dielectric films
+- [E-Beam Evaporator (MEB-600)](https://ninescrolls.com/products/e-beam-evaporator): Multi-source e-beam + thermal evaporator for IR sensors, photonic crystals, and optical multilayers; cited in ACS Appl. Mater. Interfaces (2024)
 
 ## Products — Lithography
 

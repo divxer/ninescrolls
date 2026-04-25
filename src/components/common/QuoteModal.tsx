@@ -4,7 +4,7 @@ import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 interface QuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDownloadBrochure: () => void;
+  onDownloadBrochure?: () => void;
   productName?: string;
   downloadLabel?: string;
   turnstileSiteKey?: string;
@@ -233,7 +233,9 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
                 </ul>
               </div>
               <div className="mt-6 flex gap-4 justify-center flex-wrap">
-                <button className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base" onClick={onDownloadBrochure}>{downloadLabel}</button>
+                {onDownloadBrochure && (
+                  <button className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base" onClick={onDownloadBrochure}>{downloadLabel}</button>
+                )}
                 <a href="/products" className="inline-flex items-center gap-2 h-10 px-4 rounded-lg font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5 transition-all cursor-pointer text-base">Browse Other Products</a>
               </div>
             </div>

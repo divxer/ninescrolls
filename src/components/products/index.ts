@@ -2,6 +2,7 @@ export { HDPCVDSystem } from './HDPCVDSystem';
 export { PECVDSystem } from './PECVDSystem';
 export { ALDSystem } from './ALDSystem';
 export { SputterSystem } from './SputterSystem';
+export { EBeamEvaporator } from './EBeamEvaporator';
 export { IBERIBESystem } from './IBERIBESystem';
 export { StriperSystem } from './StriperSystem';
 export { CoaterDeveloper } from './CoaterDeveloper';

@@ -77,6 +77,13 @@ Wafer size: 4"–12" | Targets: 2–6 independently configurable | Substrate tem
 Materials: Pt, Pd, W, Ru, Al2O3, TiO2, ZnO, TiN, TaN, AlN, magnetic alloys
 Best for: Metal and dielectric thin films, magnetic materials, optical coatings
 
+#### E-Beam Evaporator (MEB-600) — Multi-Source E-Beam + Thermal Evaporation
+URL: https://ninescrolls.com/products/e-beam-evaporator
+Substrate: 1×Φ8" or 5×Φ4"; custom planetary/umbrella fixtures | E-gun crucible: 6-pocket, 17 cc/pocket | Uniformity: ±3–5% | Thickness: in-situ QCM with endpoint detection | Vacuum: ~8×10⁻⁴ Pa | Modes: manual / semi-auto / full-auto
+Materials: metals (Au, Al, Cr, Ti, Ni, Pt, Pd, Cu), oxides (SiO2, TiO2, Al2O3, MgO, HfO2), fluorides (MgF2, CaF2, LiF, YF3), IR-active semiconductors (Ge, ZnS, ZnSe, PbS, PbSe), organic small molecules
+Best for: Infrared image sensors (PbS/PbSe/MgO), IR-stealth & radar-transparent photonic crystals (Ge/ZnS), UV down-conversion films on CMOS, optical AR coatings, lift-off metallization for MEMS and quantum devices
+Verified citations: Wan et al., ACS Appl. Mater. Interfaces 2024, 16(20), 26386-26394 (doi:10.1021/acsami.4c01807); Luo et al., J. Infrared Millim. Waves 2023, 42(6), 931-936; Su et al., Basic Sciences J. Textile Universities 2025, 38(5), 35-44
+
 ### Lithography
 
 #### Coater/Developer — Photolithography Track
