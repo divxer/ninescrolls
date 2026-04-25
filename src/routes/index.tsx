@@ -99,7 +99,6 @@ export function AppRoutes() {
         <Route path="/products/hdp-cvd" element={<HDPCVDSystem />} />
         <Route path="/products/sputter" element={<SputterSystem />} />
         <Route path="/products/e-beam-evaporator" element={<EBeamEvaporator />} />
-        <Route path="/products/meb-600" element={<EBeamEvaporator />} />
         <Route path="/products/coater-developer" element={<CoaterDeveloper />} />
         <Route path="/products/pecvd" element={<PECVDSystem />} />
         <Route path="/products/plasma-cleaner" element={<PlasmaCleanerOverviewPage />} />
