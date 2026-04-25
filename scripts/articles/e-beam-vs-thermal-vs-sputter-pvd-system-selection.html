@@ -137,6 +137,17 @@
   </tbody>
 </table>
 
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-regime-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-regime-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-regime-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-regime-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-regime.png" alt="Pressure vs source temperature plot — thermal at 700 to 1500 °C and 10⁻⁶ Torr, e-beam at 1500 to 3500 °C and 10⁻⁷ to 10⁻⁵ Torr, sputter at 200 to 600 °C and 10⁻³ to 10⁻² Torr" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 2: Operating regime map. The three techniques live in distinct corners of the (chamber pressure, source temperature) plane &mdash; e-beam reaches the highest source temperatures while staying in high vacuum; sputter trades vacuum for an Ar plasma at mTorr pressure; thermal sits between them at moderate temperature and HV.</p>
+</div>
+
 <h2>3) Thermal Evaporation in Depth</h2>
 
 <h3>3.1 When to Choose It</h3>
@@ -204,7 +215,18 @@
 
 <h2>6) Decision Matrix by Application</h2>
 
-<p>Working backward from what you actually want to deposit is faster than starting from the technique. The matrix below covers the most common research applications and the typical first-choice tool for each. "Hybrid OK" means the application is well-served by a multi-source platform like the MEB-600. The decision flow in Figure 2 (see &sect;9 below) condenses this matrix into a two-question test for the most common cases.</p>
+<p>Working backward from what you actually want to deposit is faster than starting from the technique. The matrix below covers the most common research applications and the typical first-choice tool for each. "Hybrid OK" means the application is well-served by a multi-source platform like the MEB-600. Figure 3 visualises the same idea at a coarser, material-class level &mdash; useful for first-pass tool selection &mdash; and the decision flow in Figure 5 (see &sect;9 below) condenses both into a two-question test for the most common cases.</p>
+
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-material-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-material-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-material-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-material-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-material-matrix.png" alt="Material × technique suitability matrix — ten material classes (low-melt metals, refractory metals, oxides, nitrides, fluorides, IR semiconductors, magnetic alloys, transparent conductors, organics) cross-tabulated against thermal, e-beam, and sputter techniques with first-choice / workable / not-recommended cells" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 3: Material &times; technique suitability matrix. Green cells mark the typical first choice, yellow indicates a workable but non-optimal fit, gray means the technique is rarely the right answer for that class. Special-case applications (e.g. ALD for 3D conformal oxide) can override these defaults.</p>
+</div>
 
 <table>
   <thead>
@@ -308,6 +330,17 @@
 
 <p>For first-principles budgeting, plan on annual operating cost equal to roughly 10&ndash;15% of capital for a research tool with moderate use. A $150k e-beam system therefore costs ~$15k&ndash;$22k per year to keep running, before any process gases or staff time.</p>
 
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-tco-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-tco-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-tco-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-tco-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-tco.png" alt="5-year total cost of ownership stacked bars: thermal $140k, e-beam $275k, sputter $350k — segmented into capital, operating, and consumables for each technique" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 4: Five-year total cost of ownership for a mid-range research-grade tool. Thermal evaporation is the cheapest end-to-end; sputtering is the most expensive once consumables (targets) are factored in. E-beam sits between the two and is typically the best dollar-per-material-class value for a multi-purpose lab.</p>
+</div>
+
 <h2>9) Conclusion: Pick the Tool That Matches Your Process</h2>
 
 <div class="post-figure">
@@ -318,7 +351,7 @@
     <source srcSet="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-decision-sm.webp" media="(max-width: 767px)" type="image/webp" />
     <img src="https://cdn.ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection/pvd-decision.png" alt="Decision flowchart showing two questions narrowing PVD technique choice: Q1 material type splits into thermal, e-beam, or sputter; Q2 substrate need splits into evaporation or sputter" loading="lazy" decoding="async" />
   </picture>
-  <p class="post-figure-caption">Figure 2: Two-question decision flow. The first cut is material type (thermal vs e-beam vs sputter), the second is substrate / process needs (evaporation for lift-off and purity, sputter for conformality and stoichiometry).</p>
+  <p class="post-figure-caption">Figure 5: Two-question decision flow. The first cut is material type (thermal vs e-beam vs sputter), the second is substrate / process needs (evaporation for lift-off and purity, sputter for conformality and stoichiometry).</p>
 </div>
 
 <p>The right answer to "which PVD technique" almost always falls out of two questions:</p>
