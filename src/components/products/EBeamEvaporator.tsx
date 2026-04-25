@@ -471,7 +471,7 @@ export function EBeamEvaporator() {
       <section className="py-16 bg-surface-container-low">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="font-headline text-3xl font-bold text-on-surface mb-8 text-center">Related Equipment &amp; Articles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <a href="/products/sputter" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
               <span className="material-symbols-outlined text-primary text-3xl mb-3 block">grid_view</span>
               <h3 className="font-headline text-lg font-semibold text-primary mb-2">Sputter System Series</h3>
@@ -489,6 +489,12 @@ export function EBeamEvaporator() {
               <h3 className="font-headline text-lg font-semibold text-primary mb-2">ALD System Series</h3>
               <p className="text-sm text-on-surface-variant mb-3">Atomic-layer-precise conformal films for complex topographies.</p>
               <span className="text-sm text-primary font-medium">View Product →</span>
+            </a>
+            <a href="/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection" className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all no-underline block">
+              <span className="material-symbols-outlined text-primary text-3xl mb-3 block">menu_book</span>
+              <h3 className="font-headline text-lg font-semibold text-primary mb-2">E-Beam vs Thermal vs Sputter</h3>
+              <p className="text-sm text-on-surface-variant mb-3">Decision guide: which PVD technique fits your lab&apos;s materials, substrates, and budget.</p>
+              <span className="text-sm text-primary font-medium">Read Article →</span>
             </a>
           </div>
         </div>
