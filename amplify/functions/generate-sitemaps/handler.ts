@@ -41,6 +41,12 @@ function toIsoDate(dateStr: string): string {
   return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
 }
 
+function toIsoDateTime(dateStr: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return `${dateStr}T00:00:00Z`;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function toRfc822(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00Z');
   return isNaN(d.getTime()) ? new Date().toUTCString() : d.toUTCString();
@@ -275,8 +281,8 @@ function generatePrerenderHTML(post: FullArticle): string {
     image: imageUrl,
     author: { '@type': 'Organization', name: post.author },
     publisher: { '@type': 'Organization', name: 'NineScrolls LLC', url: BASE_URL },
-    datePublished: post.publishDate,
-    dateModified: post.updatedAt?.split('T')[0] || post.publishDate,
+    datePublished: toIsoDateTime(post.publishDate),
+    dateModified: toIsoDateTime(post.updatedAt || post.publishDate),
     mainEntityOfPage: fullUrl,
   });
 
