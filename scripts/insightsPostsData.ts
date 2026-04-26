@@ -76,7 +76,7 @@ export const insightsPosts: InsightsPost[] = [
         </tbody>
       </table>
 
-      <p>For a comprehensive comparison of these techniques — including reactor architectures, process parameters, and quantitative performance metrics — see our guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">Understanding the Differences: PE vs RIE vs ICP-RIE</a>.</p>
+      <p>For a comprehensive comparison of these techniques — including reactor architectures, process parameters, and quantitative performance metrics — see our guide on <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">Understanding the Differences: PE vs RIE vs ICP-RIE</a>. For the chemistry-vs-physics decision in particular (when to use RIE versus pure ion bombardment for materials like noble metals or magnetic stacks), see <a href="/insights/reactive-ion-etching-vs-ion-milling">RIE vs Ion Milling</a>. And when the etched feature needs to be filled afterward, our <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook">HDP-CVD process guide</a> covers void-free dielectric gap-fill for STI, TSV, and high-aspect-ratio trenches.</p>
 
       <h3>Brief History</h3>
       <p>RIE emerged in the late 1970s when researchers at Bell Labs and IBM recognized that placing the substrate on the powered electrode of a parallel‑plate reactor increased ion directionality dramatically. The landmark Coburn‑Winters experiment (1979) demonstrated that simultaneous Ar⁺ bombardment and XeF₂ exposure etched silicon up to 10× faster than either mechanism alone — establishing the theoretical foundation for all modern RIE processes.</p>
@@ -1005,7 +1005,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>DRIE is the workhorse of MEMS fabrication. Inertial sensors (gyroscopes, accelerometers), pressure sensors, micro‑mirrors, and resonators all rely on precisely etched silicon structures. Features typically range from 10–500 μm deep with critical dimensions as small as 1–2 μm. The Bosch process enables the release of freestanding mechanical structures by etching through the full wafer thickness (typically 525 μm for a standard 200 mm wafer).</p>
 
       <h3>4.2 Through‑Silicon Vias (TSVs)</h3>
-      <p>3D IC integration and advanced packaging technologies such as high bandwidth memory (HBM) and chiplet architectures require electrical connections that pass vertically through silicon. TSVs are typically 5–10 μm in diameter and 50–100 μm deep (via‑middle) or 25–50 μm diameter and 300+ μm deep (via‑last). DRIE provides the necessary depth and profile control, and post‑etch sidewall quality directly affects the conformality of subsequent barrier/seed layer deposition.</p>
+      <p>3D IC integration and advanced packaging technologies such as high bandwidth memory (HBM) and chiplet architectures require electrical connections that pass vertically through silicon. TSVs are typically 5–10 μm in diameter and 50–100 μm deep (via‑middle) or 25–50 μm diameter and 300+ μm deep (via‑last). DRIE provides the necessary depth and profile control, and post‑etch sidewall quality directly affects the conformality of subsequent barrier/seed layer deposition — typically a CVD or <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook">HDP-CVD dielectric liner</a> for via isolation. For a side-by-side comparison of DRIE against ion-beam approaches when material chemistry rules out reactive etching, see our <a href="/insights/reactive-ion-etching-vs-ion-milling">RIE vs Ion Milling guide</a>.</p>
 
       <h3>4.3 Photonics and Optical Devices</h3>
       <p>Silicon photonic components — including waveguides, Bragg gratings, and micro‑mirrors — demand smooth, vertical sidewalls for low optical loss. While standard Bosch process scalloping may be too rough for some photonic applications, optimized short‑cycle recipes or cryogenic DRIE can achieve the surface quality needed (Ra < 20 nm).</p>
@@ -1515,7 +1515,7 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>RIE is preferred when:</strong>
           <ul>
             <li>Etching semiconductors (Si, GaAs, GaN, SiC) and dielectrics (SiO₂, Si₃N₄) where gas chemistry enables high selectivity.</li>
-            <li>Fabricating <strong>CMOS</strong>, <strong>MEMS</strong>, <strong>TSVs</strong>, and <strong>photonic devices</strong> — applications where vertical profiles and throughput are critical.</li>
+            <li>Fabricating <strong>CMOS</strong>, <strong>MEMS</strong>, <strong>TSVs</strong>, and <strong>photonic devices</strong> — applications where vertical profiles and throughput are critical, often paired with downstream <a href="/insights/hdp-cvd-in-depth-guide-practical-handbook">HDP-CVD dielectric gap-fill</a>.</li>
             <li>High aspect ratio patterns are required — standard RIE handles up to ~5:1 AR, while <a href="/insights/deep-reactive-ion-etching-bosch-process">ICP-RIE and DRIE</a> extend this to 20:1 and beyond.</li>
           </ul>
           <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;">If you are looking for a flexible RIE or ICP system for your lab, NineScrolls offers a full range of solutions from R&amp;D to small-batch production. <a href="/products/rie-etcher" style="color: #2563eb;">View RIE Systems</a> · <a href="/products/icp-etcher" style="color: #2563eb;">View ICP Systems</a></p>
@@ -2045,9 +2045,9 @@ export const insightsPosts: InsightsPost[] = [
       
       <h2>5) Typical Applications</h2>
       <ul>
-        <li><strong>STI (Shallow Trench Isolation):</strong> Void suppression, CMP compatibility;</li>
+        <li><strong>STI (Shallow Trench Isolation):</strong> Void suppression, CMP compatibility — paired with <a href="/insights/reactive-ion-etching-guide">reactive ion etching</a> to define the trench profile.</li>
         <li><strong>PMD/IMD Dielectrics:</strong> Denser insulation, reduced leakage, improved reliability;</li>
-        <li><strong>TSV/Advanced Packaging/Flip-Chip:</strong> Dielectric gap-fill, passivation;</li>
+        <li><strong>TSV/Advanced Packaging/Flip-Chip:</strong> Dielectric gap-fill and passivation downstream of <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE Bosch via etching</a>;</li>
         <li><strong>MEMS/Sensors:</strong> Dielectric deposition/encapsulation above structures;</li>
         <li><strong>Power Devices/Compound Semiconductors:</strong> High-quality dielectrics for high-voltage/temperature.</li>
       </ul>
