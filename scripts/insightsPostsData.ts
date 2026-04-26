@@ -906,8 +906,8 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '21',
-    title: 'Deep Reactive Ion Etching (DRIE) – The Bosch Process Explained',
-    excerpt: 'DRIE fundamentals, Bosch cycles (etch–passivation), applications in MEMS/TSV, common defects and mitigations, and ICP‑DRIE equipment notes.',
+    title: 'DRIE Bosch Process: Scallop Control, MEMS & TSV Etching',
+    excerpt: 'DRIE Bosch process explained: etch-passivation cycle tuning, scallop control techniques, MEMS/TSV applications, defects fixes & ICP-DRIE equipment notes.',
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
       <p>Deep Reactive Ion Etching (DRIE) is a specialized anisotropic etching technique that enables extremely high aspect ratio (HAR) features in silicon substrates. Unlike conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, which is typically limited to aspect ratios of roughly 5:1, DRIE can achieve vertical sidewalls with aspect ratios exceeding 50:1. This capability makes it indispensable for advanced MEMS, through‑silicon via (TSV) interconnects, and photonic devices.</p>
@@ -1265,8 +1265,8 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '23',
-    title: 'Reactive Ion Etching vs. Ion Milling – Which Technique Should You Choose?',
-    excerpt: 'Compare Reactive Ion Etching (RIE) and Ion Milling (IBE) — mechanisms, selectivity, etch rates, throughput, process challenges, and best use cases for semiconductor and research applications. Includes DRIE and RIBE hybrid approaches.',
+    title: 'RIE vs Ion Milling: Etch Rate, Selectivity & When to Use',
+    excerpt: 'Compare RIE vs Ion Milling (IBE): mechanisms, etch rate by material, anisotropy, selectivity, and decision framework. Includes DRIE & RIBE hybrid notes.',
     content: `
       <h2>Introduction</h2>
       <p>In advanced semiconductor fabrication and materials science research, <strong>dry etching</strong> plays a central role in transferring patterns with high fidelity. Among the most widely used techniques are <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a> and Ion Milling (also called <a href="/products/ibe-ribe">Ion Beam Etching, IBE</a>).</p>
@@ -1845,8 +1845,8 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '14',
-    title: 'HDP-CVD In-Depth Guide (High-Density Plasma CVD) — A Practical Handbook for U.S. Research and Manufacturing Users',
-    excerpt: 'Comprehensive guide to HDP-CVD technology for high-density thin films and superior gap-fill in high-aspect-ratio trenches. Learn about process optimization, equipment selection, and applications in semiconductor manufacturing.',
+    title: 'HDP-CVD Process Guide: Equipment, Recipes & Gap-Fill',
+    excerpt: 'Complete HDP-CVD handbook: starter recipes, equipment selection checklist, PECVD/ALD comparison, troubleshooting & cost analysis.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor/packaging process engineers, equipment engineers, PIs/lab managers, R&D procurement teams, and technical decision-makers.</p>
       
