@@ -191,6 +191,8 @@ interface FullArticle {
   publishDate: string;
   contentType: string;
   updatedAt: string;
+  articleType: string | null;
+  faqs: Array<{ question: string; answer: string }> | null;
 }
 
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
@@ -220,6 +222,15 @@ async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
     } while (lastKey);
   }
   if (!item || item.isDraft === true) return null;
+  let parsedFaqs: Array<{ question: string; answer: string }> | null = null;
+  if (item.faqs) {
+    try {
+      const raw = typeof item.faqs === 'string' ? JSON.parse(item.faqs) : item.faqs;
+      if (Array.isArray(raw)) parsedFaqs = raw;
+    } catch {
+      parsedFaqs = null;
+    }
+  }
   return {
     slug: item.slug,
     title: item.title,
@@ -232,6 +243,8 @@ async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
     publishDate: item.publishDate,
     contentType: item.contentType ?? 'insight',
     updatedAt: item.updatedAt ?? item.publishDate,
+    articleType: item.articleType ?? null,
+    faqs: parsedFaqs,
   };
 }
 
@@ -247,9 +260,16 @@ function generatePrerenderHTML(post: FullArticle): string {
   const description = post.excerpt || post.title;
   const imageUrl = post.imageUrl?.startsWith('http') ? post.imageUrl : (post.imageUrl ? `${BASE_URL}${post.imageUrl}` : `${BASE_URL}/assets/images/og-image.jpg`);
 
-  const jsonLd = JSON.stringify({
+  const articleSchemaType = isNews
+    ? 'NewsArticle'
+    : (post.articleType === 'TechArticle' ? 'TechArticle' : 'Article');
+  const articleJsonLd = JSON.stringify({
     '@context': 'https://schema.org',
-    '@type': isNews ? 'NewsArticle' : 'Article',
+    '@type': articleSchemaType,
+    ...(articleSchemaType === 'TechArticle' ? {
+      proficiencyLevel: 'Expert',
+      dependencies: 'Semiconductor process knowledge',
+    } : {}),
     headline: post.title,
     description,
     image: imageUrl,
@@ -259,6 +279,28 @@ function generatePrerenderHTML(post: FullArticle): string {
     dateModified: post.updatedAt?.split('T')[0] || post.publishDate,
     mainEntityOfPage: fullUrl,
   });
+
+  const breadcrumbJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: isNews ? 'News' : 'Insights', item: `${BASE_URL}/${isNews ? 'news' : 'insights'}` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: fullUrl },
+    ],
+  });
+
+  const faqJsonLd = (post.faqs && post.faqs.length > 0)
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: post.faqs.map(f => ({
+          '@type': 'Question',
+          name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+      })
+    : null;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -279,7 +321,9 @@ function generatePrerenderHTML(post: FullArticle): string {
   <meta name="twitter:title" content="${escapeHtmlAttr(fullTitle)}">
   <meta name="twitter:description" content="${escapeHtmlAttr(description)}">
   <meta name="twitter:image" content="${escapeHtmlAttr(imageUrl)}">
-  <script type="application/ld+json">${jsonLd}</script>
+  <script type="application/ld+json" data-jsonld="article">${articleJsonLd}</script>
+  <script type="application/ld+json" data-jsonld="breadcrumb">${breadcrumbJsonLd}</script>${faqJsonLd ? `
+  <script type="application/ld+json" data-jsonld="faq">${faqJsonLd}</script>` : ''}
 </head>
 <body>
   <article>
@@ -305,7 +349,7 @@ function generatePrerenderHTML(post: FullArticle): string {
         var n=d.querySelector('nav');if(n)n.remove();
         // Remove prerender meta/link tags so React Helmet owns them (avoids duplicate canonicals)
         d.querySelectorAll('link[rel="canonical"],meta[name="description"],meta[name="robots"],meta[property^="og:"],meta[name^="twitter:"]').forEach(function(el){el.remove()});
-        var ld=d.querySelector('script[type="application/ld+json"]');if(ld)ld.remove();
+        d.querySelectorAll('script[type="application/ld+json"]').forEach(function(el){el.remove()});
         // Inject SPA stylesheets
         p.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
           var c=l.cloneNode();d.head.appendChild(c);
