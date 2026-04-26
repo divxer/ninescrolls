@@ -2152,6 +2152,25 @@ export const insightsPosts: InsightsPost[] = [
     relatedProducts: [
       { href: '/products/hdp-cvd', label: 'HDP-CVD Systems', subtitle: 'High-density plasma CVD for void-free gap fill' },
       { href: '/products/pecvd', label: 'PECVD Systems', subtitle: 'Plasma-enhanced CVD for dielectric and passivation films' }
+    ],
+    articleType: 'TechArticle',
+    faqs: [
+      {
+        question: 'Will HDP-CVD damage devices due to plasma?',
+        answer: 'Mitigate plasma-induced device damage with lower bias power, pulsed or segmented processes, soft-landing recipes, and proper grounding/shielding of the wafer chuck.'
+      },
+      {
+        question: 'How does HDP-CVD cost of ownership compare to PECVD?',
+        answer: 'HDP-CVD has higher RF and chamber complexity (and therefore higher capital cost), but its superior gap-fill capability and higher throughput on critical layers make CoO competitive — especially for high-aspect-ratio dielectric fill where PECVD would require multiple deposition/etch cycles.'
+      },
+      {
+        question: 'Is TEOS mandatory for HDP-CVD oxide deposition?',
+        answer: 'No. SiH4/O2 (with optional N2O) chemistry gives higher deposition rates than TEOS-based recipes, but requires careful balance of hydrogen content, film stress, and dielectric properties. TEOS is preferred when conformality and lower H content are critical.'
+      },
+      {
+        question: 'How do you manage stress in HDP-CVD multilayer films?',
+        answer: 'Alternate low and medium bias steps, tune gas ratio and substrate temperature, and apply post-deposition anneal or plasma post-treatment. Stress engineering is typically done at the recipe level by trading sputter component vs deposition component within each cycle.'
+      }
     ]
   },
   {

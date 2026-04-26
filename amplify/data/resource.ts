@@ -76,6 +76,8 @@ const schema = a.schema({
       isStandaloneComponent: a.boolean(),
       isDraft: a.boolean().default(false),
       contentType: a.string().default('insight'),
+      articleType: a.string(),
+      faqs: a.json(),
     })
     .authorization((allow) => [
       allow.publicApiKey().to(['read']),
