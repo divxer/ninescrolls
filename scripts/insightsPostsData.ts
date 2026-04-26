@@ -1558,6 +1558,57 @@ export const insightsPosts: InsightsPost[] = [
       <p>This guide provides quantitative process data, practical engineering insights, and a structured decision framework to help you choose between RIE, IBE, and hybrid approaches such as RIBE.</p>
       <hr/>
 
+      <h2>Is Ion Beam Milling Anisotropic? Quick Answer</h2>
+      <p><strong>Yes — ion beam milling (IBE) is highly anisotropic.</strong> The ion beam is collimated and arrives at the wafer with a tightly controlled angle (typically near-vertical, but tunable from 0° to 70°+ via a tiltable stage). Material removal happens almost exclusively along the ion trajectory, producing near-vertical sidewalls regardless of the substrate crystallography or chemistry. In practical terms IBE often delivers higher anisotropy than standard RIE because there is no isotropic chemical etch component, only directional sputtering. The trade-offs are slower etch rate, low material selectivity, and higher redeposition risk on sidewalls.</p>
+      <hr/>
+
+      <h2>Sputter Etching vs RIE: Etch Rate Comparison</h2>
+      <p>Sputter etching is purely physical (Ar⁺ ion bombardment, no reactive gas), while RIE combines physical bombardment with reactive chemistry. The chemistry term is what gives RIE its rate advantage on most semiconductor materials:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Material</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Sputter Etching (Ar⁺)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE (reactive chemistry)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Why the gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Si</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–30 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">200 nm – 5 µm/min (SF₆)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Volatile SiF₄ pumped away</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SiO₂</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">15–40 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–600 nm/min (CHF₃/CF₄)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Fluorocarbon chemistry forms volatile SiF₄ + CO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Au, Pt</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–50 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (no volatile chloride/fluoride)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Noble metals require physical-only IBE</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Co, NiFe (MTJ)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–40 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (not viable in production)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">No volatile etch product; IBE is industry standard</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Photoresist</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–200 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">200 nm – 5 µm/min (O₂)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Oxygen plasma forms CO, CO₂, H₂O</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Bottom line:</strong> for any material with a viable reactive chemistry, RIE is 5–100× faster than sputter etching. Sputter etching (and its directional cousin IBE) wins only when no volatile etch product exists — noble metals, magnetic stacks, complex oxides, and some compound semiconductors.</p>
+      <hr/>
+
       <h2>Working Principles</h2>
       <h3>Reactive Ion Etching (RIE)</h3>
       <ul>
@@ -1845,46 +1896,80 @@ export const insightsPosts: InsightsPost[] = [
         <li>Complex multi-material stacks (e.g., magnetic tunnel junctions, photonic waveguides) need to be patterned with minimal cross-contamination.</li>
       </ul>
 
-      <h3>Three-Way Comparison: RIE vs. IBE vs. RIBE</h3>
+      <h3>Four-Way Comparison: RIE vs. Ion Milling vs. DRIE vs. RIBE</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
           <tr style="background: #f6f7fb;">
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Dimension</th>
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE</th>
-            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">IBE</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Ion Milling (IBE)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;"><a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE</a></th>
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIBE</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Selectivity</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Etch Rate</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50 nm – 5 µm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–100 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">5–20 µm/min (Si)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">100–500 nm/min</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Anisotropy</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">High</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (collimated beam)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (passivation cycles)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (collimated beam)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Selectivity</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High (material-dependent)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (~1:1 to 3:1)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (80:1 to mask)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — tunable via reactive gas</td>
           </tr>
           <tr style="background: #fafbfc;">
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Plasma Damage</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Aspect Ratio</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">3:1 to 10:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≤ 5:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≥ 50:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≤ 5:1</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Plasma Damage</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — direct plasma exposure</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — direct plasma exposure</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
           </tr>
-          <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Directional Control</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Directional Control</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical (field-driven)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control (0–70°)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical (field-driven)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
-          </tr>
-          <tr style="background: #fafbfc;">
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Material Range</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Broad — including some metals with reactive assist</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Redeposition</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Material Range</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material (incl. noble metals, magnetics)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Silicon (and a few III-Vs)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Broad — incl. some metals with reactive assist</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Redeposition</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (volatile etch products)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">High risk</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (volatile SiF₄)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Reduced — reactive gas forms volatile by-products</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Best For</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">CMOS, dielectric patterning</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">MTJ, magnetics, noble metals</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">MEMS, TSV, deep Si trenches</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Damage-sensitive metals & oxides</td>
           </tr>
         </tbody>
       </table>
@@ -2556,7 +2641,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>Understanding which one dominates your process is the first step toward a reliable fix.</p>
 
       <h3>3.1 How Gas Flow Non-Uniformity Affects Etch Rate</h3>
-      <p>Plasma etching is a surface reaction driven by the local concentration of reactive radicals. When gas enters the chamber unevenly, the radical density is higher near the inlet and depleted toward the exhaust side. The result is a spatially dependent etch rate that follows the gas concentration gradient, not the plasma density.</p>
+      <p><a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma etching</a> is a surface reaction driven by the local concentration of reactive radicals. When gas enters the chamber unevenly, the radical density is higher near the inlet and depleted toward the exhaust side. The result is a spatially dependent etch rate that follows the gas concentration gradient, not the plasma density.</p>
 
       <p>In a typical downstream or parallel-plate plasma cleaner operating at low-to-medium pressure (50–500 mTorr), gas flow non-uniformity tends to produce:</p>
       <ul>
@@ -3849,7 +3934,7 @@ export const insightsPosts: InsightsPost[] = [
 
     <h2>2) Plasma Etching for Nanostructure Fabrication</h2>
 
-    <p>Plasma etching transforms planar thin films into functional nanostructures — nanopillars for enhanced surface area, nanochannels for fluid transport, nanopores for filtration, and nanopatterned electrodes for catalysis. The etch chemistry, plasma source, and process parameters determine the structure geometry, surface roughness, and sidewall chemistry.</p>
+    <p><a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma etching</a> transforms planar thin films into functional nanostructures — nanopillars for enhanced surface area, nanochannels for fluid transport, nanopores for filtration, and nanopatterned electrodes for catalysis. The etch chemistry, plasma source, and process parameters determine the structure geometry, surface roughness, and sidewall chemistry.</p>
 
     <h3>2.1 Nanostructure Etching Recipes</h3>
 
@@ -5221,7 +5306,7 @@ export const insightsPosts: InsightsPost[] = [
 
       <h2>2) Pattern Transfer by Plasma Etching</h2>
 
-      <p>Once the resist pattern is developed, it must be transferred into the underlying substrate or thin film. Plasma etching \u2014 specifically <a href="/insights/reactive-ion-etching-guide">reactive ion etching (RIE) and ICP-RIE</a> \u2014 is the primary method for anisotropic pattern transfer at the nanoscale. The challenge at sub-100 nm dimensions is maintaining sidewall verticality, minimizing line edge roughness (LER), and achieving sufficient selectivity to the resist mask.</p>
+      <p>Once the resist pattern is developed, it must be transferred into the underlying substrate or thin film. <a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma etching</a> \u2014 specifically <a href="/insights/reactive-ion-etching-guide">reactive ion etching (RIE) and ICP-RIE</a> \u2014 is the primary method for anisotropic pattern transfer at the nanoscale. The challenge at sub-100 nm dimensions is maintaining sidewall verticality, minimizing line edge roughness (LER), and achieving sufficient selectivity to the resist mask.</p>
 
       <h3>2.1 Nanoscale Etch Recipes by Material</h3>
 
@@ -8266,7 +8351,7 @@ export const insightsPosts: InsightsPost[] = [
       <p>As device dimensions scale below 5 μm, plasma uniformity and microloading effects become increasingly important.</p>
       
       <h2>6) Conclusion</h2>
-      <p>The synergistic balance of CH₄, H₂, and Ar in plasma etching plays a decisive role in shaping both morphology and composition of Bi₂Te₂.₇Se₀.₃ thermoelectric thin films. Through systematic parameter optimization, the reported CH₄/H₂/Ar recipe offers a practical route to high-aspect-ratio, compositionally stable microstructures suitable for next-generation thermoelectric devices.</p>
+      <p>The synergistic balance of CH₄, H₂, and Ar in <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a> plays a decisive role in shaping both morphology and composition of Bi₂Te₂.₇Se₀.₃ thermoelectric thin films. Through systematic parameter optimization, the reported CH₄/H₂/Ar recipe offers a practical route to high-aspect-ratio, compositionally stable microstructures suitable for next-generation thermoelectric devices.</p>
       
       <p>For researchers and fabrication facilities working on micro-thermoelectric applications, understanding these plasma-material interactions provides a foundation for process development and optimization. The insights from this study can be extended to other thermoelectric material systems and contribute to the advancement of on-chip thermal management technologies.</p>
       
@@ -9156,7 +9241,7 @@ export const insightsPosts: InsightsPost[] = [
       DOI: <a href="https://doi.org/10.1021/acsanm.5c05598" target="_blank" rel="noopener noreferrer">10.1021/acsanm.5c05598</a></p>
 
       <h2>The Role of Plasma Etching</h2>
-      <p>The nanoforest structures at the heart of this actuator were fabricated using <strong>oxygen plasma etching</strong> performed with the <strong>RIE-150 Reactive Ion Etching system</strong> (Beijing Zhongke Tailong Electronics Co., Ltd.).</p>
+      <p>The nanoforest structures at the heart of this actuator were fabricated using <strong>oxygen <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a></strong> performed with the <strong>RIE-150 Reactive Ion Etching system</strong> (Beijing Zhongke Tailong Electronics Co., Ltd.).</p>
 
       <h3>Process Parameters</h3>
       <table style="width:100%;border-collapse:collapse;margin:1em 0;">
@@ -9591,7 +9676,7 @@ export const insightsPosts: InsightsPost[] = [
     title: 'Atomic Layer Etching (ALE): A Practical Guide for Research and Development',
     excerpt: 'A comprehensive guide to Atomic Layer Etching: self-limiting cyclic processes, ALE energy windows, core chemistries for Si/SiO\u2082/III-V/metals, ICP-RIE implementation, optimization challenges, and emerging frontiers including cryogenic and area-selective ALE.',
     content: `
-      <p>As semiconductor devices shrink toward sub-nanometer critical dimensions, conventional plasma etching is reaching its precision limits. Atomic Layer Etching (ALE) has emerged as a transformative approach that offers monolayer-level control over material removal \u2014 enabling researchers and process engineers to etch with a precision that was unimaginable just a decade ago.</p>
+      <p>As semiconductor devices shrink toward sub-nanometer critical dimensions, conventional <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a> is reaching its precision limits. Atomic Layer Etching (ALE) has emerged as a transformative approach that offers monolayer-level control over material removal \u2014 enabling researchers and process engineers to etch with a precision that was unimaginable just a decade ago.</p>
       <p>This guide provides a comprehensive overview of ALE: how it works, how it compares to traditional <a href="/insights/reactive-ion-etching-guide">reactive ion etching (RIE)</a>, its key applications in research, and how you can begin exploring ALE processes using ICP-RIE equipment in your own lab.</p>
 
       <h2>What Is Atomic Layer Etching?</h2>
@@ -9873,7 +9958,7 @@ export const insightsPosts: InsightsPost[] = [
     title: 'Cryogenic Plasma Etching vs. Bosch Process: Choosing the Right Approach for High-Aspect-Ratio Structures',
     excerpt: 'An in-depth comparison of cryogenic plasma etching and the Bosch process for high-aspect-ratio silicon etching. Covers sidewall smoothness, aspect ratio capability, process gases, equipment requirements, retrofit options, and emerging hybrid approaches for MEMS, photonics, and quantum device fabrication.',
     content: `
-      <p>High-aspect-ratio (HAR) etching is the backbone of modern MEMS fabrication, through-silicon vias (TSVs), 3D NAND memory, and advanced photonic structures. For decades, the Bosch process \u2014 with its alternating etch/passivation cycles \u2014 has been the industry standard for deep reactive ion etching (DRIE). However, cryogenic plasma etching is gaining renewed attention as an alternative that offers smoother sidewalls, simpler process control, and compatibility with emerging device requirements.</p>
+      <p>High-aspect-ratio (HAR) etching is the backbone of modern MEMS fabrication, through-silicon vias (TSVs), 3D NAND memory, and advanced photonic structures. For decades, the Bosch process \u2014 with its alternating etch/passivation cycles \u2014 has been the industry standard for deep reactive ion etching (DRIE). However, cryogenic <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a> is gaining renewed attention as an alternative that offers smoother sidewalls, simpler process control, and compatibility with emerging device requirements.</p>
       <p>This article compares these two approaches in depth, helping researchers and process engineers understand when each technique excels and how to make an informed choice for their specific application. Both methods are built on ICP-RIE platforms — for foundational context on how ICP-RIE differs from basic PE and RIE, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison</a>, or our complete <a href="/insights/reactive-ion-etching-guide">reactive ion etching guide</a>.</p>
 
       <h2>The Bosch Process: A Quick Recap</h2>
@@ -10164,7 +10249,7 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'A practical guide to applying machine learning in plasma etch process development. Covers Bayesian optimization for recipe tuning, virtual metrology with OES data, ML-enhanced endpoint detection, digital twins, predictive maintenance, and a step-by-step workflow with Python code examples for research labs.',
     content: `
       <p>Developing a plasma etch process has traditionally been an exercise in expert intuition combined with painstaking experimentation. A typical ICP-<a href="/insights/reactive-ion-etching-guide">RIE</a> process has 6\u201310 independently adjustable parameters \u2014 ICP power, bias power, pressure, gas flows, temperature, and more \u2014 creating a vast parameter space that is impractical to explore exhaustively. Researchers often rely on one-factor-at-a-time (OFAT) experiments or design-of-experiments (DOE) approaches, but both have significant limitations when dealing with complex, nonlinear process interactions.</p>
-      <p>Machine learning (ML) and artificial intelligence (AI) are changing this landscape. From accelerating recipe development to enabling real-time process control, data-driven approaches are making plasma etching smarter, faster, and more predictable. This article explores how ML is being applied to plasma etch processes, what tools and methods are most relevant for research labs, and how these approaches can enhance your existing workflow.</p>
+      <p>Machine learning (ML) and artificial intelligence (AI) are changing this landscape. From accelerating recipe development to enabling real-time process control, data-driven approaches are making <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a> smarter, faster, and more predictable. This article explores how ML is being applied to plasma etch processes, what tools and methods are most relevant for research labs, and how these approaches can enhance your existing workflow.</p>
 
       <h2>Why Plasma Etching Is Ripe for Machine Learning</h2>
       <p>Several characteristics of plasma etch processes make them particularly well-suited for ML approaches:</p>
@@ -10536,7 +10621,7 @@ result = differential_evolution(
       <p><strong>Target Readers:</strong> Process engineers, researchers, and technical decision-makers working with emerging semiconductor materials beyond traditional silicon. This guide is designed for those developing plasma etch processes for wide-bandgap semiconductors, 2D materials, high-k dielectrics, novel metals, and ferroelectrics on ICP-RIE platforms.</p>
 
       <h2>Introduction</h2>
-      <p>Silicon has dominated semiconductor manufacturing for over half a century. But as the industry pushes toward higher frequencies, higher power densities, and novel device architectures, a growing family of materials is entering the fabrication spotlight \u2014 each bringing unique plasma etching challenges.</p>
+      <p>Silicon has dominated semiconductor manufacturing for over half a century. But as the industry pushes toward higher frequencies, higher power densities, and novel device architectures, a growing family of materials is entering the fabrication spotlight \u2014 each bringing unique <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a> challenges.</p>
       <p>Wide-bandgap semiconductors like SiC and GaN are revolutionizing power electronics and RF devices. Two-dimensional materials such as MoS\u2082 and graphene promise atomically thin transistors. High-k dielectrics and ferroelectrics enable next-generation memory. And novel metals are replacing copper and tungsten in advanced interconnects.</p>
       <p>For research labs developing processes for these materials, understanding their etch behavior in <a href="/insights/reactive-ion-etching-guide">RIE</a> and ICP-RIE systems is essential. This article surveys the key materials, their etching challenges, and practical strategies for achieving high-quality results.</p>
 
@@ -10987,7 +11072,7 @@ result = differential_evolution(
       <h2>Introduction</h2>
       <p>In an ideal world, a plasma etch process would remove exactly the material you want \u2014 and absolutely nothing else. In reality, every etch process attacks surrounding materials to some degree. The ratio of how fast you etch the target material versus how fast you etch the material you want to preserve is called <strong>etch selectivity</strong>, and it is one of the most critical \u2014 and most challenging \u2014 parameters in plasma process development.</p>
       <p>As device structures become more complex, the demands on etch selectivity are escalating. Advanced logic devices feature multiple thin film layers stacked in close proximity. 3D NAND structures require etching through dozens of alternating layers. Gate-all-around (GAA) transistors demand selective removal of one material from a nanoscale sandwich while preserving neighboring layers that are just a few nanometers thick.</p>
-      <p>This article explores why selectivity is becoming the defining challenge of modern plasma etching, the physical and chemical mechanisms that control it, practical strategies for achieving the selectivity your research demands, and emerging trends in selectivity-driven process design.</p>
+      <p>This article explores why selectivity is becoming the defining challenge of modern <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching</a>, the physical and chemical mechanisms that control it, practical strategies for achieving the selectivity your research demands, and emerging trends in selectivity-driven process design.</p>
 
       <h2>Understanding Etch Selectivity</h2>
 
