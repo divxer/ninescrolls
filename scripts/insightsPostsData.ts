@@ -305,6 +305,133 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Iterate with DOE</strong> — use 2–3 factor factorial design varying gas ratio, pressure, and RF power</li>
       </ol>
 
+      <h3>4.5 Etch Rate & Selectivity Reference Matrix</h3>
+      <p>The following table consolidates typical etch rates and selectivity ranges across the most common materials and chemistries. Values are starting-point ranges drawn from published literature and tool vendor data — actual results depend on chamber geometry, RF coupling, mask material, and feature loading.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Common Chemistry</th>
+            <th>CCP-RIE Rate</th>
+            <th>ICP-RIE Rate</th>
+            <th>Selectivity to PR</th>
+            <th>Selectivity to SiO₂</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Si</strong></td>
+            <td>SF₆ / O₂</td>
+            <td>200–500 nm/min</td>
+            <td>1–5 µm/min</td>
+            <td>5:1</td>
+            <td>high</td>
+            <td>Isotropic without bias; add C₄F₈ for sidewall passivation</td>
+          </tr>
+          <tr>
+            <td><strong>Si (deep, Bosch)</strong></td>
+            <td>SF₆ / C₄F₈ alternating</td>
+            <td>—</td>
+            <td>5–20 µm/min</td>
+            <td>80:1</td>
+            <td>high</td>
+            <td>DRIE only; see <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE Bosch process guide</a></td>
+          </tr>
+          <tr>
+            <td><strong>Si (CMOS gate)</strong></td>
+            <td>Cl₂ / HBr</td>
+            <td>100–300 nm/min</td>
+            <td>500–1500 nm/min</td>
+            <td>30:1</td>
+            <td>moderate</td>
+            <td>HBr enables vertical sidewalls and high selectivity to gate oxide</td>
+          </tr>
+          <tr>
+            <td><strong>SiO₂</strong></td>
+            <td>CHF₃ / CF₄ / Ar</td>
+            <td>50–150 nm/min</td>
+            <td>200–600 nm/min</td>
+            <td>3:1</td>
+            <td>—</td>
+            <td>Self-passivating; ratio tunes selectivity</td>
+          </tr>
+          <tr>
+            <td><strong>SiO₂ (HAR contact)</strong></td>
+            <td>C₄F₈ / Ar / CO</td>
+            <td>—</td>
+            <td>200–800 nm/min</td>
+            <td>5:1</td>
+            <td>—</td>
+            <td>For 10:1+ contact and via etch</td>
+          </tr>
+          <tr>
+            <td><strong>Si₃N₄</strong></td>
+            <td>CHF₃ / O₂ or SF₆</td>
+            <td>50–200 nm/min</td>
+            <td>200–500 nm/min</td>
+            <td>3:1</td>
+            <td>2:1</td>
+            <td>Selectivity to SiO₂ tunable via O₂ flow</td>
+          </tr>
+          <tr>
+            <td><strong>GaN</strong></td>
+            <td>Cl₂ / BCl₃ / Ar</td>
+            <td>—</td>
+            <td>200–500 nm/min</td>
+            <td>1:1</td>
+            <td>low</td>
+            <td>HEMT mesa etch; metal mask preferred over PR</td>
+          </tr>
+          <tr>
+            <td><strong>GaAs</strong></td>
+            <td>Cl₂ / Ar or BCl₃</td>
+            <td>—</td>
+            <td>300–800 nm/min</td>
+            <td>3:1</td>
+            <td>low</td>
+            <td>Smooth profile; chamber temperature critical for AlGaAs stop layers</td>
+          </tr>
+          <tr>
+            <td><strong>InP</strong></td>
+            <td>Cl₂ / CH₄ / H₂</td>
+            <td>—</td>
+            <td>200–500 nm/min</td>
+            <td>3:1</td>
+            <td>low</td>
+            <td>Polymer formation risk; periodic O₂ chamber clean recommended</td>
+          </tr>
+          <tr>
+            <td><strong>SiC</strong></td>
+            <td>SF₆ / O₂ or NF₃</td>
+            <td>—</td>
+            <td>200–500 nm/min</td>
+            <td>1:1</td>
+            <td>moderate</td>
+            <td>Hard mask required (Ni, Al); slow because of high Si–C bond strength</td>
+          </tr>
+          <tr>
+            <td><strong>Al / AlCu</strong></td>
+            <td>Cl₂ / BCl₃</td>
+            <td>200–500 nm/min</td>
+            <td>500–1000 nm/min</td>
+            <td>5:1</td>
+            <td>high</td>
+            <td>Post-etch passivation mandatory to prevent corrosion (H₂O + Cl residue)</td>
+          </tr>
+          <tr>
+            <td><strong>Photoresist (strip)</strong></td>
+            <td>O₂</td>
+            <td>200 nm – 1 µm/min</td>
+            <td>1–5 µm/min</td>
+            <td>—</td>
+            <td>very high</td>
+            <td>For descum, drop power and time to 5–15 s at 30–50 W</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Reading the table:</strong> CCP rates are typical for parallel-plate RIE at 100–250 W; ICP rates assume an inductive source at 500–1500 W with independent bias. Selectivity to photoresist is for standard novolak/DUV resists; chemically amplified resists may degrade faster. For exact numbers on your tool, run a 2³ DOE varying pressure, power, and gas ratio against a witness wafer of known thickness.</p>
+
       <h2>5) Types of RIE Systems</h2>
       <p>Three main RIE architectures exist, each with distinct plasma characteristics and application niches:</p>
 
@@ -636,6 +763,35 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Profile:</strong> Vertical with scalloping (scallop amplitude tunable via cycle time ratio)</li>
       </ul>
 
+      <h3>9.4 Si₃N₄ Etch (CCP‑RIE)</h3>
+      <ul>
+        <li><strong>Gas:</strong> CHF₃ 30 sccm / O₂ 5 sccm</li>
+        <li><strong>Pressure:</strong> 30 mTorr</li>
+        <li><strong>RF Power:</strong> 100–200 W</li>
+        <li><strong>Temperature:</strong> 20 °C</li>
+        <li><strong>Expected Rate:</strong> 50–100 nm/min</li>
+        <li><strong>Selectivity (Si₃N₄:SiO₂):</strong> ~3:1 — increase O₂ flow to push selectivity higher at the cost of rate</li>
+      </ul>
+
+      <h3>9.5 GaN Mesa Etch (ICP‑RIE)</h3>
+      <ul>
+        <li><strong>Gas:</strong> Cl₂ 25 sccm / BCl₃ 5 sccm / Ar 10 sccm</li>
+        <li><strong>Pressure:</strong> 5 mTorr</li>
+        <li><strong>ICP Power:</strong> 500 W / Bias: 50 W</li>
+        <li><strong>Temperature:</strong> 60 °C (chuck warming reduces polymer)</li>
+        <li><strong>Expected Rate:</strong> 200–400 nm/min</li>
+        <li><strong>Profile:</strong> Vertical with smooth sidewall — critical for HEMT gate recess and laser facets. Use Ni or SiO₂ hard mask, not photoresist.</li>
+      </ul>
+
+      <h3>9.6 Photoresist Strip / Descum (CCP‑RIE)</h3>
+      <ul>
+        <li><strong>Gas:</strong> O₂ 50 sccm</li>
+        <li><strong>Pressure:</strong> 100 mTorr</li>
+        <li><strong>RF Power:</strong> 100–150 W (full strip) / 30–50 W (descum)</li>
+        <li><strong>Expected Rate:</strong> 500 nm/min – 2 µm/min depending on resist chemistry</li>
+        <li><strong>Note:</strong> For descum (removing residual scum after develop), run 5–15 s at low power. For full strip, time to clear plus 20% over-etch. Add 5% N₂ to reduce surface charging on dielectric stacks.</li>
+      </ul>
+
       <p><strong>DOE Tip:</strong> Start with a 2³ factorial design varying pressure, RF power, and gas ratio. Measure etch rate (profilometer), selectivity (step height on two-layer test wafer), and profile (cross-section SEM). Iterate based on results.</p>
 
       <h2>10) Metrology & Validation</h2>
@@ -827,13 +983,21 @@ export const insightsPosts: InsightsPost[] = [
       <p><strong>Product pages:</strong> <a href="/products/rie-etcher">RIE Etcher</a> · <a href="/products/icp-etcher">ICP Etcher</a> · <a href="/products/ibe-ribe">IBE / RIBE</a> · <a href="/NineScrolls-Equipment-Guide.pdf" target="_blank" rel="noopener noreferrer">📥 Download full Equipment Guide (PDF)</a></p>
 
       <h2>12) Future Trends in RIE</h2>
-      <ul>
-        <li><strong>Atomic Layer Etching (ALE):</strong> Self-limiting etch cycles removing one atomic layer at a time. Enables sub‑nm precision for gate-all-around (GAA) transistors and advanced FinFETs. Combines surface modification (Cl₂ adsorption) with gentle Ar⁺ desorption.</li>
-        <li><strong>Pulsed Plasma & Pulsed Bias:</strong> Time-domain control of ion energy distribution reduces damage and enables precise profile tuning. Increasingly standard on ICP‑RIE platforms.</li>
-        <li><strong>AI/ML-Assisted Process Optimization:</strong> Machine learning models trained on multi-variable process data to predict optimal recipes, detect drift, and enable virtual metrology — reducing development time from weeks to days.</li>
-        <li><strong>Cryogenic Etching:</strong> Substrate cooling to −100 to −120 °C with SF₆/O₂ enables smooth, scallop-free deep Si etching as an alternative to the Bosch process.</li>
-        <li><strong>Area‑Selective Etching:</strong> Combining ALE with surface functionalization for inherent selectivity without masks — potential paradigm shift for self-aligned patterning.</li>
-      </ul>
+
+      <h3>12.1 Atomic Layer Etching (ALE)</h3>
+      <p>ALE removes material one atomic layer at a time by alternating a self-limiting surface modification step (e.g., Cl₂ chemisorption) with a low-energy ion desorption step (Ar⁺ at 30–60 eV). Per-cycle removal is set by the saturated surface chemistry rather than by time, giving sub-Ångström control and near-zero CD bias. ALE is now in production for gate-all-around (GAA) transistor recess steps and advanced FinFET fin trim, and is being qualified for memory hole etch and EUV-mask defect repair. Throughput remains the main barrier — typical rates are 1–5 nm/min — so ALE is reserved for the most critical layers.</p>
+
+      <h3>12.2 Pulsed Plasma & Pulsed Bias</h3>
+      <p>Modulating either the source power or the bias power on millisecond time scales decouples ion flux from ion energy in a way that continuous-wave plasma cannot. Synchronous pulsing reduces charging damage on dielectric stacks, suppresses notching at SOI buried-oxide interfaces, and enables tighter control of sidewall passivation in HAR features. Pulsed-bias DRIE is now standard on advanced Bosch tools, and pulsed-source ICP is moving into mainstream III-V and photonic etch flows.</p>
+
+      <h3>12.3 AI / ML-Assisted Process Optimization</h3>
+      <p>Modern fabs and increasingly large R&amp;D groups are training machine learning models on multi-variable process data — RF, OES spectra, MFC flows, chuck temperature, exhaust pressure — to predict optimal recipes, detect chamber drift before it produces bad wafers, and run virtual metrology that infers etch depth without physically measuring every wafer. Published case studies report development cycle reduction from weeks to days and yield recovery on aged chambers without preventive maintenance. Integration with run-to-run controllers and digital-twin chamber models is the next step.</p>
+
+      <h3>12.4 Cryogenic Etching</h3>
+      <p>Cooling the substrate to −100 to −120 °C with SF₆/O₂ chemistry produces a thin SiO_xF_y passivation layer that condenses on sidewalls but not the trench bottom (driven by ion bombardment), giving extremely smooth, scallop-free vertical sidewalls. Cryo is the production standard for damage-sensitive photonic Si waveguides and is gaining ground on Bosch for >50:1 aspect-ratio MEMS structures. The trade-off is added LN₂ infrastructure and tighter chuck temperature control.</p>
+
+      <h3>12.5 Area-Selective Etching & Self-Aligned Patterning</h3>
+      <p>Combining ALE with chemoselective surface functionalization (e.g., self-assembled monolayers that block one material but not another) produces inherent etch selectivity without lithographic masks. Early demonstrations on Si vs SiO₂ and metal vs dielectric stacks suggest a paradigm shift for self-aligned contact and via patterning at sub-3 nm nodes. Watch this space — material-selective ALE is one of the few credible paths to extending Moore's Law beyond what direct lithography can resolve.</p>
 
       <h2>13) FAQ</h2>
 
