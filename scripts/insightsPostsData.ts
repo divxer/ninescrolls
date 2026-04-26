@@ -902,6 +902,29 @@ export const insightsPosts: InsightsPost[] = [
       { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'General-purpose reactive ion etching for Si, SiO₂, polymers' },
       { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for deep etching and III-V processing' },
       { href: '/products/compact-rie', label: 'Compact RIE', subtitle: 'Space-efficient RIE for rapid prototyping and failure analysis' }
+    ],
+    articleType: 'TechArticle',
+    faqs: [
+      {
+        question: 'When should I choose ICP-RIE over standard CCP-RIE?',
+        answer: 'Choose ICP-RIE when you need (a) independent control of ion energy and plasma density, (b) high aspect ratio (>5:1) features, (c) low-damage etching for sensitive materials such as III-V, 2D materials, or photonics, or (d) high etch rates with good uniformity. CCP-RIE is sufficient for general-purpose dielectric/polymer etching, photoresist stripping, and applications where simplicity and cost matter more than ultimate performance.'
+      },
+      {
+        question: 'How do I minimize plasma-induced damage?',
+        answer: 'Use ICP-RIE to decouple ion energy from plasma density (keep bias low while maintaining adequate radical supply); enable pulsed bias at 10-50% duty cycle to reduce average ion energy; implement soft-landing by reducing bias power during the final 10-20% of etch time as you approach the stop layer; and consider a post-etch anneal (e.g., 400 °C in N2/H2) to recover lattice damage.'
+      },
+      {
+        question: 'What endpoint detection method should I use for RIE?',
+        answer: 'OES (Optical Emission Spectroscopy) is the most versatile — monitor a characteristic emission line of an etch by-product or reactant that changes when you reach the stop layer (e.g., SiF* at 777 nm drops when Si etch is complete). Laser interferometry is best for transparent film thickness monitoring (SiO2, SiNx). For blanket etches without clear optical signals, use a timed etch with a 10-20% safety over-etch.'
+      },
+      {
+        question: 'Can RIE etch high-aspect-ratio features?',
+        answer: 'Standard CCP-RIE achieves roughly 3:1 to 5:1 aspect ratio. ICP-RIE extends this to ~20:1 through higher plasma density and independent bias control. For extreme AR (>20:1, up to 50:1+), DRIE with the Bosch process — alternating etch and passivation cycles — is required. The key limiting factors are ion angular distribution, radical transport into the feature, and by-product removal.'
+      },
+      {
+        question: 'How do I estimate RIE equipment cost and cost of ownership?',
+        answer: 'Equipment cost ranges from ~$100K-200K for a basic CCP-RIE system to ~$300K-800K+ for a fully-loaded ICP-RIE with DRIE capability. CoO includes process gases (~$2K-10K/year), pump maintenance (~$3K-5K/year), consumables such as O-rings, clamp parts, and liners (~$2K-5K/year), and utilities (power, cooling water, CDA). For R&D labs running under 20 hours/week, CoO is typically $15K-30K/year excluding the capital cost.'
+      }
     ]
   },
   {
