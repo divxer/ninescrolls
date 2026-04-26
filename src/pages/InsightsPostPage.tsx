@@ -216,7 +216,7 @@ export const InsightsPostPage: React.FC = () => {
         type="article"
       />
       <Helmet>
-        <script type="application/ld+json">
+        <script type="application/ld+json" data-jsonld="article">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": post.articleType || "Article",
@@ -260,7 +260,9 @@ export const InsightsPostPage: React.FC = () => {
             } : {})
           })}
         </script>
-        <script type="application/ld+json">
+      </Helmet>
+      <Helmet>
+        <script type="application/ld+json" data-jsonld="breadcrumb">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
@@ -271,8 +273,10 @@ export const InsightsPostPage: React.FC = () => {
             ]
           })}
         </script>
-        {post.faqs && post.faqs.length > 0 && (
-          <script type="application/ld+json">
+      </Helmet>
+      {post.faqs && post.faqs.length > 0 && (
+        <Helmet>
+          <script type="application/ld+json" data-jsonld="faq">
             {JSON.stringify({
               "@context": "https://schema.org",
               "@type": "FAQPage",
@@ -283,8 +287,8 @@ export const InsightsPostPage: React.FC = () => {
               }))
             })}
           </script>
-        )}
-      </Helmet>
+        </Helmet>
+      )}
       <div className="min-h-screen bg-surface-container-lowest">
         {/* Hero Section */}
         <section className="hero-gradient relative py-20 text-white overflow-hidden">
