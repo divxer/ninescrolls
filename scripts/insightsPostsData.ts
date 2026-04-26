@@ -1204,17 +1204,75 @@ export const insightsPosts: InsightsPost[] = [
       <p>Deep isolation trenches (20–100 μm) in power semiconductor devices provide electrical isolation between high‑voltage and low‑voltage regions. Superjunction MOSFETs and IGBTs use DRIE‑etched trenches that are subsequently filled with oxide or polysilicon to create the charge‑balanced structures necessary for high breakdown voltage.</p>
       <hr/>
 
-      <h2>5) Common Defects and Challenges</h2>
-      <p>Despite its versatility, the Bosch process introduces several characteristic artifacts and challenges that engineers must understand and address:</p>
+      <h2>5) Scallop Control and Common DRIE Defects</h2>
+      <p>Despite its versatility, the Bosch process introduces several characteristic artifacts that engineers must understand and address. Sidewall scalloping is the dominant one and the focus of most process tuning effort.</p>
 
-      <h3>5.1 Sidewall Scalloping</h3>
-      <p>The most recognizable artifact of the Bosch process is sidewall scalloping — a periodic waviness on the trench walls caused by the alternating etch/passivation cycles. Each etch step isotropically removes a small amount of silicon laterally before the next passivation step re‑protects the surface. Scallop amplitude is typically 50–200 nm for standard cycle times (2–5 s), but can be reduced to < 30 nm with ultra‑short cycles (< 1 s).</p>
-      <p>Scalloping matters because it increases surface roughness, which can degrade thin film conformality in TSV metallization, increase optical scattering in photonic devices, and reduce fatigue life in MEMS structures. Common mitigation strategies include:</p>
+      <h3>5.1 Sidewall Scalloping &amp; Cycle-Time Tuning</h3>
+      <p>The most recognizable artifact of the Bosch process is sidewall scalloping — a periodic waviness on the trench walls caused by the alternating etch/passivation cycles. Each etch step isotropically removes a small amount of silicon laterally before the next passivation step re‑protects the surface. Scallop amplitude scales roughly linearly with etch-step duration and inversely with passivation effectiveness. Standard cycle times (2–5 s) produce 50–200 nm scallops; ultra-short cycles (&lt; 1 s) push amplitude under 30 nm at the cost of net etch rate.</p>
+
+      <p>Why it matters: scallop roughness degrades thin-film conformality in TSV metallization, increases optical scattering in photonic devices, and reduces fatigue life in MEMS resonators. The table below summarizes the cycle-tuning regimes engineers actually use:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Regime</th>
+            <th>Etch step</th>
+            <th>Passivation step</th>
+            <th>Scallop amplitude</th>
+            <th>Net etch rate</th>
+            <th>Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>High-throughput</strong></td>
+            <td>5–8 s, bias 30 W</td>
+            <td>3–4 s</td>
+            <td>150–300 nm</td>
+            <td>10–20 µm/min</td>
+            <td>Bulk MEMS release, deep cavity</td>
+          </tr>
+          <tr>
+            <td><strong>Balanced</strong></td>
+            <td>2–4 s, bias 20 W</td>
+            <td>2–3 s</td>
+            <td>50–150 nm</td>
+            <td>5–10 µm/min</td>
+            <td>Standard MEMS, TSV via-middle</td>
+          </tr>
+          <tr>
+            <td><strong>Smooth</strong></td>
+            <td>0.8–1.5 s, bias 15 W</td>
+            <td>1–1.5 s</td>
+            <td>20–50 nm</td>
+            <td>2–4 µm/min</td>
+            <td>Photonic Si waveguides, optical MEMS</td>
+          </tr>
+          <tr>
+            <td><strong>Pulsed-bias smooth</strong></td>
+            <td>1–2 s, bias pulsed 10–20%</td>
+            <td>1–2 s</td>
+            <td>10–30 nm</td>
+            <td>1–3 µm/min</td>
+            <td>High-AR MEMS, charge-sensitive stacks</td>
+          </tr>
+          <tr>
+            <td><strong>Cryogenic (non-Bosch)</strong></td>
+            <td>continuous SF₆/O₂</td>
+            <td>—</td>
+            <td>&lt; 10 nm</td>
+            <td>1–3 µm/min</td>
+            <td>Premium photonics, &gt; 50:1 AR</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Beyond cycle tuning, the four post-process options to further reduce scallop roughness are:</p>
       <ul>
-        <li><strong>Shorter cycle times</strong> — Reducing each step to < 1 s dramatically reduces scallop amplitude but lowers net etch rate.</li>
-        <li><strong>Post‑etch smoothing</strong> — A brief isotropic SF₆ etch (without bias) or thermal oxidation followed by oxide strip can reduce scallop roughness by 70–90%.</li>
-        <li><strong>Hydrogen annealing</strong> — High‑temperature H₂ anneal (1000–1100 °C) causes silicon surface migration that smooths scallops.</li>
-        <li><strong>Switching to cryogenic DRIE</strong> — Eliminates scalloping entirely by using continuous (non‑cyclic) etching at cryogenic temperatures.</li>
+        <li><strong>Isotropic SF₆ smoothing</strong> — A brief bias-off SF₆ pulse after the main etch reduces peak-to-valley by 70–90% but rounds critical dimensions.</li>
+        <li><strong>Thermal oxidation + oxide strip</strong> — Sacrificial oxidation at 1000 °C followed by HF strip planarizes scallops via differential consumption.</li>
+        <li><strong>H₂ anneal</strong> — 1000–1100 °C in H₂ drives surface silicon migration that smooths scallops without dimensional loss; standard for premium photonic Si waveguides.</li>
+        <li><strong>Switch to cryogenic DRIE</strong> — Eliminates scallop formation entirely by replacing the Bosch cycle with continuous SF₆/O₂ at −100 to −120 °C; requires LN₂ infrastructure.</li>
       </ul>
 
       <div class="post-figure">
