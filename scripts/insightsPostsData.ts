@@ -1558,6 +1558,57 @@ export const insightsPosts: InsightsPost[] = [
       <p>This guide provides quantitative process data, practical engineering insights, and a structured decision framework to help you choose between RIE, IBE, and hybrid approaches such as RIBE.</p>
       <hr/>
 
+      <h2>Is Ion Beam Milling Anisotropic? Quick Answer</h2>
+      <p><strong>Yes — ion beam milling (IBE) is highly anisotropic.</strong> The ion beam is collimated and arrives at the wafer with a tightly controlled angle (typically near-vertical, but tunable from 0° to 70°+ via a tiltable stage). Material removal happens almost exclusively along the ion trajectory, producing near-vertical sidewalls regardless of the substrate crystallography or chemistry. In practical terms IBE often delivers higher anisotropy than standard RIE because there is no isotropic chemical etch component, only directional sputtering. The trade-offs are slower etch rate, low material selectivity, and higher redeposition risk on sidewalls.</p>
+      <hr/>
+
+      <h2>Sputter Etching vs RIE: Etch Rate Comparison</h2>
+      <p>Sputter etching is purely physical (Ar⁺ ion bombardment, no reactive gas), while RIE combines physical bombardment with reactive chemistry. The chemistry term is what gives RIE its rate advantage on most semiconductor materials:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="background: #f6f7fb;">
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Material</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Sputter Etching (Ar⁺)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE (reactive chemistry)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Why the gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Si</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–30 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">200 nm – 5 µm/min (SF₆)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Volatile SiF₄ pumped away</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">SiO₂</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">15–40 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–600 nm/min (CHF₃/CF₄)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Fluorocarbon chemistry forms volatile SiF₄ + CO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Au, Pt</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–50 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (no volatile chloride/fluoride)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Noble metals require physical-only IBE</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Co, NiFe (MTJ)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">20–40 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">— (not viable in production)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">No volatile etch product; IBE is industry standard</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Photoresist</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50–200 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">200 nm – 5 µm/min (O₂)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Oxygen plasma forms CO, CO₂, H₂O</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Bottom line:</strong> for any material with a viable reactive chemistry, RIE is 5–100× faster than sputter etching. Sputter etching (and its directional cousin IBE) wins only when no volatile etch product exists — noble metals, magnetic stacks, complex oxides, and some compound semiconductors.</p>
+      <hr/>
+
       <h2>Working Principles</h2>
       <h3>Reactive Ion Etching (RIE)</h3>
       <ul>
@@ -1845,46 +1896,80 @@ export const insightsPosts: InsightsPost[] = [
         <li>Complex multi-material stacks (e.g., magnetic tunnel junctions, photonic waveguides) need to be patterned with minimal cross-contamination.</li>
       </ul>
 
-      <h3>Three-Way Comparison: RIE vs. IBE vs. RIBE</h3>
+      <h3>Four-Way Comparison: RIE vs. Ion Milling vs. DRIE vs. RIBE</h3>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
           <tr style="background: #f6f7fb;">
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Dimension</th>
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIE</th>
-            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">IBE</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">Ion Milling (IBE)</th>
+            <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;"><a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE</a></th>
             <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left;">RIBE</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Selectivity</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Etch Rate</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">50 nm – 5 µm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">10–100 nm/min</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">5–20 µm/min (Si)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">100–500 nm/min</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Anisotropy</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">High</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (collimated beam)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (passivation cycles)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (collimated beam)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Selectivity</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">High (material-dependent)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (~1:1 to 3:1)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Very High (80:1 to mask)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — tunable via reactive gas</td>
           </tr>
           <tr style="background: #fafbfc;">
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Plasma Damage</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Aspect Ratio</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">3:1 to 10:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≤ 5:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≥ 50:1</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">≤ 5:1</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Plasma Damage</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — direct plasma exposure</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Moderate — direct plasma exposure</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low — decoupled beam</td>
           </tr>
-          <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Directional Control</td>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Directional Control</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical (field-driven)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control (0–70°)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Vertical (field-driven)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Full angle control</td>
-          </tr>
-          <tr style="background: #fafbfc;">
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Material Range</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material</td>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Broad — including some metals with reactive assist</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #e5e7eb; padding: 8px;">Redeposition</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Material Range</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Semiconductors, dielectrics</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Any material (incl. noble metals, magnetics)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Silicon (and a few III-Vs)</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Broad — incl. some metals with reactive assist</td>
+          </tr>
+          <tr style="background: #fafbfc;">
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Redeposition</strong></td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (volatile etch products)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">High risk</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Low (volatile SiF₄)</td>
             <td style="border: 1px solid #e5e7eb; padding: 8px;">Reduced — reactive gas forms volatile by-products</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;"><strong>Best For</strong></td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">CMOS, dielectric patterning</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">MTJ, magnetics, noble metals</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">MEMS, TSV, deep Si trenches</td>
+            <td style="border: 1px solid #e5e7eb; padding: 8px;">Damage-sensitive metals & oxides</td>
           </tr>
         </tbody>
       </table>
