@@ -1093,6 +1093,22 @@ export const insightsPosts: InsightsPost[] = [
       <p>Need guidance on Bosch vs cryogenic DRIE for your application? Our engineers at NineScrolls can help evaluate your aspect ratio, etch depth, and material stack to recommend the optimal DRIE solution for your process requirements.</p>
       <p style="margin-top: 8px; padding: 12px 16px; background: #f0f4ff; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95em;"><a href="/products/icp-etcher" style="color: #2563eb;">ICP Etcher Series</a> · <a href="/products/icp-etcher" style="color: #2563eb;">DRIE Solutions</a> · <a href="/contact?topic=DRIE%20Inquiry" style="color: #2563eb;">Contact Us for DRIE Consultation</a></p>
 
+      <h2>FAQ</h2>
+      <p><strong>Q1: What is the Bosch process in DRIE?</strong><br>
+      A: The Bosch process is a time-multiplexed deep reactive ion etch that alternates short SF₆ etch steps with C₄F₈ passivation steps. The fluorocarbon film deposited during passivation protects sidewalls from lateral attack so subsequent etch cycles drive vertically into silicon, enabling aspect ratios well beyond what continuous-mode RIE can deliver.</p>
+
+      <p><strong>Q2: How do you control scalloping in DRIE?</strong><br>
+      A: Scallop amplitude is set primarily by etch step duration and ion energy. Shorter etch cycles (1–3 s instead of 5–8 s), reduced platen bias during the etch step, and higher passivation gas flow shrink scallops to under 50 nm. For sub-20 nm sidewall roughness, pulsed-bias Bosch or cryogenic DRIE is usually a better fit than aggressive cycle-time tuning.</p>
+
+      <p><strong>Q3: What is the typical etch rate of Bosch DRIE for silicon?</strong><br>
+      A: Standard Bosch recipes achieve 3–10 µm/min for silicon, with high-throughput recipes reaching 15–20 µm/min at the cost of slightly larger scallops and reduced selectivity. Etch rate scales with ICP power, SF₆ flow, and chamber pressure, but high-AR features run slower due to ARDE (aspect-ratio-dependent etching).</p>
+
+      <p><strong>Q4: Bosch DRIE vs cryogenic DRIE — which should I choose?</strong><br>
+      A: Choose Bosch when you need batch-friendly room-temperature operation, high throughput, and well-understood recipes for MEMS / TSV. Choose cryogenic DRIE (substrate at -100 to -120 °C) when sidewall smoothness is critical (photonics, optical MEMS) or when aspect ratios exceed 50:1 — cryo eliminates scallops by suppressing lateral etch chemically rather than by passivation cycles. Cryo systems require LN₂ infrastructure and tighter temperature control.</p>
+
+      <p><strong>Q5: What are the most common DRIE defects and how do you fix them?</strong><br>
+      A: The four recurring defects are (1) <em>grass / black silicon</em> from micromasking — fix with longer over-etch and chamber clean; (2) <em>notching</em> at the buried oxide of SOI wafers — switch to pulsed-bias mode; (3) <em>ARDE</em> with narrower features etching slower — compensate via mask CD bias or ramp-up of bias mid-recipe; and (4) <em>excessive sidewall roughness</em> — reduce etch cycle time and increase passivation step.</p>
+
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Laermer, F. & Schilp, A. "Method of Anisotropically Etching Silicon." U.S. Patent 5,501,893 (1996). Robert Bosch GmbH.</li>
@@ -1115,6 +1131,29 @@ export const insightsPosts: InsightsPost[] = [
     relatedProducts: [
       { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'DRIE Bosch and cryogenic etching for MEMS and TSV' },
       { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Standard RIE for shallow trench and dielectric etching' }
+    ],
+    articleType: 'TechArticle',
+    faqs: [
+      {
+        question: 'What is the Bosch process in DRIE?',
+        answer: 'The Bosch process is a time-multiplexed deep reactive ion etch that alternates short SF6 etch steps with C4F8 passivation steps. The fluorocarbon film deposited during passivation protects sidewalls from lateral attack so subsequent etch cycles drive vertically into silicon, enabling aspect ratios well beyond what continuous-mode RIE can deliver.'
+      },
+      {
+        question: 'How do you control scalloping in DRIE?',
+        answer: 'Scallop amplitude is set primarily by etch step duration and ion energy. Shorter etch cycles (1-3 s instead of 5-8 s), reduced platen bias during the etch step, and higher passivation gas flow shrink scallops to under 50 nm. For sub-20 nm sidewall roughness, pulsed-bias Bosch or cryogenic DRIE is usually a better fit than aggressive cycle-time tuning.'
+      },
+      {
+        question: 'What is the typical etch rate of Bosch DRIE for silicon?',
+        answer: 'Standard Bosch recipes achieve 3-10 µm/min for silicon, with high-throughput recipes reaching 15-20 µm/min at the cost of slightly larger scallops and reduced selectivity. Etch rate scales with ICP power, SF6 flow, and chamber pressure, but high-AR features run slower due to ARDE (aspect-ratio-dependent etching).'
+      },
+      {
+        question: 'Bosch DRIE vs cryogenic DRIE — which should I choose?',
+        answer: 'Choose Bosch when you need batch-friendly room-temperature operation, high throughput, and well-understood recipes for MEMS or TSV. Choose cryogenic DRIE (substrate at -100 to -120 °C) when sidewall smoothness is critical (photonics, optical MEMS) or when aspect ratios exceed 50:1 — cryo eliminates scallops by suppressing lateral etch chemically rather than by passivation cycles. Cryo systems require LN2 infrastructure and tighter temperature control.'
+      },
+      {
+        question: 'What are the most common DRIE defects and how do you fix them?',
+        answer: 'The four recurring defects are (1) grass / black silicon from micromasking — fix with longer over-etch and chamber clean; (2) notching at the buried oxide of SOI wafers — switch to pulsed-bias mode; (3) ARDE with narrower features etching slower — compensate via mask CD bias or ramp-up of bias mid-recipe; and (4) excessive sidewall roughness — reduce etch cycle time and increase passivation step.'
+      }
     ]
   },
   {
@@ -1623,6 +1662,22 @@ export const insightsPosts: InsightsPost[] = [
         <a href="/contact?topic=Etching%20Inquiry" style="display: inline-block; padding: 12px 28px; background: #ffffff; color: #1e3a5f; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1em;">Discuss Your Requirements</a>
       </div>
 
+      <h2>FAQ</h2>
+      <p><strong>Q1: Is ion beam milling anisotropic?</strong><br>
+      A: Yes — ion beam milling (IBE) is highly anisotropic because the ion beam is collimated and arrives at the wafer with a tightly controlled angle (typically near-vertical, but tunable from 0° to 70°+ via a tiltable stage). Material removal happens almost exclusively along the ion trajectory, producing near-vertical sidewalls regardless of the substrate's crystallography or chemistry.</p>
+
+      <p><strong>Q2: What's the etch rate difference between sputter etching and reactive ion etching?</strong><br>
+      A: Sputter etching (purely physical, no reactive gas) typically runs at 5–50 nm/min depending on material, while RIE rates range from 50 nm/min up to several µm/min because reactive radicals form volatile byproducts that are pumped away. The gap is largest on materials with good chemical etch paths (Si, SiO₂) and smallest on inert materials like noble metals where RIE loses its chemical advantage.</p>
+
+      <p><strong>Q3: When should I choose IBE over RIE?</strong><br>
+      A: Choose IBE when (1) your material has no good reactive chemistry — magnetics (Co, NiFe, MTJ stacks), noble metals (Pt, Au), or compounds like permanent magnets; (2) you need angular control for facet engineering or undercut shaping; or (3) the substrate is damage-sensitive and you can tolerate slower rates. Stay with RIE/ICP-RIE for production-throughput etching of Si, SiO₂, Si₃N₄, III-V semiconductors, and most photoresist-masked patterning.</p>
+
+      <p><strong>Q4: Can RIE etch metals?</strong><br>
+      A: Some metals — Al, Ti, W, Mo, Ta — etch well in chlorine-based RIE plasmas (Cl₂/BCl₃) because they form volatile chlorides. Other metals (Au, Pt, Cu, Ni, Co, Fe) lack volatile etch products under typical RIE conditions and are usually patterned by ion milling, lift-off, or wet etch instead. Cu can be etched by some emerging plasma chemistries but is rarely done in production.</p>
+
+      <p><strong>Q5: Is ion milling end-pointed?</strong><br>
+      A: IBE end-point detection is harder than RIE because there are no chemical reaction products to monitor via OES. The standard approaches are SIMS (mass spectrometry of sputtered species, very accurate but adds tool cost), interferometry on transparent stacks, and time-based recipes calibrated against a witness wafer. For MTJ etching, SIMS-based end-point is the production standard.</p>
+
       <h2>References</h2>
       <ol style="font-size: 0.95em; line-height: 1.8;">
         <li>Coburn, J. W. "Plasma-assisted etching." <em>Plasma Chemistry and Plasma Processing</em>, 2(1), 1–41 (1982). <a href="https://doi.org/10.1007/BF00566856" target="_blank" rel="noopener noreferrer">doi:10.1007/BF00566856</a></li>
@@ -1646,6 +1701,29 @@ export const insightsPosts: InsightsPost[] = [
       { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'Chemical-dominant reactive ion etching' },
       { href: '/products/icp-etcher', label: 'ICP Etcher Series', subtitle: 'High-density plasma for deep and high-AR etching' },
       { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Physical ion beam etching for metals and complex materials' }
+    ],
+    articleType: 'TechArticle',
+    faqs: [
+      {
+        question: 'Is ion beam milling anisotropic?',
+        answer: 'Yes — ion beam milling (IBE) is highly anisotropic because the ion beam is collimated and arrives at the wafer with a tightly controlled angle (typically near-vertical, but tunable from 0° to 70°+ via a tiltable stage). Material removal happens almost exclusively along the ion trajectory, producing near-vertical sidewalls regardless of the substrate crystallography or chemistry.'
+      },
+      {
+        question: "What's the etch rate difference between sputter etching and reactive ion etching?",
+        answer: 'Sputter etching (purely physical, no reactive gas) typically runs at 5-50 nm/min depending on material, while RIE rates range from 50 nm/min up to several µm/min because reactive radicals form volatile byproducts that are pumped away. The gap is largest on materials with good chemical etch paths (Si, SiO2) and smallest on inert materials like noble metals where RIE loses its chemical advantage.'
+      },
+      {
+        question: 'When should I choose IBE over RIE?',
+        answer: 'Choose IBE when (1) your material has no good reactive chemistry — magnetics (Co, NiFe, MTJ stacks), noble metals (Pt, Au), or compounds like permanent magnets; (2) you need angular control for facet engineering or undercut shaping; or (3) the substrate is damage-sensitive and you can tolerate slower rates. Stay with RIE/ICP-RIE for production-throughput etching of Si, SiO2, Si3N4, III-V semiconductors, and most photoresist-masked patterning.'
+      },
+      {
+        question: 'Can RIE etch metals?',
+        answer: 'Some metals — Al, Ti, W, Mo, Ta — etch well in chlorine-based RIE plasmas (Cl2/BCl3) because they form volatile chlorides. Other metals (Au, Pt, Cu, Ni, Co, Fe) lack volatile etch products under typical RIE conditions and are usually patterned by ion milling, lift-off, or wet etch instead. Cu can be etched by some emerging plasma chemistries but is rarely done in production.'
+      },
+      {
+        question: 'Is ion milling end-pointed?',
+        answer: 'IBE end-point detection is harder than RIE because there are no chemical reaction products to monitor via OES. The standard approaches are SIMS (mass spectrometry of sputtered species, very accurate but adds tool cost), interferometry on transparent stacks, and time-based recipes calibrated against a witness wafer. For MTJ etching, SIMS-based end-point is the production standard.'
+      }
     ]
   },
   {
