@@ -51,6 +51,8 @@ export interface InsightsPost {
   isStandaloneComponent?: boolean;
   isDraft?: boolean;
   contentType?: ContentType;
+  articleType?: 'Article' | 'TechArticle';
+  faqs?: Array<{ question: string; answer: string }>;
 }
 
 // Q&A types

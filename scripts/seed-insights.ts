@@ -238,6 +238,8 @@ async function seedInsights() {
         relatedProducts: JSON.stringify(relatedProducts),
         heroImages: heroImages ? JSON.stringify(heroImages) : null,
         isStandaloneComponent,
+        articleType: post.articleType ?? null,
+        faqs: post.faqs ? JSON.stringify(post.faqs) : null,
       });
 
       if (errors) {

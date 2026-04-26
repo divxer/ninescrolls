@@ -219,7 +219,11 @@ export const InsightsPostPage: React.FC = () => {
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Article",
+            "@type": post.articleType || "Article",
+            ...(post.articleType === "TechArticle" ? {
+              "proficiencyLevel": "Expert",
+              "dependencies": "Semiconductor process knowledge"
+            } : {}),
             "headline": post.title,
             "description": post.excerpt || post.title,
             "image": jsonLdImageUrl,
@@ -267,6 +271,19 @@ export const InsightsPostPage: React.FC = () => {
             ]
           })}
         </script>
+        {post.faqs && post.faqs.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": post.faqs.map(f => ({
+                "@type": "Question",
+                "name": f.question,
+                "acceptedAnswer": { "@type": "Answer", "text": f.answer }
+              }))
+            })}
+          </script>
+        )}
       </Helmet>
       <div className="min-h-screen bg-surface-container-lowest">
         {/* Hero Section */}

@@ -72,6 +72,10 @@ function mapToInsightsPost(item: DynamoInsightsPost): InsightsPost {
     isStandaloneComponent: item.isStandaloneComponent ?? undefined,
     isDraft: item.isDraft ?? undefined,
     contentType: (item.contentType as ContentType) ?? 'insight',
+    articleType: (item.articleType as 'Article' | 'TechArticle' | undefined) ?? undefined,
+    faqs: item.faqs
+      ? (typeof item.faqs === 'string' ? JSON.parse(item.faqs) : item.faqs)
+      : undefined,
   };
 }
 
