@@ -9592,7 +9592,7 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'A comprehensive guide to Atomic Layer Etching: self-limiting cyclic processes, ALE energy windows, core chemistries for Si/SiO\u2082/III-V/metals, ICP-RIE implementation, optimization challenges, and emerging frontiers including cryogenic and area-selective ALE.',
     content: `
       <p>As semiconductor devices shrink toward sub-nanometer critical dimensions, conventional plasma etching is reaching its precision limits. Atomic Layer Etching (ALE) has emerged as a transformative approach that offers monolayer-level control over material removal \u2014 enabling researchers and process engineers to etch with a precision that was unimaginable just a decade ago.</p>
-      <p>This guide provides a comprehensive overview of ALE: how it works, how it compares to traditional reactive ion etching (RIE), its key applications in research, and how you can begin exploring ALE processes using ICP-RIE equipment in your own lab.</p>
+      <p>This guide provides a comprehensive overview of ALE: how it works, how it compares to traditional <a href="/insights/reactive-ion-etching-guide">reactive ion etching (RIE)</a>, its key applications in research, and how you can begin exploring ALE processes using ICP-RIE equipment in your own lab.</p>
 
       <h2>What Is Atomic Layer Etching?</h2>
       <p>Atomic Layer Etching is a cyclic, self-limiting etch process that removes material one atomic layer at a time. Unlike continuous plasma etching \u2014 where ions and reactive species simultaneously bombard the substrate \u2014 ALE separates the process into two distinct, sequential steps:</p>
@@ -9874,7 +9874,7 @@ export const insightsPosts: InsightsPost[] = [
     excerpt: 'An in-depth comparison of cryogenic plasma etching and the Bosch process for high-aspect-ratio silicon etching. Covers sidewall smoothness, aspect ratio capability, process gases, equipment requirements, retrofit options, and emerging hybrid approaches for MEMS, photonics, and quantum device fabrication.',
     content: `
       <p>High-aspect-ratio (HAR) etching is the backbone of modern MEMS fabrication, through-silicon vias (TSVs), 3D NAND memory, and advanced photonic structures. For decades, the Bosch process \u2014 with its alternating etch/passivation cycles \u2014 has been the industry standard for deep reactive ion etching (DRIE). However, cryogenic plasma etching is gaining renewed attention as an alternative that offers smoother sidewalls, simpler process control, and compatibility with emerging device requirements.</p>
-      <p>This article compares these two approaches in depth, helping researchers and process engineers understand when each technique excels and how to make an informed choice for their specific application. Both methods are built on ICP-RIE platforms — for foundational context on how ICP-RIE differs from basic PE and RIE, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison</a>.</p>
+      <p>This article compares these two approaches in depth, helping researchers and process engineers understand when each technique excels and how to make an informed choice for their specific application. Both methods are built on ICP-RIE platforms — for foundational context on how ICP-RIE differs from basic PE and RIE, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">PE vs RIE vs ICP-RIE comparison</a>, or our complete <a href="/insights/reactive-ion-etching-guide">reactive ion etching guide</a>.</p>
 
       <h2>The Bosch Process: A Quick Recap</h2>
       <p>The Bosch process (also known as time-multiplexed deep silicon etching) achieves high-aspect-ratio profiles through cyclic alternation between two steps:</p>
@@ -10163,7 +10163,7 @@ export const insightsPosts: InsightsPost[] = [
     title: 'Machine Learning for Plasma Etch Optimization: How AI Is Transforming Process Development',
     excerpt: 'A practical guide to applying machine learning in plasma etch process development. Covers Bayesian optimization for recipe tuning, virtual metrology with OES data, ML-enhanced endpoint detection, digital twins, predictive maintenance, and a step-by-step workflow with Python code examples for research labs.',
     content: `
-      <p>Developing a plasma etch process has traditionally been an exercise in expert intuition combined with painstaking experimentation. A typical ICP-RIE process has 6\u201310 independently adjustable parameters \u2014 ICP power, bias power, pressure, gas flows, temperature, and more \u2014 creating a vast parameter space that is impractical to explore exhaustively. Researchers often rely on one-factor-at-a-time (OFAT) experiments or design-of-experiments (DOE) approaches, but both have significant limitations when dealing with complex, nonlinear process interactions.</p>
+      <p>Developing a plasma etch process has traditionally been an exercise in expert intuition combined with painstaking experimentation. A typical ICP-<a href="/insights/reactive-ion-etching-guide">RIE</a> process has 6\u201310 independently adjustable parameters \u2014 ICP power, bias power, pressure, gas flows, temperature, and more \u2014 creating a vast parameter space that is impractical to explore exhaustively. Researchers often rely on one-factor-at-a-time (OFAT) experiments or design-of-experiments (DOE) approaches, but both have significant limitations when dealing with complex, nonlinear process interactions.</p>
       <p>Machine learning (ML) and artificial intelligence (AI) are changing this landscape. From accelerating recipe development to enabling real-time process control, data-driven approaches are making plasma etching smarter, faster, and more predictable. This article explores how ML is being applied to plasma etch processes, what tools and methods are most relevant for research labs, and how these approaches can enhance your existing workflow.</p>
 
       <h2>Why Plasma Etching Is Ripe for Machine Learning</h2>
@@ -10538,7 +10538,7 @@ result = differential_evolution(
       <h2>Introduction</h2>
       <p>Silicon has dominated semiconductor manufacturing for over half a century. But as the industry pushes toward higher frequencies, higher power densities, and novel device architectures, a growing family of materials is entering the fabrication spotlight \u2014 each bringing unique plasma etching challenges.</p>
       <p>Wide-bandgap semiconductors like SiC and GaN are revolutionizing power electronics and RF devices. Two-dimensional materials such as MoS\u2082 and graphene promise atomically thin transistors. High-k dielectrics and ferroelectrics enable next-generation memory. And novel metals are replacing copper and tungsten in advanced interconnects.</p>
-      <p>For research labs developing processes for these materials, understanding their etch behavior in RIE and ICP-RIE systems is essential. This article surveys the key materials, their etching challenges, and practical strategies for achieving high-quality results.</p>
+      <p>For research labs developing processes for these materials, understanding their etch behavior in <a href="/insights/reactive-ion-etching-guide">RIE</a> and ICP-RIE systems is essential. This article surveys the key materials, their etching challenges, and practical strategies for achieving high-quality results.</p>
 
       <h2>The Role of Surface Chemistry in New Material Etching</h2>
       <p>Surface chemistry is the foundation upon which all etch process development rests. Unlike bulk material properties, which are relatively fixed, the surface presents a dynamic landscape of native oxides, dangling bonds, reconstructed atomic arrangements, and adsorbed species \u2014 each fundamentally affecting how a material responds to plasma etching.</p>
@@ -11052,7 +11052,7 @@ result = differential_evolution(
       </ul>
 
       <h3>Strategy 2: Reduce Ion Energy</h3>
-      <p>Lower bias power reduces the physical sputtering component of etching, allowing chemical selectivity to dominate. In ICP-RIE systems, the ability to set very low bias power (5\u201350 W) while maintaining high ICP power (for radical generation) is the hardware enabler for this approach. This independent source/bias architecture is essential for high-selectivity processes.</p>
+      <p>Lower bias power reduces the physical sputtering component of etching, allowing chemical selectivity to dominate. In ICP-<a href="/insights/reactive-ion-etching-guide">RIE</a> systems, the ability to set very low bias power (5\u201350 W) while maintaining high ICP power (for radical generation) is the hardware enabler for this approach. This independent source/bias architecture is essential for high-selectivity processes.</p>
 
       <h3>Strategy 3: Increase Pressure</h3>
       <p>Higher process pressure increases the radical-to-ion flux ratio, shifting the etch mechanism toward chemical etching and away from physical sputtering. The sweet spot for high-selectivity ICP-RIE processes is typically 10\u201350 mTorr: high enough for good radical density and selectivity, low enough for adequate anisotropy.</p>
@@ -20605,7 +20605,7 @@ result = differential_evolution(
         </tbody>
       </table>
 
-      <p><strong>Silicon electrodes</strong> deserve special mention. Many modern etch systems use high-purity silicon for plasma-facing electrode surfaces. Since silicon is the primary substrate material being processed, any sputtered electrode material is "process-compatible" and does not introduce foreign metallic contamination. Silicon showerhead electrodes in ICP-RIE systems serve double duty as gas distribution plates and grounded electrodes, with hundreds of precisely machined holes for uniform gas delivery.</p>
+      <p><strong>Silicon electrodes</strong> deserve special mention. Many modern etch systems use high-purity silicon for plasma-facing electrode surfaces. Since silicon is the primary substrate material being processed, any sputtered electrode material is "process-compatible" and does not introduce foreign metallic contamination. Silicon showerhead electrodes in ICP-<a href="/insights/reactive-ion-etching-guide">RIE</a> systems serve double duty as gas distribution plates and grounded electrodes, with hundreds of precisely machined holes for uniform gas delivery.</p>
 
       <h2>5) Liner and Shield Design</h2>
       <p>Chamber liners (also called shields or inserts) are removable components that line the interior walls of the process chamber, serving two critical functions:</p>
@@ -24715,7 +24715,7 @@ result = differential_evolution(
       <p><strong>O₂ flow tuning:</strong> Too little O₂ leads to carbon-rich surface residues (appearing as black or brown discoloration) that slow etching and create roughness. Too much O₂ dilutes F* concentration, reducing etch rate, and can oxidize the SiC surface during etching, creating an SiO₂-like surface layer that acts as a micro-mask and increases roughness. The optimal O₂ window is typically 15–30% of total gas flow.</p>
 
       <h3>2.2 ICP-RIE Process Parameters for SiC</h3>
-      <p>SiC etching demands higher ion energies than silicon or III-V etching because the Si–C bonds must be broken by physical bombardment before chemical etching can proceed efficiently. This makes the DC bias (controlled by RIE/platen power) the most critical parameter.</p>
+      <p>SiC etching demands higher ion energies than silicon or III-V etching because the Si–C bonds must be broken by physical bombardment before chemical etching can proceed efficiently. This makes the DC bias (controlled by <a href="/insights/reactive-ion-etching-guide">RIE</a>/platen power) the most critical parameter.</p>
 
       <table class="insights-table">
         <thead>
@@ -25302,7 +25302,7 @@ result = differential_evolution(
       <h2>2. Microchannel Fabrication</h2>
 
       <h3>2.1 DRIE for Silicon Microchannels</h3>
-      <p>Deep reactive ion etching (DRIE) using the Bosch process creates high-aspect-ratio channels in silicon with nearly vertical sidewalls. For Bio-MEMS, the key challenge is managing sidewall scalloping — the periodic undulations inherent to the Bosch cycle — which can trap air bubbles and disrupt laminar flow.</p>
+      <p><a href="/insights/deep-reactive-ion-etching-bosch-process">Deep reactive ion etching (DRIE)</a> using the Bosch process creates high-aspect-ratio channels in silicon with nearly vertical sidewalls. For Bio-MEMS, the key challenge is managing sidewall scalloping — the periodic undulations inherent to the Bosch cycle — which can trap air bubbles and disrupt laminar flow. (For broader context on plasma etch families, see our <a href="/insights/reactive-ion-etching-guide">reactive ion etching guide</a>.)</p>
       <p><strong>Optimized Bosch parameters for microfluidics:</strong></p>
       <table>
         <thead>
