@@ -18,6 +18,13 @@ import '../styles/article-content.css';
  * Rewrite /assets/images/ paths inside HTML content to CDN URLs.
  * Only active when VITE_CDN_BASE_URL is set; otherwise returns content as-is.
  */
+function toIsoDateTime(dateStr: string | undefined): string {
+  if (!dateStr) return new Date().toISOString();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return `${dateStr}T00:00:00Z`;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function rewriteContentImages(html: string): string {
   if (!CDN_BASE_URL) return html;
   // Match src="..." and srcSet="..." attributes containing /assets/images/
@@ -241,8 +248,8 @@ export const InsightsPostPage: React.FC = () => {
                 "url": "https://ninescrolls.com/assets/images/logo.png"
               }
             },
-            "datePublished": post.publishDate,
-            "dateModified": post.lastModifiedDate || post.publishDate,
+            "datePublished": toIsoDateTime(post.publishDate),
+            "dateModified": toIsoDateTime(post.lastModifiedDate || post.publishDate),
             "mainEntityOfPage": {
               "@type": "WebPage",
               "@id": `https://ninescrolls.com/insights/${post.slug}`
