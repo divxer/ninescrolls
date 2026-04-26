@@ -372,6 +372,39 @@ export function PlasmaCleanerOverviewPage() {
           </Link>
         </div>
       </section>
+
+      <section className="bg-surface-container-low py-16">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-3 text-on-surface text-center">Two Workflows on One Tool</h2>
+          <p className="text-lg text-on-surface-variant text-center mb-10 max-w-[720px] mx-auto">
+            The same low-pressure RF plasma chamber serves both <strong>cleaning</strong> (removing organic
+            and particulate contamination) and <strong>surface modification</strong> (deliberately changing
+            surface chemistry, energy, and functional groups). What differs is the gas, the time, and the post-process handling.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link
+              to="/insights/plasma-cleaner-applications-guide"
+              className="block bg-white rounded-xl p-6 border border-outline-variant hover:border-primary hover:shadow-lg transition-all no-underline"
+            >
+              <h3 className="text-xl font-bold text-on-surface mb-2">Plasma Cleaning Applications</h3>
+              <p className="text-on-surface-variant">
+                Industry-by-industry survey of cleaning use cases — semiconductor wire-bond prep, biomedical PDMS bonding, optics, automotive paint adhesion, and TEM sample preparation.
+              </p>
+              <span className="text-primary font-semibold mt-3 inline-block">Read the guide →</span>
+            </Link>
+            <Link
+              to="/insights/plasma-surface-modification-a-practical-guide-to-activation-functionalization"
+              className="block bg-white rounded-xl p-6 border border-outline-variant hover:border-primary hover:shadow-lg transition-all no-underline"
+            >
+              <h3 className="text-xl font-bold text-on-surface mb-2">Plasma Surface Modification</h3>
+              <p className="text-on-surface-variant">
+                Activation, functionalization (–NH₂ / –CF₃ / –COOH grafting), CASING crosslinking, and hydrophobic-recovery countermeasures — with quantitative case data and process windows.
+              </p>
+              <span className="text-primary font-semibold mt-3 inline-block">Read the guide →</span>
+            </Link>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

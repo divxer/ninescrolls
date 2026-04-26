@@ -97,6 +97,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Plasma Cleaner Buying Guide](https://ninescrolls.com/insights/plasma-cleaner-buying-guide): Step-by-step selection guide covering chamber sizing, vacuum systems, and TCO
 - [Plasma Cleaner Comparison](https://ninescrolls.com/insights/plasma-cleaner-comparison-research-labs): Quartz vs stainless steel, RF vs mid-frequency, brand comparison
 - [PLUTO vs HY Plasma Cleaners](https://ninescrolls.com/insights/pluto-vs-hy-plasma-cleaner-comparison): Head-to-head comparison — RF vs mid-frequency, chamber architecture, power density, electrode design, application matching, cost-of-ownership, decision flowchart
+- [Plasma Surface Modification: Activation, Functionalization & Wettability Control](https://ninescrolls.com/insights/plasma-surface-modification-a-practical-guide-to-activation-functionalization): Practical guide to changing surface chemistry rather than removing contamination — activation (raising surface energy 30→75 mN/m), functionalization (–NH₂, –CF₃, –COOH grafting), CASING crosslinking; gas selection matrix (O₂/N₂/NH₃/Ar/CF₄/H₂); quantitative case studies (PDMS bonding 300+ kPa, PP paint adhesion 1B→5B, Ti implant osteoblast 2.5×); hydrophobic recovery countermeasures (PECVD capping, immediate-use windows); cleaning vs modification comparison
 
 ## Insights — Equipment Fundamentals
 
