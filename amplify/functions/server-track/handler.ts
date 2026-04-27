@@ -424,6 +424,24 @@ async function writePageTimeFlush(
         ConditionExpression: 'attribute_not_exists(id)',
     }));
 
+    // ── Notify AppSync so Live mode picks up page_time_flush ──────────
+    await notifyAppSync({
+        id: itemId,
+        eventType: 'page_time_flush',
+        timestamp: new Date(props.endedAt as number).toISOString(),
+        pathname: (props.path as string) || null,
+        pageTitle: (props.title as string) || null,
+        orgName: ipData?.orgName || null,
+        organizationType: ipData?.organizationType || null,
+        isTargetCustomer: false,
+        leadTier: null,
+        country: ipData?.country || null,
+        region: ipData?.region || null,
+        city: ipData?.city || null,
+        visitorId: (props.visitorId as string) || null,
+        isBot: props.isBot === true,
+    });
+
     // ── Phase 2: AI classification (only when we did a fallback IP lookup) ──
     // Same logic as writePageView Phase 3: enrich the record with AI results.
     if (ipData && ipData.organizationType && AI_CLASSIFY_ORG_TYPES.has(ipData.organizationType) && props.isBot !== true) {
@@ -478,6 +496,24 @@ async function writePageTimeFlush(
                     ConditionExpression: 'attribute_exists(id)',
                 }));
                 console.info(`[PTF] AI enrichment complete: id=${itemId} type=${aiResult.organizationType} target=${finalIsTargetCustomer} provider=${aiResult.provider}`);
+
+                // Republish enriched record so Live mode shows AI results (mirrors writePageView).
+                await notifyAppSync({
+                    id: itemId,
+                    eventType: 'page_time_flush',
+                    timestamp: new Date(props.endedAt as number).toISOString(),
+                    pathname: (props.path as string) || null,
+                    pageTitle: (props.title as string) || null,
+                    orgName: ipData.orgName || null,
+                    organizationType: aiResult.organizationType,
+                    isTargetCustomer: finalIsTargetCustomer,
+                    leadTier: finalLeadTier ?? null,
+                    country: ipData.country || null,
+                    region: ipData.region || null,
+                    city: ipData.city || null,
+                    visitorId: (props.visitorId as string) || null,
+                    isBot: props.isBot === true,
+                });
             }
         } catch (err) {
             console.error('[PTF] AI classification/enrichment failed (DDB record intact):', err);
@@ -504,6 +540,24 @@ async function writePageTimeFlush(
                     ConditionExpression: 'attribute_exists(id)',
                 }));
                 console.info(`[PTF] Categorical target: id=${itemId} type=${ipData.organizationType}`);
+
+                // Republish so Live mode reflects the categorical target flag.
+                await notifyAppSync({
+                    id: itemId,
+                    eventType: 'page_time_flush',
+                    timestamp: new Date(props.endedAt as number).toISOString(),
+                    pathname: (props.path as string) || null,
+                    pageTitle: (props.title as string) || null,
+                    orgName: ipData.orgName || null,
+                    organizationType: ipData.organizationType || null,
+                    isTargetCustomer: true,
+                    leadTier: 'B',
+                    country: ipData.country || null,
+                    region: ipData.region || null,
+                    city: ipData.city || null,
+                    visitorId: (props.visitorId as string) || null,
+                    isBot: props.isBot === true,
+                });
             } catch (err) {
                 console.error('[PTF] Categorical target update failed:', err);
             }
@@ -633,8 +687,8 @@ async function writePageView(
         ConditionExpression: 'attribute_not_exists(id)',
     }));
 
-    // ── Notify AppSync (fire-and-forget, non-blocking) ─────────────────
-    notifyAppSync({
+    // ── Notify AppSync (awaited so Lambda doesn't freeze the fetch) ─────
+    await notifyAppSync({
         id: `pv-${pageViewId}`,
         eventType: props.eventType,
         timestamp: (props.timestamp as string) || now,
@@ -720,7 +774,7 @@ async function writePageView(
                 console.info(`[PVS] AI enrichment complete: pvid=${pageViewId} type=${aiResult.organizationType} target=${finalIsTargetCustomer} provider=${aiResult.provider}`);
 
                 // Send enriched notification with AI results
-                notifyAppSync({
+                await notifyAppSync({
                     id: `pv-${pageViewId}`,
                     eventType: props.eventType,
                     timestamp: (props.timestamp as string) || now,
@@ -771,19 +825,33 @@ const PUBLISH_MUTATION = /* GraphQL */ `
   }
 `;
 
-/** Fire-and-forget notification to AppSync so admin dashboard receives live updates. */
-function notifyAppSync(vars: Record<string, unknown>): void {
+/**
+ * Notify AppSync so admin dashboard receives live updates.
+ * Returns a Promise that callers MUST await before the Lambda returns —
+ * otherwise the runtime freezes the unfinished fetch and the publish is lost,
+ * which manifests as silent event drops in the admin Live mode.
+ */
+async function notifyAppSync(vars: Record<string, unknown>): Promise<void> {
     if (!GRAPHQL_ENDPOINT || !GRAPHQL_API_KEY) return;
-    fetch(GRAPHQL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': GRAPHQL_API_KEY,
-        },
-        body: JSON.stringify({ query: PUBLISH_MUTATION, variables: vars }),
-    }).catch((err) => {
+    // 2s timeout: a stuck publish must not block the Lambda response.
+    // The admin's 30s polling fallback covers any missed publish.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2000);
+    try {
+        await fetch(GRAPHQL_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': GRAPHQL_API_KEY,
+            },
+            body: JSON.stringify({ query: PUBLISH_MUTATION, variables: vars }),
+            signal: controller.signal,
+        });
+    } catch (err) {
         console.warn('[AppSync] notification failed:', err);
-    });
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────

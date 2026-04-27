@@ -2628,12 +2628,22 @@ export function AdminAnalyticsPage() {
     let cancelled = false;
     let subscription: { unsubscribe: () => void } | null = null;
     let hiddenSince: string | null = null; // ISO timestamp when tab went hidden
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempt = 0;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    // Track newest event timestamp seen so polling fallback can fetch only the gap.
+    // Initialise to mount time so we don't refetch the entire date range.
+    let lastSeenISO: string = new Date().toISOString();
 
     // Handler for incoming subscription events
     const handleSubscriptionEvent = (event: { data: { id: string; eventType: string; timestamp: string } }) => {
       if (cancelled) return;
       const notification = event.data;
       if (!notification?.id) return;
+
+      if (notification.timestamp && notification.timestamp > lastSeenISO) {
+        lastSeenISO = notification.timestamp;
+      }
 
       (client.models.AnalyticsEvent as any).get(
         { id: notification.id },
@@ -2686,6 +2696,13 @@ export function AdminAnalyticsPage() {
       const fetched = perType.flat();
       if (fetched.length === 0) return;
 
+      // Advance lastSeenISO past the newest fetched event so the next poll
+      // doesn't refetch the same window.
+      for (const e of fetched) {
+        const ts = (e as { timestamp?: string }).timestamp;
+        if (ts && ts > lastSeenISO) lastSeenISO = ts;
+      }
+
       setAllEvents((prev) => {
         const existingIds = new Set(prev.map((e) => e.id));
         const newEvents = fetched.filter((e) => !existingIds.has(e.id));
@@ -2693,7 +2710,18 @@ export function AdminAnalyticsPage() {
         setLiveNewCount((c) => c + newEvents.length);
         return [...prev, ...newEvents];
       });
-      console.info(`[Live] caught up ${fetched.length} events since tab was hidden`);
+    }
+
+    // Schedule a reconnect with exponential backoff (capped at 30s).
+    function scheduleReconnect(): void {
+      if (cancelled || reconnectTimer) return;
+      const delay = Math.min(30_000, 1000 * Math.pow(2, reconnectAttempt));
+      reconnectAttempt += 1;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (cancelled) return;
+        connectSubscription();
+      }, delay);
     }
 
     // Connect (or reconnect) AppSync subscription
@@ -2703,25 +2731,43 @@ export function AdminAnalyticsPage() {
       try {
         const subscriptions = (client as any).subscriptions;
         if (!subscriptions?.onAnalyticsEvent) {
-          console.info('[Live] Subscription not available yet — use Refresh button to update');
+          console.info('[Live] Subscription not available yet — polling fallback will catch events');
+          scheduleReconnect();
           return;
         }
         subscription = subscriptions.onAnalyticsEvent({
           authMode: 'userPool',
         }).subscribe({
-          next: handleSubscriptionEvent,
+          next: (event: { data: { id: string; eventType: string; timestamp: string } }) => {
+            reconnectAttempt = 0; // reset backoff on healthy traffic
+            handleSubscriptionEvent(event);
+          },
           error: (err: unknown) => {
-            console.warn('[Live] subscription error:', err);
+            console.warn('[Live] subscription error, will reconnect:', err);
             subscription = null;
+            scheduleReconnect();
           },
         });
         console.info('[Live] AppSync subscription connected');
       } catch (err) {
         console.warn('[Live] Failed to set up subscription:', err);
+        scheduleReconnect();
       }
     }
 
     connectSubscription();
+
+    // ── Polling fallback ─────────────────────────────────────────────
+    // Subscriptions silently drop on network blips and not every event type
+    // publishes. Poll every 30s for events newer than lastSeenISO so nothing
+    // can be lost — at worst it shows up 30s late.
+    pollTimer = setInterval(() => {
+      if (cancelled || document.hidden) return;
+      const since = lastSeenISO;
+      fetchEventsSince(since).catch((err) => {
+        console.warn('[Live] polling fallback failed:', err);
+      });
+    }, 30_000);
 
     // Reconnect subscription + incremental catch-up when returning from sleep/hidden
     const onVisibilityChange = () => {
@@ -2744,6 +2790,8 @@ export function AdminAnalyticsPage() {
     return () => {
       cancelled = true;
       subscription?.unsubscribe();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (pollTimer) clearInterval(pollTimer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
