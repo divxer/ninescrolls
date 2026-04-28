@@ -12892,7 +12892,7 @@ result = differential_evolution(
       <ul>
         <li><strong>Corrosion protection:</strong> ALD Al&#8322;O&#8323; provides pinhole-free barrier coatings on metals, polymers, and 3D-printed parts</li>
         <li><strong>Biomedical implants:</strong> ALD TiO&#8322; and ZnO coatings enhance biocompatibility and provide antimicrobial properties</li>
-        <li><strong>Diffusion barriers:</strong> ALD TiN and TaN serve as Cu diffusion barriers in BEOL interconnects with conformality that PVD cannot achieve in high-AR vias</li>
+        <li><strong>Diffusion barriers:</strong> ALD TiN and TaN serve as Cu diffusion barriers in BEOL interconnects with conformality that PVD cannot achieve in high-AR vias &mdash; for the downstream patterning of these barrier and gate-metal layers, see the <a href="/insights/metal-etching-complete-guide">Metal Etching Complete Guide</a></li>
         <li><strong>Catalysis:</strong> ALD enables atomic-scale tuning of catalyst composition and overcoating to prevent sintering while maintaining activity</li>
       </ul>
 
@@ -15381,7 +15381,7 @@ result = differential_evolution(
         <li><strong>Noble metals:</strong> Pt, Au, Ir, Ru &mdash; chemically inert by definition</li>
         <li><strong>Complex oxides:</strong> PZT (PbZrTiO&sub3;), BaTiO&sub3;, LiNbO&sub3; &mdash; multi-component materials where selective chemical volatilization would cause stoichiometry loss</li>
       </ul>
-      <p>The tradeoff: pure sputtering offers no chemical selectivity, so mask erosion is faster and redeposition of sputtered material on sidewalls and chamber surfaces is significant. Careful angle optimization and stage rotation are essential.</p>
+      <p>The tradeoff: pure sputtering offers no chemical selectivity, so mask erosion is faster and redeposition of sputtered material on sidewalls and chamber surfaces is significant. Careful angle optimization and stage rotation are essential. For metal-specific chemistries, mask choices, and post-etch corrosion control across the full process-metal portfolio, see the <a href="/insights/metal-etching-complete-guide">Metal Etching Complete Guide</a>.</p>
 
       <h3>3.2 Reactive Ion Beam Etching (RIBE)</h3>
       <p>Reactive gas (O&sub2;, CHF&sub3;, CF&sub4;, Cl&sub2;, or mixtures) is introduced <em>into the ion source itself</em>, producing reactive ions (O&sup1;&plus;, CF&sub3;&sup1;&plus;, Cl&sup1;&plus;) in the beam. These ions both sputter and chemically react with the substrate, forming volatile products that are pumped away.</p>
@@ -19619,7 +19619,7 @@ result = differential_evolution(
         <li><strong>In-situ light clean</strong> (30&ndash;60 s O&sub2; or H&sub2;/N&sub2; plasma in the etch chamber after pattern transfer): Removes the most reactive residues (halide salts, loose polymer) before the wafer is exposed to air, preventing corrosion and reducing the ex-situ clean burden.</li>
         <li><strong>Ex-situ thorough clean</strong> (dedicated plasma cleaner or wet bench): Removes remaining stubborn residues with optimized chemistry, power, and time without impacting etch chamber throughput or cleanliness.</li>
       </ul>
-      <p>For chlorine-based metal etch processes (Al, Ti, W), the in-situ clean step is not optional &mdash; AlCl&sub3; and TiCl<sub>x</sub> residues are hygroscopic and begin corroding the metal within minutes of air exposure.</p>
+      <p>For chlorine-based metal etch processes (Al, Ti, W), the in-situ clean step is not optional &mdash; AlCl&sub3; and TiCl<sub>x</sub> residues are hygroscopic and begin corroding the metal within minutes of air exposure. For the upstream etch chemistries that produce these residues, including in-situ passivation steps and queue-time discipline, see the <a href="/insights/metal-etching-complete-guide">Metal Etching Complete Guide</a>.</p>
 
       <h2>7) Contamination Monitoring</h2>
       <p>Effective post-etch cleaning requires verification that residues have been fully removed. The following techniques are used for process development, qualification, and monitoring:</p>
@@ -25040,7 +25040,7 @@ result = differential_evolution(
 
       <h3>4.3 Metal Contact Deposition</h3>
       <p><strong>GaN ohmic contacts:</strong> Ti/Al/Ni/Au (20/120/40/50 nm) stack is the standard for n-GaN contacts. Requires rapid thermal annealing (RTA) at 830–870°C for 30 s in N₂ to form TiN at the Ti/GaN interface, achieving contact resistance < 0.5 Ω·mm. Sputter deposition provides better step coverage and adhesion than e-beam evaporation for these multi-layer stacks.</p>
-      <p><strong>SiC ohmic contacts:</strong> Ni (100 nm) on n-type SiC, annealed at 950–1050°C to form Ni₂Si. Contact resistance < 10⁻⁵ Ω·cm². Ti/Al on p-type SiC requires higher anneal temperatures (1000–1100°C).</p>
+      <p><strong>SiC ohmic contacts:</strong> Ni (100 nm) on n-type SiC, annealed at 950–1050°C to form Ni₂Si. Contact resistance < 10⁻⁵ Ω·cm². Ti/Al on p-type SiC requires higher anneal temperatures (1000–1100°C). For source-field plate and gate-metal subtractive patterning of these stacks, see the <a href="/insights/metal-etching-complete-guide">Metal Etching Complete Guide</a>.</p>
 
       <picture>
         <source srcSet="https://cdn.ninescrolls.com/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide/wbg-device-process-flow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
