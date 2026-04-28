@@ -40,8 +40,8 @@
     <tr><td>Tungsten</td><td>WF<sub>6</sub></td><td>17</td><td>Excellent fluorine etch; SF<sub>6</sub> is industry standard</td></tr>
     <tr><td>Molybdenum</td><td>MoF<sub>6</sub>, MoOCl<sub>4</sub></td><td>34, 159</td><td>Fluorine etch standard; Cl<sub>2</sub>/O<sub>2</sub> alternative</td></tr>
     <tr><td>Tantalum</td><td>TaF<sub>5</sub>, TaCl<sub>5</sub></td><td>229, 239</td><td>Hot wafer required; usually IBE for thin films</td></tr>
-    <tr><td>Copper</td><td>CuCl<sub>2</sub></td><td>1490 (decomp.)</td><td>No volatile product &mdash; IBE or damascene CMP only</td></tr>
-    <tr><td>Gold</td><td>AuCl<sub>3</sub></td><td>~254 (decomp.)</td><td>No practical RIE &mdash; IBE/RIBE or wet aqua regia</td></tr>
+    <tr><td>Copper</td><td>CuCl<sub>2</sub></td><td>~993 (decomp.)</td><td>No volatile product &mdash; IBE or damascene CMP only</td></tr>
+    <tr><td>Gold</td><td>AuCl<sub>3</sub></td><td>~160 (decomp.)</td><td>No practical RIE &mdash; IBE/RIBE or wet aqua regia</td></tr>
     <tr><td>Platinum</td><td>PtCl<sub>4</sub></td><td>370 (decomp.)</td><td>IBE only; chlorine adds modest chemical assist</td></tr>
     <tr><td>Nickel</td><td>NiCl<sub>2</sub></td><td>1001</td><td>IBE primary; Cl<sub>2</sub>/CO at &gt;200&nbsp;&deg;C marginal</td></tr>
     <tr><td>Cobalt (CoFeB)</td><td>CoCl<sub>2</sub></td><td>1049</td><td>IBE only; tilted IBE for MTJ stacks</td></tr>
@@ -90,7 +90,7 @@
 
 <p>Ion beam etching uses a broad-area, gridded ion source to direct a collimated beam of inert (Ar) or reactive (Ar + Cl<sub>2</sub>, Ar + O<sub>2</sub>) ions at the substrate. The substrate is on a tilting, rotating stage so the ion incidence angle and azimuthal direction can be set precisely. Material is removed by physical sputtering &mdash; the ion's momentum knocks atoms out of the surface regardless of whether a volatile product exists. Reactive IBE (RIBE) adds a chemical channel: the beam contains both inert and reactive ions, giving a modest etch rate boost on materials that can react with chlorine or oxygen.</p>
 
-<p>IBE/RIBE is the only practical route for copper, gold, platinum, nickel, cobalt, ruthenium, magnetic stacks (MTJ), and any film where chemical attack would degrade device properties. Etch rates are slow (typically 5&ndash;50 nm/min) and selectivity to mask is modest (1.5&ndash;3:1 for hard masks, often &lt;1:1 to resist). The decisive advantages are universal material coverage and the ability to dial sidewall taper from vertical to 30&deg; by tilting the stage.</p>
+<p>IBE/RIBE is the only practical route for copper, gold, platinum, nickel, cobalt, ruthenium, magnetic stacks (MTJ), and any film where chemical attack would degrade device properties. Etch rates are slow (typically 5&ndash;50 nm/min) and selectivity to mask is modest (1.5&ndash;3:1 for hard masks, often &lt;1:1 to resist). The decisive advantages are universal material coverage and the ability to dial sidewall taper from vertical to 30&deg; by tilting the stage. For a deeper treatment of source architectures and tilt-angle optimization, see the <a href="/insights/ion-beam-etching-ribe-guide">Ion Beam Etching (IBE) &amp; RIBE Guide</a>.</p>
 
 <div class="post-figure">
   <picture>
@@ -126,15 +126,15 @@
   <li>Out-of-vacuum within 60 s, immediate O<sub>2</sub> ash to strip resist + remaining Cl, then DI rinse</li>
 </ul>
 
-<p><strong>Mask choice:</strong> 1.5&ndash;2.0 &micro;m i-line resist for &lt;1 &micro;m Al. SiO<sub>2</sub> hard mask (200&ndash;500 nm) for &gt;1 &micro;m or where critical dimension control is tight. Selectivity to resist: 2&ndash;3:1; to oxide: 15&ndash;30:1.</p>
+<p><strong>Mask choice:</strong> 1.5&ndash;2.0 &micro;m i-line resist for &lt;1 &micro;m Al. SiO<sub>2</sub> hard mask (200&ndash;500 nm) for &gt;1 &micro;m or where critical dimension control is tight. Selectivity to resist: 2&ndash;3:1; to oxide: 15&ndash;30:1. See the <a href="/insights/hard-mask-processing-materials-integration-and-pattern-transfer-strategies">Hard Mask Processing guide</a> for full mask material selection and integration trade-offs.</p>
 
-<p><strong>What bites you:</strong> Skipping the passivation step is the most expensive mistake in aluminum etching. Wafers that look fine at the metrology station develop pitting, &ldquo;black silicon&rdquo; haze, or open lines after 12&ndash;48 hours in fab humidity. Set a queue time of &lt;30 minutes from etch out to ash, and validate every chamber recovery with a moisture-exposure soak.</p>
+<p><strong>What bites you:</strong> Skipping the passivation step is the most expensive mistake in aluminum etching. Wafers that look fine at the metrology station develop pitting, &ldquo;black silicon&rdquo; haze, or open lines after 12&ndash;48 hours in fab humidity. Set a queue time of &lt;30 minutes from etch out to ash, and validate every chamber recovery with a moisture-exposure soak. For systematic residue characterization and removal procedures, see <a href="/insights/post-etch-cleaning-residue-removal">Post-Etch Cleaning &amp; Residue Removal</a>.</p>
 
 <h3>3.2 Titanium and Titanium Nitride (Ti, TiN)</h3>
 
 <p><strong>Chemistry:</strong> Cl<sub>2</sub>/Ar (Ti); Cl<sub>2</sub>/Ar or SF<sub>6</sub>/Ar (TiN). The TiN etch in fluorine is highly selective to Si and SiO<sub>2</sub> and is a common production choice for gate-stack patterning where the Ti/TiN layer sits on a high-k dielectric.</p>
 
-<p><strong>Equipment:</strong> ICP-RIE for &gt;50 nm films; CCP RIE for thin barrier-layer strips. Ti/TiN is often the second step in a stack etch (resist &rarr; SiO<sub>2</sub> hard mask &rarr; TiN &rarr; gate metal &rarr; high-k), where the TiN step is short (&lt;15 s) and high-selectivity to the underlying high-k.</p>
+<p><strong>Equipment:</strong> ICP-RIE for &gt;50 nm films; CCP RIE for thin barrier-layer strips. Ti/TiN is often the second step in a stack etch (resist &rarr; SiO<sub>2</sub> hard mask &rarr; TiN &rarr; gate metal &rarr; high-k), where the TiN step is short (&lt;15 s) and high-selectivity to the underlying high-k. The high-k layer itself (typically <a href="/insights/atomic-layer-deposition-ald-comprehensive-guide">ALD-deposited HfO<sub>2</sub> or Al<sub>2</sub>O<sub>3</sub></a>) is usually preserved as the gate dielectric.</p>
 
 <p><strong>Typical recipe (50 nm TiN, ICP-RIE):</strong></p>
 <ul>
@@ -170,9 +170,9 @@
 
 <p><strong>Chemistry:</strong> none practical. Au, Pt, Pd, Ag have no halide volatile below 250&nbsp;&deg;C. The production route is IBE (Ar) for thin films &lt;500 nm, with optional Cl<sub>2</sub> or O<sub>2</sub> assist for a 30&ndash;50% rate boost on Pt. For thicker Au (&gt;1 &micro;m, common in MEMS contacts and RF inductors), wet etching with KI/I<sub>2</sub> is fast (&gt;500 nm/min) and clean but isotropic.</p>
 
-<p><strong>IBE recipe (200 nm Au, normal-incidence):</strong> Ar 8 sccm, 500 V beam, 100 mA, 30 nm/min, selectivity to photoresist 1:1, selectivity to SiO<sub>2</sub> 0.7:1. For better selectivity, use a Cr or Ti hard mask. For tilted IBE on MTJ stacks, see Section 4.</p>
+<p><strong>IBE recipe (200 nm Au, normal-incidence):</strong> Ar 8 sccm, 500 V beam, 100 mA, 30 nm/min, selectivity to photoresist 1:1, selectivity to SiO<sub>2</sub> 0.7:1. For better selectivity, use a Cr or Ti hard mask. For tilted IBE on MTJ stacks, see <a href="#mtj-stacks">Section 3.6</a>.</p>
 
-<h3>3.6 Magnetic Stacks (CoFeB, NiFe, MTJ)</h3>
+<h3 id="mtj-stacks">3.6 Magnetic Stacks (CoFeB, NiFe, MTJ)</h3>
 
 <p>Magnetic random-access memory (MRAM) device fabrication is the most demanding application of metal etching in the modern fab. A magnetic tunnel junction (MTJ) stack contains 10&ndash;20 layers, each 0.5&ndash;3 nm thick, including CoFeB free and reference layers, MgO tunnel barrier, Ru and Ta spacers, and a synthetic antiferromagnet. None of these materials has a volatile chloride at usable temperatures.</p>
 
@@ -204,7 +204,7 @@
 
 <p>For chemical plasma etching, sidewall taper is set by the balance of ion-driven vertical etch and isotropic radical etch. The ion energy floor (typically 50&ndash;100 V for chlorine etches) sets the minimum directional component; reducing ion energy below that floor lets radicals etch laterally and creates a tapered or even concave profile. Polymer-forming additives (N<sub>2</sub>, CHF<sub>3</sub>, CH<sub>4</sub>) deposit a thin sidewall film that blocks lateral etch &mdash; this is how aluminum lines stay vertical despite heavy chlorine radical flux.</p>
 
-<p>For IBE, sidewall taper is geometrically set by the ion incidence angle. Normal incidence gives the steepest profile (typically 75&ndash;85&deg; sidewall) but maximum redeposition. Tilted IBE at 30&ndash;45&deg; trades a few degrees of profile for major reduction in redeposition. For MTJ devices, the sweet spot is usually ~30&deg; tilt with continuous rotation.</p>
+<p>For IBE, sidewall taper is geometrically set by the ion incidence angle. Normal incidence gives the steepest profile (typically 75&ndash;85&deg; sidewall) but maximum redeposition. Tilted IBE at 30&ndash;45&deg; trades a steeper sidewall for major reduction in redeposition. For MTJ devices, the sweet spot is usually ~30&deg; tilt with continuous rotation.</p>
 
 <h3>4.2 Redeposition</h3>
 
@@ -307,7 +307,7 @@
 
 <h3>7.5 Power Devices and Wide-Bandgap Stacks</h3>
 
-<p>GaN HEMT and SiC MOSFET ohmic contacts (typically Ti/Al/Ni/Au or Ti/Al/Mo/Au) are patterned by lift-off, not subtractive etch. Source-field plates and gate metal can be subtractive; ICP-RIE with Cl<sub>2</sub>/BCl<sub>3</sub> for the Al/Ti layers, with an etch stop on the underlying Ni or Au handled by a strict time-based recipe.</p>
+<p>GaN HEMT and SiC MOSFET ohmic contacts (typically Ti/Al/Ni/Au or Ti/Al/Mo/Au) are patterned by lift-off, not subtractive etch. Source-field plates and gate metal can be subtractive; ICP-RIE with Cl<sub>2</sub>/BCl<sub>3</sub> for the Al/Ti layers, with an etch stop on the underlying Ni or Au handled by a strict time-based recipe. For full device-flow context, see the <a href="/insights/wide-bandgap-semiconductor-gan-sic-fabrication-guide">GaN/SiC Wide-Bandgap Fabrication Guide</a>.</p>
 
 <h2>8) Troubleshooting Reference</h2>
 
@@ -354,6 +354,7 @@
   <li><a href="/products/ibe-ribe">IBE / RIBE Systems</a> &mdash; the universal route for Au, Pt, Cu (subtractive), Ni, Co, magnetic stacks, and noble-metal plasmonics. Tilt range 0&ndash;70&deg; with continuous rotation, optional reactive gas (Cl<sub>2</sub>, O<sub>2</sub>) for selectivity assist, and secondary neutralizer for charge-sensitive devices.</li>
   <li><a href="/products/striper">Striper Systems</a> &mdash; in-line O<sub>2</sub> ash for resist removal and residual-chlorine elimination immediately after Al etch.</li>
   <li><a href="/products/sputter">Sputter Systems</a> &mdash; the deposition counterpart for the metal layers being etched, useful when a barrier or hard-mask metal is part of the same flow.</li>
+  <li><a href="/products/e-beam-evaporator">MEB-600 E-Beam Evaporator</a> &mdash; high-purity noble metal deposition (Au, Pt, Cr, Ti) for lift-off patterning and as the deposition front-end for IBE-defined plasmonic and MTJ structures.</li>
 </ul>
 
 <p>Customers patterning new metal stacks &mdash; especially MTJ, plasmonic Au/Ag, or thick Al for power devices &mdash; should expect a 4&ndash;8 week process development engagement before transferring to production. Recipes for the standard metals (Al, Ti, TiN, W, Cr) are pre-qualified and transfer in 1&ndash;2 weeks.</p>
