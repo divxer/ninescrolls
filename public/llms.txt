@@ -64,6 +64,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Wafer Loading Effect in Plasma Etching](https://ninescrolls.com/insights/wafer-loading-effect-plasma-etching): Macro loading, micro loading, and ARDE — causes, quantitative models, and mitigation strategies for etch rate non-uniformity
 - [III-V Compound Semiconductor Etching Guide](https://ninescrolls.com/insights/iii-v-compound-semiconductor-etching-guide): Plasma etching of GaAs, InP, GaN, AlGaN, InGaAs, GaSb — gas chemistries (Cl₂, BCl₃, SiCl₄, CH₄/H₂), selectivity, damage mitigation, equipment selection for photonics/RF/power/quantum
 - [Diamond Semiconductor Processing](https://ninescrolls.com/insights/diamond-semiconductor-processing-icp-etching-deposition): Diamond UWBG semiconductor — CVD growth, ICP plasma etching optimization, thin-film deposition, doping strategies, device architectures, quantum device fabrication
+- [Metal Etching: Complete Guide](https://ninescrolls.com/insights/metal-etching-complete-guide): Metal-by-metal etch chemistries and equipment — Al/Ti/W/Mo Cl₂/SF₆ ICP-RIE, IBE/RIBE for Au/Pt/Cu/Ni/Co/MTJ stacks, sidewall taper and redeposition control, post-etch corrosion mitigation for Al, endpoint detection (OES), MRAM/plasmonic/BEOL process integration, equipment selection decision tree
 
 ## Insights — Deposition & Materials
 

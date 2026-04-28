@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Metal Etching: Complete Guide to Chemistries, Equipment, and Process Integration</title>
+</head>
+<body>
+<h1>Metal Etching: Complete Guide</h1>
+
+<p style="font-size: 1.15rem; color: #4a5568; margin-top: -0.5rem;"><em>Chemistries, equipment, and process integration for aluminum, refractory, noble, and magnetic metal stacks.</em></p>
+
+<p><strong>Target Readers:</strong> Process and integration engineers responsible for metal patterning in CMOS back-end-of-line, MEMS, MRAM, photonics, plasmonics, and power-device flows; cleanroom managers selecting between RIE/ICP, IBE/RIBE, and wet benches for a new metal stack; researchers benchmarking sidewall quality, redeposition, and post-etch corrosion. Newcomers will benefit from the metal-by-metal chemistry table and the three-route decision tree; experienced engineers can skip to the redeposition-control, corrosion-mitigation, and endpoint-detection sections.</p>
+
+<div class="tldr-section">
+  <h3>TL;DR</h3>
+  <ul>
+    <li><strong>Metal etching is fundamentally different from Si or dielectric etching</strong> because most metal halides are non-volatile at typical wafer temperatures. The process designer's first decision is always <em>chemical (RIE/ICP) vs physical (IBE/RIBE) vs wet</em>, and that choice is dictated by the metal itself.</li>
+    <li><strong>Aluminum, titanium, tungsten, and molybdenum etch chemically</strong> with chlorine- or fluorine-based plasmas (Cl<sub>2</sub>/BCl<sub>3</sub> for Al/Ti, SF<sub>6</sub>/NF<sub>3</sub> for W/Mo). <strong>Copper, gold, platinum, nickel, and ferromagnetic stacks (CoFeB, NiFe)</strong> have no practical volatile etch product and are patterned by IBE/RIBE, damascene CMP, or wet etch.</li>
+    <li><strong>Post-etch corrosion of aluminum</strong> is the single most common production problem &mdash; chloride residues hydrolyze in air to form HCl, which attacks both the patterned metal and underlying interconnect. Mitigation requires in-situ H<sub>2</sub>O/H<sub>2</sub> or fluorine passivation, immediate O<sub>2</sub> ash, and rapid wet rinse.</li>
+    <li><strong>Sidewall taper</strong> is controlled by ion angle (IBE), polymer-forming additives (chlorine RIE with N<sub>2</sub> or CHF<sub>3</sub>), or substrate temperature. For magnetic tunnel junction stacks, IBE at 30&deg;&ndash;70&deg; tilt is the only route that preserves device performance.</li>
+    <li><strong>Equipment selection</strong> follows the metal: ICP-RIE for Al, Ti, W interconnects and gates; IBE/RIBE for Au/Pt/Cr/Ni and any stack containing magnetic or noble-metal layers; wet bench for low-volume Cr photomask etch and Cu damascene clean.</li>
+  </ul>
+</div>
+
+<h2>1) Why Metal Etching Is Hard</h2>
+
+<p>Silicon and silicon-dioxide etching look easy in retrospect. SiF<sub>4</sub> boils at &minus;86&nbsp;&deg;C and pumps away the moment it forms. SiCl<sub>4</sub> boils at 58&nbsp;&deg;C and only needs a warm wall to leave the chamber. The plasma chemist's life is straightforward: pick a halogen-bearing feed gas, let the radicals find the surface, and the volatile product carries the silicon away.</p>
+
+<p>Metals are not so cooperative. The relevant halides have boiling points that are tens to hundreds of degrees above any practical wafer temperature, and several of them are stable solids that simply pile up on the substrate. Until the etch product can leave the surface as a gas, the etch does not progress &mdash; physical sputtering is the only fallback.</p>
+
+<h3>1.1 The Volatility Problem in One Table</h3>
+
+<table>
+  <thead>
+    <tr><th>Metal</th><th>Most volatile halide</th><th>Boiling point (&deg;C, 1 atm)</th><th>Practical implication</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Aluminum</td><td>AlCl<sub>3</sub></td><td>~180 (sublimes)</td><td>Chlorine RIE works; needs &gt;50&nbsp;&deg;C wafer to keep product moving</td></tr>
+    <tr><td>Titanium</td><td>TiCl<sub>4</sub></td><td>136</td><td>Easy chlorine etch; dual-use as Ti or TiN</td></tr>
+    <tr><td>Tungsten</td><td>WF<sub>6</sub></td><td>17</td><td>Excellent fluorine etch; SF<sub>6</sub> is industry standard</td></tr>
+    <tr><td>Molybdenum</td><td>MoF<sub>6</sub>, MoOCl<sub>4</sub></td><td>34, 159</td><td>Fluorine etch standard; Cl<sub>2</sub>/O<sub>2</sub> alternative</td></tr>
+    <tr><td>Tantalum</td><td>TaF<sub>5</sub>, TaCl<sub>5</sub></td><td>229, 239</td><td>Hot wafer required; usually IBE for thin films</td></tr>
+    <tr><td>Copper</td><td>CuCl<sub>2</sub></td><td>1490 (decomp.)</td><td>No volatile product &mdash; IBE or damascene CMP only</td></tr>
+    <tr><td>Gold</td><td>AuCl<sub>3</sub></td><td>~254 (decomp.)</td><td>No practical RIE &mdash; IBE/RIBE or wet aqua regia</td></tr>
+    <tr><td>Platinum</td><td>PtCl<sub>4</sub></td><td>370 (decomp.)</td><td>IBE only; chlorine adds modest chemical assist</td></tr>
+    <tr><td>Nickel</td><td>NiCl<sub>2</sub></td><td>1001</td><td>IBE primary; Cl<sub>2</sub>/CO at &gt;200&nbsp;&deg;C marginal</td></tr>
+    <tr><td>Cobalt (CoFeB)</td><td>CoCl<sub>2</sub></td><td>1049</td><td>IBE only; tilted IBE for MTJ stacks</td></tr>
+    <tr><td>Chromium</td><td>CrO<sub>2</sub>Cl<sub>2</sub></td><td>117</td><td>Wet (ceric ammonium nitrate) standard for photomasks; Cl<sub>2</sub>/O<sub>2</sub> RIE possible</td></tr>
+    <tr><td>Ruthenium</td><td>RuO<sub>4</sub></td><td>40</td><td>O<sub>2</sub>-based plasma etch with Cl<sub>2</sub> assist</td></tr>
+    <tr><td>Hafnium</td><td>HfCl<sub>4</sub></td><td>320 (sublimes)</td><td>Hot chuck or IBE; thin-film only</td></tr>
+  </tbody>
+</table>
+
+<p>The pattern is clear: aluminum, titanium, tungsten, molybdenum, and a small handful of refractory metals can be etched chemically because their halides volatilize at reachable temperatures. Copper, gold, platinum, nickel, cobalt, and the ferromagnetic alloys cannot &mdash; their halides are condensed phases at any temperature you would ever expose a device wafer to. For these metals, etching means physical removal: ion beam milling (IBE/RIBE) when you need anisotropy, or wet etching when sidewall profile is not critical.</p>
+
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/decision-tree-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/decision-tree-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/decision-tree-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/decision-tree-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/decision-tree-lg.png" alt="Metal etching decision tree branching by volatile halide availability into chemical RIE/ICP, physical IBE/RIBE, and wet routes with representative metals on each branch" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 1: Metal etching decision tree. The first branch is always volatility &mdash; if the most accessible metal halide is a gas at reasonable wafer temperatures, a plasma route is open. If not, the choice collapses to ion beam milling or a wet bath.</p>
+</div>
+
+<h3>1.2 Five Things That Make Metal Etching Different</h3>
+
+<p>Every metal-etch process engineer learns to think about five things that you can mostly ignore in a Si or oxide flow:</p>
+
+<ul>
+  <li><strong>Redeposition.</strong> Sputtered metal atoms are heavy, sticky, and chemically reactive. They redeposit on sidewalls, on the chamber walls, and especially on the photoresist edge, where they can mask the etch and create &ldquo;fences&rdquo; that survive the strip. Tilted IBE and chamber-wall conditioning are the two main mitigation tools.</li>
+  <li><strong>Post-etch corrosion.</strong> Aluminum chloride residues are hygroscopic; the moment the wafer leaves vacuum, AlCl<sub>3</sub> + H<sub>2</sub>O reactions liberate HCl that attacks the bulk Al. Production aluminum etchers have a passivation step (CHF<sub>3</sub> or H<sub>2</sub>O vapor) and a queue-time limit before O<sub>2</sub> ash and DI rinse.</li>
+  <li><strong>Selectivity to photoresist.</strong> Chlorine plasmas erode resist at 100&ndash;300 nm/min, comparable to or faster than the metal etch rate. Hard masks (oxide, nitride, or sacrificial metal) are common in deep metal etches; for thin Al gates, the resist budget is tight but workable with a thick (1.5&ndash;2 &micro;m) i-line resist.</li>
+  <li><strong>Endpoint detection.</strong> The thin films involved (often 30&ndash;500 nm) etch in seconds to a few minutes, and over-etch into the underlying barrier layer (TiN, Ta, Ti) is a common failure mode. Optical emission monitoring of AlCl, TiCl, or W lines is essential.</li>
+  <li><strong>Magnetics, ferroelectrics, and noble metals.</strong> Stacks containing CoFeB, NiFe, Pt, Ru, or PZT cannot be exposed to high-temperature halogen plasmas without permanent property loss. IBE at low ion energy and tilted angle is usually the only route that preserves device performance.</li>
+</ul>
+
+<h2>2) The Three Process Routes</h2>
+
+<p>Every metal etch process in production today belongs to one of three families. The boundaries are real, not academic &mdash; choosing the wrong route can cost a year of process development.</p>
+
+<h3>2.1 Chemical Plasma (RIE / ICP-RIE)</h3>
+
+<p>Chemical plasma etching is the workhorse route for aluminum, titanium, tungsten, molybdenum, and most thin-film refractory metals. A halogen-bearing feed gas is dissociated to produce reactive radicals; the radicals react with the metal surface to form a volatile metal halide; ion bombardment provides directionality and clears the reaction product from the surface. Typical equipment: capacitively coupled RIE for thin films (&lt;200 nm Al/Ti gates), inductively coupled ICP-RIE for thicker films, deeper etches, or where independent control of plasma density and ion energy is needed (interconnects, MEMS metal posts).</p>
+
+<p>The strengths of chemical plasma etching are speed (etch rates of 0.5&ndash;5 &micro;m/min are routine), high selectivity to oxide and nitride underlayers (5:1 to &gt;100:1 with proper chemistry), and excellent profile control via ion bias and polymer-forming additives. The weaknesses are limited material coverage (only the volatile-halide metals), aggressive resist erosion, and the corrosion problem already noted for aluminum.</p>
+
+<h3>2.2 Physical / Ion Beam (IBE / RIBE)</h3>
+
+<p>Ion beam etching uses a broad-area, gridded ion source to direct a collimated beam of inert (Ar) or reactive (Ar + Cl<sub>2</sub>, Ar + O<sub>2</sub>) ions at the substrate. The substrate is on a tilting, rotating stage so the ion incidence angle and azimuthal direction can be set precisely. Material is removed by physical sputtering &mdash; the ion's momentum knocks atoms out of the surface regardless of whether a volatile product exists. Reactive IBE (RIBE) adds a chemical channel: the beam contains both inert and reactive ions, giving a modest etch rate boost on materials that can react with chlorine or oxygen.</p>
+
+<p>IBE/RIBE is the only practical route for copper, gold, platinum, nickel, cobalt, ruthenium, magnetic stacks (MTJ), and any film where chemical attack would degrade device properties. Etch rates are slow (typically 5&ndash;50 nm/min) and selectivity to mask is modest (1.5&ndash;3:1 for hard masks, often &lt;1:1 to resist). The decisive advantages are universal material coverage and the ability to dial sidewall taper from vertical to 30&deg; by tilting the stage.</p>
+
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/route-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/route-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/route-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/route-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/route-comparison-lg.png" alt="Side-by-side cross-section comparison of chemical RIE (vertical sidewall, polymer passivation, fast rate), physical IBE (tilted ion beam, sputter redeposition shadow, slow rate), and wet etch (isotropic undercut, no plasma damage, batch capable)" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 2: Three process routes side-by-side. RIE delivers vertical, fast etches but only for volatile-halide metals. IBE delivers a vertical-to-tilted profile on any metal but is slow and subject to redeposition. Wet etch is fast and damage-free but isotropic, restricting it to features wider than ~3&times; the film thickness.</p>
+</div>
+
+<h3>2.3 Wet Etching</h3>
+
+<p>Wet etching survives in three production niches: chromium photomask blanks (ceric ammonium nitrate), residual TiW or seed-layer Cu strip in damascene flows (peroxide-based mixtures), and any large-feature metal patterning where isotropy is acceptable (legacy MEMS, thick-film resistors, RF inductors). Wet rates can exceed 1 &micro;m/min, equipment cost is low, and there is no plasma-induced damage. The undercut, however, is geometric &mdash; for a 200 nm film, expect ~200 nm of lateral etch under the resist, which sets a hard floor on minimum line width.</p>
+
+<h2>3) Metal-by-Metal Process Cookbook</h2>
+
+<p>The remainder of this section walks through the process recipes you will actually encounter. Each entry is structured: chemistry, equipment, typical recipe window, mask choice, and the things that bite you.</p>
+
+<h3>3.1 Aluminum (Al, Al-Si, Al-Cu, Al-Si-Cu)</h3>
+
+<p><strong>Chemistry:</strong> Cl<sub>2</sub> + BCl<sub>3</sub>, with optional N<sub>2</sub>, CHF<sub>3</sub>, or CH<sub>4</sub> for sidewall passivation. BCl<sub>3</sub> is the dominant native-oxide breakthrough agent &mdash; without it, the AlO<sub>x</sub> surface layer prevents etch initiation. N<sub>2</sub> creates a thin AlN/BN sidewall passivation that improves anisotropy.</p>
+
+<p><strong>Equipment:</strong> ICP-RIE strongly preferred; CCP RIE acceptable for &lt;500 nm films and relaxed CD. Wafer temperature 50&ndash;80&nbsp;&deg;C to keep AlCl<sub>3</sub> volatile but below the resist softening point. Chamber wall conditioning (seasoning) is critical &mdash; bare aluminum walls trap chlorine, making each first wafer different from the last.</p>
+
+<p><strong>Typical recipe (1.0 &micro;m Al-Cu interconnect, ICP-RIE):</strong></p>
+<ul>
+  <li>Native-oxide breakthrough: BCl<sub>3</sub> 50 sccm, 5 mTorr, ICP 600 W, bias 50 W, 15 s</li>
+  <li>Main etch: Cl<sub>2</sub> 60 sccm + BCl<sub>3</sub> 20 sccm + N<sub>2</sub> 10 sccm, 8 mTorr, ICP 800 W, bias 80 W, ~120 s with OES endpoint on AlCl 261 nm</li>
+  <li>Over-etch: same gases, bias dropped to 40 W, 20% over the endpoint time</li>
+  <li>In-situ passivation: CHF<sub>3</sub> 50 sccm or H<sub>2</sub>O vapor, 30&ndash;60 s, no bias &mdash; converts surface AlCl<sub>3</sub> to AlF<sub>3</sub> or Al(OH)<sub>x</sub>, which does not hydrolyze in air</li>
+  <li>Out-of-vacuum within 60 s, immediate O<sub>2</sub> ash to strip resist + remaining Cl, then DI rinse</li>
+</ul>
+
+<p><strong>Mask choice:</strong> 1.5&ndash;2.0 &micro;m i-line resist for &lt;1 &micro;m Al. SiO<sub>2</sub> hard mask (200&ndash;500 nm) for &gt;1 &micro;m or where critical dimension control is tight. Selectivity to resist: 2&ndash;3:1; to oxide: 15&ndash;30:1.</p>
+
+<p><strong>What bites you:</strong> Skipping the passivation step is the most expensive mistake in aluminum etching. Wafers that look fine at the metrology station develop pitting, &ldquo;black silicon&rdquo; haze, or open lines after 12&ndash;48 hours in fab humidity. Set a queue time of &lt;30 minutes from etch out to ash, and validate every chamber recovery with a moisture-exposure soak.</p>
+
+<h3>3.2 Titanium and Titanium Nitride (Ti, TiN)</h3>
+
+<p><strong>Chemistry:</strong> Cl<sub>2</sub>/Ar (Ti); Cl<sub>2</sub>/Ar or SF<sub>6</sub>/Ar (TiN). The TiN etch in fluorine is highly selective to Si and SiO<sub>2</sub> and is a common production choice for gate-stack patterning where the Ti/TiN layer sits on a high-k dielectric.</p>
+
+<p><strong>Equipment:</strong> ICP-RIE for &gt;50 nm films; CCP RIE for thin barrier-layer strips. Ti/TiN is often the second step in a stack etch (resist &rarr; SiO<sub>2</sub> hard mask &rarr; TiN &rarr; gate metal &rarr; high-k), where the TiN step is short (&lt;15 s) and high-selectivity to the underlying high-k.</p>
+
+<p><strong>Typical recipe (50 nm TiN, ICP-RIE):</strong></p>
+<ul>
+  <li>Cl<sub>2</sub> 30 sccm + Ar 20 sccm, 5 mTorr, ICP 500 W, bias 30 W, 25 s</li>
+  <li>Endpoint by OES on TiCl 365 nm, 50% over-etch</li>
+  <li>Selectivity to HfO<sub>2</sub>: ~30:1 in chlorine, &gt;100:1 in SF<sub>6</sub></li>
+</ul>
+
+<h3>3.3 Tungsten (W) and Molybdenum (Mo)</h3>
+
+<p><strong>Chemistry:</strong> SF<sub>6</sub> dominates &mdash; WF<sub>6</sub> boils at 17&nbsp;&deg;C, MoF<sub>6</sub> at 34&nbsp;&deg;C, both well below any reasonable wafer temperature. NF<sub>3</sub> is a cleaner alternative that produces less chamber polymer. Cl<sub>2</sub>/O<sub>2</sub> is a valid alternative chemistry for Mo and is preferred for Mo electrodes in display applications because chamber recovery is easier.</p>
+
+<p><strong>Equipment:</strong> ICP-RIE for via plug etchback or pattern etch; CCP RIE for blanket etchback. W is famous for its uniformity sensitivity &mdash; loading effect can produce 20&ndash;30% center-to-edge non-uniformity unless the chamber pressure and ICP power are tuned for the specific pattern density.</p>
+
+<p><strong>Typical recipe (300 nm W, ICP-RIE):</strong></p>
+<ul>
+  <li>SF<sub>6</sub> 40 sccm + O<sub>2</sub> 5 sccm + Ar 20 sccm, 8 mTorr, ICP 700 W, bias 40 W</li>
+  <li>Etch rate ~500 nm/min, selectivity to SiO<sub>2</sub> 20:1, to resist 1.5:1</li>
+  <li>Endpoint on WF 248 nm or interferometry</li>
+</ul>
+
+<h3>3.4 Copper (Cu)</h3>
+
+<p><strong>Chemistry:</strong> there is no production plasma chemistry for copper. CuCl<sub>x</sub> melts above 400&nbsp;&deg;C. Two routes survive in the fab:</p>
+<ul>
+  <li><strong>Damascene CMP.</strong> The mainstream BEOL approach: pattern the dielectric, deposit Cu by ECP, polish back with CMP. No plasma etch involved. This is how every advanced-logic wafer is made today.</li>
+  <li><strong>IBE/RIBE.</strong> For non-damascene applications &mdash; subtractive Cu interconnects in some packaging flows, Cu inductors and antennas, photonic Cu plasmonic structures. Ar IBE at 300&ndash;500 V, 30&ndash;60&deg; tilt to manage redeposition.</li>
+</ul>
+
+<p>Subtractive Cu plasma etching has been an active research topic for thirty years &mdash; processes based on hot HCl, hexafluoroacetylacetonate (hfac), or H<sub>2</sub>/CH<sub>4</sub> at &gt;200&nbsp;&deg;C have all been demonstrated. None has reached production. If your application demands subtractive Cu patterning at &lt;5 &micro;m line width, plan on IBE.</p>
+
+<h3>3.5 Gold, Platinum, and Other Noble Metals</h3>
+
+<p><strong>Chemistry:</strong> none practical. Au, Pt, Pd, Ag have no halide volatile below 250&nbsp;&deg;C. The production route is IBE (Ar) for thin films &lt;500 nm, with optional Cl<sub>2</sub> or O<sub>2</sub> assist for a 30&ndash;50% rate boost on Pt. For thicker Au (&gt;1 &micro;m, common in MEMS contacts and RF inductors), wet etching with KI/I<sub>2</sub> is fast (&gt;500 nm/min) and clean but isotropic.</p>
+
+<p><strong>IBE recipe (200 nm Au, normal-incidence):</strong> Ar 8 sccm, 500 V beam, 100 mA, 30 nm/min, selectivity to photoresist 1:1, selectivity to SiO<sub>2</sub> 0.7:1. For better selectivity, use a Cr or Ti hard mask. For tilted IBE on MTJ stacks, see Section 4.</p>
+
+<h3>3.6 Magnetic Stacks (CoFeB, NiFe, MTJ)</h3>
+
+<p>Magnetic random-access memory (MRAM) device fabrication is the most demanding application of metal etching in the modern fab. A magnetic tunnel junction (MTJ) stack contains 10&ndash;20 layers, each 0.5&ndash;3 nm thick, including CoFeB free and reference layers, MgO tunnel barrier, Ru and Ta spacers, and a synthetic antiferromagnet. None of these materials has a volatile chloride at usable temperatures.</p>
+
+<p>The production answer is <strong>tilted IBE with a metal hard mask</strong>. The wafer sits on a stage that rotates while tilted at 30&ndash;70&deg; from normal. The tilted beam clears redeposited material from the sidewall before it can short the tunnel barrier; the rotation ensures azimuthal uniformity. Beam voltage is kept low (&lt;500 V) to avoid amorphizing the MgO. A second &ldquo;trim&rdquo; etch at higher tilt is sometimes used to remove residual sidewall damage.</p>
+
+<p><strong>Typical MTJ etch sequence (300-mm production):</strong></p>
+<ul>
+  <li>Hard mask open: TaN or Ta hard mask patterned by chlorine RIE, resist stripped before MTJ etch</li>
+  <li>Main IBE: Ar, 400&ndash;600 V, 30&deg; tilt with rotation, etch to ~1 nm into the bottom electrode</li>
+  <li>Trim IBE: Ar, 200&ndash;300 V, 60&ndash;70&deg; tilt, 5&ndash;10 s to remove sidewall redep</li>
+  <li>In-situ encapsulation: SiN PECVD without breaking vacuum, to lock the magnetic state</li>
+</ul>
+
+<h3>3.7 Chromium (Cr)</h3>
+
+<p>Cr etching has two faces. For photomask production (binary chrome on quartz), the standard remains wet etching with cerium-ammonium-nitrate-based formulations &mdash; isotropic but acceptable for the typical 100&ndash;500 nm line widths and 80 nm Cr thickness. For chrome hard masks under deep silicon etches, Cl<sub>2</sub>/O<sub>2</sub> RIE is well-established: the chrome opens cleanly in oxidizing chlorine and the etch is highly selective to the underlying oxide.</p>
+
+<p><strong>Cl<sub>2</sub>/O<sub>2</sub> RIE recipe (50 nm Cr hard mask, ICP):</strong> Cl<sub>2</sub> 20 sccm + O<sub>2</sub> 10 sccm, 5 mTorr, ICP 400 W, bias 30 W, ~30 s, endpoint OES on CrO<sub>2</sub>Cl<sub>2</sub> 360 nm.</p>
+
+<h3>3.8 Refractory Metals (Ta, Hf, Zr, Nb)</h3>
+
+<p>These metals all have chlorides and fluorides that volatilize above 200&nbsp;&deg;C. For thin films (&lt;100 nm) they are typically etched by IBE with mild chemical assist (Cl<sub>2</sub> or BCl<sub>3</sub> in the beam). For thicker films, hot-chuck ICP-RIE with Cl<sub>2</sub>/BCl<sub>3</sub> is feasible but rare outside specialty applications. TaN as a barrier or hard mask is a common configuration; Cl<sub>2</sub>/Ar etch at high ICP power and modest bias is standard.</p>
+
+<h2>4) Sidewall Profile, Redeposition, and Damage Control</h2>
+
+<p>Three problems dominate metal-etch yield: sidewall taper drift, redeposition fences, and plasma-induced damage to the underlying device or to magnetic/ferroelectric properties. Each has a recognized engineering response.</p>
+
+<h3>4.1 Sidewall Profile</h3>
+
+<p>For chemical plasma etching, sidewall taper is set by the balance of ion-driven vertical etch and isotropic radical etch. The ion energy floor (typically 50&ndash;100 V for chlorine etches) sets the minimum directional component; reducing ion energy below that floor lets radicals etch laterally and creates a tapered or even concave profile. Polymer-forming additives (N<sub>2</sub>, CHF<sub>3</sub>, CH<sub>4</sub>) deposit a thin sidewall film that blocks lateral etch &mdash; this is how aluminum lines stay vertical despite heavy chlorine radical flux.</p>
+
+<p>For IBE, sidewall taper is geometrically set by the ion incidence angle. Normal incidence gives the steepest profile (typically 75&ndash;85&deg; sidewall) but maximum redeposition. Tilted IBE at 30&ndash;45&deg; trades a few degrees of profile for major reduction in redeposition. For MTJ devices, the sweet spot is usually ~30&deg; tilt with continuous rotation.</p>
+
+<h3>4.2 Redeposition</h3>
+
+<p>Sputtered metal atoms with no volatile escape route stick wherever they land. The visible failure modes are:</p>
+<ul>
+  <li><strong>Sidewall fences:</strong> a thin, vertical &ldquo;fin&rdquo; of redeposited metal standing where the resist edge used to be, surviving the resist strip and shorting adjacent lines. Most common in normal-incidence IBE on Au, Pt, Cu.</li>
+  <li><strong>Trench filling:</strong> redep accumulating in narrow trenches faster than it can be removed, capping the etch. Common in deep IBE on patterned Cu pillars.</li>
+  <li><strong>Chamber drift:</strong> metal coating on chamber walls slowly changes the plasma chemistry and the wall conductivity, producing a process drift over the maintenance interval.</li>
+</ul>
+
+<p>The mitigations are: tilted IBE with rotation (the workhorse), chemical-assist beams (Cl<sub>2</sub>, O<sub>2</sub>) to gasify part of the redep, frequent in-situ chamber cleans (O<sub>2</sub> for noble-metal stations, Cl<sub>2</sub>/BCl<sub>3</sub> for Al stations), and sacrificial conditioning wafers between batches.</p>
+
+<h3>4.3 Plasma-Induced Damage</h3>
+
+<p>Damage takes three forms in metal etching:</p>
+<ul>
+  <li><strong>Subsurface lattice damage</strong> from high-energy ions, which degrades sheet resistance and can introduce defect-mediated leakage in adjacent dielectrics.</li>
+  <li><strong>Charging damage</strong> when isolated metal pads accumulate plasma charge, driving high voltage across thin gate dielectrics or tunnel barriers.</li>
+  <li><strong>Magnetic and ferroelectric property loss</strong> when high temperatures or aggressive chemistries reach functional layers (CoFeB, PZT, BaTiO<sub>3</sub>).</li>
+</ul>
+
+<p>Low-bias ICP and IBE at &lt;500 V are the primary damage controls. Pulsed plasma (synchronous source/bias pulsing) reduces both charging and ion-energy spread. For magnetic stacks, the entire process is designed around a thermal budget that keeps the wafer below ~150&nbsp;&deg;C throughout.</p>
+
+<h2>5) Endpoint Detection and Process Control</h2>
+
+<p>Metal films are thin and the cost of over-etching into the underlying barrier or device layer is high. Endpoint detection earns its keep on every metal etcher.</p>
+
+<h3>5.1 Optical Emission Spectroscopy (OES)</h3>
+
+<p>The plasma is rich in atomic and molecular emissions from the etch products. As the metal layer clears, the corresponding line drops; as the underlayer is exposed, new lines appear. Standard endpoint wavelengths:</p>
+
+<table>
+  <thead><tr><th>Etch</th><th>Endpoint wavelength</th><th>Direction</th></tr></thead>
+  <tbody>
+    <tr><td>Al in Cl<sub>2</sub>/BCl<sub>3</sub></td><td>AlCl 261 nm or Al 396 nm</td><td>Drop</td></tr>
+    <tr><td>Al &rarr; TiN underlayer</td><td>TiCl 365 nm</td><td>Rise</td></tr>
+    <tr><td>TiN in Cl<sub>2</sub>/Ar</td><td>TiCl 365 nm or N 388 nm</td><td>Drop</td></tr>
+    <tr><td>W in SF<sub>6</sub></td><td>WF 248 nm or F 704 nm</td><td>Drop / Rise</td></tr>
+    <tr><td>Cr in Cl<sub>2</sub>/O<sub>2</sub></td><td>Cr 425 nm</td><td>Drop</td></tr>
+    <tr><td>Ti underlayer hit (in any Cl<sub>2</sub> etch)</td><td>TiCl 365 nm</td><td>Rise</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 Interferometry</h3>
+
+<p>For blanket etchback or for transparent stacks (e.g., metal on quartz photomask), laser interferometry on the etching surface gives a direct thickness reading. The technique works only on patterns with significant transparent area or on monitor wafers; on dense metal patterns OES is more reliable.</p>
+
+<h3>5.3 Time-Based with Periodic Calibration</h3>
+
+<p>For very short etches (&lt;15 s, e.g., 10-nm TiN gate caps), endpoint signal is inadequate and the etch is run open-loop on calibrated time. The discipline required is regular monitor-wafer measurement and tight control of upstream variables (gas flow calibration, pressure transducer drift, ICP coupling efficiency).</p>
+
+<h2>6) Equipment Selection &mdash; Practical Decision Tree</h2>
+
+<p>Most labs do not have the budget to install a dedicated tool for every metal. The goal is to map the metal portfolio onto the smallest set of platforms that delivers the required quality.</p>
+
+<div class="post-figure">
+  <picture>
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/equipment-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/equipment-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/equipment-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcSet="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/equipment-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/metal-etching-complete-guide/equipment-matrix-lg.png" alt="Two-axis matrix mapping metal types to equipment platforms with ICP-RIE Cl2/BCl3, ICP-RIE SF6, IBE/RIBE, and wet bench columns and metal rows shaded by suitability" loading="lazy" decoding="async" />
+  </picture>
+  <p class="post-figure-caption">Figure 3: Equipment-to-metal suitability matrix. Most production labs converge on a chlorine ICP-RIE for Al/Ti/Cr, a fluorine ICP-RIE for W/Mo, and an IBE/RIBE for everything else. A wet bench survives for chrome photomask and Cu seed strip.</p>
+</div>
+
+<h3>6.1 Chlorine ICP-RIE</h3>
+
+<p>The single most useful metal etcher in a research or pilot fab. Cl<sub>2</sub>, BCl<sub>3</sub>, and Ar as base gases, plus N<sub>2</sub> and O<sub>2</sub> as additives, cover Al, Ti, TiN, Cr, Ta, Mo (with O<sub>2</sub>), and most refractory metals. Required features: hot chuck (50&ndash;100&nbsp;&deg;C), endpoint OES, in-situ passivation step, robust load-lock to limit air exposure of etched aluminum.</p>
+
+<h3>6.2 Fluorine ICP-RIE (or shared chamber with SF<sub>6</sub>)</h3>
+
+<p>For W, Mo, and any fluorine-active material (TiN, MoSi<sub>2</sub>, polysilicon). A dedicated fluorine chamber avoids the cross-contamination problems of running fluorine and chlorine sequentially in the same chamber. Many labs share a single ICP-RIE between chemistries with a defined cleaning protocol; for high-volume production, dedicated chambers are the rule.</p>
+
+<h3>6.3 IBE / RIBE</h3>
+
+<p>The universal solvent of metal etching. Required for Au, Pt, Cu (subtractive), Ni, Co, magnetic stacks, and any film that the chemical routes cannot touch. Required features: tilting/rotating chuck (0&ndash;70&deg; tilt, continuous rotation), reactive gas option (Cl<sub>2</sub>, O<sub>2</sub>) for selectivity boost, secondary electron neutralizer to prevent charging on isolated structures.</p>
+
+<h3>6.4 Wet Bench</h3>
+
+<p>For Cr photomask, Cu seed-layer strip, large-feature Au, and any application where isotropy is acceptable. A separate &ldquo;dirty&rdquo; bench is mandatory &mdash; no metal-bath line should share filtration with a CMOS wet station.</p>
+
+<h2>7) Application-Specific Process Maps</h2>
+
+<h3>7.1 CMOS Back-End Interconnect</h3>
+
+<p>Modern interconnect is dual-damascene Cu &mdash; no metal etch involved at the line/via level. Aluminum subtractive etch survives only at the topmost passivation/bond-pad layers (4&ndash;6 &micro;m thick). Process: thick i-line resist or oxide hard mask, ICP-RIE with Cl<sub>2</sub>/BCl<sub>3</sub>/N<sub>2</sub>, mandatory in-situ passivation, and immediate ash + DI rinse.</p>
+
+<h3>7.2 MEMS Electrodes and Through-Silicon Pads</h3>
+
+<p>MEMS metal etching is dominated by Au (RF MEMS, capacitive sensing), Cr (photolithography masks for downstream Si etch), and thick Al (capacitive comb drives). The thick-film, large-feature regime favors wet etch where possible and IBE for the rest. For Au &gt;500 nm with sub-micron critical dimension, IBE is the only practical answer.</p>
+
+<h3>7.3 MRAM and Spintronics</h3>
+
+<p>Tilted IBE with metal hard mask. Process control variables are beam voltage (low to preserve MgO barrier), tilt angle (30&deg; main, 60&deg; trim), and rotation speed (must complete an integer number of revolutions per layer to avoid asymmetry). In-situ encapsulation immediately after etch is non-negotiable.</p>
+
+<h3>7.4 Photonics and Plasmonics</h3>
+
+<p>Plasmonic structures pattern Au, Ag, and Cu at 50&ndash;200 nm critical dimension, often with sub-100 nm thickness. The dominant routes are lift-off (most common for &lt;500 nm structures) and IBE at normal incidence with a Cr or Ti hard mask. Sidewall roughness directly affects optical performance, so tilt is kept low and beam energy is reduced to minimize scattering centers.</p>
+
+<h3>7.5 Power Devices and Wide-Bandgap Stacks</h3>
+
+<p>GaN HEMT and SiC MOSFET ohmic contacts (typically Ti/Al/Ni/Au or Ti/Al/Mo/Au) are patterned by lift-off, not subtractive etch. Source-field plates and gate metal can be subtractive; ICP-RIE with Cl<sub>2</sub>/BCl<sub>3</sub> for the Al/Ti layers, with an etch stop on the underlying Ni or Au handled by a strict time-based recipe.</p>
+
+<h2>8) Troubleshooting Reference</h2>
+
+<table>
+  <thead><tr><th>Symptom</th><th>Likely cause</th><th>First-pass fix</th></tr></thead>
+  <tbody>
+    <tr><td>Aluminum lines pit or open hours after etch</td><td>Skipped or insufficient passivation; queue time too long</td><td>Add CHF<sub>3</sub> or H<sub>2</sub>O passivation step; cap queue time to &lt;30 min; verify ash chamber moisture</td></tr>
+    <tr><td>Sidewall fences after IBE on Au or Pt</td><td>Normal-incidence redeposition</td><td>Tilt 30&ndash;45&deg; with rotation; add brief O<sub>2</sub>/Ar trim at higher tilt</td></tr>
+    <tr><td>Tapered Al sidewall (top wider than bottom)</td><td>Insufficient ion energy or excess radical flux</td><td>Raise bias, lower pressure, add N<sub>2</sub> or CHF<sub>3</sub> for sidewall passivation</td></tr>
+    <tr><td>Undercut Al sidewall (top narrower than bottom)</td><td>Excessive sidewall passivation; faceted resist</td><td>Reduce N<sub>2</sub>; switch to thicker resist; check resist hardbake</td></tr>
+    <tr><td>Center-to-edge non-uniformity &gt;15% on W</td><td>Pattern loading effect; pressure too high</td><td>Lower pressure, raise ICP power, add Ar dilution; consider center-fed showerhead</td></tr>
+    <tr><td>Cr photomask CD undersized</td><td>Wet undercut exceeding film thickness</td><td>Switch to ICP-RIE Cl<sub>2</sub>/O<sub>2</sub>; add BARC if optical reflection is creating CD bias</td></tr>
+    <tr><td>MTJ device shorting after IBE</td><td>Sidewall metal redep across MgO barrier</td><td>Increase tilt to 30&ndash;45&deg;; add encapsulation immediately after etch; reduce beam voltage</td></tr>
+    <tr><td>TiN over-etch into HfO<sub>2</sub> high-k</td><td>Endpoint missed; fluorine chemistry too aggressive</td><td>Switch to chlorine; use OES on TiCl 365 nm with auto-stop; reduce over-etch time</td></tr>
+    <tr><td>Resist erosion before metal cleared</td><td>Resist too thin or selectivity too low</td><td>Increase resist to 1.5&ndash;2.0 &micro;m; switch to oxide or Cr hard mask; reduce bias</td></tr>
+    <tr><td>Black silicon / haze on wafer surface after Al etch</td><td>Micromasking by AlCl<sub>3</sub> particles or sputtered chamber-wall material</td><td>Run a chamber clean cycle; reduce bias; check for ceiling deposits and wet-clean if &gt;5 &micro;m</td></tr>
+  </tbody>
+</table>
+
+<h2>9) Process Development Checklist</h2>
+
+<p>For a new metal-etch process or a transfer between tools, work through the following before committing to production:</p>
+
+<ul>
+  <li><strong>Chemistry selection:</strong> Confirmed volatile halide route exists, or default to IBE? Document the volatility data behind the choice.</li>
+  <li><strong>Mask selection:</strong> Resist budget calculated against measured etch selectivity? Hard mask required? Hard mask removal route compatible with the device?</li>
+  <li><strong>Wafer temperature:</strong> Hot enough for halide volatilization, cool enough for resist integrity?</li>
+  <li><strong>Endpoint:</strong> OES wavelength validated on a real device wafer? Endpoint algorithm tested on under-loaded and over-loaded patterns?</li>
+  <li><strong>Passivation:</strong> For Al, is in-situ passivation step measured (residual Cl by XPS or AES)?</li>
+  <li><strong>Queue time:</strong> Documented from etch out to ash to wet rinse? Verified under fab humidity range?</li>
+  <li><strong>Chamber conditioning:</strong> First-wafer effect quantified? Number of seasoning wafers before production? Defined wet-clean trigger?</li>
+  <li><strong>Damage:</strong> Sheet resistance, contact resistance, and (for magnetic stacks) magnetic property measured before and after etch?</li>
+  <li><strong>Profile:</strong> Cross-section SEM at center, mid, and edge? Sidewall taper within spec? No fences, no undercut?</li>
+  <li><strong>Run-to-run drift:</strong> 25-wafer continuous run completed? CD and rate drift &lt;5%?</li>
+</ul>
+
+<h2>10) Equipment Notes from the NineScrolls Catalogue</h2>
+
+<p>NineScrolls supplies the etch platforms most commonly deployed against the metal-etch problem set described above:</p>
+
+<ul>
+  <li><a href="/products/icp-etcher">ICP Etcher Series</a> &mdash; chlorine and fluorine ICP-RIE for Al, Ti, TiN, W, Mo, Cr, and refractory metal patterning. Hot chuck, OES endpoint, in-situ passivation step, and Cl<sub>2</sub>-rated load-lock are configurable for each metal-etch application.</li>
+  <li><a href="/products/rie-etcher">RIE Etcher Series</a> &mdash; capacitively-coupled RIE for thin-film metal patterning where independent plasma-density control is not required. Suited to TiN gate caps, &lt;200 nm Al gates, and Cr hard mask opening.</li>
+  <li><a href="/products/ibe-ribe">IBE / RIBE Systems</a> &mdash; the universal route for Au, Pt, Cu (subtractive), Ni, Co, magnetic stacks, and noble-metal plasmonics. Tilt range 0&ndash;70&deg; with continuous rotation, optional reactive gas (Cl<sub>2</sub>, O<sub>2</sub>) for selectivity assist, and secondary neutralizer for charge-sensitive devices.</li>
+  <li><a href="/products/striper">Striper Systems</a> &mdash; in-line O<sub>2</sub> ash for resist removal and residual-chlorine elimination immediately after Al etch.</li>
+  <li><a href="/products/sputter">Sputter Systems</a> &mdash; the deposition counterpart for the metal layers being etched, useful when a barrier or hard-mask metal is part of the same flow.</li>
+</ul>
+
+<p>Customers patterning new metal stacks &mdash; especially MTJ, plasmonic Au/Ag, or thick Al for power devices &mdash; should expect a 4&ndash;8 week process development engagement before transferring to production. Recipes for the standard metals (Al, Ti, TiN, W, Cr) are pre-qualified and transfer in 1&ndash;2 weeks.</p>
+
+<h2>FAQ</h2>
+
+<div itemscope itemtype="https://schema.org/FAQPage">
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Why can't copper be plasma-etched in production?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      Because no copper halide is volatile at any temperature compatible with photoresist or with adjacent dielectric thermal budgets. CuCl<sub>2</sub> melts at 498&nbsp;&deg;C and starts to decompose before it boils. Hot-chuck Cu etch processes have been demonstrated above 200&nbsp;&deg;C, but they require either organic ligands (hfac) that introduce contamination concerns or temperatures incompatible with standard resist. The industry's answer was to invent damascene CMP, which sidesteps the problem entirely by patterning the dielectric and filling with copper rather than etching the copper itself. For applications where damascene is not an option (subtractive packaging interconnect, photonics), IBE is the standard route.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How do I prevent aluminum corrosion after chlorine etch?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      Three controls in series. (1) <strong>In-situ passivation</strong>: 30&ndash;60 s of CHF<sub>3</sub> or H<sub>2</sub>O vapor in the etch chamber, no bias, immediately after the main etch. This converts surface AlCl<sub>3</sub> to AlF<sub>3</sub> or Al(OH)<sub>x</sub>, neither of which hydrolyzes in air. (2) <strong>Queue time</strong>: cap the time from etch unload to O<sub>2</sub> ash at &lt;30 min, ideally &lt;10 min; ash chamber must be fully water-saturated. (3) <strong>DI rinse</strong>: spray rinse within minutes of ash to remove any remaining chloride. If your fab has high humidity, a vacuum N<sub>2</sub> purge cabinet between etch and ash is a worthwhile investment.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">When should I tilt the IBE stage instead of running normal incidence?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      Tilt whenever sidewall redeposition matters &mdash; which is almost every metal etch deeper than ~50 nm. Normal incidence gives the steepest sidewall but maximum redep; the redep collects on the sidewall as a vertical &ldquo;fence&rdquo; that survives the resist strip and shorts adjacent features. A 30&deg; tilt with continuous rotation reduces fence formation by an order of magnitude with only a small (~5&deg;) loss of sidewall verticality. For MTJ and plasmonic structures, 30&ndash;45&deg; main + 60&ndash;70&deg; trim is the standard recipe. Reserve normal incidence for very thin (&lt;30 nm) films where redep volume is small, or for blanket etchback where sidewall is irrelevant.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What's the difference between IBE and RIBE, and when does it matter?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      IBE uses inert ions (typically Ar) for purely physical sputter removal. RIBE adds a reactive species (Cl<sub>2</sub>, O<sub>2</sub>, CF<sub>4</sub>) to the beam, giving a chemical-assist channel on top of the physical etch. RIBE is the right choice when (a) a reasonable halide product exists but the kinetics need a boost &mdash; e.g., Pt with Cl<sub>2</sub> assist runs ~50% faster than pure Ar IBE, and (b) selectivity to mask or underlayer needs improvement &mdash; oxygen-assist RIBE on noble metals improves selectivity to dielectric mask. IBE is preferred when the metal genuinely has no chemical channel (Au, Cu) or when chemical assist would damage adjacent layers (MTJ tunnel barriers, ferroelectric layers).</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can I share one ICP-RIE chamber between chlorine and fluorine metal etches?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      In R&D and pilot environments, yes &mdash; with a defined transition cleaning protocol. The risk is metal fluoride or chloride residue on chamber walls cross-contaminating the next process. Standard practice: between chemistries run a 5&ndash;10 min O<sub>2</sub>/Ar plasma clean, then a 5 min seasoning step in the new chemistry, then a monitor wafer before any product. In high-volume production, dedicated chambers eliminate this risk and the associated tool-time penalty. The decision usually comes down to throughput &mdash; below ~5 lots/day per chemistry, sharing makes sense; above that, the dual-chamber economics dominate.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How do I etch a multi-metal stack like Ti/Al/Ti or Ti/TiN/Al-Cu/TiN?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      With a single chlorine ICP-RIE recipe broken into stepped sub-recipes, each tuned to the layer being etched. Typical sequence for Ti/TiN/Al-Cu/TiN/Ti: (1) breakthrough BCl<sub>3</sub>/Ar to clear top Ti and native oxide, (2) main Cl<sub>2</sub>/BCl<sub>3</sub>/N<sub>2</sub> to etch through the Al-Cu, with OES endpoint on Al 396 nm dropping, (3) underlayer over-etch with reduced bias to clear remaining TiN/Ti without trenching the underlying oxide. The whole stack runs in a single pump-down on a modern ICP-RIE; total etch time for 600 nm Al-Cu with 50 nm Ti/TiN cladding is typically 90&ndash;150 s.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What's the best mask for ion beam etching of magnetic tunnel junctions?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      A pre-patterned metallic hard mask &mdash; almost always TaN, Ta, or Ru &mdash; deposited at the top of the MTJ stack and patterned with chlorine RIE before the IBE step. Photoresist is stripped before IBE because resist erodes too quickly under Ar bombardment to survive the MTJ etch, and stripped resist would re-contaminate the chamber. Hard mask thickness is typically 50&ndash;100 nm, sized so that 30&ndash;50% remains after the MTJ etch and trim. The remaining hard mask is part of the top electrode of the finished device.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">My W etch shows 25% center-to-edge non-uniformity. What's the fix?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      Tungsten is famous for loading-effect non-uniformity because SF<sub>6</sub> radicals get consumed faster in dense pattern regions. First-pass remedies: (1) lower pressure (8 mTorr &rarr; 5 mTorr) to reduce radical residence time, (2) raise ICP power to maintain radical flux, (3) add Ar dilution to push the discharge into a more transport-limited regime, (4) consider a center-fed showerhead or a counter-loading test pattern on edge dies. If the non-uniformity tracks pattern density rather than radial position, the cure is upstream &mdash; loading effect is fundamentally about depletion, and pressure/power are the levers. If it tracks radial position regardless of pattern, the cause is gas distribution or chuck temperature uniformity and should be addressed mechanically.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Is wet etching still acceptable for production metal patterning?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      In three production niches, yes. (1) <strong>Cr photomask blanks</strong>: wet ceric ammonium nitrate is still the standard because the feature size (typically &gt;100 nm) and film thickness (~80 nm) tolerate the inherent lateral undercut. (2) <strong>Cu seed-layer strip</strong> after damascene CMP: a brief peroxide-based wet dip removes residual barrier seed faster and cheaper than any plasma route. (3) <strong>Large-feature MEMS metal</strong>: thick Al, Au, or Cu features with critical dimensions &gt;10&times; the film thickness suffer little CD penalty from isotropy and benefit from the high throughput and low capital cost of a wet bench. Outside these niches, plasma routes have replaced wet etching everywhere CD or sidewall control matters.</p>
+    </div>
+  </div>
+
+  <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+    <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How thin can a metal hard mask be?</h3>
+    <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+      <p itemprop="text">
+      For a chlorine-based etch with a Cr hard mask, films as thin as 20&ndash;30 nm work for sub-200 nm patterning, provided the underlying main etch has selectivity to Cr above 20:1. ALD Al<sub>2</sub>O<sub>3</sub> hard masks can go below 10 nm because the film is pinhole-free at that thickness, but the trade-off is slower deposition and an extra ALD chamber. The fundamental limit is set by pinhole density &mdash; below 20 nm, sputtered or evaporated metals develop pinholes that print through to the substrate. ALD or PEALD-deposited oxides and nitrides remain pinhole-free down to &lt;5 nm, which is why they are the dominant choice for the most aggressive lithography nodes.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
