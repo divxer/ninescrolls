@@ -9734,6 +9734,21 @@ export const insightsPosts: InsightsPost[] = [
       </table>
       <p>The key advantage of ALE is not speed \u2014 it is precision. For applications where sub-nanometer depth control, minimal surface damage, and near-perfect uniformity matter more than throughput, ALE offers a fundamentally superior approach.</p>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-vs-continuous-etching-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-vs-continuous-etching-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-vs-continuous-etching-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-vs-continuous-etching-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-vs-continuous-etching-lg.png"
+            alt="ALE vs Continuous Plasma Etching comparison \u2014 bulk simultaneous ion + radical bombardment with damage and undercut, vs sequential modify/purge/remove/purge cycles producing atomic-layer-perfect etching with self-limiting saturation curve"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 1: ALE vs Continuous Plasma Etching \u2014 Bulk damage and undercut from simultaneous ion + radical bombardment vs atomic-layer-perfect, self-limiting cyclic removal in ALE</figcaption>
+      </figure>
+
       <h2>Core ALE Chemistries and Material Systems</h2>
 
       <h3>Silicon and Silicon Dioxide</h3>
@@ -9756,6 +9771,21 @@ export const insightsPosts: InsightsPost[] = [
       <h3>Emerging Material Systems: Ferroelectrics and Phase-Change Materials</h3>
       <p>ALE is being extended to materials critical for next-generation memory. Hafnium zirconium oxide (HZO), a ferroelectric material central to FeRAM and FeFET devices, presents unique ALE challenges because its ferroelectric properties are extremely sensitive to surface damage and stoichiometry changes.</p>
       <p>Phase-change materials (GST \u2014 Ge\u2082Sb\u2082Te\u2085) for PCM and selector devices also benefit from ALE approaches. Conventional etching of GST causes composition segregation that degrades switching characteristics. Cl\u2082/Ar ALE at 60\u00b0C has been shown to maintain the stoichiometric ratio of Ge:Sb:Te to within \u00b13% of the target 2:2:5 composition across the etched surface, compared to \u00b115% variation with continuous ICP-RIE.</p>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-chemistries-by-material-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-chemistries-by-material-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-chemistries-by-material-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-chemistries-by-material-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-chemistries-by-material-lg.jpg"
+            alt="ALE chemistries by material system \u2014 Si, SiO2, GaN, GaAs/InP, HfO2, HZO, GST, W, Co, Ru with their modification + removal pairs, EPC, ALE window, selectivity, use case, and key notes"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 2: ALE Chemistries by Material System \u2014 Modification + removal chemistry pairs, etch-per-cycle (EPC), ALE window, and selectivity for semiconductors, dielectrics, III-V/high-k/ferroelectrics, phase-change materials, and metals</figcaption>
+      </figure>
 
       <h2>The ALE Energy Window: Understanding the Self-Limiting Mechanism</h2>
       <p>The success of ALE hinges on operating within a specific ion energy window during the removal step. Understanding this window is essential for process development:</p>
@@ -9789,6 +9819,21 @@ export const insightsPosts: InsightsPost[] = [
       </ol>
       <p>NineScrolls\\' ICP etching systems feature independent ICP source and substrate bias power controls, pulsed plasma capability, and fast gas delivery \u2014 making them well-suited for researchers looking to develop and optimize ALE processes alongside conventional RIE/ICP workflows.</p>
 
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-recipe-timing-icp-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-recipe-timing-icp-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-recipe-timing-icp-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-recipe-timing-icp-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-recipe-timing-icp-lg.png"
+            alt="ALE recipe implementation on ICP-RIE \u2014 full cycle timing diagram showing Cl2/Ar gas pulses, ICP source RF, pulsed bias, and pump throttle synchronization across modify, purge, activate, and purge phases"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 3: ALE Recipe Implementation on ICP-RIE \u2014 One full cycle timing of gas, plasma, bias, and pumping; repeat N cycles for precise total removal at atomic-layer accuracy</figcaption>
+      </figure>
+
       <h2>Practical Optimization Challenges and Solutions</h2>
 
       <h3>Optimizing Gas Switching for Minimal Cycle Time</h3>
@@ -9821,6 +9866,21 @@ export const insightsPosts: InsightsPost[] = [
         <li><strong>Imperfect radical quenching:</strong> Slow radical desorption can blur the boundary between steps.</li>
       </ul>
       <p><strong>Practical guideline:</strong> Accept EPC variation of less than 5% as \u201csufficiently self-limiting\u201d for most research applications.</p>
+
+      <figure style="margin:2rem 0;text-align:center">
+        <picture>
+          <source type="image/webp"
+            srcset="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-optimization-challenges-sm.webp 640w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-optimization-challenges-md.webp 768w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-optimization-challenges-lg.webp 1024w,
+                    https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-optimization-challenges-xl.webp 1280w"
+            sizes="(max-width:640px) 100vw, (max-width:768px) 100vw, (max-width:1024px) 100vw, 1280px" />
+          <img src="https://cdn.ninescrolls.com/insights/atomic-layer-etching-practical-guide/ale-optimization-challenges-lg.png"
+            alt="ALE optimization challenges and solutions \u2014 throughput bottleneck, cross-contamination, energy window drift, and pattern loading / ARDE with proven mitigation strategies"
+            style="max-width:100%;height:auto;border-radius:8px" loading="lazy" />
+        </picture>
+        <figcaption style="margin-top:8px;font-style:italic;color:#666;font-size:0.9em">Figure 4: ALE Optimization Challenges &amp; Solutions \u2014 Four common bottlenecks (throughput, cross-contamination, energy-window drift, pattern loading) and proven mitigation strategies</figcaption>
+      </figure>
 
       <h2>Applications in Current Research</h2>
       <ul>
