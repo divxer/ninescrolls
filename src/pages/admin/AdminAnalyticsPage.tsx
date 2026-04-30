@@ -627,7 +627,10 @@ function isPrivateIP(ip: string): boolean {
 
 // ─── Aggregation ────────────────────────────────────────────────────────────
 
-function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
+function aggregateByOrg(
+  events: AnalyticsEvent[],
+  overrideAiByOrg?: Map<string, { organizationType: string; confidence: number }>,
+): OrganizationRecord[] {
   // ── Pre-pass: build visitorId → org metadata from events that carry org data ──
   // page_time_flush events lack ip/org/orgName/country etc. We inherit those
   // from other events (page_view, product_view, etc.) sharing the same visitorId.
@@ -718,6 +721,15 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
       addIfISP(e.orgName || '', e.org || '', e.aiOrganizationType ?? undefined, e.organizationType ?? undefined);
     }
   }
+  // Also trust OrgOverride cache: events may lack aiOrganizationType while
+  // the org-level classification is already known. Without this, ISP
+  // splitting silently skips and multiple residential visitors collapse
+  // into a single record.
+  if (overrideAiByOrg) {
+    for (const [orgName, ov] of overrideAiByOrg) {
+      if (ISP_ORG_TYPES.has(ov.organizationType)) ispOrgNames.add(orgName);
+    }
+  }
 
   // ── Split ISP org-keyed groups by individual visitor ───────────────
   // Some events lack AI classification and end up keyed by org name even
@@ -733,6 +745,11 @@ function aggregateByOrg(events: AnalyticsEvent[]): OrganizationRecord[] {
     );
     if (aiEvt) {
       ispAiType.set(ispName, { aiOrganizationType: aiEvt.aiOrganizationType!, aiConfidence: aiEvt.aiConfidence! });
+    } else {
+      const ov = overrideAiByOrg?.get(ispName);
+      if (ov && ov.organizationType !== 'unknown') {
+        ispAiType.set(ispName, { aiOrganizationType: ov.organizationType, aiConfidence: ov.confidence });
+      }
     }
     groups.delete(ispName);
     for (const e of ispGroup) {
@@ -2809,13 +2826,30 @@ export function AdminAnalyticsPage() {
     try { return localStorage.getItem('ns_visitor_id') || ''; } catch { return ''; }
   }, []);
 
+  // Build override AI map so aggregateByOrg can detect ISPs even when
+  // event-level aiOrganizationType is missing (older un-backfilled events).
+  // Manual overrides bypass the confidence threshold (admin = trusted);
+  // AI overrides require >= 0.5 to match the event-level threshold.
+  const overrideAiByOrg = useMemo(() => {
+    const map = new Map<string, { organizationType: string; confidence: number }>();
+    for (const ov of orgOverrides) {
+      if (!ov.organizationType || ov.organizationType === 'unknown') continue;
+      const trusted = ov.source === 'manual' || (ov.confidence ?? 0) >= 0.5;
+      if (!trusted) continue;
+      map.set(ov.orgName, { organizationType: ov.organizationType, confidence: ov.confidence ?? 0 });
+    }
+    return map;
+  }, [orgOverrides]);
+
   // Collect all visitorIds that share an org with the admin's current visitorId.
   // This catches historical visitorIds (cleared localStorage, different sessions)
   // that were grouped into the same organization by IP/org lookup.
   const selfVisitorIds = useMemo(() => {
     if (!selfVisitorId) return new Set<string>();
-    // First, aggregate orgs to find which org contains selfVisitorId
-    const orgs = aggregateByOrg(allEvents);
+    // First, aggregate orgs to find which org contains selfVisitorId.
+    // Pass override map so ISP grouping splits residential visitors apart —
+    // otherwise an admin on an ISP would pull every residential visitor into selfOrg.
+    const orgs = aggregateByOrg(allEvents, overrideAiByOrg);
     const selfOrg = orgs.find((o) =>
       o.events.some((e) => (e as Record<string, unknown>).visitorId === selfVisitorId)
     );
@@ -2827,7 +2861,7 @@ export function AdminAnalyticsPage() {
       if (vid) ids.add(vid);
     }
     return ids;
-  }, [allEvents, selfVisitorId]);
+  }, [allEvents, selfVisitorId, overrideAiByOrg]);
 
   // Filter bots by isBot flag (User-Agent detection)
   const filteredEvents = useMemo(() => {
@@ -2846,7 +2880,7 @@ export function AdminAnalyticsPage() {
 
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
-    const orgs = aggregateByOrg(filteredEvents);
+    const orgs = aggregateByOrg(filteredEvents, overrideAiByOrg);
 
     // Backfill rfqInstitution from RFQ table for orgs missing it in event properties
     if (allRfqs.length > 0) {
@@ -2919,7 +2953,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides, allRfqs]);
+  }, [filteredEvents, orgOverrides, allRfqs, overrideAiByOrg]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
