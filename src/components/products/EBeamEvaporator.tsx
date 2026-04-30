@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
@@ -11,6 +12,7 @@ export function EBeamEvaporator() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuoteIntent, setIsQuoteIntent] = useState(false);
   const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   useScrollToTop();
 
@@ -123,6 +125,13 @@ export function EBeamEvaporator() {
               >
                 Request a Quote
               </button>
+              <a
+                href="#"
+                className="inline-flex items-center gap-2 border border-white/40 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
+                onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+              >
+                Download Datasheet
+              </a>
             </div>
           </div>
         </div>
@@ -464,6 +473,7 @@ export function EBeamEvaporator() {
         ]}
         journalNames={['ACS AMI', 'J. Infrared Millim. Waves', 'BSJ Textile Univ.']}
         onRequestQuote={() => openContactForm(true)}
+        onDownloadDatasheet={() => setGateOpen(true)}
         ctaLabel="Request a Quote"
       />
 
@@ -513,6 +523,14 @@ export function EBeamEvaporator() {
               <span className="material-symbols-outlined text-[20px]">call</span>
               Contact Sales Team
             </button>
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline"
+              onClick={(e) => { e.preventDefault(); setGateOpen(true); }}
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Product Datasheet
+            </a>
           </div>
         </div>
       </section>
@@ -535,6 +553,17 @@ export function EBeamEvaporator() {
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="E-Beam Evaporation System (MEB-600)"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+        onDownloadBrochure={() => { const a = document.createElement('a'); a.href = '/docs/e-beam-evaporator-datasheet.pdf'; a.download = 'NineScrolls-MEB-600-Spec-Sheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
+        downloadLabel="Download Datasheet"
+      />
+
+      <DownloadGateModal
+        isOpen={gateOpen}
+        onClose={() => setGateOpen(false)}
+        fileUrl={'/docs/e-beam-evaporator-datasheet.pdf'}
+        fileName={'NineScrolls-MEB-600-Spec-Sheet.pdf'}
+        title={'Download MEB-600 Datasheet'}
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
     </>
