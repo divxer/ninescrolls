@@ -42,7 +42,7 @@ export function EBeamEvaporator() {
     "@type": "Product",
     "@id": "https://ninescrolls.com/products/e-beam-evaporator#product",
     "name": "E-Beam Evaporation System (MEB-600)",
-    "description": "Multi-source e-beam + thermal resistance evaporator with 6-pocket crucible, ±3% film uniformity, in-situ QCM endpoint control. Cited in ACS Applied Materials & Interfaces (2024) for infrared image sensor fabrication.",
+    "description": "Combined e-beam and thermal-resistance evaporator in a single chamber with 10 kW e-gun, 6×17 cc water-cooled crucibles, INFICON closed-loop quartz monitor, and ≤±5% uniformity over Φ6\" wafers. Cited in ACS Applied Materials & Interfaces (2024) for infrared image sensor fabrication.",
     "image": ["https://ninescrolls.com/assets/images/products/e-beam/main.jpg"],
     "sku": "meb-600",
     "brand": { "@type": "Brand", "name": "NineScrolls LLC" },
@@ -80,7 +80,7 @@ export function EBeamEvaporator() {
     <>
       <SEO
         title="E-Beam Evaporation System (MEB-600) — Multi-Source IR & Photonic Thin-Film Evaporator | NineScrolls"
-        description="MEB-600 e-beam + thermal evaporator with 6-pocket crucible, ±3% uniformity, in-situ QCM endpoint. Cited in ACS Appl. Mater. Interfaces (2024). For IR sensors, photonic crystals, and optoelectronic thin films on up to 8-inch wafers."
+        description='MEB-600 combined e-beam (10 kW, 270°) + thermal evaporator with 6×17 cc water-cooled crucibles, INFICON closed-loop quartz monitor, ≤±5% uniformity over Φ6" wafers, Siemens PLC recipe control. Cited in ACS Appl. Mater. Interfaces (2024). For IR sensors, photonic crystals, and optoelectronic thin films.'
         keywords="e-beam evaporator, MEB-600, electron beam evaporation system, thermal evaporator, PVD evaporation, QCM thickness monitor, infrared coating, photonic crystal deposition, PbS evaporation, IR sensor fabrication, lift-off evaporation"
         url="/products/e-beam-evaporator"
         image={cdnUrl('/assets/images/products/e-beam/main.jpg')}
@@ -104,7 +104,7 @@ export function EBeamEvaporator() {
             <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">E-Beam Evaporation System (MEB-600)</h1>
             <p className="text-lg md:text-xl text-white/95 mb-2">Multi-Source Evaporator for Infrared, Photonic &amp; Optoelectronic Thin Films</p>
             <p className="text-base text-white/80 tracking-wide">
-              E-Beam + Thermal Resistance · In-Situ QCM Endpoint · 6-Pocket Crucible
+              10 kW E-Beam + 3 kW Thermal · INFICON Closed-Loop QCM · 6×17 cc Crucible · Siemens PLC Recipe Control
             </p>
 
             <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm rounded-lg max-w-2xl mx-auto">
@@ -114,7 +114,8 @@ export function EBeamEvaporator() {
               <p className="text-[0.95rem] text-white/90 leading-relaxed text-center">
                 Cited in <em>ACS Applied Materials &amp; Interfaces</em> (2024) for crack-free PbS microplate
                 growth, plus published work in IR sensors and photonic crystals. Configurable for metals,
-                oxides, nitrides and fluorides on substrates up to Φ8&quot;.
+                oxides, nitrides and fluorides; baseline single-wafer Φ6&quot; substrate, larger chambers and
+                umbrella / dome holders available on request.
               </p>
             </div>
 
@@ -164,39 +165,43 @@ export function EBeamEvaporator() {
               <ul className="space-y-2 mb-6">
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Dual-source platform: XY-scanned e-beam gun plus thermal resistance boats
+                  Combined e-beam and thermal-resistance evaporation in a single SS304 vacuum chamber
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  6-pocket E-gun crucible (17 cc per pocket) for multi-material runs
+                  10 kW E-type electron gun, 270° deflection, programmable X-Y scan (10–250 Hz)
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  In-situ quartz-crystal monitor (QCM) with endpoint detection
+                  6 × 17 cc oxygen-free copper crucibles, water-cooled, automatic indexing &amp; shutter
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  ±3% to ±5% film uniformity across substrate
+                  Dual-electrode 3 kW thermal-resistance source with auto-switching and shutters
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Variable-speed planetary rotation; custom umbrella fixture available
+                  INFICON closed-loop quartz-crystal monitor, 0.1 Å/s rate / 1 Å thickness resolution
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Optional ion-source pre-clean for improved film adhesion
+                  ≤±5% film uniformity over Φ6&quot; wafer (baseline)
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Optional optical monitor and composite mask system
+                  Substrate heating: planar RT–300 °C (quartz lamp) or umbrella RT–200 °C, PID ±1 °C
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Manual, semi-auto and full-auto recipe modes
+                  KYKY 1200 L/s composite turbo + ULVAC 12 L/s rotary pumping; ultimate 6.7×10⁻⁵ Pa
                 </li>
                 <li className="flex items-start gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
-                  Substrate capacity: 1 × Φ8&quot; or 5 × Φ4&quot;; custom fixtures available
+                  Siemens PLC + Advantech IPC, Windows GUI; auto / manual modes, recipe logging
+                </li>
+                <li className="flex items-start gap-3 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0">check_circle</span>
+                  Recirculating chiller and silent air compressor included; safety interlocks &amp; alarms
                 </li>
               </ul>
 
@@ -240,51 +245,87 @@ export function EBeamEvaporator() {
             <table className="w-full border-collapse bg-white rounded-xl shadow-sm overflow-hidden">
               <tbody>
                 <tr>
-                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications</th>
+                  <th colSpan={2} className="bg-primary text-on-primary text-left px-6 py-3 font-semibold text-lg">System Specifications (baseline configuration)</th>
                 </tr>
                 <tr className="border-b border-outline-variant/30">
-                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Substrate Capacity</td>
-                  <td className="px-6 py-3 text-on-surface-variant">1 × Φ8&quot; or 5 × Φ4&quot;; custom planetary / umbrella fixtures available</td>
+                  <td className="px-6 py-3 font-medium text-on-surface w-1/3">Configuration</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Combined e-beam + thermal-resistance evaporation, single vacuum chamber</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
-                  <td className="px-6 py-3 font-medium text-on-surface">Source Configuration</td>
-                  <td className="px-6 py-3 text-on-surface-variant">XY-scanned electron beam gun + thermal resistance boats</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Chamber</td>
+                  <td className="px-6 py-3 text-on-surface-variant">SS304, vertical cylindrical, front-opening, water-cooled walls; Φ600 × H600 mm baseline (larger / smaller available)</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30">
-                  <td className="px-6 py-3 font-medium text-on-surface">E-Gun Crucible</td>
-                  <td className="px-6 py-3 text-on-surface-variant">6-pocket, 17 cc per pocket</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Footprint &amp; Mass</td>
+                  <td className="px-6 py-3 text-on-surface-variant">2200 × 1500 × 2000 mm (L × W × H); ~1100 kg</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
-                  <td className="px-6 py-3 font-medium text-on-surface">Materials</td>
-                  <td className="px-6 py-3 text-on-surface-variant">Metals · oxides · nitrides · fluorides · compound semiconductors (Ge, ZnS, PbS, MgO, Au, Al, Cr, SiO₂, TiO₂…)</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Substrate Holder</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Rotating planar holder, max Φ6&quot; single wafer, 1–10 rpm continuously variable; umbrella / dome holder available</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30">
-                  <td className="px-6 py-3 font-medium text-on-surface">Film Uniformity</td>
-                  <td className="px-6 py-3 text-on-surface-variant">±3% to ±5% across substrate</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Source-to-Substrate</td>
+                  <td className="px-6 py-3 text-on-surface-variant">330–370 mm</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">E-Beam Gun</td>
+                  <td className="px-6 py-3 text-on-surface-variant">E-type, 270° deflection; max 10 kW; –8 / –10 kV anode (selectable); 0–1000 mA @ 10 kV</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">E-Beam Scan</td>
+                  <td className="px-6 py-3 text-on-surface-variant">X-Y deflection ±2.0 A each, 10–250 Hz, programmable per recipe</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Crucibles</td>
+                  <td className="px-6 py-3 text-on-surface-variant">6 × 17 cc oxygen-free copper, water-cooled, automatic indexing, automatic shutter</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Thermal Resistance</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Two evaporation electrode sets with auto-switching; 3 kW supply; compatible with boats and helical filaments; auto shutters</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
                   <td className="px-6 py-3 font-medium text-on-surface">Thickness Control</td>
-                  <td className="px-6 py-3 text-on-surface-variant">In-situ Quartz Crystal Monitor (QCM) with endpoint detection</td>
+                  <td className="px-6 py-3 text-on-surface-variant">INFICON quartz-crystal monitor, closed-loop with source shutters; 0–9999.9 Å/s (0.1 Å/s resolution); 1 Å thickness resolution</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30">
-                  <td className="px-6 py-3 font-medium text-on-surface">Substrate Rotation</td>
-                  <td className="px-6 py-3 text-on-surface-variant">Variable-speed planetary rotation</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Film Uniformity</td>
+                  <td className="px-6 py-3 text-on-surface-variant">≤±5% over Φ6&quot; (baseline)</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
                   <td className="px-6 py-3 font-medium text-on-surface">Substrate Heating</td>
-                  <td className="px-6 py-3 text-on-surface-variant">Resistive heating; high-temperature upgrade optional</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Planar: RT–300 °C (quartz lamp); Umbrella: RT–200 °C (sheathed); PID ±1 °C</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30">
-                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum System</td>
-                  <td className="px-6 py-3 text-on-surface-variant">High-vacuum (turbo + dry pump); ~8×10⁻⁴ Pa typical working pressure</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Ultimate Vacuum</td>
+                  <td className="px-6 py-3 text-on-surface-variant">6.7 × 10⁻⁵ Pa (at ≤55% RH)</td>
                 </tr>
                 <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Pump-down Time</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Atm → 9.0 × 10⁻⁴ Pa in ≤35 min</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum Pumps</td>
+                  <td className="px-6 py-3 text-on-surface-variant">KYKY 1200 L/s composite turbomolecular + ULVAC (Ningbo) 12 L/s rotary; gate-valve isolated</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Vacuum Gauging</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Digital combined gauge — Pirani (low vacuum) + cold cathode (high vacuum)</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
+                  <td className="px-6 py-3 font-medium text-on-surface">Control System</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Siemens PLC + Advantech IPC, Windows-style GUI; auto / manual modes; recipe programming and run logging</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                  <td className="px-6 py-3 font-medium text-on-surface">Safety &amp; Alarms</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Interlocks; auto power-loss recipe memory; recipe validation; alarms for water failure, TMP fault, communication fault</td>
+                </tr>
+                <tr className="border-b border-outline-variant/30">
                   <td className="px-6 py-3 font-medium text-on-surface">Optional Modules</td>
-                  <td className="px-6 py-3 text-on-surface-variant">Ion-source pre-clean · Optical monitor · Composite mask · Auto recipe</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Ion-source pre-clean · Optical monitor · Composite mask · Custom planetary / umbrella fixtures</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-3 font-medium text-on-surface">Operation Modes</td>
-                  <td className="px-6 py-3 text-on-surface-variant">Manual · Semi-auto · Full-auto</td>
+                  <td className="px-6 py-3 font-medium text-on-surface">Included Utilities</td>
+                  <td className="px-6 py-3 text-on-surface-variant">Recirculating chiller; silent air compressor</td>
                 </tr>
               </tbody>
             </table>
@@ -404,7 +445,7 @@ export function EBeamEvaporator() {
               },
               {
                 q: 'What substrate sizes and fixtures does the MEB-600 support?',
-                a: 'Standard configurations accept 1 × Φ8" wafer or 5 × Φ4" wafers. Custom planetary or umbrella-style fixtures are available for non-standard substrates, including polyimide flexible substrates, curved optics and small chip carriers.',
+                a: 'The baseline configuration accepts a single Φ6" wafer on a rotating planar holder (1–10 rpm). Larger chambers, multi-wafer planetary fixtures, and umbrella / dome holders are available on request — useful for non-standard substrates such as polyimide flexible substrates, curved IR optics, or small chip carriers. The chamber is Φ600 × H600 mm in the baseline build, also customisable.',
               },
               {
                 q: 'Can the system support lift-off metallization?',
