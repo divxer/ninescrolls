@@ -679,12 +679,18 @@ async function writePageView(
             isBot: props.isBot === true,
 
             // Persist event-specific properties for admin visibility.
-            // RFQ linkage takes precedence (legacy contract), otherwise full original blob.
-            ...(props.rfqId
-                ? { properties: JSON.stringify({ rfqId: props.rfqId, rfqInstitution: props.rfqInstitution }) }
-                : props.originalProperties && typeof props.originalProperties === 'object'
-                    ? { properties: JSON.stringify(props.originalProperties) }
-                    : {}),
+            // Merge originalProperties with the RFQ linkage fields so RFQ events
+            // keep their full payload (institution, equipment category, etc.) and
+            // also expose rfqId / rfqInstitution at well-known keys for queries.
+            // Callers must keep PII out of properties — see DownloadGateModal.
+            ...((props.originalProperties && typeof props.originalProperties === 'object') || props.rfqId
+                ? {
+                    properties: JSON.stringify({
+                        ...(typeof props.originalProperties === 'object' ? props.originalProperties : {}),
+                        ...(props.rfqId ? { rfqId: props.rfqId, rfqInstitution: props.rfqInstitution } : {}),
+                    }),
+                }
+                : {}),
 
             createdAt: now,
             updatedAt: now,
