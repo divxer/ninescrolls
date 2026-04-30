@@ -678,8 +678,13 @@ async function writePageView(
             userAgent,
             isBot: props.isBot === true,
 
-            // RFQ linkage (rfq_submission events only)
-            ...(props.rfqId ? { properties: JSON.stringify({ rfqId: props.rfqId, rfqInstitution: props.rfqInstitution }) } : {}),
+            // Persist event-specific properties for admin visibility.
+            // RFQ linkage takes precedence (legacy contract), otherwise full original blob.
+            ...(props.rfqId
+                ? { properties: JSON.stringify({ rfqId: props.rfqId, rfqInstitution: props.rfqInstitution }) }
+                : props.originalProperties && typeof props.originalProperties === 'object'
+                    ? { properties: JSON.stringify(props.originalProperties) }
+                    : {}),
 
             createdAt: now,
             updatedAt: now,
@@ -1112,15 +1117,28 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                     }),
                     behaviorScore: properties.behaviorScore,
                 };
+                const isPageView = properties.eventType === 'page_view';
+                const originalProps = (properties.originalProperties && typeof properties.originalProperties === 'object')
+                    ? properties.originalProperties as Record<string, unknown>
+                    : {};
                 const segmentPromises: Promise<{ status: number; body: string }>[] = [
-                    sendToSegment({
-                        type: 'page',
-                        anonymousId: anonymousId || undefined,
-                        name: (properties.pathname as string) || '/',
-                        properties: segmentProperties,
-                        timestamp: new Date().toISOString(),
-                        context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
-                    }),
+                    isPageView
+                        ? sendToSegment({
+                            type: 'page',
+                            anonymousId: anonymousId || undefined,
+                            name: (properties.pathname as string) || '/',
+                            properties: segmentProperties,
+                            timestamp: new Date().toISOString(),
+                            context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
+                        })
+                        : sendToSegment({
+                            type: 'track',
+                            anonymousId: anonymousId || undefined,
+                            event: (properties.eventName as string) || 'Tracked Event',
+                            properties: { ...originalProps, ...segmentProperties },
+                            timestamp: new Date().toISOString(),
+                            context: { ip: visitorIp, userAgent, library: { name: 'analytics.js', version: '5.2.0' } },
+                        }),
                 ];
 
                 // Send Target Customer Detected event to Segment (if applicable)

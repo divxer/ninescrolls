@@ -319,7 +319,7 @@ function aggregateProductStats(pageStats: PageStats[], events: AnalyticsEvent[])
   const pdfCounts = new Map<string, number>();
   const contactCounts = new Map<string, number>();
   for (const e of events) {
-    if (e.eventType === 'pdf_download' && e.productName) {
+    if ((e.eventType === 'pdf_download' || e.eventName === 'Document Downloaded') && e.productName) {
       pdfCounts.set(e.productName, (pdfCounts.get(e.productName) || 0) + 1);
     }
     if ((e.eventType === 'contact_form' || e.eventType === 'rfq_submission') && (e.productId || e.productName)) {
@@ -1391,7 +1391,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     e.pathname?.includes('/contact') || e.eventName === 'Contact Form Submitted'
   );
   const downloadedPDF = org.events.some((e) =>
-    e.eventType === 'pdf_download' || e.eventName === 'Product Downloaded' || e.eventName === 'Datasheet Downloaded'
+    e.eventType === 'pdf_download' || e.eventName === 'Product Downloaded' || e.eventName === 'Datasheet Downloaded' || e.eventName === 'Document Downloaded'
   );
   const contactFormSubmitted = org.events.some((e) => e.eventType === 'contact_form');
   const uniqueProductPages = new Set(
@@ -1915,7 +1915,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
               const eventIcon = (e: AnalyticsEvent) => {
                 if (e.eventType === 'page_time_flush') return 'timer';
                 if (e.eventType === 'page_view') return e.pathname === '/' ? 'home' : 'description';
-                if (e.eventType === 'pdf_download') return 'download';
+                if (e.eventType === 'pdf_download' || e.eventName === 'Document Downloaded') return 'download';
                 if (e.eventType === 'contact_form' || e.eventType === 'rfq_submission') return 'mail';
                 return 'mouse';
               };
@@ -2501,7 +2501,8 @@ export function AdminAnalyticsPage() {
       const EVENT_TYPES = [
         'page_view', 'page_time_flush', 'product_view', 'pdf_download',
         'contact_form', 'target_customer', 'search', 'add_to_cart',
-        'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
+        'purchase', 'rfq_step', 'rfq_submission', 'lead_capture',
+        'newsletter_signup', 'other', 'anomaly',
       ];
 
       async function queryByType(eventType: string): Promise<AnalyticsEvent[]> {
@@ -2672,7 +2673,8 @@ export function AdminAnalyticsPage() {
       const EVENT_TYPES = [
         'page_view', 'page_time_flush', 'product_view', 'pdf_download',
         'contact_form', 'target_customer', 'search', 'add_to_cart',
-        'purchase', 'rfq_step', 'rfq_submission', 'other', 'anomaly',
+        'purchase', 'rfq_step', 'rfq_submission', 'lead_capture',
+        'newsletter_signup', 'other', 'anomaly',
       ];
       const nowISO = new Date().toISOString();
 

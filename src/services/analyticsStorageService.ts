@@ -179,6 +179,10 @@ function buildPageViewPayload(params: SendPageViewBeaconParams): string {
       // RFQ linkage (only present for rfq_submission events)
       rfqId: params.properties?.rfqId || undefined,
       rfqInstitution: params.properties?.institution || undefined,
+
+      // Original event properties (forwarded to Segment as track-event properties
+      // and persisted to DDB AnalyticsEvent.properties for admin visibility).
+      originalProperties: params.properties,
     },
     context: collectBrowserContext(),
   });

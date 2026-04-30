@@ -135,7 +135,7 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
     a.click();
     document.body.removeChild(a);
 
-    analytics.trackCustomEvent('Document Downloaded', { fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
+    analytics.trackCustomEvent('Datasheet Downloaded', { fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
 
     setSubmitting(false);
     onClose();
