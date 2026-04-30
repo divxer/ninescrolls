@@ -12,6 +12,7 @@ import DOMPurify from 'dompurify';
 import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import { LightboxContainer } from '../components/common/ImageLightbox';
+import { HeroCleanroomBackground } from '../components/HeroCleanroomBackground';
 import '../styles/article-content.css';
 
 /**
@@ -300,7 +301,7 @@ export const InsightsPostPage: React.FC = () => {
         {/* Hero Section */}
         <section className="hero-gradient relative py-20 text-white overflow-hidden">
           <div className="absolute inset-0 opacity-30">
-            <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="" />
+            <HeroCleanroomBackground />
           </div>
           <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
             <div className="flex items-center w-full gap-10 md:flex-row flex-col">
@@ -436,7 +437,7 @@ export function InsightsPostPreview({ post }: { post: InsightsPost }) {
     <div className="min-h-screen bg-surface-container-lowest">
       <section className="hero-gradient relative py-20 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="" />
+          <HeroCleanroomBackground priority={false} />
         </div>
         <div className="max-w-[1200px] mx-auto px-5 relative z-10 flex items-center min-h-[400px]">
           <div className="flex items-center w-full gap-10 md:flex-row flex-col">

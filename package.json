@@ -17,6 +17,7 @@
     "create-news": "npx tsx scripts/create-news.ts",
     "upload-news-image": "npx tsx scripts/upload-news-image.ts",
     "upload-product-images": "npx tsx --env-file=.env scripts/upload-product-images.ts",
+    "upload-hero-cleanroom": "npx tsx --env-file=.env scripts/upload-hero-cleanroom.ts",
     "ping-search-engines": "npx tsx scripts/ping-search-engines.ts",
     "test": "vitest run",
     "test:watch": "vitest"
