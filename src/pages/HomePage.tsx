@@ -6,6 +6,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useInsightsPosts } from '../hooks/useInsightsPosts';
 import { SEO } from '../components/common/SEO';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { HeroCleanroomBackground } from '../components/HeroCleanroomBackground';
 import { newsCategories } from '../types';
 
 export function HomePage() {
@@ -97,7 +98,7 @@ export function HomePage() {
         {/* Hero Section */}
         <section className="relative h-screen min-h-[700px] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <img className="w-full h-full object-cover" src={cdnUrl('/assets/images/hero-cleanroom.jpg')} alt="Semiconductor cleanroom facility" />
+            <HeroCleanroomBackground alt="Semiconductor cleanroom facility" />
             <div className="absolute inset-0 bg-gradient-to-r from-on-surface/80 via-on-surface/45 to-transparent"></div>
           </div>
           <div className="container mx-auto px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
