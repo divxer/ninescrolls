@@ -117,11 +117,15 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
       console.warn('Lead submission failed (non-blocking):', err);
     }
 
+    // PII (email, fullName, jobTitle, organization) is intentionally NOT included
+    // here — it lives in the LEAD# partition (and HubSpot) only. Analytics events
+    // hold non-PII signal so they can be retained without GDPR redaction concerns.
     analytics.trackCustomEvent('Lead Captured', {
       source: 'Download Gate',
       fileUrl,
       fileName,
-      ...form,
+      intent: form.intent,
+      researchAreas: form.researchAreas,
       turnstile: token ? 'verified' : 'n/a',
       marketingOptIn,
       privacyAccepted: true
@@ -135,7 +139,7 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
     a.click();
     document.body.removeChild(a);
 
-    analytics.trackCustomEvent('Document Downloaded', { fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
+    analytics.trackCustomEvent('Datasheet Downloaded', { fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
 
     setSubmitting(false);
     onClose();

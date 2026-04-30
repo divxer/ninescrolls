@@ -20,6 +20,8 @@ function eventNameToType(event: string): string {
     'RFQ Step 1: Your Information': 'rfq_step',
     'RFQ Step 2: Project Details': 'rfq_step',
     'RFQ Submitted': 'rfq_submission',
+    'Lead Captured': 'lead_capture',
+    'newsletter_subscribe': 'newsletter_signup',
   };
   return map[event] || 'other';
 }

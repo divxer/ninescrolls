@@ -50,8 +50,9 @@ export const useCombinedAnalytics = () => {
 
     // Datasheet download tracking
     trackDatasheetDownload: (productId: string, productName: string) => {
+      // Google Analytics only — Segment/DDB write goes through segment.trackWithIPAnalysis
+      // to avoid double-writing one download as two separate AnalyticsEvent records.
       gaAnalytics.trackDatasheetDownload(productId, productName);
-      segmentAnalytics.trackDatasheetDownload(productId, productName);
     },
 
     // Search tracking
