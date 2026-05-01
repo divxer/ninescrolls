@@ -2619,6 +2619,20 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  // Refetch overrides when a detail dossier closes. OrgDetail can write new
+  // classifications (auto-classify, Mark as Target, Undo, Rename) while open;
+  // without this, the table keeps using a stale snapshot until full refresh,
+  // which breaks ISP grouping for orgs that were just classified.
+  const prevSelectedOrgRef = useRef<OrganizationRecord | null>(null);
+  useEffect(() => {
+    if (prevSelectedOrgRef.current && !selectedOrg) {
+      listOrgOverrides()
+        .then(setOrgOverrides)
+        .catch((err) => console.warn('Failed to refresh overrides:', err));
+    }
+    prevSelectedOrgRef.current = selectedOrg;
+  }, [selectedOrg]);
+
   // Load all RFQs for institution name backfill
   const [allRfqs, setAllRfqs] = useState<RfqSubmission[]>([]);
   useEffect(() => {
