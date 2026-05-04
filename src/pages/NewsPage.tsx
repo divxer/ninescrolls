@@ -104,47 +104,49 @@ export const NewsPage: React.FC = () => {
         ) : filteredPosts.length === 0 ? (
           <div className="text-center text-on-surface-variant py-20">No news articles found.</div>
         ) : (
-          <div className="space-y-12">
-            {filteredPosts.slice(0, visibleCount).map(post => (
-              <div key={post.id} className="border-b border-outline-variant pb-12 flex gap-12 flex-col md:flex-row transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                <div className="w-32 shrink-0">
-                  <time className="font-headline font-bold text-primary" dateTime={post.publishDate}>{formatDate(post.publishDate)}</time>
-                  <span className="block mt-2 text-[10px] uppercase font-black text-on-surface-variant tracking-widest">{post.category}</span>
-                  <span className="block mt-1 text-xs text-on-surface-variant">{post.readTime} min</span>
-                </div>
-                <div className="flex-1">
-                  {hasValidImage(post.imageUrl) && (
-                    <Link to={`/news/${post.slug}`} className="block mb-6 rounded-lg overflow-hidden">
-                      <img
-                        src={cdnUrl(resolveCardImage(post.imageUrl))}
-                        alt={post.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-48 object-cover"
-                      />
+          <>
+            <div className="space-y-12">
+              {filteredPosts.slice(0, visibleCount).map(post => (
+                <div key={post.id} className="border-b border-outline-variant pb-12 flex gap-12 flex-col md:flex-row transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
+                  <div className="w-32 shrink-0">
+                    <time className="font-headline font-bold text-primary" dateTime={post.publishDate}>{formatDate(post.publishDate)}</time>
+                    <span className="block mt-2 text-[10px] uppercase font-black text-on-surface-variant tracking-widest">{post.category}</span>
+                    <span className="block mt-1 text-xs text-on-surface-variant">{post.readTime} min</span>
+                  </div>
+                  <div className="flex-1">
+                    {hasValidImage(post.imageUrl) && (
+                      <Link to={`/news/${post.slug}`} className="block mb-6 rounded-lg overflow-hidden">
+                        <img
+                          src={cdnUrl(resolveCardImage(post.imageUrl))}
+                          alt={post.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-48 object-cover"
+                        />
+                      </Link>
+                    )}
+                    {!hasValidImage(post.imageUrl) && (
+                      <Link
+                        to={`/news/${post.slug}`}
+                        className="block mb-6 rounded-lg overflow-hidden h-48 flex items-center justify-center text-white font-headline font-bold text-lg"
+                        style={{ background: CATEGORY_COLORS[post.category] || '#0d9488' }}
+                      >
+                        {post.category}
+                      </Link>
+                    )}
+                    <h3 className="text-3xl font-headline font-bold hover:text-primary cursor-pointer transition-colors">
+                      <Link to={`/news/${post.slug}`}>{post.title}</Link>
+                    </h3>
+                    <p className="text-on-surface-variant mt-4">{post.excerpt}</p>
+                    <Link to={`/news/${post.slug}`} className="mt-6 inline-flex items-center gap-2 font-bold text-sm uppercase tracking-widest text-primary">
+                      Read Full Release <span className="material-symbols-outlined text-sm">arrow_forward</span>
                     </Link>
-                  )}
-                  {!hasValidImage(post.imageUrl) && (
-                    <Link
-                      to={`/news/${post.slug}`}
-                      className="block mb-6 rounded-lg overflow-hidden h-48 flex items-center justify-center text-white font-headline font-bold text-lg"
-                      style={{ background: CATEGORY_COLORS[post.category] || '#0d9488' }}
-                    >
-                      {post.category}
-                    </Link>
-                  )}
-                  <h3 className="text-3xl font-headline font-bold hover:text-primary cursor-pointer transition-colors">
-                    <Link to={`/news/${post.slug}`}>{post.title}</Link>
-                  </h3>
-                  <p className="text-on-surface-variant mt-4">{post.excerpt}</p>
-                  <Link to={`/news/${post.slug}`} className="mt-6 inline-flex items-center gap-2 font-bold text-sm uppercase tracking-widest text-primary">
-                    Read Full Release <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             {filteredPosts.length > visibleCount && (
-              <div className="pt-4 flex justify-center">
+              <div className="mt-12 flex justify-center">
                 <button
                   onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                   className="px-6 py-3 rounded-full bg-primary text-on-primary font-bold hover:opacity-90 transition-opacity"
@@ -153,7 +155,7 @@ export const NewsPage: React.FC = () => {
                 </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
     </>
