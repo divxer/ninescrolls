@@ -1961,6 +1961,14 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                         <h4 className="text-sm font-bold text-on-surface">{eventLabel}</h4>
                         {e.pathname && <p className="text-xs text-secondary font-mono">{e.pathname}</p>}
                         {e.productName && <p className="text-xs text-secondary font-medium">{e.productName}</p>}
+                        {(e.eventType === 'pdf_download' || e.eventType === 'lead_capture') && (() => {
+                          const props = typeof e.properties === 'string' ? (() => { try { return JSON.parse(e.properties); } catch { return null; } })() : e.properties;
+                          const fileName = props?.fileName as string | undefined;
+                          const fileUrl = props?.fileUrl as string | undefined;
+                          const display = fileName || (fileUrl ? fileUrl.split('/').pop()?.split('?')[0] : null);
+                          if (!display) return null;
+                          return <p className="text-xs text-secondary font-medium" title={fileUrl}>{display}</p>;
+                        })()}
                         {e.eventType === 'rfq_submission' && (() => {
                           const props = typeof e.properties === 'string' ? (() => { try { return JSON.parse(e.properties); } catch { return null; } })() : e.properties;
                           const rfqId = props?.rfqId as string | undefined;
