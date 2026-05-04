@@ -28,6 +28,12 @@ export const InsightsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [recommended, setRecommended] = useState<InsightsPost[]>([]);
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, searchTerm]);
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -202,9 +208,21 @@ export const InsightsPage: React.FC = () => {
           {loading ? (
             <div className="text-center text-on-surface-variant py-20">Loading articles...</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {filteredPosts.map(renderCard)}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {filteredPosts.slice(0, visibleCount).map(renderCard)}
+              </div>
+              {filteredPosts.length > visibleCount && (
+                <div className="mt-12 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                    className="px-6 py-3 rounded-full bg-primary text-on-primary font-bold hover:opacity-90 transition-opacity"
+                  >
+                    Load more ({filteredPosts.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {/* More Recommendations */}
