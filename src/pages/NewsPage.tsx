@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cdnUrl } from '../config/imageConfig';
 import { useScrollToTop } from '../hooks/useScrollToTop';
@@ -36,8 +36,14 @@ export const NewsPage: React.FC = () => {
   );
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useScrollToTop();
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, searchTerm]);
 
   const filteredPosts = posts.filter(post => {
     const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
@@ -99,7 +105,7 @@ export const NewsPage: React.FC = () => {
           <div className="text-center text-on-surface-variant py-20">No news articles found.</div>
         ) : (
           <div className="space-y-12">
-            {filteredPosts.map(post => (
+            {filteredPosts.slice(0, visibleCount).map(post => (
               <div key={post.id} className="border-b border-outline-variant pb-12 flex gap-12 flex-col md:flex-row transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
                 <div className="w-32 shrink-0">
                   <time className="font-headline font-bold text-primary" dateTime={post.publishDate}>{formatDate(post.publishDate)}</time>
@@ -137,6 +143,16 @@ export const NewsPage: React.FC = () => {
                 </div>
               </div>
             ))}
+            {filteredPosts.length > visibleCount && (
+              <div className="pt-4 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                  className="px-6 py-3 rounded-full bg-primary text-on-primary font-bold hover:opacity-90 transition-opacity"
+                >
+                  Load more ({filteredPosts.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
