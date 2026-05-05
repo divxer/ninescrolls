@@ -400,14 +400,24 @@ export function ICPEtcher() {
       {/* Academic Citations */}
       <AcademicCitations
         heading="Trusted by Leading Research Labs"
-        subtitle="Our ICP etching systems are cited in 60+ peer-reviewed publications across top-tier journals including Nature Communications, Advanced Materials, and Light: Science & Applications, powering breakthroughs in photonics, micro-optics, and nanofabrication."
+        subtitle="Our ICP etching systems are cited in 60+ peer-reviewed publications across top-tier journals including Nature Communications, Advanced Functional Materials, and Light: Science & Applications, powering breakthroughs in photonics, metasurfaces, micro-optics, and nanofabrication."
         stats={[
-          { value: '60', suffix: '+', label: 'Peer-Reviewed Publications' },
+          { value: '61', suffix: '+', label: 'Peer-Reviewed Publications' },
           { value: '2800', suffix: '+', label: 'Total Citations' },
           { value: '20', suffix: '+', label: 'Research Institutions' },
           { value: '9', suffix: ' yr', label: 'Publication Track Record' },
         ]}
         publications={[
+          {
+            journal: 'Advanced Functional Materials',
+            tier: 'top',
+            title: 'High-Performance Color Printing and Information Encryption Enabled by Silicon Carbide Metasurface',
+            authors: 'Ren et al.',
+            year: '2026',
+            citations: 0,
+            doi: '10.1002/adfm.202526191',
+            isNew: true,
+          },
           {
             journal: 'PhotoniX',
             tier: 'high',
