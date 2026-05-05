@@ -134,10 +134,19 @@ function generateSitemap(posts: ArticleData[]): string {
   for (const p of STATIC_PAGES) {
     lines.push(`  <url><loc>${BASE_URL}${p.loc}</loc><lastmod>${p.lastmod}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
   }
+  const NOW = Date.now();
+  const DAY_MS = 86_400_000;
   for (const post of posts) {
-    const path = post.contentType === 'news' ? `/news/${post.slug}` : `/insights/${post.slug}`;
+    const isNews = post.contentType === 'news';
+    const path = isNews ? `/news/${post.slug}` : `/insights/${post.slug}`;
     const lastmod = toIsoDate(post.updatedAt?.split('T')[0] || post.publishDate);
-    lines.push(`  <url><loc>${BASE_URL}${path}</loc><lastmod>${lastmod}</lastmod><changefreq>${post.contentType === 'news' ? 'weekly' : 'monthly'}</changefreq><priority>0.7</priority></url>`);
+    // News decays with age (timely, low-conversion). Insights are evergreen.
+    let priority = '0.7';
+    if (isNews) {
+      const ageDays = (NOW - new Date(post.publishDate + 'T00:00:00Z').getTime()) / DAY_MS;
+      priority = ageDays > 180 ? '0.3' : ageDays > 60 ? '0.4' : '0.5';
+    }
+    lines.push(`  <url><loc>${BASE_URL}${path}</loc><lastmod>${lastmod}</lastmod><changefreq>${isNews ? 'weekly' : 'monthly'}</changefreq><priority>${priority}</priority></url>`);
   }
   lines.push('</urlset>');
   return lines.join('\n') + '\n';

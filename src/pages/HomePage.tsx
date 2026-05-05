@@ -83,7 +83,7 @@ export function HomePage() {
   return (
     <>
       <SEO
-        title="NineScrolls - Advanced Plasma Etching & ALD Systems for Semiconductor Manufacturing"
+        title="Plasma Etching & Deposition Systems for R&D Labs"
         description="Leading provider of plasma etching systems, ALD equipment, and semiconductor manufacturing solutions. Expert RIE etching, ICP etching, and thin film deposition technology for research and production."
         keywords="plasma etching, plasma etching machine, plasma etching process, inductively coupled plasma etching, what is plasma etching, semiconductor manufacturing, thin film deposition"
         url="/"
