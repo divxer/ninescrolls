@@ -3264,7 +3264,7 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '11',
-    title: 'Understanding the Differences Between PE, RIE, and ICP-RIE in Plasma Etching',
+    title: 'RIE vs ICP-RIE vs PE: Plasma Etching Comparison',
     excerpt: 'PE, RIE, and ICP-RIE compared with real process data — etch rates, gas chemistries, Bosch process, common etch defects, and endpoint detection. A practical guide for choosing the right plasma etching technology.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor process engineers, equipment engineers, R&D scientists, and technical decision-makers in plasma processing.</p>
