@@ -5,6 +5,8 @@ interface Publication {
   authors: string;
   year: string;
   citations: number;
+  doi?: string;
+  isNew?: boolean;
 }
 
 interface StatItem {
@@ -87,15 +89,38 @@ export function AcademicCitations({
                 <div className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider mb-1.5 ${tierJournalColors[pub.tier]}`}>
                   <span className={`w-2 h-2 rounded-full ${tierDotColors[pub.tier]}`} />
                   {pub.journal}
+                  {pub.isNew && (
+                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white tracking-wider">NEW</span>
+                  )}
                 </div>
-                <div className="text-[15px] font-semibold text-on-surface leading-normal mb-1.5 line-clamp-2">{pub.title}</div>
+                {pub.doi ? (
+                  <a
+                    href={`https://doi.org/${pub.doi}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[15px] font-semibold text-on-surface leading-normal mb-1.5 line-clamp-2 hover:text-primary transition-colors block no-underline"
+                  >
+                    {pub.title}
+                  </a>
+                ) : (
+                  <div className="text-[15px] font-semibold text-on-surface leading-normal mb-1.5 line-clamp-2">{pub.title}</div>
+                )}
                 <div className="text-xs text-on-surface-variant">
                   {pub.authors} · <span>{pub.year}</span>
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-extrabold text-primary">{pub.citations}</div>
-                <div className="text-xs text-on-surface-variant uppercase tracking-wider">citations</div>
+                {pub.isNew ? (
+                  <>
+                    <div className="text-base font-extrabold text-primary leading-tight">Just<br />Published</div>
+                    <div className="text-xs text-on-surface-variant uppercase tracking-wider mt-1">{pub.year}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-extrabold text-primary">{pub.citations}</div>
+                    <div className="text-xs text-on-surface-variant uppercase tracking-wider">citations</div>
+                  </>
+                )}
               </div>
             </div>
           ))}
