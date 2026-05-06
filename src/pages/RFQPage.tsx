@@ -35,6 +35,8 @@ const EQUIPMENT_CATEGORIES = [
   { value: 'IBE', label: 'Ion Beam Etching (IBE)' },
   { value: 'HDP-CVD', label: 'HDP-CVD System' },
   { value: 'Plasma-Cleaner', label: 'Plasma Cleaner / Surface Treatment' },
+  { value: 'Stripper', label: 'Photoresist Stripping System' },
+  { value: 'Coater-Developer', label: 'Coater / Developer (Spin Coater)' },
   { value: 'Other', label: 'Not Sure / Need Recommendation' },
 ];
 
@@ -182,6 +184,8 @@ const PRODUCT_CATEGORY_MAP: Record<string, string> = {
   'IBE': 'IBE', 'IBE System': 'IBE', 'RIBE': 'IBE',
   'HDP-CVD': 'HDP-CVD', 'HDP-CVD System': 'HDP-CVD',
   'Plasma Cleaner': 'Plasma-Cleaner', 'Plasma Treatment': 'Plasma-Cleaner', 'Surface Treatment': 'Plasma-Cleaner',
+  'Stripper': 'Stripper', 'Stripping': 'Stripper', 'Photoresist Strip': 'Stripper',
+  'Coater': 'Coater-Developer', 'Developer': 'Coater-Developer', 'Spin Coater': 'Coater-Developer',
 };
 
 function inferCategory(product: string, explicitCategory?: string): string {
