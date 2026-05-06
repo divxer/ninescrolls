@@ -1093,7 +1093,7 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '21',
-    title: 'DRIE Bosch Process: Scallop Control, MEMS & TSV Etching',
+    title: 'Deep Reactive Ion Etching (DRIE): Bosch Process Guide for MEMS & TSV',
     excerpt: 'DRIE Bosch process explained: etch-passivation cycle tuning, scallop control techniques, MEMS/TSV applications, defects fixes & ICP-DRIE equipment notes.',
     content: `
       <h2>1) Introduction to DRIE and the Bosch Process</h2>
@@ -1549,7 +1549,7 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '23',
-    title: 'RIE vs Ion Milling: Etch Rate, Selectivity & When to Use',
+    title: 'Reactive Ion Etching vs Ion Milling (IBE): Complete Comparison Guide',
     excerpt: 'Compare RIE vs Ion Milling (IBE): mechanisms, etch rate by material, anisotropy, selectivity, and decision framework. Includes DRIE & RIBE hybrid notes.',
     content: `
       <h2>Introduction</h2>
@@ -2253,7 +2253,7 @@ export const insightsPosts: InsightsPost[] = [
   },
   {
     id: '14',
-    title: 'HDP-CVD Process Guide: Equipment, Recipes & Gap-Fill',
+    title: 'HDP-CVD Process: Void-Free Gap-Fill Guide with Recipes & Equipment',
     excerpt: 'Complete HDP-CVD handbook: starter recipes, equipment selection checklist, PECVD/ALD comparison, troubleshooting & cost analysis.',
     content: `
       <p><strong>Target Readers:</strong> Semiconductor/packaging process engineers, equipment engineers, PIs/lab managers, R&D procurement teams, and technical decision-makers.</p>
