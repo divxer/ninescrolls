@@ -52,7 +52,6 @@ interface OrganizationRecord {
   isAnonymousHighIntent: boolean;
   isISPVisitor: boolean;
   companyType: string;
-  hasBot: boolean;
   lifecycleStage: LifecycleStage;
   rfqInstitution: string | null;
   events: AnalyticsEvent[];
@@ -631,6 +630,10 @@ function aggregateByOrg(
   events: AnalyticsEvent[],
   overrideAiByOrg?: Map<string, { organizationType: string; confidence: number }>,
 ): OrganizationRecord[] {
+  // Bots never aggregate into human orgs — they are summarized separately via aggregateBots().
+  // This guard is unconditional; callers do not need to pre-filter.
+  events = events.filter((e) => !e.isBot);
+
   // ── Pre-pass: build visitorId → org metadata from events that carry org data ──
   // page_time_flush events lack ip/org/orgName/country etc. We inherit those
   // from other events (page_view, product_view, etc.) sharing the same visitorId.
@@ -879,9 +882,6 @@ function aggregateByOrg(
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
-    // Detect bot visitors by isBot flag (User-Agent detection)
-    const hasBot = group.some((e) => e.isBot);
-
     // Promote AI classification when IP-based org type is unknown
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
@@ -905,7 +905,7 @@ function aggregateByOrg(
     })() : null;
     const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown')?.organizationType ||
       geoEvent.organizationType || '';
-    const effectiveOrgType = hasBot ? 'bot' : (aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType);
+    const effectiveOrgType = aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType;
 
     // Backfill tier for old events that lack leadTier.
     // Two paths mirror the pipeline (segmentAnalytics):
@@ -984,7 +984,6 @@ function aggregateByOrg(
       isAnonymousHighIntent,
       isISPVisitor,
       companyType,
-      hasBot,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       rfqInstitution,
       events: sorted,
@@ -1007,6 +1006,93 @@ function aggregateByOrg(
     }
   }
 
+  return records;
+}
+
+// ─── Bot Traffic Aggregation ────────────────────────────────────────────────
+
+interface BotRecord {
+  botName: string;
+  userAgentSample: string;
+  events: number;
+  uniqueVisitors: number;
+  uniquePages: number;
+  lastSeen: string;
+}
+
+// Ordered list of known bot signatures. Multi-word entries (e.g. "Sogou web spider")
+// must precede their single-word substrings so the longer match wins.
+const KNOWN_BOT_SIGNATURES = [
+  // Search engines
+  'Googlebot-Image', 'Googlebot-News', 'Googlebot-Video', 'Googlebot',
+  'Storebot-Google', 'AdsBot-Google-Mobile', 'AdsBot-Google', 'Mediapartners-Google', 'GoogleOther',
+  'bingbot', 'adidxbot', 'BingPreview', 'MicrosoftPreview',
+  'Baiduspider-render', 'Baiduspider', 'YandexImages', 'YandexBot', 'DuckDuckBot', 'Slurp',
+  'Sogou web spider', 'Sogou inst spider', 'Sogou Pic Spider', 'Sogou News Spider',
+  'Yisouspider', 'Bytespider', 'PetalBot', 'Applebot', 'Amazonbot',
+  // SEO / scrapers
+  'AhrefsBot', 'SemrushBot', 'MJ12bot', 'DotBot', 'BLEXBot',
+  'DataForSeoBot', 'SerpstatBot', 'BarkrowlerBot', 'MegaIndex',
+  'CCBot', 'archive.org_bot', 'ia_archiver',
+  // AI / LLM crawlers
+  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'anthropic-ai', 'Claude-Web',
+  'PerplexityBot', 'YouBot', 'cohere-ai', 'Diffbot',
+  // Social previewers
+  'facebookexternalhit', 'meta-externalagent', 'Twitterbot', 'LinkedInBot',
+  'Pinterestbot', 'Discordbot', 'TelegramBot', 'WhatsApp', 'Slackbot',
+  // Misc
+  'SEBot-WA', 'SEBot',
+];
+
+function detectBotName(ua: string): string {
+  if (!ua) return 'Unknown Bot';
+  const lower = ua.toLowerCase();
+  // 1. Known signatures (longest-match-first via list order)
+  for (const sig of KNOWN_BOT_SIGNATURES) {
+    if (lower.includes(sig.toLowerCase())) return sig;
+  }
+  // 2. "compatible; <Name>" pattern — covers most well-formed crawler UAs
+  const compat = ua.match(/compatible;\s*([A-Za-z][A-Za-z0-9_.-]*)/);
+  if (compat && compat[1].length >= 3) return compat[1];
+  // 3. Generic keyword glued or standalone (bot/spider/crawl/...)
+  const glued = ua.match(/\b([A-Za-z][A-Za-z0-9_-]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z0-9_-]*)\b/i);
+  if (glued) return glued[1];
+  const standalone = ua.match(/\b(bot|spider|crawler|fetcher|scanner)\b/i);
+  if (standalone) return standalone[1];
+  // 4. Last resort: truncated UA so distinct unknowns don't collide
+  return ua.slice(0, 40);
+}
+
+function aggregateBots(events: AnalyticsEvent[]): BotRecord[] {
+  const groups = new Map<string, { ua: string; eventCount: number; visitors: Set<string>; pages: Set<string>; lastSeen: number }>();
+  for (const e of events) {
+    if (!e.isBot) continue;
+    const ua = e.userAgent || '';
+    const name = detectBotName(ua);
+    let g = groups.get(name);
+    if (!g) {
+      g = { ua, eventCount: 0, visitors: new Set(), pages: new Set(), lastSeen: 0 };
+      groups.set(name, g);
+    }
+    g.eventCount++;
+    const vid = (e as Record<string, unknown>).visitorId as string;
+    if (vid) g.visitors.add(vid);
+    if (e.pathname) g.pages.add(e.pathname);
+    const t = new Date(e.timestamp).getTime();
+    if (t > g.lastSeen) g.lastSeen = t;
+  }
+  const records: BotRecord[] = [];
+  for (const [botName, g] of groups) {
+    records.push({
+      botName,
+      userAgentSample: g.ua,
+      events: g.eventCount,
+      uniqueVisitors: g.visitors.size,
+      uniquePages: g.pages.size,
+      lastSeen: g.lastSeen ? new Date(g.lastSeen).toISOString() : '',
+    });
+  }
+  records.sort((a, b) => b.events - a.events);
   return records;
 }
 
@@ -1219,8 +1305,8 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
     setOverrideLoading(true);
     getOrgOverride(org.orgName).then(async (result) => {
       if (cancelled) return;
-      // Auto-classify if no cached classification exists (skip bots)
-      if (!result.found && !org.hasBot) {
+      // Auto-classify if no cached classification exists.
+      if (!result.found) {
         try {
           const ctxEvent = org.events.find(e => e.isp || e.country || e.city) || org.events[0];
           const classified = await classifyOrg(org.orgName, {
@@ -1432,7 +1518,7 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const ipEvent = org.events.find((e) => e.organizationType && e.organizationType !== 'unknown') || org.events[0];
   const ipOrgType = ipEvent?.organizationType || 'unknown';
   const hasEventAI = aiEvent && aiEvent.aiConfidence != null && aiEvent.aiOrganizationType;
-  const hasOverrideAI = !hasEventAI && !org.hasBot && override?.found && override?.source !== 'manual'
+  const hasOverrideAI = !hasEventAI && override?.found && override?.source !== 'manual'
     && !!(override?.organizationType);
   const hasAI = hasEventAI || hasOverrideAI;
   const effectiveAiOrgType = hasEventAI ? aiEvent.aiOrganizationType : override?.organizationType;
@@ -1443,7 +1529,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   // Classification source
   const classificationSource = (() => {
     if (override?.found && override?.source === 'manual') return 'manual';
-    if (org.hasBot) return 'bot';
     if (hasAI && effectiveAiConf >= 0.5) return 'ai';
     if (ipOrgType !== 'unknown') return 'ip';
     if (org.isAnonymousHighIntent) return 'behavior';
@@ -1466,10 +1551,9 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
   const currentIsTarget = isManualOverride ? override?.isTargetCustomer : org.isTargetCustomer;
 
   // Display org type
-  const displayOrgType = org.hasBot ? 'bot'
-    : (override?.found && override?.organizationType && override.organizationType !== 'unknown')
-      ? override.organizationType
-      : org.organizationType;
+  const displayOrgType = (override?.found && override?.organizationType && override.organizationType !== 'unknown')
+    ? override.organizationType
+    : org.organizationType;
 
   // Engagement level
   const engagement = engagementLevel(org.maxBehaviorScore);
@@ -2191,27 +2275,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                 </div>
               )}
 
-              {/* Bot detection details */}
-              {org.hasBot && (() => {
-                const botEvent = org.events.find((e) => e.isBot);
-                const ua = botEvent?.userAgent || '';
-                const botMatch = ua.match(/([A-Za-z]*(?:bot|spider|crawl|slurp|archiver|fetcher|scanner)[A-Za-z]*)\b/i);
-                const botName = botMatch ? botMatch[1] : 'Unknown Bot';
-                const detectionMethod = 'User-Agent match';
-                return (
-                  <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Bot Name</span>
-                      <span className="text-sm font-medium text-on-surface">{botName}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Detection</span>
-                      <span className="text-sm font-medium text-on-surface">{detectionMethod}</span>
-                    </div>
-                  </div>
-                );
-              })()}
-
               {/* Status Indicators */}
               <div className="pt-4" style={{ borderTop: '1px solid rgba(196, 198, 207, 0.2)' }}>
                 <div className="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
@@ -2225,12 +2288,6 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
                     <>
                       <span className="material-symbols-outlined text-[16px] text-tertiary-fixed-dim" style={{ fontVariationSettings: "'FILL' 1" }}>edit</span>
                       Manual Override
-                    </>
-                  )}
-                  {classificationSource === 'bot' && (
-                    <>
-                      <span className="material-symbols-outlined text-[16px] text-error">bug_report</span>
-                      Bot Detected
                     </>
                   )}
                   {classificationSource === 'ip' && (
@@ -2877,12 +2934,12 @@ export function AdminAnalyticsPage() {
     return ids;
   }, [allEvents, selfVisitorId, overrideAiByOrg]);
 
-  // Filter bots by isBot flag (User-Agent detection)
+  const botRecords = useMemo(() => aggregateBots(allEvents), [allEvents]);
+
+  // Bots are always excluded from human analytics (orgs / keywords / pages / landings).
+  // They surface only in the dedicated Bot Traffic panel below, gated by `showBots`.
   const filteredEvents = useMemo(() => {
-    let events = allEvents;
-    if (!showBots) {
-      events = events.filter((e) => !e.isBot);
-    }
+    let events = allEvents.filter((e) => !e.isBot);
     if (!showPrivateIPs) {
       events = events.filter((e) => !e.ip || !isPrivateIP(e.ip));
     }
@@ -2890,7 +2947,7 @@ export function AdminAnalyticsPage() {
       events = events.filter((e) => !selfVisitorIds.has((e as Record<string, unknown>).visitorId as string));
     }
     return events;
-  }, [allEvents, showBots, showPrivateIPs, hideSelf, selfVisitorIds]);
+  }, [allEvents, showPrivateIPs, hideSelf, selfVisitorIds]);
 
   // Aggregate by organization, then apply manual overrides
   const organizations = useMemo(() => {
@@ -3394,6 +3451,53 @@ export function AdminAnalyticsPage() {
               <span className="material-symbols-outlined text-[12px]">close</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* ─── Bot Traffic Panel ─────────────────────────────────────────────── */}
+      {showBots && botRecords.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">smart_toy</span>
+              <h4 className="font-headline font-bold text-on-surface">Bot Traffic</h4>
+              <span className="text-xs text-on-surface-variant">
+                {botRecords.reduce((sum, b) => sum + b.events, 0)} events across {botRecords.length} bot{botRecords.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button
+              className="text-xs text-on-surface-variant hover:text-on-surface bg-transparent border-none cursor-pointer underline"
+              onClick={() => setShowBots(false)}
+            >
+              Hide
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant">
+                  <th className="text-left py-2 pr-4">Bot</th>
+                  <th className="text-right py-2 pr-4">Events</th>
+                  <th className="text-right py-2 pr-4">Visitors</th>
+                  <th className="text-right py-2 pr-4">Pages</th>
+                  <th className="text-right py-2">Last Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {botRecords.map((b) => (
+                  <tr key={b.botName} className="border-b border-outline-variant/30 last:border-0">
+                    <td className="py-2 pr-4 font-medium text-on-surface" title={b.userAgentSample}>{b.botName}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-on-surface-variant">{b.events}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-on-surface-variant">{b.uniqueVisitors}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-on-surface-variant">{b.uniquePages}</td>
+                    <td className="py-2 text-right text-xs text-on-surface-variant">
+                      {b.lastSeen ? new Date(b.lastSeen).toLocaleString() : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
