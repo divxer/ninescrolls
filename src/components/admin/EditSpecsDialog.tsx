@@ -48,7 +48,9 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
   const [department, setDepartment] = useState(initial.department || '');
   const [quoteDate, setQuoteDate] = useState(initial.quoteDate || '');
   const [quoteValidUntil, setQuoteValidUntil] = useState(initial.quoteValidUntil || '');
-  const [validUntilTouched, setValidUntilTouched] = useState(Boolean(initial.quoteValidUntil));
+  const [validUntilTouched, setValidUntilTouched] = useState(
+    initial.quoteValidUntil != null || initial.quoteDate != null,
+  );
 
   useEffect(() => {
     if (validUntilTouched) return;
