@@ -297,8 +297,9 @@ export function CreateOrderPage() {
                 value={quoteValidUntil}
                 min={quoteDate || undefined}
                 onChange={(e) => {
-                  setValidUntilTouched(true);
-                  setQuoteValidUntil(e.target.value);
+                  const next = e.target.value;
+                  setQuoteValidUntil(next);
+                  setValidUntilTouched(Boolean(next));
                 }}
                 className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
               />
