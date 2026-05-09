@@ -248,6 +248,8 @@ describe('order-api handler', () => {
             mockQuery.mockResolvedValueOnce({ Items: [] });
             mockQuery.mockResolvedValueOnce({ Items: [] });
             mockQuery.mockResolvedValueOnce({ Items: [] });
+            // QUOTE_SENT expired-quotes query
+            mockQuery.mockResolvedValueOnce({ Items: [] });
 
             const result = await handler(
                 makeAppSyncEvent('orderStats'),
@@ -256,7 +258,41 @@ describe('order-api handler', () => {
             );
 
             expect(result.totalActive).toBe(3);
-            expect(JSON.parse(result.byStatus).INQUIRY).toBe(3);
+            expect(result.byStatus.INQUIRY).toBe(3);
+        });
+
+        it('counts QUOTE_SENT orders with past quoteValidUntil as expiredQuotes', async () => {
+            // Save and replace the dispatch impl so the QUOTE_SENT GSI1 query
+            // returns expired-quote items. Restore in `finally` so subsequent
+            // tests keep the original constructor-name dispatch.
+            const originalImpl = mockSend.getMockImplementation();
+            mockSend.mockReset();
+            mockSend.mockImplementation((cmd: { ExpressionAttributeValues?: Record<string, string> }) => {
+                const pk = cmd.ExpressionAttributeValues?.[':pk'];
+                if (pk === 'ORDER_STATUS#QUOTE_SENT') {
+                    return Promise.resolve({
+                        Count: 3,
+                        Items: [
+                            { quoteValidUntil: '2020-01-01' }, // expired
+                            { quoteValidUntil: '2020-06-15' }, // expired
+                            { quoteValidUntil: '2099-01-01' }, // future, not expired
+                        ],
+                    });
+                }
+                return Promise.resolve({ Count: 0, Items: [] });
+            });
+
+            try {
+                const result = await handler(
+                    makeAppSyncEvent('orderStats'),
+                    {} as any,
+                    vi.fn(),
+                );
+                expect(result.expiredQuotes).toBe(2);
+            } finally {
+                mockSend.mockReset();
+                if (originalImpl) mockSend.mockImplementation(originalImpl);
+            }
         });
     });
 
@@ -298,6 +334,125 @@ describe('order-api handler', () => {
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow('institution, productModel, and primaryContact are required');
+        });
+
+        it('persists quoteValidUntil', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValue({
+                Item: {
+                    PK: 'ORDER#x', SK: 'META', orderId: 'x', status: 'INQUIRY',
+                    institution: 'I', productModel: 'ICP',
+                    createdAt: 't', updatedAt: 't', createdBy: 'a', source: 'MANUAL',
+                    feedbackScheduleCreated: false,
+                    quoteDate: '2026-05-01', quoteValidUntil: '2026-06-01',
+                },
+            });
+            mockQuery.mockResolvedValue({ Items: [] });
+
+            await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'I',
+                        productModel: 'ICP',
+                        quoteDate: '2026-05-01',
+                        quoteValidUntil: '2026-06-01',
+                        primaryContact: { contactName: 'N', contactEmail: 'e@x.com', role: 'PI' },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            const orderItemPut = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Item?: { quoteValidUntil?: string } };
+                return arg.Item?.quoteValidUntil === '2026-06-01';
+            });
+            expect(orderItemPut).toBeTruthy();
+        });
+
+        it('rejects createOrder when quoteValidUntil is before quoteDate', async () => {
+            await expect(handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'I',
+                        productModel: 'ICP',
+                        quoteDate: '2026-06-01',
+                        quoteValidUntil: '2026-05-01',
+                        primaryContact: { contactName: 'N', contactEmail: 'e@x.com', role: 'PI' },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/quoteValidUntil/);
+        });
+
+        it('rejects createOrder when quoteValidUntil is malformed', async () => {
+            await expect(handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'I',
+                        productModel: 'ICP',
+                        quoteValidUntil: '2026/06/01',
+                        primaryContact: { contactName: 'N', contactEmail: 'e@x.com', role: 'PI' },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/YYYY-MM-DD/);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // updateOrder
+    // -----------------------------------------------------------------------
+    describe('updateOrder', () => {
+        it('writes QUOTE_VALIDITY_UPDATED log when validUntil changes', async () => {
+            mockGet.mockResolvedValue({
+                Item: {
+                    PK: 'ORDER#x', SK: 'META', orderId: 'x', status: 'QUOTE_SENT',
+                    institution: 'I', productModel: 'ICP',
+                    createdAt: 't', updatedAt: 't', createdBy: 'a', source: 'MANUAL',
+                    feedbackScheduleCreated: false,
+                    quoteDate: '2026-05-01', quoteValidUntil: '2026-05-31',
+                },
+            });
+            mockUpdate.mockResolvedValue({});
+            mockPut.mockResolvedValue({});
+            mockQuery.mockResolvedValue({ Items: [] });
+
+            await handler(
+                makeAppSyncEvent('updateOrder', {
+                    orderId: 'x',
+                    input: JSON.stringify({ quoteValidUntil: '2026-06-15' }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            const logPut = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string } })
+                .find((arg) => arg?.Item?.action === 'QUOTE_VALIDITY_UPDATED');
+            expect(logPut).toBeTruthy();
+        });
+
+        it('rejects updateOrder with validUntil before stored quoteDate', async () => {
+            mockGet.mockResolvedValue({
+                Item: {
+                    PK: 'ORDER#x', SK: 'META', orderId: 'x', status: 'QUOTE_SENT',
+                    institution: 'I', productModel: 'ICP',
+                    createdAt: 't', updatedAt: 't', createdBy: 'a', source: 'MANUAL',
+                    feedbackScheduleCreated: false,
+                    quoteDate: '2026-05-15',
+                },
+            });
+            await expect(handler(
+                makeAppSyncEvent('updateOrder', {
+                    orderId: 'x',
+                    input: JSON.stringify({ quoteValidUntil: '2026-05-01' }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/quoteValidUntil/);
         });
     });
 
