@@ -1,6 +1,7 @@
-import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { fetchOrder, buildFullOrderResponse } from '../lib/orderHelper.js';
+import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
 interface UpdateOrderInput {
@@ -12,6 +13,8 @@ interface UpdateOrderInput {
     productName?: string;
     configuration?: string;
     quoteAmount?: number;
+    quoteDate?: string;
+    quoteValidUntil?: string;
     estimatedDelivery?: string;
     notes?: string;
 }
@@ -19,8 +22,11 @@ interface UpdateOrderInput {
 const UPDATABLE_FIELDS = [
     'quoteNumber', 'poNumber', 'institution', 'department',
     'productModel', 'productName', 'configuration', 'quoteAmount',
+    'quoteDate', 'quoteValidUntil',
     'estimatedDelivery', 'notes',
 ];
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function updateOrder(event: AppSyncEvent) {
     const { orderId, input: rawInput } = event.arguments as {
@@ -40,6 +46,17 @@ export async function updateOrder(event: AppSyncEvent) {
         throw new Error(`Order not found: ${orderId}`);
     }
 
+    if (input.quoteValidUntil !== undefined && input.quoteValidUntil !== '' && !ISO_DATE_RE.test(input.quoteValidUntil)) {
+        throw new Error('quoteValidUntil must be a YYYY-MM-DD date');
+    }
+    if (input.quoteDate !== undefined && input.quoteDate !== '' && !ISO_DATE_RE.test(input.quoteDate)) {
+        throw new Error('quoteDate must be a YYYY-MM-DD date');
+    }
+    const effectiveQuoteDate = input.quoteDate ?? (existing.quoteDate as string | undefined);
+    if (input.quoteValidUntil && effectiveQuoteDate && input.quoteValidUntil < effectiveQuoteDate) {
+        throw new Error('quoteValidUntil cannot be before quoteDate');
+    }
+
     const updateParts: string[] = ['updatedAt = :now'];
     const exprValues: Record<string, unknown> = { ':now': new Date().toISOString() };
 
@@ -57,6 +74,22 @@ export async function updateOrder(event: AppSyncEvent) {
         UpdateExpression: `SET ${updateParts.join(', ')}`,
         ExpressionAttributeValues: exprValues,
     }));
+
+    if (input.quoteValidUntil !== undefined && input.quoteValidUntil !== existing.quoteValidUntil) {
+        const now = new Date().toISOString();
+        const { email: operator } = getOperatorInfo(event);
+        await docClient.send(new PutCommand({
+            TableName: TABLE_NAME(),
+            Item: {
+                PK: `ORDER#${orderId}`,
+                SK: `LOG#${now}`,
+                action: 'QUOTE_VALIDITY_UPDATED',
+                operator,
+                timestamp: now,
+                detail: `Quote valid until: ${existing.quoteValidUntil ?? '(none)'} → ${input.quoteValidUntil ?? '(none)'}`,
+            },
+        }));
+    }
 
     return buildFullOrderResponse(orderId);
 }
