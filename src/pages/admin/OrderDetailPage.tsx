@@ -9,6 +9,7 @@ import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { EditSpecsDialog } from '../../components/admin/EditSpecsDialog';
 import { formatDate, getNextStatus, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
+import { quoteExpiryStatus, daysUntilExpiry } from '../../lib/orderHelpers';
 
 const STEP_ICONS: Record<string, string> = {
   INQUIRY: 'search',
@@ -309,6 +310,31 @@ export function OrderDetailPage() {
               <div className="space-y-1">
                 <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Created By</label>
                 <p className="text-sm font-semibold">{order.createdByEmail || order.createdBy}</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Quote Valid Until</label>
+                {(() => {
+                  const status = quoteExpiryStatus(order);
+                  const remaining = daysUntilExpiry(order.quoteValidUntil ?? null);
+                  if (!order.quoteValidUntil) {
+                    return <p className="text-sm text-outline italic">-</p>;
+                  }
+                  const color = status === 'expired'
+                    ? 'text-error'
+                    : status === 'soon'
+                      ? 'text-tertiary'
+                      : 'text-on-surface';
+                  const suffix = status === 'expired' && remaining !== null
+                    ? ` (expired ${Math.abs(remaining)}d ago)`
+                    : status === 'soon' && remaining !== null
+                      ? ` (expires in ${remaining}d)`
+                      : '';
+                  return (
+                    <p className={`text-sm font-semibold ${color}`}>
+                      {order.quoteValidUntil}{suffix}
+                    </p>
+                  );
+                })()}
               </div>
             </div>
           </div>
