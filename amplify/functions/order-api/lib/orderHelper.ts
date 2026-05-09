@@ -80,6 +80,7 @@ export function buildOrderResponse(order: OrderItem, contacts: ContactItem[]): R
             notes: c.notes || null,
         })),
         quoteDate: order.quoteDate || null,
+        quoteValidUntil: order.quoteValidUntil || null,
         poDate: order.poDate || null,
         estimatedDelivery: order.estimatedDelivery || null,
         productionStartDate: order.productionStartDate || null,
