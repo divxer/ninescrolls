@@ -88,11 +88,27 @@ export async function orderStats(_event: AppSyncEvent) {
         }
     }
 
+    // Count expired quotes (QUOTE_SENT with quoteValidUntil < today)
+    let expiredQuotes = 0;
+    const quoteSentResult = await docClient.send(new QueryCommand({
+        TableName: TABLE_NAME(),
+        IndexName: 'GSI1',
+        KeyConditionExpression: 'GSI1PK = :pk',
+        ExpressionAttributeValues: { ':pk': 'ORDER_STATUS#QUOTE_SENT' },
+    }));
+    for (const order of quoteSentResult.Items || []) {
+        const vu = order.quoteValidUntil as string | undefined;
+        if (vu && vu < today) {
+            expiredQuotes++;
+        }
+    }
+
     return {
         totalActive,
         byStatus,
         avgDaysToInstall,
         upcomingDeliveries,
         overdueOrders,
+        expiredQuotes,
     };
 }
