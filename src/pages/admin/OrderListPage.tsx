@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
-import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
+import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type Order, type OrderStatus } from '../../types/admin';
 import { quoteExpiryStatus, daysUntilExpiry, isQuoteExpired } from '../../lib/orderHelpers';
 
 const STATUS_ICONS: Record<string, string> = {
@@ -25,8 +25,8 @@ function formatCurrency(value: number | null | undefined): string {
   }).format(value);
 }
 
-function ExpiryBadge({ order }: { order: { status: string; quoteValidUntil?: string | null } }) {
-  const status = quoteExpiryStatus(order as Parameters<typeof quoteExpiryStatus>[0]);
+function ExpiryBadge({ order }: { order: Order }) {
+  const status = quoteExpiryStatus(order);
   if (status === 'none' || status === 'ok') return null;
   const remaining = daysUntilExpiry(order.quoteValidUntil ?? null);
   if (status === 'expired') {
@@ -71,10 +71,7 @@ export function OrderListPage() {
     );
   }, [orders, search, expiredOnly]);
 
-  const expiredCount = useMemo(
-    () => orders.filter(o => isQuoteExpired(o)).length,
-    [orders],
-  );
+  const expiredCount = stats?.expiredQuotes ?? 0;
 
   // Find the stalled order (highest daysSinceLastUpdate, not CLOSED/INSTALLED)
   const stalledOrder = useMemo(() => {
@@ -235,7 +232,10 @@ export function OrderListPage() {
                 <input
                   type="checkbox"
                   checked={expiredOnly}
-                  onChange={(e) => setExpiredOnly(e.target.checked)}
+                  onChange={(e) => {
+                    setExpiredOnly(e.target.checked);
+                    if (e.target.checked) setStatusFilter('All');
+                  }}
                   className="rounded border-outline-variant"
                 />
                 Show expired only
@@ -436,11 +436,13 @@ export function OrderListPage() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-on-surface">Expired Quotes</p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">{expiredCount} need re-issue</p>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">{expiredCount === 1 ? '1 needs re-issue' : `${expiredCount} need re-issue`}</p>
                 </div>
               </div>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                {expiredCount} sent quote{expiredCount !== 1 ? 's have' : ' has'} passed its validity date.
+                {expiredCount === 1
+                  ? '1 sent quote has passed its validity date.'
+                  : `${expiredCount} sent quotes have passed their validity date.`}
               </p>
               <button
                 onClick={() => { setExpiredOnly(true); setStatusFilter('All'); }}
