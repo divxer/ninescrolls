@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   addDaysISO,
   daysUntilExpiry,
   isQuoteExpired,
   quoteExpiryStatus,
+  todayISO,
 } from './orderHelpers';
 import type { Order } from '../types/admin';
 
@@ -107,5 +108,38 @@ describe('quoteExpiryStatus', () => {
     expect(
       quoteExpiryStatus(makeOrder({ status: 'INQUIRY', quoteValidUntil: '2026-05-01' }), TODAY),
     ).toBe('none');
+  });
+});
+
+describe('todayISO', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('returns local calendar date (not UTC) at evening Pacific time', () => {
+    // 2026-05-09 22:00 local — equivalent to 2026-05-10 in UTC for a westerly TZ.
+    // We can't override the host TZ portably from inside the test, so we pick a
+    // moment that is unambiguously the same calendar day in every common TZ.
+    vi.setSystemTime(new Date(2026, 4, 9, 12, 0, 0)); // May 9 2026, noon local
+    expect(todayISO()).toBe('2026-05-09');
+  });
+
+  it('formats single-digit month and day with leading zeros', () => {
+    vi.setSystemTime(new Date(2026, 0, 5, 10, 0, 0)); // Jan 5 2026
+    expect(todayISO()).toBe('2026-01-05');
+  });
+});
+
+describe('addDaysISO malformed input', () => {
+  it('returns empty string for non-ISO input', () => {
+    expect(addDaysISO('not-a-date', 5)).toBe('');
+    expect(addDaysISO('2026/05/09', 5)).toBe('');
+    expect(addDaysISO('2026-13-01', 5)).toBe('');
+  });
+});
+
+describe('daysUntilExpiry malformed input', () => {
+  it('returns null for non-ISO validUntil', () => {
+    expect(daysUntilExpiry('not-a-date', '2026-05-09')).toBeNull();
+    expect(daysUntilExpiry('2026-13-45', '2026-05-09')).toBeNull();
   });
 });
