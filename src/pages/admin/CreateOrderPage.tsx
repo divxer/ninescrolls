@@ -278,10 +278,11 @@ export function CreateOrderPage() {
           </h3>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              <label htmlFor="quoteDate" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
                 Quote Date
               </label>
               <input
+                id="quoteDate"
                 type="date"
                 value={quoteDate}
                 onChange={(e) => setQuoteDate(e.target.value)}
@@ -289,10 +290,11 @@ export function CreateOrderPage() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              <label htmlFor="quoteValidUntil" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
                 Quote Valid Until
               </label>
               <input
+                id="quoteValidUntil"
                 type="date"
                 value={quoteValidUntil}
                 min={quoteDate || undefined}
@@ -305,10 +307,11 @@ export function CreateOrderPage() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              <label htmlFor="estimatedDelivery" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
                 Estimated Delivery
               </label>
               <input
+                id="estimatedDelivery"
                 type="date"
                 value={estimatedDelivery}
                 onChange={(e) => setEstimatedDelivery(e.target.value)}
