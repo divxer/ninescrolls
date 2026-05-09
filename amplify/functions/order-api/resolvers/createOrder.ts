@@ -14,6 +14,7 @@ interface CreateOrderInput {
     configuration?: string;
     quoteAmount?: number;
     quoteDate?: string;
+    quoteValidUntil?: string;
     estimatedDelivery?: string;
     notes?: string;
     primaryContact: {
@@ -41,6 +42,17 @@ export async function createOrder(event: AppSyncEvent) {
         throw new Error('primaryContact must have contactName, contactEmail, and role');
     }
 
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    if (input.quoteValidUntil && !ISO_DATE_RE.test(input.quoteValidUntil)) {
+        throw new Error('quoteValidUntil must be a YYYY-MM-DD date');
+    }
+    if (input.quoteDate && !ISO_DATE_RE.test(input.quoteDate)) {
+        throw new Error('quoteDate must be a YYYY-MM-DD date');
+    }
+    if (input.quoteValidUntil && input.quoteDate && input.quoteValidUntil < input.quoteDate) {
+        throw new Error('quoteValidUntil cannot be before quoteDate');
+    }
+
     const now = new Date().toISOString();
     const orderId = generateOrderId();
     const contactId = generateContactId();
@@ -64,7 +76,8 @@ export async function createOrder(event: AppSyncEvent) {
         configuration: input.configuration || '',
         quoteNumber: input.quoteNumber || '',
         quoteAmount: input.quoteAmount,
-        quoteDate: input.quoteDate,
+        quoteDate: input.quoteDate || undefined,
+        quoteValidUntil: input.quoteValidUntil || undefined,
         estimatedDelivery: input.estimatedDelivery,
         notes: input.notes || '',
         matchedOrgId: '',

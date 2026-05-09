@@ -264,6 +264,7 @@ const schema = a.schema({
     contacts: a.ref('OrderContact').array(),
     // Dates
     quoteDate: a.date(),
+    quoteValidUntil: a.date(),
     poDate: a.date(),
     estimatedDelivery: a.date(),
     productionStartDate: a.date(),
@@ -296,6 +297,7 @@ const schema = a.schema({
     avgDaysToInstall: a.float(),
     upcomingDeliveries: a.integer().required(),
     overdueOrders: a.integer().required(),
+    expiredQuotes: a.integer().required(),
   }),
 
   PresignedUploadUrl: a.customType({

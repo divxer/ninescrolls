@@ -42,6 +42,7 @@ export interface Order {
   matchedOrgId?: string | null;
   contacts?: OrderContact[] | null;
   quoteDate?: string | null;
+  quoteValidUntil?: string | null;
   poDate?: string | null;
   estimatedDelivery?: string | null;
   productionStartDate?: string | null;
@@ -104,6 +105,7 @@ export interface OrderStats {
   avgDaysToInstall?: number | null;
   upcomingDeliveries: number;
   overdueOrders: number;
+  expiredQuotes: number;
 }
 
 export interface RfqSubmission {

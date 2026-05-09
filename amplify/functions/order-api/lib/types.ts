@@ -80,6 +80,7 @@ export interface OrderItem {
     rfqId?: string;
     declineReason?: string;
     quoteDate?: string;
+    quoteValidUntil?: string;
     poDate?: string;
     estimatedDelivery?: string;
     productionStartDate?: string;

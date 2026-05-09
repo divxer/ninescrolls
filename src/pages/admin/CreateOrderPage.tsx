@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { PRODUCT_MODELS, CONTACT_ROLES, ROLE_LABELS, type ContactRole } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
+import { addDaysISO } from '../../lib/orderHelpers';
 
 export function CreateOrderPage() {
   const navigate = useNavigate();
@@ -27,16 +28,28 @@ export function CreateOrderPage() {
 
   // Dates
   const [quoteDate, setQuoteDate] = useState(new Date().toISOString().split('T')[0]);
+  const [quoteValidUntil, setQuoteValidUntil] = useState('');
+  const [validUntilTouched, setValidUntilTouched] = useState(false);
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
 
   // Reference
   const [quoteNumber, setQuoteNumber] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Auto-default validUntil to quoteDate + 30 days while user hasn't touched it
+  useEffect(() => {
+    if (validUntilTouched) return;
+    setQuoteValidUntil(quoteDate ? addDaysISO(quoteDate, 30) : '');
+  }, [quoteDate, validUntilTouched]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!productModel || !institution || !contactName || !contactEmail || !contactRole) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    if (quoteValidUntil && quoteDate && quoteValidUntil < quoteDate) {
+      setError('Quote Valid Until must be on or after Quote Date.');
       return;
     }
 
@@ -52,6 +65,7 @@ export function CreateOrderPage() {
         quoteAmount: quoteAmount ? parseFloat(quoteAmount) : undefined,
         quoteNumber: quoteNumber || undefined,
         quoteDate: quoteDate || undefined,
+        quoteValidUntil: quoteValidUntil || undefined,
         estimatedDelivery: estimatedDelivery || undefined,
         notes: notes || undefined,
         primaryContact: {
@@ -262,12 +276,13 @@ export function CreateOrderPage() {
             <span className="material-symbols-outlined text-[18px]">calendar_month</span>
             Dates
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              <label htmlFor="quoteDate" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
                 Quote Date
               </label>
               <input
+                id="quoteDate"
                 type="date"
                 value={quoteDate}
                 onChange={(e) => setQuoteDate(e.target.value)}
@@ -275,10 +290,28 @@ export function CreateOrderPage() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+              <label htmlFor="quoteValidUntil" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                Quote Valid Until
+              </label>
+              <input
+                id="quoteValidUntil"
+                type="date"
+                value={quoteValidUntil}
+                min={quoteDate || undefined}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setQuoteValidUntil(next);
+                  setValidUntilTouched(Boolean(next));
+                }}
+                className="w-full bg-surface-container-low border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-secondary focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="estimatedDelivery" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
                 Estimated Delivery
               </label>
               <input
+                id="estimatedDelivery"
                 type="date"
                 value={estimatedDelivery}
                 onChange={(e) => setEstimatedDelivery(e.target.value)}
