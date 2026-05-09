@@ -379,6 +379,8 @@ export function OrderDetailPage() {
             quoteNumber: order.quoteNumber,
             poNumber: order.poNumber,
             department: order.department,
+            quoteDate: order.quoteDate,
+            quoteValidUntil: order.quoteValidUntil,
           }}
           onSave={handleSaveSpecs}
         />

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { PRODUCT_MODELS } from '../../types/admin';
+import { addDaysISO } from '../../lib/orderHelpers';
 
 const MODEL_NAME_DEFAULTS: Record<string, string> = {
   ICP: 'ICP-150 Inductively Coupled Plasma Etcher',
@@ -29,6 +30,8 @@ interface EditSpecsDialogProps {
     quoteNumber?: string | null;
     poNumber?: string | null;
     department?: string | null;
+    quoteDate?: string | null;
+    quoteValidUntil?: string | null;
   };
   onSave: (updates: Record<string, unknown>) => Promise<void>;
 }
@@ -43,6 +46,16 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
   const [quoteNumber, setQuoteNumber] = useState(initial.quoteNumber || '');
   const [poNumber, setPoNumber] = useState(initial.poNumber || '');
   const [department, setDepartment] = useState(initial.department || '');
+  const [quoteDate, setQuoteDate] = useState(initial.quoteDate || '');
+  const [quoteValidUntil, setQuoteValidUntil] = useState(initial.quoteValidUntil || '');
+  const [validUntilTouched, setValidUntilTouched] = useState(Boolean(initial.quoteValidUntil));
+
+  useEffect(() => {
+    if (validUntilTouched) return;
+    setQuoteValidUntil(quoteDate ? addDaysISO(quoteDate, 30) : '');
+  }, [quoteDate, validUntilTouched]);
+
+  const dateInvalid = Boolean(quoteValidUntil && quoteDate && quoteValidUntil < quoteDate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -50,7 +63,7 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
   const amountInvalid = quoteAmountRaw !== '' && (isNaN(quoteAmountNum) || quoteAmountNum < 0);
 
   async function handleSubmit() {
-    if (amountInvalid) return;
+    if (amountInvalid || dateInvalid) return;
     setSubmitting(true);
     setError('');
     try {
@@ -62,6 +75,8 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
         quoteNumber: quoteNumber || null,
         poNumber: poNumber || null,
         department: department || null,
+        quoteDate: quoteDate || null,
+        quoteValidUntil: quoteValidUntil || null,
       };
       await onSave(updates);
       onClose();
@@ -180,6 +195,35 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
             />
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Quote Date</label>
+            <input
+              type="date"
+              value={quoteDate}
+              onChange={(e) => setQuoteDate(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Quote Valid Until</label>
+            <input
+              type="date"
+              value={quoteValidUntil}
+              min={quoteDate || undefined}
+              onChange={(e) => {
+                const next = e.target.value;
+                setQuoteValidUntil(next);
+                setValidUntilTouched(Boolean(next));
+              }}
+              className={inputCls}
+            />
+            {dateInvalid && (
+              <span className="text-error text-[10px] mt-1 block">Must be on or after Quote Date</span>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 justify-end mt-6">
@@ -193,7 +237,7 @@ export function EditSpecsDialog({ open, onClose, initial, onSave }: EditSpecsDia
         <button
           className="bg-secondary text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-secondary/90 transition-colors disabled:opacity-50"
           onClick={handleSubmit}
-          disabled={submitting || amountInvalid}
+          disabled={submitting || amountInvalid || dateInvalid}
         >
           {submitting ? 'Saving...' : 'Save Changes'}
         </button>
