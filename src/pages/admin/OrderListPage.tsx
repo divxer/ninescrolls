@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
+import { quoteExpiryStatus, daysUntilExpiry, isQuoteExpired } from '../../lib/orderHelpers';
 
 const STATUS_ICONS: Record<string, string> = {
   INQUIRY: 'search',
@@ -24,11 +25,30 @@ function formatCurrency(value: number | null | undefined): string {
   }).format(value);
 }
 
+function ExpiryBadge({ order }: { order: { status: string; quoteValidUntil?: string | null } }) {
+  const status = quoteExpiryStatus(order as Parameters<typeof quoteExpiryStatus>[0]);
+  if (status === 'none' || status === 'ok') return null;
+  const remaining = daysUntilExpiry(order.quoteValidUntil ?? null);
+  if (status === 'expired') {
+    return (
+      <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-error-container text-on-error-container">
+        Expired
+      </span>
+    );
+  }
+  return (
+    <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary-fixed text-on-tertiary-fixed-variant">
+      Expires in {remaining}d
+    </span>
+  );
+}
+
 export function OrderListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const { orders, loading, error } = useOrders(statusFilter === 'All' ? undefined : statusFilter);
   const { stats } = useOrderStats();
   const [search, setSearch] = useState('');
+  const [expiredOnly, setExpiredOnly] = useState(false);
 
   const byStatus = useMemo(() => {
     if (!stats) return {} as Record<string, number>;
@@ -38,16 +58,23 @@ export function OrderListPage() {
   }, [stats]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return orders;
+    let list = orders;
+    if (expiredOnly) list = list.filter(o => isQuoteExpired(o));
+    if (!search.trim()) return list;
     const q = search.toLowerCase();
-    return orders.filter(o =>
+    return list.filter(o =>
       o.institution.toLowerCase().includes(q) ||
       o.quoteNumber?.toLowerCase().includes(q) ||
       o.poNumber?.toLowerCase().includes(q) ||
       o.productModel.toLowerCase().includes(q) ||
       o.productName?.toLowerCase().includes(q),
     );
-  }, [orders, search]);
+  }, [orders, search, expiredOnly]);
+
+  const expiredCount = useMemo(
+    () => orders.filter(o => isQuoteExpired(o)).length,
+    [orders],
+  );
 
   // Find the stalled order (highest daysSinceLastUpdate, not CLOSED/INSTALLED)
   const stalledOrder = useMemo(() => {
@@ -204,6 +231,15 @@ export function OrderListPage() {
                   className="bg-surface-container-low border-none rounded-lg py-1.5 pl-9 pr-4 text-sm w-full md:w-56 focus:ring-1 focus:ring-secondary/20 placeholder:text-on-surface-variant/50 transition-all"
                 />
               </div>
+              <label className="flex items-center gap-2 text-xs text-on-surface-variant cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={expiredOnly}
+                  onChange={(e) => setExpiredOnly(e.target.checked)}
+                  className="rounded border-outline-variant"
+                />
+                Show expired only
+              </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -228,6 +264,7 @@ export function OrderListPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-bold text-on-surface">{order.quoteNumber || order.poNumber || order.orderId.slice(0, 8)}</span>
                   <StatusBadge status={order.status} />
+                  <ExpiryBadge order={order} />
                 </div>
                 <div className="text-sm font-medium text-on-surface">{order.institution}</div>
                 {order.department && <div className="text-xs text-on-surface-variant">{order.department}</div>}
@@ -292,6 +329,7 @@ export function OrderListPage() {
                     </td>
                     <td className="px-6 py-5">
                       <StatusBadge status={order.status} />
+                      <ExpiryBadge order={order} />
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className="text-xs text-on-surface-variant">{order.daysSinceLastUpdate}d</span>
@@ -387,6 +425,29 @@ export function OrderListPage() {
               >
                 Review Transmission
               </Link>
+            </div>
+          )}
+
+          {expiredCount > 0 && (
+            <div className="p-6 border border-outline-variant/20 rounded-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded bg-error-container flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-error-container">schedule</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-on-surface">Expired Quotes</p>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">{expiredCount} need re-issue</p>
+                </div>
+              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                {expiredCount} sent quote{expiredCount !== 1 ? 's have' : ' has'} passed its validity date.
+              </p>
+              <button
+                onClick={() => { setExpiredOnly(true); setStatusFilter('All'); }}
+                className="mt-4 w-full py-2 bg-surface text-[10px] font-bold uppercase tracking-widest border border-outline-variant/30 hover:bg-surface-container-low transition-colors rounded flex items-center justify-center text-on-surface"
+              >
+                Filter Expired
+              </button>
             </div>
           )}
         </div>
