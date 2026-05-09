@@ -267,9 +267,12 @@ describe('order-api handler', () => {
             // tests keep the original constructor-name dispatch.
             const originalImpl = mockSend.getMockImplementation();
             mockSend.mockReset();
-            mockSend.mockImplementation((cmd: { ExpressionAttributeValues?: Record<string, string> }) => {
+            mockSend.mockImplementation((cmd: { Select?: string; ExpressionAttributeValues?: Record<string, string> }) => {
                 const pk = cmd.ExpressionAttributeValues?.[':pk'];
                 if (pk === 'ORDER_STATUS#QUOTE_SENT') {
+                    if (cmd.Select === 'COUNT') {
+                        return Promise.resolve({ Count: 3 });
+                    }
                     return Promise.resolve({
                         Count: 3,
                         Items: [
@@ -289,6 +292,7 @@ describe('order-api handler', () => {
                     vi.fn(),
                 );
                 expect(result.expiredQuotes).toBe(2);
+                expect(result.byStatus.QUOTE_SENT).toBe(3);
             } finally {
                 mockSend.mockReset();
                 if (originalImpl) mockSend.mockImplementation(originalImpl);
@@ -364,8 +368,8 @@ describe('order-api handler', () => {
             );
 
             const orderItemPut = mockSend.mock.calls.find((c: unknown[]) => {
-                const arg = c[0] as { Item?: { quoteValidUntil?: string } };
-                return arg.Item?.quoteValidUntil === '2026-06-01';
+                const arg = c[0] as { Item?: { quoteValidUntil?: string; SK?: string } };
+                return arg.Item?.SK === 'META' && arg.Item?.quoteValidUntil === '2026-06-01';
             });
             expect(orderItemPut).toBeTruthy();
         });
@@ -430,9 +434,12 @@ describe('order-api handler', () => {
             );
 
             const logPut = mockSend.mock.calls
-                .map((c: unknown[]) => c[0] as { Item?: { action?: string } })
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string; detail?: string } })
                 .find((arg) => arg?.Item?.action === 'QUOTE_VALIDITY_UPDATED');
             expect(logPut).toBeTruthy();
+            const detail = (logPut?.Item as { detail?: string } | undefined)?.detail ?? '';
+            expect(detail).toContain('2026-05-31');
+            expect(detail).toContain('2026-06-15');
         });
 
         it('rejects updateOrder with validUntil before stored quoteDate', async () => {
