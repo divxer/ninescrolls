@@ -52,13 +52,17 @@ export async function updateOrder(event: AppSyncEvent) {
     if (input.quoteDate !== undefined && input.quoteDate !== '' && !ISO_DATE_RE.test(input.quoteDate)) {
         throw new Error('quoteDate must be a YYYY-MM-DD date');
     }
-    const effectiveQuoteDate = input.quoteDate ?? (existing.quoteDate as string | undefined);
+    const effectiveQuoteDate = input.quoteDate ?? existing.quoteDate;
     if (input.quoteValidUntil && effectiveQuoteDate && input.quoteValidUntil < effectiveQuoteDate) {
         throw new Error('quoteValidUntil cannot be before quoteDate');
     }
 
+    if (input.quoteValidUntil === '') input.quoteValidUntil = undefined;
+    if (input.quoteDate === '') input.quoteDate = undefined;
+
+    const now = new Date().toISOString();
     const updateParts: string[] = ['updatedAt = :now'];
-    const exprValues: Record<string, unknown> = { ':now': new Date().toISOString() };
+    const exprValues: Record<string, unknown> = { ':now': now };
 
     for (const field of UPDATABLE_FIELDS) {
         const value = (input as Record<string, unknown>)[field];
@@ -76,19 +80,22 @@ export async function updateOrder(event: AppSyncEvent) {
     }));
 
     if (input.quoteValidUntil !== undefined && input.quoteValidUntil !== existing.quoteValidUntil) {
-        const now = new Date().toISOString();
         const { email: operator } = getOperatorInfo(event);
-        await docClient.send(new PutCommand({
-            TableName: TABLE_NAME(),
-            Item: {
-                PK: `ORDER#${orderId}`,
-                SK: `LOG#${now}`,
-                action: 'QUOTE_VALIDITY_UPDATED',
-                operator,
-                timestamp: now,
-                detail: `Quote valid until: ${existing.quoteValidUntil ?? '(none)'} → ${input.quoteValidUntil ?? '(none)'}`,
-            },
-        }));
+        try {
+            await docClient.send(new PutCommand({
+                TableName: TABLE_NAME(),
+                Item: {
+                    PK: `ORDER#${orderId}`,
+                    SK: `LOG#${now}`,
+                    action: 'QUOTE_VALIDITY_UPDATED',
+                    operator,
+                    timestamp: now,
+                    detail: `Quote valid until: ${existing.quoteValidUntil ?? '(none)'} → ${input.quoteValidUntil ?? '(none)'}`,
+                },
+            }));
+        } catch (err) {
+            console.error('Failed to write QUOTE_VALIDITY_UPDATED audit log:', err);
+        }
     }
 
     return buildFullOrderResponse(orderId);
