@@ -13,6 +13,8 @@ import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import { LightboxContainer } from '../components/common/ImageLightbox';
 import { HeroCleanroomBackground } from '../components/HeroCleanroomBackground';
+import { RfqCtaCard } from '../components/insights/RfqCtaCard';
+import { RfqCtaSidebar } from '../components/insights/RfqCtaSidebar';
 import '../styles/article-content.css';
 
 /**
@@ -160,6 +162,7 @@ function PostSidebar({ post, allPosts }: { post: InsightsPost; allPosts?: Insigh
         <RelatedProductsSidebar products={post.relatedProducts} />
         {allPosts && <RelatedArticlesSidebar post={post} allPosts={allPosts} />}
       </div>
+      <RfqCtaSidebar post={post} ctaPosition="sidebar" />
       <TableOfContents />
     </div>
   );
@@ -376,6 +379,9 @@ export const InsightsPostPage: React.FC = () => {
                     <button className="px-5 py-2.5 border-none rounded-full cursor-pointer font-medium bg-slate-500 text-white hover:-translate-y-0.5 hover:shadow-md transition-all">Email</button>
                   </div>
                 </div>
+
+                {/* RFQ CTA Card */}
+                <RfqCtaCard post={post} ctaPosition="article-footer" />
 
                 {/* Q&A Section */}
                 <ArticleQASection slug={post.slug} post={post} />
