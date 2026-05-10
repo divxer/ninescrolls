@@ -389,7 +389,7 @@ export const InsightsPostPage: React.FC = () => {
           )}
         </section>
       </div>
-      <FloatingAskButton slug={post.slug} />
+      <FloatingAskButton slug={post.slug} post={post} />
     </>
   );
 };

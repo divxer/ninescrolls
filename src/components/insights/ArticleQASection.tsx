@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useArticleQuestions } from '../../hooks/useArticleQuestions';
-import { submitQuestion } from '../../services/articleQuestionsService';
 import { useArticleQuestionForm } from '../../hooks/useArticleQuestionForm';
 import { buildRfqUrl, relatedProductsToSlugs } from '../../utils/rfqAttribution';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
@@ -13,18 +12,30 @@ interface ArticleQASectionProps {
 }
 
 /** Fixed sidebar "Ask" button + popup form modal */
-export function FloatingAskButton({ slug }: { slug: string }) {
+export function FloatingAskButton({ slug, post }: { slug: string; post?: InsightsPost }) {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', question: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState('');
-  const widgetRef = useRef<HTMLDivElement | null>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+  const navigate = useNavigate();
+  const analytics = useCombinedAnalytics();
+  const {
+    form, update, handleSubmit,
+    isSubmitting, isSuccess, error, turnstileSiteKey, widgetRef, token, reset,
+  } = useArticleQuestionForm({
+    slug,
+    onPurchaseIntentSubmit: ({ questionLength }) => {
+      analytics.trackCustomEvent('insights_question_with_purchase_intent', {
+        articleSlug: slug,
+        questionLength,
+      });
+    },
+    onSuccessRedirect: () => {
+      navigate(buildRfqUrl({
+        products: relatedProductsToSlugs(post?.relatedProducts),
+        sourceSlug: slug,
+        extraParams: { via: 'ask-checkbox' },
+      }));
+    },
+  });
 
   // Show after 400px scroll, hide when Q&A section is near viewport
   useEffect(() => {
@@ -44,33 +55,6 @@ export function FloatingAskButton({ slug }: { slug: string }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Load Turnstile when modal opens
-  useEffect(() => {
-    if (!open || !turnstileSiteKey || !widgetRef.current) return;
-    const ensureScript = () => new Promise<void>((resolve) => {
-      if ((window as any).turnstile) return resolve();
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      document.head.appendChild(script);
-    });
-    ensureScript().then(() => {
-      try {
-        const widget = widgetRef.current;
-        const turnstile = (window as any).turnstile;
-        if (!widget || !turnstile) return;
-        widgetIdRef.current = turnstile.render(widget, {
-          sitekey: turnstileSiteKey,
-          callback: (t: string) => setToken(t),
-        });
-      } catch (err) {
-        console.warn('Turnstile render failed:', err);
-      }
-    });
-  }, [open, turnstileSiteKey]);
-
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -79,53 +63,7 @@ export function FloatingAskButton({ slug }: { slug: string }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (form.name.trim().length < 2) { setError('Please enter your name.'); return; }
-    if (!form.email.includes('@')) { setError('Please enter a valid email address.'); return; }
-    if (form.question.trim().length < 10) { setError('Please enter at least 10 characters for your question.'); return; }
-    if (turnstileSiteKey && !token) { setError('Please complete the verification.'); return; }
-
-    setIsSubmitting(true);
-    try {
-      const result = await submitQuestion({
-        articleSlug: slug,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        question: form.question.trim(),
-        turnstileToken: token || 'no-key',
-      });
-
-      if (!result.success) {
-        setError(result.message || 'Submission failed. Please try again.');
-        return;
-      }
-
-      setIsSuccess(true);
-      setForm({ name: '', email: '', question: '' });
-      setToken('');
-      if (widgetIdRef.current && (window as any).turnstile) {
-        (window as any).turnstile.reset(widgetIdRef.current);
-      }
-    } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const resetAndClose = () => {
-    setOpen(false);
-    setIsSuccess(false);
-    setError(null);
-  };
+  const resetAndClose = () => { setOpen(false); reset(); };
 
   return (
     <>
@@ -170,7 +108,7 @@ export function FloatingAskButton({ slug }: { slug: string }) {
                   Thank you! Our team will review and respond soon.
                 </p>
                 <button
-                  onClick={() => { setIsSuccess(false); setForm({ name: '', email: '', question: '' }); }}
+                  onClick={reset}
                   className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/5 transition-colors"
                 >
                   Ask Another Question
