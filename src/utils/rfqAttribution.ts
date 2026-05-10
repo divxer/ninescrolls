@@ -21,7 +21,7 @@ export function buildRfqUrl(opts: BuildRfqUrlOpts): string {
       params.set(k, v);
     }
   }
-  return `/rfq?${params.toString()}`;
+  return `/request-quote?${params.toString()}`;
 }
 
 export function relatedProductsToSlugs(products?: RelatedProduct[]): { slug: string }[] {
