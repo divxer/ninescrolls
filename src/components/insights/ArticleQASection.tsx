@@ -18,7 +18,7 @@ export function FloatingAskButton({ slug, post }: { slug: string; post?: Insight
   const navigate = useNavigate();
   const analytics = useCombinedAnalytics();
   const {
-    form, update, handleSubmit,
+    form, update, handleSubmit, setPurchaseIntent,
     isSubmitting, isSuccess, error, turnstileSiteKey, widgetRef, token, reset,
   } = useArticleQuestionForm({
     slug,
@@ -170,6 +170,21 @@ export function FloatingAskButton({ slug, post }: { slug: string; post?: Insight
                     <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>
                   )}
 
+                  <label className="flex items-start gap-2 cursor-pointer text-sm text-on-surface-variant">
+                    <input
+                      type="checkbox"
+                      checked={form.purchaseIntent}
+                      onChange={(e) => setPurchaseIntent(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      I'm also evaluating equipment for purchase
+                      <span className="block text-xs text-on-surface-variant/70 mt-0.5">
+                        Optional — if checked, we'll redirect you to our quote form after submitting your question.
+                      </span>
+                    </span>
+                  </label>
+
                   <div className="flex items-center justify-between gap-4 pt-1">
                     <p className="text-xs text-on-surface-variant">
                       Your email will not be published.
@@ -197,7 +212,7 @@ export function ArticleQASection({ slug, post }: ArticleQASectionProps) {
   const navigate = useNavigate();
   const analytics = useCombinedAnalytics();
   const {
-    form, update, handleSubmit, reset,
+    form, update, handleSubmit, reset, setPurchaseIntent,
     isSubmitting, isSuccess, error, turnstileSiteKey, widgetRef, token,
   } = useArticleQuestionForm({
     slug,
@@ -321,6 +336,21 @@ export function ArticleQASection({ slug, post }: ArticleQASectionProps) {
             {error && (
               <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>
             )}
+
+            <label className="flex items-start gap-2 cursor-pointer text-sm text-on-surface-variant">
+              <input
+                type="checkbox"
+                checked={form.purchaseIntent}
+                onChange={(e) => setPurchaseIntent(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                I'm also evaluating equipment for purchase
+                <span className="block text-xs text-on-surface-variant/70 mt-0.5">
+                  Optional — if checked, we'll redirect you to our quote form after submitting your question.
+                </span>
+              </span>
+            </label>
 
             <button
               type="submit"
