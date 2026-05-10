@@ -68,6 +68,7 @@ export interface ArticleQuestion {
   submittedAt: string;
   answeredAt?: string;
   answeredBy?: string;
+  purchaseIntent?: boolean;
 }
 
 export interface ArticleQuestionAdmin extends ArticleQuestion {
