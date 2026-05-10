@@ -7,16 +7,9 @@ import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { formatDate, formatDateTime } from '../../types/admin';
 import type { RfqSubmission } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
+import { parseRfqSource } from '../../utils/rfqAttribution';
 
 const STATUS_OPTIONS = ['All', 'pending', 'converted', 'declined'];
-
-function parseSource(src: string): string {
-  const [area, slug] = src.split('/');
-  if (!slug) return src;
-  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const areaLabel = area === 'insights' ? 'Article' : area.charAt(0).toUpperCase() + area.slice(1);
-  return `${areaLabel}: ${title}`;
-}
 
 export function RFQListPage() {
   const { rfqs, loading, error, refresh } = useRfqs();
@@ -238,7 +231,7 @@ export function RFQListPage() {
                   </td>
                   <td className="px-6 py-5 font-headline font-semibold text-primary">{rfq.budgetRange || '-'}</td>
                   <td className="px-6 py-5 text-xs text-on-surface-variant max-w-[160px] truncate">
-                    {rfq.referrerSource ? parseSource(rfq.referrerSource).slice(0, 30) : '-'}
+                    {rfq.referrerSource ? parseRfqSource(rfq.referrerSource).slice(0, 30) : '-'}
                   </td>
                   <td className="px-6 py-5"><StatusBadge status={rfq.status} /></td>
                   <td className="px-6 py-5 text-right">
@@ -396,7 +389,7 @@ export function RFQListPage() {
                   <div className="flex justify-between items-baseline gap-4">
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest shrink-0">Source</span>
                     <span className="font-headline font-semibold text-on-surface text-right text-sm">
-                      {parseSource(selectedRfq.referrerSource)}{' '}
+                      {parseRfqSource(selectedRfq.referrerSource)}{' '}
                       <a
                         href={`/${selectedRfq.referrerSource}`}
                         target="_blank"

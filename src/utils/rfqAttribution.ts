@@ -31,3 +31,15 @@ export function relatedProductsToSlugs(products?: RelatedProduct[]): { slug: str
     .filter((slug) => slug.length > 0 && !slug.includes('/'))  // sanity: drop non-product hrefs
     .map((slug) => ({ slug }));
 }
+
+/**
+ * Parse a referrerSource string ("insights/<slug>" or "news/<slug>") into a
+ * human-readable label like "Article: Atomic Layer Etching Guide".
+ */
+export function parseRfqSource(src: string): string {
+  const [area, slug] = src.split('/');
+  if (!slug) return src;
+  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const areaLabel = area === 'insights' ? 'Article' : area.charAt(0).toUpperCase() + area.slice(1);
+  return `${areaLabel}: ${title}`;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRfqUrl, relatedProductsToSlugs } from './rfqAttribution';
+import { buildRfqUrl, relatedProductsToSlugs, parseRfqSource } from './rfqAttribution';
 
 describe('buildRfqUrl', () => {
   it('builds URL with no products', () => {
@@ -61,5 +61,25 @@ describe('relatedProductsToSlugs', () => {
       { href: '/products/sub/path', label: 'Bad' },
       { href: '/products/', label: 'Empty' },
     ])).toEqual([{ slug: 'rie-etcher' }]);
+  });
+});
+
+describe('parseRfqSource', () => {
+  it('parses insights/<slug> as "Article: ..."', () => {
+    expect(parseRfqSource('insights/atomic-layer-etching-guide'))
+      .toBe('Article: Atomic Layer Etching Guide');
+  });
+
+  it('parses news/<slug> as "News: ..."', () => {
+    expect(parseRfqSource('news/apple-intel-deal'))
+      .toBe('News: Apple Intel Deal');
+  });
+
+  it('returns input unchanged when no slash', () => {
+    expect(parseRfqSource('orphan-string')).toBe('orphan-string');
+  });
+
+  it('handles unknown area with capitalized fallback', () => {
+    expect(parseRfqSource('foo/bar-baz')).toBe('Foo: Bar Baz');
   });
 });
