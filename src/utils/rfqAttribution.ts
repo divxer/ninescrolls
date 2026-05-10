@@ -1,3 +1,5 @@
+import type { RelatedProduct } from '../types';
+
 interface BuildRfqUrlOpts {
   products?: { slug: string }[];
   sourceSlug: string;
@@ -20,4 +22,12 @@ export function buildRfqUrl(opts: BuildRfqUrlOpts): string {
     }
   }
   return `/rfq?${params.toString()}`;
+}
+
+export function relatedProductsToSlugs(products?: RelatedProduct[]): { slug: string }[] {
+  if (!products) return [];
+  return products
+    .map((p) => p.href.replace(/^\/products\//, ''))
+    .filter((slug) => slug.length > 0 && !slug.includes('/'))  // sanity: drop non-product hrefs
+    .map((slug) => ({ slug }));
 }

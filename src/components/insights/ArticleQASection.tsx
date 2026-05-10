@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useArticleQuestions } from '../../hooks/useArticleQuestions';
 import { submitQuestion } from '../../services/articleQuestionsService';
 import { useArticleQuestionForm } from '../../hooks/useArticleQuestionForm';
-import { buildRfqUrl } from '../../utils/rfqAttribution';
+import { buildRfqUrl, relatedProductsToSlugs } from '../../utils/rfqAttribution';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import type { InsightsPost } from '../../types';
 
@@ -254,7 +254,7 @@ export function FloatingAskButton({ slug }: { slug: string }) {
   );
 }
 
-export function ArticleQASection({ slug, post: _post }: ArticleQASectionProps) {
+export function ArticleQASection({ slug, post }: ArticleQASectionProps) {
   const { questions, loading, refetch } = useArticleQuestions(slug);
   const navigate = useNavigate();
   const analytics = useCombinedAnalytics();
@@ -271,6 +271,7 @@ export function ArticleQASection({ slug, post: _post }: ArticleQASectionProps) {
     },
     onSuccessRedirect: () => {
       navigate(buildRfqUrl({
+        products: relatedProductsToSlugs(post?.relatedProducts),
         sourceSlug: slug,
         extraParams: { via: 'ask-checkbox' },
       }));

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRfqUrl } from './rfqAttribution';
+import { buildRfqUrl, relatedProductsToSlugs } from './rfqAttribution';
 
 describe('buildRfqUrl', () => {
   it('builds URL with no products', () => {
@@ -39,5 +39,27 @@ describe('buildRfqUrl', () => {
       sourceSlug: 'foo',
       extraParams: { via: 'ask-checkbox' },
     })).toBe('/rfq?source=insights%2Ffoo&via=ask-checkbox');
+  });
+});
+
+describe('relatedProductsToSlugs', () => {
+  it('returns empty array for undefined', () => {
+    expect(relatedProductsToSlugs()).toEqual([]);
+  });
+
+  it('extracts slug from /products/<slug> hrefs', () => {
+    expect(relatedProductsToSlugs([
+      { href: '/products/rie-etcher', label: 'RIE' },
+      { href: '/products/icp-etcher', label: 'ICP' },
+    ])).toEqual([{ slug: 'rie-etcher' }, { slug: 'icp-etcher' }]);
+  });
+
+  it('drops hrefs that are not /products/<slug>', () => {
+    expect(relatedProductsToSlugs([
+      { href: '/products/rie-etcher', label: 'RIE' },
+      { href: '/about', label: 'About' },
+      { href: '/products/sub/path', label: 'Bad' },
+      { href: '/products/', label: 'Empty' },
+    ])).toEqual([{ slug: 'rie-etcher' }]);
   });
 });
