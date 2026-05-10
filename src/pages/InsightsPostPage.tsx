@@ -378,7 +378,7 @@ export const InsightsPostPage: React.FC = () => {
                 </div>
 
                 {/* Q&A Section */}
-                <ArticleQASection slug={post.slug} />
+                <ArticleQASection slug={post.slug} post={post} />
 
                 {/* Related Articles */}
                 {allPosts.length > 0 && <RelatedArticlesBottom post={post} allPosts={allPosts} />}
