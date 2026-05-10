@@ -202,6 +202,11 @@ export function AdminQuestionsPage() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
                           {badge.label}
                         </span>
+                        {item.purchaseIntent && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                            $ Purchase Intent
+                          </span>
+                        )}
                         <span className="text-xs text-on-surface-variant font-mono">
                           {item.articleSlug}
                         </span>

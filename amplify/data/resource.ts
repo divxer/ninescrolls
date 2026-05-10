@@ -97,6 +97,7 @@ const schema = a.schema({
       submittedAt: a.string().required(),
       answeredAt: a.string(),
       answeredBy: a.string(),
+      purchaseIntent: a.boolean(),
     })
     .authorization((allow) => [
       allow.publicApiKey().to(['read']),
@@ -361,6 +362,7 @@ const schema = a.schema({
     shippingCountry: a.string(),
     linkedOrderId: a.string(),
     attachmentKeys: a.json(),
+    referrerSource: a.string(),
   }),
 
   RfqConnection: a.customType({

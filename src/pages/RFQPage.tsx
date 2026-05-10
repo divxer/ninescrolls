@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
+import { parseRfqUrlParams } from './rfqUrlParams';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -214,9 +215,8 @@ const labelClasses = "block text-xs font-bold text-on-surface-variant uppercase 
 export function RFQPage() {
   const analytics = useCombinedAnalytics();
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const urlProduct = params.get('product') || '';
-  const urlCategory = params.get('category') || '';
+  const urlParams = parseRfqUrlParams(location.search);
+  const { urlProduct, urlCategory, referrerSource, productListText, productsList, via } = urlParams;
 
   // State
   const [currentStep, setCurrentStep] = useState(1);
@@ -224,6 +224,9 @@ export function RFQPage() {
     ...initialFormData,
     specificModel: urlProduct,
     equipmentCategory: inferCategory(urlProduct, urlCategory),
+    additionalComments: productListText
+      ? productListText + (initialFormData.additionalComments || '')
+      : initialFormData.additionalComments,
   }));
   const [files, setFiles] = useState<File[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -533,6 +536,7 @@ export function RFQPage() {
         payload.shippingCountry = formData.shippingCountry;
       }
       if (turnstileToken) payload.turnstileToken = turnstileToken;
+      if (referrerSource) payload.referrerSource = referrerSource;
 
       let response: Response;
       if (files.length > 0) {
@@ -563,6 +567,13 @@ export function RFQPage() {
       setTurnstileToken(null);
       analytics.trackRFQSubmission(formData.equipmentCategory, formData.specificModel || formData.equipmentCategory);
       analytics.segment.trackRFQSubmissionWithAnalysis(formData.equipmentCategory, formData.specificModel || formData.equipmentCategory, result.rfqId, formData.institution);
+      if (referrerSource) {
+        analytics.trackCustomEvent('rfq_submit_attribution', {
+          referrerSource,
+          productCount: productsList.length,
+          viaAskCheckbox: via === 'ask-checkbox',
+        });
+      }
     } catch (err) {
       console.error('RFQ submission error:', err);
       setSubmitError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again or contact us at sales@ninescrolls.com');

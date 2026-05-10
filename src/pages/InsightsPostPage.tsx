@@ -13,6 +13,8 @@ import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import { LightboxContainer } from '../components/common/ImageLightbox';
 import { HeroCleanroomBackground } from '../components/HeroCleanroomBackground';
+import { RfqCtaCard } from '../components/insights/RfqCtaCard';
+import { RfqCtaSidebar } from '../components/insights/RfqCtaSidebar';
 import '../styles/article-content.css';
 
 /**
@@ -160,6 +162,7 @@ function PostSidebar({ post, allPosts }: { post: InsightsPost; allPosts?: Insigh
         <RelatedProductsSidebar products={post.relatedProducts} />
         {allPosts && <RelatedArticlesSidebar post={post} allPosts={allPosts} />}
       </div>
+      <RfqCtaSidebar post={post} ctaPosition="sidebar" />
       <TableOfContents />
     </div>
   );
@@ -377,8 +380,11 @@ export const InsightsPostPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* RFQ CTA Card */}
+                <RfqCtaCard post={post} ctaPosition="article-footer" />
+
                 {/* Q&A Section */}
-                <ArticleQASection slug={post.slug} />
+                <ArticleQASection slug={post.slug} post={post} />
 
                 {/* Related Articles */}
                 {allPosts.length > 0 && <RelatedArticlesBottom post={post} allPosts={allPosts} />}
@@ -389,7 +395,7 @@ export const InsightsPostPage: React.FC = () => {
           )}
         </section>
       </div>
-      <FloatingAskButton slug={post.slug} />
+      <FloatingAskButton slug={post.slug} post={post} />
     </>
   );
 };

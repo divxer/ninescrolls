@@ -24,6 +24,7 @@ function mapToArticleQuestion(item: DynamoQuestion): ArticleQuestion {
     submittedAt: item.submittedAt,
     answeredAt: item.answeredAt ?? undefined,
     answeredBy: item.answeredBy ?? undefined,
+    purchaseIntent: (item as any).purchaseIntent ?? false, // TODO: drop cast after sandbox regenerates outputs
   };
 }
 
@@ -71,6 +72,7 @@ export async function submitQuestion(payload: {
   email: string;
   question: string;
   turnstileToken: string;
+  purchaseIntent?: boolean;
 }): Promise<{ success: boolean; message: string }> {
   const res = await fetch(`${getApiUrl()}/api/questions`, {
     method: 'POST',

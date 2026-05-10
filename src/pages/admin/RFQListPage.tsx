@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useRfqs } from '../../hooks/useRfqs';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { ConvertToOrderDialog } from '../../components/admin/ConvertToOrderDialog';
@@ -10,9 +10,18 @@ import * as svc from '../../services/orderAdminService';
 
 const STATUS_OPTIONS = ['All', 'pending', 'converted', 'declined'];
 
+function parseSource(src: string): string {
+  const [area, slug] = src.split('/');
+  if (!slug) return src;
+  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const areaLabel = area === 'insights' ? 'Article' : area.charAt(0).toUpperCase() + area.slice(1);
+  return `${areaLabel}: ${title}`;
+}
+
 export function RFQListPage() {
   const { rfqs, loading, error, refresh } = useRfqs();
   const navigate = useNavigate();
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedRfq, setSelectedRfq] = useState<RfqSubmission | null>(null);
@@ -29,12 +38,17 @@ export function RFQListPage() {
     return { pending, converted, declined, rate };
   }, [rfqs]);
 
+  const sourceFilter = new URLSearchParams(location.search).get('source');
+
   const filtered = useMemo(() => {
     let result = [...rfqs].sort(
       (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
     );
     if (statusFilter !== 'All') {
       result = result.filter(r => r.status === statusFilter);
+    }
+    if (sourceFilter) {
+      result = result.filter(r => r.referrerSource === sourceFilter);
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -46,7 +60,7 @@ export function RFQListPage() {
       );
     }
     return result;
-  }, [rfqs, search, statusFilter]);
+  }, [rfqs, search, statusFilter, sourceFilter]);
 
   function openPanel(rfq: RfqSubmission) {
     setSelectedRfq(rfq);
@@ -195,6 +209,7 @@ export function RFQListPage() {
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Institution</th>
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Category</th>
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Budget</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Source</th>
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em]">Status</th>
               <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.1em] text-right">Actions</th>
             </tr>
@@ -222,6 +237,9 @@ export function RFQListPage() {
                     </span>
                   </td>
                   <td className="px-6 py-5 font-headline font-semibold text-primary">{rfq.budgetRange || '-'}</td>
+                  <td className="px-6 py-5 text-xs text-on-surface-variant max-w-[160px] truncate">
+                    {rfq.referrerSource ? parseSource(rfq.referrerSource).slice(0, 30) : '-'}
+                  </td>
                   <td className="px-6 py-5"><StatusBadge status={rfq.status} /></td>
                   <td className="px-6 py-5 text-right">
                     <Link
@@ -237,7 +255,7 @@ export function RFQListPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-on-surface-variant text-sm">No RFQs found.</td>
+                <td colSpan={8} className="text-center py-12 text-on-surface-variant text-sm">No RFQs found.</td>
               </tr>
             )}
           </tbody>
@@ -372,6 +390,22 @@ export function RFQListPage() {
                   <div className="flex justify-between items-baseline">
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Referral Source</span>
                     <span className="font-headline font-semibold text-on-surface">{selectedRfq.referralSource}</span>
+                  </div>
+                )}
+                {selectedRfq.referrerSource && (
+                  <div className="flex justify-between items-baseline gap-4">
+                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest shrink-0">Source</span>
+                    <span className="font-headline font-semibold text-on-surface text-right text-sm">
+                      {parseSource(selectedRfq.referrerSource)}{' '}
+                      <a
+                        href={`/${selectedRfq.referrerSource}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-xs hover:underline"
+                      >
+                        View →
+                      </a>
+                    </span>
                   </div>
                 )}
                 {selectedRfq.needsBudgetaryQuote && (

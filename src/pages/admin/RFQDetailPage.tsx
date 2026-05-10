@@ -7,6 +7,14 @@ import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { formatDateTime } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
 
+function parseSource(src: string): string {
+  const [area, slug] = src.split('/');
+  if (!slug) return src;
+  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const areaLabel = area === 'insights' ? 'Article' : area.charAt(0).toUpperCase() + area.slice(1);
+  return `${areaLabel}: ${title}`;
+}
+
 export function RFQDetailPage() {
   const { rfqId } = useParams<{ rfqId: string }>();
   const navigate = useNavigate();
@@ -226,6 +234,22 @@ export function RFQDetailPage() {
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Referral Source</p>
             <p className="text-sm font-medium text-on-surface">{rfq.referralSource || '-'}</p>
           </div>
+          {rfq.referrerSource && (
+            <div>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Source</p>
+              <p className="text-sm font-medium text-on-surface">
+                {parseSource(rfq.referrerSource)}{' '}
+                <a
+                  href={`/${rfq.referrerSource}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary text-xs hover:underline"
+                >
+                  View article →
+                </a>
+              </p>
+            </div>
+          )}
           <div className="md:col-span-2">
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Existing Equipment</p>
             <p className="text-sm font-medium text-on-surface">{rfq.existingEquipment || '-'}</p>
