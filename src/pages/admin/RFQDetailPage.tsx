@@ -6,14 +6,7 @@ import { ConvertToOrderDialog } from '../../components/admin/ConvertToOrderDialo
 import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { formatDateTime } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
-
-function parseSource(src: string): string {
-  const [area, slug] = src.split('/');
-  if (!slug) return src;
-  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const areaLabel = area === 'insights' ? 'Article' : area.charAt(0).toUpperCase() + area.slice(1);
-  return `${areaLabel}: ${title}`;
-}
+import { parseRfqSource } from '../../utils/rfqAttribution';
 
 export function RFQDetailPage() {
   const { rfqId } = useParams<{ rfqId: string }>();
@@ -238,7 +231,7 @@ export function RFQDetailPage() {
             <div>
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Source</p>
               <p className="text-sm font-medium text-on-surface">
-                {parseSource(rfq.referrerSource)}{' '}
+                {parseRfqSource(rfq.referrerSource)}{' '}
                 <a
                   href={`/${rfq.referrerSource}`}
                   target="_blank"

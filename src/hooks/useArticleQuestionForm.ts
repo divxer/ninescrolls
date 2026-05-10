@@ -132,6 +132,5 @@ export function useArticleQuestionForm({ slug, onSuccessRedirect, onPurchaseInte
     turnstileSiteKey,
     widgetRef,
     token,
-    resetToken,
   };
 }
