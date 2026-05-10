@@ -108,7 +108,7 @@ const VALID_RFQ = {
     applicationDescription: 'We need an ICP etching system for high-aspect-ratio silicon etching in MEMS fabrication.',
     keySpecifications: '8-inch chamber, load-lock required',
     quantity: 1,
-    budgetRange: '$100,000 - $200,000' as const,
+    budgetRange: 'Over $150k' as const,
     timeline: 'within-6-months' as const,
     fundingStatus: 'funded' as const,
     referralSource: 'web-search' as const,
