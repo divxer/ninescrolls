@@ -22,7 +22,7 @@ export function parseRfqUrlParams(search: string): ParsedRfqUrlParams {
   const via = params.get('via') || '';
   const productListText =
     productsList.length >= 2
-      ? `Products of interest:\n${productsList.map((p) => `- ${p}`).join('\n')}\n\n`
+      ? `Products of interest:\n${productsList.map((p) => `- ${p}`).join('\n')}\n\n[Please describe your application requirements below]\n\n`
       : '';
   return { productsList, urlProduct, urlCategory, referrerSource, via, productListText };
 }
