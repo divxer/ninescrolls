@@ -128,6 +128,7 @@ export interface RfqSubmission {
   timeline?: string | null;
   fundingStatus?: string | null;
   referralSource?: string | null;
+  referrerSource?: string | null;
   existingEquipment?: string | null;
   additionalComments?: string | null;
   needsBudgetaryQuote?: boolean | null;
