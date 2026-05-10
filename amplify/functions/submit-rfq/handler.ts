@@ -30,7 +30,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 const EQUIPMENT_CATEGORIES = [
-    'ICP', 'PECVD', 'Sputter', 'ALD', 'RIE', 'IBE', 'HDP-CVD', 'Plasma-Cleaner', 'Other',
+    'ICP', 'PECVD', 'Sputter', 'E-Beam', 'ALD', 'RIE', 'IBE', 'HDP-CVD',
+    'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Other',
 ] as const;
 
 const ROLES = [
