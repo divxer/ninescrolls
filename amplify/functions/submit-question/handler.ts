@@ -57,6 +57,7 @@ const questionSchema = z.object({
     email: z.string().email().max(254),
     question: z.string().min(10).max(2000),
     turnstileToken: z.string().min(1),
+    purchaseIntent: z.boolean().optional().default(false),
 });
 
 type QuestionInput = z.infer<typeof questionSchema>;
@@ -225,6 +226,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 name: data.name,
                 email: data.email,
                 question: data.question,
+                purchaseIntent: data.purchaseIntent,
                 status: 'pending',
                 submittedAt: now,
                 createdAt: now,
