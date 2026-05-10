@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { rfqSchema } from './handler';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing handler
@@ -439,5 +440,41 @@ describe('submit-rfq handler', () => {
         expect((result as { statusCode: number }).statusCode).toBe(200);
         // The handler sanitizes strings before storing — verified by the fact it doesn't crash
         // and the email content uses sanitized values
+    });
+
+    it('persists referrerSource when valid format', async () => {
+        const event = makeEvent({
+            ...VALID_RFQ,
+            budgetRange: undefined,
+            referrerSource: 'insights/atomic-layer-etching-guide',
+        });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+        const putCallArgs = (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(putCallArgs.Item.referrerSource).toBe('insights/atomic-layer-etching-guide');
+    });
+
+    it('rejects invalid referrerSource format silently (RFQ still submits)', async () => {
+        const event = makeEvent({
+            ...VALID_RFQ,
+            budgetRange: undefined,
+            referrerSource: 'javascript:alert(1)',
+        });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+        const putCallArgs = (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(putCallArgs.Item.referrerSource).toBeUndefined();
+    });
+
+    it('rejects oversized referrerSource (>200 chars)', async () => {
+        const event = makeEvent({
+            ...VALID_RFQ,
+            budgetRange: undefined,
+            referrerSource: 'insights/' + 'a'.repeat(201),
+        });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+        const putCallArgs = (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(putCallArgs.Item.referrerSource).toBeUndefined();
     });
 });

@@ -106,6 +106,18 @@ export const rfqSchema = z.object({
     shippingState: z.string().max(100).optional(),
     shippingZipCode: z.string().max(20).optional(),
     shippingCountry: z.string().max(100).optional(),
+    // Article attribution — silently dropped if invalid (never blocks submission)
+    referrerSource: z
+        .string()
+        .optional()
+        .transform((v) => {
+            if (!v) return undefined;
+            if (v.length > 200 || !/^(insights|news|products)\/[a-z0-9-]+$/.test(v)) {
+                console.warn(`Invalid referrerSource ignored: ${v.slice(0, 50)}`);
+                return undefined;
+            }
+            return v;
+        }),
 }).refine(
     (data) => {
         if (!data.needsBudgetaryQuote) return true;
@@ -647,6 +659,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             shippingCountry: data.shippingCountry,
             TTL: 0, // No expiry
         };
+
+        // Add article attribution if present and valid
+        if (data.referrerSource) {
+            item.referrerSource = data.referrerSource;
+        }
 
         // Add ORG association if matched
         if (matchedOrgId) {
