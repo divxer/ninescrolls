@@ -648,7 +648,11 @@ backend.addOutput({
 // See docs/superpowers/specs/2026-05-14-tender-watch-design.md
 // =============================================================================
 
-const tenderWatchStack = backend.createStack('tender-watch-stack');
+// `tender-watch-stack` is auto-created by Amplify because the 9 tender Lambdas
+// declare `resourceGroupName: 'tender-watch-stack'` in their resource.ts files.
+// We attach the S3 bucket, Step Functions state machine, IAM grants, and
+// EventBridge rule to that same nested stack.
+const tenderWatchStack = Stack.of(backend.fetchSam.resources.lambda);
 
 // --- S3 staging bucket: holds inter-state Step Functions payloads (fetch output, etc.).
 //     7-day lifecycle policy keeps debug history without unbounded growth.
