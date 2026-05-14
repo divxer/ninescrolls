@@ -50,7 +50,7 @@ fetch-sam  fetch-ted  fetch-uk  fetch-others (Parallel; phased)
    ↓          ↓         ↓          ↓
    └────┬─────┴─────────┴──────────┘
         ↓
-   normalize-and-dedupe  (cross-source dedupe, write to Tender table)
+   normalize-and-dedupe  (cross-source dedupe, write TENDER items)
         ↓
    prefilter-by-keyword  (coarse string + NAICS/CPV filter)
         ↓
@@ -69,7 +69,7 @@ notify-high   notify-daily
         ↓
        [End]
 
-Admin path: browser → AppSync (existing) → DynamoDB (Tender, TenderProductMatch, TenderKeywordConfig, TenderStatusLog)
+Admin path: browser → AppSync (existing) → Lambda resolvers (Phase 2) → `intelligenceTable` single-table store
 ```
 
 ### Reused infrastructure
@@ -78,10 +78,11 @@ Admin path: browser → AppSync (existing) → DynamoDB (Tender, TenderProductMa
 - SES (already used for RFQ notifications)
 - AppSync + Amplify Auth (admin already wired)
 - Existing `/admin/*` navigation and layout
+- **`intelligenceTable` (`NineScrollsIntelligence`)** — existing single-table store that already houses Order / RFQ / Lead / Feedback. Tender entities are added with new key prefixes; no new DynamoDB tables are created. This matches the established convention for workflow entities and keeps cross-entity timelines (GSI4 by email) coherent.
 
 ### New infrastructure
 
-- 4 DynamoDB tables (Tender, TenderProductMatch, TenderKeywordConfig, TenderStatusLog) defined in `amplify/data/resource.ts`
+- Amplify schema (`amplify/data/resource.ts`) gains 4 new `customType` definitions (Tender / TenderProductMatch / TenderKeywordConfig / TenderStatusLog) plus Lambda-resolver queries and mutations (Phase 2)
 - Step Functions Standard state machine defined as a CDK construct inside `amplify/backend.ts`
 - 10 Lambda functions under `amplify/functions/` (fetch-sam, fetch-ted, fetch-uk, normalize-dedupe, prefilter-by-keyword, match-with-llm, classify-and-store, notify-high-priority, notify-daily-digest, expire-old-tenders). Phase 1 ships all except `fetch-uk`, which is added in Phase 3.
 - EventBridge rule (cron daily) → Step Functions
@@ -89,84 +90,138 @@ Admin path: browser → AppSync (existing) → DynamoDB (Tender, TenderProductMa
 
 ## Data model
 
-All models added to `amplify/data/resource.ts` with `allow.authenticated()` for admin auth (matches existing admin model patterns).
+All Tender data lives in the existing `intelligenceTable` (DynamoDB single-table design matching the established convention for workflow entities). No new tables are created. Four logical entity types are layered on top via key prefixes.
 
-### `Tender`
+### Key schema reference
 
+Existing table keys:
+- `PK` (HASH), `SK` (RANGE)
+- `GSI1PK / GSI1SK` — Type/status queries
+- `GSI2PK / GSI2SK` — Organization queries (reused below for cross-source dedupe hash)
+- `GSI3PK / GSI3SK` — Order ↔ Feedback association (reused below for high-priority sort)
+- `GSI4PK / GSI4SK` — Email-based timeline (not used by tender entities; tender does not have a primary email)
+- `TTL` — optional expiry
+
+### Entity 1: Tender (main record)
+
+```
+PK = TENDER#<tenderId>           // e.g. TENDER#sam-1234567890
+SK = METADATA
+GSI1PK = TENDER_STATUS#<status>  // for default admin list (active statuses)
+GSI1SK = <100-overallScore (zero-padded 3)>#<postedDate>#<tenderId>
+                                 // ↑ inverse score so lexicographic ASC = score DESC
+GSI2PK = TENDER_HASH#<sourceTenderHash>  // dedupe lookup
+GSI2SK = TENDER
+GSI3PK = TENDER_HIGH_PRIORITY    // only set when overallScore >= 80, used for daily digest scan
+GSI3SK = <postedDate>#<tenderId>
+```
+
+Attributes:
 | Field | Type | Notes |
 |---|---|---|
-| `id` | string (PK) | Format: `sam-<noticeId>`, `ted-<docId>`, etc. Deterministic, idempotent across reruns. |
-| `source` | enum | `sam` \| `ted` \| `uk` \| `canada` \| `australia` \| `singapore` \| `korea` \| ... |
+| `tenderId` | string | Format: `sam-<noticeId>`, `ted-<docId>`, etc. Deterministic. |
+| `entityType` | string (const `TENDER`) | Discriminator for table scans |
+| `source` | string | `sam` \| `ted` \| `uk` \| `canada` \| `australia` \| `singapore` \| `korea` \| ... |
 | `sourceUrl` | string | Original public tender URL |
-| `sourceTenderHash` | string | `sha256(title.lower().trim() + agency.lower() + (deadline || ''))` — cross-source dedupe key |
+| `sourceTenderHash` | string | `sha256(title.lower().trim() + agency.lower() + (deadline || ''))` |
 | `title` | string | |
 | `agency` | string | Procuring agency name |
 | `country` | string | ISO 3166-1 alpha-2 |
-| `language` | string | ISO 639-1 (`en`, `de`, `fr`, ...) |
-| `description` | string | Original description (may be long) |
-| `estimatedValueUSD` | number? | Converted to USD via static rate table (refreshed quarterly); null if not provided by source |
-| `estimatedValueOriginal` | string? | e.g. `"EUR 250000"` for reference |
-| `postedDate` | AWSDate | When tender was published |
-| `deadline` | AWSDate? | Bid submission deadline; null when source omits |
-| `naicsCodes` | string[] | NAICS codes from source (US tenders) |
-| `cpvCodes` | string[] | CPV codes from source (EU tenders) |
-| `rawPayload` | AWSJSON | Original API response for debugging |
-| `overallScore` | integer | 0–100, `max(matches.score)`. Maintained by `classify-and-store`. |
+| `language` | string | ISO 639-1 |
+| `description` | string | Original description |
+| `estimatedValueUSD` | number? | Converted to USD via static rate table (refreshed quarterly) |
+| `estimatedValueOriginal` | string? | e.g. `"EUR 250000"` |
+| `postedDate` | string (ISO date) | |
+| `deadline` | string (ISO date)? | |
+| `naicsCodes` | string[] | |
+| `cpvCodes` | string[] | |
+| `rawPayload` | object | Stored as JSON, persisted for debugging |
+| `overallScore` | number (0–100) | `max(matches.score)`; written by `classify-and-store` |
 | `isHighPriority` | boolean | `overallScore >= 80` |
 | `isExpired` | boolean | `deadline < today`; refreshed by `expire-old-tenders` |
-| `status` | enum | `new` \| `reviewing` \| `pursuing` \| `submitted` \| `won` \| `lost` \| `not_relevant` |
-| `statusNote` | string? | Free-text note set at last status change |
+| `status` | string | `new` \| `reviewing` \| `pursuing` \| `submitted` \| `won` \| `lost` \| `not_relevant` |
+| `statusNote` | string? | |
 | `assignedTo` | string? | Admin email |
-| `lastStatusChangedAt` | AWSDateTime? | |
+| `lastStatusChangedAt` | string (ISO datetime)? | |
+| `createdAt` | string (ISO datetime) | |
+| `updatedAt` | string (ISO datetime) | |
 
-Indexes:
-- `byStatus + lastStatusChangedAt` (admin list default sort)
-- `bySource + postedDate`
-- `byScore + postedDate` (high-priority queries)
-- `bySourceTenderHash` (dedupe lookup)
+Index usage:
+- **Admin default list**: `Query GSI1 WHERE GSI1PK = TENDER_STATUS#<status> ORDER BY GSI1SK ASC` (which is score DESC then postedDate DESC). Iterate the non-`not_relevant` statuses (`new` / `reviewing` / `pursuing` / `submitted`) or use a small parallel fan-out client-side.
+- **Dedupe**: `Query GSI2 WHERE GSI2PK = TENDER_HASH#<hash>` returns 0 or 1.
+- **Daily digest scan**: `Query GSI3 WHERE GSI3PK = TENDER_HIGH_PRIORITY AND GSI3SK >= <today>`.
 
-### `TenderProductMatch` (M:N association)
+When `status` or `overallScore` changes, the writing Lambda must update GSI1SK and add/remove `GSI3PK`/`GSI3SK` accordingly (the existing helpers in `orderApi` Lambda follow the same pattern — same code style applies).
 
+### Entity 2: TenderProductMatch (one tender ↔ many products)
+
+```
+PK = TENDER#<tenderId>
+SK = MATCH#<productSlug>
+```
+
+Attributes:
 | Field | Type | Notes |
 |---|---|---|
-| `id` | string (PK) | Deterministic: `${tenderId}-${productSlug}` for idempotency |
-| `tenderId` | string (FK) | |
+| `tenderId` | string | |
 | `productSlug` | string | References `Product.slug` |
-| `score` | integer | 0–100 for this single product match |
-| `reasoning` | string | LLM explanation, shown in admin detail page |
-| `matchedKeywords` | string[] | Keywords that triggered prefilter |
+| `entityType` | string (const `TENDER_MATCH`) | |
+| `score` | number (0–100) | |
+| `reasoning` | string | LLM-generated explanation |
+| `matchedKeywords` | string[] | |
+| `createdAt` | string (ISO datetime) | |
 
-Indexes: `byTenderId`, `byProductSlug`
+Listing all matches for a tender: `Query PK = TENDER#<id> AND begins_with(SK, "MATCH#")`.
 
-### `TenderKeywordConfig`
+### Entity 3: TenderStatusLog (status change audit)
 
+```
+PK = TENDER#<tenderId>
+SK = LOG#<ISO datetime>#<ulid>
+```
+
+Attributes:
 | Field | Type | Notes |
 |---|---|---|
-| `id` | string (PK) | |
-| `productCategory` | string | Logical grouping: `PECVD`, `ALD`, `RIE-ICP`, `AFM`, `sputter`, `e-beam`, ... |
-| `productSlugs` | string[] | Product slugs in this category |
-| `keywords` | string[] | Primary keywords (OR-matched) |
-| `synonyms` | string[] | Additional matchable terms |
-| `blacklist` | string[] | Terms that exclude a candidate (handles ambiguity, e.g. `AFM = automated facial recognition`) |
-| `naicsCodes` | string[] | NAICS whitelist for US sources |
-| `cpvCodes` | string[] | CPV whitelist for EU sources |
-| `isActive` | boolean | |
-| `updatedBy` | string | Admin email |
-| `updatedAt` | AWSDateTime | |
-
-### `TenderStatusLog`
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | string (PK) | |
-| `tenderId` | string (FK) | |
-| `fromStatus` | enum? | Null on first status set |
-| `toStatus` | enum | |
+| `tenderId` | string | |
+| `entityType` | string (const `TENDER_STATUS_LOG`) | |
+| `fromStatus` | string? | Null on first status set |
+| `toStatus` | string | |
 | `changedBy` | string | Admin email |
-| `changedAt` | AWSDateTime | |
+| `changedAt` | string (ISO datetime) | |
 | `note` | string? | |
 
-Index: `byTenderId + changedAt`
+Listing audit log for a tender: `Query PK = TENDER#<id> AND begins_with(SK, "LOG#")`.
+
+### Entity 4: TenderKeywordConfig (per-category matching rules)
+
+```
+PK = TENDER_KEYWORD_CONFIG
+SK = CATEGORY#<productCategory>     // e.g. CATEGORY#PECVD
+GSI1PK = TENDER_KEYWORD_CONFIG_ACTIVE   // set only when isActive = true
+GSI1SK = CATEGORY#<productCategory>
+```
+
+Attributes:
+| Field | Type | Notes |
+|---|---|---|
+| `productCategory` | string | Logical grouping (`PECVD`, `ALD`, `RIE-ICP`, `AFM`, ...) |
+| `entityType` | string (const `TENDER_KEYWORD_CONFIG`) | |
+| `productSlugs` | string[] | |
+| `keywords` | string[] | Primary keywords (OR-matched) |
+| `synonyms` | string[] | |
+| `blacklist` | string[] | Excluded terms |
+| `naicsCodes` | string[] | |
+| `cpvCodes` | string[] | |
+| `isActive` | boolean | |
+| `updatedBy` | string | Admin email |
+| `updatedAt` | string (ISO datetime) | |
+
+`prefilter-by-keyword` Lambda loads all active configs with: `Query GSI1 WHERE GSI1PK = TENDER_KEYWORD_CONFIG_ACTIVE`.
+
+### Amplify schema additions
+
+Following the existing customType + Lambda-resolver convention (matches RFQ/Order pattern), 4 customType definitions are added to `amplify/data/resource.ts`: `Tender`, `TenderProductMatch`, `TenderStatusLog`, `TenderKeywordConfig`, plus `TenderConnection` / `TenderMatchConnection` / `TenderKeywordConfigConnection` for paginated list returns. Queries (`listTenders`, `getTender`, `listTenderKeywordConfigs`, etc.) and mutations (`updateTenderStatus`, `upsertTenderKeywordConfig`, `markTenderNotRelevant`, `runPrefilterPreview`) are added in **Phase 2** as part of the admin UI work; Phase 1 does not need any AppSync wiring because the pipeline writes directly via the DynamoDB SDK.
 
 ### Existing `Product` table
 
@@ -180,7 +235,7 @@ Trigger: EventBridge cron `0 2 * * ? *` (02:00 UTC daily).
 ### State sequence
 
 1. **Parallel: FetchAllSources** — one branch per source. Each branch has Retry (3× exponential backoff) and Catch that converts failure into `{ source, error, fetched: 0 }`. State succeeds even when individual sources fail.
-2. **Map: NormalizeAndDedupe** — MaxConcurrency 5. Each item processes a batch of 50 raw tenders: compute `sourceTenderHash`, Query the `bySourceTenderHash` GSI; if a record already exists, skip; else PutItem with `attribute_not_exists(id)` condition (defensive against concurrent batches).
+2. **Map: NormalizeAndDedupe** — MaxConcurrency 5. Each item processes a batch of 50 raw tenders: compute `sourceTenderHash`, Query `GSI2` with `GSI2PK = TENDER_HASH#<hash>`; if a record already exists, skip; else PutItem with `attribute_not_exists(PK)` condition (defensive against concurrent batches).
 3. **Task: PrefilterByKeyword** — load all active `TenderKeywordConfig` into memory once; for each new tender, check NAICS/CPV whitelist OR keyword match (less blacklist). Output `{ candidates: [tenderId, ...] }`.
 4. **Choice: HasCandidates?** — empty → Pass + End. Non-empty → continue.
 5. **Map: LLMScoring** — MaxConcurrency 10. Each candidate calls `match-with-llm`. Retry on `BedrockThrottlingException` (3× backoff). On exhausted retry, Catch logs the failure to CloudWatch and leaves the tender scoreless; the next day's run will retry if the tender is still pre-deadline.
@@ -192,7 +247,7 @@ Trigger: EventBridge cron `0 2 * * ? *` (02:00 UTC daily).
 
 ### Concurrency and rate limits
 
-- Map state for normalize: MaxConcurrency 5 to avoid DDB write throttling on the Tender table
+- Map state for normalize: MaxConcurrency 5 to avoid DDB write throttling on `intelligenceTable` (PAY_PER_REQUEST adapts quickly, but a soft cap also reduces SDK-level retry storms)
 - Map state for LLM scoring: MaxConcurrency 10 to stay well under Bedrock per-account TPS
 - All Lambdas use AWS SDK v3 client reuse (module-scope) for warm-start performance
 
@@ -210,7 +265,7 @@ Fetch output is potentially large (5,000+ tenders × ~10KB each = 50MB) — far 
 All Lambdas must be idempotent:
 - `fetch-*` writes use deterministic ids (`sam-<noticeId>`, etc.)
 - `normalize-dedupe` uses conditional PutItem
-- `match-with-llm` writes `TenderProductMatch` with `${tenderId}-${productSlug}` id (overwrite, not append)
+- `match-with-llm` writes TenderProductMatch items (`PK = TENDER#<id>, SK = MATCH#<productSlug>`); repeat executions overwrite, not append
 - `classify-and-store` is a pure update over existing records
 
 ## Lambda functions
@@ -220,13 +275,13 @@ All Lambdas must be idempotent:
 | `fetch-sam` | Step Functions | axios, SDK SSM | SSM Parameter Store read (`/tender-watch/sam/api-key`), S3 PutObject on raw bucket |
 | `fetch-ted` | Step Functions | axios | S3 PutObject on raw bucket |
 | `fetch-uk` | Step Functions | axios | S3 PutObject on raw bucket |
-| `normalize-dedupe` | Step Functions | SDK DynamoDB | DDB read/write on Tender table; S3 GetObject |
-| `prefilter-by-keyword` | Step Functions | SDK DynamoDB | DDB read on TenderKeywordConfig and Tender |
-| `match-with-llm` | Step Functions Map | Bedrock Runtime, Anthropic SDK | bedrock:InvokeModel, DDB read/write on Tender + TenderProductMatch, SSM read (`/tender-watch/anthropic/api-key`) |
-| `classify-and-store` | Step Functions | SDK DynamoDB | DDB read/write on Tender + TenderProductMatch |
+| `normalize-dedupe` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable`; S3 GetObject |
+| `prefilter-by-keyword` | Step Functions | SDK DynamoDB | DDB read on `intelligenceTable` |
+| `match-with-llm` | Step Functions Map | Bedrock Runtime, Anthropic SDK | bedrock:InvokeModel, DDB read/write on `intelligenceTable`, SSM read (`/tender-watch/anthropic/api-key`) |
+| `classify-and-store` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable` |
 | `notify-high-priority` | Step Functions | SDK SES | ses:SendEmail |
-| `notify-daily-digest` | Step Functions | SDK SES | ses:SendEmail; DDB read on Tender |
-| `expire-old-tenders` | Step Functions | SDK DynamoDB | DDB read/write on Tender |
+| `notify-daily-digest` | Step Functions | SDK SES | ses:SendEmail; DDB read on `intelligenceTable` |
+| `expire-old-tenders` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable` |
 
 ### Source-specific details
 
@@ -289,7 +344,7 @@ Expected output:
 ]
 ```
 
-Matches with `score < 30` are dropped (not written to `TenderProductMatch`).
+Matches with `score < 30` are dropped (no `MATCH#<slug>` item is written for them).
 
 ## Admin UI
 
@@ -379,7 +434,7 @@ Phase 3+ scales linearly with LLM calls; still under $30/month at 3× volume.
 
 Detailed task breakdown to be produced by the implementation-plan skill. High-level phases:
 
-1. **Phase 1 — Data pipeline + email (2–3 days)** — schema, Step Functions, 9 Lambdas, EventBridge cron, seed `TenderKeywordConfig` script, manual verification of email output. No UI.
+1. **Phase 1 — Data pipeline + email (2–3 days)** — shared library code (key builders, hash, S3 staging, normalized tender schema), Step Functions state machine + IAM, 9 Lambdas, EventBridge cron, seed script for initial `TenderKeywordConfig` items into `intelligenceTable`, manual verification of email output. No UI, no AppSync changes.
 2. **Phase 2 — Admin UI (2–3 days)** — list page, detail page, keyword configuration page (including the synchronous `Test match` preview backed by an AppSync custom mutation around `prefilter-by-keyword`), status log table, nav integration.
 3. **Phase 3 — CRM hook + UK + additional sources (1–2 days)** — `Convert to RFQ` flow, `fetch-uk`, optional Canada/Australia/Singapore/Korea sources.
 4. **Phase 4 — Tuning (ongoing)** — adjust keyword configs, refine LLM prompt, CloudWatch dashboard, optional debug-output cache.
