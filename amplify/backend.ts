@@ -716,12 +716,12 @@ const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
 const fetchSamTask = new LambdaInvoke(tenderWatchStack, 'FetchSam', {
     lambdaFunction: backend.fetchSam.resources.lambda,
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
 });
 const fetchTedTask = new LambdaInvoke(tenderWatchStack, 'FetchTed', {
     lambdaFunction: backend.fetchTed.resources.lambda,
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
 });
 
 const fetchParallel = new Parallel(tenderWatchStack, 'FetchAllSources', {
@@ -736,14 +736,14 @@ const normalizeTask = new LambdaInvoke(tenderWatchStack, 'NormalizeDedupe', {
         executionId: JsonPath.stringAt('$.exec.executionId'),
         fetchOutputs: JsonPath.objectAt('$.fetchResults'),
     }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
     resultPath: '$.normalized',
 });
 
 const prefilterTask = new LambdaInvoke(tenderWatchStack, 'Prefilter', {
     lambdaFunction: backend.prefilterByKeyword.resources.lambda,
     payload: TaskInput.fromObject({ newTenderIds: JsonPath.objectAt('$.normalized.newTenderIds') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
     resultPath: '$.prefilter',
 });
 
@@ -756,26 +756,26 @@ matchMap.iterator(
     new LambdaInvoke(tenderWatchStack, 'MatchOne', {
         lambdaFunction: backend.matchWithLlm.resources.lambda,
         payload: TaskInput.fromObject({ tenderId: JsonPath.stringAt('$.tenderId') }),
-        outputPath: '$.Payload',
+        payloadResponseOnly: true,
     }),
 );
 
 const classifyTask = new LambdaInvoke(tenderWatchStack, 'ClassifyAndStore', {
     lambdaFunction: backend.classifyAndStore.resources.lambda,
     payload: TaskInput.fromObject({ matchResults: JsonPath.objectAt('$.matches') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
     resultPath: '$.classification',
 });
 
 const notifyHigh = new LambdaInvoke(tenderWatchStack, 'NotifyHighPriority', {
     lambdaFunction: backend.notifyHighPriority.resources.lambda,
     payload: TaskInput.fromObject({ highPriorityTenderIds: JsonPath.objectAt('$.classification.highPriorityTenderIds') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
 });
 const notifyDigest = new LambdaInvoke(tenderWatchStack, 'NotifyDailyDigest', {
     lambdaFunction: backend.notifyDailyDigest.resources.lambda,
     payload: TaskInput.fromObject({ digestTenderIds: JsonPath.objectAt('$.classification.digestTenderIds') }),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
 });
 const notifyParallel = new Parallel(tenderWatchStack, 'Notifications', { resultPath: '$.notifyResults' });
 notifyParallel.branch(notifyHigh);
@@ -784,7 +784,7 @@ notifyParallel.branch(notifyDigest);
 const expireTask = new LambdaInvoke(tenderWatchStack, 'ExpireOldTenders', {
     lambdaFunction: backend.expireOldTenders.resources.lambda,
     payload: TaskInput.fromObject({}),
-    outputPath: '$.Payload',
+    payloadResponseOnly: true,
 });
 
 const choice = new Choice(tenderWatchStack, 'HasCandidates')
