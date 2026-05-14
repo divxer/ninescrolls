@@ -319,6 +319,7 @@ All pages live under `/admin/*`, reusing existing layout, navigation, and Amplif
 - Left: list of product categories from `TenderKeywordConfig`
 - Right: detail panel for selected category — productCategory (immutable PK), linked product slugs (multiselect from Product table), keywords (tag input), synonyms, blacklist (with helper text on disambiguation), NAICS codes, CPV codes, `isActive` toggle
 - Save action writes DDB + records `updatedBy` / `updatedAt` + shows "takes effect on next daily run" hint
+- **Test match preview**: a textarea for pasting sample tender title + description, plus optional NAICS/CPV inputs. A `Test match` button invokes the `prefilter-by-keyword` Lambda directly (synchronously, via AppSync custom mutation) using the *current unsaved* form values, and shows whether the candidate would pass prefilter and which keywords/codes triggered. No LLM call (would be slow and would cost tokens during config iteration); LLM behavior is observed in production runs.
 
 ### Navigation integration
 
@@ -347,7 +348,7 @@ Reuses existing admin Cognito group. No sub-roles. Sub-admin role splitting is a
   - `BedrockThrottlingException` > 5/day
   - Zero new tenders ingested for 7 consecutive days (data source schema change indicator)
 - Debug capture: when `match-with-llm` fails JSON parse, raw output is written to `s3://tender-watch-debug/<execution-id>/<tenderId>.txt`
-- CloudWatch metrics (phase 4 dashboard): `fetched_per_source`, `prefilter_pass_rate`, `llm_match_score_distribution`, `high_priority_count`, `notifications_sent`
+- CloudWatch metrics (phase 4 dashboard): `fetched_per_source`, `prefilter_pass_rate`, `llm_match_score_distribution`, `high_priority_count`, `notifications_sent`, `s3_staging_latency_ms` (time from `fetch-*` S3 write to next state's S3 read; surfaces when raw payloads grow large enough to slow the pipeline)
 
 ## Risks
 
@@ -379,7 +380,7 @@ Phase 3+ scales linearly with LLM calls; still under $30/month at 3× volume.
 Detailed task breakdown to be produced by the implementation-plan skill. High-level phases:
 
 1. **Phase 1 — Data pipeline + email (2–3 days)** — schema, Step Functions, 9 Lambdas, EventBridge cron, seed `TenderKeywordConfig` script, manual verification of email output. No UI.
-2. **Phase 2 — Admin UI (2–3 days)** — list page, detail page, keyword configuration page, status log table, nav integration.
+2. **Phase 2 — Admin UI (2–3 days)** — list page, detail page, keyword configuration page (including the synchronous `Test match` preview backed by an AppSync custom mutation around `prefilter-by-keyword`), status log table, nav integration.
 3. **Phase 3 — CRM hook + UK + additional sources (1–2 days)** — `Convert to RFQ` flow, `fetch-uk`, optional Canada/Australia/Singapore/Korea sources.
 4. **Phase 4 — Tuning (ongoing)** — adjust keyword configs, refine LLM prompt, CloudWatch dashboard, optional debug-output cache.
 
@@ -391,4 +392,3 @@ Detailed task breakdown to be produced by the implementation-plan skill. High-le
 - Machine translation pipeline
 - Sub-admin role splitting (read-only vs editor)
 - China-domestic procurement portals
-- "Test match" preview button in keyword config page (deferred to phase 4 if needed)
