@@ -62,6 +62,18 @@ function buildPrompt(
     ].join('\n');
 }
 
+/**
+ * Parse JSON that may be wrapped in markdown code fences. Claude occasionally
+ * outputs `` ```json\n[...]\n``` `` despite the prompt asking for JSON only.
+ */
+function parseLlmJson(text: string): unknown {
+    const trimmed = text.trim();
+    // Strip surrounding code fence if present.
+    const fenced = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+    const payload = fenced ? fenced[1].trim() : trimmed;
+    return JSON.parse(payload);
+}
+
 async function callBedrock(prompt: string): Promise<LlmMatch[]> {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), BEDROCK_TIMEOUT_MS);
@@ -79,7 +91,7 @@ async function callBedrock(prompt: string): Promise<LlmMatch[]> {
         const text = await (res.body as any).transformToString('utf-8');
         const wrap = JSON.parse(text);
         const inner: string = wrap.content?.[0]?.text ?? '[]';
-        return JSON.parse(inner) as LlmMatch[];
+        return parseLlmJson(inner) as LlmMatch[];
     } finally { clearTimeout(t); }
 }
 
@@ -92,7 +104,7 @@ async function callAnthropic(prompt: string): Promise<LlmMatch[]> {
     });
     const block = (res.content[0] as any);
     const text: string = block?.text ?? '[]';
-    return JSON.parse(text) as LlmMatch[];
+    return parseLlmJson(text) as LlmMatch[];
 }
 
 export async function handler(event: MatchEvent): Promise<MatchResult> {

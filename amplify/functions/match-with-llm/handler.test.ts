@@ -94,6 +94,27 @@ describe('match-with-llm handler', () => {
         expect(mockAnthropic).toHaveBeenCalled();
     });
 
+    it('strips markdown code fences from LLM response', async () => {
+        mockGet.mockResolvedValueOnce({ Item: { tenderId: 'sam-fence', title: 'X', description: '' } });
+        mockQuery.mockResolvedValueOnce({ Items: [{ productCategory: 'PECVD', productSlugs: ['pluto-f'], isActive: true }] });
+
+        // Wrap the JSON in a markdown code fence — what real Claude often returns.
+        const fenced = '```json\n' + JSON.stringify([
+            { category: 'PECVD', score: 91, reasoning: 'fenced response', matchedKeywords: ['PECVD'] },
+        ]) + '\n```';
+        const json = JSON.stringify({ content: [{ type: 'text', text: fenced }] });
+        mockBedrockSend.mockResolvedValueOnce({
+            body: { transformToString: vi.fn().mockResolvedValue(json) },
+        });
+        mockPut.mockResolvedValue({});
+
+        const { handler } = await import('./handler');
+        const result = await handler({ tenderId: 'sam-fence' });
+
+        expect(result.matches).toHaveLength(1);
+        expect(result.matches[0].score).toBe(91);
+    });
+
     it('returns empty matches when both providers fail', async () => {
         mockGet.mockResolvedValueOnce({ Item: { tenderId: 'sam-3', title: 'X', description: '' } });
         mockQuery.mockResolvedValueOnce({ Items: [{ productCategory: 'PECVD', productSlugs: ['pluto-f'], isActive: true }] });
