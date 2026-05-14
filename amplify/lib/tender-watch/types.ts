@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { TENDER_STATUSES, type TenderStatus } from './keys';
+
+/** Re-exported here as a Zod enum for runtime validation in Phase 2 resolvers. */
+export const TenderStatusSchema = z.enum(TENDER_STATUSES);
+export type { TenderStatus };
 
 /** Common shape every fetch-* Lambda emits and normalize-dedupe consumes. */
 export const NormalizedTenderSchema = z.object({
@@ -61,7 +66,7 @@ export interface TenderItem {
     overallScore: number;
     isHighPriority: boolean;
     isExpired: boolean;
-    status: 'new' | 'reviewing' | 'pursuing' | 'submitted' | 'won' | 'lost' | 'not_relevant';
+    status: TenderStatus;
     statusNote: string | null;
     assignedTo: string | null;
     lastStatusChangedAt: string | null;
@@ -114,7 +119,7 @@ export const USD_RATES: Record<string, number> = {
 };
 
 export function toUsd(amount: number | undefined | null, currency: string | undefined | null): number | null {
-    if (amount == null || !currency) return null;
+    if (amount == null || !Number.isFinite(amount) || !currency) return null;
     const rate = USD_RATES[currency.toUpperCase()];
     if (rate == null) return null;
     return Math.round(amount * rate);
