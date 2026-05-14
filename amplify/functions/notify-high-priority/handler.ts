@@ -41,7 +41,7 @@ export async function handler(event: NotifyHighPriorityEvent): Promise<NotifyRes
             }));
 
             const subject = `🔥 [Tender Watch] ${t.country} · ${t.agency} · score ${t.overallScore}`;
-            const matchesHtml = (matches.Items ?? []).map((m) =>
+            const matchesHtml = (matches.Items ?? []).map((m: Record<string, any>) =>
                 `<li><strong>${escapeHtml(m.productSlug)}</strong> — ${m.score}/100<br><em>${escapeHtml(m.reasoning ?? '')}</em></li>`
             ).join('');
 
