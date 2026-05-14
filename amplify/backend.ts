@@ -676,13 +676,6 @@ for (const fn of tenderLambdas) {
 [backend.fetchSam, backend.fetchTed].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
 tenderRawBucket.grantRead(backend.normalizeDedupe.resources.lambda);
 
-// fetch-sam reads the SAM.gov API key from SSM Parameter Store.
-backend.fetchSam.resources.lambda.addToRolePolicy(new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ['ssm:GetParameter'],
-    resources: ['arn:aws:ssm:*:*:parameter/tender-watch/sam/api-key'],
-}));
-
 // match-with-llm invokes Bedrock — same pattern as classify-org.
 backend.matchWithLlm.resources.lambda.addToRolePolicy(new PolicyStatement({
     effect: Effect.ALLOW,

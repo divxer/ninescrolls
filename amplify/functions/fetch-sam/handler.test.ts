@@ -4,12 +4,6 @@ import fixture from './fixtures/sam-sample.json';
 const axiosGet = vi.fn();
 vi.mock('axios', () => ({ default: { get: axiosGet }, get: axiosGet }));
 
-const ssmSend = vi.fn().mockResolvedValue({ Parameter: { Value: 'fake-key' } });
-vi.mock('@aws-sdk/client-ssm', () => ({
-    SSMClient: vi.fn().mockImplementation(() => ({ send: ssmSend })),
-    GetParameterCommand: vi.fn().mockImplementation((args) => ({ __cmd: 'GetParameter', ...args })),
-}));
-
 const s3Send = vi.fn().mockResolvedValue({});
 vi.mock('@aws-sdk/client-s3', () => ({
     S3Client: vi.fn().mockImplementation(() => ({ send: s3Send })),
@@ -18,7 +12,7 @@ vi.mock('@aws-sdk/client-s3', () => ({
 }));
 
 vi.stubEnv('STAGING_BUCKET', 'tender-watch-raw-test');
-vi.stubEnv('SAM_API_KEY_PARAM', '/tender-watch/sam/api-key');
+vi.stubEnv('SAM_API_KEY', 'fake-test-key');
 
 beforeEach(() => {
     axiosGet.mockReset();

@@ -1,15 +1,13 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import axios from 'axios';
 import type { NormalizedTender, FetchOutput } from '../../lib/tender-watch/types';
 import { NormalizedTenderSchema } from '../../lib/tender-watch/types';
 import { stagedKey } from '../../lib/tender-watch/s3-staging';
 
 const s3 = new S3Client({});
-const ssm = new SSMClient({});
 
 const STAGING_BUCKET = () => process.env.STAGING_BUCKET!;
-const SAM_API_KEY_PARAM = () => process.env.SAM_API_KEY_PARAM!;
+const SAM_API_KEY = () => process.env.SAM_API_KEY!;
 
 const SAM_URL = 'https://api.sam.gov/prod/opportunities/v2/search';
 const NAICS_WHITELIST = '334516,334519,333242,541380';
@@ -77,14 +75,9 @@ function normalize(op: SamOpportunity): NormalizedTender {
     };
 }
 
-async function getApiKey(): Promise<string> {
-    const res = await ssm.send(new GetParameterCommand({ Name: SAM_API_KEY_PARAM(), WithDecryption: true }));
-    return res.Parameter?.Value ?? '';
-}
-
 export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
     try {
-        const apiKey = await getApiKey();
+        const apiKey = SAM_API_KEY();
         const today = new Date();
         const lookback = new Date(today.getTime() - LOOKBACK_DAYS * 24 * 3600 * 1000);
         const postedFrom = lookback.toISOString().slice(0, 10);
