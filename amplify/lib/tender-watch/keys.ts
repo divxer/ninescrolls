@@ -4,8 +4,9 @@
  */
 
 export function scoreSortToken(score: number): string {
+    // Clamp out-of-range scores: <0 → 100 (lowest priority), >100 → 0 (highest priority).
     const clamped = Math.min(100, Math.max(0, Math.round(score)));
-    // Inverse so lexicographic ASC = score DESC.
+    // Inverse so lexicographic ASC = score DESC on GSI1SK.
     return String(100 - clamped).padStart(3, '0');
 }
 
@@ -25,7 +26,7 @@ export function tenderKeywordConfigItemKey(productCategory: string) {
     return { PK: 'TENDER_KEYWORD_CONFIG' as const, SK: `CATEGORY#${productCategory}` };
 }
 
-export function tenderStatusGsiKey(status: string, overallScore: number, postedDate: string, tenderId: string) {
+export function tenderStatusGsiKey(status: TenderStatus, overallScore: number, postedDate: string, tenderId: string) {
     return {
         GSI1PK: `TENDER_STATUS#${status}`,
         GSI1SK: `${scoreSortToken(overallScore)}#${postedDate}#${tenderId}`,
