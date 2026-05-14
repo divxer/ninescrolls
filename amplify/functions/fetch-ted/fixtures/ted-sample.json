@@ -1,0 +1,33 @@
+{
+    "total": 2,
+    "results": [
+        {
+            "ND": "TED-2026-100001",
+            "TI": { "en": "Atomic Layer Deposition system for nanoelectronics research" },
+            "DD": "2026-05-12",
+            "RC": "DE",
+            "OL": "DE",
+            "AC": { "official-name": "Technische Universität München" },
+            "CPV": [{ "code": "38540000" }, { "code": "38500000" }],
+            "DT": "2026-08-30",
+            "VAL": { "amount": 480000, "currency": "EUR" },
+            "TX": {
+                "en": "Procurement of an atomic layer deposition (ALD) system for nano-electronics research with high uniformity and trench coverage on 200mm wafers."
+            },
+            "URI": "https://ted.europa.eu/notice/-/detail/100001-2026"
+        },
+        {
+            "ND": "TED-2026-100002",
+            "TI": { "en": "Office cleaning services" },
+            "DD": "2026-05-12",
+            "RC": "FR",
+            "OL": "FR",
+            "AC": { "official-name": "Mairie de Lyon" },
+            "CPV": [{ "code": "90919200" }],
+            "DT": "2026-07-01",
+            "VAL": { "amount": 95000, "currency": "EUR" },
+            "TX": { "en": "Three-year contract for daily office cleaning at municipal facilities." },
+            "URI": "https://ted.europa.eu/notice/-/detail/100002-2026"
+        }
+    ]
+}
