@@ -1,0 +1,41 @@
+{
+    "totalRecords": 2,
+    "page": 0,
+    "size": 2,
+    "_embedded": {
+        "opportunity": [
+            {
+                "noticeId": "abcdef01234567890",
+                "title": "PECVD Deposition System for University Cleanroom",
+                "fullParentPathName": "DEPT OF EDUCATION.NATIONAL SCIENCE FOUNDATION",
+                "organizationName": "Stanford University",
+                "postedDate": "2026-05-10",
+                "responseDeadLine": "2026-08-15T23:59:00-04:00",
+                "type": "Solicitation",
+                "active": "Yes",
+                "naicsCode": "334516",
+                "uiLink": "https://sam.gov/opp/abcdef01234567890",
+                "description": "The university seeks a plasma-enhanced chemical vapor deposition (PECVD) system capable of depositing silicon nitride and silicon dioxide thin films on 6-inch wafers. Throughput >= 25 wafers/hour.",
+                "additionalInfoLink": null,
+                "officeAddress": { "city": "Stanford", "state": "CA", "countryCode": "USA" },
+                "placeOfPerformance": { "country": { "code": "USA" } }
+            },
+            {
+                "noticeId": "fedcba98765432100",
+                "title": "Maintenance contract for HVAC systems",
+                "fullParentPathName": "DEPT OF DEFENSE.NAVY",
+                "organizationName": "Naval Base San Diego",
+                "postedDate": "2026-05-11",
+                "responseDeadLine": "2026-07-01T17:00:00-08:00",
+                "type": "Combined Synopsis/Solicitation",
+                "active": "Yes",
+                "naicsCode": "238220",
+                "uiLink": "https://sam.gov/opp/fedcba98765432100",
+                "description": "Routine HVAC maintenance for facility 4B.",
+                "additionalInfoLink": null,
+                "officeAddress": { "city": "San Diego", "state": "CA", "countryCode": "USA" },
+                "placeOfPerformance": { "country": { "code": "USA" } }
+            }
+        ]
+    }
+}
