@@ -9,7 +9,7 @@ const s3 = new S3Client({});
 const STAGING_BUCKET = () => process.env.STAGING_BUCKET!;
 const SAM_API_KEY = () => process.env.SAM_API_KEY!;
 
-const SAM_URL = 'https://api.sam.gov/prod/opportunities/v2/search';
+const SAM_URL = 'https://api.sam.gov/opportunities/v2/search';
 const NAICS_WHITELIST = '334516,334519,333242,541380';
 const PAGE_SIZE = 1000;
 const LOOKBACK_DAYS = 2;
@@ -29,13 +29,13 @@ interface SamOpportunity {
     active?: string;
     naicsCode?: string;
     uiLink: string;
-    description: string;
+    description?: string;
     placeOfPerformance?: { country?: { code?: string } };
 }
 
 interface SamResponse {
-    totalRecords: number;
-    _embedded?: { opportunity?: SamOpportunity[] };
+    totalRecords?: number;
+    opportunitiesData?: SamOpportunity[];
 }
 
 function isoCountryFromUsa(code: string | undefined): string {
@@ -46,7 +46,6 @@ function isoCountryFromUsa(code: string | undefined): string {
         AUS: 'AU', JPN: 'JP', KOR: 'KR', SGP: 'SG',
     };
     const mapped = map[code] ?? code.slice(0, 2);
-    // Guard against weird inputs like 'N/A' that slice to '<2 chars or invalid'.
     return /^[A-Z]{2}$/.test(mapped) ? mapped : 'US';
 }
 
@@ -54,6 +53,13 @@ function toIsoDate(input: string | null | undefined): string | null {
     if (!input) return null;
     const match = input.match(/^\d{4}-\d{2}-\d{2}/);
     return match ? match[0] : null;
+}
+
+function formatMdy(date: Date): string {
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(date.getUTCDate()).padStart(2, '0');
+    const yyyy = String(date.getUTCFullYear());
+    return `${mm}/${dd}/${yyyy}`;
 }
 
 function normalize(op: SamOpportunity): NormalizedTender {
@@ -80,45 +86,43 @@ export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
         const apiKey = SAM_API_KEY();
         const today = new Date();
         const lookback = new Date(today.getTime() - LOOKBACK_DAYS * 24 * 3600 * 1000);
-        const postedFrom = lookback.toISOString().slice(0, 10);
-        const postedTo = today.toISOString().slice(0, 10);
+        const postedFrom = formatMdy(lookback);
+        const postedTo = formatMdy(today);
 
         const out: NormalizedTender[] = [];
-        let page = 0;
+        let offset = 0;
         for (;;) {
             const { data } = await axios.get<SamResponse>(SAM_URL, {
                 params: {
                     api_key: apiKey,
                     postedFrom,
                     postedTo,
-                    ptype: 'k,o',
                     ncode: NAICS_WHITELIST,
                     limit: PAGE_SIZE,
-                    offset: page * PAGE_SIZE,
+                    offset,
                 },
                 timeout: 30_000,
             });
-            const opps = data._embedded?.opportunity ?? [];
+            const opps = data.opportunitiesData ?? [];
             for (const op of opps) {
-                if (op.active === 'Yes' || op.active === undefined) {
-                    const candidate = normalize(op);
-                    const parsed = NormalizedTenderSchema.safeParse(candidate);
-                    if (parsed.success) {
-                        out.push(parsed.data);
-                    } else {
-                        console.warn(JSON.stringify({
-                            event: 'fetch-sam.normalize-invalid',
-                            noticeId: op.noticeId,
-                            issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
-                        }));
-                    }
+                if (op.active !== 'Yes' && op.active !== undefined) continue;
+                // Only Solicitation / Combined Synopsis/Solicitation — drop awards, justifications, etc.
+                if (op.type && !['Solicitation', 'Combined Synopsis/Solicitation'].includes(op.type)) continue;
+                const candidate = normalize(op);
+                const parsed = NormalizedTenderSchema.safeParse(candidate);
+                if (parsed.success) {
+                    out.push(parsed.data);
+                } else {
+                    console.warn(JSON.stringify({
+                        event: 'fetch-sam.normalize-invalid',
+                        noticeId: op.noticeId,
+                        issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+                    }));
                 }
             }
-            page += 1;
-            // Trust an empty page as the unambiguous termination condition.
-            // If the server reports totalRecords, also exit early once we've covered it.
+            offset += PAGE_SIZE;
             if (opps.length === 0) break;
-            if (data.totalRecords != null && page * PAGE_SIZE >= data.totalRecords) break;
+            if (data.totalRecords != null && offset >= data.totalRecords) break;
         }
 
         const key = stagedKey(event.executionId, 'fetch-sam', 'output');

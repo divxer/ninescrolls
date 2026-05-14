@@ -37,7 +37,7 @@ describe('fetch-ted handler', () => {
             externalId: 'TED-2026-100001',
             title: 'Atomic Layer Deposition system for nanoelectronics research',
             country: 'DE',
-            language: 'de',
+            language: 'en',
             postedDate: '2026-05-12',
             deadline: '2026-08-30',
             cpvCodes: ['38540000', '38500000'],
