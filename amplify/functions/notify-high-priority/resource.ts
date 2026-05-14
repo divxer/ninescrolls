@@ -4,6 +4,7 @@ export const notifyHighPriority = defineFunction({
     name: 'notify-high-priority',
     entry: './handler.ts',
     runtime: 22,
+    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 120,
     memoryMB: 256,
     environment: {

@@ -4,6 +4,7 @@ export const notifyDailyDigest = defineFunction({
     name: 'notify-daily-digest',
     entry: './handler.ts',
     runtime: 22,
+    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 60,
     memoryMB: 256,
     environment: {

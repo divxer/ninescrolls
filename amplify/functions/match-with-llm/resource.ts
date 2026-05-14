@@ -4,6 +4,7 @@ export const matchWithLlm = defineFunction({
     name: 'match-with-llm',
     entry: './handler.ts',
     runtime: 22,
+    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 120,
     memoryMB: 1024,
     environment: {

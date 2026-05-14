@@ -4,6 +4,7 @@ export const fetchTed = defineFunction({
     name: 'fetch-ted',
     entry: './handler.ts',
     runtime: 22,
+    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 300,
     memoryMB: 512,
     // STAGING_BUCKET is injected at deploy time by amplify/backend.ts (Task 14)

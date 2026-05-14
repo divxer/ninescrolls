@@ -4,6 +4,7 @@ export const fetchSam = defineFunction({
     name: 'fetch-sam',
     entry: './handler.ts',
     runtime: 22,
+    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 300,
     memoryMB: 512,
     environment: {
