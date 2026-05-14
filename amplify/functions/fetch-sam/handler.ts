@@ -1,10 +1,8 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import axios from 'axios';
-import type {
-    NormalizedTender,
-    FetchOutput,
-} from '../../lib/tender-watch/types';
+import type { NormalizedTender, FetchOutput } from '../../lib/tender-watch/types';
+import { NormalizedTenderSchema } from '../../lib/tender-watch/types';
 import { stagedKey } from '../../lib/tender-watch/s3-staging';
 
 const s3 = new S3Client({});
@@ -45,8 +43,13 @@ interface SamResponse {
 function isoCountryFromUsa(code: string | undefined): string {
     if (!code) return 'US';
     if (code === 'USA' || code === 'US') return 'US';
-    const map: Record<string, string> = { CAN: 'CA', MEX: 'MX', GBR: 'GB' };
-    return map[code] ?? code.slice(0, 2);
+    const map: Record<string, string> = {
+        CAN: 'CA', MEX: 'MX', GBR: 'GB', FRA: 'FR', DEU: 'DE',
+        AUS: 'AU', JPN: 'JP', KOR: 'KR', SGP: 'SG',
+    };
+    const mapped = map[code] ?? code.slice(0, 2);
+    // Guard against weird inputs like 'N/A' that slice to '<2 chars or invalid'.
+    return /^[A-Z]{2}$/.test(mapped) ? mapped : 'US';
 }
 
 function toIsoDate(input: string | null | undefined): string | null {
@@ -105,12 +108,24 @@ export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
             const opps = data._embedded?.opportunity ?? [];
             for (const op of opps) {
                 if (op.active === 'Yes' || op.active === undefined) {
-                    out.push(normalize(op));
+                    const candidate = normalize(op);
+                    const parsed = NormalizedTenderSchema.safeParse(candidate);
+                    if (parsed.success) {
+                        out.push(parsed.data);
+                    } else {
+                        console.warn(JSON.stringify({
+                            event: 'fetch-sam.normalize-invalid',
+                            noticeId: op.noticeId,
+                            issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+                        }));
+                    }
                 }
             }
-            const total = data.totalRecords ?? out.length;
             page += 1;
-            if (page * PAGE_SIZE >= total || opps.length === 0) break;
+            // Trust an empty page as the unambiguous termination condition.
+            // If the server reports totalRecords, also exit early once we've covered it.
+            if (opps.length === 0) break;
+            if (data.totalRecords != null && page * PAGE_SIZE >= data.totalRecords) break;
         }
 
         const key = stagedKey(event.executionId, 'fetch-sam', 'output');
