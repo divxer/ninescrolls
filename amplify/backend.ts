@@ -17,6 +17,16 @@ import { optimizeInsightsImage } from './functions/optimize-insights-image/resou
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
 import { submitQuestion } from './functions/submit-question/resource';
+// Tender Watch — Phase 1
+import { fetchSam } from './functions/fetch-sam/resource';
+import { fetchTed } from './functions/fetch-ted/resource';
+import { normalizeDedupe } from './functions/normalize-dedupe/resource';
+import { prefilterByKeyword } from './functions/prefilter-by-keyword/resource';
+import { matchWithLlm } from './functions/match-with-llm/resource';
+import { classifyAndStore } from './functions/classify-and-store/resource';
+import { notifyHighPriority } from './functions/notify-high-priority/resource';
+import { notifyDailyDigest } from './functions/notify-daily-digest/resource';
+import { expireOldTenders } from './functions/expire-old-tenders/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -35,6 +45,14 @@ import {
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import {
+    StateMachine, StateMachineType, Pass, Parallel, Map as SfnMap,
+    Choice, Condition, Succeed, JsonPath, LogLevel, TaskInput,
+} from 'aws-cdk-lib/aws-stepfunctions';
+import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
 
 /** Single source of truth for the CDN custom domain */
 const CDN_DOMAIN = 'cdn.ninescrolls.com';
@@ -58,6 +76,17 @@ const backend = defineBackend({
     generateSitemaps,
     submitLead,
     submitQuestion,
+
+    // Tender Watch — Phase 1
+    fetchSam,
+    fetchTed,
+    normalizeDedupe,
+    prefilterByKeyword,
+    matchWithLlm,
+    classifyAndStore,
+    notifyHighPriority,
+    notifyDailyDigest,
+    expireOldTenders,
 });
 
 // Create a fixed stage name
@@ -612,4 +641,174 @@ backend.addOutput({
             },
         },
     },
+});
+
+// =============================================================================
+// Tender Watch — Phase 1 infrastructure
+// See docs/superpowers/specs/2026-05-14-tender-watch-design.md
+// =============================================================================
+
+const tenderWatchStack = backend.createStack('tender-watch-stack');
+
+// --- S3 staging bucket: holds inter-state Step Functions payloads (fetch output, etc.).
+//     7-day lifecycle policy keeps debug history without unbounded growth.
+const tenderRawBucket = new Bucket(tenderWatchStack, 'TenderWatchRawBucket', {
+    blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    encryption: BucketEncryption.S3_MANAGED,
+    lifecycleRules: [{ id: 'expire-7d', expiration: Duration.days(7) }],
+    enforceSSL: true,
+});
+
+// --- Grant each Lambda the table + staging-bucket env it needs.
+const tenderLambdas = [
+    backend.fetchSam, backend.fetchTed, backend.normalizeDedupe,
+    backend.prefilterByKeyword, backend.matchWithLlm, backend.classifyAndStore,
+    backend.notifyHighPriority, backend.notifyDailyDigest, backend.expireOldTenders,
+];
+
+for (const fn of tenderLambdas) {
+    intelligenceTable.grantReadWriteData(fn.resources.lambda);
+    fn.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+    fn.addEnvironment('STAGING_BUCKET', tenderRawBucket.bucketName);
+}
+
+// fetch-* Lambdas write the staging bucket; normalize-dedupe reads it.
+[backend.fetchSam, backend.fetchTed].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
+tenderRawBucket.grantRead(backend.normalizeDedupe.resources.lambda);
+
+// fetch-sam reads the SAM.gov API key from SSM Parameter Store.
+backend.fetchSam.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['ssm:GetParameter'],
+    resources: ['arn:aws:ssm:*:*:parameter/tender-watch/sam/api-key'],
+}));
+
+// match-with-llm invokes Bedrock — same pattern as classify-org.
+backend.matchWithLlm.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
+    ],
+}));
+
+// notify-* Lambdas send SES email.
+[backend.notifyHighPriority, backend.notifyDailyDigest].forEach((fn) => {
+    fn.resources.lambda.addToRolePolicy(new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+        resources: ['*'],
+    }));
+});
+
+// --- Step Functions state machine.
+const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
+    parameters: { 'executionId.$': '$$.Execution.Name' },
+    resultPath: '$.exec',
+});
+
+const fetchSamTask = new LambdaInvoke(tenderWatchStack, 'FetchSam', {
+    lambdaFunction: backend.fetchSam.resources.lambda,
+    payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
+    outputPath: '$.Payload',
+});
+const fetchTedTask = new LambdaInvoke(tenderWatchStack, 'FetchTed', {
+    lambdaFunction: backend.fetchTed.resources.lambda,
+    payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
+    outputPath: '$.Payload',
+});
+
+const fetchParallel = new Parallel(tenderWatchStack, 'FetchAllSources', {
+    resultPath: '$.fetchResults',
+});
+fetchParallel.branch(fetchSamTask);
+fetchParallel.branch(fetchTedTask);
+
+const normalizeTask = new LambdaInvoke(tenderWatchStack, 'NormalizeDedupe', {
+    lambdaFunction: backend.normalizeDedupe.resources.lambda,
+    payload: TaskInput.fromObject({
+        executionId: JsonPath.stringAt('$.exec.executionId'),
+        fetchOutputs: JsonPath.objectAt('$.fetchResults'),
+    }),
+    outputPath: '$.Payload',
+    resultPath: '$.normalized',
+});
+
+const prefilterTask = new LambdaInvoke(tenderWatchStack, 'Prefilter', {
+    lambdaFunction: backend.prefilterByKeyword.resources.lambda,
+    payload: TaskInput.fromObject({ newTenderIds: JsonPath.objectAt('$.normalized.newTenderIds') }),
+    outputPath: '$.Payload',
+    resultPath: '$.prefilter',
+});
+
+const matchMap = new SfnMap(tenderWatchStack, 'LLMScoring', {
+    maxConcurrency: 10,
+    itemsPath: '$.prefilter.candidates',
+    resultPath: '$.matches',
+});
+matchMap.iterator(
+    new LambdaInvoke(tenderWatchStack, 'MatchOne', {
+        lambdaFunction: backend.matchWithLlm.resources.lambda,
+        payload: TaskInput.fromObject({ tenderId: JsonPath.stringAt('$.tenderId') }),
+        outputPath: '$.Payload',
+    }),
+);
+
+const classifyTask = new LambdaInvoke(tenderWatchStack, 'ClassifyAndStore', {
+    lambdaFunction: backend.classifyAndStore.resources.lambda,
+    payload: TaskInput.fromObject({ matchResults: JsonPath.objectAt('$.matches') }),
+    outputPath: '$.Payload',
+    resultPath: '$.classification',
+});
+
+const notifyHigh = new LambdaInvoke(tenderWatchStack, 'NotifyHighPriority', {
+    lambdaFunction: backend.notifyHighPriority.resources.lambda,
+    payload: TaskInput.fromObject({ highPriorityTenderIds: JsonPath.objectAt('$.classification.highPriorityTenderIds') }),
+    outputPath: '$.Payload',
+});
+const notifyDigest = new LambdaInvoke(tenderWatchStack, 'NotifyDailyDigest', {
+    lambdaFunction: backend.notifyDailyDigest.resources.lambda,
+    payload: TaskInput.fromObject({ digestTenderIds: JsonPath.objectAt('$.classification.digestTenderIds') }),
+    outputPath: '$.Payload',
+});
+const notifyParallel = new Parallel(tenderWatchStack, 'Notifications', { resultPath: '$.notifyResults' });
+notifyParallel.branch(notifyHigh);
+notifyParallel.branch(notifyDigest);
+
+const expireTask = new LambdaInvoke(tenderWatchStack, 'ExpireOldTenders', {
+    lambdaFunction: backend.expireOldTenders.resources.lambda,
+    payload: TaskInput.fromObject({}),
+    outputPath: '$.Payload',
+});
+
+const choice = new Choice(tenderWatchStack, 'HasCandidates')
+    .when(
+        Condition.numberGreaterThan('$.prefilter.candidatesCount', 0),
+        matchMap.next(classifyTask).next(notifyParallel).next(expireTask),
+    )
+    .otherwise(new Succeed(tenderWatchStack, 'NoCandidates'));
+
+const definition = passInjectExecutionId
+    .next(fetchParallel)
+    .next(normalizeTask)
+    .next(prefilterTask)
+    .next(choice);
+
+const stateMachineLogGroup = new LogGroup(tenderWatchStack, 'TenderWatchLogs', {
+    retention: RetentionDays.ONE_MONTH,
+});
+
+const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchDaily', {
+    stateMachineName: 'tender-watch-daily',
+    stateMachineType: StateMachineType.STANDARD,
+    definition,
+    logs: { destination: stateMachineLogGroup, level: LogLevel.ALL, includeExecutionData: true },
+    tracingEnabled: true,
+});
+
+// --- EventBridge daily cron — 02:00 UTC.
+new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
+    schedule: Schedule.cron({ minute: '0', hour: '2', day: '*', month: '*', year: '*' }),
+    targets: [new SfnStateMachine(tenderWatchStateMachine)],
 });
