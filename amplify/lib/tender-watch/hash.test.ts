@@ -50,4 +50,12 @@ describe('sourceTenderHash', () => {
         const b = sourceTenderHash({ title: 'B', agency: 'X', deadline: '2026-01-01' });
         expect(a).not.toBe(b);
     });
+
+    it('separator collisions: pipe characters in field values do not cause hash collisions', () => {
+        // Regression test: an earlier implementation joined fields with '|',
+        // which collided when a field value contained that character.
+        const a = sourceTenderHash({ title: 'foo|bar', agency: 'baz', deadline: '2026-01-01' });
+        const b = sourceTenderHash({ title: 'foo', agency: 'bar|baz', deadline: '2026-01-01' });
+        expect(a).not.toBe(b);
+    });
 });
