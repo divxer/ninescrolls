@@ -553,7 +553,7 @@ const cdnCertificate = Certificate.fromCertificateArn(
 // In Amplify sandbox, the prod distribution already owns the alias, so we skip the
 // custom domain here and let sandbox use the default *.cloudfront.net URL. Branch
 // deploys (including main = prod) keep the custom domain.
-const isSandbox = Stack.of(insightsAssetsStack).stackName.includes('-sandbox-');
+const isSandbox = backend.stack.stackName.includes('-sandbox-');
 
 const insightsAssetsCdn = new Distribution(insightsAssetsStack, 'InsightsAssetsCdn', {
     defaultBehavior: {
