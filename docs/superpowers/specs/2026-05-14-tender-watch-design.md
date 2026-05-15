@@ -1,8 +1,10 @@
 # Tender Watch — Design Spec
 
 **Date:** 2026-05-14
-**Status:** Approved (pending implementation)
+**Status:** Approved (sandbox-validated)
 **Owner:** harvey@ninescrolls.com
+
+> **Verification:** This design was sandbox-deployed and end-to-end verified in PR [#139](https://github.com/divxer/ninescrolls/pull/139). The sandbox run pulled 129 live TED notices, deduped via GSI2, scored 2 ALD candidates through Bedrock Haiku, wrote 3 TENDER_MATCH items to the DynamoDB table, and triggered the daily-digest email (which surfaced the unrelated SES→SendGrid migration captured in commit `4e5f113`). All 12 corrections discovered during sandbox debugging are reflected in this revision.
 
 ## Summary
 
@@ -75,7 +77,7 @@ Admin path: browser → AppSync (existing) → Lambda resolvers (Phase 2) → `i
 ### Reused infrastructure
 
 - Bedrock Claude Haiku 4.5 (`us.anthropic.claude-haiku-4-5-20251001-v1:0`) — same model and region as `classify-org` Lambda; Anthropic API as fallback (same dual-provider pattern)
-- SES (already used for RFQ notifications)
+- SendGrid HTTP API (already used for RFQ/lead/question/Stripe notifications across the project) with the `SENDGRID_API_KEY` Amplify secret
 - AppSync + Amplify Auth (admin already wired)
 - Existing `/admin/*` navigation and layout
 - **`intelligenceTable` (`NineScrollsIntelligence`)** — existing single-table store that already houses Order / RFQ / Lead / Feedback. Tender entities are added with new key prefixes; no new DynamoDB tables are created. This matches the established convention for workflow entities and keeps cross-entity timelines (GSI4 by email) coherent.
@@ -87,6 +89,8 @@ Admin path: browser → AppSync (existing) → Lambda resolvers (Phase 2) → `i
 - 10 Lambda functions under `amplify/functions/` (fetch-sam, fetch-ted, fetch-uk, normalize-dedupe, prefilter-by-keyword, match-with-llm, classify-and-store, notify-high-priority, notify-daily-digest, expire-old-tenders). Phase 1 ships all except `fetch-uk`, which is added in Phase 3.
 - EventBridge rule (cron daily) → Step Functions
 - S3 bucket `tender-watch-raw` for inter-state payload staging (raw fetch output is too large for Step Functions 256KB payload limit)
+
+> **CDK note — `resourceGroupName`:** Every tender-watch Lambda's `defineFunction` call in `resource.ts` must include `resourceGroupName: 'tender-watch-stack'`. This assigns the Lambda to the same CloudFormation nested stack as the Step Functions state machine and S3 bucket. Without it, Lambdas land in Amplify's auto-managed `function` stack, which creates a circular dependency (`function` ↔ `tender-watch-stack`) because the Lambdas reference the S3 bucket and the state machine references the Lambdas.
 
 ## Data model
 
@@ -241,9 +245,11 @@ Trigger: EventBridge cron `0 2 * * ? *` (02:00 UTC daily).
 5. **Map: LLMScoring** — MaxConcurrency 10. Each candidate calls `match-with-llm`. Retry on `BedrockThrottlingException` (3× backoff). On exhausted retry, Catch logs the failure to CloudWatch and leaves the tender scoreless; the next day's run will retry if the tender is still pre-deadline.
 6. **Task: ClassifyAndStore** — compute `overallScore` per tender, update `isHighPriority`.
 7. **Parallel: Notifications**
-   - `notify-high-priority` — one email per high-priority tender (sequential, throttled to 5/s for SES)
-   - `notify-daily-digest` — single HTML email of all new tenders today; not sent if empty
+   - `notify-high-priority` — one email per high-priority tender (sequential; uses SendGrid HTTP API, `POST https://api.sendgrid.com/v3/mail/send`, from `noreply@ninescrolls.com` to `info@ninescrolls.com`)
+   - `notify-daily-digest` — single HTML email of all new tenders today via SendGrid; not sent if empty
 8. **Task: ExpireOldTenders** — scan `isExpired = false AND deadline < today`, batch update to true.
+
+> **CDK note — `payloadResponseOnly` on `LambdaInvoke`:** Every `LambdaInvoke` task in the state machine uses `payloadResponseOnly: true`. The naive alternative — `outputPath: '$.Payload'` — fails when the task also sets `resultPath`: the `resultPath` nests the full wrapped Lambda invoke response (`{ ExecutedVersion, Payload, StatusCode, ... }`) under the result key, and `outputPath: '$.Payload'` then tries to find `Payload` at the root and finds nothing. `payloadResponseOnly: true` unwraps the Lambda's return value directly as the task output, which works correctly in all cases.
 
 ### Concurrency and rate limits
 
@@ -272,29 +278,59 @@ All Lambdas must be idempotent:
 
 | Lambda | Trigger | Primary deps | IAM (beyond defaults) |
 |---|---|---|---|
-| `fetch-sam` | Step Functions | axios, SDK SSM | SSM Parameter Store read (`/tender-watch/sam/api-key`), S3 PutObject on raw bucket |
+| `fetch-sam` | Step Functions | axios | S3 PutObject on raw bucket |
 | `fetch-ted` | Step Functions | axios | S3 PutObject on raw bucket |
 | `fetch-uk` | Step Functions | axios | S3 PutObject on raw bucket |
 | `normalize-dedupe` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable`; S3 GetObject |
 | `prefilter-by-keyword` | Step Functions | SDK DynamoDB | DDB read on `intelligenceTable` |
-| `match-with-llm` | Step Functions Map | Bedrock Runtime, Anthropic SDK | bedrock:InvokeModel, DDB read/write on `intelligenceTable`, SSM read (`/tender-watch/anthropic/api-key`) |
+| `match-with-llm` | Step Functions Map | Bedrock Runtime, Anthropic SDK | bedrock:InvokeModel, DDB read/write on `intelligenceTable` |
 | `classify-and-store` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable` |
-| `notify-high-priority` | Step Functions | SDK SES | ses:SendEmail |
-| `notify-daily-digest` | Step Functions | SDK SES | ses:SendEmail; DDB read on `intelligenceTable` |
+| `notify-high-priority` | Step Functions | fetch (built-in) | none (HTTPS only — SendGrid via `api.sendgrid.com`) |
+| `notify-daily-digest` | Step Functions | fetch (built-in) | none (HTTPS only — SendGrid via `api.sendgrid.com`); DDB read on `intelligenceTable` |
 | `expire-old-tenders` | Step Functions | SDK DynamoDB | DDB read/write on `intelligenceTable` |
 
 ### Source-specific details
 
 **fetch-sam**
-- Endpoint: `https://api.sam.gov/prod/opportunities/v2/search`
-- Params: `postedFrom=today-2 (with overlap window)`, `noticeType=Solicitation,Combined Synopsis/Solicitation`, `active=true`, `ncode=334516,334519,333242,541380`
+- Endpoint: `https://api.sam.gov/opportunities/v2/search` (no `/prod` segment)
+- Params:
+  - `api_key=<SAM_API_KEY>` — API key passed as query param (value injected as the `SAM_API_KEY` env var from an Amplify secret, set via `npx ampx sandbox secret set SAM_API_KEY` for sandbox and via Amplify Console for prod)
+  - `postedFrom=<MM/dd/yyyy>` / `postedTo=<MM/dd/yyyy>` — date range with 2-day overlap window; format is `MM/dd/yyyy` URL-encoded (e.g. `04%2F10%2F2026`)
+  - `active=true`
+  - `ncode=334516,334519,333242,541380`
+- Notice-type filtering: done client-side after fetch — keep records where `op.type === 'Solicitation'` or `op.type === 'Combined Synopsis/Solicitation'`; drop `Justification`, `Sources Sought`, etc.
 - Pagination: loop until `totalRecords` exhausted (page size 1000 max)
-- Auth: API key in header (stored in SSM)
+- Response shape: `{ totalRecords, limit, offset, opportunitiesData: [...] }` — iterate `opportunitiesData`
 
 **fetch-ted**
-- Endpoint: `https://ted.europa.eu/api/v3.0/notices/search`
-- Filter: `CPV~'38000000|38500000|38540000|31700000'`
-- Multilingual: prefer English version when source provides multiple; otherwise keep original and tag `language`
+- Endpoint: `https://api.ted.europa.eu/v3/notices/search` (new host; note no `.0` minor version suffix)
+- Method: POST with JSON body
+- Body shape:
+  ```json
+  {
+    "query": "(classification-cpv=\"38000000\" OR classification-cpv=\"38500000\" OR classification-cpv=\"38540000\" OR classification-cpv=\"31700000\") AND publication-date>=YYYYMMDD",
+    "fields": ["publication-number", "notice-title", "publication-date", "classification-cpv", "buyer-name", "buyer-country", "description-proc", "deadline-receipt-tender-date-lot", "estimated-value-proc", "notice-type", "links"],
+    "page": 1,
+    "limit": 100
+  }
+  ```
+  - Date in query is compact `YYYYMMDD` (no dashes)
+  - The `fields` array must be non-empty; omitting it returns only minimal data
+- Notice-type filtering: keep records where `notice-type` starts with `cn-` (open tender calls, e.g. `cn-standard`); drop `can-standard` (contract award notices) and other types
+- Response field mapping to normalized schema:
+  | TED field | Notes |
+  |---|---|
+  | `publication-number` | → `externalId` |
+  | `notice-title` | multilingual map `{ eng: [strings], ... }` — prefer `eng[0]`, fall back to first available language |
+  | `publication-date` | → `postedDate` |
+  | `classification-cpv` | → `cpvCodes` |
+  | `buyer-name` | multilingual map — prefer `eng[0]` |
+  | `buyer-country` | 3-letter ISO array (e.g. `["DEU"]`) — convert to 2-letter for `country` |
+  | `description-proc` | multilingual map — prefer `eng[0]` |
+  | `deadline-receipt-tender-date-lot` | array — take first element → `deadline` |
+  | `estimated-value-proc` | number → `estimatedValue.amount` (currency EUR assumed) |
+  | `links` | multilingual map of URLs → `url` (prefer `eng`) |
+- Multilingual: prefer English fields (`eng`) when available; otherwise keep original and tag `language`
 
 **fetch-uk**
 - Endpoint: `https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages`
@@ -346,6 +382,8 @@ Expected output:
 
 Matches with `score < 30` are dropped (no `MATCH#<slug>` item is written for them).
 
+> **LLM output parsing note:** Bedrock Claude Haiku frequently wraps its JSON output in ` ```json … ``` ` code fences despite the "Output JSON only" instruction. The `match-with-llm` Lambda's parser strips an optional fence before calling `JSON.parse`, using the regex `/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i`. The Anthropic API fallback path uses the same parser.
+
 ## Admin UI
 
 All pages live under `/admin/*`, reusing existing layout, navigation, and Amplify Auth.
@@ -391,19 +429,23 @@ Reuses existing admin Cognito group. No sub-roles. Sub-admin role splitting is a
   - `normalize-dedupe`: mock DDB; test hash algorithm + conditional PutItem behavior
   - `prefilter-by-keyword`: pure function over keyword config + tender; cover keyword match, synonym match, blacklist, NAICS whitelist, CPV whitelist
   - `match-with-llm`: mock Bedrock; verify JSON parsing of expected and malformed LLM output; verify fallback to Anthropic API on Bedrock failure
-  - `notify-*`: mock SES; assert subject and body templates; assert no-send on empty input
+  - `notify-*`: mock `fetch` (global) for the SendGrid API call; assert request body subject and HTML template; assert no-send on empty input
 - **Integration tests**: not in scope for MVP. Manual Step Functions trigger + CloudWatch verification used during phase 1 rollout.
 - **Fixture data**: 5–10 real SAM.gov and TED responses stored under `amplify/functions/fetch-sam/fixtures/` and `amplify/functions/fetch-ted/fixtures/`.
 
 ## Observability and alerting
 
-- Step Functions execution failure → EventBridge → SNS → SES email to `info@ninescrolls.com`
+- Step Functions execution failure → EventBridge → SNS → email to `info@ninescrolls.com` (SNS subscription; note: pipeline notification emails use SendGrid, but SNS-triggered alarm emails go through SNS's own email transport)
 - CloudWatch alarms:
   - Any Lambda 5xx > 1/day
   - `BedrockThrottlingException` > 5/day
   - Zero new tenders ingested for 7 consecutive days (data source schema change indicator)
 - Debug capture: when `match-with-llm` fails JSON parse, raw output is written to `s3://tender-watch-debug/<execution-id>/<tenderId>.txt`
 - CloudWatch metrics (phase 4 dashboard): `fetched_per_source`, `prefilter_pass_rate`, `llm_match_score_distribution`, `high_priority_count`, `notifications_sent`, `s3_staging_latency_ms` (time from `fetch-*` S3 write to next state's S3 read; surfaces when raw payloads grow large enough to slow the pipeline)
+
+## Local-sandbox considerations
+
+- **CloudFront alias conflict:** `cdn.ninescrolls.com` is a globally-unique CloudFront alias owned by the prod distribution. When running `npx ampx sandbox`, the sandbox's `insightsAssetsCdn` distribution must drop the `domainNames` + `certificate` props — otherwise the sandbox deploy fails because the alias is already in use. Detection: check `backend.stack.stackName.includes('-sandbox-')` in `amplify/backend.ts` and conditionally omit those props. In sandbox mode the distribution uses its default `*.cloudfront.net` URL; prod uses the custom domain. This pattern should be followed for any future CloudFront distributions that reference `cdn.ninescrolls.com`.
 
 ## Risks
 
@@ -423,7 +465,7 @@ Reuses existing admin Cognito group. No sub-roles. Sub-admin role splitting is a
 | DynamoDB | A few thousand items, on-demand | <$1 |
 | Step Functions Standard | ~50 transitions/day × 30 = 1,500/month (free tier 4,000) | $0 |
 | EventBridge | 1 rule | $0 |
-| SES | <100 emails/month | $0 |
+| SendGrid | <100 emails/month (free tier) | $0 |
 | S3 | ~500 MB raw payload staging (7-day lifecycle) | <$1 |
 | CloudWatch | logs + a few alarms | <$2 |
 | **Total** | | **~$10/month** |
