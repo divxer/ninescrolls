@@ -1,15 +1,14 @@
-import { defineFunction } from '@aws-amplify/backend';
+import { defineFunction, secret } from '@aws-amplify/backend';
 
 export const notifyHighPriority = defineFunction({
     name: 'notify-high-priority',
     entry: './handler.ts',
     runtime: 22,
-    resourceGroupName: 'tender-watch-stack',
     timeoutSeconds: 120,
     memoryMB: 256,
+    resourceGroupName: 'tender-watch-stack',
     environment: {
-        NOTIFICATION_FROM: 'info@ninescrolls.com',
-        NOTIFICATION_TO: 'info@ninescrolls.com',
-        // INTELLIGENCE_TABLE is injected at deploy time by amplify/backend.ts (Task 14)
+        SENDGRID_API_KEY: secret('SENDGRID_API_KEY'),
+        // INTELLIGENCE_TABLE is injected at deploy time by amplify/backend.ts
     },
 });

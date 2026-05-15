@@ -698,15 +698,6 @@ backend.matchWithLlm.resources.lambda.addToRolePolicy(new PolicyStatement({
     ],
 }));
 
-// notify-* Lambdas send SES email.
-[backend.notifyHighPriority, backend.notifyDailyDigest].forEach((fn) => {
-    fn.resources.lambda.addToRolePolicy(new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['ses:SendEmail', 'ses:SendRawEmail'],
-        resources: ['*'],
-    }));
-});
-
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
     parameters: { 'executionId.$': '$$.Execution.Name' },

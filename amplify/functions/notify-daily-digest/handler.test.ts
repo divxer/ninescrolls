@@ -14,20 +14,19 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     BatchGetCommand: class { input: any; constructor(input: any) { this.input = input; } },
 }));
 
-const sesSend = vi.fn().mockResolvedValue({ MessageId: 'mid' });
-vi.mock('@aws-sdk/client-sesv2', () => ({
-    SESv2Client: vi.fn().mockImplementation(() => ({ send: sesSend })),
-    SendEmailCommand: class { input: any; constructor(input: any) { this.input = input; } },
-}));
-
 vi.stubEnv('INTELLIGENCE_TABLE', 'NineScrollsIntelligence');
-vi.stubEnv('NOTIFICATION_FROM', 'info@ninescrolls.com');
-vi.stubEnv('NOTIFICATION_TO', 'info@ninescrolls.com');
+vi.stubEnv('SENDGRID_API_KEY', 'SG.fake');
 
-beforeEach(() => { mockBatchGet.mockReset(); sesSend.mockClear(); });
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
+
+beforeEach(() => {
+    mockBatchGet.mockReset();
+    fetchMock.mockReset();
+});
 
 describe('notify-daily-digest handler', () => {
-    it('sends a single grouped email when tenders exist', async () => {
+    it('sends a single SendGrid email grouped by country when tenders exist', async () => {
         mockBatchGet.mockResolvedValueOnce({
             Responses: {
                 NineScrollsIntelligence: [
@@ -37,12 +36,17 @@ describe('notify-daily-digest handler', () => {
                 ],
             },
         });
+        fetchMock.mockResolvedValueOnce({ status: 202, text: async () => '' });
 
         const { handler } = await import('./handler');
         const result = await handler({ digestTenderIds: ['sam-1', 'sam-2', 'ted-1'] });
 
         expect(result.sent).toBe(1);
-        const html = sesSend.mock.calls[0][0].input.Content.Simple.Body.Html.Data;
+        const [url, opts] = fetchMock.mock.calls[0];
+        expect(url).toBe('https://api.sendgrid.com/v3/mail/send');
+        const payload = JSON.parse(opts.body);
+        expect(payload.from.email).toBe('noreply@ninescrolls.com');
+        const html = payload.content[0].value;
         expect(html).toContain('US');
         expect(html).toContain('DE');
         expect(html).toContain('Stanford');
@@ -53,6 +57,6 @@ describe('notify-daily-digest handler', () => {
         const { handler } = await import('./handler');
         const result = await handler({ digestTenderIds: [] });
         expect(result.sent).toBe(0);
-        expect(sesSend).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 });

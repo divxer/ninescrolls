@@ -1,14 +1,13 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { tenderItemKey } from '../../lib/tender-watch/keys';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const ses = new SESv2Client({});
 
 const TABLE = () => process.env.INTELLIGENCE_TABLE!;
-const FROM = () => process.env.NOTIFICATION_FROM!;
-const TO = () => process.env.NOTIFICATION_TO!;
+const SENDGRID_API_KEY = () => process.env.SENDGRID_API_KEY;
+const NOTIFICATION_TO = 'info@ninescrolls.com';
+const NOTIFICATION_FROM = { email: 'noreply@ninescrolls.com', name: 'NineScrolls' };
 
 export interface DigestEvent { digestTenderIds: string[]; }
 export interface DigestResult { sent: number; }
@@ -31,6 +30,11 @@ async function loadTenders(ids: string[]): Promise<any[]> {
 
 export async function handler(event: DigestEvent): Promise<DigestResult> {
     if (event.digestTenderIds.length === 0) return { sent: 0 };
+    const apiKey = SENDGRID_API_KEY();
+    if (!apiKey) {
+        console.warn(JSON.stringify({ event: 'notify-daily-digest.no-api-key' }));
+        return { sent: 0 };
+    }
     const tenders = await loadTenders(event.digestTenderIds);
     if (tenders.length === 0) return { sent: 0 };
 
@@ -52,16 +56,24 @@ export async function handler(event: DigestEvent): Promise<DigestResult> {
     const html = `<h2>Tender Watch — daily digest</h2><p>${tenders.length} new tenders today.</p>\n${sections}`;
     const subject = `[Tender Watch] Daily digest — ${tenders.length} new tenders (${[...byCountry.keys()].sort().join(', ')})`;
 
-    await ses.send(new SendEmailCommand({
-        FromEmailAddress: FROM(),
-        Destination: { ToAddresses: [TO()] },
-        Content: {
-            Simple: {
-                Subject: { Data: subject, Charset: 'UTF-8' },
-                Body: { Html: { Data: html, Charset: 'UTF-8' } },
-            },
+    const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
         },
-    }));
+        body: JSON.stringify({
+            personalizations: [{ to: [{ email: NOTIFICATION_TO }] }],
+            from: NOTIFICATION_FROM,
+            subject,
+            content: [{ type: 'text/html', value: html }],
+        }),
+    });
+    if (res.status !== 202) {
+        const body = await res.text().catch(() => '');
+        console.error(JSON.stringify({ event: 'notify-daily-digest.sendgrid.fail', status: res.status, body }));
+        return { sent: 0 };
+    }
 
     return { sent: 1 };
 }
