@@ -160,7 +160,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
             Limit: 1,
         }));
         const items = aliasHit.Items ?? [];
-        const lookup = items.find((i) => i.entityType === 'ORG_DOMAIN_LOOKUP');
+        const lookup = items.find((i: Record<string, unknown>) => i.entityType === 'ORG_DOMAIN_LOOKUP');
         if (lookup?.orgId) {
             canonicalOrgId = lookup.orgId as string;
         }
@@ -231,7 +231,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
                     GSI2SK: 'ORG',
                 },
                 ConditionExpression: 'attribute_not_exists(PK)',
-            })).catch((err) => {
+            })).catch((err: any) => {
                 if (err?.name !== 'ConditionalCheckFailedException') throw err;
             });
         }
