@@ -1,9 +1,11 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 import crypto from 'node:crypto';
+import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
+import { computeRfqScore } from '../../lib/organization/lead-score';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -181,10 +183,6 @@ function hashIp(ip: string): string {
     return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
-function extractEmailDomain(email: string): string {
-    return email.split('@')[1]?.toLowerCase() ?? '';
-}
-
 // ---------------------------------------------------------------------------
 // Turnstile verification
 // ---------------------------------------------------------------------------
@@ -209,56 +207,6 @@ async function verifyTurnstile(token: string): Promise<boolean> {
         console.error('Turnstile verification failed:', JSON.stringify(result));
     }
     return result.success;
-}
-
-// ---------------------------------------------------------------------------
-// ORG matching — try email domain first, then institution name
-// ---------------------------------------------------------------------------
-async function matchOrg(emailDomain: string, _institution: string): Promise<string | null> {
-    try {
-        // Query GSI2 for ORG entities matching the email domain
-        // ORG entities use PK=ORG#<orgId>, and we can look up by domain
-        const result = await docClient.send(new QueryCommand({
-            TableName: TABLE_NAME(),
-            IndexName: 'GSI2',
-            KeyConditionExpression: 'GSI2PK = :pk',
-            ExpressionAttributeValues: { ':pk': `ORG_DOMAIN#${emailDomain}` },
-            Limit: 1,
-        }));
-
-        if (result.Items && result.Items.length > 0) {
-            return result.Items[0].orgId as string;
-        }
-    } catch (err) {
-        console.warn('ORG matching failed (non-critical):', err);
-    }
-    return null;
-}
-
-// ---------------------------------------------------------------------------
-// Lead Score update — §12.10.10
-// ---------------------------------------------------------------------------
-async function updateLeadScore(orgId: string, data: RfqInput): Promise<void> {
-    let points = 8; // Base: RFQ submission
-    if (data.fundingStatus === 'funded') points += 5;
-    if (data.timeline === 'immediate') points += 3;
-
-    try {
-        await docClient.send(new UpdateCommand({
-            TableName: TABLE_NAME(),
-            Key: { PK: `ORG#${orgId}`, SK: 'META' },
-            UpdateExpression: 'ADD leadScore :pts SET hasActiveInquiry = :t, latestRFQDate = :d, updatedAt = :now',
-            ExpressionAttributeValues: {
-                ':pts': points,
-                ':t': true,
-                ':d': new Date().toISOString(),
-                ':now': new Date().toISOString(),
-            },
-        }));
-        console.log(`Lead Score updated: ORG#${orgId} +${points} points`);
-    } catch (err) {
-        console.warn('Lead Score update failed (non-critical):', err);
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -615,11 +563,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         const submittedAt = new Date().toISOString();
         const ipHashed = hashIp(ip);
 
-        // 5. Match ORG entity
-        const emailDomain = extractEmailDomain(data.email);
-        const matchedOrgId = await matchOrg(emailDomain, data.institution);
-
-        // 6. Create RFQ_SUBMISSION entity in DynamoDB — §12.10.4
+        // 5. Create RFQ_SUBMISSION entity in DynamoDB — §12.10.4
+        //    matchedOrgId + GSI2PK are backfilled below after organization-api upsert.
         const normalizedEmail = data.email.trim().toLowerCase();
         const item: Record<string, unknown> = {
             PK: `RFQ#${rfqId}`,
@@ -666,18 +611,49 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             item.referrerSource = data.referrerSource;
         }
 
-        // Add ORG association if matched
-        if (matchedOrgId) {
-            item.matchedOrgId = matchedOrgId;
-            item.GSI2PK = `ORG#${matchedOrgId}`;
-            item.GSI2SK = `RFQ#${submittedAt}`;
-        }
+        // Always populate GSI2SK so a later backfill of GSI2PK indexes correctly
+        item.GSI2SK = `RFQ#${submittedAt}`;
 
         await docClient.send(new PutCommand({
             TableName: TABLE_NAME(),
             Item: item,
         }));
         console.log(`RFQ_SUBMISSION created: ${rfqId}`);
+
+        // 6. Upsert customer Organization + backfill matchedOrgId/GSI2PK
+        let matchedOrgId: string | null = null;
+        try {
+            const orgResult = await invokeOrganizationApi({
+                action: 'upsertFromSubmission',
+                source: 'rfq',
+                email: data.email,
+                institution: data.institution,
+                submittedAt,
+                scoreDelta: computeRfqScore({
+                    fundingStatus: data.fundingStatus,
+                    timeline: data.timeline,
+                }),
+            });
+            matchedOrgId = orgResult.matchedOrgId;
+        } catch (err) {
+            console.error(JSON.stringify({
+                event: 'submit-rfq.org-upsert-failed',
+                error: String(err),
+                rfqId,
+            }));
+        }
+
+        if (matchedOrgId) {
+            await docClient.send(new UpdateCommand({
+                TableName: TABLE_NAME(),
+                Key: { PK: `RFQ#${rfqId}`, SK: 'META' },
+                UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
+                ExpressionAttributeValues: {
+                    ':id': matchedOrgId,
+                    ':gsi2': `ORG#${matchedOrgId}`,
+                },
+            }));
+        }
 
         // 7. Move attachments from temp/ → rfqs/<rfqId>/
         let attachmentKeys: string[] = [];
@@ -693,11 +669,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                     ExpressionAttributeValues: { ':keys': attachmentKeys },
                 }));
             }
-        }
-
-        // 8. Lead Score update (if ORG matched) — §12.10.10
-        if (matchedOrgId) {
-            await updateLeadScore(matchedOrgId, data);
         }
 
         // 9. Send emails (best-effort, non-blocking)
