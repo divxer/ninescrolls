@@ -545,11 +545,13 @@ describe('getOrganization', () => {
         sendMock.mockResolvedValueOnce({ Item: {
             orgId: 'stanford.edu', displayName: 'Stanford', type: 'university',
         } });
-        // GSI2 Query for related items
+        // GSI2 Query for related items. NOTE: real items written by
+        // submit-rfq / submit-lead / convert-rfq-to-order have NO entityType
+        // attribute — handler must discriminate by PK prefix only.
         sendMock.mockResolvedValueOnce({ Items: [
-            { entityType: 'RFQ_SUBMISSION', rfqId: 'r1', submittedAt: '2026-05-10' },
-            { entityType: 'ORDER', orderId: 'o1', quoteDate: '2026-04-01' },
-            { entityType: 'LEAD_SUBMISSION', leadId: 'l1', submittedAt: '2026-03-15' },
+            { PK: 'RFQ#r1', rfqId: 'r1', submittedAt: '2026-05-10' },
+            { PK: 'ORDER#o1', orderId: 'o1', quoteDate: '2026-04-01' },
+            { PK: 'LEAD#l1', leadId: 'l1', submittedAt: '2026-03-15' },
         ] });
 
         const { handler } = await import('./handler');
