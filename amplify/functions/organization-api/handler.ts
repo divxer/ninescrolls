@@ -40,8 +40,17 @@ interface UpsertResult {
     matchedOrgId: string | null;
 }
 
+const SOURCE_DATE_FIELD = {
+    rfq: 'latestRFQDate',
+    lead: 'latestLeadDate',
+    order: 'latestOrderDate',
+} as const;
+
 function invertedActivityToken(iso: string): string {
     const ms = new Date(iso).getTime();
+    if (!Number.isFinite(ms)) {
+        throw new Error(`invertedActivityToken: invalid ISO timestamp "${iso}"`);
+    }
     const inverted = (8_640_000_000_000_000 - ms).toString().padStart(16, '0');
     return inverted;
 }
@@ -135,7 +144,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
 
     const nowIso = new Date().toISOString();
     const sourceCountField = `${payload.source}Count`;
-    const sourceDateField = `latest${payload.source.toUpperCase()}Date`;
+    const sourceDateField = SOURCE_DATE_FIELD[payload.source];
 
     // Try PutItem with attribute_not_exists (new Org path)
     try {
@@ -179,7 +188,12 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
             ConditionExpression: 'attribute_not_exists(PK)',
         }));
 
-        // Alias lookup write (only if domain differs from canonical orgId)
+        // Alias lookup write (only if domain differs from canonical orgId).
+        // Note: If META PutItem succeeded but this alias PutItem throws a non-CCFE
+        // error (network, throttle), META exists without an alias lookup. The next
+        // submission from the same alias domain may create a duplicate Org. The
+        // backfill script (Task 13) reconciles this drift; we accept the eventual
+        // consistency rather than wrap both writes in a TransactWriteItems.
         if (domain !== canonicalOrgId) {
             await ddb.send(new PutCommand({
                 TableName: TABLE(),
@@ -244,8 +258,8 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
     }));
 
     const newLeadScore = (updateRes.Attributes as any)?.leadScore as number | undefined;
-    const previousLeadScore = (newLeadScore ?? 0) - payload.scoreDelta;
     if (typeof newLeadScore === 'number') {
+        const previousLeadScore = newLeadScore - payload.scoreDelta;
         if (newLeadScore >= LEAD_SCORE_THRESHOLD && previousLeadScore < LEAD_SCORE_THRESHOLD) {
             await ddb.send(new UpdateCommand({
                 TableName: TABLE(),

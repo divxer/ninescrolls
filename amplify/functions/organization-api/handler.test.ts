@@ -209,4 +209,152 @@ describe('upsertFromSubmission', () => {
 
         expect(result.matchedOrgId).toBe('special-mit.edu');
     });
+
+    it('uses latestLeadDate field name for lead source (regression: schema field-name mismatch)', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const capturedItems: any[] = [];
+        sendMock.mockImplementation(async (cmd: any) => {
+            if (cmd.constructor.name === 'PutCommand') {
+                capturedItems.push(cmd.input?.Item);
+            }
+            return {};
+        });
+
+        vi.stubEnv('AWS_LAMBDA_FUNCTION_NAME', 'organization-api-test');
+
+        const { handler } = await import('./handler');
+        await handler({
+            action: 'upsertFromSubmission',
+            source: 'lead',
+            email: 'lab@stanford.edu',
+            submittedAt: NOW_ISO,
+            scoreDelta: 2,
+        } as any);
+
+        // The META Item should have latestLeadDate (mixed case), not latestLEADDate
+        const metaItem = capturedItems.find(i => i?.SK === 'META');
+        expect(metaItem).toBeDefined();
+        expect(metaItem.latestLeadDate).toBe(NOW_ISO);
+        expect((metaItem as any).latestLEADDate).toBeUndefined();
+    });
+
+    it('uses latestOrderDate field name for order source', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const capturedItems: any[] = [];
+        sendMock.mockImplementation(async (cmd: any) => {
+            if (cmd.constructor.name === 'PutCommand') {
+                capturedItems.push(cmd.input?.Item);
+            }
+            return {};
+        });
+
+        vi.stubEnv('AWS_LAMBDA_FUNCTION_NAME', 'organization-api-test');
+
+        const { handler } = await import('./handler');
+        await handler({
+            action: 'upsertFromSubmission',
+            source: 'order',
+            email: 'procurement@stanford.edu',
+            submittedAt: NOW_ISO,
+            scoreDelta: 15,
+            orderValueUSD: 50000,
+        } as any);
+
+        const metaItem = capturedItems.find(i => i?.SK === 'META');
+        expect(metaItem).toBeDefined();
+        expect(metaItem.latestOrderDate).toBe(NOW_ISO);
+        expect(metaItem.totalOrderValueUSD).toBe(50000);
+        expect(metaItem.orderCount).toBe(1);
+        expect(metaItem.hasActiveInquiry).toBe(false); // order path
+    });
+
+    it('writes GSI3 keys when initial scoreDelta crosses LEAD_SCORE_THRESHOLD', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const capturedItems: any[] = [];
+        sendMock.mockImplementation(async (cmd: any) => {
+            if (cmd.constructor.name === 'PutCommand') {
+                capturedItems.push(cmd.input?.Item);
+            }
+            return {};
+        });
+
+        vi.stubEnv('AWS_LAMBDA_FUNCTION_NAME', 'organization-api-test');
+
+        const { handler } = await import('./handler');
+        await handler({
+            action: 'upsertFromSubmission',
+            source: 'rfq',
+            email: 'procurement@stanford.edu',
+            submittedAt: NOW_ISO,
+            scoreDelta: 16, // funded + immediate RFQ
+        } as any);
+
+        const metaItem = capturedItems.find(i => i?.SK === 'META');
+        expect(metaItem.GSI3PK).toBe('ORG_LEAD_SCORE');
+        expect(metaItem.GSI3SK).toMatch(/^09984#stanford\.edu$/); // invertedScoreToken(16) = '09984'
+    });
+
+    it('does not write GSI3 keys for new Org below threshold', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const capturedItems: any[] = [];
+        sendMock.mockImplementation(async (cmd: any) => {
+            if (cmd.constructor.name === 'PutCommand') {
+                capturedItems.push(cmd.input?.Item);
+            }
+            return {};
+        });
+
+        vi.stubEnv('AWS_LAMBDA_FUNCTION_NAME', 'organization-api-test');
+
+        const { handler } = await import('./handler');
+        await handler({
+            action: 'upsertFromSubmission',
+            source: 'lead',
+            email: 'someone@stanford.edu',
+            submittedAt: NOW_ISO,
+            scoreDelta: 2, // below threshold
+        } as any);
+
+        const metaItem = capturedItems.find(i => i?.SK === 'META');
+        expect(metaItem.GSI3PK).toBeUndefined();
+        expect(metaItem.GSI3SK).toBeUndefined();
+    });
+
+    it('upsert succeeds even if self-invoke classify fails', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn().mockResolvedValue({});
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Lambda self-invoke throws
+        const lambdaMock = await import('@aws-sdk/client-lambda');
+        const lambdaSend = vi.fn().mockRejectedValue(new Error('Lambda quota exceeded'));
+        (lambdaMock.LambdaClient as any).mockImplementation(() => ({ send: lambdaSend }));
+
+        vi.stubEnv('AWS_LAMBDA_FUNCTION_NAME', 'organization-api-test');
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            action: 'upsertFromSubmission',
+            source: 'rfq',
+            email: 'harvey@stanford.edu',
+            submittedAt: NOW_ISO,
+            scoreDelta: 8,
+        } as any);
+
+        // Upsert returned matchedOrgId despite classify invocation failure
+        expect(result).toEqual({ matchedOrgId: 'stanford.edu' });
+        expect(lambdaSend).toHaveBeenCalled();
+    });
 });
