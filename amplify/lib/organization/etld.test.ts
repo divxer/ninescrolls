@@ -75,4 +75,21 @@ describe('classifyEmailDomain', () => {
     it('trims whitespace', () => {
         expect(classifyEmailDomain('  user@stanford.edu  ').orgId).toBe('stanford.edu');
     });
+
+    it('takes the first @ when multiple are present (documented quirk)', () => {
+        // RFC 5321 quoted-string local parts are not supported; the implementation
+        // uses indexOf('@') so `a@b@stanford.edu` becomes domain="b@stanford.edu",
+        // which tldts still resolves to stanford.edu. Pinning to lock the behavior.
+        const r = classifyEmailDomain('a@b@stanford.edu');
+        expect(r.orgId).toBe('stanford.edu');
+    });
+
+    it('handles trailing dot in domain', () => {
+        expect(classifyEmailDomain('user@stanford.edu.').orgId).toBe('stanford.edu');
+    });
+
+    it('returns null for IP-literal domain', () => {
+        // IP addresses have no eTLD+1 under PSL.
+        expect(classifyEmailDomain('user@192.168.1.1').orgId).toBeNull();
+    });
 });

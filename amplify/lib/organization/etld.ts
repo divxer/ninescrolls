@@ -45,6 +45,8 @@ export function classifyEmailDomain(email: string): EmailDomainResult {
     // Require a PSL-recognized public suffix (ICANN or private); reject
     // synthetic/unknown TLDs that `tldts` would otherwise echo back verbatim.
     const etldPlusOne = parsed.domain;
+    // PSL-private hosts (github.io, vercel.app, etc.) are admitted as Orgs by design;
+    // downstream classification + lead score filters low-value PaaS-rooted records.
     if (!etldPlusOne || (!parsed.isIcann && !parsed.isPrivate)) {
         return { orgId: null, domain, isFreeMailDomain: false };
     }
