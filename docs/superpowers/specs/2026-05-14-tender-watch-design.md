@@ -96,6 +96,8 @@ Admin path: browser → AppSync (existing) → Lambda resolvers (Phase 2) → `i
 
 All Tender data lives in the existing `intelligenceTable` (DynamoDB single-table design matching the established convention for workflow entities). No new tables are created. Four logical entity types are layered on top via key prefixes.
 
+> **Cross-reference:** This same `intelligenceTable` is shared with Phase C (Customer Organization DB) which adds `ORG#<orgId>/META`, `ORG_DOMAIN_LOOKUP/DOMAIN#<domain>`, and reuses GSI1–GSI3 with `ORG_TYPE#…`, `ORG_DOMAIN#…`, `ORG_LEAD_SCORE` partition keys. See [`docs/superpowers/specs/2026-05-15-organization-db-design.md`](./2026-05-15-organization-db-design.md) for the full Org-side layout. The two subsystems use disjoint PK prefixes (`TENDER#…` vs `ORG#…`) and partition-key namespaces, so they coexist cleanly on the same table.
+
 ### Key schema reference
 
 Existing table keys:

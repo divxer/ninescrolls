@@ -142,6 +142,8 @@ Tests cover: `harvey@stanford.edu` → `stanford.edu`; `lab@media.mit.edu` → `
 
 ## Data model (intelligenceTable single-table additions)
 
+> **Cross-reference:** This `intelligenceTable` is shared with the Tender Watch pipeline (Phase 1). See [`docs/superpowers/specs/2026-05-14-tender-watch-design.md`](./2026-05-14-tender-watch-design.md) for `TENDER#…` entities and their GSI1/GSI3 usage. The two subsystems use disjoint PK prefixes and partition-key namespaces (`ORG_*` vs `TENDER_*`), so they coexist cleanly. Phase D (Tender ↔ Org matching engine) is what will read both sides; until then they're independent.
+
 ### Entity 1: Organization metadata
 
 ```
