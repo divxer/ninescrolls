@@ -6,10 +6,9 @@ vi.mock('@aws-sdk/client-lambda', () => ({
     InvokeCommand: class { input: any; constructor(input: any) { this.input = input; } },
 }));
 
-vi.stubEnv('ORGANIZATION_API_FUNCTION_NAME', 'organization-api-test');
-
 beforeEach(() => {
     mockSend.mockReset();
+    vi.stubEnv('ORGANIZATION_API_FUNCTION_NAME', 'organization-api-test');
 });
 
 describe('invokeOrganizationApi', () => {
@@ -37,7 +36,7 @@ describe('invokeOrganizationApi', () => {
         expect(payload.action).toBe('upsertFromSubmission');
     });
 
-    it('throws when FunctionError is set', async () => {
+    it('throws with errorMessage from payload when FunctionError is set', async () => {
         mockSend.mockResolvedValueOnce({
             Payload: new TextEncoder().encode(JSON.stringify({ errorMessage: 'boom' })),
             FunctionError: 'Unhandled',
@@ -46,6 +45,26 @@ describe('invokeOrganizationApi', () => {
         const { invokeOrganizationApi } = await import('./invoke-org-api');
         await expect(invokeOrganizationApi({
             action: 'upsertFromSubmission', source: 'rfq', email: 'a@b.com', submittedAt: '', scoreDelta: 0,
-        })).rejects.toThrow(/boom|Unhandled/);
+        })).rejects.toThrow(/boom/);
+    });
+
+    it('throws with FunctionError when no errorMessage in payload', async () => {
+        mockSend.mockResolvedValueOnce({
+            Payload: new TextEncoder().encode(JSON.stringify({})),
+            FunctionError: 'Unhandled',
+        });
+
+        const { invokeOrganizationApi } = await import('./invoke-org-api');
+        await expect(invokeOrganizationApi({
+            action: 'upsertFromSubmission', source: 'rfq', email: 'a@b.com', submittedAt: '', scoreDelta: 0,
+        })).rejects.toThrow(/Unhandled/);
+    });
+
+    it('returns null when Lambda returns no payload', async () => {
+        mockSend.mockResolvedValueOnce({ Payload: undefined, FunctionError: undefined });
+        const { invokeOrganizationApi } = await import('./invoke-org-api');
+        await expect(invokeOrganizationApi({
+            action: 'upsertFromSubmission', source: 'rfq', email: 'a@b.com', submittedAt: '', scoreDelta: 0,
+        })).resolves.toBeNull();
     });
 });

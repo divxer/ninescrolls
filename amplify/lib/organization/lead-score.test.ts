@@ -69,4 +69,25 @@ describe('computeOrderScore', () => {
     it('handles boundary at 100000', () => {
         expect(computeOrderScore(100_000)).toBe(25);
     });
+
+    it('returns 0 for NaN', () => {
+        expect(computeOrderScore(Number.NaN)).toBe(0);
+    });
+
+    it('returns 0 for negative amount', () => {
+        expect(computeOrderScore(-100)).toBe(0);
+    });
+
+    it('returns 0 for Infinity (not finite)', () => {
+        // Infinity passes >= thresholds in raw math; Number.isFinite guard rejects it.
+        expect(computeOrderScore(Number.POSITIVE_INFINITY)).toBe(0);
+    });
+
+    it('returns 5 just below mid threshold (29_999)', () => {
+        expect(computeOrderScore(29_999)).toBe(5);
+    });
+
+    it('returns 15 just below large threshold (99_999)', () => {
+        expect(computeOrderScore(99_999)).toBe(15);
+    });
 });
