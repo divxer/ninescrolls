@@ -94,16 +94,16 @@ The "effective TLD plus one" extracts the organization-level domain, correctly h
 import { getDomain } from 'tldts';
 
 const FREE_MAIL_DOMAINS = new Set([
-    'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.jp',
-    'hotmail.com', 'outlook.com', 'live.com', 'msn.com',
+    'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.jp', 'rocketmail.com', 'ymail.com',
+    'hotmail.com', 'outlook.com', 'live.com', 'live.co.uk', 'live.com.au', 'msn.com',
     'aol.com', 'icloud.com', 'me.com', 'mac.com',
-    'qq.com', '163.com', '126.com', 'sina.com', 'sina.cn',
+    'qq.com', 'vip.qq.com', '163.com', '163.net', 'vip.163.com', '126.com', 'sina.com', 'sina.cn',
     'sohu.com', 'foxmail.com', 'yeah.net', '139.com', '189.cn',
     'tom.com', '21cn.com',
     'naver.com', 'daum.net', 'hanmail.net',
     'yandex.ru', 'mail.ru', 'rambler.ru',
     'gmx.com', 'gmx.de', 'web.de', 't-online.de',
-    'zoho.com', 'protonmail.com', 'proton.me', 'fastmail.com',
+    'zoho.com', 'protonmail.com', 'proton.me', 'protonmail.ch', 'tutanota.com', 'tuta.io', 'hey.com', 'pm.me', 'fastmail.com',
     'hotmail.co.uk', 'btinternet.com',
     'mailinator.com', 'tempmail.org', '10minutemail.com',
 ]);
@@ -133,6 +133,10 @@ export function classifyEmailDomain(email: string): EmailDomainResult {
     };
 }
 ```
+
+**Edge cases not handled** (acceptable for the target customer segment):
+- RFC 5321 quoted-string local parts like `"harvey@ninescrolls"@stanford.edu`. The first `@` belongs to the quoted region but our `indexOf('@')` treats it as the domain separator, yielding a wrong domain extraction. Practical impact: vanishingly rare in university/corporate procurement emails; the wrong extraction may return a free-mail-like result (no Org created) or null. No code attempts to remediate.
+- Internationalized domain names (IDN, punycode like `xn--...`) — `tldts` handles these correctly, but emails using raw Unicode TLDs (e.g. `info@example.中国`) pass through `tldts` and may produce unexpected results. Track via the `event: 'org.upsert.no-etld'` warning log when `getDomain` returns null on a non-empty domain.
 
 Tests cover: `harvey@stanford.edu` → `stanford.edu`; `lab@media.mit.edu` → `mit.edu`; `proc@tsinghua.edu.cn` → `tsinghua.edu.cn`; `info@chem.ox.ac.uk` → `ox.ac.uk`; `harvey@gmail.com` → null (free-mail); `not-an-email` → null; trailing `@` → null.
 
@@ -165,7 +169,7 @@ GSI3SK = <invertedScoreToken>#<orgId>
 | `aiClassifiedAt` | ISO datetime? | AI |
 | `aiProvider` | `bedrock` / `anthropic` / `manual` / null | AI |
 | `leadScore` | number (0+) | upsert `ADD leadScore :delta` |
-| `hasActiveInquiry` | boolean | upsert sets true on RFQ submission |
+| `hasActiveInquiry` | boolean | upsert sets to true on RFQ/Lead submission. Never automatically cleared in Phase C. (Phase E may clear it on RFQ close / order won-lost transitions.) |
 | `rfqCount` / `orderCount` / `leadCount` | numbers | upsert `ADD :one` per source |
 | `totalOrderValueUSD` | number | upsert order path |
 | `firstSeenAt` | ISO datetime | Initial |
@@ -198,6 +202,8 @@ When `submit-rfq` sees `lab@media.mit.edu`:
 2. Query GSI2 with `GSI2PK = ORG_DOMAIN#media.mit.edu` — if hit, use that lookup's `orgId`
 3. If no hit, the canonical Org may still exist under `mit.edu`. Try GetItem `PK=ORG#mit.edu/META`
 4. If Org exists, write alias lookup; if not, create Org then write alias lookup
+
+**GSI2 collision note**: both the Organization META item and the alias lookup items live in GSI2. A query `GSI2PK = ORG_DOMAIN#mit.edu` will return *both* the META item (if `mit.edu` is the canonical primaryDomain) *and* the alias lookup item if one exists for the same domain. Code that resolves domain → orgId via this GSI must filter by `entityType` attribute (`ORGANIZATION` for the META item, `ORG_DOMAIN_LOOKUP` for the alias item) and prefer the lookup item if both exist. In practice the alias lookup item is preferred because it carries the explicit `orgId` field.
 
 ### Index usage
 
@@ -262,6 +268,16 @@ function requireAdmin(event: AppSyncResolverEvent<any>) {
 }
 ```
 
+**Shared constants** (defined in `amplify/lib/organization/constants.ts`):
+
+```typescript
+export const ALIAS_DOMAINS_CAP = 100;         // max aliasDomains per Organization
+export const LEAD_SCORE_THRESHOLD = 10;       // GSI3 sparse index threshold
+export const RECLASSIFY_COOLDOWN_DAYS = 30;   // reclassifyOrganization no-op window
+export const BEDROCK_TIMEOUT_MS = 8000;       // mirrors match-with-llm
+export const ANTHROPIC_TIMEOUT_MS = 20000;    // mirrors match-with-llm
+```
+
 ### Operation: `upsertFromSubmission`
 
 Called synchronously by `submit-rfq`, `submit-lead`, `convert-rfq-to-order`.
@@ -289,21 +305,18 @@ Called synchronously by `submit-rfq`, `submit-lead`, `convert-rfq-to-order`.
 1. `classifyEmailDomain(email)` → `{ orgId, domain, isFreeMailDomain }`
 2. If `orgId === null` (free-mail or invalid): return `{ matchedOrgId: null }` immediately
 3. Query GSI2 for `ORG_DOMAIN#<domain>` to find a pre-existing alias lookup; if hit, set `canonicalOrgId = lookup.orgId`. Otherwise `canonicalOrgId = orgId`.
-4. GetItem `PK=ORG#<canonicalOrgId>/META`
-5. **If not exists** (new Org):
-   - PutItem the META item with initial fields (firstSeenAt=now, lastActivityAt=now, leadScore=scoreDelta, primaryDomain=domain, displayName=canonicalOrgId, type='unknown', primaryContactEmail=email, source-specific count=1, status='active'). Set GSI1PK to `ORG_TYPE#unknown`.
-   - PutItem the alias lookup if `domain !== canonicalOrgId`
-   - Async invoke self: `Lambda.invoke(self, { action: 'classifyOrg', orgId: canonicalOrgId, institution })` with `InvocationType: 'Event'` (fire-and-forget)
-6. **If exists**:
-   - UpdateItem with `ADD leadScore :delta, ADD <source>Count :one`, optional `ADD totalOrderValueUSD :v`, `SET hasActiveInquiry=true, latest<Source>Date=:submittedAt, lastActivityAt=:now, updatedAt=:now`
-   - Also update `GSI1SK` (recomputed inverted-activity token reflects new lastActivityAt)
-   - New alias domain handling — **the lookup item is the source of truth**:
-     1. Attempt PutItem alias lookup `ORG_DOMAIN_LOOKUP/DOMAIN#<domain>` with `ConditionExpression: 'attribute_not_exists(PK)'`.
-     2. On success (new alias), follow up with `UpdateItem ORG#<id>/META` using `SET aliasDomains = list_append(if_not_exists(aliasDomains, :empty), :newAlias)`.
-     3. On `ConditionalCheckFailedException` (alias already known), skip the array append.
-   This keeps the `aliasDomains` array and the GSI2 alias index in sync without race conditions or duplicate appends.
-   - If `leadScore` crosses the 10 threshold, set GSI3PK/GSI3SK; otherwise no-op
-7. Return `{ matchedOrgId: canonicalOrgId }`
+4. **Try to create the Org with `PutItem` + `attribute_not_exists(PK)` ConditionExpression**:
+   - Item fields: firstSeenAt=now, lastActivityAt=now, leadScore=scoreDelta, primaryDomain=domain, displayName=canonicalOrgId (fallback until classify), type='unknown', primaryContactEmail=email, source-specific count=1 (rfqCount or leadCount or orderCount), status='active'. Set GSI1PK = `ORG_TYPE#unknown` and GSI1SK = `<invertedToken(now)>#<canonicalOrgId>`. If `scoreDelta >= 10`, also set GSI3PK + GSI3SK.
+   - **On PutItem success (this Lambda invocation created the Org)**: proceed to step 5 to write the alias lookup if needed; then async-invoke classifyOrg; return `{matchedOrgId: canonicalOrgId}`.
+   - **On `ConditionalCheckFailedException` (the Org already exists, either pre-existing or created by a concurrent invocation in a race)**: proceed to step 6 to perform the update path.
+5. **Alias lookup write (for new Orgs only)**: if `domain !== canonicalOrgId`, attempt PutItem `ORG_DOMAIN_LOOKUP/DOMAIN#<domain>` with `attribute_not_exists(PK)`. On success, also UpdateItem the META item to append `domain` to `aliasDomains` (only if `aliasDomains.length < ALIAS_DOMAINS_CAP`; see step 7 cap enforcement). On `ConditionalCheckFailedException`, skip both — another invocation already created this alias. After alias work, async-invoke `Lambda.invoke(self, { action: 'classifyOrg', orgId: canonicalOrgId, institution })` with `InvocationType: 'Event'`; return `{matchedOrgId: canonicalOrgId}`.
+6. **Update path (Org already exists)**:
+   - UpdateItem the META item: `ADD leadScore :delta`, `ADD <source>Count :one`, `ADD totalOrderValueUSD :v` (only for source='order'), `SET hasActiveInquiry=true, latest<Source>Date=:submittedAt, lastActivityAt=:now, updatedAt=:now, GSI1SK=:newSk` (newSk = `<invertedToken(now)>#<canonicalOrgId>`).
+   - **leadScore threshold check**: after the UpdateItem, if the returned new `leadScore` is `>= 10` and the previous value was `< 10`, perform a second UpdateItem to set GSI3PK = `ORG_LEAD_SCORE` + GSI3SK = `<invertedScoreToken>#<canonicalOrgId>`. If new score is `< 10` and previous was `>= 10` (only possible via negative scoreDelta, currently not used but supported), REMOVE GSI3PK + GSI3SK. Use `ReturnValues: 'UPDATED_NEW'` on the first UpdateItem to read the new score; gate the second UpdateItem on the threshold crossing.
+   - **Alias handling**: if `domain` was extracted but is not already in `aliasDomains` (check via the alias lookup PutItem path described in step 5, with `attribute_not_exists(PK)` gating), do the alias PutItem + array append. Cap enforcement in step 7.
+   - **Contact count maintenance**: `contactCount` is derived from `rfqCount + leadCount + orderCount`. Update it in the same UpdateItem expression to keep it in sync: `SET contactCount = if_not_exists(rfqCount, :zero) + if_not_exists(leadCount, :zero) + if_not_exists(orderCount, :zero) + :one` (the `+ :one` represents the contribution from this submission, which the `ADD` clause has not yet been visible to in the same operation; alternatively, recompute on the next read).
+   - Return `{matchedOrgId: canonicalOrgId}`.
+7. **`aliasDomains` cap enforcement (applies to steps 5 and 6 array-append)**: before `list_append`, GetItem the current `aliasDomains` length. If `>= ALIAS_DOMAINS_CAP` (constant = 100), log a warning (`event: 'org.alias.cap-exceeded'`, orgId, droppedDomain) and skip the append. The alias lookup PutItem can still be written so that GSI2 lookups continue to resolve, even when the array array cannot reflect the new alias.
 
 ### Operation: `classifyOrg`
 
@@ -358,29 +371,34 @@ Invoked asynchronously (fire-and-forget) after a new Org is created, or explicit
 **Logic**:
 - `sortBy='activity'`: fan-out `Query GSI1 WHERE GSI1PK=ORG_TYPE#<type>` for each requested type; in-memory merge by GSI1SK (already inverted-activity-sorted).
 - `sortBy='leadScore'`: `Query GSI3 WHERE GSI3PK=ORG_LEAD_SCORE`.
-- `sortBy='firstSeen'`: fall back to `Scan` with filter on `entityType=ORGANIZATION`. Less efficient; acceptable for the "Recently added" view.
+- `sortBy='firstSeen'`: scan `intelligenceTable` with `FilterExpression: entityType = :org`. As `intelligenceTable` grows (Phase 1 tender pipeline writes ~100 new TENDER items/day), this Scan reads progressively more pages. At ~30k total table items, a Scan with filter still completes in <5s but reads ~5MB of table data per request. **Scaling escape valve**: if this becomes too slow, add a sparse GSI keyed by `firstSeenAt` for `entityType = ORGANIZATION` items, or fall back to a dedicated `ORG_FIRST_SEEN` GSI4 keyed by `firstSeenAt` only on Org items. Decision deferred until measured pain.
 - After GSI/Scan: apply `country / ownerSalesRep / minLeadScore / search` in-memory.
 - Paginate by cursor.
 
 ### Operation: `getOrganization`
 
-**Arguments**: `{ orgId: string }`
+**`getOrganization`**:
 
-**Logic**:
-- GetItem the Org meta.
-- Parallel `Query` 4 indexes via GSI2 PK = `ORG#<orgId>` filtered by SK prefix:
-  - `begins_with(SK, 'META')` for RFQs (RFQ entities use `RFQ#<id>/META`)
-  - Similar for ORDER / LEAD
-  - Skip TENDER (no ORG link in Phase C)
-- Return `OrganizationDetailBundle = { organization, recentRfqs, recentOrders, recentLeads, recentTenders: [] }`
+Arguments: `{ orgId: string }`
 
-In practice, RFQ, Order, and Lead items don't share a uniform GSI2 SK pattern — they each have their own SK such as `META` or `SUBMISSION#...`. The cleanest implementation queries GSI2 with `GSI2PK = ORG#<orgId>` and filters in-memory by `entityType` attribute. Limit 20 per category.
+Returns `OrganizationDetailBundle = { organization, recentRfqs, recentOrders, recentLeads, recentTenders: [] }`.
+
+Logic:
+1. GetItem the Org META: `PK = ORG#<orgId>, SK = META`. If absent, throw `404: organization not found`.
+2. Single Query against GSI2 with `KeyConditionExpression: GSI2PK = :pk` where `:pk = ORG#<orgId>`. This returns all RFQ, Order, Lead items whose GSI2PK references this Org. Limit 80 (sized to give ~20 each for 4 entity types).
+3. Group results in-memory by `entityType` attribute: collect into `recentRfqs`, `recentOrders`, `recentLeads`. Sort each by the corresponding date attribute (`submittedAt` / `quoteDate` / `submittedAt`) descending, cap at 20.
+4. `recentTenders` is unconditionally `[]` in Phase C — Tender → Organization matching is Phase D scope.
+5. Return the assembled bundle.
+
+The single GSI2 query is more efficient than four parallel queries with begins_with filters; entity discrimination is done in-memory.
 
 ### Operation: `updateOrganizationStatus`
 
-**Arguments**: `{ orgId, status: 'active'|'archived'|'blocked', adminNotes? }`
+**`updateOrganizationStatus`**:
 
-UpdateItem to set status + adminNotes + updatedAt. No log entity (per non-goals).
+Arguments: `{ orgId, status: 'active'|'archived'|'blocked', adminNotes?, tags? }`
+
+UpdateItem to set `status`, `adminNotes` (if provided), `tags` (if provided), `updatedAt`. No log entity (per non-goals). Status validation: must be one of the three values; reject otherwise with `400: invalid status`.
 
 ### Operation: `updateOrganizationOwner`
 
@@ -392,7 +410,7 @@ UpdateItem to set ownerSalesRep. Null clears the field. No log.
 
 **Arguments**: `{ orgId, force?: boolean }`
 
-Calls the internal `classifyOrg` action directly. `force=false` and Org already has `aiClassifiedAt` within last 30 days: no-op return existing. `force=true`: always re-invoke Bedrock.
+Calls the internal `classifyOrg` action directly. `force=false` and Org already has `aiClassifiedAt` within last RECLASSIFY_COOLDOWN_DAYS days (30): no-op return existing. `force=true`: always re-invoke Bedrock.
 
 ### IAM and environment
 
@@ -403,6 +421,50 @@ Calls the internal `classifyOrg` action directly. `force=false` and Org already 
 - `ANTHROPIC_API_KEY` Amplify secret
 
 The Lambda for `submit-rfq`, `submit-lead`, `convert-rfq-to-order` each need `lambda:InvokeFunction` granted on `organization-api`.
+
+### Authorization pattern
+
+All five admin AppSync operations are declared with `allow.authenticated()` — any authenticated Cognito user can call them at the schema level. Defense-in-depth is enforced at the Lambda layer via `requireAdmin` which checks `event.identity.groups.includes('admin')`.
+
+This matches the existing project-wide pattern (e.g. `listRfqs`, `listLeads`, `convertRfqToOrder` all use the same combination). It is not a Phase C regression. The implication: a non-admin authenticated user who bypasses our admin UI (e.g. raw GraphQL call with a valid Cognito token) hits the Lambda and is rejected with `Unauthorized: admin group required`. Schema-level admin enforcement would require introducing custom Cognito group claims in the AppSync auth resolver, which is out of scope for Phase C.
+
+### `amplify/backend.ts` wiring
+
+In `backend.ts`, after the `organizationApi` import and the `defineBackend({ ..., organizationApi })` registration:
+
+```typescript
+intelligenceTable.grantReadWriteData(backend.organizationApi.resources.lambda);
+backend.organizationApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Bedrock IAM (mirrors classify-org / match-with-llm)
+backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
+    ],
+}));
+
+// Self-invoke for fire-and-forget classifyOrg
+backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['lambda:InvokeFunction'],
+    resources: [backend.organizationApi.resources.lambda.functionArn],
+}));
+
+// Allow submit-rfq, submit-lead, convert-rfq-to-order to invoke organization-api
+[backend.submitRfq, backend.submitLead, backend.convertRfqToOrder].forEach((fn) => {
+    fn.resources.lambda.addToRolePolicy(new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['lambda:InvokeFunction'],
+        resources: [backend.organizationApi.resources.lambda.functionArn],
+    }));
+    fn.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
+});
+```
+
+This mirrors the existing pattern used to wire `classifyOrg` invocation from `serverTrack` (see `amplify/backend.ts` lines ~165-180).
 
 ### Tests
 
@@ -445,6 +507,8 @@ if (orgResult.matchedOrgId) {
 }
 ```
 
+**Timing of `GSI2PK` write**: the existing dead-code path wrote `GSI2PK` in the initial RFQ PutCommand (with always-null `matchedOrgId` resulting in no `GSI2PK` value, so the field was effectively unset). The new code path writes `GSI2PK` in a follow-up UpdateCommand after `invokeOrganizationApi` resolves. Between the initial PutCommand and the UpdateCommand there is a brief window (typically <500ms) where the RFQ exists without `GSI2PK`. Admin queries against `GSI2PK = ORG#<orgId>` during that window would not find this RFQ. The practical impact is negligible (admin loads list rarely during user submission), but is noted for completeness.
+
 `invokeOrganizationApi` is a helper module `amplify/lib/organization/invoke-org-api.ts` that wraps `LambdaClient.invoke` with `InvocationType: 'RequestResponse'`, timeout 5000ms, and returns parsed payload. On any error, throws — caller catches.
 
 `computeRfqScore` (and siblings `computeLeadScore`, `computeOrderScore`) live in `amplify/lib/organization/lead-score.ts` so all callers share the same scoring logic.
@@ -453,7 +517,10 @@ Delete the old `matchOrg` and `updateLeadScore` functions.
 
 ### `submit-lead/handler.ts`
 
-Same pattern: call `invokeOrganizationApi` with `source: 'lead'` after writing the Lead item; if `matchedOrgId` returned, UpdateItem the Lead to set `matchedOrgId + GSI2PK`.
+`submit-lead` handles three discriminated lead types: `contact`, `download_gate`, `newsletter`.
+
+- **`contact` and `download_gate`**: both have `email` and may have `organization` (institution-name-like). After writing the Lead item, call `invokeOrganizationApi({source: 'lead', email, institution: data.organization, submittedAt, scoreDelta: computeLeadScore(data)})`. If `matchedOrgId` returned, UpdateItem the Lead to set `matchedOrgId + GSI2PK = ORG#<orgId>`.
+- **`newsletter`**: has only `email` (no `organization` field on the schema). Call `invokeOrganizationApi({source: 'lead', email, institution: undefined, submittedAt, scoreDelta: computeLeadScore(data)})`. Free-mail domains are skipped by the upsert (most newsletter signups), so most newsletter leads will not create Orgs. Corporate newsletter signups (e.g. someone subscribing with `info@amat.com`) will create or update the Org.
 
 ### `convert-rfq-to-order/handler.ts`
 
@@ -472,15 +539,27 @@ If for some reason the RFQ had `matchedOrgId=null` (e.g. free-mail submitter), t
 ```typescript
 // One-time idempotent script. Run with --dry-run first.
 //
-// 1. Scan intelligenceTable for entityType IN (RFQ, ORDER, LEAD).
-// 2. Group by eTLD+1 of submitter email; skip free-mail domains.
+// 1. Scan intelligenceTable for entityType IN (RFQ, ORDER, LEAD). Filter on entityType
+//    server-side to reduce read costs.
+// 2. Group items by submitter email's eTLD+1 (via classifyEmailDomain); skip free-mail domains.
 // 3. For each group:
-//    a. Compute aggregates: count of each source, sum of order values, earliest firstSeenAt, latest lastActivityAt, sum of computeXxxScore as leadScore.
-//    b. PutItem ORG#<id>/META with ConditionExpression attribute_not_exists(PK) — skips if Org already exists.
-//    c. PutItem ORG_DOMAIN_LOOKUP for each unique domain seen in this group (also ConditionExpression).
-//    d. UpdateItem each source item (RFQ/Order/Lead) to set matchedOrgId + GSI2PK.
-//    e. Async Lambda.invoke organization-api with action='classifyOrg' for each new Org (batches of 10, throttled).
-// 4. Log summary: {orgsCreated, orgsExisting, itemsBackfilled, freeMailSkipped, errors}.
+//    a. Compute aggregates: source-specific counts (rfqCount, orderCount, leadCount), sum of
+//       order values (totalOrderValueUSD), earliest firstSeenAt, latest lastActivityAt, sum of
+//       computeRfqScore / computeLeadScore / computeOrderScore results as the initial leadScore.
+//    b. PutItem ORG#<id>/META with ConditionExpression: attribute_not_exists(PK) — skips if Org
+//       already exists.
+//    c. PutItem ORG_DOMAIN_LOOKUP/DOMAIN#<d> for each unique domain in the group (also
+//       attribute_not_exists).
+//    d. UpdateItem each source RFQ/Order/Lead item to set matchedOrgId + GSI2PK = ORG#<canonicalOrgId>.
+//    e. Order repair sub-step: for each updated RFQ, if its linkedOrderId is non-empty, also
+//       fetch the Order and UpdateItem its matchedOrgId + GSI2PK to match the RFQ's resolved Org.
+//       Historical orders were created by convert-rfq-to-order with matchedOrgId: rfq.matchedOrgId || ''
+//       — empty string because the dead matchOrg always returned null. Without this repair,
+//       historical converted Orders will not surface in the Org's timeline.
+//    f. Async Lambda.invoke organization-api with action='classifyOrg' for each new Org
+//       (batches of 10, 100ms throttle between batches).
+// 4. Log summary: { orgsCreated, orgsExisting, rfqsBackfilled, ordersBackfilled, ordersRepaired,
+//    leadsBackfilled, freeMailSkipped, errors }.
 //
 // Modes:
 //   --dry-run         Print all planned writes, do not execute.
@@ -536,6 +615,14 @@ Two-column layout:
 ```
 
 Position after `Leads` in the existing order. Final nav: Dashboard → Orders → RFQs → Leads → **Organizations** → Insights → Q&A → Analytics.
+
+**Merge order with Phase 2**: Phase 2's `TenderListPage` adds a `Tenders` entry between `RFQs` and `Leads`. Phase C inserts `Organizations` after `Leads`. The final post-merge order is:
+
+```typescript
+Dashboard → Orders → RFQs → Tenders → Leads → Organizations → Insights → Q&A → Analytics
+```
+
+If Phase 2 merges first (expected), Phase C's PR adds only the `Organizations` line in the position above. If Phase C merges first, Phase 2's PR adds `Tenders` between `RFQs` and `Leads`. Either ordering avoids a merge conflict because each PR only adds an array entry.
 
 ### Frontend file inventory
 
@@ -728,12 +815,14 @@ Each handler case gets a vitest unit:
 |---|---|---|
 | `organization-api` Lambda invocations | ~20 user submissions/day × 30 + admin ops ≈ 700/month | $0 (free tier) |
 | Bedrock Haiku classify | ~20 new Orgs/month × ~1500 tokens × $0.002 | <$0.10 |
-| Provisioned Concurrency 1 (organization-api) | $0.000004167 × 60s × 60m × 24h × 30d | ~$0.10 |
+| Provisioned Concurrency 1 (512 MB, organization-api) | 0.5 GB × 720 hours × $0.000004646/GB-s × 3600 s/h | ~$6.00 |
 | Additional DDB read/write | A few thousand ops/month | <$0.10 |
 | `tldts` bundle impact | +30KB gzipped | Negligible |
-| **Phase C added cost** | | **~$0.30/month** |
+| **Phase C added cost** | | **~$6.50/month** |
 
 Backfill is a one-time cost not included above; expected ~$1-2 of DDB write capacity for the full historical sweep.
+
+**Note on Provisioned Concurrency cost**: the ~$6/month for PC=1 dominates the Phase C operational cost. The alternative is to drop PC and accept cold-start latency for `organization-api`. At current submission volume (~20/day), cold starts would affect maybe 1-2 user submissions per day — those see +1-2s added latency, which is recoverable via the `catch + matchedOrgId = null` failure path. **Decision to revisit before merge**: if cost matters more than 1-2 occasional slow submissions, drop PC; cost falls to <$0.30/month with no functional impact (just occasional cold-start latency that already fails gracefully).
 
 ## Out of scope (explicitly excluded)
 
