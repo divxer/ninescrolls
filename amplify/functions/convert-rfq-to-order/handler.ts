@@ -5,6 +5,8 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { S3Client, CopyObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'node:crypto';
+import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
+import { computeOrderScore } from '../../lib/organization/lead-score';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -178,6 +180,40 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             Item: orderItem,
         }));
         console.log(`ORDER created: ${orderId}`);
+
+        // 2b. Upsert customer Organization + (if previously unmatched) backfill matchedOrgId/GSI2PK
+        const primaryEmail = (rfq.email as string | undefined) ?? undefined;
+        if (primaryEmail) {
+            try {
+                const orgResult = await invokeOrganizationApi({
+                    action: 'upsertFromSubmission',
+                    source: 'order',
+                    email: primaryEmail,
+                    institution: rfq.institution as string | undefined,
+                    submittedAt: now,
+                    scoreDelta: computeOrderScore(req.quoteAmount),
+                    orderValueUSD: req.quoteAmount,
+                });
+                if (orgResult.matchedOrgId && !rfq.matchedOrgId) {
+                    await docClient.send(new UpdateCommand({
+                        TableName: TABLE_NAME(),
+                        Key: { PK: `ORDER#${orderId}`, SK: 'META' },
+                        UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
+                        ExpressionAttributeValues: {
+                            ':id': orgResult.matchedOrgId,
+                            ':gsi2': `ORG#${orgResult.matchedOrgId}`,
+                            ':gsi2sk': `ORDER#${now}`,
+                        },
+                    }));
+                }
+            } catch (err) {
+                console.error(JSON.stringify({
+                    event: 'convert-rfq.org-upsert-failed',
+                    error: String(err),
+                    orderId,
+                }));
+            }
+        }
 
         // 3. Create ORDER_CONTACT from RFQ contact info — §12.3
         const contactItem: Record<string, unknown> = {
