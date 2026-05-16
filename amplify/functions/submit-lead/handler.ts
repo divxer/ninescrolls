@@ -1,6 +1,8 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
+import { computeLeadScore } from '../../lib/organization/lead-score';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 
@@ -235,7 +237,7 @@ async function pushToHubSpot(data: LeadInput, leadId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 // DynamoDB — store lead in NineScrollsIntelligence table
 // ---------------------------------------------------------------------------
-async function storeLead(data: LeadInput, leadId: string, ipHash: string): Promise<void> {
+async function storeLead(data: LeadInput, leadId: string, ipHash: string): Promise<string> {
     const submittedAt = new Date().toISOString();
 
     const normalizedEmail = data.email.trim().toLowerCase();
@@ -276,12 +278,16 @@ async function storeLead(data: LeadInput, leadId: string, ipHash: string): Promi
         item.source = data.source;
     }
 
+    // Populate GSI2SK so a later backfill of GSI2PK indexes correctly.
+    item.GSI2SK = `LEAD#${submittedAt}`;
+
     await docClient.send(new PutCommand({
         TableName: TABLE_NAME(),
         Item: item,
     }));
 
     console.log(`Lead stored: ${leadId} (type: ${data.type})`);
+    return submittedAt;
 }
 
 // ---------------------------------------------------------------------------
@@ -635,9 +641,48 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         // 5. Store lead in DynamoDB (all types)
-        await storeLead(data, leadId, ipHash);
+        const submittedAt = await storeLead(data, leadId, ipHash);
 
-        // 6. Non-blocking side effects: emails, HubSpot, SendGrid contacts
+        // 6. Upsert customer Organization + backfill matchedOrgId/GSI2PK
+        const institution = data.type === 'newsletter'
+            ? undefined
+            : (data as { organization?: string }).organization;
+
+        let matchedOrgId: string | null = null;
+        try {
+            const orgResult = await invokeOrganizationApi({
+                action: 'upsertFromSubmission',
+                source: 'lead',
+                email: data.email,
+                institution,
+                submittedAt,
+                scoreDelta: computeLeadScore({
+                    type: data.type,
+                    marketingOptIn: (data as { marketingOptIn?: boolean }).marketingOptIn,
+                }),
+            });
+            matchedOrgId = orgResult.matchedOrgId;
+        } catch (err) {
+            console.error(JSON.stringify({
+                event: 'submit-lead.org-upsert-failed',
+                error: String(err),
+                leadId,
+            }));
+        }
+
+        if (matchedOrgId) {
+            await docClient.send(new UpdateCommand({
+                TableName: TABLE_NAME(),
+                Key: { PK: `LEAD#${leadId}`, SK: 'META' },
+                UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
+                ExpressionAttributeValues: {
+                    ':id': matchedOrgId,
+                    ':gsi2': `ORG#${matchedOrgId}`,
+                },
+            }));
+        }
+
+        // 7. Non-blocking side effects: emails, HubSpot, SendGrid contacts
         const sideEffects: Promise<void>[] = [
             pushToHubSpot(data, leadId).catch(err => console.warn('HubSpot push failed (non-critical):', err)),
         ];

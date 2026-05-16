@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { orderApi } from '../functions/order-api/resource';
+import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 
 // =============================================================================
@@ -413,6 +414,53 @@ const schema = a.schema({
     nextToken: a.string(),
   }),
 
+  Organization: a.customType({
+    orgId: a.id().required(),
+    primaryDomain: a.string().required(),
+    aliasDomains: a.string().array(),
+    displayName: a.string(),
+    type: a.string(),
+    country: a.string(),
+    industry: a.string(),
+    aiClassifiedAt: a.datetime(),
+    aiProvider: a.string(),
+    leadScore: a.integer(),
+    hasActiveInquiry: a.boolean(),
+    rfqCount: a.integer(),
+    orderCount: a.integer(),
+    leadCount: a.integer(),
+    totalOrderValueUSD: a.float(),
+    firstSeenAt: a.datetime(),
+    lastActivityAt: a.datetime(),
+    // ISO datetime (matches what upsertFromSubmission writes); was previously
+    // declared as a.date() which forced YYYY-MM-DD and broke AppSync serialization.
+    latestRFQDate: a.datetime(),
+    latestOrderDate: a.datetime(),
+    latestLeadDate: a.datetime(),
+    status: a.string(),
+    adminNotes: a.string(),
+    tags: a.string().array(),
+    ownerSalesRep: a.string(),
+    contactCount: a.integer(),
+    primaryContactEmail: a.string(),
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
+  }),
+
+  OrganizationConnection: a.customType({
+    items: a.ref('Organization').array().required(),
+    nextToken: a.string(),
+    totalActiveCount: a.integer(),
+  }),
+
+  OrganizationDetailBundle: a.customType({
+    organization: a.ref('Organization').required(),
+    recentRfqs: a.ref('RfqSubmission').array().required(),
+    recentOrders: a.ref('Order').array().required(),
+    recentLeads: a.ref('LeadSubmission').array().required(),
+    recentTenders: a.json(), // empty array [] in Phase C; populated in Phase D
+  }),
+
   // =========================================================================
   // Queries — §12.4
   // =========================================================================
@@ -515,6 +563,31 @@ const schema = a.schema({
     })
     .returns(a.ref('CustomerTimeline').required())
     .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listOrganizations: a
+    .query()
+    .arguments({
+      statuses: a.string().array(),
+      types: a.string().array(),
+      countries: a.string().array(),
+      ownerSalesRep: a.string(),
+      minLeadScore: a.integer(),
+      search: a.string(),
+      sortBy: a.string(),
+      sortDir: a.string(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('OrganizationConnection').required())
+    .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getOrganization: a
+    .query()
+    .arguments({ orgId: a.id().required() })
+    .returns(a.ref('OrganizationDetailBundle'))
+    .handler(a.handler.function(organizationApi))
     .authorization((allow) => [allow.authenticated()]),
 
   // =========================================================================
@@ -709,6 +782,38 @@ const schema = a.schema({
     })
     .returns(a.ref('Order').required())
     .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  updateOrganizationStatus: a
+    .mutation()
+    .arguments({
+      orgId: a.id().required(),
+      status: a.string().required(),
+      adminNotes: a.string(),
+      tags: a.string().array(),
+    })
+    .returns(a.ref('Organization').required())
+    .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  updateOrganizationOwner: a
+    .mutation()
+    .arguments({
+      orgId: a.id().required(),
+      ownerSalesRep: a.string(),
+    })
+    .returns(a.ref('Organization').required())
+    .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  reclassifyOrganization: a
+    .mutation()
+    .arguments({
+      orgId: a.id().required(),
+      force: a.boolean(),
+    })
+    .returns(a.ref('Organization').required())
+    .handler(a.handler.function(organizationApi))
     .authorization((allow) => [allow.authenticated()]),
 
   // =========================================================================

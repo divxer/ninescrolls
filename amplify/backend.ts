@@ -17,6 +17,7 @@ import { optimizeInsightsImage } from './functions/optimize-insights-image/resou
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
 import { submitQuestion } from './functions/submit-question/resource';
+import { organizationApi } from './functions/organization-api/resource';
 // Tender Watch — Phase 1
 import { fetchSam } from './functions/fetch-sam/resource';
 import { fetchTed } from './functions/fetch-ted/resource';
@@ -76,6 +77,7 @@ const backend = defineBackend({
     generateSitemaps,
     submitLead,
     submitQuestion,
+    organizationApi,
 
     // Tender Watch — Phase 1
     fetchSam,
@@ -796,7 +798,9 @@ const stateMachineLogGroup = new LogGroup(tenderWatchStack, 'TenderWatchLogs', {
 });
 
 const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchDaily', {
-    stateMachineName: 'tender-watch-daily',
+    // Suffix with stack name in sandbox to avoid colliding with the prod state machine
+    // (the global name `tender-watch-daily` is owned by the prod main-branch deploy).
+    stateMachineName: isSandbox ? `tender-watch-daily-${backend.stack.stackName.slice(-12)}` : 'tender-watch-daily',
     stateMachineType: StateMachineType.STANDARD,
     definition,
     logs: { destination: stateMachineLogGroup, level: LogLevel.ALL, includeExecutionData: true },
@@ -807,4 +811,44 @@ const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchD
 new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
     schedule: Schedule.cron({ minute: '0', hour: '2', day: '*', month: '*', year: '*' }),
     targets: [new SfnStateMachine(tenderWatchStateMachine)],
+});
+
+// =============================================================================
+// Customer Organization (Phase C)
+// See docs/superpowers/specs/2026-05-15-organization-db-design.md
+// =============================================================================
+
+const orgFunctionStack = Stack.of(backend.organizationApi.resources.lambda);
+
+intelligenceTable.grantReadWriteData(backend.organizationApi.resources.lambda);
+backend.organizationApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Bedrock invoke (mirrors match-with-llm / classify-org)
+backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
+    ],
+}));
+
+// Self-invoke for fire-and-forget classifyOrg (called by upsertFromSubmission).
+// Use a name-pattern ARN (not lambda.functionArn) to avoid a circular ref:
+// Lambda → Role → Policy → Lambda.functionArn → Lambda. The role's policy must
+// be createable before the Lambda exists.
+backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['lambda:InvokeFunction'],
+    resources: [`arn:aws:lambda:${orgFunctionStack.region}:${orgFunctionStack.account}:function:*organizationapi*`],
+}));
+
+// Cross-Lambda invoke from submission Lambdas → organization-api
+[backend.submitRfq, backend.submitLead, backend.convertRfqToOrder].forEach((fn) => {
+    fn.resources.lambda.addToRolePolicy(new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['lambda:InvokeFunction'],
+        resources: [backend.organizationApi.resources.lambda.functionArn],
+    }));
+    fn.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
 });

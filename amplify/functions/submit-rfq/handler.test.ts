@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { rfqSchema } from './handler';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing handler
@@ -52,6 +52,12 @@ vi.mock('@aws-sdk/client-s3', () => ({
     })),
     CopyObjectCommand: vi.fn(),
     DeleteObjectCommand: vi.fn(),
+}));
+
+// Mock organization-api invocation
+const mockInvokeOrgApi = vi.fn().mockResolvedValue({ matchedOrgId: null });
+vi.mock('../../lib/organization/invoke-org-api', () => ({
+    invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
 }));
 
 // Mock global fetch for Turnstile and notifications
@@ -476,5 +482,44 @@ describe('submit-rfq handler', () => {
         expect(JSON.parse((result as { body: string }).body).success).toBe(true);
         const putCallArgs = (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
         expect(putCallArgs.Item.referrerSource).toBeUndefined();
+    });
+
+    it('backfills matchedOrgId + GSI2PK when organization-api returns a matchedOrgId', async () => {
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
+        const event = makeEvent(VALID_RFQ);
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockInvokeOrgApi).toHaveBeenCalledWith(expect.objectContaining({
+            action: 'upsertFromSubmission',
+            source: 'rfq',
+            email: VALID_RFQ.email,
+            institution: VALID_RFQ.institution,
+        }));
+
+        const backfillCall = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+            .find((c: { Item?: unknown }[]) => {
+                const params = c[0] as { Key?: { SK?: string }; UpdateExpression?: string };
+                return params.Key?.SK === 'META'
+                    && (params.UpdateExpression ?? '').includes('matchedOrgId');
+            });
+        expect(backfillCall).toBeDefined();
+        const backfillParams = backfillCall![0] as { ExpressionAttributeValues: Record<string, string> };
+        expect(backfillParams.ExpressionAttributeValues[':id']).toBe('stanford.edu');
+        expect(backfillParams.ExpressionAttributeValues[':gsi2']).toBe('ORG#stanford.edu');
+    });
+
+    it('returns 200 and skips backfill when organization-api throws', async () => {
+        mockInvokeOrgApi.mockRejectedValueOnce(new Error('org-api boom'));
+        const event = makeEvent(VALID_RFQ);
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        const backfillCall = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+            .find((c: { Item?: unknown }[]) => {
+                const params = c[0] as { UpdateExpression?: string };
+                return (params.UpdateExpression ?? '').includes('matchedOrgId');
+            });
+        expect(backfillCall).toBeUndefined();
     });
 });

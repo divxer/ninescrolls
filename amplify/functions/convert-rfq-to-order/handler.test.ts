@@ -32,6 +32,11 @@ vi.mock('@aws-sdk/client-s3', () => ({
     CopyObjectCommand: vi.fn(),
 }));
 
+const mockInvokeOrgApi = vi.fn().mockResolvedValue({ matchedOrgId: null });
+vi.mock('../../lib/organization/invoke-org-api', () => ({
+    invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
+}));
+
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 global.fetch = mockFetch;
 
@@ -77,6 +82,7 @@ describe('convert-rfq-to-order handler', () => {
         mockGet.mockResolvedValue({ Item: PENDING_RFQ });
         mockPut.mockResolvedValue({});
         mockUpdate.mockResolvedValue({});
+        mockInvokeOrgApi.mockResolvedValue({ matchedOrgId: null });
 
         const mod = await import('./handler');
         handler = mod.handler;
@@ -144,6 +150,30 @@ describe('convert-rfq-to-order handler', () => {
             operator: 'admin',
             productModel: 'TL-ICP-500',
         });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+    });
+
+    it('invokes organization-api with source=order and orderValueUSD', async () => {
+        const event = makeEvent({
+            rfqId: 'rfq-20260310-abc123',
+            operator: 'admin',
+            quoteAmount: 150000,
+        });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockInvokeOrgApi).toHaveBeenCalledWith(expect.objectContaining({
+            action: 'upsertFromSubmission',
+            source: 'order',
+            email: PENDING_RFQ.email,
+            institution: PENDING_RFQ.institution,
+            orderValueUSD: 150000,
+        }));
+    });
+
+    it('returns 200 even when organization-api throws', async () => {
+        mockInvokeOrgApi.mockRejectedValueOnce(new Error('org-api boom'));
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
         const result = await handler(event, {} as never, (() => {}) as never);
         expect((result as { statusCode: number }).statusCode).toBe(200);
     });
