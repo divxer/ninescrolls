@@ -833,11 +833,14 @@ backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     ],
 }));
 
-// Self-invoke for fire-and-forget classifyOrg (called by upsertFromSubmission)
+// Self-invoke for fire-and-forget classifyOrg (called by upsertFromSubmission).
+// Use a name-pattern ARN (not lambda.functionArn) to avoid a circular ref:
+// Lambda → Role → Policy → Lambda.functionArn → Lambda. The role's policy must
+// be createable before the Lambda exists.
 backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: ['lambda:InvokeFunction'],
-    resources: [backend.organizationApi.resources.lambda.functionArn],
+    resources: [`arn:aws:lambda:${orgFunctionStack.region}:${orgFunctionStack.account}:function:*organization-api*`],
 }));
 
 // Cross-Lambda invoke from submission Lambdas → organization-api
