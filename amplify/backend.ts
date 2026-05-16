@@ -918,7 +918,7 @@ if (!isSandbox) {
         logGroup: orgLambdaLogs,
         metricNamespace: 'NineScrolls/OrgApi',
         metricName: 'BothProvidersFailed',
-        filterPattern: FilterPattern.literal('"event":"org.classify.both-providers-failed"'),
+        filterPattern: FilterPattern.literal('"org.classify.both-providers-failed"'),
         metricValue: '1',
         defaultValue: 0,
     });
@@ -941,7 +941,7 @@ if (!isSandbox) {
         logGroup: orgLambdaLogs,
         metricNamespace: 'NineScrolls/OrgApi',
         metricName: 'BedrockFailed',
-        filterPattern: FilterPattern.literal('"event":"org.classify.bedrock-failed"'),
+        filterPattern: FilterPattern.literal('"org.classify.bedrock-failed"'),
         metricValue: '1',
         defaultValue: 0,
     });
