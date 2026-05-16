@@ -715,3 +715,376 @@ describe('admin mutations', () => {
         expect(updateCmd.input.UpdateExpression).not.toContain(':owner');
     });
 });
+
+describe('mergeOrganization', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    function makeOrgMeta(overrides: Record<string, any> = {}) {
+        return {
+            PK: `ORG#${overrides.orgId ?? 'src.com'}`,
+            SK: 'META',
+            entityType: 'ORGANIZATION',
+            orgId: overrides.orgId ?? 'src.com',
+            displayName: overrides.displayName ?? 'Source',
+            primaryDomain: overrides.primaryDomain ?? overrides.orgId ?? 'src.com',
+            aliasDomains: [],
+            type: 'unknown',
+            status: 'active',
+            leadScore: 0,
+            rfqCount: 0,
+            orderCount: 0,
+            leadCount: 0,
+            totalOrderValueUSD: 0,
+            contactCount: 0,
+            hasActiveInquiry: false,
+            firstSeenAt: '2026-01-01T00:00:00.000Z',
+            lastActivityAt: '2026-01-01T00:00:00.000Z',
+            ...overrides,
+        };
+    }
+
+    it('happy path: rewrites GSI2 items, aggregates counts, archives source', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // GetItem(source), GetItem(target)
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'gelest.com',
+            primaryDomain: 'gelest.com',
+            rfqCount: 2, orderCount: 1, leadCount: 1, totalOrderValueUSD: 10000,
+            contactCount: 3, leadScore: 5, hasActiveInquiry: true,
+            firstSeenAt: '2026-01-01T00:00:00.000Z',
+            lastActivityAt: '2026-03-15T00:00:00.000Z',
+            latestRFQDate: '2026-03-15T00:00:00.000Z',
+        }) });
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'mcgc.com',
+            primaryDomain: 'mcgc.com',
+            aliasDomains: ['mitsubishichem.com'],
+            rfqCount: 1, orderCount: 0, leadCount: 0, totalOrderValueUSD: 0,
+            contactCount: 1, leadScore: 3,
+            firstSeenAt: '2026-02-01T00:00:00.000Z',
+            lastActivityAt: '2026-02-10T00:00:00.000Z',
+            latestRFQDate: '2026-02-10T00:00:00.000Z',
+        }) });
+        // GSI2 Query for linked items
+        sendMock.mockResolvedValueOnce({ Items: [
+            { PK: 'RFQ#r1', SK: 'META', submittedAt: '2026-03-15T00:00:00.000Z' },
+            { PK: 'ORDER#o1', SK: 'META', quoteDate: '2026-03-10T00:00:00.000Z' },
+            { PK: 'LEAD#l1', SK: 'META', submittedAt: '2026-02-20T00:00:00.000Z' },
+        ] });
+        // UpdateItem x3 for each linked item
+        sendMock.mockResolvedValueOnce({});
+        sendMock.mockResolvedValueOnce({});
+        sendMock.mockResolvedValueOnce({});
+        // ORG_DOMAIN_LOOKUP Query — empty
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // UpdateItem target META
+        sendMock.mockResolvedValueOnce({ Attributes: {
+            orgId: 'mcgc.com',
+            rfqCount: 3, orderCount: 1, leadCount: 1,
+            leadScore: 8,
+            aliasDomains: ['mitsubishichem.com', 'gelest.com'],
+        } });
+        // UpdateItem source META archive
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'gelest.com', targetOrgId: 'mcgc.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.orgId).toBe('mcgc.com');
+        expect(result.rfqCount).toBe(3);
+        expect(result.leadScore).toBe(8);
+
+        // Inspect the 3 linked-item rewrites
+        const linkedUpdates = sendMock.mock.calls.filter((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK?.match(/^(RFQ|ORDER|LEAD)#/);
+        });
+        expect(linkedUpdates.length).toBe(3);
+        for (const call of linkedUpdates) {
+            const v = call[0].input.ExpressionAttributeValues;
+            expect(v[':target']).toBe('mcgc.com');
+            expect(v[':gsi2pk']).toBe('ORG#mcgc.com');
+            expect(v[':gsi2sk']).toMatch(/^(RFQ|ORDER|LEAD)#/);
+        }
+
+        // Target META update has aggregated counts
+        const targetUpdate = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#mcgc.com'
+                && cmd.input.Key?.SK === 'META';
+        });
+        expect(targetUpdate).toBeDefined();
+        const tv = targetUpdate![0].input.ExpressionAttributeValues;
+        expect(tv[':rfqCount']).toBe(3);
+        expect(tv[':orderCount']).toBe(1);
+        expect(tv[':leadCount']).toBe(1);
+        expect(tv[':leadScore']).toBe(8);
+        expect(tv[':totalOrderValue']).toBe(10000);
+        // aliasDomains union includes source primary + source aliases (target primary excluded)
+        expect(tv[':aliases']).toContain('gelest.com');
+        expect(tv[':aliases']).toContain('mitsubishichem.com');
+        expect(tv[':aliases']).not.toContain('mcgc.com');
+        // firstSeen = min, lastActivity = max
+        expect(tv[':firstSeenAt']).toBe('2026-01-01T00:00:00.000Z');
+        expect(tv[':lastActivityAt']).toBe('2026-03-15T00:00:00.000Z');
+        expect(tv[':hasActiveInquiry']).toBe(true);
+
+        // Source META archive update
+        const sourceArchive = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#gelest.com'
+                && cmd.input.Key?.SK === 'META';
+        });
+        expect(sourceArchive).toBeDefined();
+        const sExpr = sourceArchive![0].input.UpdateExpression as string;
+        expect(sExpr).toContain('mergedInto');
+        expect(sExpr).toContain('mergedAt');
+        expect(sExpr).toContain('REMOVE GSI1PK, GSI1SK, GSI3PK, GSI3SK');
+        expect(sourceArchive![0].input.ExpressionAttributeValues[':archived']).toBe('archived');
+        expect(sourceArchive![0].input.ExpressionAttributeValues[':target']).toBe('mcgc.com');
+    });
+
+    it('idempotent re-merge into same target: returns target unchanged, no writes', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Source: already archived + merged into mcgc.com
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'gelest.com',
+            status: 'archived',
+            mergedInto: 'mcgc.com',
+        }) });
+        // Target
+        const targetMeta = makeOrgMeta({ orgId: 'mcgc.com', leadScore: 12 });
+        sendMock.mockResolvedValueOnce({ Item: targetMeta });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'gelest.com', targetOrgId: 'mcgc.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.orgId).toBe('mcgc.com');
+        // No UpdateCommand was executed
+        const updates = sendMock.mock.calls.filter((c: any) => c[0].constructor.name === 'UpdateCommand');
+        expect(updates.length).toBe(0);
+    });
+
+    it('throws when source is already merged into a DIFFERENT target', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'gelest.com',
+            status: 'archived',
+            mergedInto: 'other.com',
+        }) });
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({ orgId: 'mcgc.com' }) });
+
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'gelest.com', targetOrgId: 'mcgc.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/already merged into other\.com/);
+    });
+
+    it('throws on self-merge', async () => {
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'gelest.com', targetOrgId: 'gelest.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/merge an Org into itself/);
+    });
+
+    it('throws when source or target Org is missing', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Source missing
+        sendMock.mockResolvedValueOnce({ Item: undefined });
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({ orgId: 'mcgc.com' }) });
+
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'ghost.com', targetOrgId: 'mcgc.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/Organization not found: ghost\.com/);
+    });
+
+    it('crosses GSI3 threshold: writes GSI3PK/SK when leadScore sum >= threshold', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Source leadScore=5, target leadScore=7 → sum=12 (crosses threshold of 10)
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'src.com', leadScore: 5,
+        }) });
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'tgt.com', leadScore: 7, // not yet indexed
+        }) });
+        // GSI2 linked query — empty
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // Lookup query — empty
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // Target META update
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'tgt.com', leadScore: 12 } });
+        // Source META archive
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'src.com', targetOrgId: 'tgt.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        const targetUpdate = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#tgt.com'
+                && cmd.input.Key?.SK === 'META';
+        });
+        expect(targetUpdate).toBeDefined();
+        const expr = targetUpdate![0].input.UpdateExpression as string;
+        expect(expr).toContain('GSI3PK = :gsi3pk');
+        expect(expr).toContain('GSI3SK = :gsi3sk');
+        const v = targetUpdate![0].input.ExpressionAttributeValues;
+        expect(v[':gsi3pk']).toBe('ORG_LEAD_SCORE');
+        expect(v[':gsi3sk']).toMatch(/^09988#tgt\.com$/); // invertedScoreToken(12) = '09988'
+    });
+
+    it('aliasDomains cap: truncates union and logs warn when over cap', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Build 90 aliases on target and 30 unique on source → union 120 > cap 100
+        const targetAliases = Array.from({ length: 90 }, (_, i) => `t${i}.com`);
+        const sourceAliases = Array.from({ length: 30 }, (_, i) => `s${i}.com`);
+
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'src.com',
+            primaryDomain: 'src.com',
+            aliasDomains: sourceAliases,
+        }) });
+        sendMock.mockResolvedValueOnce({ Item: makeOrgMeta({
+            orgId: 'tgt.com',
+            primaryDomain: 'tgt.com',
+            aliasDomains: targetAliases,
+        }) });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'tgt.com' } });
+        sendMock.mockResolvedValueOnce({});
+
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const { handler } = await import('./handler');
+        await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'src.com', targetOrgId: 'tgt.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        const targetUpdate = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#tgt.com'
+                && cmd.input.Key?.SK === 'META';
+        });
+        const aliases = targetUpdate![0].input.ExpressionAttributeValues[':aliases'] as string[];
+        expect(aliases.length).toBe(100); // capped
+
+        const warnedMerge = warnSpy.mock.calls.find((c) =>
+            typeof c[0] === 'string' && (c[0] as string).includes('org.merge.alias-cap-exceeded'),
+        );
+        expect(warnedMerge).toBeDefined();
+        warnSpy.mockRestore();
+    });
+
+    it('skips re-aggregation on retry when target already merged this source (CCFE on mergedSources)', async () => {
+        // Simulates a partial-failure retry: previous run aggregated target +
+        // wrote source orgId to target.mergedSources, but Lambda timed out
+        // before archiving source. Re-running must NOT double-aggregate.
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // 1. GetItem source (still active — archive step never ran)
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#src.com', SK: 'META', orgId: 'src.com', status: 'active',
+            primaryDomain: 'src.com', leadScore: 8, rfqCount: 1, orderCount: 0, leadCount: 0,
+            firstSeenAt: '2026-04-01T00:00:00Z', lastActivityAt: '2026-04-15T00:00:00Z',
+        } });
+        // 2. GetItem target (already has src.com in mergedSources)
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#tgt.com', SK: 'META', orgId: 'tgt.com', status: 'active',
+            primaryDomain: 'tgt.com', leadScore: 20, rfqCount: 5, orderCount: 2, leadCount: 1,
+            mergedSources: new Set(['src.com']),
+            firstSeenAt: '2026-03-01T00:00:00Z', lastActivityAt: '2026-05-01T00:00:00Z',
+        } });
+        // 3. GSI2 Query for linked items (already moved on previous run, returns 0)
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // 4. Query for ORG_DOMAIN_LOOKUP pointing at src.com (already repointed previously, returns 0)
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // 5. UpdateCommand target — CCFE because mergedSources already contains src.com
+        const ccfe = new Error('The conditional request failed');
+        (ccfe as any).name = 'ConditionalCheckFailedException';
+        sendMock.mockRejectedValueOnce(ccfe);
+        // 6. GetItem target (after CCFE) — return current state
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#tgt.com', SK: 'META', orgId: 'tgt.com', leadScore: 28, rfqCount: 6, // already aggregated
+        } });
+        // 7. UpdateCommand source — archive (idempotent SET)
+        sendMock.mockResolvedValueOnce({});
+
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'src.com', targetOrgId: 'tgt.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        // Returns the re-fetched target state — already-aggregated counts
+        expect(result.leadScore).toBe(28);
+        expect(result.rfqCount).toBe(6);
+
+        // Confirm CCFE was logged as retry-safety event
+        const warnedRetry = warnSpy.mock.calls.find((c) =>
+            typeof c[0] === 'string' && (c[0] as string).includes('org.merge.target-already-aggregated'),
+        );
+        expect(warnedRetry).toBeDefined();
+
+        // Source archive must still have been attempted
+        const sourceArchive = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#src.com'
+                && (cmd.input.UpdateExpression as string).includes('mergedInto');
+        });
+        expect(sourceArchive).toBeDefined();
+        warnSpy.mockRestore();
+    });
+});
