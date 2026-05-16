@@ -52,6 +52,17 @@ function invertedScoreToken(score: number): string {
     return (10_000 - clamped).toString().padStart(5, '0');
 }
 
+/**
+ * Normalize a date-like string to full ISO 8601 (AWSDateTime).
+ * Historical ORDER items store `quoteDate` as bare `YYYY-MM-DD`; the schema
+ * declares firstSeenAt / lastActivityAt / latest<Type>Date as a.datetime(),
+ * so bare dates must be promoted to full ISO before writing.
+ */
+function toIsoDateTime(v: string): string {
+    if (!v) return v;
+    return v.includes('T') ? v : `${v}T00:00:00.000Z`;
+}
+
 interface OrgGroup {
     canonicalDomain: string;
     aliasDomains: Set<string>;
@@ -148,7 +159,9 @@ async function groupByOrg(items: any[]): Promise<Map<string, OrgGroup>> {
             continue;
         }
 
-        const itemDate = (item.submittedAt ?? item.quoteDate ?? item.createdAt ?? '2020-01-01') as string;
+        // Normalize to full ISO 8601 — ORDER's quoteDate is bare YYYY-MM-DD, but
+        // the Organization schema declares firstSeenAt / lastActivityAt as a.datetime().
+        const itemDate = toIsoDateTime((item.submittedAt ?? item.quoteDate ?? item.createdAt ?? '2020-01-01') as string);
 
         if (!map.has(orgId)) {
             map.set(orgId, {
