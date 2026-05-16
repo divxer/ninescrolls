@@ -33,7 +33,6 @@ import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-clo
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { MetricFilter, FilterPattern } from 'aws-cdk-lib/aws-logs';
 import { Topic } from 'aws-cdk-lib/aws-sns';
-import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
@@ -863,10 +862,19 @@ backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
 // avoid spurious subscription-confirmation emails on every developer's spin-up.
 // ---------------------------------------------------------------------------
 if (!isSandbox) {
-    const orgAlarmTopic = new Topic(orgFunctionStack, 'OrgApiAlarmTopic', {
-        displayName: 'NineScrolls organization-api alarms',
-    });
-    orgAlarmTopic.addSubscription(new EmailSubscription('info@ninescrolls.com'));
+    // Reference an out-of-band-managed SNS topic. Earlier we created the topic
+    // via `new Topic(...)` but Amplify Gen 2 was destroying + recreating it on
+    // every main-branch deploy (root cause TBD, possibly stack-rebuild quirk).
+    // The recreation took the email subscription with it, so every alarm-stack
+    // deploy required a fresh "Confirm subscription" click — broken pattern.
+    //
+    // Workaround: the topic + email subscription live entirely outside CDK.
+    // Created once in the SNS Console; CDK only references the ARN.
+    const orgAlarmTopic = Topic.fromTopicArn(
+        orgFunctionStack,
+        'OrgApiAlarmTopic',
+        `arn:aws:sns:${orgFunctionStack.region}:${orgFunctionStack.account}:ninescrolls-org-api-alarms`,
+    );
 
     const alarmAction = new SnsAction(orgAlarmTopic);
     const orgLambda = backend.organizationApi.resources.lambda;
