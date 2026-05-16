@@ -67,16 +67,21 @@ interface OrgGroup {
 }
 
 async function scanAllSubmissions(): Promise<any[]> {
+    // Use PK prefix + SK=META as the canonical identity — historical items
+    // (pre-Phase C) don't carry an `entityType` attribute, only follow the
+    // single-table PK prefix convention.
     const out: any[] = [];
     let lastKey: any = undefined;
     do {
         const r: any = await ddb.send(new ScanCommand({
             TableName: TABLE,
-            FilterExpression: 'entityType IN (:rfq, :order, :lead)',
+            FilterExpression:
+                '(begins_with(PK, :rfqp) OR begins_with(PK, :orderp) OR begins_with(PK, :leadp)) AND SK = :meta',
             ExpressionAttributeValues: {
-                ':rfq': 'RFQ_SUBMISSION',
-                ':order': 'ORDER',
-                ':lead': 'LEAD_SUBMISSION',
+                ':rfqp': 'RFQ#',
+                ':orderp': 'ORDER#',
+                ':leadp': 'LEAD#',
+                ':meta': 'META',
             },
             ExclusiveStartKey: lastKey,
         }));
@@ -86,40 +91,85 @@ async function scanAllSubmissions(): Promise<any[]> {
     return out;
 }
 
-function groupByOrg(items: any[]): Map<string, OrgGroup> {
+async function fetchOrderPrimaryEmail(orderPk: string): Promise<{ email: string; name?: string } | null> {
+    // ORDERs store contacts as separate SK rows (CONTACT#<id>) with
+    // `contactEmail` field. Pull the primary one.
+    const r: any = await ddb.send(new ScanCommand({
+        TableName: TABLE,
+        FilterExpression: 'PK = :pk AND begins_with(SK, :ck)',
+        ExpressionAttributeValues: { ':pk': orderPk, ':ck': 'CONTACT#' },
+    }));
+    const contacts = (r.Items ?? []) as any[];
+    if (contacts.length === 0) return null;
+    const primary = contacts.find((c) => c.isPrimary === true) ?? contacts[0];
+    if (!primary?.contactEmail) return null;
+    return { email: primary.contactEmail as string, name: primary.contactName as string | undefined };
+}
+
+function inferEntityType(pk: string): 'RFQ_SUBMISSION' | 'ORDER' | 'LEAD_SUBMISSION' | null {
+    if (pk.startsWith('RFQ#')) return 'RFQ_SUBMISSION';
+    if (pk.startsWith('ORDER#')) return 'ORDER';
+    if (pk.startsWith('LEAD#')) return 'LEAD_SUBMISSION';
+    return null;
+}
+
+async function groupByOrg(items: any[]): Promise<Map<string, OrgGroup>> {
     const map = new Map<string, OrgGroup>();
     let freeMailSkipped = 0;
+    let noEmailSkipped = 0;
 
     for (const item of items) {
-        const email = (item.email ?? item.contacts?.[0]?.email ?? '') as string;
-        if (!email) continue;
+        const pk = item.PK as string;
+        const entityType = item.entityType ?? inferEntityType(pk);
+        if (!entityType) continue;
+
+        // Resolve email per entity type:
+        // - RFQ/LEAD: `email` on META row
+        // - ORDER: fetch primary CONTACT row (`contactEmail`)
+        let email: string | undefined = item.email as string | undefined;
+        let contactName: string | undefined;
+        if (!email && entityType === 'ORDER') {
+            const ec = await fetchOrderPrimaryEmail(pk);
+            if (ec) {
+                email = ec.email;
+                contactName = ec.name;
+            }
+        }
+        if (!email) {
+            noEmailSkipped++;
+            console.log(JSON.stringify({ event: 'backfill.no-email', pk, entityType }));
+            continue;
+        }
+
         const { orgId, domain, isFreeMailDomain } = classifyEmailDomain(email);
         if (!orgId) {
             if (isFreeMailDomain) freeMailSkipped++;
+            console.log(JSON.stringify({ event: 'backfill.skip', pk, reason: isFreeMailDomain ? 'free-mail' : 'invalid', email }));
             continue;
         }
+
+        const itemDate = (item.submittedAt ?? item.quoteDate ?? item.createdAt ?? '2020-01-01') as string;
 
         if (!map.has(orgId)) {
             map.set(orgId, {
                 canonicalDomain: orgId,
                 aliasDomains: new Set([domain]),
                 rfqs: [], orders: [], leads: [],
-                firstSeen: item.submittedAt ?? item.createdAt ?? item.quoteDate ?? '2020-01-01',
-                lastActivity: '2020-01-01',
+                firstSeen: itemDate,
+                lastActivity: itemDate,
                 leadScore: 0,
                 primaryContactEmail: email,
-                primaryInstitution: item.institution ?? item.organization,
+                // RFQ uses `institution`, LEAD uses `organization`; fall back to contact name for orders
+                primaryInstitution: (item.institution ?? item.organization ?? contactName) as string | undefined,
                 totalOrderValueUSD: 0,
             });
         }
         const group = map.get(orgId)!;
         group.aliasDomains.add(domain);
+        if (itemDate < group.firstSeen) group.firstSeen = itemDate;
+        if (itemDate > group.lastActivity) group.lastActivity = itemDate;
 
-        const submittedAt = item.submittedAt ?? item.quoteDate ?? item.createdAt ?? '2020-01-01';
-        if (submittedAt < group.firstSeen) group.firstSeen = submittedAt;
-        if (submittedAt > group.lastActivity) group.lastActivity = submittedAt;
-
-        switch (item.entityType) {
+        switch (entityType) {
             case 'RFQ_SUBMISSION':
                 group.rfqs.push(item);
                 group.leadScore += computeRfqScore({
@@ -142,7 +192,7 @@ function groupByOrg(items: any[]): Map<string, OrgGroup> {
         }
     }
 
-    console.log(`Grouped ${items.length} items into ${map.size} Orgs; skipped ${freeMailSkipped} free-mail submissions`);
+    console.log(`Grouped ${items.length} items into ${map.size} Orgs; skipped ${freeMailSkipped} free-mail + ${noEmailSkipped} no-email`);
     return map;
 }
 
@@ -226,22 +276,20 @@ async function writeOrgAndAliases(orgId: string, group: OrgGroup): Promise<{ cre
 }
 
 async function backfillItemMatchedOrg(item: any, orgId: string): Promise<void> {
+    const entityType = item.entityType ?? inferEntityType(item.PK as string);
     let pk: string;
     let gsi2sk: string;
-    switch (item.entityType) {
+    switch (entityType) {
         case 'RFQ_SUBMISSION':
-            pk = `RFQ#${item.rfqId}`;
-            // Live shape: RFQ#${submittedAt}
+            pk = item.PK as string;
             gsi2sk = `RFQ#${item.submittedAt ?? item.createdAt ?? ''}`;
             break;
         case 'ORDER':
-            pk = `ORDER#${item.orderId}`;
-            // Live shape: ORDER#${now/quoteDate}
+            pk = item.PK as string;
             gsi2sk = `ORDER#${item.quoteDate ?? item.createdAt ?? ''}`;
             break;
         case 'LEAD_SUBMISSION':
-            pk = `LEAD#${item.leadId}`;
-            // Live shape: LEAD#${submittedAt}
+            pk = item.PK as string;
             gsi2sk = `LEAD#${item.submittedAt ?? item.createdAt ?? ''}`;
             break;
         default:
@@ -328,7 +376,7 @@ async function main() {
     const items = await scanAllSubmissions();
     console.log(`Scanned ${items.length} RFQ/Order/Lead items`);
 
-    const groups = groupByOrg(items);
+    const groups = await groupByOrg(items);
 
     let orgsCreated = 0, orgsExisting = 0;
     let rfqsBackfilled = 0, ordersBackfilled = 0, leadsBackfilled = 0, ordersRepaired = 0;
