@@ -555,7 +555,6 @@ interface ListOrgArgs {
     minLeadScore?: number;
     search?: string;
     sortBy?: 'activity' | 'leadScore' | 'firstSeen';
-    sortDir?: 'asc' | 'desc';
     limit?: number;
     nextToken?: string;
 }
@@ -580,6 +579,10 @@ async function listOrganizations(args: ListOrgArgs) {
             ),
         );
         items = queries.flatMap((q) => q.Items ?? []);
+        // Cross-type merge needs explicit sort: per-type slices are sorted DESC by GSI1SK
+        // but flatMap concatenates them in types[] order, leaving cross-type items in
+        // the wrong order until we re-sort by lastActivityAt.
+        items.sort((a, b) => (b.lastActivityAt ?? '').localeCompare(a.lastActivityAt ?? ''));
     } else if (sortBy === 'leadScore') {
         const r = await ddb.send(new QueryCommand({
             TableName: TABLE(),
@@ -629,7 +632,9 @@ async function listOrganizations(args: ListOrgArgs) {
 
     return {
         items: sliced,
-        nextToken: items.length > limit ? `offset:${limit}` : null,
+        // TODO(phase-d): real pagination. Phase C returns the first page only.
+        // Returning a non-null token would mislead clients into looping.
+        nextToken: null,
         totalActiveCount,
     };
 }
@@ -696,6 +701,7 @@ async function updateOrganizationStatus(
         TableName: TABLE(),
         Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
         UpdateExpression: `SET ${setExpressions.join(', ')}`,
+        ConditionExpression: 'attribute_exists(PK)',
         ExpressionAttributeNames: exprNames,
         ExpressionAttributeValues: exprValues,
         ReturnValues: 'ALL_NEW',
@@ -726,6 +732,7 @@ async function updateOrganizationOwner(
         TableName: TABLE(),
         Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
         UpdateExpression: updateExpr,
+        ConditionExpression: 'attribute_exists(PK)',
         ExpressionAttributeValues: exprValues,
         ReturnValues: 'ALL_NEW',
     }));

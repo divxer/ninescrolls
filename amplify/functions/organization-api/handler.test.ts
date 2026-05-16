@@ -502,6 +502,33 @@ describe('listOrganizations', () => {
         // Default sort=activity DESC: stanford (newer) first
         expect((result as any).items[0].orgId).toBe('stanford.edu');
     });
+
+    it('sorts merged results across types by lastActivityAt DESC', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // First query (university) returns OLDER item
+        sendMock.mockResolvedValueOnce({ Items: [
+            { orgId: 'old.edu', type: 'university', lastActivityAt: '2026-01-01T00:00:00Z', leadScore: 5 },
+        ] });
+        // Second query (company) returns NEWER item — without explicit sort, it would
+        // come second; with the fix, it should sort first.
+        sendMock.mockResolvedValueOnce({ Items: [
+            { orgId: 'newer.com', type: 'company', lastActivityAt: '2026-05-15T00:00:00Z', leadScore: 12 },
+        ] });
+        sendMock.mockResolvedValue({});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'listOrganizations' },
+            arguments: { types: ['university', 'company'], statuses: ['active'], limit: 25 },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.items[0].orgId).toBe('newer.com'); // newer activity first
+        expect(result.items[1].orgId).toBe('old.edu');
+    });
 });
 
 describe('getOrganization', () => {
@@ -626,5 +653,63 @@ describe('admin mutations', () => {
         // No UpdateCommand should have been called — only the GetItem
         const updateCalls = sendMock.mock.calls.filter((c: any) => c[0].constructor.name === 'UpdateCommand');
         expect(updateCalls.length).toBe(0);
+    });
+
+    it('reclassifyOrganization with force=true bypasses cooldown and invokes classifyOrg', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        // GetItem returns recently-classified Org
+        sendMock.mockResolvedValueOnce({ Item: {
+            orgId: 'stanford.edu',
+            type: 'university',
+            aiClassifiedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        } });
+        // classifyOrg internals: GetItem (existing) again, then UpdateCommand
+        sendMock.mockResolvedValueOnce({ Item: { orgId: 'stanford.edu', type: 'university' } });
+        sendMock.mockResolvedValue({});
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockResolvedValueOnce({
+            body: { transformToString: vi.fn().mockResolvedValue(JSON.stringify({
+                content: [{ type: 'text', text: JSON.stringify({
+                    displayName: 'Stanford University',
+                    type: 'university',
+                    country: 'US',
+                    industry: 'Higher education',
+                }) }],
+            })) },
+        });
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'reclassifyOrganization' },
+            arguments: { orgId: 'stanford.edu', force: true },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        // Bedrock was called (cooldown bypassed)
+        expect(bedrockSend).toHaveBeenCalled();
+        // Result is the new classification, not the cached META item
+        expect(result.aiProvider).toBe('bedrock');
+    });
+
+    it('updateOrganizationOwner with null ownerSalesRep REMOVEs the field', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'stanford.edu' } });
+
+        const { handler } = await import('./handler');
+        await handler({
+            info: { fieldName: 'updateOrganizationOwner' },
+            arguments: { orgId: 'stanford.edu', ownerSalesRep: null },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        const updateCmd = sendMock.mock.calls[0][0];
+        expect(updateCmd.input.UpdateExpression).toContain('REMOVE ownerSalesRep');
+        expect(updateCmd.input.UpdateExpression).not.toContain(':owner');
     });
 });
