@@ -659,11 +659,15 @@ async function getOrganization(args: { orgId: string }) {
     const recentRfqs: any[] = [];
     const recentOrders: any[] = [];
     const recentLeads: any[] = [];
+    // PK prefix is the canonical entity discriminator — submit-rfq /
+    // submit-lead / convert-rfq-to-order don't write `entityType`, and
+    // historical pre-Phase-C items don't have it either. Filtering by
+    // entityType (the original code) silently rejected every linked item.
     for (const item of (linked.Items ?? [])) {
-        const t = item.entityType;
-        if (t === 'RFQ_SUBMISSION' && recentRfqs.length < 20) recentRfqs.push(item);
-        else if (t === 'ORDER' && recentOrders.length < 20) recentOrders.push(item);
-        else if (t === 'LEAD_SUBMISSION' && recentLeads.length < 20) recentLeads.push(item);
+        const pk = (item.PK as string) ?? '';
+        if (pk.startsWith('RFQ#') && recentRfqs.length < 20) recentRfqs.push(item);
+        else if (pk.startsWith('ORDER#') && recentOrders.length < 20) recentOrders.push(item);
+        else if (pk.startsWith('LEAD#') && recentLeads.length < 20) recentLeads.push(item);
     }
     recentRfqs.sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''));
     recentOrders.sort((a, b) => (b.quoteDate ?? '').localeCompare(a.quoteDate ?? ''));
