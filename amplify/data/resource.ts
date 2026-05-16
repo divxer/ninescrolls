@@ -432,9 +432,11 @@ const schema = a.schema({
     totalOrderValueUSD: a.float(),
     firstSeenAt: a.datetime(),
     lastActivityAt: a.datetime(),
-    latestRFQDate: a.date(),
-    latestOrderDate: a.date(),
-    latestLeadDate: a.date(),
+    // ISO datetime (matches what upsertFromSubmission writes); was previously
+    // declared as a.date() which forced YYYY-MM-DD and broke AppSync serialization.
+    latestRFQDate: a.datetime(),
+    latestOrderDate: a.datetime(),
+    latestLeadDate: a.datetime(),
     status: a.string(),
     adminNotes: a.string(),
     tags: a.string().array(),
