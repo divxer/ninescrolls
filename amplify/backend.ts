@@ -29,6 +29,11 @@ import { notifyHighPriority } from './functions/notify-high-priority/resource';
 import { notifyDailyDigest } from './functions/notify-daily-digest/resource';
 import { expireOldTenders } from './functions/expire-old-tenders/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
+import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
+import { MetricFilter, FilterPattern } from 'aws-cdk-lib/aws-logs';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
@@ -852,3 +857,95 @@ backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     }));
     fn.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
 });
+
+// ---------------------------------------------------------------------------
+// CloudWatch alarms — only in prod / main branch deploys. Sandbox skips to
+// avoid spurious subscription-confirmation emails on every developer's spin-up.
+// ---------------------------------------------------------------------------
+if (!isSandbox) {
+    const orgAlarmTopic = new Topic(orgFunctionStack, 'OrgApiAlarmTopic', {
+        displayName: 'NineScrolls organization-api alarms',
+    });
+    orgAlarmTopic.addSubscription(new EmailSubscription('info@ninescrolls.com'));
+
+    const alarmAction = new SnsAction(orgAlarmTopic);
+    const orgLambda = backend.organizationApi.resources.lambda;
+
+    // Amplify's IFunction doesn't expose `logGroup`; resolve by Lambda's
+    // standard convention: /aws/lambda/<functionName>.
+    const orgLambdaLogs = LogGroup.fromLogGroupName(
+        orgFunctionStack,
+        'OrgApiLogGroup',
+        `/aws/lambda/${orgLambda.functionName}`,
+    );
+
+    // 1. Hard errors: any Lambda invocation returning an error.
+    new Alarm(orgFunctionStack, 'OrgApiErrorsAlarm', {
+        alarmDescription: 'organization-api Lambda errored (sum) over 5 min',
+        metric: orgLambda.metricErrors({
+            period: Duration.minutes(5),
+            statistic: 'Sum',
+        }),
+        threshold: 3,
+        evaluationPeriods: 1,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+    }).addAlarmAction(alarmAction);
+
+    // 2. Latency: p99 duration > 5s (Bedrock 8s timeout + DDB overhead).
+    new Alarm(orgFunctionStack, 'OrgApiDurationAlarm', {
+        alarmDescription: 'organization-api p99 duration exceeded 5s',
+        metric: orgLambda.metricDuration({
+            period: Duration.minutes(5),
+            statistic: 'p99',
+        }),
+        threshold: 5000,
+        evaluationPeriods: 2,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+    }).addAlarmAction(alarmAction);
+
+    // 3. Critical: both Bedrock AND Anthropic failed — Org stays type='unknown'.
+    const bothFailedFilter = new MetricFilter(orgFunctionStack, 'BothProvidersFailedFilter', {
+        logGroup: orgLambdaLogs,
+        metricNamespace: 'NineScrolls/OrgApi',
+        metricName: 'BothProvidersFailed',
+        filterPattern: FilterPattern.literal('"event":"org.classify.both-providers-failed"'),
+        metricValue: '1',
+        defaultValue: 0,
+    });
+    new Alarm(orgFunctionStack, 'OrgApiBothProvidersFailedAlarm', {
+        alarmDescription: 'Bedrock + Anthropic both failed on classifyOrg (Org left unclassified)',
+        metric: bothFailedFilter.metric({
+            period: Duration.minutes(5),
+            statistic: 'Sum',
+        }),
+        threshold: 1,
+        evaluationPeriods: 1,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+    }).addAlarmAction(alarmAction);
+
+    // 4. Warning: Bedrock fallback rate. Anthropic catches these but high
+    //    counts indicate a Bedrock outage worth investigating before Anthropic
+    //    quota becomes a problem.
+    const bedrockFailedFilter = new MetricFilter(orgFunctionStack, 'BedrockFailedFilter', {
+        logGroup: orgLambdaLogs,
+        metricNamespace: 'NineScrolls/OrgApi',
+        metricName: 'BedrockFailed',
+        filterPattern: FilterPattern.literal('"event":"org.classify.bedrock-failed"'),
+        metricValue: '1',
+        defaultValue: 0,
+    });
+    new Alarm(orgFunctionStack, 'OrgApiBedrockFallbackAlarm', {
+        alarmDescription: 'Bedrock classifyOrg failed > 5 times in an hour (warning)',
+        metric: bedrockFailedFilter.metric({
+            period: Duration.hours(1),
+            statistic: 'Sum',
+        }),
+        threshold: 5,
+        evaluationPeriods: 1,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+    }).addAlarmAction(alarmAction);
+}
