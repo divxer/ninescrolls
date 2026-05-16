@@ -840,7 +840,7 @@ backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
 backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: ['lambda:InvokeFunction'],
-    resources: [`arn:aws:lambda:${orgFunctionStack.region}:${orgFunctionStack.account}:function:*organization-api*`],
+    resources: [`arn:aws:lambda:${orgFunctionStack.region}:${orgFunctionStack.account}:function:*organizationapi*`],
 }));
 
 // Cross-Lambda invoke from submission Lambdas → organization-api
