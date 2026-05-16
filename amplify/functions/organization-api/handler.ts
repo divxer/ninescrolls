@@ -6,6 +6,7 @@ import {
     PutCommand,
     UpdateCommand,
     QueryCommand,
+    ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
@@ -116,10 +117,16 @@ async function dispatchAction(event: DirectInvokePayload): Promise<unknown> {
 
 async function dispatchFieldName(
     fieldName: string,
-    _event: AppSyncResolverEvent<any>,
+    event: AppSyncResolverEvent<any>,
 ): Promise<unknown> {
-    // Will be expanded in Tasks 7 and 8.
-    throw new Error(`Unknown fieldName: ${fieldName}`);
+    switch (fieldName) {
+        case 'listOrganizations':
+            return listOrganizations(event.arguments);
+        case 'getOrganization':
+            return getOrganization(event.arguments);
+        default:
+            throw new Error(`Unknown fieldName: ${fieldName}`);
+    }
 }
 
 async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResult> {
@@ -531,5 +538,131 @@ async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, 
     };
 }
 
+interface ListOrgArgs {
+    statuses?: string[];
+    types?: string[];
+    countries?: string[];
+    ownerSalesRep?: string;
+    minLeadScore?: number;
+    search?: string;
+    sortBy?: 'activity' | 'leadScore' | 'firstSeen';
+    sortDir?: 'asc' | 'desc';
+    limit?: number;
+    nextToken?: string;
+}
+
+async function listOrganizations(args: ListOrgArgs) {
+    const sortBy = args.sortBy ?? 'activity';
+    const limit = args.limit ?? 25;
+    const types = args.types ?? ORG_TYPES.filter((t) => t !== 'unknown');
+
+    let items: any[] = [];
+
+    if (sortBy === 'activity') {
+        const queries = await Promise.all(
+            types.map((type) =>
+                ddb.send(new QueryCommand({
+                    TableName: TABLE(),
+                    IndexName: 'GSI1',
+                    KeyConditionExpression: 'GSI1PK = :pk',
+                    ExpressionAttributeValues: { ':pk': `ORG_TYPE#${type}` },
+                    Limit: limit * 2,
+                })),
+            ),
+        );
+        items = queries.flatMap((q) => q.Items ?? []);
+    } else if (sortBy === 'leadScore') {
+        const r = await ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            IndexName: 'GSI3',
+            KeyConditionExpression: 'GSI3PK = :pk',
+            ExpressionAttributeValues: { ':pk': 'ORG_LEAD_SCORE' },
+            Limit: limit * 2,
+        }));
+        items = r.Items ?? [];
+    } else {
+        // firstSeen — Scan with filter
+        const r = await ddb.send(new ScanCommand({
+            TableName: TABLE(),
+            FilterExpression: 'entityType = :et',
+            ExpressionAttributeValues: { ':et': 'ORGANIZATION' },
+        }));
+        items = r.Items ?? [];
+        items.sort((a, b) => (b.firstSeenAt ?? '').localeCompare(a.firstSeenAt ?? ''));
+    }
+
+    // In-memory filters
+    if (args.statuses?.length) {
+        items = items.filter((i) => args.statuses!.includes(i.status ?? 'active'));
+    } else {
+        items = items.filter((i) => (i.status ?? 'active') === 'active');
+    }
+    if (args.countries?.length) {
+        items = items.filter((i) => args.countries!.includes(i.country));
+    }
+    if (args.ownerSalesRep) {
+        items = items.filter((i) => i.ownerSalesRep === args.ownerSalesRep);
+    }
+    if (typeof args.minLeadScore === 'number') {
+        items = items.filter((i) => (i.leadScore ?? 0) >= args.minLeadScore!);
+    }
+    if (args.search) {
+        const needle = args.search.toLowerCase();
+        items = items.filter((i) =>
+            (i.displayName ?? '').toLowerCase().includes(needle) ||
+            (i.primaryDomain ?? '').toLowerCase().includes(needle),
+        );
+    }
+
+    // Cap to limit
+    const totalActiveCount = items.length;
+    const sliced = items.slice(0, limit);
+
+    return {
+        items: sliced,
+        nextToken: items.length > limit ? `offset:${limit}` : null,
+        totalActiveCount,
+    };
+}
+
+async function getOrganization(args: { orgId: string }) {
+    const meta = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
+    }));
+    if (!meta.Item) {
+        throw new Error(`Organization not found: ${args.orgId}`);
+    }
+
+    const linked = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: { ':pk': `ORG#${args.orgId}` },
+        Limit: 80,
+    }));
+
+    const recentRfqs: any[] = [];
+    const recentOrders: any[] = [];
+    const recentLeads: any[] = [];
+    for (const item of (linked.Items ?? [])) {
+        const t = item.entityType;
+        if (t === 'RFQ_SUBMISSION' && recentRfqs.length < 20) recentRfqs.push(item);
+        else if (t === 'ORDER' && recentOrders.length < 20) recentOrders.push(item);
+        else if (t === 'LEAD_SUBMISSION' && recentLeads.length < 20) recentLeads.push(item);
+    }
+    recentRfqs.sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''));
+    recentOrders.sort((a, b) => (b.quoteDate ?? '').localeCompare(a.quoteDate ?? ''));
+    recentLeads.sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''));
+
+    return {
+        organization: meta.Item,
+        recentRfqs,
+        recentOrders,
+        recentLeads,
+        recentTenders: [],
+    };
+}
+
 // Export internals for unit tests
-export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg };
+export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg, listOrganizations, getOrganization };

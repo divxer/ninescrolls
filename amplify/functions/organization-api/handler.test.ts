@@ -470,3 +470,86 @@ describe('classifyOrg', () => {
         expect(updateCalls.length).toBe(0);
     });
 });
+
+describe('listOrganizations', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    it('queries GSI1 per requested type and merges results', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // Two parallel Queries (one per type)
+        sendMock.mockResolvedValueOnce({ Items: [
+            { orgId: 'stanford.edu', type: 'university', lastActivityAt: '2026-05-15T10:00:00Z', leadScore: 30 },
+        ] });
+        sendMock.mockResolvedValueOnce({ Items: [
+            { orgId: 'amat.com', type: 'company', lastActivityAt: '2026-05-14T10:00:00Z', leadScore: 12 },
+        ] });
+        // Optional totalActiveCount Query
+        sendMock.mockResolvedValueOnce({ Count: 2 });
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'listOrganizations' },
+            arguments: { types: ['university', 'company'], statuses: ['active'], limit: 25 },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect((result as any).items.length).toBe(2);
+        // Default sort=activity DESC: stanford (newer) first
+        expect((result as any).items[0].orgId).toBe('stanford.edu');
+    });
+});
+
+describe('getOrganization', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    it('returns a bundle with Org meta + grouped timeline', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // GetItem META
+        sendMock.mockResolvedValueOnce({ Item: {
+            orgId: 'stanford.edu', displayName: 'Stanford', type: 'university',
+        } });
+        // GSI2 Query for related items
+        sendMock.mockResolvedValueOnce({ Items: [
+            { entityType: 'RFQ_SUBMISSION', rfqId: 'r1', submittedAt: '2026-05-10' },
+            { entityType: 'ORDER', orderId: 'o1', quoteDate: '2026-04-01' },
+            { entityType: 'LEAD_SUBMISSION', leadId: 'l1', submittedAt: '2026-03-15' },
+        ] });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'getOrganization' },
+            arguments: { orgId: 'stanford.edu' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.organization.orgId).toBe('stanford.edu');
+        expect(result.recentRfqs).toHaveLength(1);
+        expect(result.recentOrders).toHaveLength(1);
+        expect(result.recentLeads).toHaveLength(1);
+        expect(result.recentTenders).toEqual([]);
+    });
+
+    it('throws 404 if Org does not exist', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: undefined });
+
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'getOrganization' },
+            arguments: { orgId: 'fake.example' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/not found/);
+    });
+});
