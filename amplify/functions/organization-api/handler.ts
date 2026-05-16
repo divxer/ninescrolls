@@ -480,6 +480,15 @@ async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, 
     if (!result) return { aiProvider: null };
 
     const safeType = isValidOrgType(result.type) ? result.type! : 'unknown';
+    if (!isValidOrgType(result.type)) {
+        console.warn(JSON.stringify({
+            event: 'org.classify.type-coerced',
+            orgId: payload.orgId,
+            aiType: result.type ?? null,
+            coercedTo: 'unknown',
+        }));
+    }
+    const safeDisplayName = result.displayName?.trim() || payload.orgId;
     const nowIso = new Date().toISOString();
     const oldType = (existing.Item as any).type ?? 'unknown';
 
@@ -493,7 +502,7 @@ async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, 
             '#c': 'country',
         },
         ExpressionAttributeValues: {
-            ':disp': result.displayName ?? payload.orgId,
+            ':disp': safeDisplayName,
             ':t': safeType,
             ':c': result.country ?? null,
             ':ind': result.industry ?? null,
@@ -513,7 +522,7 @@ async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, 
 
     return {
         orgId: payload.orgId,
-        displayName: result.displayName ?? payload.orgId,
+        displayName: safeDisplayName,
         type: safeType,
         country: result.country ?? null,
         industry: result.industry ?? null,
