@@ -456,7 +456,7 @@ const schema = a.schema({
     recentRfqs: a.ref('RfqSubmission').array().required(),
     recentOrders: a.ref('Order').array().required(),
     recentLeads: a.ref('LeadSubmission').array().required(),
-    recentTenders: a.json(),
+    recentTenders: a.json(), // empty array [] in Phase C; populated in Phase D
   }),
 
   // =========================================================================
