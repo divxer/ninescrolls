@@ -51,3 +51,9 @@ export async function reclassifyOrganization(args: { orgId: string; force?: bool
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
+
+export async function mergeOrganization(args: { sourceOrgId: string; targetOrgId: string }) {
+  const { data, errors } = await client.mutations.mergeOrganization(args as any, AUTH);
+  if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+  return data;
+}

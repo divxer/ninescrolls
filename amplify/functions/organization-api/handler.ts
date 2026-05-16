@@ -133,6 +133,8 @@ async function dispatchFieldName(
             return updateOrganizationOwner(event.arguments, identity);
         case 'reclassifyOrganization':
             return reclassifyOrganization(event.arguments);
+        case 'mergeOrganization':
+            return mergeOrganization(event.arguments, identity);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -773,5 +775,260 @@ async function reclassifyOrganization(args: { orgId: string; force?: boolean }) 
     return result;
 }
 
+/**
+ * Merge `sourceOrgId` into `targetOrgId`.
+ *
+ * Steps:
+ *  1. Validate both Org META rows exist and are not the same.
+ *  2. Re-point all GSI2-linked items (RFQ / ORDER / LEAD) from source to target,
+ *     rewriting `matchedOrgId` + `GSI2PK` + `GSI2SK` (SK shape depends on PK prefix).
+ *  3. Re-point all `ORG_DOMAIN_LOOKUP` rows whose `orgId` == sourceOrgId to target.
+ *  4. Aggregate counts / scores / dates onto target META and re-evaluate GSI3 indexing.
+ *  5. Archive source META: status='archived', mergedInto, mergedAt, REMOVE GSI1/GSI3.
+ *
+ * Idempotency: if source is already merged into the SAME target, return target unchanged.
+ * Throws if source is already merged into a DIFFERENT target.
+ */
+async function mergeOrganization(
+    args: { sourceOrgId: string; targetOrgId: string },
+    identity: string,
+) {
+    const { sourceOrgId, targetOrgId } = args;
+    if (sourceOrgId === targetOrgId) {
+        throw new Error('Cannot merge an Org into itself');
+    }
+
+    const [sourceRes, targetRes] = await Promise.all([
+        ddb.send(new GetCommand({
+            TableName: TABLE(),
+            Key: { PK: `ORG#${sourceOrgId}`, SK: 'META' },
+        })),
+        ddb.send(new GetCommand({
+            TableName: TABLE(),
+            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
+        })),
+    ]);
+    const source = sourceRes.Item as Record<string, any> | undefined;
+    const target = targetRes.Item as Record<string, any> | undefined;
+    if (!source) throw new Error(`Organization not found: ${sourceOrgId}`);
+    if (!target) throw new Error(`Organization not found: ${targetOrgId}`);
+
+    // Idempotency check
+    if (source.status === 'archived' && source.mergedInto) {
+        if (source.mergedInto === targetOrgId) {
+            console.log(JSON.stringify({
+                event: 'org.merge.idempotent-noop',
+                sourceOrgId,
+                targetOrgId,
+                changedBy: identity,
+            }));
+            return target;
+        }
+        throw new Error(
+            `Source Org ${sourceOrgId} is already merged into ${source.mergedInto}, cannot re-merge into ${targetOrgId}`,
+        );
+    }
+
+    // Step 2: Query GSI2 for all items linked to source
+    const linked = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: { ':pk': `ORG#${sourceOrgId}` },
+    }));
+    const linkedItems = (linked.Items ?? []) as Record<string, any>[];
+
+    let itemsMoved = 0;
+    for (const item of linkedItems) {
+        const pk = (item.PK as string) ?? '';
+        // Skip the source META itself (it's keyed by PK=ORG#source, SK=META and uses
+        // GSI2PK=`ORG_DOMAIN#${orgId}` not `ORG#${orgId}`, so it won't normally appear
+        // here, but guard anyway).
+        if (pk === `ORG#${sourceOrgId}` && item.SK === 'META') continue;
+
+        let newGsi2Sk: string;
+        if (pk.startsWith('RFQ#')) {
+            newGsi2Sk = `RFQ#${item.submittedAt ?? item.createdAt ?? ''}`;
+        } else if (pk.startsWith('ORDER#')) {
+            newGsi2Sk = `ORDER#${item.quoteDate ?? item.createdAt ?? ''}`;
+        } else if (pk.startsWith('LEAD#')) {
+            newGsi2Sk = `LEAD#${item.submittedAt ?? item.createdAt ?? ''}`;
+        } else {
+            // Unknown linked entity — skip rather than corrupt
+            console.warn(JSON.stringify({
+                event: 'org.merge.unknown-linked-pk',
+                sourceOrgId,
+                targetOrgId,
+                pk,
+            }));
+            continue;
+        }
+
+        await ddb.send(new UpdateCommand({
+            TableName: TABLE(),
+            Key: { PK: item.PK, SK: item.SK },
+            UpdateExpression: 'SET matchedOrgId = :target, GSI2PK = :gsi2pk, GSI2SK = :gsi2sk',
+            ExpressionAttributeValues: {
+                ':target': targetOrgId,
+                ':gsi2pk': `ORG#${targetOrgId}`,
+                ':gsi2sk': newGsi2Sk,
+            },
+        }));
+        itemsMoved++;
+    }
+
+    // Step 3: Re-point ORG_DOMAIN_LOOKUP rows whose orgId == sourceOrgId.
+    // ORG_DOMAIN_LOOKUP rows are keyed by PK='ORG_DOMAIN_LOOKUP', SK=`DOMAIN#${domain}`.
+    // Their GSI2PK is `ORG_DOMAIN#${domain}` (NOT `ORG#${sourceOrgId}`), so they won't
+    // be returned by the GSI2 query above — we need a separate Query on PK.
+    const lookupRes = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+        FilterExpression: 'orgId = :src',
+        ExpressionAttributeValues: {
+            ':pk': 'ORG_DOMAIN_LOOKUP',
+            ':prefix': 'DOMAIN#',
+            ':src': sourceOrgId,
+        },
+    }));
+    for (const lookup of (lookupRes.Items ?? []) as Record<string, any>[]) {
+        await ddb.send(new UpdateCommand({
+            TableName: TABLE(),
+            Key: { PK: lookup.PK, SK: lookup.SK },
+            UpdateExpression: 'SET orgId = :target',
+            ExpressionAttributeValues: { ':target': targetOrgId },
+        }));
+    }
+
+    // Step 4: Aggregate target META.
+    // aliasDomains = union(target.aliasDomains, source.aliasDomains, source.primaryDomain)
+    const aliasSet = new Set<string>(target.aliasDomains ?? []);
+    for (const d of (source.aliasDomains ?? []) as string[]) aliasSet.add(d);
+    if (source.primaryDomain) aliasSet.add(source.primaryDomain);
+    // Drop the target's own primary domain if it ended up in the union
+    if (target.primaryDomain) aliasSet.delete(target.primaryDomain);
+    let aliasDomains = Array.from(aliasSet);
+    if (aliasDomains.length > ALIAS_DOMAINS_CAP) {
+        console.warn(JSON.stringify({
+            event: 'org.merge.alias-cap-exceeded',
+            sourceOrgId,
+            targetOrgId,
+            unionSize: aliasDomains.length,
+            cap: ALIAS_DOMAINS_CAP,
+            dropped: aliasDomains.length - ALIAS_DOMAINS_CAP,
+        }));
+        aliasDomains = aliasDomains.slice(0, ALIAS_DOMAINS_CAP);
+    }
+
+    const newRfqCount = (target.rfqCount ?? 0) + (source.rfqCount ?? 0);
+    const newOrderCount = (target.orderCount ?? 0) + (source.orderCount ?? 0);
+    const newLeadCount = (target.leadCount ?? 0) + (source.leadCount ?? 0);
+    const newTotalOrderValue = (target.totalOrderValueUSD ?? 0) + (source.totalOrderValueUSD ?? 0);
+    const newContactCount = (target.contactCount ?? 0) + (source.contactCount ?? 0);
+    const oldTargetLeadScore = target.leadScore ?? 0;
+    const newLeadScore = oldTargetLeadScore + (source.leadScore ?? 0);
+
+    function minIso(a?: string, b?: string): string | undefined {
+        if (!a) return b;
+        if (!b) return a;
+        return a < b ? a : b;
+    }
+    function maxIso(a?: string, b?: string): string | undefined {
+        if (!a) return b;
+        if (!b) return a;
+        return a > b ? a : b;
+    }
+    const newFirstSeenAt = minIso(target.firstSeenAt, source.firstSeenAt) ?? new Date().toISOString();
+    const newLastActivityAt = maxIso(target.lastActivityAt, source.lastActivityAt) ?? new Date().toISOString();
+    const newLatestRFQDate = maxIso(target.latestRFQDate, source.latestRFQDate);
+    const newLatestOrderDate = maxIso(target.latestOrderDate, source.latestOrderDate);
+    const newLatestLeadDate = maxIso(target.latestLeadDate, source.latestLeadDate);
+    const newHasActiveInquiry = !!(target.hasActiveInquiry || source.hasActiveInquiry);
+
+    const nowIso = new Date().toISOString();
+    const setExprs: string[] = [
+        'aliasDomains = :aliases',
+        'rfqCount = :rfqCount',
+        'orderCount = :orderCount',
+        'leadCount = :leadCount',
+        'totalOrderValueUSD = :totalOrderValue',
+        'contactCount = :contactCount',
+        'leadScore = :leadScore',
+        'firstSeenAt = :firstSeenAt',
+        'lastActivityAt = :lastActivityAt',
+        'hasActiveInquiry = :hasActiveInquiry',
+        'updatedAt = :now',
+        // GSI1SK reflects lastActivityAt — rewrite it so the target appears at the right
+        // position in admin lists ordered by activity.
+        'GSI1SK = :gsi1Sk',
+    ];
+    const exprValues: Record<string, unknown> = {
+        ':aliases': aliasDomains,
+        ':rfqCount': newRfqCount,
+        ':orderCount': newOrderCount,
+        ':leadCount': newLeadCount,
+        ':totalOrderValue': newTotalOrderValue,
+        ':contactCount': newContactCount,
+        ':leadScore': newLeadScore,
+        ':firstSeenAt': newFirstSeenAt,
+        ':lastActivityAt': newLastActivityAt,
+        ':hasActiveInquiry': newHasActiveInquiry,
+        ':now': nowIso,
+        ':gsi1Sk': `${invertedActivityToken(newLastActivityAt)}#${targetOrgId}`,
+    };
+    if (newLatestRFQDate) { setExprs.push('latestRFQDate = :latestRFQDate'); exprValues[':latestRFQDate'] = newLatestRFQDate; }
+    if (newLatestOrderDate) { setExprs.push('latestOrderDate = :latestOrderDate'); exprValues[':latestOrderDate'] = newLatestOrderDate; }
+    if (newLatestLeadDate) { setExprs.push('latestLeadDate = :latestLeadDate'); exprValues[':latestLeadDate'] = newLatestLeadDate; }
+
+    // GSI3 (lead score index) threshold re-evaluation.
+    // - If now >= threshold: write GSI3PK/SK (overwriting old SK so the position reflects new score).
+    // - If now < threshold and target was previously indexed: REMOVE GSI3PK/SK.
+    // We always SET if above threshold (idempotent), and REMOVE if below and was indexed.
+    let removeGsi3 = false;
+    if (newLeadScore >= LEAD_SCORE_THRESHOLD) {
+        setExprs.push('GSI3PK = :gsi3pk');
+        setExprs.push('GSI3SK = :gsi3sk');
+        exprValues[':gsi3pk'] = 'ORG_LEAD_SCORE';
+        exprValues[':gsi3sk'] = `${invertedScoreToken(newLeadScore)}#${targetOrgId}`;
+    } else if (target.GSI3PK) {
+        removeGsi3 = true;
+    }
+
+    const updateExpr = `SET ${setExprs.join(', ')}${removeGsi3 ? ' REMOVE GSI3PK, GSI3SK' : ''}`;
+    const targetUpdate = await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
+        UpdateExpression: updateExpr,
+        ExpressionAttributeValues: exprValues,
+        ConditionExpression: 'attribute_exists(PK)',
+        ReturnValues: 'ALL_NEW',
+    }));
+
+    // Step 5: archive source META. REMOVE GSI1/GSI3 so it disappears from admin lists.
+    await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${sourceOrgId}`, SK: 'META' },
+        UpdateExpression: 'SET #st = :archived, mergedInto = :target, mergedAt = :now, updatedAt = :now REMOVE GSI1PK, GSI1SK, GSI3PK, GSI3SK',
+        ExpressionAttributeNames: { '#st': 'status' },
+        ExpressionAttributeValues: {
+            ':archived': 'archived',
+            ':target': targetOrgId,
+            ':now': nowIso,
+        },
+        ConditionExpression: 'attribute_exists(PK)',
+    }));
+
+    console.log(JSON.stringify({
+        event: 'org.merge',
+        sourceOrgId,
+        targetOrgId,
+        itemsMoved,
+        newLeadScore,
+        changedBy: identity,
+    }));
+
+    return targetUpdate.Attributes;
+}
+
 // Export internals for unit tests
-export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg, listOrganizations, getOrganization, updateOrganizationStatus, updateOrganizationOwner, reclassifyOrganization };
+export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg, listOrganizations, getOrganization, updateOrganizationStatus, updateOrganizationOwner, reclassifyOrganization, mergeOrganization };

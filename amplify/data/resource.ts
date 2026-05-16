@@ -816,6 +816,16 @@ const schema = a.schema({
     .handler(a.handler.function(organizationApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  mergeOrganization: a
+    .mutation()
+    .arguments({
+      sourceOrgId: a.id().required(),
+      targetOrgId: a.id().required(),
+    })
+    .returns(a.ref('Organization').required())
+    .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   // =========================================================================
   // Subscriptions — §12.4
   // =========================================================================

@@ -4,6 +4,7 @@ import {
     updateOrganizationOwner,
     reclassifyOrganization,
 } from '../../services/organizationAdminService';
+import { MergeOrgDialog } from './MergeOrgDialog';
 
 interface Props {
     org: any;
@@ -14,6 +15,7 @@ export function OrganizationHeaderPanel({ org, onUpdate }: Props) {
     const [status, setStatus] = useState(org.status ?? 'active');
     const [owner, setOwner] = useState(org.ownerSalesRep ?? '');
     const [busy, setBusy] = useState(false);
+    const [mergeOpen, setMergeOpen] = useState(false);
 
     async function saveStatus(newStatus: string) {
         setBusy(true);
@@ -123,6 +125,15 @@ export function OrganizationHeaderPanel({ org, onUpdate }: Props) {
                     <span className="material-symbols-outlined text-base">auto_awesome</span>
                     Reclassify with AI
                 </button>
+
+                <button
+                    onClick={() => setMergeOpen(true)}
+                    disabled={busy}
+                    className="w-full px-4 py-2.5 bg-transparent border border-outline-variant text-on-surface-variant rounded-lg font-headline font-semibold text-sm hover:bg-surface-variant/20 hover:text-on-surface transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span className="material-symbols-outlined text-base">merge</span>
+                    Merge into another Org…
+                </button>
             </div>
 
             {org.aliasDomains?.length > 0 && (
@@ -138,6 +149,15 @@ export function OrganizationHeaderPanel({ org, onUpdate }: Props) {
                     </ul>
                 </div>
             )}
+
+            <MergeOrgDialog
+                sourceOrg={org}
+                open={mergeOpen}
+                onClose={() => {
+                    setMergeOpen(false);
+                    onUpdate();
+                }}
+            />
         </aside>
     );
 }
