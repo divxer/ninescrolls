@@ -56,6 +56,8 @@ const CreateOrderPage = lazy(() => import('../pages/admin/CreateOrderPage').then
 const RFQListPage = lazy(() => import('../pages/admin/RFQListPage').then(m => ({ default: m.RFQListPage })));
 const RFQDetailPage = lazy(() => import('../pages/admin/RFQDetailPage').then(m => ({ default: m.RFQDetailPage })));
 const LeadsListPage = lazy(() => import('../pages/admin/LeadsListPage').then(m => ({ default: m.LeadsListPage })));
+const OrganizationListPage = lazy(() => import('../pages/admin/OrganizationListPage').then(m => ({ default: m.OrganizationListPage })));
+const OrganizationDetailPage = lazy(() => import('../pages/admin/OrganizationDetailPage').then(m => ({ default: m.OrganizationDetailPage })));
 const DashboardPage = lazy(() => import('../pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AdminQuestionsPage = lazy(() => import('../pages/admin/AdminQuestionsPage').then(m => ({ default: m.AdminQuestionsPage })));
 
@@ -135,6 +137,8 @@ export function AdminRoutes() {
           <Route path="rfqs" element={<RFQListPage />} />
           <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
           <Route path="leads" element={<LeadsListPage />} />
+          <Route path="organizations" element={<OrganizationListPage />} />
+          <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
         </Route>
       </Routes>
     </Suspense>
