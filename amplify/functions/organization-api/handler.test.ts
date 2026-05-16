@@ -1021,4 +1021,70 @@ describe('mergeOrganization', () => {
         expect(warnedMerge).toBeDefined();
         warnSpy.mockRestore();
     });
+
+    it('skips re-aggregation on retry when target already merged this source (CCFE on mergedSources)', async () => {
+        // Simulates a partial-failure retry: previous run aggregated target +
+        // wrote source orgId to target.mergedSources, but Lambda timed out
+        // before archiving source. Re-running must NOT double-aggregate.
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // 1. GetItem source (still active — archive step never ran)
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#src.com', SK: 'META', orgId: 'src.com', status: 'active',
+            primaryDomain: 'src.com', leadScore: 8, rfqCount: 1, orderCount: 0, leadCount: 0,
+            firstSeenAt: '2026-04-01T00:00:00Z', lastActivityAt: '2026-04-15T00:00:00Z',
+        } });
+        // 2. GetItem target (already has src.com in mergedSources)
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#tgt.com', SK: 'META', orgId: 'tgt.com', status: 'active',
+            primaryDomain: 'tgt.com', leadScore: 20, rfqCount: 5, orderCount: 2, leadCount: 1,
+            mergedSources: new Set(['src.com']),
+            firstSeenAt: '2026-03-01T00:00:00Z', lastActivityAt: '2026-05-01T00:00:00Z',
+        } });
+        // 3. GSI2 Query for linked items (already moved on previous run, returns 0)
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // 4. Query for ORG_DOMAIN_LOOKUP pointing at src.com (already repointed previously, returns 0)
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        // 5. UpdateCommand target — CCFE because mergedSources already contains src.com
+        const ccfe = new Error('The conditional request failed');
+        (ccfe as any).name = 'ConditionalCheckFailedException';
+        sendMock.mockRejectedValueOnce(ccfe);
+        // 6. GetItem target (after CCFE) — return current state
+        sendMock.mockResolvedValueOnce({ Item: {
+            PK: 'ORG#tgt.com', SK: 'META', orgId: 'tgt.com', leadScore: 28, rfqCount: 6, // already aggregated
+        } });
+        // 7. UpdateCommand source — archive (idempotent SET)
+        sendMock.mockResolvedValueOnce({});
+
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'mergeOrganization' },
+            arguments: { sourceOrgId: 'src.com', targetOrgId: 'tgt.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        // Returns the re-fetched target state — already-aggregated counts
+        expect(result.leadScore).toBe(28);
+        expect(result.rfqCount).toBe(6);
+
+        // Confirm CCFE was logged as retry-safety event
+        const warnedRetry = warnSpy.mock.calls.find((c) =>
+            typeof c[0] === 'string' && (c[0] as string).includes('org.merge.target-already-aggregated'),
+        );
+        expect(warnedRetry).toBeDefined();
+
+        // Source archive must still have been attempted
+        const sourceArchive = sendMock.mock.calls.find((c: any) => {
+            const cmd = c[0];
+            return cmd.constructor.name === 'UpdateCommand'
+                && cmd.input.Key?.PK === 'ORG#src.com'
+                && (cmd.input.UpdateExpression as string).includes('mergedInto');
+        });
+        expect(sourceArchive).toBeDefined();
+        warnSpy.mockRestore();
+    });
 });

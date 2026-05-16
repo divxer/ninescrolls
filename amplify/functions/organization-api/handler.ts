@@ -994,15 +994,46 @@ async function mergeOrganization(
         removeGsi3 = true;
     }
 
-    const updateExpr = `SET ${setExprs.join(', ')}${removeGsi3 ? ' REMOVE GSI3PK, GSI3SK' : ''}`;
-    const targetUpdate = await ddb.send(new UpdateCommand({
-        TableName: TABLE(),
-        Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
-        UpdateExpression: updateExpr,
-        ExpressionAttributeValues: exprValues,
-        ConditionExpression: 'attribute_exists(PK)',
-        ReturnValues: 'ALL_NEW',
-    }));
+    // Retry-safety: if this merge call is a retry after a partial failure (e.g.
+    // Lambda timed out after step 4 succeeded but before step 5 archived source),
+    // we must NOT re-aggregate target counts a second time.
+    //
+    // Strategy: ADD the source orgId to a `mergedSources` String Set on target;
+    // condition the whole UpdateItem on the source NOT already being in that set.
+    // On retry the condition fails (CCFE), and we catch + skip aggregation —
+    // target stays consistent. Then we proceed to (idempotent) source archive.
+    exprValues[':srcId'] = sourceOrgId;
+    exprValues[':srcSet'] = new Set([sourceOrgId]);
+    const updateExpr = `SET ${setExprs.join(', ')} ADD mergedSources :srcSet${removeGsi3 ? ' REMOVE GSI3PK, GSI3SK' : ''}`;
+
+    let targetAttrs: Record<string, any> | undefined;
+    try {
+        const targetUpdate = await ddb.send(new UpdateCommand({
+            TableName: TABLE(),
+            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
+            UpdateExpression: updateExpr,
+            ExpressionAttributeValues: exprValues,
+            ConditionExpression:
+                'attribute_exists(PK) AND (attribute_not_exists(mergedSources) OR NOT contains(mergedSources, :srcId))',
+            ReturnValues: 'ALL_NEW',
+        }));
+        targetAttrs = targetUpdate.Attributes as Record<string, any> | undefined;
+    } catch (err: any) {
+        if (err?.name !== 'ConditionalCheckFailedException') throw err;
+        // Target already aggregated this source on a previous (interrupted) run.
+        // Re-fetch target to return its current state and continue to archive source.
+        console.warn(JSON.stringify({
+            event: 'org.merge.target-already-aggregated',
+            sourceOrgId,
+            targetOrgId,
+            changedBy: identity,
+        }));
+        const fresh = await ddb.send(new GetCommand({
+            TableName: TABLE(),
+            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
+        }));
+        targetAttrs = fresh.Item as Record<string, any> | undefined;
+    }
 
     // Step 5: archive source META. REMOVE GSI1/GSI3 so it disappears from admin lists.
     await ddb.send(new UpdateCommand({
@@ -1027,7 +1058,7 @@ async function mergeOrganization(
         changedBy: identity,
     }));
 
-    return targetUpdate.Attributes;
+    return targetAttrs;
 }
 
 // Export internals for unit tests
