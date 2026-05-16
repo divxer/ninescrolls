@@ -17,7 +17,9 @@ import {
     ANTHROPIC_TIMEOUT_MS,
     BEDROCK_TIMEOUT_MS,
     LEAD_SCORE_THRESHOLD,
+    ORG_STATUSES,
     ORG_TYPES,
+    RECLASSIFY_COOLDOWN_DAYS,
 } from '../../lib/organization/constants';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -119,11 +121,18 @@ async function dispatchFieldName(
     fieldName: string,
     event: AppSyncResolverEvent<any>,
 ): Promise<unknown> {
+    const identity = (event.identity as any)?.username ?? 'unknown';
     switch (fieldName) {
         case 'listOrganizations':
             return listOrganizations(event.arguments);
         case 'getOrganization':
             return getOrganization(event.arguments);
+        case 'updateOrganizationStatus':
+            return updateOrganizationStatus(event.arguments, identity);
+        case 'updateOrganizationOwner':
+            return updateOrganizationOwner(event.arguments, identity);
+        case 'reclassifyOrganization':
+            return reclassifyOrganization(event.arguments);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -664,5 +673,94 @@ async function getOrganization(args: { orgId: string }) {
     };
 }
 
+async function updateOrganizationStatus(
+    args: { orgId: string; status: string; adminNotes?: string; tags?: string[] },
+    identity: string,
+) {
+    if (!(ORG_STATUSES as readonly string[]).includes(args.status)) {
+        throw new Error(`invalid status: ${args.status}`);
+    }
+    const nowIso = new Date().toISOString();
+    const setExpressions: string[] = ['#st = :status', 'updatedAt = :now'];
+    const exprValues: Record<string, unknown> = { ':status': args.status, ':now': nowIso };
+    const exprNames: Record<string, string> = { '#st': 'status' };
+    if (args.adminNotes !== undefined) {
+        setExpressions.push('adminNotes = :notes');
+        exprValues[':notes'] = args.adminNotes;
+    }
+    if (args.tags !== undefined) {
+        setExpressions.push('tags = :tags');
+        exprValues[':tags'] = args.tags;
+    }
+    const res = await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
+        UpdateExpression: `SET ${setExpressions.join(', ')}`,
+        ExpressionAttributeNames: exprNames,
+        ExpressionAttributeValues: exprValues,
+        ReturnValues: 'ALL_NEW',
+    }));
+    console.log(JSON.stringify({
+        event: 'org.status.updated',
+        orgId: args.orgId,
+        newStatus: args.status,
+        changedBy: identity,
+    }));
+    return res.Attributes;
+}
+
+async function updateOrganizationOwner(
+    args: { orgId: string; ownerSalesRep?: string | null },
+    identity: string,
+) {
+    const nowIso = new Date().toISOString();
+    let updateExpr: string;
+    const exprValues: Record<string, unknown> = { ':now': nowIso };
+    if (args.ownerSalesRep) {
+        updateExpr = 'SET ownerSalesRep = :owner, updatedAt = :now';
+        exprValues[':owner'] = args.ownerSalesRep;
+    } else {
+        updateExpr = 'SET updatedAt = :now REMOVE ownerSalesRep';
+    }
+    const res = await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
+        UpdateExpression: updateExpr,
+        ExpressionAttributeValues: exprValues,
+        ReturnValues: 'ALL_NEW',
+    }));
+    console.log(JSON.stringify({
+        event: 'org.owner.updated',
+        orgId: args.orgId,
+        owner: args.ownerSalesRep ?? null,
+        changedBy: identity,
+    }));
+    return res.Attributes;
+}
+
+async function reclassifyOrganization(args: { orgId: string; force?: boolean }) {
+    const existing = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${args.orgId}`, SK: 'META' },
+    }));
+    if (!existing.Item) throw new Error(`Organization not found: ${args.orgId}`);
+
+    if (!args.force && existing.Item.aiClassifiedAt) {
+        const lastIso = existing.Item.aiClassifiedAt as string;
+        const ageDays = (Date.now() - new Date(lastIso).getTime()) / (1000 * 60 * 60 * 24);
+        if (ageDays < RECLASSIFY_COOLDOWN_DAYS) {
+            console.log(JSON.stringify({
+                event: 'org.reclassify.cooldown-active',
+                orgId: args.orgId,
+                ageDays,
+            }));
+            return existing.Item;
+        }
+    }
+
+    const result = await classifyOrg({ action: 'classifyOrg', orgId: args.orgId });
+    return result;
+}
+
 // Export internals for unit tests
-export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg, listOrganizations, getOrganization };
+export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg, listOrganizations, getOrganization, updateOrganizationStatus, updateOrganizationOwner, reclassifyOrganization };

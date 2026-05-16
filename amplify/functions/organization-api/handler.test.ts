@@ -553,3 +553,78 @@ describe('getOrganization', () => {
         } as any)).rejects.toThrow(/not found/);
     });
 });
+
+describe('admin mutations', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    it('updateOrganizationStatus sets status, adminNotes, tags', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'stanford.edu', status: 'archived' } });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'updateOrganizationStatus' },
+            arguments: { orgId: 'stanford.edu', status: 'archived', adminNotes: 'Out of season', tags: ['cold'] },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.status).toBe('archived');
+        const updateCmd = sendMock.mock.calls[0][0];
+        expect(updateCmd.input.UpdateExpression).toContain('status');
+        expect(updateCmd.input.UpdateExpression).toContain('adminNotes');
+        expect(updateCmd.input.UpdateExpression).toContain('tags');
+    });
+
+    it('updateOrganizationStatus rejects invalid status', async () => {
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'updateOrganizationStatus' },
+            arguments: { orgId: 'stanford.edu', status: 'bogus' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/invalid status/);
+    });
+
+    it('updateOrganizationOwner sets ownerSalesRep', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'stanford.edu', ownerSalesRep: 'sales@ninescrolls.com' } });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'updateOrganizationOwner' },
+            arguments: { orgId: 'stanford.edu', ownerSalesRep: 'sales@ninescrolls.com' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.ownerSalesRep).toBe('sales@ninescrolls.com');
+    });
+
+    it('reclassifyOrganization is no-op within RECLASSIFY_COOLDOWN_DAYS unless force=true', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        // GetItem returns recently classified Org
+        sendMock.mockResolvedValueOnce({ Item: {
+            orgId: 'stanford.edu',
+            type: 'university',
+            aiClassifiedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        } });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'reclassifyOrganization' },
+            arguments: { orgId: 'stanford.edu', force: false },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.orgId).toBe('stanford.edu');
+        // No UpdateCommand should have been called — only the GetItem
+        const updateCalls = sendMock.mock.calls.filter((c: any) => c[0].constructor.name === 'UpdateCommand');
+        expect(updateCalls.length).toBe(0);
+    });
+});
