@@ -798,7 +798,9 @@ const stateMachineLogGroup = new LogGroup(tenderWatchStack, 'TenderWatchLogs', {
 });
 
 const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchDaily', {
-    stateMachineName: 'tender-watch-daily',
+    // Suffix with stack name in sandbox to avoid colliding with the prod state machine
+    // (the global name `tender-watch-daily` is owned by the prod main-branch deploy).
+    stateMachineName: isSandbox ? `tender-watch-daily-${backend.stack.stackName.slice(-12)}` : 'tender-watch-daily',
     stateMachineType: StateMachineType.STANDARD,
     definition,
     logs: { destination: stateMachineLogGroup, level: LogLevel.ALL, includeExecutionData: true },
