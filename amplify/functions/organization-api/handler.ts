@@ -675,10 +675,29 @@ async function getOrganization(args: { orgId: string }) {
     recentOrders.sort((a, b) => (b.quoteDate ?? '').localeCompare(a.quoteDate ?? ''));
     recentLeads.sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''));
 
+    // Order schema declares `feedbackCount` and `daysSinceLastUpdate` as
+    // non-nullable Int, but the stored DDB Order item doesn't carry them — they
+    // are computed by `order-api` at read time via buildOrderResponse. Mirror
+    // that here so AppSync serialization doesn't reject the response.
+    const nowMs = Date.now();
+    const normalizedOrders = recentOrders.map((o) => {
+        const updatedAtMs = o.updatedAt ? new Date(o.updatedAt as string).getTime() : nowMs;
+        const daysSinceLastUpdate = Number.isFinite(updatedAtMs)
+            ? Math.floor((nowMs - updatedAtMs) / (1000 * 60 * 60 * 24))
+            : 0;
+        return {
+            ...o,
+            feedbackCount: o.feedbackCount ?? 0,
+            daysSinceLastUpdate: o.daysSinceLastUpdate ?? daysSinceLastUpdate,
+            feedbackScheduleCreated: o.feedbackScheduleCreated ?? false,
+            source: o.source ?? 'MANUAL',
+        };
+    });
+
     return {
         organization: meta.Item,
         recentRfqs,
-        recentOrders,
+        recentOrders: normalizedOrders,
         recentLeads,
         recentTenders: [],
     };
