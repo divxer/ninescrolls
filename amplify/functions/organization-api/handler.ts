@@ -8,14 +8,20 @@ import {
     QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import Anthropic from '@anthropic-ai/sdk';
 import { classifyEmailDomain } from '../../lib/organization/etld';
 import {
     ALIAS_DOMAINS_CAP,
+    ANTHROPIC_TIMEOUT_MS,
+    BEDROCK_TIMEOUT_MS,
     LEAD_SCORE_THRESHOLD,
+    ORG_TYPES,
 } from '../../lib/organization/constants';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
+const bedrock = new BedrockRuntimeClient({});
 const TABLE = () => process.env.INTELLIGENCE_TABLE!;
 const SELF_FUNCTION_NAME = () => process.env.AWS_LAMBDA_FUNCTION_NAME!;
 
@@ -101,6 +107,8 @@ async function dispatchAction(event: DirectInvokePayload): Promise<unknown> {
     switch (event.action) {
         case 'upsertFromSubmission':
             return upsertFromSubmission(event as unknown as UpsertPayload);
+        case 'classifyOrg':
+            return classifyOrg(event as unknown as ClassifyOrgPayload);
         default:
             throw new Error(`Unknown action: ${event.action}`);
     }
@@ -352,5 +360,167 @@ async function invokeSelfClassify(orgId: string, institution?: string): Promise<
     }
 }
 
+interface ClassifyOrgPayload {
+    action: 'classifyOrg';
+    orgId: string;
+    institution?: string;
+    force?: boolean;
+}
+
+interface LlmClassifyOutput {
+    displayName?: string;
+    type?: string;
+    country?: string;
+    industry?: string | null;
+}
+
+function parseLlmJson(text: string): unknown {
+    const trimmed = text.trim();
+    const fenced = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+    return JSON.parse(fenced ? fenced[1].trim() : trimmed);
+}
+
+function buildClassifyPrompt(orgId: string, institution?: string): string {
+    return [
+        'Classify this customer organization. Output JSON only.',
+        '',
+        'Schema:',
+        '{ "displayName": string,',
+        '  "type": string,            // one of: university, research-institute, company, government, other',
+        '  "country": string,         // ISO 3166-1 alpha-2',
+        '  "industry": string | null  // short noun phrase or null',
+        '}',
+        '',
+        `Inputs:`,
+        `- Domain: ${orgId}`,
+        `- Institution name provided: ${institution ? `"${institution}"` : 'none'}`,
+    ].join('\n');
+}
+
+async function callBedrock(prompt: string): Promise<LlmClassifyOutput> {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), BEDROCK_TIMEOUT_MS);
+    try {
+        const res = await bedrock.send(new InvokeModelCommand({
+            modelId: process.env.BEDROCK_MODEL_ID!,
+            contentType: 'application/json',
+            accept: 'application/json',
+            body: JSON.stringify({
+                anthropic_version: 'bedrock-2023-05-31',
+                max_tokens: 500,
+                messages: [{ role: 'user', content: prompt }],
+            }),
+        }), { abortSignal: ctrl.signal });
+        const text = await (res.body as any).transformToString('utf-8');
+        const wrap = JSON.parse(text);
+        const inner: string = wrap.content?.[0]?.text ?? '{}';
+        return parseLlmJson(inner) as LlmClassifyOutput;
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+async function callAnthropic(prompt: string): Promise<LlmClassifyOutput> {
+    const client = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY!,
+        timeout: ANTHROPIC_TIMEOUT_MS,
+    });
+    const res = await client.messages.create({
+        model: process.env.CLAUDE_MODEL!,
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }],
+    });
+    const block = res.content[0] as any;
+    const text: string = block?.text ?? '{}';
+    return parseLlmJson(text) as LlmClassifyOutput;
+}
+
+function isValidOrgType(t: string | undefined): boolean {
+    return !!t && (ORG_TYPES as readonly string[]).includes(t);
+}
+
+async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, unknown>> {
+    const existing = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${payload.orgId}`, SK: 'META' },
+    }));
+    if (!existing.Item) {
+        console.warn(JSON.stringify({ event: 'org.classify.org-missing', orgId: payload.orgId }));
+        return { aiProvider: null };
+    }
+
+    const prompt = buildClassifyPrompt(payload.orgId, payload.institution);
+
+    let result: LlmClassifyOutput | null = null;
+    let provider: 'bedrock' | 'anthropic' | null = null;
+
+    try {
+        result = await callBedrock(prompt);
+        provider = 'bedrock';
+    } catch (bedrockErr) {
+        console.warn(JSON.stringify({
+            event: 'org.classify.bedrock-failed',
+            orgId: payload.orgId,
+            error: String(bedrockErr),
+        }));
+        try {
+            result = await callAnthropic(prompt);
+            provider = 'anthropic';
+        } catch (anthropicErr) {
+            console.error(JSON.stringify({
+                event: 'org.classify.both-providers-failed',
+                orgId: payload.orgId,
+                bedrockError: String(bedrockErr),
+                anthropicError: String(anthropicErr),
+            }));
+            return { aiProvider: null };
+        }
+    }
+
+    if (!result) return { aiProvider: null };
+
+    const safeType = isValidOrgType(result.type) ? result.type! : 'unknown';
+    const nowIso = new Date().toISOString();
+    const oldType = (existing.Item as any).type ?? 'unknown';
+
+    await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `ORG#${payload.orgId}`, SK: 'META' },
+        UpdateExpression: 'SET #disp = :disp, #t = :t, #c = :c, industry = :ind, aiClassifiedAt = :now, aiProvider = :prov, updatedAt = :now, GSI1PK = :newGsi1Pk',
+        ExpressionAttributeNames: {
+            '#disp': 'displayName',
+            '#t': 'type',
+            '#c': 'country',
+        },
+        ExpressionAttributeValues: {
+            ':disp': result.displayName ?? payload.orgId,
+            ':t': safeType,
+            ':c': result.country ?? null,
+            ':ind': result.industry ?? null,
+            ':now': nowIso,
+            ':prov': provider,
+            ':newGsi1Pk': `ORG_TYPE#${safeType}`,
+        },
+    }));
+
+    console.log(JSON.stringify({
+        event: 'org.classify.success',
+        orgId: payload.orgId,
+        provider,
+        type: safeType,
+        oldType,
+    }));
+
+    return {
+        orgId: payload.orgId,
+        displayName: result.displayName ?? payload.orgId,
+        type: safeType,
+        country: result.country ?? null,
+        industry: result.industry ?? null,
+        aiClassifiedAt: nowIso,
+        aiProvider: provider,
+    };
+}
+
 // Export internals for unit tests
-export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission };
+export { dispatchAction, dispatchFieldName, requireAdmin, ddb, TABLE, upsertFromSubmission, classifyOrg };

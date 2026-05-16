@@ -358,3 +358,115 @@ describe('upsertFromSubmission', () => {
         expect(lambdaSend).toHaveBeenCalled();
     });
 });
+
+describe('classifyOrg', () => {
+    beforeEach(() => {
+        // Reset module cache so each test can rebind DynamoDBDocumentClient.from
+        // and BedrockRuntimeClient before the handler module captures them at import time.
+        vi.resetModules();
+    });
+
+    function bedrockBody(json: object) {
+        const text = JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(json) }] });
+        return { body: { transformToString: vi.fn().mockResolvedValue(text) } };
+    }
+
+    it('classifies an Org via Bedrock and writes back type + country + GSI1PK', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        // GetItem returns existing Org
+        sendMock.mockImplementationOnce(async () => ({
+            Item: {
+                orgId: 'stanford.edu',
+                displayName: 'stanford.edu',
+                type: 'unknown',
+                aliasDomains: [],
+            },
+        }));
+        // UpdateItem
+        sendMock.mockResolvedValue({});
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockResolvedValueOnce(bedrockBody({
+            displayName: 'Stanford University',
+            type: 'university',
+            country: 'US',
+            industry: 'Higher education',
+        }));
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            action: 'classifyOrg',
+            orgId: 'stanford.edu',
+            institution: 'Stanford University',
+        } as any);
+
+        expect((result as any).type).toBe('university');
+        expect((result as any).displayName).toBe('Stanford University');
+        const updateCmd = sendMock.mock.calls.find((c: any) => c[0].constructor.name === 'UpdateCommand');
+        expect(updateCmd).toBeDefined();
+        const expr = updateCmd![0].input.UpdateExpression as string;
+        expect(expr).toContain('GSI1PK');
+    });
+
+    it('falls back to Anthropic when Bedrock fails', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockImplementationOnce(async () => ({ Item: { orgId: 'mit.edu', type: 'unknown' } }));
+        sendMock.mockResolvedValue({});
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockRejectedValueOnce(new Error('Bedrock unavailable'));
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const anthropicMock = await import('@anthropic-ai/sdk');
+        const create = vi.fn().mockResolvedValueOnce({
+            content: [{ type: 'text', text: JSON.stringify({
+                displayName: 'MIT',
+                type: 'university',
+                country: 'US',
+                industry: null,
+            }) }],
+        });
+        (anthropicMock.default as any) = class { messages = { create }; };
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            action: 'classifyOrg',
+            orgId: 'mit.edu',
+        } as any);
+
+        expect((result as any).aiProvider).toBe('anthropic');
+    });
+
+    it('no-ops on both providers failing (does not throw)', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockImplementationOnce(async () => ({ Item: { orgId: 'unknown.example', type: 'unknown' } }));
+        sendMock.mockResolvedValue({});
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockRejectedValueOnce(new Error('Bedrock down'));
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const anthropicMock = await import('@anthropic-ai/sdk');
+        const create = vi.fn().mockRejectedValueOnce(new Error('Anthropic 500'));
+        (anthropicMock.default as any) = class { messages = { create }; };
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            action: 'classifyOrg',
+            orgId: 'unknown.example',
+        } as any);
+
+        expect((result as any).aiProvider).toBeNull();
+        // No UpdateItem on type/country
+        const updateCalls = sendMock.mock.calls.filter((c: any) =>
+            c[0].constructor.name === 'UpdateCommand' && (c[0].input.UpdateExpression as string).includes('type'));
+        expect(updateCalls.length).toBe(0);
+    });
+});
