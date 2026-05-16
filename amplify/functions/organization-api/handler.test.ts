@@ -59,4 +59,16 @@ describe('organization-api dispatcher', () => {
         // Use an unknown action so we get a clean "Unknown action" error rather than DDB calls
         await expect(handler({ action: 'bogus-action' } as any)).rejects.toThrow(/Unknown action/);
     });
+
+    it('routes AppSync event with stray top-level action key through requireAdmin (not direct-invoke)', async () => {
+        // Defense against an AppSync resolver event accidentally getting an `action` key
+        // at the top level — must NOT bypass requireAdmin.
+        const { handler } = await import('./handler');
+        await expect(handler({
+            action: 'upsertFromSubmission', // attacker / misconfiguration
+            info: { fieldName: 'listOrganizations' },
+            arguments: {},
+            identity: { username: 'user1', groups: ['user'] }, // no admin
+        } as any)).rejects.toThrow(/admin group required/);
+    });
 });
