@@ -667,6 +667,40 @@ const schema = a.schema({
     .handler(a.handler.function(organizationApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  listTenders: a
+    .query()
+    .arguments({
+      statuses: a.string().array(),
+      includeExpired: a.boolean(),
+      countries: a.string().array(),
+      categories: a.string().array(),
+      minScore: a.integer(),
+      postedDateFrom: a.string(),
+      postedDateTo: a.string(),
+      search: a.string(),
+      sortBy: a.string(),
+      sortDir: a.string(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('TenderConnection').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getTender: a
+    .query()
+    .arguments({ tenderId: a.id().required() })
+    .returns(a.ref('TenderDetailBundle'))
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listTenderKeywordConfigs: a
+    .query()
+    .arguments({ includeInactive: a.boolean() })
+    .returns(a.ref('TenderKeywordConfig').array().required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   // =========================================================================
   // Insights Image Upload — queries & mutations
   // =========================================================================
