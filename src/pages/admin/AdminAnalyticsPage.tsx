@@ -54,6 +54,7 @@ interface OrganizationRecord {
   companyType: string;
   lifecycleStage: LifecycleStage;
   rfqInstitution: string | null;
+  contactOrganization: string | null;
   events: AnalyticsEvent[];
 }
 
@@ -986,6 +987,7 @@ function aggregateByOrg(
       companyType,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       rfqInstitution,
+      contactOrganization: null,
       events: sorted,
     });
   }
