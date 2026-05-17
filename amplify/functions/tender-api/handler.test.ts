@@ -256,3 +256,35 @@ describe('updateTenderStatus', () => {
         expect(result.assignedTo).toBe('alice');
     });
 });
+
+describe('bulkUpdateTenderStatus', () => {
+    it('updates each tender and returns success count', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        // For each tender: Get + Update + Put = 3 calls
+        for (const tid of ['t1', 't2']) {
+            sendMock.mockResolvedValueOnce({ Item: { tenderId: tid, status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
+            sendMock.mockResolvedValueOnce({ Attributes: {} });
+            sendMock.mockResolvedValueOnce({});
+        }
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'bulkUpdateTenderStatus' },
+            arguments: { tenderIds: ['t1', 't2'], toStatus: 'reviewing' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result).toBe(2);
+    });
+
+    it('throws when more than 50 ids are passed', async () => {
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'bulkUpdateTenderStatus' },
+            arguments: { tenderIds: Array.from({ length: 51 }, (_, i) => `t${i}`), toStatus: 'reviewing' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/bulk update limit/);
+    });
+});

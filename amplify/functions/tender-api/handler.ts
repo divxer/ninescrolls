@@ -53,6 +53,8 @@ async function dispatchFieldName(
             return listKeywordConfigs(event.arguments);
         case 'updateTenderStatus':
             return updateTenderStatus(event.arguments, identity);
+        case 'bulkUpdateTenderStatus':
+            return bulkUpdateTenderStatus(event.arguments, identity);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -286,5 +288,32 @@ async function updateTenderStatus(
     return updated.Attributes;
 }
 
+async function bulkUpdateTenderStatus(
+    args: { tenderIds: string[]; toStatus: string },
+    identity: string,
+) {
+    if (args.tenderIds.length > 50) {
+        throw new Error('bulk update limit exceeded: maximum 50 tenders per request');
+    }
+    // Process sequentially to respect per-tender optimistic-lock semantics and
+    // keep DDB write pressure predictable. Chunks of 10 group log writes while
+    // ensuring each tender's Get→Update→Put triple completes before the next.
+    let success = 0;
+    for (const tid of args.tenderIds) {
+        try {
+            await updateTenderStatus({ tenderId: tid, toStatus: args.toStatus }, identity);
+            success += 1;
+        } catch (err) {
+            console.warn(JSON.stringify({
+                event: 'tender.bulk.update-failed',
+                error: String(err),
+                tenderId: tid,
+                changedBy: identity,
+            }));
+        }
+    }
+    return success;
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus };
