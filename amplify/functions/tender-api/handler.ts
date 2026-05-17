@@ -15,9 +15,14 @@ import {
 } from '../../lib/tender-watch/keys';
 import { matchesAnyConfig } from '../../lib/tender-watch/prefilter';
 import type { TenderKeywordConfigItem } from '../../lib/tender-watch/types';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import Anthropic from '@anthropic-ai/sdk';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const TABLE = () => process.env.INTELLIGENCE_TABLE!;
+const bedrock = new BedrockRuntimeClient({});
+const BEDROCK_TIMEOUT_MS = 8000;
+const ANTHROPIC_TIMEOUT_MS = 20000;
 
 const ADMIN_GROUP = 'admin';
 
@@ -62,6 +67,8 @@ async function dispatchFieldName(
             return upsertKeywordConfig(event.arguments, identity);
         case 'runPrefilterPreview':
             return runPrefilterPreview(event.arguments);
+        case 'translateTenderDescription':
+            return translateDescription(event.arguments);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -387,5 +394,94 @@ async function runPrefilterPreview(args: {
     };
 }
 
+async function translateDescription(args: { tenderId: string; force?: boolean }): Promise<string> {
+    const existing = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: { PK: `TENDER#${args.tenderId}`, SK: 'METADATA' },
+    }));
+    if (!existing.Item) throw new Error(`Tender not found: ${args.tenderId}`);
+
+    const cached = existing.Item.descriptionEn as string | undefined;
+    if (cached && !args.force) return cached;
+
+    const description = (existing.Item.description as string | undefined) ?? '';
+    const language = (existing.Item.language as string | undefined) ?? 'unknown';
+    const prompt = buildTranslatePrompt(description, language);
+
+    let translated: string | null = null;
+    try {
+        translated = await callBedrock(prompt);
+    } catch (err) {
+        console.warn(JSON.stringify({ event: 'tender.translate.bedrock-failed', tenderId: args.tenderId, error: String(err) }));
+        try {
+            translated = await callAnthropic(prompt);
+        } catch (err2) {
+            console.error(JSON.stringify({
+                event: 'tender.translate.both-providers-failed',
+                tenderId: args.tenderId,
+                bedrockError: String(err),
+                anthropicError: String(err2),
+            }));
+            throw new Error('Translation unavailable');
+        }
+    }
+
+    const nowIso = new Date().toISOString();
+    // Don't touch updatedAt — translation is a derived field, doesn't invalidate optimistic lock token.
+    await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: { PK: `TENDER#${args.tenderId}`, SK: 'METADATA' },
+        UpdateExpression: 'SET descriptionEn = :en, descriptionEnAt = :now',
+        ExpressionAttributeValues: { ':en': translated, ':now': nowIso },
+    }));
+    return translated;
+}
+
+function buildTranslatePrompt(description: string, language: string): string {
+    const truncated = description.length > 4000 ? description.slice(0, 4000) : description;
+    return [
+        'Translate this procurement tender description to English. Preserve technical terminology (CPV codes, model numbers, scientific units) verbatim. Output translation only, no commentary.',
+        '',
+        `Original (language: ${language}):`,
+        truncated,
+    ].join('\n');
+}
+
+async function callBedrock(prompt: string): Promise<string> {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), BEDROCK_TIMEOUT_MS);
+    try {
+        const res = await bedrock.send(new InvokeModelCommand({
+            modelId: process.env.BEDROCK_MODEL_ID!,
+            contentType: 'application/json',
+            accept: 'application/json',
+            body: JSON.stringify({
+                anthropic_version: 'bedrock-2023-05-31',
+                max_tokens: 2000,
+                messages: [{ role: 'user', content: prompt }],
+            }),
+        }), { abortSignal: ctrl.signal });
+        const text = await (res.body as any).transformToString('utf-8');
+        const wrap = JSON.parse(text);
+        return ((wrap.content?.[0]?.text as string) ?? '').trim();
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+async function callAnthropic(prompt: string): Promise<string> {
+    const client = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY!,
+        timeout: ANTHROPIC_TIMEOUT_MS,
+    });
+    const res = await client.messages.create({
+        model: process.env.CLAUDE_MODEL!,
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+    });
+    const block = res.content[0] as any;
+    return ((block?.text as string) ?? '').trim();
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig, runPrefilterPreview };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig, runPrefilterPreview, translateDescription };

@@ -387,3 +387,74 @@ describe('runPrefilterPreview', () => {
         expect(result.matchedCategories).toEqual(['PECVD']);
     });
 });
+
+describe('translateTenderDescription', () => {
+    function bedrockBody(text: string) {
+        const wrap = JSON.stringify({ content: [{ type: 'text', text }] });
+        return { body: { transformToString: vi.fn().mockResolvedValue(wrap) } };
+    }
+
+    it('returns cached descriptionEn without calling Bedrock', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', descriptionEn: 'already translated' } });
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn();
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'translateTenderDescription' },
+            arguments: { tenderId: 't1' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result).toBe('already translated');
+        expect(bedrockSend).not.toHaveBeenCalled();
+    });
+
+    it('translates via Bedrock when no cached value and updates item', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', description: 'Descrizione tecnica', language: 'it' } });
+        sendMock.mockResolvedValueOnce({});  // UpdateCommand to cache
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockResolvedValueOnce(bedrockBody('Technical description'));
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'translateTenderDescription' },
+            arguments: { tenderId: 't1' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result).toBe('Technical description');
+        expect(bedrockSend).toHaveBeenCalled();
+    });
+
+    it('force=true re-translates even when cached', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', description: 'src', language: 'it', descriptionEn: 'stale' } });
+        sendMock.mockResolvedValueOnce({});
+
+        const bedrockMock = await import('@aws-sdk/client-bedrock-runtime');
+        const bedrockSend = vi.fn().mockResolvedValueOnce(bedrockBody('fresh'));
+        (bedrockMock.BedrockRuntimeClient as any).mockImplementation(() => ({ send: bedrockSend }));
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'translateTenderDescription' },
+            arguments: { tenderId: 't1', force: true },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result).toBe('fresh');
+    });
+});
