@@ -95,6 +95,18 @@ async function listTenders(args: ListTendersArgs) {
     const sortBy = args.sortBy ?? 'score';
     const sortDir = args.sortDir ?? 'desc';
 
+    // If filters are restrictive, fetch more candidates per status so the
+    // post-filter page isn't near-empty. Heuristic: any of country / category /
+    // minScore / search / postedDate range bump us to 10x.
+    const hasRestrictiveFilter =
+        (args.countries?.length ?? 0) > 0 ||
+        (args.categories?.length ?? 0) > 0 ||
+        typeof args.minScore === 'number' ||
+        !!args.search ||
+        !!args.postedDateFrom ||
+        !!args.postedDateTo;
+    const fetchMultiplier = hasRestrictiveFilter ? 10 : 2;
+
     // Fan-out one Query per requested status on GSI1
     const queries = await Promise.all(
         statuses.map((status) =>
@@ -103,7 +115,7 @@ async function listTenders(args: ListTendersArgs) {
                 IndexName: 'GSI1',
                 KeyConditionExpression: 'GSI1PK = :pk',
                 ExpressionAttributeValues: { ':pk': `TENDER_STATUS#${status}` },
-                Limit: limit * 2,
+                Limit: limit * fetchMultiplier,
             })),
         ),
     );
@@ -309,21 +321,23 @@ async function bulkUpdateTenderStatus(
     if (args.tenderIds.length > 50) {
         throw new Error('bulk update limit exceeded: maximum 50 tenders per request');
     }
-    // Process sequentially to respect per-tender optimistic-lock semantics and
-    // keep DDB write pressure predictable. Chunks of 10 group log writes while
-    // ensuring each tender's Get→Update→Put triple completes before the next.
+    // Concurrency limit of 10 — chunk into batches and Promise.allSettled per chunk.
+    const CHUNK = 10;
     let success = 0;
-    for (const tid of args.tenderIds) {
-        try {
-            await updateTenderStatus({ tenderId: tid, toStatus: args.toStatus }, identity);
-            success += 1;
-        } catch (err) {
-            console.warn(JSON.stringify({
-                event: 'tender.bulk.update-failed',
-                error: String(err),
-                tenderId: tid,
-                changedBy: identity,
-            }));
+    for (let i = 0; i < args.tenderIds.length; i += CHUNK) {
+        const chunk = args.tenderIds.slice(i, i + CHUNK);
+        const results = await Promise.allSettled(
+            chunk.map((tid) => updateTenderStatus({ tenderId: tid, toStatus: args.toStatus }, identity)),
+        );
+        success += results.filter((r) => r.status === 'fulfilled').length;
+        for (const r of results) {
+            if (r.status === 'rejected') {
+                console.warn(JSON.stringify({
+                    event: 'tender.bulk.update-failed',
+                    error: String(r.reason),
+                    changedBy: identity,
+                }));
+            }
         }
     }
     return success;
@@ -376,7 +390,20 @@ async function runPrefilterPreview(args: {
     };
     let configs: TenderKeywordConfigItem[];
     if (args.configOverride) {
-        configs = [args.configOverride as TenderKeywordConfigItem];
+        // Defensively fill missing array/boolean fields so malformed inputs don't
+        // crash matchesAnyConfig. Spec only requires the UI to send full configs,
+        // but the mutation is exposed in the schema and other callers may not.
+        const override = args.configOverride as Partial<TenderKeywordConfigItem>;
+        configs = [{
+            productCategory: override.productCategory ?? 'PREVIEW',
+            productSlugs: override.productSlugs ?? [],
+            keywords: override.keywords ?? [],
+            synonyms: override.synonyms ?? [],
+            blacklist: override.blacklist ?? [],
+            naicsCodes: override.naicsCodes ?? [],
+            cpvCodes: override.cpvCodes ?? [],
+            isActive: override.isActive ?? true,
+        } as TenderKeywordConfigItem];
     } else {
         const r = await ddb.send(new QueryCommand({
             TableName: TABLE(),

@@ -260,14 +260,21 @@ describe('updateTenderStatus', () => {
 describe('bulkUpdateTenderStatus', () => {
     it('updates each tender and returns success count', async () => {
         const docMock = await import('@aws-sdk/lib-dynamodb');
-        const sendMock = vi.fn();
+        const sendMock = vi.fn().mockImplementation((cmd: any) => {
+            const n = cmd.constructor.name;
+            if (n === 'GetCommand') {
+                const id = cmd.input.Key.PK.replace('TENDER#', '');
+                return Promise.resolve({ Item: { tenderId: id, status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
+            }
+            if (n === 'UpdateCommand') {
+                return Promise.resolve({ Attributes: {} });
+            }
+            if (n === 'PutCommand') {
+                return Promise.resolve({});
+            }
+            return Promise.resolve({});
+        });
         (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
-        // For each tender: Get + Update + Put = 3 calls
-        for (const tid of ['t1', 't2']) {
-            sendMock.mockResolvedValueOnce({ Item: { tenderId: tid, status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
-            sendMock.mockResolvedValueOnce({ Attributes: {} });
-            sendMock.mockResolvedValueOnce({});
-        }
 
         const { handler } = await import('./handler');
         const result = await handler({
@@ -366,6 +373,26 @@ describe('runPrefilterPreview', () => {
 
         expect(result.passed).toBe(true);
         expect(result.matchedCategories).toEqual(['ALD']);
+    });
+
+    it('handles configOverride with missing array fields without crashing', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'runPrefilterPreview' },
+            arguments: {
+                title: 'PECVD system',
+                description: '',
+                configOverride: { productCategory: 'PECVD', keywords: ['PECVD'] },  // missing arrays
+            },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.passed).toBe(true);
+        expect(result.matchedCategories).toEqual(['PECVD']);
     });
 
     it('loads saved active configs when configOverride is omitted', async () => {
