@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/useTheme';
 import '../../styles/admin-tailwind.css';
 import '../../styles/Admin.css';
@@ -163,6 +164,7 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
     </div>
   );
 }
