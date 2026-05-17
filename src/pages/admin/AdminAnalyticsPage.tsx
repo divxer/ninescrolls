@@ -3743,19 +3743,26 @@ export function AdminAnalyticsPage() {
                     onClick={() => selectOrg(org)}
                   >
                     <td className="pl-5 pr-2 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                          {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="font-semibold truncate max-w-[150px] block" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</span>
-                          {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() && (
-                            <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
-                              <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {(() => {
+                        const upgradedName = org.rfqInstitution || org.contactOrganization;
+                        const displayMain = upgradedName || org.displayName || org.orgName;
+                        const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
+                        return (
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                              {displayMain.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-semibold truncate max-w-[150px] block" title={displayMain}>{displayMain}</span>
+                              {showSubLine && (
+                                <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
+                                  <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-4 text-on-surface-variant text-xs">{org.organizationType || '--'}</td>
                     <td className="px-3 py-4 text-center">{org.totalEvents.toLocaleString()}</td>
@@ -3791,15 +3798,19 @@ export function AdminAnalyticsPage() {
           </div>
           {/* Mobile org cards */}
           <div className="md:hidden grid gap-3 p-4">
-            {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => (
+            {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => {
+              const upgradedName = org.rfqInstitution || org.contactOrganization;
+              const displayMain = upgradedName || org.displayName || org.orgName;
+              const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
+              return (
               <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
-                    {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                    {displayMain.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-on-surface truncate" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</div>
-                    {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() ? (
+                    <div className="font-semibold text-sm text-on-surface truncate" title={displayMain}>{displayMain}</div>
+                    {showSubLine ? (
                       <div className="text-xs text-on-surface-variant truncate"><span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}</div>
                     ) : (
                       <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
@@ -3815,7 +3826,8 @@ export function AdminAnalyticsPage() {
                   <div><div className="font-headline text-sm font-bold">{formatDuration(org.totalTimeOnSite)}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Time</div></div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
           {/* Show all / collapse toggle */}
           {sortedOrgs.length > 15 && (
