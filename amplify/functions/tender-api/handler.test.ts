@@ -195,3 +195,64 @@ describe('listTenderKeywordConfigs', () => {
         expect(cmd.input.IndexName).toBeUndefined();
     });
 });
+
+describe('updateTenderStatus', () => {
+    it('updates status + writes log entry on success', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        // GetCommand current META
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
+        // UpdateCommand
+        sendMock.mockResolvedValueOnce({ Attributes: { tenderId: 't1', status: 'reviewing', updatedAt: '2026-05-11T00:00:00Z' } });
+        // PutCommand log
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'updateTenderStatus' },
+            arguments: { tenderId: 't1', toStatus: 'reviewing', note: 'looks promising' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.status).toBe('reviewing');
+        // Verify log PutCommand was made
+        const putCmds = sendMock.mock.calls.filter((c: any) => c[0].constructor.name === 'PutCommand');
+        expect(putCmds.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('throws Conflict on ConditionalCheckFailedException', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
+        const ccfe = new Error('CCFE');
+        (ccfe as any).name = 'ConditionalCheckFailedException';
+        sendMock.mockRejectedValueOnce(ccfe);
+
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'updateTenderStatus' },
+            arguments: { tenderId: 't1', toStatus: 'reviewing' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/Conflict|modified/);
+    });
+
+    it('updates assignedTo when provided alongside status', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', status: 'new', updatedAt: '2026-05-10T00:00:00Z' } });
+        sendMock.mockResolvedValueOnce({ Attributes: { tenderId: 't1', status: 'pursuing', assignedTo: 'alice' } });
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'updateTenderStatus' },
+            arguments: { tenderId: 't1', toStatus: 'pursuing', assignedTo: 'alice' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.assignedTo).toBe('alice');
+    });
+});

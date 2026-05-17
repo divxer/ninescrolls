@@ -3,10 +3,14 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
     DynamoDBDocumentClient,
     GetCommand,
+    PutCommand,
     QueryCommand,
+    UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { ulid } from 'ulid';
 import {
-    ACTIVE_TENDER_STATUSES, type TenderStatus,
+    tenderStatusLogItemKey,
+    TENDER_STATUSES, ACTIVE_TENDER_STATUSES, type TenderStatus,
 } from '../../lib/tender-watch/keys';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -38,7 +42,7 @@ function requireAdmin(event: AppSyncResolverEvent<any>): void {
 async function dispatchFieldName(
     fieldName: string,
     event: AppSyncResolverEvent<any>,
-    _identity: string,
+    identity: string,
 ): Promise<unknown> {
     switch (fieldName) {
         case 'listTenders':
@@ -47,6 +51,8 @@ async function dispatchFieldName(
             return getTender(event.arguments);
         case 'listTenderKeywordConfigs':
             return listKeywordConfigs(event.arguments);
+        case 'updateTenderStatus':
+            return updateTenderStatus(event.arguments, identity);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -196,5 +202,89 @@ async function listKeywordConfigs(args: { includeInactive?: boolean }) {
     return r.Items ?? [];
 }
 
+async function updateTenderStatus(
+    args: { tenderId: string; toStatus: string; note?: string; assignedTo?: string },
+    identity: string,
+) {
+    if (!(TENDER_STATUSES as readonly string[]).includes(args.toStatus)) {
+        throw new Error(`Invalid status: ${args.toStatus}`);
+    }
+    // 1. GetItem current to know fromStatus + updatedAt for optimistic lock
+    const existing = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: { PK: `TENDER#${args.tenderId}`, SK: 'METADATA' },
+    }));
+    if (!existing.Item) throw new Error(`Tender not found: ${args.tenderId}`);
+    const fromStatus = (existing.Item.status as string) ?? 'new';
+    const prevUpdatedAt = existing.Item.updatedAt as string;
+    const nowIso = new Date().toISOString();
+
+    // 2. UpdateItem with optimistic lock
+    const setExprs: string[] = [
+        '#st = :toStatus',
+        'lastStatusChangedAt = :now',
+        'updatedAt = :now',
+        'GSI1PK = :gsi1pk',
+    ];
+    const exprValues: Record<string, unknown> = {
+        ':toStatus': args.toStatus,
+        ':now': nowIso,
+        ':gsi1pk': `TENDER_STATUS#${args.toStatus}`,
+        ':prevUpdatedAt': prevUpdatedAt,
+    };
+    const exprNames: Record<string, string> = { '#st': 'status' };
+    if (args.note !== undefined) {
+        setExprs.push('statusNote = :note');
+        exprValues[':note'] = args.note;
+    }
+    if (args.assignedTo !== undefined) {
+        setExprs.push('assignedTo = :assigned');
+        exprValues[':assigned'] = args.assignedTo;
+    }
+
+    let updated;
+    try {
+        updated = await ddb.send(new UpdateCommand({
+            TableName: TABLE(),
+            Key: { PK: `TENDER#${args.tenderId}`, SK: 'METADATA' },
+            UpdateExpression: `SET ${setExprs.join(', ')}`,
+            ConditionExpression: 'updatedAt = :prevUpdatedAt',
+            ExpressionAttributeNames: exprNames,
+            ExpressionAttributeValues: exprValues,
+            ReturnValues: 'ALL_NEW',
+        }));
+    } catch (err: any) {
+        if (err?.name === 'ConditionalCheckFailedException') {
+            throw new Error('Conflict: tender was modified by another user');
+        }
+        throw err;
+    }
+
+    // 3. PutItem log entry
+    await ddb.send(new PutCommand({
+        TableName: TABLE(),
+        Item: {
+            ...tenderStatusLogItemKey(args.tenderId, nowIso, ulid()),
+            entityType: 'TENDER_STATUS_LOG',
+            tenderId: args.tenderId,
+            fromStatus,
+            toStatus: args.toStatus,
+            changedBy: identity,
+            changedAt: nowIso,
+            ...(args.note !== undefined ? { note: args.note } : {}),
+        },
+    }));
+
+    console.log(JSON.stringify({
+        event: 'tender.status.updated',
+        tenderId: args.tenderId,
+        fromStatus,
+        toStatus: args.toStatus,
+        changedBy: identity,
+    }));
+
+    return updated.Attributes;
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus };
