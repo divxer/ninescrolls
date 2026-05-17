@@ -18,6 +18,7 @@ import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
 import { submitQuestion } from './functions/submit-question/resource';
 import { organizationApi } from './functions/organization-api/resource';
+import { tenderApi } from './functions/tender-api/resource';
 // Tender Watch — Phase 1
 import { fetchSam } from './functions/fetch-sam/resource';
 import { fetchTed } from './functions/fetch-ted/resource';
@@ -82,6 +83,7 @@ const backend = defineBackend({
     submitLead,
     submitQuestion,
     organizationApi,
+    tenderApi,
 
     // Tender Watch — Phase 1
     fetchSam,
@@ -957,3 +959,23 @@ if (!isSandbox) {
         treatMissingData: TreatMissingData.NOT_BREACHING,
     }).addAlarmAction(alarmAction);
 }
+
+// =============================================================================
+// Tender Admin (Phase 2)
+// See docs/superpowers/specs/2026-05-15-tender-watch-phase-2-design.md
+// =============================================================================
+
+const _tenderApiStack = Stack.of(backend.tenderApi.resources.lambda);
+
+intelligenceTable.grantReadWriteData(backend.tenderApi.resources.lambda);
+backend.tenderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Bedrock invoke (mirrors match-with-llm / organization-api).
+backend.tenderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
+    ],
+}));
