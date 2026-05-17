@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
+import { matchLinkedInquiries } from './linkedInquiriesMatch';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
@@ -1293,7 +1294,7 @@ function maskIP(ip: string): string {
   return ip;
 }
 
-function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
+function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[] }) {
   const [showFullIP, setShowFullIP] = useState(false);
   const [override, setOverride] = useState<OrgOverride | null>(null);
   const [overrideLoading, setOverrideLoading] = useState(true);
@@ -1405,6 +1406,27 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
     return () => { cancelled = true; };
   }, [rfqSubmitted, org.events]);
+
+  // ── Linked Inquiries lookup ────────────────────────────────────────────
+  // Mirrors linkedRfqs but joins against the leads already fetched at the
+  // top level (no duplicate listLeads call). No leadId is stored in
+  // contact_form event properties (we did not change form/segment/storage),
+  // so this is purely visitorId + timestamp join via matchLinkedInquiries.
+  const [linkedInquiries, setLinkedInquiries] = useState<LeadSubmission[]>([]);
+  const hasContactForm = org.events.some((e) => e.eventType === 'contact_form');
+
+  useEffect(() => {
+    if (!hasContactForm) {
+      setLinkedInquiries([]);
+      return;
+    }
+    const eventsForMatcher = org.events.map((e) => ({
+      visitorId: (e as Record<string, unknown>).visitorId as string | null | undefined,
+      eventType: e.eventType,
+      timestamp: e.timestamp,
+    }));
+    setLinkedInquiries(matchLinkedInquiries(eventsForMatcher, allContactLeads));
+  }, [hasContactForm, org.events, allContactLeads]);
 
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
@@ -3351,7 +3373,7 @@ export function AdminAnalyticsPage() {
   if (selectedOrg) {
     return (
       <div className="space-y-6">
-        <OrgDetail org={selectedOrg} onBack={() => history.back()} />
+        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} />
       </div>
     );
   }
