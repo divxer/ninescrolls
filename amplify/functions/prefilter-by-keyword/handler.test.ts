@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { matchesAnyConfig } from './handler';
+import { matchesAnyConfig } from '../../lib/tender-watch/prefilter';
 
 const mockQuery = vi.fn();
 const mockBatchGet = vi.fn();
