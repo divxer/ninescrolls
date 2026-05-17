@@ -3,7 +3,7 @@ import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOv
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
-import type { RfqSubmission } from '../../types/admin';
+import type { RfqSubmission, LeadSubmission } from '../../types/admin';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -2708,6 +2708,21 @@ export function AdminAnalyticsPage() {
       .then(data => {
         if (cancelled) return;
         setAllRfqs((data?.items as RfqSubmission[]) || []);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  // Load all contact leads for organization name backfill + LINKED INQUIRIES card.
+  // Mirrors allRfqs above — single fetch on mount + refreshKey changes, errors are
+  // swallowed (a failed fetch simply means inquiries don't surface; not a hard error).
+  const [allContactLeads, setAllContactLeads] = useState<LeadSubmission[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    orderAdminService.listLeads('contact')
+      .then(data => {
+        if (cancelled) return;
+        setAllContactLeads((data?.items as LeadSubmission[]) || []);
       })
       .catch(() => {});
     return () => { cancelled = true; };
