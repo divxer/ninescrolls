@@ -2388,6 +2388,51 @@ function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; 
             </div>
           )}
 
+          {/* Linked Inquiries Card */}
+          {linkedInquiries.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">contact_mail</span>
+                Linked Inquiries
+              </h3>
+              <div className="space-y-3">
+                {linkedInquiries.map(lead => {
+                  const subject = lead.productName || lead.topic || lead.inquiryType || 'General Inquiry';
+                  return (
+                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                      <div className="text-sm font-bold text-primary mb-1">{subject}</div>
+                      {lead.name && (
+                        <p className="text-xs text-on-surface">
+                          {lead.name}
+                          {lead.email && (
+                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
+                          )}
+                        </p>
+                      )}
+                      {lead.phone && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.phone}</p>
+                      )}
+                      {lead.organization && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
+                      )}
+                      {lead.message && (
+                        <p
+                          className="mt-2 pt-2 border-t border-outline-variant/20 text-xs text-on-surface whitespace-pre-wrap line-clamp-3"
+                          title={lead.message}
+                        >
+                          {lead.message}
+                        </p>
+                      )}
+                      <div className="mt-2 text-[10px] text-on-surface-variant">
+                        {new Date(lead.submittedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
