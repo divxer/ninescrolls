@@ -53,7 +53,7 @@ Union both sets, deduplicate by `leadId`, sort by `submittedAt` descending.
 
 ```
 ┌──────────────────────────────────────┐
-│ Technical Feasibility Check  [contact]│  ← subject + type badge
+│ Technical Feasibility Check           │  ← subject (no badge — see note)
 │ Bernd Schmidt · bernd@telekom.de      │  ← name · mailto email
 │ +49 175 1234567                       │  ← phone (optional)
 │ Deutsche Telekom AG                   │  ← organization (optional)
@@ -63,7 +63,11 @@ Union both sets, deduplicate by `leadId`, sort by `submittedAt` descending.
 └──────────────────────────────────────┘
 ```
 
-**Subject resolution order:** `lead.inquiryType || lead.topic || lead.productName || 'General Inquiry'`.
+**No type badge** on the entry. The card only ever holds `type === 'contact'` leads, so a per-entry "contact" badge would be uninformative noise. (RFQ's badge is informative because it shows pending/converted/declined status; contact leads have no comparable status field.)
+
+**Subject resolution order:** `lead.productName || lead.topic || lead.inquiryType || 'General Inquiry'`.
+
+Rationale: `ContactFormInline` writes the human-readable label (e.g. "Technical Feasibility Check") into `productName`, while `ContactFormModal` writes raw enums (`'budgetary'` / `'general'`) into `inquiryType`. Putting `productName` first yields friendly labels for the inline form; `inquiryType` is the last resort and only shows raw enums if no other field is populated. If the implementing agent finds raw enums still leak through, map them to labels at render time using the same mapping in `ContactFormInline.tsx:166-174`.
 
 **Email:** Rendered as `<a href="mailto:...">` for one-click reply.
 
@@ -84,7 +88,11 @@ Where `mostRecentContactLead` is the most recent (by `submittedAt`) contact lead
 - (a) Reuse the same `listLeads('contact')` Promise (cache at the top-level component scope), or
 - (b) Compute `contactOrganization` lazily inside the org detail effect and lift it up via a separate state map.
 
-**Recommendation:** option (a) — load `listLeads('contact')` once at the top of `AdminAnalyticsPage`, expose as `contactLeadsByVisitorId: Map<string, LeadSubmission>`, and use that map both in the org aggregator (for `contactOrganization`) and in the detail effect (for `linkedInquiries`).
+**Recommendation:** option (a) — load `listLeads('contact')` once at the top of `AdminAnalyticsPage`, expose as `contactLeadsByVisitorId: Map<string, LeadSubmission>` (storing the most recent lead per visitor), and use that map both in the org aggregator (for `contactOrganization`) and in the detail effect (for `linkedInquiries`).
+
+**Render-order consequence:** the org aggregator (a `useMemo`) must list `contactLeadsByVisitorId` in its dependency array. First render runs the aggregator with an empty map → orgs have `contactOrganization === undefined` and rows show the IP name; once `listLeads` resolves, state update triggers a second render that recomputes the aggregator with leads applied. This re-render is one-shot per page load.
+
+**Multi-visitor tie-break:** an org may aggregate events from multiple visitors who each submitted with a different `organization` string ("Telekom AG" vs "DT"). The rule is "most recent contact lead with non-empty `organization`, across all matching visitors" — sort by `submittedAt` descending and take the first. Acceptable inconsistency: the row label will flip if a newer lead with a different org string arrives later.
 
 **Row rendering change** (line 3704-3709):
 
@@ -129,7 +137,7 @@ All changes in `src/pages/admin/AdminAnalyticsPage.tsx`:
 1. **Imports:** Add `LeadSubmission` type to existing admin types import.
 2. **Top-level state:** `useState<Map<string, LeadSubmission>>` for `contactLeadsByVisitorId`. Load via `listLeads('contact')` in a `useEffect` running once on mount, keyed by `lead.visitorId` for O(1) lookup. Also keep the raw `LeadSubmission[]` array for timestamp-fallback matching.
 3. **Org aggregator** (~line 955): for each org, look up the most recent contact lead whose `visitorId` matches any of the org's events; attach `org.contactOrganization`.
-4. **Org type definition:** add optional `contactOrganization?: string` to the org aggregate type.
+4. **Org type definition:** add optional `contactOrganization?: string | null` to `interface OrganizationRecord` ([AdminAnalyticsPage.tsx:30](src/pages/admin/AdminAnalyticsPage.tsx:30)), alongside the existing `rfqInstitution: string | null` field.
 5. **Detail-view effect** (~line 1405, after `linkedRfqs` effect): mirror the `linkedRfqs` hybrid matching but for leads. Set `linkedInquiries` state.
 6. **JSX** (~line 2365, after LINKED RFQS card): render the LINKED INQUIRIES card (conditional on `linkedInquiries.length > 0`).
 7. **List row** (line 3704-3709): apply the `upgradedName / displayMain / showSubLine` helper.
@@ -150,6 +158,8 @@ Estimated diff: ~90 lines added, ~6 lines modified.
 | `listLeads('contact')` returns a large dataset and slows initial load | Currently RFQ list does the same pattern (`listRfqs()` for legacy match) and is acceptable. If volume grows, add server-side filter by visitorId set. |
 | Timestamp fallback creates false positives across orgs | The fallback only fires when an org has a `contact_form` event; the ±60s window is narrow enough that cross-org collisions in the same minute are negligible at current scale. |
 | Lead `organization` field is the customer-typed string and may be misspelled / inconsistent with RFQ institution | Acceptable — RFQ institution wins, and contact organization is only used when RFQ is absent. |
+| `listLeads('contact')` runs on every analytics page load (not lazily on detail-view click like RFQ) | Deliberate — `contactOrganization` is needed at aggregation time for the list view. Cost is one DDB query per admin page open, comparable to the existing `listRfqs()` call. Re-evaluate if leads volume exceeds ~5k. |
+| Contact form messages contain customer PII (project descriptions, names, contact details) and are now surfaced inside the analytics page | Confirmed acceptable — both `/admin/analytics` and `/admin/leads` route through the same `AdminRoute` auth boundary ([src/components/admin/AdminRoute.tsx](src/components/admin/AdminRoute.tsx)), so this does not broaden access. |
 
 ## Testing
 
