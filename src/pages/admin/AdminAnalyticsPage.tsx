@@ -3011,6 +3011,36 @@ export function AdminAnalyticsPage() {
       }
     }
 
+    // Backfill contactOrganization from contact leads: most recent lead with a
+    // non-empty organization, matched by visitorId set per org. Pure client-side
+    // join — the org aggregator does not see leads.
+    if (allContactLeads.length > 0) {
+      for (const org of orgs) {
+        const hasContactForm = org.events.some(e => e.eventType === 'contact_form');
+        if (!hasContactForm) continue;
+
+        const visitorIds = new Set<string>();
+        for (const e of org.events) {
+          const vid = (e as Record<string, unknown>).visitorId as string | undefined;
+          if (vid) visitorIds.add(vid);
+        }
+        if (visitorIds.size === 0) continue;
+
+        // Find most-recent matching lead with a non-empty organization string.
+        let bestLead: LeadSubmission | null = null;
+        for (const lead of allContactLeads) {
+          if (!lead.visitorId || !visitorIds.has(lead.visitorId)) continue;
+          if (!lead.organization || !lead.organization.trim()) continue;
+          if (!bestLead || +new Date(lead.submittedAt) > +new Date(bestLead.submittedAt)) {
+            bestLead = lead;
+          }
+        }
+        if (bestLead?.organization) {
+          org.contactOrganization = bestLead.organization.trim();
+        }
+      }
+    }
+
     if (orgOverrides.length === 0) return orgs;
 
     // Build lookup map for O(1) override matching
@@ -3049,7 +3079,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides, allRfqs, overrideAiByOrg]);
+  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, overrideAiByOrg]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
