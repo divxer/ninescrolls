@@ -337,3 +337,53 @@ describe('upsertTenderKeywordConfig', () => {
         expect(put.input.Item.GSI1PK).toBeUndefined();
     });
 });
+
+describe('runPrefilterPreview', () => {
+    it('uses configOverride when provided', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'runPrefilterPreview' },
+            arguments: {
+                title: 'atomic layer deposition tool',
+                description: '',
+                configOverride: {
+                    productCategory: 'ALD',
+                    productSlugs: ['ald-system'],
+                    keywords: ['atomic layer deposition'],
+                    synonyms: [],
+                    blacklist: [],
+                    naicsCodes: [],
+                    cpvCodes: [],
+                    isActive: true,
+                },
+            },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.passed).toBe(true);
+        expect(result.matchedCategories).toEqual(['ALD']);
+    });
+
+    it('loads saved active configs when configOverride is omitted', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Items: [
+            { productCategory: 'PECVD', isActive: true, keywords: ['PECVD'], synonyms: [], blacklist: [], naicsCodes: [], cpvCodes: [], productSlugs: ['p1'] },
+        ] });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'runPrefilterPreview' },
+            arguments: { title: 'PECVD reactor for university', description: '' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.passed).toBe(true);
+        expect(result.matchedCategories).toEqual(['PECVD']);
+    });
+});

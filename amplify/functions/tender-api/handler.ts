@@ -13,6 +13,8 @@ import {
     tenderStatusLogItemKey,
     TENDER_STATUSES, ACTIVE_TENDER_STATUSES, type TenderStatus,
 } from '../../lib/tender-watch/keys';
+import { matchesAnyConfig } from '../../lib/tender-watch/prefilter';
+import type { TenderKeywordConfigItem } from '../../lib/tender-watch/types';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const TABLE = () => process.env.INTELLIGENCE_TABLE!;
@@ -58,6 +60,8 @@ async function dispatchFieldName(
             return bulkUpdateTenderStatus(event.arguments, identity);
         case 'upsertTenderKeywordConfig':
             return upsertKeywordConfig(event.arguments, identity);
+        case 'runPrefilterPreview':
+            return runPrefilterPreview(event.arguments);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -350,5 +354,38 @@ async function upsertKeywordConfig(
     return item;
 }
 
+async function runPrefilterPreview(args: {
+    title: string;
+    description: string;
+    naicsCodes?: string[];
+    cpvCodes?: string[];
+    configOverride?: any;
+}) {
+    const tender = {
+        title: args.title,
+        description: args.description,
+        naicsCodes: args.naicsCodes ?? [],
+        cpvCodes: args.cpvCodes ?? [],
+    };
+    let configs: TenderKeywordConfigItem[];
+    if (args.configOverride) {
+        configs = [args.configOverride as TenderKeywordConfigItem];
+    } else {
+        const r = await ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            IndexName: 'GSI1',
+            KeyConditionExpression: 'GSI1PK = :pk',
+            ExpressionAttributeValues: { ':pk': 'TENDER_KEYWORD_CONFIG_ACTIVE' },
+        }));
+        configs = (r.Items ?? []) as TenderKeywordConfigItem[];
+    }
+    const result = matchesAnyConfig(tender, configs);
+    return {
+        matchedCategories: result.matchedCategories,
+        matchedKeywords: result.matchedKeywords,
+        passed: result.matchedCategories.length > 0,
+    };
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig, runPrefilterPreview };
