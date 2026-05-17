@@ -937,6 +937,64 @@ const schema = a.schema({
     .handler(a.handler.function(organizationApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  updateTenderStatus: a
+    .mutation()
+    .arguments({
+      tenderId: a.id().required(),
+      toStatus: a.string().required(),
+      note: a.string(),
+      assignedTo: a.string(),
+    })
+    .returns(a.ref('Tender').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  bulkUpdateTenderStatus: a
+    .mutation()
+    .arguments({
+      tenderIds: a.id().array().required(),
+      toStatus: a.string().required(),
+    })
+    .returns(a.integer().required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  upsertTenderKeywordConfig: a
+    .mutation()
+    .arguments({
+      productCategory: a.string().required(),
+      productSlugs: a.string().array().required(),
+      keywords: a.string().array().required(),
+      synonyms: a.string().array().required(),
+      blacklist: a.string().array().required(),
+      naicsCodes: a.string().array().required(),
+      cpvCodes: a.string().array().required(),
+      isActive: a.boolean().required(),
+    })
+    .returns(a.ref('TenderKeywordConfig').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  runPrefilterPreview: a
+    .mutation()
+    .arguments({
+      title: a.string().required(),
+      description: a.string().required(),
+      naicsCodes: a.string().array(),
+      cpvCodes: a.string().array(),
+      configOverride: a.json(),
+    })
+    .returns(a.ref('PrefilterPreviewResult').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  translateTenderDescription: a
+    .mutation()
+    .arguments({ tenderId: a.id().required(), force: a.boolean() })
+    .returns(a.string().required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   // =========================================================================
   // Subscriptions — §12.4
   // =========================================================================
