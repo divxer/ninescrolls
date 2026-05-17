@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import type { ListTendersArgs } from '../../services/tenderAdminService';
 
 interface Props {
@@ -8,12 +9,30 @@ interface Props {
 const STATUS_OPTIONS = ['new', 'reviewing', 'pursuing', 'submitted', 'won', 'lost', 'not_relevant'];
 
 export function TenderFilterBar({ filters, onChange }: Props) {
+    const [searchDraft, setSearchDraft] = useState(filters.search ?? '');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Sync from props if filters.search changes externally (e.g. URL navigation)
+    useEffect(() => {
+        setSearchDraft(filters.search ?? '');
+    }, [filters.search]);
+
+    function handleSearchChange(value: string) {
+        setSearchDraft(value);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            onChange({ ...filters, search: value || undefined });
+        }, 300);
+    }
+
+    useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
     return (
         <div className="flex flex-wrap gap-2 items-center mb-3 p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/30">
             <input
                 type="text"
-                value={filters.search ?? ''}
-                onChange={(e) => onChange({ ...filters, search: e.target.value || undefined })}
+                value={searchDraft}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search title / agency..."
                 className="flex-1 min-w-[200px] px-3 py-1.5 rounded-md border border-outline-variant text-sm bg-surface text-on-surface"
             />

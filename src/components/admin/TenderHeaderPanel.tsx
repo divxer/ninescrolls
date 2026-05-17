@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as svc from '../../services/tenderAdminService';
 import { notify } from '../../lib/notify';
 import { TenderStatusChangeDialog } from './TenderStatusChangeDialog';
@@ -13,6 +13,11 @@ interface Props {
 
 export function TenderHeaderPanel({ tender, onUpdated }: Props) {
     const [pending, setPending] = useState<string | null>(null);
+    const [assignedToDraft, setAssignedToDraft] = useState(tender.assignedTo ?? '');
+    // Sync local state when the underlying tender changes (different tender loaded, or refresh after status change).
+    useEffect(() => {
+        setAssignedToDraft(tender.assignedTo ?? '');
+    }, [tender.tenderId, tender.assignedTo]);
 
     async function applyStatus(toStatus: string, note?: string, assignedTo?: string) {
         try {
@@ -65,10 +70,11 @@ export function TenderHeaderPanel({ tender, onUpdated }: Props) {
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Assigned to</label>
                 <input
                     type="text"
-                    defaultValue={tender.assignedTo ?? ''}
-                    onBlur={(e) => {
-                        if (e.target.value !== (tender.assignedTo ?? '')) {
-                            void applyStatus(tender.status ?? 'new', undefined, e.target.value || undefined);
+                    value={assignedToDraft}
+                    onChange={(e) => setAssignedToDraft(e.target.value)}
+                    onBlur={() => {
+                        if (assignedToDraft !== (tender.assignedTo ?? '')) {
+                            void applyStatus(tender.status ?? 'new', undefined, assignedToDraft || undefined);
                         }
                     }}
                     placeholder="username"

@@ -83,20 +83,17 @@ export async function translateTenderDescription(tenderId: string, force = false
 }
 
 /**
- * Loops nextToken to fetch all tenders matching the filter, caps at 500 rows.
- * Returns a CSV Blob.
+ * Exports current filter result as a CSV Blob.
+ *
+ * Phase 2 limitation: server-side pagination is not yet implemented
+ * (listTenders always returns nextToken: null). This function therefore
+ * fetches a single page with limit=500. When pagination lands in Phase D,
+ * this should be updated to loop nextToken with a higher MAX_ROWS cap.
  */
 export async function exportTendersAsCsv(filters: ListTendersArgs): Promise<Blob> {
     const MAX_ROWS = 500;
-    const rows: any[] = [];
-    let nextToken: string | undefined = undefined;
-    while (rows.length < MAX_ROWS) {
-        const page: any = await listTenders({ ...filters, limit: 100, nextToken });
-        rows.push(...((page?.items ?? []) as any[]));
-        nextToken = page?.nextToken ?? undefined;
-        if (!nextToken) break;
-    }
-    const truncated = rows.slice(0, MAX_ROWS);
+    const page: any = await listTenders({ ...filters, limit: MAX_ROWS });
+    const rows = ((page?.items ?? []) as any[]).slice(0, MAX_ROWS);
     const header = ['tenderId', 'source', 'title', 'agency', 'country', 'postedDate', 'deadline', 'overallScore', 'status', 'sourceUrl'];
     const escape = (v: any) => {
         const s = v == null ? '' : String(v);
@@ -104,7 +101,7 @@ export async function exportTendersAsCsv(filters: ListTendersArgs): Promise<Blob
     };
     const csv = [
         header.join(','),
-        ...truncated.map((r) => header.map((h) => escape(r[h])).join(',')),
+        ...rows.map((r) => header.map((h) => escape(r[h])).join(',')),
     ].join('\n');
     return new Blob([csv], { type: 'text/csv;charset=utf-8' });
 }
