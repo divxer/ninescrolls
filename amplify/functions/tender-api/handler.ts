@@ -2,6 +2,7 @@ import type { AppSyncResolverEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
     DynamoDBDocumentClient,
+    GetCommand,
     QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import {
@@ -42,6 +43,8 @@ async function dispatchFieldName(
     switch (fieldName) {
         case 'listTenders':
             return listTenders(event.arguments);
+        case 'getTender':
+            return getTender(event.arguments);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -146,5 +149,32 @@ async function listTenders(args: ListTendersArgs) {
     };
 }
 
+async function getTender(args: { tenderId: string }) {
+    const [metaRes, matchesRes, logRes] = await Promise.all([
+        ddb.send(new GetCommand({
+            TableName: TABLE(),
+            Key: { PK: `TENDER#${args.tenderId}`, SK: 'METADATA' },
+        })),
+        ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :m)',
+            ExpressionAttributeValues: { ':pk': `TENDER#${args.tenderId}`, ':m': 'MATCH#' },
+        })),
+        ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :l)',
+            ExpressionAttributeValues: { ':pk': `TENDER#${args.tenderId}`, ':l': 'LOG#' },
+            ScanIndexForward: false,
+            Limit: 100,
+        })),
+    ]);
+    if (!metaRes.Item) throw new Error(`Tender not found: ${args.tenderId}`);
+    return {
+        tender: metaRes.Item,
+        matches: (matchesRes.Items ?? []).sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0)),
+        log: logRes.Items ?? [],
+    };
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender };

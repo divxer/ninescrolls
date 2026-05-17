@@ -107,3 +107,47 @@ describe('listTenders', () => {
         expect((result as any).items.map((i: any) => i.tenderId)).toEqual(['t1']);
     });
 });
+
+describe('getTender', () => {
+    it('returns bundle with tender + matches + log', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        // GetCommand META
+        sendMock.mockResolvedValueOnce({ Item: { tenderId: 't1', title: 'X', agency: 'A', source: 'ted', sourceUrl: 'http://x' } });
+        // Query matches
+        sendMock.mockResolvedValueOnce({ Items: [
+            { tenderId: 't1', productSlug: 'ald-system', score: 85, reasoning: 'good fit' },
+        ] });
+        // Query log
+        sendMock.mockResolvedValueOnce({ Items: [
+            { tenderId: 't1', toStatus: 'new', changedBy: 'cron', changedAt: '2026-05-10T00:00:00Z' },
+        ] });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'getTender' },
+            arguments: { tenderId: 't1' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.tender.tenderId).toBe('t1');
+        expect(result.matches).toHaveLength(1);
+        expect(result.log).toHaveLength(1);
+    });
+
+    it('throws 404 when tender META missing', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Item: undefined });
+
+        const { handler } = await import('./handler');
+        await expect(handler({
+            info: { fieldName: 'getTender' },
+            arguments: { tenderId: 'ghost' },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any)).rejects.toThrow(/not found/);
+    });
+});
