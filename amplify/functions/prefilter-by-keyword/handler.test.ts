@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { matchesAnyConfig } from './handler';
 
 const mockQuery = vi.fn();
 const mockBatchGet = vi.fn();
@@ -26,71 +25,6 @@ vi.stubEnv('INTELLIGENCE_TABLE', 'NineScrollsIntelligence');
 beforeEach(() => {
     mockQuery.mockReset();
     mockBatchGet.mockReset();
-});
-
-describe('matchesAnyConfig (pure logic)', () => {
-    const pecvd = {
-        productCategory: 'PECVD',
-        productSlugs: ['pluto-f'],
-        keywords: ['PECVD', 'plasma-enhanced chemical vapor deposition'],
-        synonyms: ['plasma enhanced cvd'],
-        blacklist: ['advertisement'],
-        naicsCodes: ['334516', '334519'],
-        cpvCodes: ['38540000'],
-        isActive: true,
-    };
-
-    it('passes a tender that matches keyword and NAICS', () => {
-        const r = matchesAnyConfig(
-            { title: 'PECVD System for Cleanroom', description: '', naicsCodes: ['334516'], cpvCodes: [] },
-            [pecvd],
-        );
-        expect(r.matchedCategories).toContain('PECVD');
-        expect(r.matchedKeywords).toContain('PECVD');
-    });
-
-    it('rejects a tender that matches keyword but is on the blacklist', () => {
-        const r = matchesAnyConfig(
-            { title: 'PECVD advertisement campaign', description: '', naicsCodes: ['334516'], cpvCodes: [] },
-            [pecvd],
-        );
-        expect(r.matchedCategories).toEqual([]);
-    });
-
-    it('rejects a tender with no code match and no keyword match', () => {
-        const r = matchesAnyConfig(
-            { title: 'Pool cleaning services', description: '', naicsCodes: ['561720'], cpvCodes: [] },
-            [pecvd],
-        );
-        expect(r.matchedCategories).toEqual([]);
-    });
-
-    it('passes when NAICS is empty in config (no code restriction)', () => {
-        const noCodes = { ...pecvd, naicsCodes: [], cpvCodes: [] };
-        const r = matchesAnyConfig(
-            { title: 'plasma enhanced cvd machine', description: '', naicsCodes: [], cpvCodes: [] },
-            [noCodes],
-        );
-        expect(r.matchedCategories).toContain('PECVD');
-        expect(r.matchedKeywords).toContain('plasma enhanced cvd');
-    });
-
-    it('matches synonyms case-insensitively', () => {
-        const r = matchesAnyConfig(
-            { title: 'plasma enhanced CVD tool', description: '', naicsCodes: ['334516'], cpvCodes: [] },
-            [pecvd],
-        );
-        expect(r.matchedKeywords).toContain('plasma enhanced cvd');
-    });
-
-    it('matches by CPV code when keyword is absent but description mentions related work', () => {
-        const r = matchesAnyConfig(
-            { title: 'Equipment supply', description: 'Various', naicsCodes: [], cpvCodes: ['38540000'] },
-            [pecvd],
-        );
-        // CPV alone is not enough — keyword/synonym must also hit. Otherwise too noisy.
-        expect(r.matchedCategories).toEqual([]);
-    });
 });
 
 describe('prefilter-by-keyword handler', () => {

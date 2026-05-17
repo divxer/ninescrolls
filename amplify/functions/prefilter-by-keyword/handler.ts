@@ -2,6 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { tenderItemKey } from '../../lib/tender-watch/keys';
 import type { TenderKeywordConfigItem } from '../../lib/tender-watch/types';
+import { matchesAnyConfig, type MatchableTender } from '../../lib/tender-watch/prefilter';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const TABLE = () => process.env.INTELLIGENCE_TABLE!;
@@ -15,45 +16,6 @@ export interface PrefilterCandidate {
 export interface PrefilterResult {
     candidates: PrefilterCandidate[];
     candidatesCount: number;  // duplicate of candidates.length so the Step Functions Choice state can read a primitive
-}
-
-interface MatchableTender {
-    title: string;
-    description: string;
-    naicsCodes: string[];
-    cpvCodes: string[];
-}
-
-/** Exported for reuse by Phase 2 admin `runPrefilterPreview` mutation. */
-export function matchesAnyConfig(
-    t: MatchableTender,
-    configs: TenderKeywordConfigItem[],
-): { matchedCategories: string[]; matchedKeywords: string[] } {
-    const haystack = `${t.title}\n${t.description}`.toLowerCase();
-    const matchedCategories: string[] = [];
-    const matchedKeywords = new Set<string>();
-
-    for (const c of configs) {
-        if (!c.isActive) continue;
-        // Blacklist: any blacklist term in haystack -> reject this category
-        if (c.blacklist.some((b) => haystack.includes(b.toLowerCase()))) continue;
-        // Keyword/synonym match
-        const terms = [...c.keywords, ...c.synonyms];
-        const hits = terms.filter((term) => haystack.includes(term.toLowerCase()));
-        if (hits.length === 0) continue;
-        // Optional code whitelist: if both code arrays in the config are non-empty AND the tender
-        // has no overlap with either, reject. (Empty config arrays = no code restriction.)
-        const hasNaics = c.naicsCodes.length > 0;
-        const hasCpv = c.cpvCodes.length > 0;
-        if (hasNaics || hasCpv) {
-            const naicsHit = t.naicsCodes.some((n) => c.naicsCodes.includes(n));
-            const cpvHit = t.cpvCodes.some((c2) => c.cpvCodes.includes(c2));
-            if (!naicsHit && !cpvHit) continue;
-        }
-        matchedCategories.push(c.productCategory);
-        hits.forEach((h) => matchedKeywords.add(h));
-    }
-    return { matchedCategories, matchedKeywords: [...matchedKeywords] };
 }
 
 async function loadActiveConfigs(): Promise<TenderKeywordConfigItem[]> {

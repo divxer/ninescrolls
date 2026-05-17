@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { orderApi } from '../functions/order-api/resource';
 import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
+import { tenderApi } from '../functions/tender-api/resource';
 
 // =============================================================================
 // Schema: Existing models + Order Tracker / RFQ GraphQL API
@@ -461,6 +462,82 @@ const schema = a.schema({
     recentTenders: a.json(), // empty array [] in Phase C; populated in Phase D
   }),
 
+  Tender: a.customType({
+    tenderId: a.id().required(),
+    source: a.string().required(),
+    sourceUrl: a.string().required(),
+    title: a.string().required(),
+    agency: a.string().required(),
+    country: a.string(),
+    language: a.string(),
+    description: a.string(),
+    descriptionEn: a.string(),
+    estimatedValueUSD: a.integer(),
+    estimatedValueOriginal: a.string(),
+    postedDate: a.string(),
+    deadline: a.string(),
+    naicsCodes: a.string().array(),
+    cpvCodes: a.string().array(),
+    overallScore: a.integer(),
+    isHighPriority: a.boolean(),
+    isExpired: a.boolean(),
+    status: a.string(),
+    statusNote: a.string(),
+    assignedTo: a.string(),
+    lastStatusChangedAt: a.datetime(),
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
+  }),
+
+  TenderMatch: a.customType({
+    tenderId: a.id().required(),
+    productSlug: a.string().required(),
+    score: a.integer().required(),
+    reasoning: a.string(),
+    matchedKeywords: a.string().array(),
+    createdAt: a.datetime(),
+  }),
+
+  TenderStatusLog: a.customType({
+    tenderId: a.id().required(),
+    fromStatus: a.string(),
+    toStatus: a.string().required(),
+    changedBy: a.string().required(),
+    changedAt: a.datetime().required(),
+    note: a.string(),
+  }),
+
+  TenderKeywordConfig: a.customType({
+    productCategory: a.string().required(),
+    productSlugs: a.string().array().required(),
+    keywords: a.string().array().required(),
+    synonyms: a.string().array().required(),
+    blacklist: a.string().array().required(),
+    naicsCodes: a.string().array().required(),
+    cpvCodes: a.string().array().required(),
+    isActive: a.boolean().required(),
+    updatedBy: a.string(),
+    updatedAt: a.datetime(),
+  }),
+
+  TenderConnection: a.customType({
+    items: a.ref('Tender').array().required(),
+    nextToken: a.string(),
+    totalActiveUnfiltered: a.integer(),
+  }),
+
+  TenderDetailBundle: a.customType({
+    tender: a.ref('Tender').required(),
+    matches: a.ref('TenderMatch').array().required(),
+    log: a.ref('TenderStatusLog').array().required(),
+  }),
+
+  PrefilterPreviewResult: a.customType({
+    matchedCategories: a.string().array().required(),
+    matchedKeywords: a.string().array().required(),
+    passed: a.boolean().required(),
+  }),
+
   // =========================================================================
   // Queries — §12.4
   // =========================================================================
@@ -588,6 +665,40 @@ const schema = a.schema({
     .arguments({ orgId: a.id().required() })
     .returns(a.ref('OrganizationDetailBundle'))
     .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listTenders: a
+    .query()
+    .arguments({
+      statuses: a.string().array(),
+      includeExpired: a.boolean(),
+      countries: a.string().array(),
+      categories: a.string().array(),
+      minScore: a.integer(),
+      postedDateFrom: a.string(),
+      postedDateTo: a.string(),
+      search: a.string(),
+      sortBy: a.string(),
+      sortDir: a.string(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('TenderConnection').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getTender: a
+    .query()
+    .arguments({ tenderId: a.id().required() })
+    .returns(a.ref('TenderDetailBundle'))
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  listTenderKeywordConfigs: a
+    .query()
+    .arguments({ includeInactive: a.boolean() })
+    .returns(a.ref('TenderKeywordConfig').array().required())
+    .handler(a.handler.function(tenderApi))
     .authorization((allow) => [allow.authenticated()]),
 
   // =========================================================================
@@ -824,6 +935,64 @@ const schema = a.schema({
     })
     .returns(a.ref('Organization').required())
     .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  updateTenderStatus: a
+    .mutation()
+    .arguments({
+      tenderId: a.id().required(),
+      toStatus: a.string().required(),
+      note: a.string(),
+      assignedTo: a.string(),
+    })
+    .returns(a.ref('Tender').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  bulkUpdateTenderStatus: a
+    .mutation()
+    .arguments({
+      tenderIds: a.id().array().required(),
+      toStatus: a.string().required(),
+    })
+    .returns(a.integer().required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  upsertTenderKeywordConfig: a
+    .mutation()
+    .arguments({
+      productCategory: a.string().required(),
+      productSlugs: a.string().array().required(),
+      keywords: a.string().array().required(),
+      synonyms: a.string().array().required(),
+      blacklist: a.string().array().required(),
+      naicsCodes: a.string().array().required(),
+      cpvCodes: a.string().array().required(),
+      isActive: a.boolean().required(),
+    })
+    .returns(a.ref('TenderKeywordConfig').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  runPrefilterPreview: a
+    .mutation()
+    .arguments({
+      title: a.string().required(),
+      description: a.string().required(),
+      naicsCodes: a.string().array(),
+      cpvCodes: a.string().array(),
+      configOverride: a.json(),
+    })
+    .returns(a.ref('PrefilterPreviewResult').required())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  translateTenderDescription: a
+    .mutation()
+    .arguments({ tenderId: a.id().required(), force: a.boolean() })
+    .returns(a.string().required())
+    .handler(a.handler.function(tenderApi))
     .authorization((allow) => [allow.authenticated()]),
 
   // =========================================================================

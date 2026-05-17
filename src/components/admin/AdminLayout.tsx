@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/useTheme';
 import '../../styles/admin-tailwind.css';
 import '../../styles/Admin.css';
@@ -9,6 +10,7 @@ const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
+  { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
   { path: '/admin/organizations', label: 'Organizations', icon: 'business' },
   { path: '/admin/insights', label: 'Insights', icon: 'insights' },
@@ -163,6 +165,7 @@ export function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
     </div>
   );
 }

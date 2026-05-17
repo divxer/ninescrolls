@@ -60,6 +60,9 @@ const OrganizationListPage = lazy(() => import('../pages/admin/OrganizationListP
 const OrganizationDetailPage = lazy(() => import('../pages/admin/OrganizationDetailPage').then(m => ({ default: m.OrganizationDetailPage })));
 const DashboardPage = lazy(() => import('../pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AdminQuestionsPage = lazy(() => import('../pages/admin/AdminQuestionsPage').then(m => ({ default: m.AdminQuestionsPage })));
+const TenderListPage = lazy(() => import('../pages/admin/TenderListPage').then(m => ({ default: m.TenderListPage })));
+const TenderDetailPage = lazy(() => import('../pages/admin/TenderDetailPage').then(m => ({ default: m.TenderDetailPage })));
+const TenderKeywordConfigPage = lazy(() => import('../pages/admin/TenderKeywordConfigPage').then(m => ({ default: m.TenderKeywordConfigPage })));
 
 // ─── Loading fallback ───────────────────────────────────────────────────────
 function PageLoader() {
@@ -139,6 +142,9 @@ export function AdminRoutes() {
           <Route path="leads" element={<LeadsListPage />} />
           <Route path="organizations" element={<OrganizationListPage />} />
           <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
+          <Route path="tenders" element={<TenderListPage />} />
+          <Route path="tenders/keywords" element={<TenderKeywordConfigPage />} />
+          <Route path="tenders/:tenderId" element={<TenderDetailPage />} />
         </Route>
       </Routes>
     </Suspense>
