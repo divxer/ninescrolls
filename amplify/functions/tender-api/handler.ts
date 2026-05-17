@@ -45,6 +45,8 @@ async function dispatchFieldName(
             return listTenders(event.arguments);
         case 'getTender':
             return getTender(event.arguments);
+        case 'listTenderKeywordConfigs':
+            return listKeywordConfigs(event.arguments);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -176,5 +178,23 @@ async function getTender(args: { tenderId: string }) {
     };
 }
 
+async function listKeywordConfigs(args: { includeInactive?: boolean }) {
+    if (args.includeInactive) {
+        const r = await ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            KeyConditionExpression: 'PK = :pk',
+            ExpressionAttributeValues: { ':pk': 'TENDER_KEYWORD_CONFIG' },
+        }));
+        return r.Items ?? [];
+    }
+    const r = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        IndexName: 'GSI1',
+        KeyConditionExpression: 'GSI1PK = :pk',
+        ExpressionAttributeValues: { ':pk': 'TENDER_KEYWORD_CONFIG_ACTIVE' },
+    }));
+    return r.Items ?? [];
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs };

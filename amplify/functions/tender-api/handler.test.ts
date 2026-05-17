@@ -151,3 +151,47 @@ describe('getTender', () => {
         } as any)).rejects.toThrow(/not found/);
     });
 });
+
+describe('listTenderKeywordConfigs', () => {
+    it('queries GSI1 by default (active only)', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Items: [
+            { productCategory: 'ALD', isActive: true, keywords: ['atomic'], synonyms: [], blacklist: [], productSlugs: ['ald-system'], naicsCodes: [], cpvCodes: [] },
+        ] });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'listTenderKeywordConfigs' },
+            arguments: {},
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.length).toBe(1);
+        // Verify GSI1 was used
+        const cmd = sendMock.mock.calls[0][0];
+        expect(cmd.input.IndexName).toBe('GSI1');
+    });
+
+    it('queries base table when includeInactive=true', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({ Items: [
+            { productCategory: 'ALD', isActive: true, keywords: [], synonyms: [], blacklist: [], productSlugs: [], naicsCodes: [], cpvCodes: [] },
+            { productCategory: 'Old', isActive: false, keywords: [], synonyms: [], blacklist: [], productSlugs: [], naicsCodes: [], cpvCodes: [] },
+        ] });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'listTenderKeywordConfigs' },
+            arguments: { includeInactive: true },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.length).toBe(2);
+        const cmd = sendMock.mock.calls[0][0];
+        expect(cmd.input.IndexName).toBeUndefined();
+    });
+});
