@@ -55,7 +55,7 @@ describe('matchesAnyConfig', () => {
         expect(r.matchedCategories).toEqual([]);
     });
 
-    it('applies code whitelist when both NAICS and CPV are set on config', () => {
+    it('applies code whitelist when at least one of NAICS or CPV is set on config', () => {
         const cfg = baseConfig({ naicsCodes: ['334516'], cpvCodes: ['38540000'] });
         const matchingNaics = matchesAnyConfig(
             { title: 'atomic layer deposition', description: '', naicsCodes: ['334516'], cpvCodes: [] },
@@ -67,6 +67,20 @@ describe('matchesAnyConfig', () => {
         );
         expect(matchingNaics.matchedCategories).toEqual(['ALD']);
         expect(noCodeOverlap.matchedCategories).toEqual([]);
+    });
+
+    it('applies code whitelist when only NAICS is set on config', () => {
+        const cfg = baseConfig({ naicsCodes: ['334516'], cpvCodes: [] });
+        const matchingNaics = matchesAnyConfig(
+            { title: 'atomic layer deposition', description: '', naicsCodes: ['334516'], cpvCodes: [] },
+            [cfg],
+        );
+        const rejectedNaics = matchesAnyConfig(
+            { title: 'atomic layer deposition', description: '', naicsCodes: ['999999'], cpvCodes: [] },
+            [cfg],
+        );
+        expect(matchingNaics.matchedCategories).toEqual(['ALD']);
+        expect(rejectedNaics.matchedCategories).toEqual([]);
     });
 
     it('returns matched keywords from synonyms too', () => {
