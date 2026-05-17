@@ -390,10 +390,16 @@ async function runPrefilterPreview(args: {
     };
     let configs: TenderKeywordConfigItem[];
     if (args.configOverride) {
+        // AppSync's AWSJSON scalar arrives as a string from the frontend service
+        // layer (see tenderAdminService.runPrefilterPreview). Direct callers (tests,
+        // future tooling) can still pass a parsed object — handle both.
+        const rawOverride: unknown = typeof args.configOverride === 'string'
+            ? JSON.parse(args.configOverride)
+            : args.configOverride;
         // Defensively fill missing array/boolean fields so malformed inputs don't
         // crash matchesAnyConfig. Spec only requires the UI to send full configs,
         // but the mutation is exposed in the schema and other callers may not.
-        const override = args.configOverride as Partial<TenderKeywordConfigItem>;
+        const override = (rawOverride ?? {}) as Partial<TenderKeywordConfigItem>;
         configs = [{
             productCategory: override.productCategory ?? 'PREVIEW',
             productSlugs: override.productSlugs ?? [],

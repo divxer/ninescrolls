@@ -395,6 +395,35 @@ describe('runPrefilterPreview', () => {
         expect(result.matchedCategories).toEqual(['PECVD']);
     });
 
+    it('accepts configOverride as a JSON-encoded string (AWSJSON scalar wire format)', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const { handler } = await import('./handler');
+        const result: any = await handler({
+            info: { fieldName: 'runPrefilterPreview' },
+            arguments: {
+                title: 'atomic layer deposition reactor',
+                description: '',
+                configOverride: JSON.stringify({
+                    productCategory: 'ALD',
+                    productSlugs: ['ald-system'],
+                    keywords: ['atomic layer deposition'],
+                    synonyms: [],
+                    blacklist: [],
+                    naicsCodes: [],
+                    cpvCodes: [],
+                    isActive: true,
+                }),
+            },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        expect(result.passed).toBe(true);
+        expect(result.matchedCategories).toEqual(['ALD']);
+    });
+
     it('loads saved active configs when configOverride is omitted', async () => {
         const docMock = await import('@aws-sdk/lib-dynamodb');
         const sendMock = vi.fn();

@@ -71,7 +71,13 @@ export async function runPrefilterPreview(args: {
     cpvCodes?: string[];
     configOverride?: any;
 }) {
-    const { data, errors } = await client.mutations.runPrefilterPreview(args as any, AUTH);
+    // AppSync's AWSJSON scalar (a.json() in schema) expects a JSON-encoded string,
+    // not a raw object. Match the orderAdminService.createOrder pattern.
+    const payload = {
+        ...args,
+        configOverride: args.configOverride ? JSON.stringify(args.configOverride) : undefined,
+    };
+    const { data, errors } = await client.mutations.runPrefilterPreview(payload as any, AUTH);
     if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
     return data;
 }
