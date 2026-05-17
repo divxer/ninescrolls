@@ -79,4 +79,17 @@ describe('matchLinkedInquiries', () => {
     ];
     expect(matchLinkedInquiries(events, [])).toEqual([]);
   });
+
+  // Regression guard: a lead with a non-matching visitorId belongs to a
+  // different org and must NOT fall back to timestamp proximity — otherwise
+  // unrelated submissions within 60s of each other would cross-pollinate.
+  it('does NOT timestamp-match a lead whose visitorId belongs to a different org', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'contact_form', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'OTHER_ORG', visitorId: 'v2', submittedAt: '2026-05-16T10:00:10Z' }),
+    ];
+    expect(matchLinkedInquiries(events, leads)).toEqual([]);
+  });
 });
