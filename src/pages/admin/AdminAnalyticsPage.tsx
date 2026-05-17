@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
+import { matchLinkedInquiries } from './linkedInquiriesMatch';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
-import type { RfqSubmission } from '../../types/admin';
+import type { RfqSubmission, LeadSubmission } from '../../types/admin';
 import { generateClient } from 'aws-amplify/data';
 import {
   ComposableMap,
@@ -54,6 +55,7 @@ interface OrganizationRecord {
   companyType: string;
   lifecycleStage: LifecycleStage;
   rfqInstitution: string | null;
+  contactOrganization: string | null;
   events: AnalyticsEvent[];
 }
 
@@ -986,6 +988,7 @@ function aggregateByOrg(
       companyType,
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       rfqInstitution,
+      contactOrganization: null,
       events: sorted,
     });
   }
@@ -1291,7 +1294,7 @@ function maskIP(ip: string): string {
   return ip;
 }
 
-function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => void }) {
+function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[] }) {
   const [showFullIP, setShowFullIP] = useState(false);
   const [override, setOverride] = useState<OrgOverride | null>(null);
   const [overrideLoading, setOverrideLoading] = useState(true);
@@ -1403,6 +1406,27 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
 
     return () => { cancelled = true; };
   }, [rfqSubmitted, org.events]);
+
+  // ── Linked Inquiries lookup ────────────────────────────────────────────
+  // Mirrors linkedRfqs but joins against the leads already fetched at the
+  // top level (no duplicate listLeads call). No leadId is stored in
+  // contact_form event properties (we did not change form/segment/storage),
+  // so this is purely visitorId + timestamp join via matchLinkedInquiries.
+  const [linkedInquiries, setLinkedInquiries] = useState<LeadSubmission[]>([]);
+  const hasContactForm = org.events.some((e) => e.eventType === 'contact_form');
+
+  useEffect(() => {
+    if (!hasContactForm) {
+      setLinkedInquiries([]);
+      return;
+    }
+    const eventsForMatcher = org.events.map((e) => ({
+      visitorId: (e as Record<string, unknown>).visitorId as string | null | undefined,
+      eventType: e.eventType,
+      timestamp: e.timestamp,
+    }));
+    setLinkedInquiries(matchLinkedInquiries(eventsForMatcher, allContactLeads));
+  }, [hasContactForm, org.events, allContactLeads]);
 
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
@@ -2364,6 +2388,51 @@ function OrgDetail({ org, onBack }: { org: OrganizationRecord; onBack: () => voi
             </div>
           )}
 
+          {/* Linked Inquiries Card */}
+          {linkedInquiries.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">contact_mail</span>
+                Linked Inquiries
+              </h3>
+              <div className="space-y-3">
+                {linkedInquiries.map(lead => {
+                  const subject = lead.productName || lead.topic || lead.inquiryType || 'General Inquiry';
+                  return (
+                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                      <div className="text-sm font-bold text-primary mb-1">{subject}</div>
+                      {lead.name && (
+                        <p className="text-xs text-on-surface">
+                          {lead.name}
+                          {lead.email && (
+                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
+                          )}
+                        </p>
+                      )}
+                      {lead.phone && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.phone}</p>
+                      )}
+                      {lead.organization && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
+                      )}
+                      {lead.message && (
+                        <p
+                          className="mt-2 pt-2 border-t border-outline-variant/20 text-xs text-on-surface whitespace-pre-wrap line-clamp-3"
+                          title={lead.message}
+                        >
+                          {lead.message}
+                        </p>
+                      )}
+                      <div className="mt-2 text-[10px] text-on-surface-variant">
+                        {new Date(lead.submittedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
@@ -2711,6 +2780,21 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  // Load all contact leads for organization name backfill + LINKED INQUIRIES card.
+  // Mirrors allRfqs above — single fetch on mount + refreshKey changes, errors are
+  // swallowed (a failed fetch simply means inquiries don't surface; not a hard error).
+  const [allContactLeads, setAllContactLeads] = useState<LeadSubmission[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    orderAdminService.listLeads('contact')
+      .then(data => {
+        if (cancelled) return;
+        setAllContactLeads((data?.items as LeadSubmission[]) || []);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
   // ── Live Mode: AppSync Subscription (no polling) ────
   // Subscribes to onAnalyticsEvent (fires when server-track Lambda calls
   // publishAnalyticsEvent mutation after DDB write).
@@ -2994,6 +3078,36 @@ export function AdminAnalyticsPage() {
       }
     }
 
+    // Backfill contactOrganization from contact leads: most recent lead with a
+    // non-empty organization, matched by visitorId set per org. Pure client-side
+    // join — the org aggregator does not see leads.
+    if (allContactLeads.length > 0) {
+      for (const org of orgs) {
+        const hasContactForm = org.events.some(e => e.eventType === 'contact_form');
+        if (!hasContactForm) continue;
+
+        const visitorIds = new Set<string>();
+        for (const e of org.events) {
+          const vid = (e as Record<string, unknown>).visitorId as string | undefined;
+          if (vid) visitorIds.add(vid);
+        }
+        if (visitorIds.size === 0) continue;
+
+        // Find most-recent matching lead with a non-empty organization string.
+        let bestLead: LeadSubmission | null = null;
+        for (const lead of allContactLeads) {
+          if (!lead.visitorId || !visitorIds.has(lead.visitorId)) continue;
+          if (!lead.organization || !lead.organization.trim()) continue;
+          if (!bestLead || +new Date(lead.submittedAt) > +new Date(bestLead.submittedAt)) {
+            bestLead = lead;
+          }
+        }
+        if (bestLead?.organization) {
+          org.contactOrganization = bestLead.organization.trim();
+        }
+      }
+    }
+
     if (orgOverrides.length === 0) return orgs;
 
     // Build lookup map for O(1) override matching
@@ -3032,7 +3146,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides, allRfqs, overrideAiByOrg]);
+  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, overrideAiByOrg]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
@@ -3304,7 +3418,7 @@ export function AdminAnalyticsPage() {
   if (selectedOrg) {
     return (
       <div className="space-y-6">
-        <OrgDetail org={selectedOrg} onBack={() => history.back()} />
+        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} />
       </div>
     );
   }
@@ -3696,19 +3810,26 @@ export function AdminAnalyticsPage() {
                     onClick={() => selectOrg(org)}
                   >
                     <td className="pl-5 pr-2 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                          {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="font-semibold truncate max-w-[150px] block" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</span>
-                          {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() && (
-                            <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
-                              <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {(() => {
+                        const upgradedName = org.rfqInstitution || org.contactOrganization;
+                        const displayMain = upgradedName || org.displayName || org.orgName;
+                        const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
+                        return (
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                              {displayMain.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-semibold truncate max-w-[150px] block" title={displayMain}>{displayMain}</span>
+                              {showSubLine && (
+                                <span className="text-[10px] text-on-surface-variant truncate block max-w-[150px]" title={org.orgName}>
+                                  <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-4 text-on-surface-variant text-xs">{org.organizationType || '--'}</td>
                     <td className="px-3 py-4 text-center">{org.totalEvents.toLocaleString()}</td>
@@ -3744,15 +3865,19 @@ export function AdminAnalyticsPage() {
           </div>
           {/* Mobile org cards */}
           <div className="md:hidden grid gap-3 p-4">
-            {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => (
+            {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => {
+              const upgradedName = org.rfqInstitution || org.contactOrganization;
+              const displayMain = upgradedName || org.displayName || org.orgName;
+              const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
+              return (
               <div key={org.key} className="bg-surface-container-low rounded-xl p-4 cursor-pointer" onClick={() => selectOrg(org)}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-headline font-bold text-primary text-xs shrink-0">
-                    {(org.rfqInstitution || org.displayName || org.orgName).split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
+                    {displayMain.split(/[\s,]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('')}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-on-surface truncate" title={org.rfqInstitution || org.displayName || org.orgName}>{org.rfqInstitution || org.displayName || org.orgName}</div>
-                    {org.rfqInstitution && org.rfqInstitution.toLowerCase() !== org.orgName.toLowerCase() ? (
+                    <div className="font-semibold text-sm text-on-surface truncate" title={displayMain}>{displayMain}</div>
+                    {showSubLine ? (
                       <div className="text-xs text-on-surface-variant truncate"><span className="material-symbols-outlined text-[10px] align-middle mr-0.5">dns</span>{org.orgName}</div>
                     ) : (
                       <div className="text-xs text-on-surface-variant">{org.country || 'Unknown'}</div>
@@ -3768,7 +3893,8 @@ export function AdminAnalyticsPage() {
                   <div><div className="font-headline text-sm font-bold">{formatDuration(org.totalTimeOnSite)}</div><div className="text-[10px] text-on-surface-variant uppercase tracking-widest">Time</div></div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
           {/* Show all / collapse toggle */}
           {sortedOrgs.length > 15 && (
