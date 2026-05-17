@@ -9,6 +9,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { ulid } from 'ulid';
 import {
+    tenderKeywordConfigItemKey, tenderKeywordConfigActiveGsiKey,
     tenderStatusLogItemKey,
     TENDER_STATUSES, ACTIVE_TENDER_STATUSES, type TenderStatus,
 } from '../../lib/tender-watch/keys';
@@ -55,6 +56,8 @@ async function dispatchFieldName(
             return updateTenderStatus(event.arguments, identity);
         case 'bulkUpdateTenderStatus':
             return bulkUpdateTenderStatus(event.arguments, identity);
+        case 'upsertTenderKeywordConfig':
+            return upsertKeywordConfig(event.arguments, identity);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -315,5 +318,37 @@ async function bulkUpdateTenderStatus(
     return success;
 }
 
+async function upsertKeywordConfig(
+    args: {
+        productCategory: string;
+        productSlugs: string[];
+        keywords: string[];
+        synonyms: string[];
+        blacklist: string[];
+        naicsCodes: string[];
+        cpvCodes: string[];
+        isActive: boolean;
+    },
+    identity: string,
+) {
+    const nowIso = new Date().toISOString();
+    const item: Record<string, unknown> = {
+        ...tenderKeywordConfigItemKey(args.productCategory),
+        entityType: 'TENDER_KEYWORD_CONFIG',
+        ...args,
+        updatedBy: identity,
+        updatedAt: nowIso,
+        ...(args.isActive ? tenderKeywordConfigActiveGsiKey(args.productCategory) : {}),
+    };
+    await ddb.send(new PutCommand({ TableName: TABLE(), Item: item }));
+    console.log(JSON.stringify({
+        event: 'tender.config.upserted',
+        productCategory: args.productCategory,
+        isActive: args.isActive,
+        changedBy: identity,
+    }));
+    return item;
+}
+
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig };

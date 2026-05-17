@@ -288,3 +288,52 @@ describe('bulkUpdateTenderStatus', () => {
         } as any)).rejects.toThrow(/bulk update limit/);
     });
 });
+
+describe('upsertTenderKeywordConfig', () => {
+    it('writes config with GSI1 active key when isActive', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        await handler({
+            info: { fieldName: 'upsertTenderKeywordConfig' },
+            arguments: {
+                productCategory: 'ALD',
+                productSlugs: ['ald-system'],
+                keywords: ['ALD'],
+                synonyms: ['atomic layer deposition'],
+                blacklist: [],
+                naicsCodes: [],
+                cpvCodes: [],
+                isActive: true,
+            },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        const put = sendMock.mock.calls[0][0];
+        expect(put.input.Item.GSI1PK).toBe('TENDER_KEYWORD_CONFIG_ACTIVE');
+    });
+
+    it('omits GSI1 key when isActive=false', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        sendMock.mockResolvedValueOnce({});
+
+        const { handler } = await import('./handler');
+        await handler({
+            info: { fieldName: 'upsertTenderKeywordConfig' },
+            arguments: {
+                productCategory: 'OldCat',
+                productSlugs: [], keywords: [], synonyms: [], blacklist: [], naicsCodes: [], cpvCodes: [],
+                isActive: false,
+            },
+            identity: { username: 'admin', groups: ['admin'] },
+        } as any);
+
+        const put = sendMock.mock.calls[0][0];
+        expect(put.input.Item.GSI1PK).toBeUndefined();
+    });
+});
