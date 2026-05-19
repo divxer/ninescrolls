@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchLinkedInquiries } from './linkedInquiriesMatch';
+import { matchLinkedLeadsByVisitor } from './linkedLeadsMatch';
 import type { LeadSubmission } from '../../types/admin';
 
 // Minimal AnalyticsEvent shape — the helper only reads visitorId, eventType, timestamp.
@@ -15,7 +15,7 @@ function lead(overrides: Partial<LeadSubmission>): LeadSubmission {
   };
 }
 
-describe('matchLinkedInquiries', () => {
+describe('matchLinkedLeadsByVisitor', () => {
   it('matches leads by visitorId (primary signal)', () => {
     const events: EventLike[] = [
       { visitorId: 'v1', eventType: 'page_view', timestamp: '2026-05-16T09:00:00Z' },
@@ -25,7 +25,7 @@ describe('matchLinkedInquiries', () => {
       lead({ leadId: 'L1', visitorId: 'v1', submittedAt: '2026-05-16T10:00:05Z' }),
       lead({ leadId: 'L2', visitorId: 'v2', submittedAt: '2026-05-16T10:00:00Z' }),
     ];
-    const result = matchLinkedInquiries(events, leads);
+    const result = matchLinkedLeadsByVisitor(events, leads);
     expect(result.map(l => l.leadId)).toEqual(['L1']);
   });
 
@@ -37,7 +37,7 @@ describe('matchLinkedInquiries', () => {
       lead({ leadId: 'L1', visitorId: null, submittedAt: '2026-05-16T10:00:30Z' }),    // within 60s
       lead({ leadId: 'L2', visitorId: null, submittedAt: '2026-05-16T10:02:00Z' }),    // outside 60s
     ];
-    const result = matchLinkedInquiries(events, leads);
+    const result = matchLinkedLeadsByVisitor(events, leads);
     expect(result.map(l => l.leadId)).toEqual(['L1']);
   });
 
@@ -48,7 +48,7 @@ describe('matchLinkedInquiries', () => {
     const leads = [
       lead({ leadId: 'L1', visitorId: 'v1', submittedAt: '2026-05-16T10:00:10Z' }),
     ];
-    const result = matchLinkedInquiries(events, leads);
+    const result = matchLinkedLeadsByVisitor(events, leads);
     expect(result).toHaveLength(1);
   });
 
@@ -61,7 +61,7 @@ describe('matchLinkedInquiries', () => {
       lead({ leadId: 'OLD', visitorId: 'v1', submittedAt: '2026-05-15T10:00:00Z' }),
       lead({ leadId: 'NEW', visitorId: 'v1', submittedAt: '2026-05-16T10:00:00Z' }),
     ];
-    const result = matchLinkedInquiries(events, leads);
+    const result = matchLinkedLeadsByVisitor(events, leads);
     expect(result.map(l => l.leadId)).toEqual(['NEW', 'OLD']);
   });
 
@@ -70,14 +70,14 @@ describe('matchLinkedInquiries', () => {
       { visitorId: 'v1', eventType: 'page_view', timestamp: '2026-05-16T10:00:00Z' },
     ];
     const leads = [lead({ leadId: 'L1', visitorId: 'v1' })];
-    expect(matchLinkedInquiries(events, leads)).toEqual([]);
+    expect(matchLinkedLeadsByVisitor(events, leads)).toEqual([]);
   });
 
   it('returns [] when leads array is empty', () => {
     const events: EventLike[] = [
       { visitorId: 'v1', eventType: 'contact_form', timestamp: '2026-05-16T10:00:00Z' },
     ];
-    expect(matchLinkedInquiries(events, [])).toEqual([]);
+    expect(matchLinkedLeadsByVisitor(events, [])).toEqual([]);
   });
 
   // Regression guard: a lead with a non-matching visitorId belongs to a
@@ -90,6 +90,43 @@ describe('matchLinkedInquiries', () => {
     const leads = [
       lead({ leadId: 'OTHER_ORG', visitorId: 'v2', submittedAt: '2026-05-16T10:00:10Z' }),
     ];
-    expect(matchLinkedInquiries(events, leads)).toEqual([]);
+    expect(matchLinkedLeadsByVisitor(events, leads)).toEqual([]);
+  });
+
+  // ── Regression tests for anchor-type parameterization ─────────────────
+
+  it('matches download_gate leads when anchor types include lead_capture/pdf_download', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'page_view', timestamp: '2026-05-16T09:00:00Z' },
+      { visitorId: 'v1', eventType: 'pdf_download', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: 'v1' }),
+    ];
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result.map(l => l.leadId)).toEqual(['D1']);
+  });
+
+  it('returns [] when no events match the custom anchor types', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'contact_form', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: 'v1' }),
+    ];
+    // contact_form is present but caller asked for download anchors only — early-return.
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result).toEqual([]);
+  });
+
+  it('legacy download lead with no visitorId falls back to download-event timestamp proximity', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'lead_capture', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: null, submittedAt: '2026-05-16T10:00:30Z' }),
+    ];
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result.map(l => l.leadId)).toEqual(['D1']);
   });
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
-import { matchLinkedInquiries } from './linkedInquiriesMatch';
+import { matchLinkedLeadsByVisitor } from './linkedLeadsMatch';
 import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
@@ -56,6 +56,7 @@ interface OrganizationRecord {
   lifecycleStage: LifecycleStage;
   rfqInstitution: string | null;
   contactOrganization: string | null;
+  downloadGateOrganization: string | null;
   events: AnalyticsEvent[];
 }
 
@@ -989,6 +990,7 @@ function aggregateByOrg(
       lifecycleStage: computeOrgLifecycleStage(group, products, maxPdfDownloads, maxReturnVisits),
       rfqInstitution,
       contactOrganization: null,
+      downloadGateOrganization: null,
       events: sorted,
     });
   }
@@ -1294,7 +1296,7 @@ function maskIP(ip: string): string {
   return ip;
 }
 
-function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[] }) {
+function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNewsletterLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[]; allDownloadGateLeads: LeadSubmission[]; allNewsletterLeads: LeadSubmission[] }) {
   const [showFullIP, setShowFullIP] = useState(false);
   const [override, setOverride] = useState<OrgOverride | null>(null);
   const [overrideLoading, setOverrideLoading] = useState(true);
@@ -1411,7 +1413,7 @@ function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; 
   // Mirrors linkedRfqs but joins against the leads already fetched at the
   // top level (no duplicate listLeads call). No leadId is stored in
   // contact_form event properties (we did not change form/segment/storage),
-  // so this is purely visitorId + timestamp join via matchLinkedInquiries.
+  // so this is purely visitorId + timestamp join via matchLinkedLeadsByVisitor.
   const [linkedInquiries, setLinkedInquiries] = useState<LeadSubmission[]>([]);
   const hasContactForm = org.events.some((e) => e.eventType === 'contact_form');
 
@@ -1425,8 +1427,55 @@ function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; 
       eventType: e.eventType,
       timestamp: e.timestamp,
     }));
-    setLinkedInquiries(matchLinkedInquiries(eventsForMatcher, allContactLeads));
+    setLinkedInquiries(matchLinkedLeadsByVisitor(eventsForMatcher, allContactLeads));
   }, [hasContactForm, org.events, allContactLeads]);
+
+  // ── Linked Downloads lookup ────────────────────────────────────────────
+  // Same hybrid match as linkedInquiries, just against download_gate leads.
+  const [linkedDownloads, setLinkedDownloads] = useState<LeadSubmission[]>([]);
+  const hasDownload = org.events.some((e) =>
+    e.eventType === 'lead_capture' || e.eventType === 'pdf_download'
+  );
+
+  useEffect(() => {
+    if (!hasDownload) {
+      setLinkedDownloads([]);
+      return;
+    }
+    const eventsForMatcher = org.events.map((e) => ({
+      visitorId: (e as Record<string, unknown>).visitorId as string | null | undefined,
+      eventType: e.eventType,
+      timestamp: e.timestamp,
+    }));
+    setLinkedDownloads(matchLinkedLeadsByVisitor(eventsForMatcher, allDownloadGateLeads, ['lead_capture', 'pdf_download']));
+  }, [hasDownload, org.events, allDownloadGateLeads]);
+
+  // ── Linked Newsletter lookup ───────────────────────────────────────────
+  // Newsletter signups have only email + source + timestamp. No event-type
+  // gate — newsletter signups don't always fire a corresponding analytics
+  // event (the form posts directly to the leads API). Match purely by
+  // visitorId; if no visitorId matches, the card simply hides.
+  const [linkedNewsletters, setLinkedNewsletters] = useState<LeadSubmission[]>([]);
+
+  useEffect(() => {
+    if (allNewsletterLeads.length === 0) {
+      setLinkedNewsletters([]);
+      return;
+    }
+    const visitorIds = new Set<string>();
+    for (const e of org.events) {
+      const vid = (e as Record<string, unknown>).visitorId as string | null | undefined;
+      if (vid) visitorIds.add(vid);
+    }
+    if (visitorIds.size === 0) {
+      setLinkedNewsletters([]);
+      return;
+    }
+    const matched = allNewsletterLeads
+      .filter(l => l.visitorId && visitorIds.has(l.visitorId))
+      .sort((a, b) => +new Date(b.submittedAt) - +new Date(a.submittedAt));
+    setLinkedNewsletters(matched);
+  }, [org.events, allNewsletterLeads]);
 
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
@@ -2433,6 +2482,88 @@ function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; 
             </div>
           )}
 
+          {/* Linked Downloads Card */}
+          {linkedDownloads.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Linked Downloads
+              </h3>
+              <div className="space-y-3">
+                {linkedDownloads.map(lead => {
+                  const subject = lead.fileName || lead.productName || 'Download';
+                  return (
+                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                      <div className="text-sm font-bold text-primary mb-1 break-all" title={subject}>{subject}</div>
+                      {lead.name && (
+                        <p className="text-xs text-on-surface">
+                          {lead.name}
+                          {lead.email && (
+                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
+                          )}
+                        </p>
+                      )}
+                      {lead.organization && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
+                      )}
+                      {lead.jobTitle && (
+                        <p className="text-[11px] text-on-surface-variant italic">{lead.jobTitle}</p>
+                      )}
+                      {(lead.researchAreas || lead.intent) && (
+                        <div className="mt-2 pt-2 border-t border-outline-variant/20 space-y-1">
+                          {lead.researchAreas && (
+                            <p className="text-xs text-on-surface line-clamp-2" title={lead.researchAreas}>
+                              <span className="font-semibold">Research Areas:</span> {lead.researchAreas}
+                            </p>
+                          )}
+                          {lead.intent && (
+                            <p className="text-xs text-on-surface line-clamp-2" title={lead.intent}>
+                              <span className="font-semibold">Intent:</span> {lead.intent}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-2 text-[10px] text-on-surface-variant">
+                        {new Date(lead.submittedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Linked Newsletter Card */}
+          {linkedNewsletters.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">newspaper</span>
+                Newsletter Signups
+              </h3>
+              <div className="space-y-3">
+                {linkedNewsletters.map(lead => (
+                  <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="text-sm font-medium text-primary hover:underline break-all"
+                      onClick={(ev) => ev.stopPropagation()}
+                    >
+                      {lead.email}
+                    </a>
+                    {lead.source && (
+                      <p className="text-[11px] text-on-surface-variant mt-0.5 break-all" title={lead.source}>
+                        from: {lead.source}
+                      </p>
+                    )}
+                    <div className="mt-1 text-[10px] text-on-surface-variant">
+                      {new Date(lead.submittedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
@@ -2780,20 +2911,35 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // Load all contact leads for organization name backfill + LINKED INQUIRIES card.
-  // Mirrors allRfqs above — single fetch on mount + refreshKey changes, errors are
-  // swallowed (a failed fetch simply means inquiries don't surface; not a hard error).
-  const [allContactLeads, setAllContactLeads] = useState<LeadSubmission[]>([]);
+  // Load ALL leads (no type filter) for organization name backfill +
+  // LINKED INQUIRIES / DOWNLOADS / NEWSLETTER cards. Mirrors allRfqs — single
+  // fetch on mount + refreshKey changes, errors are swallowed (a failed fetch
+  // simply means lead cards don't surface; not a hard error).
+  const [allLeads, setAllLeads] = useState<LeadSubmission[]>([]);
   useEffect(() => {
     let cancelled = false;
-    orderAdminService.listLeads('contact')
+    orderAdminService.listLeads(undefined, 200)
       .then(data => {
         if (cancelled) return;
-        setAllContactLeads((data?.items as LeadSubmission[]) || []);
+        setAllLeads((data?.items as LeadSubmission[]) || []);
       })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [refreshKey]);
+
+  // Derive per-type slices (cheap — runs only when allLeads changes).
+  const allContactLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'contact'),
+    [allLeads],
+  );
+  const allDownloadGateLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'download_gate'),
+    [allLeads],
+  );
+  const allNewsletterLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'newsletter'),
+    [allLeads],
+  );
 
   // ── Live Mode: AppSync Subscription (no polling) ────
   // Subscribes to onAnalyticsEvent (fires when server-track Lambda calls
@@ -3108,6 +3254,36 @@ export function AdminAnalyticsPage() {
       }
     }
 
+    // Backfill downloadGateOrganization from download_gate leads: same
+    // most-recent-non-empty-organization rule as contactOrganization.
+    if (allDownloadGateLeads.length > 0) {
+      for (const org of orgs) {
+        const hasDownload = org.events.some(e =>
+          e.eventType === 'lead_capture' || e.eventType === 'pdf_download'
+        );
+        if (!hasDownload) continue;
+
+        const visitorIds = new Set<string>();
+        for (const e of org.events) {
+          const vid = (e as Record<string, unknown>).visitorId as string | undefined;
+          if (vid) visitorIds.add(vid);
+        }
+        if (visitorIds.size === 0) continue;
+
+        let bestLead: LeadSubmission | null = null;
+        for (const lead of allDownloadGateLeads) {
+          if (!lead.visitorId || !visitorIds.has(lead.visitorId)) continue;
+          if (!lead.organization || !lead.organization.trim()) continue;
+          if (!bestLead || +new Date(lead.submittedAt) > +new Date(bestLead.submittedAt)) {
+            bestLead = lead;
+          }
+        }
+        if (bestLead?.organization) {
+          org.downloadGateOrganization = bestLead.organization.trim();
+        }
+      }
+    }
+
     if (orgOverrides.length === 0) return orgs;
 
     // Build lookup map for O(1) override matching
@@ -3146,7 +3322,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, overrideAiByOrg]);
+  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, allDownloadGateLeads, overrideAiByOrg]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
@@ -3418,7 +3594,7 @@ export function AdminAnalyticsPage() {
   if (selectedOrg) {
     return (
       <div className="space-y-6">
-        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} />
+        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} allDownloadGateLeads={allDownloadGateLeads} allNewsletterLeads={allNewsletterLeads} />
       </div>
     );
   }
@@ -3811,7 +3987,7 @@ export function AdminAnalyticsPage() {
                   >
                     <td className="pl-5 pr-2 py-4">
                       {(() => {
-                        const upgradedName = org.rfqInstitution || org.contactOrganization;
+                        const upgradedName = org.rfqInstitution || org.contactOrganization || org.downloadGateOrganization;
                         const displayMain = upgradedName || org.displayName || org.orgName;
                         const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
                         return (
@@ -3866,7 +4042,7 @@ export function AdminAnalyticsPage() {
           {/* Mobile org cards */}
           <div className="md:hidden grid gap-3 p-4">
             {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => {
-              const upgradedName = org.rfqInstitution || org.contactOrganization;
+              const upgradedName = org.rfqInstitution || org.contactOrganization || org.downloadGateOrganization;
               const displayMain = upgradedName || org.displayName || org.orgName;
               const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
               return (
