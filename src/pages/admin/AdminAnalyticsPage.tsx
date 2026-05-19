@@ -2533,6 +2533,37 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
             </div>
           )}
 
+          {/* Linked Newsletter Card */}
+          {linkedNewsletters.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">newspaper</span>
+                Newsletter Signups
+              </h3>
+              <div className="space-y-3">
+                {linkedNewsletters.map(lead => (
+                  <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="text-sm font-medium text-primary hover:underline break-all"
+                      onClick={(ev) => ev.stopPropagation()}
+                    >
+                      {lead.email}
+                    </a>
+                    {lead.source && (
+                      <p className="text-[11px] text-on-surface-variant mt-0.5 break-all" title={lead.source}>
+                        from: {lead.source}
+                      </p>
+                    )}
+                    <div className="mt-1 text-[10px] text-on-surface-variant">
+                      {new Date(lead.submittedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
