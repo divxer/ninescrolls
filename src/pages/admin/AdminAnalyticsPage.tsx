@@ -2780,20 +2780,35 @@ export function AdminAnalyticsPage() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
-  // Load all contact leads for organization name backfill + LINKED INQUIRIES card.
-  // Mirrors allRfqs above — single fetch on mount + refreshKey changes, errors are
-  // swallowed (a failed fetch simply means inquiries don't surface; not a hard error).
-  const [allContactLeads, setAllContactLeads] = useState<LeadSubmission[]>([]);
+  // Load ALL leads (no type filter) for organization name backfill +
+  // LINKED INQUIRIES / DOWNLOADS / NEWSLETTER cards. Mirrors allRfqs — single
+  // fetch on mount + refreshKey changes, errors are swallowed (a failed fetch
+  // simply means lead cards don't surface; not a hard error).
+  const [allLeads, setAllLeads] = useState<LeadSubmission[]>([]);
   useEffect(() => {
     let cancelled = false;
-    orderAdminService.listLeads('contact')
+    orderAdminService.listLeads()
       .then(data => {
         if (cancelled) return;
-        setAllContactLeads((data?.items as LeadSubmission[]) || []);
+        setAllLeads((data?.items as LeadSubmission[]) || []);
       })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [refreshKey]);
+
+  // Derive per-type slices (cheap — runs only when allLeads changes).
+  const allContactLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'contact'),
+    [allLeads],
+  );
+  const allDownloadGateLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'download_gate'),
+    [allLeads],
+  );
+  const allNewsletterLeads = useMemo(
+    () => allLeads.filter(l => l.type === 'newsletter'),
+    [allLeads],
+  );
 
   // ── Live Mode: AppSync Subscription (no polling) ────
   // Subscribes to onAnalyticsEvent (fires when server-track Lambda calls
