@@ -2918,7 +2918,7 @@ export function AdminAnalyticsPage() {
   const [allLeads, setAllLeads] = useState<LeadSubmission[]>([]);
   useEffect(() => {
     let cancelled = false;
-    orderAdminService.listLeads()
+    orderAdminService.listLeads(undefined, 200)
       .then(data => {
         if (cancelled) return;
         setAllLeads((data?.items as LeadSubmission[]) || []);
