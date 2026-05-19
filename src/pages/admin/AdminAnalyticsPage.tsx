@@ -1296,7 +1296,7 @@ function maskIP(ip: string): string {
   return ip;
 }
 
-function OrgDetail({ org, onBack, allContactLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[] }) {
+function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNewsletterLeads }: { org: OrganizationRecord; onBack: () => void; allContactLeads: LeadSubmission[]; allDownloadGateLeads: LeadSubmission[]; allNewsletterLeads: LeadSubmission[] }) {
   const [showFullIP, setShowFullIP] = useState(false);
   const [override, setOverride] = useState<OrgOverride | null>(null);
   const [overrideLoading, setOverrideLoading] = useState(true);
@@ -3465,7 +3465,7 @@ export function AdminAnalyticsPage() {
   if (selectedOrg) {
     return (
       <div className="space-y-6">
-        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} />
+        <OrgDetail org={selectedOrg} onBack={() => history.back()} allContactLeads={allContactLeads} allDownloadGateLeads={allDownloadGateLeads} allNewsletterLeads={allNewsletterLeads} />
       </div>
     );
   }
