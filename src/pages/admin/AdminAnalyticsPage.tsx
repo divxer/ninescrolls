@@ -3125,6 +3125,36 @@ export function AdminAnalyticsPage() {
       }
     }
 
+    // Backfill downloadGateOrganization from download_gate leads: same
+    // most-recent-non-empty-organization rule as contactOrganization.
+    if (allDownloadGateLeads.length > 0) {
+      for (const org of orgs) {
+        const hasDownload = org.events.some(e =>
+          e.eventType === 'lead_capture' || e.eventType === 'pdf_download'
+        );
+        if (!hasDownload) continue;
+
+        const visitorIds = new Set<string>();
+        for (const e of org.events) {
+          const vid = (e as Record<string, unknown>).visitorId as string | undefined;
+          if (vid) visitorIds.add(vid);
+        }
+        if (visitorIds.size === 0) continue;
+
+        let bestLead: LeadSubmission | null = null;
+        for (const lead of allDownloadGateLeads) {
+          if (!lead.visitorId || !visitorIds.has(lead.visitorId)) continue;
+          if (!lead.organization || !lead.organization.trim()) continue;
+          if (!bestLead || +new Date(lead.submittedAt) > +new Date(bestLead.submittedAt)) {
+            bestLead = lead;
+          }
+        }
+        if (bestLead?.organization) {
+          org.downloadGateOrganization = bestLead.organization.trim();
+        }
+      }
+    }
+
     if (orgOverrides.length === 0) return orgs;
 
     // Build lookup map for O(1) override matching
@@ -3163,7 +3193,7 @@ export function AdminAnalyticsPage() {
     }
 
     return orgs;
-  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, overrideAiByOrg]);
+  }, [filteredEvents, orgOverrides, allRfqs, allContactLeads, allDownloadGateLeads, overrideAiByOrg]);
 
   // Apply KPI filter
   const filteredOrgs = useMemo(() => {
