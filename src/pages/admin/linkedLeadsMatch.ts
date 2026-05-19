@@ -9,7 +9,7 @@ interface EventLike {
 const TIMESTAMP_WINDOW_MS = 60_000;
 
 /**
- * Match contact-form leads to an organization's events using a two-signal
+ * Match leads (of any type) to an organization's events using a two-signal
  * hybrid strategy:
  *   1. Primary — lead.visitorId is in the org's visitorId set.
  *   2. Fallback — lead.submittedAt is within ±60s of any contact_form event.
@@ -17,7 +17,7 @@ const TIMESTAMP_WINDOW_MS = 60_000;
  * The result is deduplicated by leadId and sorted by submittedAt descending.
  * Returns [] early when the org has no contact_form events.
  */
-export function matchLinkedInquiries(
+export function matchLinkedLeadsByVisitor(
   events: EventLike[],
   leads: LeadSubmission[],
 ): LeadSubmission[] {
