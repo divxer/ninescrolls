@@ -1447,7 +1447,7 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
       eventType: e.eventType,
       timestamp: e.timestamp,
     }));
-    setLinkedDownloads(matchLinkedLeadsByVisitor(eventsForMatcher, allDownloadGateLeads));
+    setLinkedDownloads(matchLinkedLeadsByVisitor(eventsForMatcher, allDownloadGateLeads, ['lead_capture', 'pdf_download']));
   }, [hasDownload, org.events, allDownloadGateLeads]);
 
   // ── Linked Newsletter lookup ───────────────────────────────────────────

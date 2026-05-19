@@ -12,20 +12,27 @@ const TIMESTAMP_WINDOW_MS = 60_000;
  * Match leads (of any type) to an organization's events using a two-signal
  * hybrid strategy:
  *   1. Primary — lead.visitorId is in the org's visitorId set.
- *   2. Fallback — lead.submittedAt is within ±60s of any contact_form event.
+ *   2. Fallback — lead.submittedAt is within ±60s of any anchor event
+ *      (an event of one of the `anchorEventTypes`).
+ *
+ * The anchor event types are the events that mark "this org had an
+ * interaction of the type these leads represent" (e.g. `['contact_form']`
+ * for inquiries, `['lead_capture', 'pdf_download']` for downloads).
  *
  * The result is deduplicated by leadId and sorted by submittedAt descending.
- * Returns [] early when the org has no contact_form events.
+ * Returns [] early when the org has no events of any anchor type.
  */
 export function matchLinkedLeadsByVisitor(
   events: EventLike[],
   leads: LeadSubmission[],
+  anchorEventTypes: string[] = ['contact_form'],
 ): LeadSubmission[] {
-  const contactFormTimestamps = events
-    .filter(e => e.eventType === 'contact_form')
+  const anchorSet = new Set(anchorEventTypes);
+  const anchorTimestamps = events
+    .filter(e => anchorSet.has(e.eventType))
     .map(e => new Date(e.timestamp).getTime());
 
-  if (contactFormTimestamps.length === 0) return [];
+  if (anchorTimestamps.length === 0) return [];
   if (leads.length === 0) return [];
 
   const visitorIds = new Set<string>();
@@ -45,7 +52,7 @@ export function matchLinkedLeadsByVisitor(
     }
     // Legacy lead with no visitorId — match by timestamp proximity.
     const leadTime = new Date(lead.submittedAt).getTime();
-    const hasNearbyEvent = contactFormTimestamps.some(
+    const hasNearbyEvent = anchorTimestamps.some(
       t => Math.abs(leadTime - t) < TIMESTAMP_WINDOW_MS,
     );
     if (hasNearbyEvent) matched.set(lead.leadId, lead);

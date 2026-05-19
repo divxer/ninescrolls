@@ -92,4 +92,41 @@ describe('matchLinkedLeadsByVisitor', () => {
     ];
     expect(matchLinkedLeadsByVisitor(events, leads)).toEqual([]);
   });
+
+  // ── Regression tests for anchor-type parameterization ─────────────────
+
+  it('matches download_gate leads when anchor types include lead_capture/pdf_download', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'page_view', timestamp: '2026-05-16T09:00:00Z' },
+      { visitorId: 'v1', eventType: 'pdf_download', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: 'v1' }),
+    ];
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result.map(l => l.leadId)).toEqual(['D1']);
+  });
+
+  it('returns [] when no events match the custom anchor types', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'contact_form', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: 'v1' }),
+    ];
+    // contact_form is present but caller asked for download anchors only — early-return.
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result).toEqual([]);
+  });
+
+  it('legacy download lead with no visitorId falls back to download-event timestamp proximity', () => {
+    const events: EventLike[] = [
+      { visitorId: 'v1', eventType: 'lead_capture', timestamp: '2026-05-16T10:00:00Z' },
+    ];
+    const leads = [
+      lead({ leadId: 'D1', type: 'download_gate', visitorId: null, submittedAt: '2026-05-16T10:00:30Z' }),
+    ];
+    const result = matchLinkedLeadsByVisitor(events, leads, ['lead_capture', 'pdf_download']);
+    expect(result.map(l => l.leadId)).toEqual(['D1']);
+  });
 });
