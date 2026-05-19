@@ -2482,6 +2482,57 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
             </div>
           )}
 
+          {/* Linked Downloads Card */}
+          {linkedDownloads.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Linked Downloads
+              </h3>
+              <div className="space-y-3">
+                {linkedDownloads.map(lead => {
+                  const subject = lead.fileName || lead.productName || 'Download';
+                  return (
+                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
+                      <div className="text-sm font-bold text-primary mb-1 break-all" title={subject}>{subject}</div>
+                      {lead.name && (
+                        <p className="text-xs text-on-surface">
+                          {lead.name}
+                          {lead.email && (
+                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
+                          )}
+                        </p>
+                      )}
+                      {lead.organization && (
+                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
+                      )}
+                      {lead.jobTitle && (
+                        <p className="text-[11px] text-on-surface-variant italic">{lead.jobTitle}</p>
+                      )}
+                      {(lead.researchAreas || lead.intent) && (
+                        <div className="mt-2 pt-2 border-t border-outline-variant/20 space-y-1">
+                          {lead.researchAreas && (
+                            <p className="text-xs text-on-surface line-clamp-2" title={lead.researchAreas}>
+                              <span className="font-semibold">Research Areas:</span> {lead.researchAreas}
+                            </p>
+                          )}
+                          {lead.intent && (
+                            <p className="text-xs text-on-surface line-clamp-2" title={lead.intent}>
+                              <span className="font-semibold">Intent:</span> {lead.intent}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-2 text-[10px] text-on-surface-variant">
+                        {new Date(lead.submittedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Traffic Sources Card */}
           {trafficSources.length > 0 && (
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
