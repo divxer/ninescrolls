@@ -3858,7 +3858,7 @@ export function AdminAnalyticsPage() {
                   >
                     <td className="pl-5 pr-2 py-4">
                       {(() => {
-                        const upgradedName = org.rfqInstitution || org.contactOrganization;
+                        const upgradedName = org.rfqInstitution || org.contactOrganization || org.downloadGateOrganization;
                         const displayMain = upgradedName || org.displayName || org.orgName;
                         const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
                         return (
@@ -3913,7 +3913,7 @@ export function AdminAnalyticsPage() {
           {/* Mobile org cards */}
           <div className="md:hidden grid gap-3 p-4">
             {(showAllOrgs ? sortedOrgs : sortedOrgs.slice(0, 10)).map((org) => {
-              const upgradedName = org.rfqInstitution || org.contactOrganization;
+              const upgradedName = org.rfqInstitution || org.contactOrganization || org.downloadGateOrganization;
               const displayMain = upgradedName || org.displayName || org.orgName;
               const showSubLine = !!upgradedName && upgradedName.toLowerCase() !== org.orgName.toLowerCase();
               return (
