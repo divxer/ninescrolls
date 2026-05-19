@@ -1430,6 +1430,53 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
     setLinkedInquiries(matchLinkedLeadsByVisitor(eventsForMatcher, allContactLeads));
   }, [hasContactForm, org.events, allContactLeads]);
 
+  // ── Linked Downloads lookup ────────────────────────────────────────────
+  // Same hybrid match as linkedInquiries, just against download_gate leads.
+  const [linkedDownloads, setLinkedDownloads] = useState<LeadSubmission[]>([]);
+  const hasDownload = org.events.some((e) =>
+    e.eventType === 'lead_capture' || e.eventType === 'pdf_download'
+  );
+
+  useEffect(() => {
+    if (!hasDownload) {
+      setLinkedDownloads([]);
+      return;
+    }
+    const eventsForMatcher = org.events.map((e) => ({
+      visitorId: (e as Record<string, unknown>).visitorId as string | null | undefined,
+      eventType: e.eventType,
+      timestamp: e.timestamp,
+    }));
+    setLinkedDownloads(matchLinkedLeadsByVisitor(eventsForMatcher, allDownloadGateLeads));
+  }, [hasDownload, org.events, allDownloadGateLeads]);
+
+  // ── Linked Newsletter lookup ───────────────────────────────────────────
+  // Newsletter signups have only email + source + timestamp. No event-type
+  // gate — newsletter signups don't always fire a corresponding analytics
+  // event (the form posts directly to the leads API). Match purely by
+  // visitorId; if no visitorId matches, the card simply hides.
+  const [linkedNewsletters, setLinkedNewsletters] = useState<LeadSubmission[]>([]);
+
+  useEffect(() => {
+    if (allNewsletterLeads.length === 0) {
+      setLinkedNewsletters([]);
+      return;
+    }
+    const visitorIds = new Set<string>();
+    for (const e of org.events) {
+      const vid = (e as Record<string, unknown>).visitorId as string | null | undefined;
+      if (vid) visitorIds.add(vid);
+    }
+    if (visitorIds.size === 0) {
+      setLinkedNewsletters([]);
+      return;
+    }
+    const matched = allNewsletterLeads
+      .filter(l => l.visitorId && visitorIds.has(l.visitorId))
+      .sort((a, b) => +new Date(b.submittedAt) - +new Date(a.submittedAt));
+    setLinkedNewsletters(matched);
+  }, [org.events, allNewsletterLeads]);
+
   async function handleOverride(isTarget: boolean) {
     setOverrideLoading(true);
     setOverrideMsg(null);
