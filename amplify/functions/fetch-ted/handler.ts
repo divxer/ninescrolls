@@ -9,8 +9,16 @@ const STAGING_BUCKET = () => process.env.STAGING_BUCKET!;
 
 const TED_URL = 'https://api.ted.europa.eu/v3/notices/search';
 const CPV_WHITELIST = ['38000000', '38500000', '38540000', '31700000'];
-const LOOKBACK_DAYS = 2;
+/**
+ * Lookback window in days. Default 7 (was 2 hardcoded) so a single missed run
+ * still has a chance to recover the previous day's notices. Overridable via
+ * env for ops backfills.
+ */
+const LOOKBACK_DAYS = Number(process.env.LOOKBACK_DAYS ?? 7);
 const PAGE_SIZE = 250;
+const TED_TIMEOUT_MS = 30_000;
+const MAX_RETRIES_PER_PAGE = 3;
+const RETRY_BASE_DELAY_MS = 1_000;
 const TED_FIELDS = [
     'publication-number',
     'notice-title',
@@ -143,6 +151,52 @@ function normalize(n: TedNotice): NormalizedTender {
     };
 }
 
+async function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * POST a single TED API page with retry on transient 5xx / network errors.
+ * Returns the parsed page on success or rethrows the last error after
+ * exhausting retries. Mirrors fetch-sam's retry policy.
+ */
+async function fetchPageWithRetry(body: Record<string, unknown>, pageIndex: number): Promise<TedResponse> {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= MAX_RETRIES_PER_PAGE; attempt++) {
+        try {
+            const { data } = await axios.post<TedResponse>(TED_URL, body, { timeout: TED_TIMEOUT_MS });
+            return data;
+        } catch (err) {
+            lastErr = err;
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            // Network errors (no .response) are transient; 5xx are retryable; 4xx are not.
+            const retryable = status === undefined || status >= 500;
+            if (!retryable || attempt === MAX_RETRIES_PER_PAGE) {
+                console.warn(JSON.stringify({
+                    event: 'fetch-ted.page-failed',
+                    pageIndex,
+                    attempt,
+                    status,
+                    error: err instanceof Error ? err.message : String(err),
+                }));
+                throw err;
+            }
+            const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+            console.warn(JSON.stringify({
+                event: 'fetch-ted.page-retry',
+                pageIndex,
+                attempt,
+                status,
+                delayMs: delay,
+                error: err instanceof Error ? err.message : String(err),
+            }));
+            await sleep(delay);
+        }
+    }
+    // Unreachable, but TS needs an explicit throw.
+    throw lastErr;
+}
+
 export async function handler(event: FetchTedEvent): Promise<FetchOutput> {
     try {
         const today = new Date();
@@ -152,7 +206,9 @@ export async function handler(event: FetchTedEvent): Promise<FetchOutput> {
 
         const out: NormalizedTender[] = [];
         let nextToken: string | null | undefined;
+        let pageIndex = 0;
         for (;;) {
+            pageIndex += 1;
             const body: Record<string, unknown> = {
                 query,
                 scope: 'ALL',
@@ -160,7 +216,7 @@ export async function handler(event: FetchTedEvent): Promise<FetchOutput> {
                 fields: TED_FIELDS,
             };
             if (nextToken) body.iterationNextToken = nextToken;
-            const { data } = await axios.post<TedResponse>(TED_URL, body, { timeout: 30_000 });
+            const data = await fetchPageWithRetry(body, pageIndex);
             const notices = data.notices ?? [];
             for (const n of notices) {
                 if (!isOpenTender(n['notice-type'])) continue;
@@ -188,7 +244,12 @@ export async function handler(event: FetchTedEvent): Promise<FetchOutput> {
             ContentType: 'application/json',
         }));
 
-        console.log(JSON.stringify({ event: 'fetch-ted.success', count: out.length, executionId: event.executionId }));
+        console.log(JSON.stringify({
+            event: 'fetch-ted.success',
+            count: out.length,
+            lookbackDays: LOOKBACK_DAYS,
+            executionId: event.executionId,
+        }));
         return { source: 'ted', stagedKey: key, fetched: out.length };
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

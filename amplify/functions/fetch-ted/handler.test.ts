@@ -14,6 +14,17 @@ vi.mock('@aws-sdk/client-s3', () => ({
 
 vi.stubEnv('STAGING_BUCKET', 'tender-watch-raw-test');
 
+// Speed up retry delays in tests so the suite stays fast — the production
+// helper sleeps 1s + 2s between attempts. Replace it with a no-op for tests.
+vi.mock('node:timers/promises', async () => ({ setTimeout: async () => {} }));
+// The handler uses a local sleep() that wraps global setTimeout — we monkey
+// patch global setTimeout to fire immediately, so retries don't actually wait.
+const originalSetTimeout = globalThis.setTimeout;
+globalThis.setTimeout = ((fn: () => void) => {
+    fn();
+    return 0 as unknown as ReturnType<typeof originalSetTimeout>;
+}) as typeof globalThis.setTimeout;
+
 beforeEach(() => {
     axiosPost.mockReset();
     axiosGet.mockReset();
@@ -46,11 +57,55 @@ describe('fetch-ted handler', () => {
         });
     });
 
-    it('returns fetched=0 + error on upstream failure', async () => {
-        axiosPost.mockRejectedValueOnce(new Error('timeout'));
+    it('retries transient 5xx then succeeds on a subsequent attempt', async () => {
+        const transient = Object.assign(new Error('upstream 503'), { response: { status: 503 } });
+        axiosPost
+            .mockRejectedValueOnce(transient)
+            .mockRejectedValueOnce(transient)
+            .mockResolvedValueOnce({ data: fixture });
         const { handler } = await import('./handler');
+
         const result = await handler({ executionId: 'exec-2' });
+
+        expect(axiosPost).toHaveBeenCalledTimes(3);
+        expect(result.fetched).toBe(2);
+        expect(result.error).toBeUndefined();
+    });
+
+    it('does NOT retry non-retryable 4xx errors', async () => {
+        const clientErr = Object.assign(new Error('bad request'), { response: { status: 400 } });
+        axiosPost.mockRejectedValueOnce(clientErr);
+        const { handler } = await import('./handler');
+
+        const result = await handler({ executionId: 'exec-2' });
+
+        expect(axiosPost).toHaveBeenCalledTimes(1);
         expect(result.fetched).toBe(0);
-        expect(result.error).toContain('timeout');
+        expect(result.error).toContain('bad request');
+    });
+
+    it('returns fetched=0 + error after exhausting retries on persistent failure', async () => {
+        const transient = Object.assign(new Error('upstream timeout'), { response: { status: 504 } });
+        axiosPost.mockRejectedValue(transient);
+        const { handler } = await import('./handler');
+
+        const result = await handler({ executionId: 'exec-2' });
+
+        expect(axiosPost).toHaveBeenCalledTimes(3); // MAX_RETRIES_PER_PAGE
+        expect(result.fetched).toBe(0);
+        expect(result.error).toContain('upstream timeout');
+    });
+
+    it('treats network errors (no .response) as retryable', async () => {
+        const networkErr = new Error('ECONNRESET'); // no .response → status undefined
+        axiosPost
+            .mockRejectedValueOnce(networkErr)
+            .mockResolvedValueOnce({ data: fixture });
+        const { handler } = await import('./handler');
+
+        const result = await handler({ executionId: 'exec-2' });
+
+        expect(axiosPost).toHaveBeenCalledTimes(2);
+        expect(result.fetched).toBe(2);
     });
 });
