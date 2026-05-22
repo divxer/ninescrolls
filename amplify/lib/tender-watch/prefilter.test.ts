@@ -110,4 +110,91 @@ describe('matchesAnyConfig', () => {
         expect(r.matchedCategories).toEqual([]);
         expect(r.matchedKeywords).toEqual([]);
     });
+
+    // ---- Soft filter behavior (added 2026-05-22) ----
+    // When a config has NAICS/CPV restrictions, code overlap is the hard gate.
+    // Keywords/synonyms are recorded as hints but their absence no longer
+    // drops the category. Rationale: SAM.gov titles use terminology variants
+    // (e.g. "Inductively Coupled Etching System" vs "Inductively Coupled
+    // Plasma") that an expert-curated keyword list silently misses; NAICS is
+    // the more reliable hard signal.
+
+    it('matches by NAICS alone even when title has no keyword hit (Argonne ICP case)', () => {
+        const cfg = baseConfig({
+            productCategory: 'ICP',
+            SK: 'CATEGORY#ICP',
+            GSI1SK: 'ICP',
+            keywords: ['inductively coupled plasma'],
+            naicsCodes: ['333242'],
+        });
+        const r = matchesAnyConfig(
+            {
+                title: 'Inductively Coupled Etching System',
+                description: 'Argonne National Lab cleanroom equipment',
+                naicsCodes: ['333242'],
+                cpvCodes: [],
+            },
+            [cfg],
+        );
+        expect(r.matchedCategories).toEqual(['ICP']);
+        // No keyword hit — hints set is empty.
+        expect(r.matchedKeywords).toEqual([]);
+    });
+
+    it('matches by CPV alone even when title has no keyword hit', () => {
+        const cfg = baseConfig({ cpvCodes: ['38540000'] });
+        const r = matchesAnyConfig(
+            { title: 'thin film coating station', description: '', naicsCodes: [], cpvCodes: ['38540000'] },
+            [cfg],
+        );
+        expect(r.matchedCategories).toEqual(['ALD']);
+        expect(r.matchedKeywords).toEqual([]);
+    });
+
+    it('records keyword/synonym hits as hints when NAICS is the gate', () => {
+        const cfg = baseConfig({
+            keywords: ['atomic layer deposition'],
+            synonyms: ['ALD'],
+            naicsCodes: ['334516'],
+        });
+        const r = matchesAnyConfig(
+            {
+                title: 'ALD reactor with atomic layer deposition capability',
+                description: '',
+                naicsCodes: ['334516'],
+                cpvCodes: [],
+            },
+            [cfg],
+        );
+        expect(r.matchedCategories).toEqual(['ALD']);
+        // Both the keyword and the synonym should appear as hints.
+        expect(r.matchedKeywords.sort()).toEqual(['ALD', 'atomic layer deposition']);
+    });
+
+    it('still respects blacklist when matching by NAICS alone', () => {
+        const cfg = baseConfig({
+            blacklist: ['training course'],
+            naicsCodes: ['334516'],
+        });
+        const r = matchesAnyConfig(
+            {
+                title: 'Inductively coupled etching training course',
+                description: '',
+                naicsCodes: ['334516'],
+                cpvCodes: [],
+            },
+            [cfg],
+        );
+        expect(r.matchedCategories).toEqual([]);
+    });
+
+    it('falls back to keyword gate when config has no NAICS/CPV restrictions', () => {
+        // No code restrictions on either tender or config → keyword gate applies
+        // to avoid matching every tender against every unrestricted category.
+        const r = matchesAnyConfig(
+            { title: 'office supplies procurement', description: '', naicsCodes: [], cpvCodes: [] },
+            [baseConfig()],
+        );
+        expect(r.matchedCategories).toEqual([]);
+    });
 });
