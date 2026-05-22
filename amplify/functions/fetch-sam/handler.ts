@@ -10,9 +10,24 @@ const STAGING_BUCKET = () => process.env.STAGING_BUCKET!;
 const SAM_API_KEY = () => process.env.SAM_API_KEY!;
 
 const SAM_URL = 'https://api.sam.gov/opportunities/v2/search';
-const NAICS_WHITELIST = '334516,334519,333242,541380';
+
+/**
+ * NAICS codes monitored by NineScrolls.
+ *
+ * IMPORTANT: SAM API's `ncode` parameter is single-value only. Comma-separated
+ * values like `334516,334519,333242,541380` are treated as a literal single
+ * NAICS code and match ZERO results (verified empirically May 2026 — this was
+ * the original launch bug causing every fetchSam run to return count=0).
+ *
+ * The fetcher iterates this array, issuing one SAM API call per NAICS code,
+ * deduping noticeIds across iterations.
+ */
+const NAICS_WHITELIST = ['334516', '334519', '333242', '541380'];
 const PAGE_SIZE = 1000;
-const LOOKBACK_DAYS = 2;
+const LOOKBACK_DAYS = Number(process.env.LOOKBACK_DAYS ?? 7);
+const SAM_TIMEOUT_MS = 30_000;
+const MAX_RETRIES_PER_PAGE = 3;
+const RETRY_BASE_DELAY_MS = 1_000;
 
 export interface FetchSamEvent {
     executionId: string;
@@ -81,6 +96,52 @@ function normalize(op: SamOpportunity): NormalizedTender {
     };
 }
 
+async function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch a single SAM API page with retry on transient 5xx / network errors.
+ * Returns the parsed page on success or rethrows the last error after exhausting retries.
+ */
+async function fetchPageWithRetry(params: Record<string, unknown>, ncode: string, offset: number): Promise<SamResponse> {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= MAX_RETRIES_PER_PAGE; attempt++) {
+        try {
+            const { data } = await axios.get<SamResponse>(SAM_URL, { params, timeout: SAM_TIMEOUT_MS });
+            return data;
+        } catch (err) {
+            lastErr = err;
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            const retryable = status === undefined || status >= 500;
+            if (!retryable || attempt === MAX_RETRIES_PER_PAGE) {
+                console.warn(JSON.stringify({
+                    event: 'fetch-sam.page-failed',
+                    ncode,
+                    offset,
+                    attempt,
+                    status,
+                    error: err instanceof Error ? err.message : String(err),
+                }));
+                throw err;
+            }
+            const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+            console.warn(JSON.stringify({
+                event: 'fetch-sam.page-retry',
+                ncode,
+                offset,
+                attempt,
+                status,
+                delayMs: delay,
+                error: err instanceof Error ? err.message : String(err),
+            }));
+            await sleep(delay);
+        }
+    }
+    // Unreachable, but TS needs an explicit throw.
+    throw lastErr;
+}
+
 export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
     try {
         const apiKey = SAM_API_KEY();
@@ -90,39 +151,47 @@ export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
         const postedTo = formatMdy(today);
 
         const out: NormalizedTender[] = [];
-        let offset = 0;
-        for (;;) {
-            const { data } = await axios.get<SamResponse>(SAM_URL, {
-                params: {
-                    api_key: apiKey,
-                    postedFrom,
-                    postedTo,
-                    ncode: NAICS_WHITELIST,
-                    limit: PAGE_SIZE,
+        const seenNoticeIds = new Set<string>();
+        const perNcodeCounts: Record<string, number> = {};
+
+        // SAM API's `ncode` parameter is single-value. Loop per NAICS code.
+        for (const ncode of NAICS_WHITELIST) {
+            let offset = 0;
+            let pageIndex = 0;
+            for (;;) {
+                pageIndex += 1;
+                const data = await fetchPageWithRetry(
+                    { api_key: apiKey, postedFrom, postedTo, ncode, limit: PAGE_SIZE, offset },
+                    ncode,
                     offset,
-                },
-                timeout: 30_000,
-            });
-            const opps = data.opportunitiesData ?? [];
-            for (const op of opps) {
-                if (op.active !== 'Yes' && op.active !== undefined) continue;
-                // Only Solicitation / Combined Synopsis/Solicitation — drop awards, justifications, etc.
-                if (op.type && !['Solicitation', 'Combined Synopsis/Solicitation'].includes(op.type)) continue;
-                const candidate = normalize(op);
-                const parsed = NormalizedTenderSchema.safeParse(candidate);
-                if (parsed.success) {
-                    out.push(parsed.data);
-                } else {
-                    console.warn(JSON.stringify({
-                        event: 'fetch-sam.normalize-invalid',
-                        noticeId: op.noticeId,
-                        issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
-                    }));
+                );
+                const opps = data.opportunitiesData ?? [];
+                for (const op of opps) {
+                    if (op.active !== 'Yes' && op.active !== undefined) continue;
+                    // Only Solicitation / Combined Synopsis/Solicitation — drop awards, justifications, etc.
+                    if (op.type && !['Solicitation', 'Combined Synopsis/Solicitation'].includes(op.type)) continue;
+                    // Dedupe across NAICS iterations (a single opportunity can be tagged with multiple NAICS,
+                    // and the SAM API returns it once per matching ncode call).
+                    if (seenNoticeIds.has(op.noticeId)) continue;
+                    seenNoticeIds.add(op.noticeId);
+
+                    const candidate = normalize(op);
+                    const parsed = NormalizedTenderSchema.safeParse(candidate);
+                    if (parsed.success) {
+                        out.push(parsed.data);
+                        perNcodeCounts[ncode] = (perNcodeCounts[ncode] ?? 0) + 1;
+                    } else {
+                        console.warn(JSON.stringify({
+                            event: 'fetch-sam.normalize-invalid',
+                            noticeId: op.noticeId,
+                            issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+                        }));
+                    }
                 }
+                offset += PAGE_SIZE;
+                if (opps.length === 0) break;
+                if (data.totalRecords != null && offset >= data.totalRecords) break;
             }
-            offset += PAGE_SIZE;
-            if (opps.length === 0) break;
-            if (data.totalRecords != null && offset >= data.totalRecords) break;
         }
 
         const key = stagedKey(event.executionId, 'fetch-sam', 'output');
@@ -133,7 +202,15 @@ export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
             ContentType: 'application/json',
         }));
 
-        console.log(JSON.stringify({ event: 'fetch-sam.success', count: out.length, executionId: event.executionId }));
+        console.log(JSON.stringify({
+            event: 'fetch-sam.success',
+            count: out.length,
+            perNcode: perNcodeCounts,
+            postedFrom,
+            postedTo,
+            lookbackDays: LOOKBACK_DAYS,
+            executionId: event.executionId,
+        }));
         return { source: 'sam', stagedKey: key, fetched: out.length };
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
