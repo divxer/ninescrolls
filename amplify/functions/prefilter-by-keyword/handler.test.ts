@@ -67,4 +67,41 @@ describe('prefilter-by-keyword handler', () => {
         expect(result.candidates).toEqual([]);
         expect(result.candidatesCount).toBe(0);
     });
+
+    it('emits per-source candidate counts', async () => {
+        mockQuery.mockResolvedValueOnce({
+            Items: [
+                {
+                    productCategory: 'ALD',
+                    productSlugs: ['ald-system'],
+                    keywords: ['ald', 'icp', 'pvd'],
+                    synonyms: [],
+                    blacklist: [],
+                    naicsCodes: ['333242', '334516'],
+                    cpvCodes: ['38540000'],
+                    isActive: true,
+                },
+            ],
+        });
+        mockBatchGet.mockResolvedValueOnce({
+            Responses: {
+                NineScrollsIntelligence: [
+                    { tenderId: 'sam-A', source: 'sam', title: 'ICP Etcher', description: '', naicsCodes: ['333242'], cpvCodes: [] },
+                    { tenderId: 'sam-B', source: 'sam', title: 'ALD System', description: '', naicsCodes: ['334516'], cpvCodes: [] },
+                    { tenderId: 'ted-C', source: 'ted', title: 'PVD Sputter', description: '', naicsCodes: [], cpvCodes: ['38540000'] },
+                    { tenderId: 'cal-D', source: 'calusource', title: 'Office Supplies', description: '', naicsCodes: [], cpvCodes: [] },
+                ],
+            },
+        });
+
+        const { handler } = await import('./handler');
+        const result = await handler({ newTenderIds: ['sam-A', 'sam-B', 'ted-C', 'cal-D'] });
+
+        expect(result.candidates.length).toBe(3);
+        expect(result.perSource).toEqual({
+            sam: { candidates: 2 },
+            ted: { candidates: 1 },
+            calusource: { candidates: 0 },
+        });
+    });
 });
