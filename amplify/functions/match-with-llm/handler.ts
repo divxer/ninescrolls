@@ -21,7 +21,11 @@ const DESCRIPTION_MAX_CHARS = 4000;
 export interface MatchEvent { tenderId: string; }
 export interface MatchResult {
     tenderId: string;
+    source: 'sam' | 'ted' | 'calusource' | string;
     matches: { productSlug: string; productCategory: string; score: number }[];
+    attempted: 0 | 1;
+    llmTimeout: boolean;
+    llmError: boolean;
     error?: string;
 }
 
@@ -114,7 +118,17 @@ export async function handler(event: MatchEvent): Promise<MatchResult> {
     try {
         const t = await ddb.send(new GetCommand({ TableName: TABLE(), Key: tenderItemKey(event.tenderId) }));
         tender = t.Item;
-        if (!tender) throw new Error(`tender ${event.tenderId} not found`);
+        if (!tender) {
+            return {
+                tenderId: event.tenderId,
+                source: 'unknown',
+                matches: [],
+                attempted: 0,
+                llmTimeout: false,
+                llmError: false,
+                error: `tender ${event.tenderId} not found`,
+            };
+        }
 
         const c = await ddb.send(new QueryCommand({
             TableName: TABLE(),
@@ -125,46 +139,73 @@ export async function handler(event: MatchEvent): Promise<MatchResult> {
         configs = (c.Items ?? []) as TenderKeywordConfigItem[];
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return { tenderId: event.tenderId, matches: [], error: message };
+        return {
+            tenderId: event.tenderId,
+            source: 'unknown',
+            matches: [],
+            attempted: 0,
+            llmTimeout: false,
+            llmError: false,
+            error: message,
+        };
     }
 
+    const source = (tender.source ?? 'unknown') as string;
     const prompt = buildPrompt(tender, configs);
-    let llmOut: LlmMatch[];
+    let llmOut: LlmMatch[] = [];
+    let bedrockErr: unknown = null;
+    let anthropicErr: unknown = null;
     try {
         llmOut = await callBedrock(prompt);
-    } catch (bedrockErr) {
+    } catch (err) {
+        bedrockErr = err;
         console.warn(JSON.stringify({ event: 'match.bedrock.fail', tenderId: event.tenderId, error: String(bedrockErr) }));
         try {
             llmOut = await callAnthropic(prompt);
-        } catch (anthropicErr) {
+        } catch (err2) {
+            anthropicErr = err2;
             const message = String(anthropicErr);
             console.error(JSON.stringify({ event: 'match.anthropic.fail', tenderId: event.tenderId, error: message }));
-            return { tenderId: event.tenderId, matches: [], error: message };
         }
     }
 
+    const bothAborted = isAbort(bedrockErr) && isAbort(anthropicErr);
+    const bothErrored = bedrockErr !== null && anthropicErr !== null;
+    const llmTimeout = bothAborted;
+    const llmError = bothErrored && !bothAborted;
+    const error = bothErrored ? String(anthropicErr ?? bedrockErr) : undefined;
+
     const matches: MatchResult['matches'] = [];
     const now = new Date().toISOString();
-    for (const m of llmOut) {
-        if (!m || typeof m.score !== 'number' || m.score < MIN_SCORE) continue;
-        const config = configs.find((c) => c.productCategory === m.category);
-        if (!config) continue;
-        for (const productSlug of config.productSlugs) {
-            const item: TenderMatchItem = {
-                ...tenderMatchItemKey(event.tenderId, productSlug),
-                tenderId: event.tenderId,
-                productSlug,
-                entityType: 'TENDER_MATCH',
-                score: Math.round(m.score),
-                reasoning: m.reasoning ?? '',
-                matchedKeywords: Array.isArray(m.matchedKeywords) ? m.matchedKeywords : [],
-                createdAt: now,
-            };
-            await ddb.send(new PutCommand({ TableName: TABLE(), Item: item }));
-            matches.push({ productSlug, productCategory: m.category, score: item.score });
+    if (!bothErrored) {
+        for (const m of llmOut) {
+            if (!m || typeof m.score !== 'number' || m.score < MIN_SCORE) continue;
+            const config = configs.find((c) => c.productCategory === m.category);
+            if (!config) continue;
+            for (const productSlug of config.productSlugs) {
+                const item: TenderMatchItem = {
+                    ...tenderMatchItemKey(event.tenderId, productSlug),
+                    tenderId: event.tenderId,
+                    productSlug,
+                    entityType: 'TENDER_MATCH',
+                    score: Math.round(m.score),
+                    reasoning: m.reasoning ?? '',
+                    matchedKeywords: Array.isArray(m.matchedKeywords) ? m.matchedKeywords : [],
+                    createdAt: now,
+                };
+                await ddb.send(new PutCommand({ TableName: TABLE(), Item: item }));
+                matches.push({ productSlug, productCategory: m.category, score: item.score });
+            }
         }
     }
 
     console.log(JSON.stringify({ event: 'match.done', tenderId: event.tenderId, matchCount: matches.length }));
-    return { tenderId: event.tenderId, matches };
+    return { tenderId: event.tenderId, source, matches, attempted: 1, llmTimeout, llmError, error };
+}
+
+function isAbort(err: unknown): boolean {
+    if (!err) return false;
+    const name = (err as { name?: string }).name;
+    const msg = (err as { message?: string }).message ?? '';
+    return name === 'AbortError' || /abort|timeout/i.test(msg);
 }
