@@ -1,8 +1,7 @@
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import { getAmplifyDataClient } from './amplifyClient';
 import { invalidateInsightsCache } from './insightsService';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 
 export interface CreateInsightsPostInput {
   slug: string;
@@ -27,7 +26,7 @@ export interface UpdateInsightsPostInput extends CreateInsightsPostInput {
 }
 
 export async function createInsightsPost(input: CreateInsightsPostInput) {
-  const { data, errors } = await client.models.InsightsPost.create(input, {
+  const { data, errors } = await client().models.InsightsPost.create(input, {
     authMode: 'userPool',
   });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
@@ -36,7 +35,7 @@ export async function createInsightsPost(input: CreateInsightsPostInput) {
 }
 
 export async function updateInsightsPost(input: UpdateInsightsPostInput) {
-  const { data, errors } = await client.models.InsightsPost.update(input, {
+  const { data, errors } = await client().models.InsightsPost.update(input, {
     authMode: 'userPool',
   });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
@@ -45,7 +44,7 @@ export async function updateInsightsPost(input: UpdateInsightsPostInput) {
 }
 
 export async function deleteInsightsPost(id: string) {
-  const { errors } = await client.models.InsightsPost.delete(
+  const { errors } = await client().models.InsightsPost.delete(
     { id },
     { authMode: 'userPool' }
   );
@@ -54,7 +53,7 @@ export async function deleteInsightsPost(id: string) {
 }
 
 export async function fetchInsightsPostById(id: string) {
-  const { data, errors } = await client.models.InsightsPost.get({ id });
+  const { data, errors } = await client().models.InsightsPost.get({ id });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }

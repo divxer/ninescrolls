@@ -1,7 +1,6 @@
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import { getAmplifyDataClient } from './amplifyClient';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
 
 // --- Orders ---
@@ -11,31 +10,31 @@ export async function listOrders(status?: string, limit?: number, nextToken?: st
   if (status) args.status = status;
   if (limit) args.limit = limit;
   if (nextToken) args.nextToken = nextToken;
-  const { data, errors } = await client.queries.listOrders(args as any, AUTH);
+  const { data, errors } = await client().queries.listOrders(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function getOrder(orderId: string) {
-  const { data, errors } = await client.queries.getOrder({ orderId } as any, AUTH);
+  const { data, errors } = await client().queries.getOrder({ orderId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function getOrderLogs(orderId: string) {
-  const { data, errors } = await client.queries.getOrderLogs({ orderId } as any, AUTH);
+  const { data, errors } = await client().queries.getOrderLogs({ orderId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function fetchOrderStats() {
-  const { data, errors } = await client.queries.orderStats(AUTH as any);
+  const { data, errors } = await client().queries.orderStats(AUTH as any);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function createOrder(input: Record<string, unknown>) {
-  const { data, errors } = await client.mutations.createOrder(
+  const { data, errors } = await client().mutations.createOrder(
     { input: JSON.stringify(input) } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -48,13 +47,13 @@ export async function updateOrderStatus(
   const args: Record<string, unknown> = { orderId, newStatus };
   if (statusDate) args.statusDate = statusDate;
   if (note) args.note = note;
-  const { data, errors } = await client.mutations.updateOrderStatus(args as any, AUTH);
+  const { data, errors } = await client().mutations.updateOrderStatus(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function updateOrder(orderId: string, input: Record<string, unknown>) {
-  const { data, errors } = await client.mutations.updateOrder(
+  const { data, errors } = await client().mutations.updateOrder(
     { orderId, input: JSON.stringify(input) } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -62,7 +61,7 @@ export async function updateOrder(orderId: string, input: Record<string, unknown
 }
 
 export async function addContact(orderId: string, input: Record<string, unknown>) {
-  const { data, errors } = await client.mutations.addContact(
+  const { data, errors } = await client().mutations.addContact(
     { orderId, input: JSON.stringify(input) } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -72,7 +71,7 @@ export async function addContact(orderId: string, input: Record<string, unknown>
 export async function updateContact(
   orderId: string, contactId: string, input: Record<string, unknown>,
 ) {
-  const { data, errors } = await client.mutations.updateContact(
+  const { data, errors } = await client().mutations.updateContact(
     { orderId, contactId, input: JSON.stringify(input) } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -80,7 +79,7 @@ export async function updateContact(
 }
 
 export async function removeContact(orderId: string, contactId: string) {
-  const { data, errors } = await client.mutations.removeContact(
+  const { data, errors } = await client().mutations.removeContact(
     { orderId, contactId } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -90,7 +89,7 @@ export async function removeContact(orderId: string, contactId: string) {
 export async function declineInquiry(orderId: string, reason: string, note?: string) {
   const args: Record<string, unknown> = { orderId, reason };
   if (note) args.note = note;
-  const { data, errors } = await client.mutations.declineInquiry(args as any, AUTH);
+  const { data, errors } = await client().mutations.declineInquiry(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -101,13 +100,13 @@ export async function listOrderDocuments(orderId: string, stage?: string, docTyp
   const args: Record<string, unknown> = { orderId };
   if (stage) args.stage = stage;
   if (docType) args.docType = docType;
-  const { data, errors } = await client.queries.listOrderDocuments(args as any, AUTH);
+  const { data, errors } = await client().queries.listOrderDocuments(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function getDocumentUploadUrl(orderId: string, fileName: string, mimeType: string) {
-  const { data, errors } = await client.queries.getDocumentUploadUrl(
+  const { data, errors } = await client().queries.getDocumentUploadUrl(
     { orderId, fileName, mimeType } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -127,7 +126,7 @@ export async function confirmDocumentUpload(params: {
 }) {
   const args: Record<string, unknown> = { ...params };
   if (params.tags) args.tags = JSON.stringify(params.tags);
-  const { data, errors } = await client.mutations.confirmDocumentUpload(args as any, AUTH);
+  const { data, errors } = await client().mutations.confirmDocumentUpload(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -140,13 +139,13 @@ export async function updateDocument(
   if (input.description !== undefined) args.description = input.description;
   if (input.docType !== undefined) args.docType = input.docType;
   if (input.tags !== undefined) args.tags = JSON.stringify(input.tags);
-  const { data, errors } = await client.mutations.updateDocument(args as any, AUTH);
+  const { data, errors } = await client().mutations.updateDocument(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function deleteDocument(orderId: string, docId: string) {
-  const { data, errors } = await client.mutations.deleteDocument(
+  const { data, errors } = await client().mutations.deleteDocument(
     { orderId, docId } as any, AUTH,
   );
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
@@ -160,13 +159,13 @@ export async function listRfqs(status?: string, limit?: number, nextToken?: stri
   if (status) args.status = status;
   if (limit) args.limit = limit;
   if (nextToken) args.nextToken = nextToken;
-  const { data, errors } = await client.queries.listRfqs(args as any, AUTH);
+  const { data, errors } = await client().queries.listRfqs(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function getRfq(rfqId: string) {
-  const { data, errors } = await client.queries.getRfq({ rfqId } as any, AUTH);
+  const { data, errors } = await client().queries.getRfq({ rfqId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -174,13 +173,13 @@ export async function getRfq(rfqId: string) {
 export async function declineRfq(rfqId: string, reason?: string) {
   const args: Record<string, unknown> = { rfqId };
   if (reason) args.reason = reason;
-  const { data, errors } = await client.mutations.declineRfq(args as any, AUTH);
+  const { data, errors } = await client().mutations.declineRfq(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function revertRfqToPending(rfqId: string) {
-  const { data, errors } = await client.mutations.revertRfqToPending({ rfqId } as any, AUTH);
+  const { data, errors } = await client().mutations.revertRfqToPending({ rfqId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -194,7 +193,7 @@ export async function convertRfqToOrder(rfqId: string, overrides?: {
   notes?: string;
 }) {
   const args: Record<string, unknown> = { rfqId, ...overrides };
-  const { data, errors } = await client.mutations.convertRfqToOrder(args as any, AUTH);
+  const { data, errors } = await client().mutations.convertRfqToOrder(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -207,19 +206,19 @@ export async function listLeads(type?: string, limit?: number, nextToken?: strin
   if (limit) args.limit = limit;
   if (nextToken) args.nextToken = nextToken;
   // listLeads may not exist in deployed schema yet — guard against it
-  if (typeof (client.queries as any).listLeads !== 'function') {
+  if (typeof (client().queries as any).listLeads !== 'function') {
     throw new Error('listLeads query not available. Please deploy the updated backend schema first.');
   }
-  const { data, errors } = await client.queries.listLeads(args as any, AUTH);
+  const { data, errors } = await client().queries.listLeads(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
 
 export async function getLead(leadId: string) {
-  if (typeof (client.queries as any).getLead !== 'function') {
+  if (typeof (client().queries as any).getLead !== 'function') {
     throw new Error('getLead query not available. Please deploy the updated backend schema first.');
   }
-  const { data, errors } = await client.queries.getLead({ leadId } as any, AUTH);
+  const { data, errors } = await client().queries.getLead({ leadId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }
@@ -230,10 +229,10 @@ export async function listByEmail(email: string, limit?: number, nextToken?: str
   const args: Record<string, unknown> = { email };
   if (limit) args.limit = limit;
   if (nextToken) args.nextToken = nextToken;
-  if (typeof (client.queries as any).listByEmail !== 'function') {
+  if (typeof (client().queries as any).listByEmail !== 'function') {
     throw new Error('listByEmail query not available. Please deploy the updated backend schema first.');
   }
-  const { data, errors } = await client.queries.listByEmail(args as any, AUTH);
+  const { data, errors } = await client().queries.listByEmail(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
   return data;
 }

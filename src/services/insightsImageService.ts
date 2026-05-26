@@ -1,7 +1,6 @@
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import { getAmplifyDataClient } from './amplifyClient';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
 
 export interface ImageUploadResult {
@@ -20,7 +19,7 @@ export async function getImageUploadUrl(
   fileName: string,
   mimeType: string,
 ) {
-  const { data, errors } = await client.queries.getInsightsImageUploadUrl(
+  const { data, errors } = await client().queries.getInsightsImageUploadUrl(
     { slug, fileName, mimeType } as any,
     AUTH,
   );
@@ -72,7 +71,7 @@ export async function getContentImageUploadUrl(
   fileName: string,
   mimeType: string,
 ) {
-  const { data, errors } = await client.queries.getContentImageUploadUrl(
+  const { data, errors } = await client().queries.getContentImageUploadUrl(
     { slug, fileName, mimeType } as any,
     AUTH,
   );
@@ -86,7 +85,7 @@ export async function getContentImageUploadUrl(
  * Called when an article is deleted.
  */
 export async function deleteInsightsImages(slug: string) {
-  const { data, errors } = await client.mutations.deleteInsightsImages(
+  const { data, errors } = await client().mutations.deleteInsightsImages(
     { slug } as any,
     AUTH,
   );
@@ -101,7 +100,7 @@ export async function processImage(
   s3Key: string,
   slug: string,
 ): Promise<ImageUploadResult> {
-  const { data, errors } = await client.mutations.processInsightsImage(
+  const { data, errors } = await client().mutations.processInsightsImage(
     { s3Key, slug } as any,
     AUTH,
   );

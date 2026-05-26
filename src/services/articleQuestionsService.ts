@@ -1,8 +1,8 @@
-import { generateClient } from 'aws-amplify/data';
+import { getAmplifyDataClient } from './amplifyClient';
 import type { Schema } from '../../amplify/data/resource';
 import type { ArticleQuestion, ArticleQuestionAdmin, QuestionStatus } from '../types';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 
 type DynamoQuestion = Schema['ArticleQuestion']['type'];
 
@@ -47,7 +47,7 @@ export async function fetchApprovedQuestions(articleSlug: string): Promise<Artic
   let nextToken: string | null | undefined = undefined;
 
   do {
-    const page: { data: DynamoQuestion[]; nextToken?: string | null } = await client.models.ArticleQuestion.list({
+    const page: { data: DynamoQuestion[]; nextToken?: string | null } = await client().models.ArticleQuestion.list({
       filter: {
         articleSlug: { eq: articleSlug },
         status: { eq: 'approved' },
@@ -94,7 +94,7 @@ export async function fetchAllQuestions(status?: QuestionStatus): Promise<Articl
   const filter = status ? { status: { eq: status } } : undefined;
 
   do {
-    const page: { data: DynamoQuestion[]; nextToken?: string | null } = await client.models.ArticleQuestion.list({
+    const page: { data: DynamoQuestion[]; nextToken?: string | null } = await client().models.ArticleQuestion.list({
       limit: 100,
       authMode: 'userPool',
       ...(filter ? { filter } : {}),
@@ -115,7 +115,7 @@ export async function answerQuestion(
   answer: string,
   answeredBy: string,
 ): Promise<void> {
-  await client.models.ArticleQuestion.update(
+  await client().models.ArticleQuestion.update(
     {
       id,
       answer,
@@ -129,7 +129,7 @@ export async function answerQuestion(
 
 /** Reject a question (admin) */
 export async function rejectQuestion(id: string): Promise<void> {
-  await client.models.ArticleQuestion.update(
+  await client().models.ArticleQuestion.update(
     { id, status: 'rejected' },
     { authMode: 'userPool' },
   );
@@ -137,7 +137,7 @@ export async function rejectQuestion(id: string): Promise<void> {
 
 /** Revert a question back to pending (admin) */
 export async function revertToPending(id: string): Promise<void> {
-  await client.models.ArticleQuestion.update(
+  await client().models.ArticleQuestion.update(
     { id, status: 'pending' },
     { authMode: 'userPool' },
   );
@@ -145,7 +145,7 @@ export async function revertToPending(id: string): Promise<void> {
 
 /** Delete a question (admin) */
 export async function deleteQuestion(id: string): Promise<void> {
-  await client.models.ArticleQuestion.delete(
+  await client().models.ArticleQuestion.delete(
     { id },
     { authMode: 'userPool' },
   );
