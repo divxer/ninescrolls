@@ -56,7 +56,7 @@ import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import {
     StateMachine, StateMachineType, Pass, Parallel, Map as SfnMap,
-    Choice, Condition, Succeed, JsonPath, LogLevel, TaskInput,
+    Choice, Condition, JsonPath, LogLevel, TaskInput, Result,
 } from 'aws-cdk-lib/aws-stepfunctions';
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -871,10 +871,9 @@ const recordRunFailedTask = new LambdaInvoke(tenderWatchStack, 'RecordRunFailed'
     payloadResponseOnly: true,
 });
 
-const expireTask = new LambdaInvoke(tenderWatchStack, 'ExpireOldTenders', {
-    lambdaFunction: backend.expireOldTenders.resources.lambda,
-    payload: TaskInput.fromObject({}),
-    payloadResponseOnly: true,
+const noMatchesPass = new Pass(tenderWatchStack, 'NoMatchesYet', {
+    result: Result.fromArray([]),
+    resultPath: '$.matches',
 });
 
 const noCandidatesClassifiedPass = new Pass(tenderWatchStack, 'NoCandidatesClassified', {
@@ -886,7 +885,6 @@ notifyHigh.next(notifyDigest);
 notifyHpFailedPass.next(notifyDigest);
 notifyDigest.next(recordRunCompleteTask);
 notifyDigestFailedPass.next(recordRunCompleteTask);
-recordRunCompleteTask.next(expireTask);
 [normalizeTask, prefilterTask, matchMap, classifyTask].forEach((t) => {
     t.addCatch(recordRunFailedTask, { errors: ['States.ALL'], resultPath: '$.error' });
 });
@@ -896,7 +894,7 @@ const choice = new Choice(tenderWatchStack, 'HasCandidates')
         Condition.numberGreaterThan('$.prefilter.candidatesCount', 0),
         matchMap.next(classifyTask).next(notifyHigh),
     )
-    .otherwise(noCandidatesClassifiedPass.next(notifyHigh));
+    .otherwise(noMatchesPass.next(noCandidatesClassifiedPass).next(notifyHigh));
 
 const definition = passInjectExecutionId
     .next(fetchParallel)
@@ -927,6 +925,11 @@ new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
 new Rule(tenderWatchStack, 'PipelineHealthCheckRule', {
     schedule: Schedule.cron({ minute: '30', hour: '2', day: '*', month: '*', year: '*' }),
     targets: [new LambdaFunctionTarget(backend.notifyPipelineHealth.resources.lambda)],
+});
+
+new Rule(tenderWatchStack, 'ExpireOldTendersRule', {
+    schedule: Schedule.cron({ minute: '45', hour: '2', day: '*', month: '*', year: '*' }),
+    targets: [new LambdaFunctionTarget(backend.expireOldTenders.resources.lambda)],
 });
 
 // =============================================================================

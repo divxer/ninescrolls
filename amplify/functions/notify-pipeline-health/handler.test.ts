@@ -30,6 +30,7 @@ vi.stubEnv('ALERT_EMAIL_FROM', 'info@ninescrolls.com');
 vi.stubEnv('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource');
 
 beforeEach(() => {
+    vi.stubEnv('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource');
     ddbQueryMock.mockReset();
     ddbBatchGetMock.mockReset();
     ddbPutMock.mockReset();
@@ -96,6 +97,35 @@ describe('notify-pipeline-health', () => {
         expect(body).toMatch(/normalize crash/);
     });
 
+    it('Rule 3: notificationStatus FAILED sends WARNING email', async () => {
+        ddbQueryMock.mockResolvedValueOnce({ Items: [summary({ notificationStatus: 'FAILED', notificationError: 'SES quota' })] });
+        ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [
+            sourceRow('sam'), sourceRow('ted'), sourceRow('calusource'),
+        ] } });
+        const { handler } = await import('./handler');
+        await handler({});
+        const subject = sesSendMock.mock.calls[0][0].Content.Simple.Subject.Data;
+        const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
+        expect(subject).toMatch(/WARNING/);
+        expect(body).toMatch(/Notification layer FAILED/i);
+    });
+
+    it('Rule 4: source failed in 2 consecutive runs sends CRITICAL email', async () => {
+        ddbQueryMock.mockResolvedValueOnce({ Items: [
+            summary({ executionId: 'e2', sourcesFailed: ['ted'], sourcesSucceeded: ['sam', 'calusource'], status: 'PARTIAL' }),
+            summary({ executionId: 'e1', sourcesFailed: ['ted'], sourcesSucceeded: ['sam', 'calusource'], status: 'PARTIAL' }),
+        ] });
+        ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [
+            sourceRow('sam'),
+            sourceRow('ted', { status: 'FAILED', fetched: 0 }),
+            sourceRow('calusource'),
+        ] } });
+        const { handler } = await import('./handler');
+        await handler({});
+        const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
+        expect(body).toMatch(/ted.*2 consecutive/i);
+    });
+
     it('Rule 5: source SUCCESS but fetched=0 sends CRITICAL email', async () => {
         ddbQueryMock.mockResolvedValueOnce({ Items: [summary()] });
         ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [
@@ -107,6 +137,43 @@ describe('notify-pipeline-health', () => {
         await handler({});
         const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
         expect(body).toMatch(/ted.*0 records/i);
+    });
+
+    it('Rule 5: source excluded via ZERO_FETCH_ALERT_SOURCES sends no email', async () => {
+        vi.stubEnv('ZERO_FETCH_ALERT_SOURCES', 'sam,calusource');
+        ddbQueryMock.mockResolvedValueOnce({ Items: [summary()] });
+        ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [
+            sourceRow('sam'),
+            sourceRow('ted', { fetched: 0 }),
+            sourceRow('calusource'),
+        ] } });
+        const { handler } = await import('./handler');
+        await handler({});
+        expect(sesSendMock).not.toHaveBeenCalled();
+    });
+
+    it('Rule 6: llmTimeoutCount > 0 sends WARNING email', async () => {
+        ddbQueryMock.mockResolvedValueOnce({ Items: [summary()] });
+        ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [
+            sourceRow('sam', { llmTimeoutCount: 3 }),
+            sourceRow('ted'),
+            sourceRow('calusource'),
+        ] } });
+        const { handler } = await import('./handler');
+        await handler({});
+        const subject = sesSendMock.mock.calls[0][0].Content.Simple.Subject.Data;
+        const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
+        expect(subject).toMatch(/WARNING/);
+        expect(body).toMatch(/LLM timeouts/i);
+    });
+
+    it('Rule 7: SUMMARY present but SOURCE rows missing sends WARNING email', async () => {
+        ddbQueryMock.mockResolvedValueOnce({ Items: [summary()] });
+        ddbBatchGetMock.mockResolvedValueOnce({ Responses: { 'IntelligenceTable-test': [sourceRow('sam')] } });
+        const { handler } = await import('./handler');
+        await handler({});
+        const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
+        expect(body).toMatch(/missing SOURCE rows/i);
     });
 
     it('Healthy run sends no email', async () => {
@@ -126,5 +193,15 @@ describe('notify-pipeline-health', () => {
         await handler({});
         await handler({});
         expect(sesSendMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('Multiple alerts with mixed levels uses the most severe subject', async () => {
+        ddbQueryMock.mockResolvedValueOnce({ Items: [summary({ status: 'FAILED', lastError: 'x', notificationStatus: 'FAILED', notificationError: 'SES quota' })] });
+        const { handler } = await import('./handler');
+        await handler({});
+        const subject = sesSendMock.mock.calls[0][0].Content.Simple.Subject.Data;
+        const body = sesSendMock.mock.calls[0][0].Content.Simple.Body.Text.Data;
+        expect(subject).toMatch(/CRITICAL/);
+        expect(body).toMatch(/Notification layer FAILED/i);
     });
 });

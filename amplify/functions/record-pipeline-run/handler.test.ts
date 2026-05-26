@@ -92,6 +92,136 @@ describe('record-pipeline-run', () => {
         expect(summary.status).toBe('PARTIAL');
     });
 
+    it('writes status=PARTIAL when one source failed', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-2',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 11, stagedKey: 'k/sam' },
+                { source: 'ted', fetched: 0, stagedKey: null, errorName: 'Timeout', errorCause: 'after 30s' },
+                { source: 'calusource', fetched: 12, stagedKey: 'k/cal' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+
+        const items = ddbPutMock.mock.calls.map(c => c[0].Item);
+        const summary = items.find(i => i.SK === 'SUMMARY');
+        expect(summary.status).toBe('PARTIAL');
+        expect(summary.sourcesFailed).toEqual(['ted']);
+        expect(summary.sourcesSucceeded).toEqual(['sam', 'calusource']);
+        expect(summary.notificationStatus).toBe('SKIPPED');
+    });
+
+    it('writes notificationStatus=PARTIAL when one notify failed and one sent', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-3',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 1, stagedKey: 'k' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'failed', error: 'SES quota' },
+            notifyDigest: { status: 'sent', count: 3 },
+        });
+        const summary = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SUMMARY');
+        expect(summary.notificationStatus).toBe('PARTIAL');
+        expect(summary.notificationError).toContain('SES quota');
+    });
+
+    it('writes notified=null when fetch succeeded but notify failed', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-notify-failed',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 1, stagedKey: 'k' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [
+                { tenderId: 't1', source: 'sam', matches: [{ productSlug: 'x', productCategory: 'X', score: 90 }], attempted: 1, llmTimeout: false, llmError: false },
+            ],
+            classified: { tendersUpdated: 1, highPriorityTenderIds: ['t1'], digestTenderIds: ['t1'] },
+            notifyHp: { status: 'failed', error: 'SES quota' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const samRow = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SOURCE#sam');
+        expect(samRow.highPriority).toBe(1);
+        expect(samRow.notified).toBeNull();
+    });
+
+    it('writes completedStages=["fetch"] on a failed source', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-cs',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 0, stagedKey: null, errorName: 'Timeout', errorCause: 'after 30s' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const samRow = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SOURCE#sam');
+        expect(samRow.completedStages).toEqual(['fetch']);
+        expect(samRow.status).toBe('FAILED');
+    });
+
+    it('treats missing matches as an empty no-candidates run', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-no-candidates',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 1, stagedKey: 'k' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const summary = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SUMMARY');
+        expect(summary.status).toBe('SUCCESS');
+        expect(summary.totalScored).toBe(0);
+    });
+
     it('writes only SUMMARY on FAILED path', async () => {
         const { handler } = await import('./handler');
         await handler({
