@@ -196,6 +196,51 @@ describe('listTenderKeywordConfigs', () => {
     });
 });
 
+describe('pipeline runs', () => {
+    it('listPipelineRuns queries GSI5 latest-first with default limit 100', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn().mockResolvedValueOnce({ Items: [{ executionId: 'e1' }, { executionId: 'e2' }] });
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'listPipelineRuns' },
+            arguments: {},
+            identity: { username: 'admin1', groups: ['admin'] },
+        } as any);
+
+        expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+            input: expect.objectContaining({
+                IndexName: 'GSI5',
+                KeyConditionExpression: 'GSI5PK = :pk',
+                ScanIndexForward: false,
+                Limit: 100,
+            }),
+        }));
+        expect(result).toEqual([{ executionId: 'e1' }, { executionId: 'e2' }]);
+    });
+
+    it('getPipelineRun returns summary and source rows', async () => {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn().mockResolvedValueOnce({ Items: [
+            { SK: 'SUMMARY', executionId: 'e1', status: 'SUCCESS' },
+            { SK: 'SOURCE#sam', source: 'sam', fetched: 10 },
+            { SK: 'SOURCE#ted', source: 'ted', fetched: 20 },
+        ] });
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            info: { fieldName: 'getPipelineRun' },
+            arguments: { executionId: 'e1' },
+            identity: { username: 'admin1', groups: ['admin'] },
+        } as any) as any;
+
+        expect(result.summary.executionId).toBe('e1');
+        expect(result.sources).toHaveLength(2);
+    });
+});
+
 describe('updateTenderStatus', () => {
     it('updates status + writes log entry on success', async () => {
         const docMock = await import('@aws-sdk/lib-dynamodb');

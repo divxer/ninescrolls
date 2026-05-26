@@ -10,7 +10,11 @@ const NOTIFICATION_TO = 'info@ninescrolls.com';
 const NOTIFICATION_FROM = { email: 'noreply@ninescrolls.com', name: 'NineScrolls' };
 
 export interface DigestEvent { digestTenderIds: string[]; }
-export interface DigestResult { sent: number; }
+export interface DigestOutcome {
+    status: 'sent' | 'skipped';
+    count: number;
+}
+export type DigestResult = DigestOutcome;
 
 function escapeHtml(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -28,15 +32,14 @@ async function loadTenders(ids: string[]): Promise<any[]> {
     return out;
 }
 
-export async function handler(event: DigestEvent): Promise<DigestResult> {
-    if (event.digestTenderIds.length === 0) return { sent: 0 };
+export async function handler(event: DigestEvent): Promise<DigestOutcome> {
+    if (event.digestTenderIds.length === 0) return { status: 'skipped', count: 0 };
     const apiKey = SENDGRID_API_KEY();
     if (!apiKey) {
-        console.warn(JSON.stringify({ event: 'notify-daily-digest.no-api-key' }));
-        return { sent: 0 };
+        throw new Error('SENDGRID_API_KEY is required for notify-daily-digest');
     }
     const tenders = await loadTenders(event.digestTenderIds);
-    if (tenders.length === 0) return { sent: 0 };
+    if (tenders.length === 0) return { status: 'skipped', count: 0 };
 
     const byCountry = new Map<string, any[]>();
     for (const t of tenders) {
@@ -72,8 +75,8 @@ export async function handler(event: DigestEvent): Promise<DigestResult> {
     if (res.status !== 202) {
         const body = await res.text().catch(() => '');
         console.error(JSON.stringify({ event: 'notify-daily-digest.sendgrid.fail', status: res.status, body }));
-        return { sent: 0 };
+        throw new Error(`SendGrid returned ${res.status}: ${body}`);
     }
 
-    return { sent: 1 };
+    return { status: 'sent', count: tenders.length };
 }

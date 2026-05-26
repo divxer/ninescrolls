@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
   { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
+  { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
   { path: '/admin/organizations', label: 'Organizations', icon: 'business' },
   { path: '/admin/insights', label: 'Insights', icon: 'insights' },
@@ -30,7 +31,12 @@ export function AdminLayout() {
     if (root) root.setAttribute('data-theme', effectiveTheme);
   }, [effectiveTheme]);
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const isActive = (path: string) => {
+    if (path === '/admin/tenders') {
+      return location.pathname.startsWith('/admin/tenders') && !location.pathname.startsWith('/admin/tenders/runs');
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div className="admin-root">

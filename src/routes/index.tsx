@@ -63,6 +63,8 @@ const AdminQuestionsPage = lazy(() => import('../pages/admin/AdminQuestionsPage'
 const TenderListPage = lazy(() => import('../pages/admin/TenderListPage').then(m => ({ default: m.TenderListPage })));
 const TenderDetailPage = lazy(() => import('../pages/admin/TenderDetailPage').then(m => ({ default: m.TenderDetailPage })));
 const TenderKeywordConfigPage = lazy(() => import('../pages/admin/TenderKeywordConfigPage').then(m => ({ default: m.TenderKeywordConfigPage })));
+const TenderPipelineRunsPage = lazy(() => import('../pages/admin/TenderPipelineRunsPage').then(m => ({ default: m.TenderPipelineRunsPage })));
+const TenderPipelineRunDetailPage = lazy(() => import('../pages/admin/TenderPipelineRunDetailPage').then(m => ({ default: m.TenderPipelineRunDetailPage })));
 
 // ─── Loading fallback ───────────────────────────────────────────────────────
 function PageLoader() {
@@ -144,6 +146,8 @@ export function AdminRoutes() {
           <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
           <Route path="tenders" element={<TenderListPage />} />
           <Route path="tenders/keywords" element={<TenderKeywordConfigPage />} />
+          <Route path="tenders/runs" element={<TenderPipelineRunsPage />} />
+          <Route path="tenders/runs/:executionId" element={<TenderPipelineRunDetailPage />} />
           <Route path="tenders/:tenderId" element={<TenderDetailPage />} />
         </Route>
       </Routes>

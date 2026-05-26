@@ -126,4 +126,55 @@ describe('match-with-llm handler', () => {
         expect(result.matches).toEqual([]);
         expect(result.error).toBeDefined();
     });
+
+    it('returns source/attempted/llmTimeout/llmError fields on every call', async () => {
+        mockGet.mockResolvedValueOnce({
+            Item: {
+                tenderId: 'sam-Z',
+                source: 'sam',
+                title: 'PECVD',
+                description: '',
+                naicsCodes: [],
+                cpvCodes: [],
+            },
+        });
+        mockQuery.mockResolvedValueOnce({ Items: [{ productCategory: 'PECVD', productSlugs: ['pluto-f'], isActive: true }] });
+        mockBedrockSend.mockResolvedValueOnce(bedrockOk([
+            { category: 'PECVD', score: 92, reasoning: '', matchedKeywords: [] },
+        ]));
+        mockPut.mockResolvedValue({});
+
+        const { handler } = await import('./handler');
+        const result = await handler({ tenderId: 'sam-Z' });
+        expect(result.source).toBe('sam');
+        expect(result.attempted).toBe(1);
+        expect(result.llmTimeout).toBe(false);
+        expect(result.llmError).toBe(false);
+        expect(result.matches[0].score).toBe(92);
+    });
+
+    it('sets llmTimeout when Bedrock + Anthropic both AbortError', async () => {
+        mockGet.mockResolvedValueOnce({ Item: { tenderId: 'ted-Z', source: 'ted', title: 'X', description: '', naicsCodes: [], cpvCodes: [] } });
+        mockQuery.mockResolvedValueOnce({ Items: [] });
+        mockBedrockSend.mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+        mockAnthropic.mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+
+        const { handler } = await import('./handler');
+        const result = await handler({ tenderId: 'ted-Z' });
+        expect(result.llmTimeout).toBe(true);
+        expect(result.llmError).toBe(false);
+        expect(result.matches).toEqual([]);
+    });
+
+    it('sets llmError when Bedrock + Anthropic both fail with non-timeout error', async () => {
+        mockGet.mockResolvedValueOnce({ Item: { tenderId: 'cal-Z', source: 'calusource', title: 'X', description: '', naicsCodes: [], cpvCodes: [] } });
+        mockQuery.mockResolvedValueOnce({ Items: [] });
+        mockBedrockSend.mockRejectedValueOnce(new Error('5xx'));
+        mockAnthropic.mockRejectedValueOnce(new Error('5xx'));
+
+        const { handler } = await import('./handler');
+        const result = await handler({ tenderId: 'cal-Z' });
+        expect(result.llmError).toBe(true);
+        expect(result.llmTimeout).toBe(false);
+    });
 });

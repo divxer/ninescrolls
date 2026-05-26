@@ -10,7 +10,11 @@ const NOTIFICATION_TO = 'info@ninescrolls.com';
 const NOTIFICATION_FROM = { email: 'noreply@ninescrolls.com', name: 'NineScrolls' };
 
 export interface NotifyHighPriorityEvent { highPriorityTenderIds: string[]; }
-export interface NotifyResult { sent: number; failed: number; }
+export interface NotifyOutcome {
+    status: 'sent' | 'skipped';
+    count: number;
+}
+export type NotifyResult = NotifyOutcome;
 
 function escapeHtml(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -23,7 +27,7 @@ function daysUntil(dateIso: string | null | undefined): string {
     return `${days} day${Math.abs(days) === 1 ? '' : 's'}`;
 }
 
-async function sendEmail(subject: string, html: string, apiKey: string): Promise<boolean> {
+async function sendEmail(subject: string, html: string, apiKey: string): Promise<void> {
     const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -37,55 +41,58 @@ async function sendEmail(subject: string, html: string, apiKey: string): Promise
             content: [{ type: 'text/html', value: html }],
         }),
     });
-    if (res.status === 202) return true;
+    if (res.status === 202) return;
     const body = await res.text().catch(() => '');
     console.error(JSON.stringify({ event: 'notify-high-priority.sendgrid.fail', status: res.status, body }));
-    return false;
+    throw new Error(`SendGrid returned ${res.status}: ${body}`);
 }
 
-export async function handler(event: NotifyHighPriorityEvent): Promise<NotifyResult> {
-    let sent = 0;
-    let failed = 0;
+export async function handler(event: NotifyHighPriorityEvent): Promise<NotifyOutcome> {
+    if (event.highPriorityTenderIds.length === 0) {
+        return { status: 'skipped', count: 0 };
+    }
+
     const apiKey = SENDGRID_API_KEY();
     if (!apiKey) {
-        console.warn(JSON.stringify({ event: 'notify-high-priority.no-api-key' }));
-        return { sent: 0, failed: event.highPriorityTenderIds.length };
+        throw new Error('SENDGRID_API_KEY is required for notify-high-priority');
     }
 
+    const rows: string[] = [];
     for (const tenderId of event.highPriorityTenderIds) {
-        try {
-            const meta = await ddb.send(new GetCommand({ TableName: TABLE(), Key: tenderItemKey(tenderId) }));
-            const t = meta.Item;
-            if (!t) { failed += 1; continue; }
+        const meta = await ddb.send(new GetCommand({ TableName: TABLE(), Key: tenderItemKey(tenderId) }));
+        const t = meta.Item;
+        if (!t) continue;
 
-            const matches = await ddb.send(new QueryCommand({
-                TableName: TABLE(),
-                KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
-                ExpressionAttributeValues: { ':pk': `TENDER#${tenderId}`, ':sk': 'MATCH#' },
-            }));
+        const matches = await ddb.send(new QueryCommand({
+            TableName: TABLE(),
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+            ExpressionAttributeValues: { ':pk': `TENDER#${tenderId}`, ':sk': 'MATCH#' },
+        }));
 
-            const subject = `🔥 [Tender Watch] ${t.country} · ${t.agency} · score ${t.overallScore}`;
-            const matchesHtml = (matches.Items ?? []).map((m: Record<string, any>) =>
-                `<li><strong>${escapeHtml(m.productSlug)}</strong> — ${m.score}/100<br><em>${escapeHtml(m.reasoning ?? '')}</em></li>`
-            ).join('');
+        const matchesHtml = (matches.Items ?? []).map((m: Record<string, any>) =>
+            `<li><strong>${escapeHtml(m.productSlug)}</strong> - ${m.score}/100<br><em>${escapeHtml(m.reasoning ?? '')}</em></li>`
+        ).join('');
 
-            const html = [
-                `<h2>${escapeHtml(t.title)}</h2>`,
-                `<p><strong>Agency:</strong> ${escapeHtml(t.agency)} (${escapeHtml(t.country)})<br>`,
-                `<strong>Deadline:</strong> ${t.deadline ?? 'N/A'} (${daysUntil(t.deadline)})<br>`,
-                t.estimatedValueUSD ? `<strong>Estimated value:</strong> ~$${(t.estimatedValueUSD as number).toLocaleString('en-US')}<br>` : '',
-                `<strong>Score:</strong> ${t.overallScore}/100<br>`,
-                `<strong>Source:</strong> <a href="${escapeHtml(t.sourceUrl)}">${escapeHtml(t.sourceUrl)}</a></p>`,
-                `<h3>Product matches</h3><ul>${matchesHtml}</ul>`,
-                `<h3>Description</h3><p>${escapeHtml(t.description ?? '').replace(/\n/g, '<br>')}</p>`,
-            ].join('\n');
-
-            const ok = await sendEmail(subject, html, apiKey);
-            if (ok) sent += 1; else failed += 1;
-        } catch (err) {
-            console.error(JSON.stringify({ event: 'notify-high-priority.fail', tenderId, error: String(err) }));
-            failed += 1;
-        }
+        rows.push([
+            `<section>`,
+            `<h2>${escapeHtml(t.title)}</h2>`,
+            `<p><strong>Agency:</strong> ${escapeHtml(t.agency)} (${escapeHtml(t.country)})<br>`,
+            `<strong>Deadline:</strong> ${t.deadline ?? 'N/A'} (${daysUntil(t.deadline)})<br>`,
+            t.estimatedValueUSD ? `<strong>Estimated value:</strong> ~$${(t.estimatedValueUSD as number).toLocaleString('en-US')}<br>` : '',
+            `<strong>Score:</strong> ${t.overallScore}/100<br>`,
+            `<strong>Source:</strong> <a href="${escapeHtml(t.sourceUrl)}">${escapeHtml(t.sourceUrl)}</a></p>`,
+            `<h3>Product matches</h3><ul>${matchesHtml}</ul>`,
+            `<h3>Description</h3><p>${escapeHtml(t.description ?? '').replace(/\n/g, '<br>')}</p>`,
+            `</section>`,
+        ].join('\n'));
     }
-    return { sent, failed };
+
+    if (rows.length === 0) {
+        return { status: 'skipped', count: 0 };
+    }
+
+    const subject = `[Tender Watch] ${rows.length} high-priority tender${rows.length === 1 ? '' : 's'}`;
+    const html = `<h1>Tender Watch - high priority</h1>\n${rows.join('\n<hr>\n')}`;
+    await sendEmail(subject, html, apiKey);
+    return { status: 'sent', count: rows.length };
 }

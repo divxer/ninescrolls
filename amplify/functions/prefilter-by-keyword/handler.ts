@@ -13,9 +13,13 @@ export interface PrefilterCandidate {
     matchedCategories: string[];
     matchedKeywords: string[];
 }
+export interface PrefilterPerSource {
+    candidates: number;
+}
 export interface PrefilterResult {
     candidates: PrefilterCandidate[];
     candidatesCount: number;  // duplicate of candidates.length so the Step Functions Choice state can read a primitive
+    perSource: Record<string, PrefilterPerSource>;
 }
 
 async function loadActiveConfigs(): Promise<TenderKeywordConfigItem[]> {
@@ -35,7 +39,7 @@ async function loadActiveConfigs(): Promise<TenderKeywordConfigItem[]> {
     return out;
 }
 
-interface LoadedTender extends MatchableTender { tenderId: string; }
+interface LoadedTender extends MatchableTender { tenderId: string; source?: string; }
 
 async function loadTenders(tenderIds: string[]): Promise<LoadedTender[]> {
     if (tenderIds.length === 0) return [];
@@ -53,8 +57,9 @@ async function loadTenders(tenderIds: string[]): Promise<LoadedTender[]> {
 }
 
 export async function handler(event: PrefilterEvent): Promise<PrefilterResult> {
+    const perSource: Record<string, PrefilterPerSource> = {};
     if (event.newTenderIds.length === 0) {
-        return { candidates: [], candidatesCount: 0 };
+        return { candidates: [], candidatesCount: 0, perSource };
     }
     const [configs, tenders] = await Promise.all([
         loadActiveConfigs(),
@@ -63,9 +68,12 @@ export async function handler(event: PrefilterEvent): Promise<PrefilterResult> {
 
     const candidates: PrefilterCandidate[] = [];
     for (const t of tenders) {
+        const src = t.source ?? 'unknown';
+        perSource[src] ??= { candidates: 0 };
         const r = matchesAnyConfig(t, configs);
         if (r.matchedCategories.length > 0) {
             candidates.push({ tenderId: t.tenderId, ...r });
+            perSource[src].candidates += 1;
         }
     }
 
@@ -74,6 +82,7 @@ export async function handler(event: PrefilterEvent): Promise<PrefilterResult> {
         in: event.newTenderIds.length,
         out: candidates.length,
         configs: configs.length,
+        perSource,
     }));
-    return { candidates, candidatesCount: candidates.length };
+    return { candidates, candidatesCount: candidates.length, perSource };
 }
