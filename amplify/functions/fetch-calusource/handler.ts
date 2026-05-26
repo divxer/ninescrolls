@@ -78,15 +78,37 @@ interface CalusourceResponse {
     };
 }
 
-/** Format a Date as `M/d/yyyy h:mm am|pm`, the format CalUsource accepts in AdvanceSearchInput.Value. */
+/**
+ * Format a Date as `M/d/yyyy h:mm am|pm` IN PACIFIC TIME.
+ *
+ * CalUsource's UI universally renders timestamps as "Pacific Standard Time"
+ * (per UC system convention; GEP follows the customer locale). Empirical
+ * testing confirms the API interprets `AdvanceSearchInput.Value` as Pacific
+ * regardless of UTC offset. Passing UTC-derived numbers would shift the
+ * active/closed boundary by 7–8 hours and could silently misclassify events
+ * whose ResponseEnd sits within that window.
+ *
+ * We use Intl.DateTimeFormat with `timeZone: 'America/Los_Angeles'` so the
+ * Lambda emits Pacific-correct strings regardless of Lambda runtime locale.
+ */
 function formatGepDate(d: Date): string {
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const year = d.getUTCFullYear();
-    const hours24 = d.getUTCHours();
-    const hours12 = hours24 % 12 || 12;
-    const mins = String(d.getUTCMinutes()).padStart(2, '0');
-    const ampm = hours24 < 12 ? 'am' : 'pm';
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).formatToParts(d);
+    const pick = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const month = Number(pick('month'));
+    const day = Number(pick('day'));
+    const year = pick('year');
+    const hours12 = Number(pick('hour'));
+    const mins = pick('minute');
+    // dayPeriod is "AM" or "PM"; GEP wants lowercase "am" / "pm".
+    const ampm = pick('dayPeriod').toLowerCase();
     return `${month}/${day}/${year} ${hours12}:${mins} ${ampm}`;
 }
 
@@ -194,7 +216,8 @@ async function fetchPageWithRetry(body: Record<string, unknown>, pageIndex: numb
         } catch (err) {
             lastErr = err;
             const status = (err as { response?: { status?: number } })?.response?.status;
-            const retryable = status === undefined || status >= 500;
+            // Retry on network errors (no .response), 5xx, and 429 rate-limit.
+            const retryable = status === undefined || status === 429 || status >= 500;
             if (!retryable || attempt === MAX_RETRIES_PER_PAGE) {
                 console.warn(JSON.stringify({
                     event: 'fetch-calusource.page-failed',

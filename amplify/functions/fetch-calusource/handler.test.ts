@@ -89,6 +89,30 @@ describe('fetch-calusource handler', () => {
         expect(body.CultureCode).toBe('en-US');
     });
 
+    it('formats the SRCG_ResponseEnd start in PACIFIC TIME, not UTC', async () => {
+        // Fix "now" to a moment where UTC and Pacific fall on different days:
+        // 2026-05-27 03:00:00 UTC == 2026-05-26 20:00 PDT (UTC-7 in summer).
+        // The Lambda should emit "5/26/2026 8:00 pm", not "5/27/2026 3:00 am".
+        // We fake only the clock, not setTimeout (which our outer module patch
+        // already shortcuts to immediate).
+        const fixedNow = new Date('2026-05-27T03:00:00.000Z');
+        vi.useFakeTimers({ now: fixedNow, toFake: ['Date'] });
+        try {
+            axiosPost.mockResolvedValueOnce({ data: fixture });
+            const { handler } = await import('./handler');
+            await handler({ executionId: 'exec-cal-tz' });
+
+            const body = axiosPost.mock.calls[0][1];
+            const dateRange = body.AdvanceSearchInput[0].Value as string;
+            const [startStr] = dateRange.split(',');
+            // Date must be 5/26/2026 (Pacific calendar day), NOT 5/27/2026 (UTC).
+            expect(startStr).toMatch(/^5\/26\/2026 /);
+            expect(startStr).toMatch(/ pm$/);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('paginates when TotalRecords exceeds one page', async () => {
         // Build 100 unique rows for page 1 and 5 for page 2
         const mkRow = (i: number) => ({
@@ -157,7 +181,7 @@ describe('fetch-calusource handler', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('does NOT retry non-retryable 4xx errors', async () => {
+    it('does NOT retry non-retryable 4xx errors (e.g. 400)', async () => {
         const clientErr = Object.assign(new Error('bad request'), { response: { status: 400 } });
         axiosPost.mockRejectedValueOnce(clientErr);
         const { handler } = await import('./handler');
@@ -165,6 +189,17 @@ describe('fetch-calusource handler', () => {
         expect(axiosPost).toHaveBeenCalledTimes(1);
         expect(result.fetched).toBe(0);
         expect(result.error).toContain('bad request');
+    });
+
+    it('retries 429 rate-limit responses', async () => {
+        const rateLimited = Object.assign(new Error('Too Many Requests'), { response: { status: 429 } });
+        axiosPost
+            .mockRejectedValueOnce(rateLimited)
+            .mockResolvedValueOnce({ data: fixture });
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-cal-429' });
+        expect(axiosPost).toHaveBeenCalledTimes(2);
+        expect(result.fetched).toBe(2);
     });
 
     it('returns fetched=0 + error after exhausting retries on persistent 5xx', async () => {
