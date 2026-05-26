@@ -58,8 +58,8 @@ This spec defines **Phase A** only. Phase B (cross-run trend dashboards, anomaly
                   │     pipeline_run rows in IntelligenceTable          │
                   │  PK=RUN#<execId>  SK=SUMMARY                       │
                   │  PK=RUN#<execId>  SK=SOURCE#sam|ted|calusource     │
-                  │  GSI4PK=PIPELINE_RUNS  GSI4SK=<startedAt>#<execId> │
-                  │  (only SUMMARY rows populate GSI4PK/GSI4SK)                 │
+                  │  GSI5PK=PIPELINE_RUNS  GSI5SK=<startedAt>#<execId> │
+                  │  (only SUMMARY rows populate GSI5PK/GSI5SK)                 │
                   └────────────────────────┬───────────────────────────┘
                                            │
        ┌───────────────────────────────────┼───────────────────────────┐
@@ -80,7 +80,7 @@ This spec defines **Phase A** only. Phase B (cross-run trend dashboards, anomaly
 
 ### Five key architectural decisions
 
-1. **Reuse IntelligenceTable single-table design.** No new DDB table. `pipeline_run` rows use `PK=RUN#<execId>` namespace. New GSI4 (partition `PIPELINE_RUNS`, sort `<startedAt>#<execId>`) for time-ordered list queries.
+1. **Reuse IntelligenceTable single-table design.** No new DDB table. `pipeline_run` rows use `PK=RUN#<execId>` namespace. New GSI5 (partition `PIPELINE_RUNS`, sort `<startedAt>#<execId>`) for time-ordered list queries. (GSI1–GSI4 are already claimed by feedback/order/RFQ/email entities — GSI5 is the next free index and isolates operational logs from domain data.)
 2. **Final-task pattern, not per-stage writes.** A single `RecordRunComplete` Lambda invocation at the end of the SF state machine reads all stage ResultPaths and writes all rows in one shot. Cheaper, atomic, and avoids partial state from per-stage writes failing.
 3. **Two-tier catch.** Fetch-task failures are handled inside each fetch branch (returning `{source, fetched: 0, stagedKey: null, errorName, errorCause}`), allowing the pipeline to continue with `PARTIAL` status. Stage failures (Normalize/Prefilter/Match/Classify) route to `RecordRunFailed`, producing a `FAILED` status. Notification failures are a third tier — they record a `notificationStatus=FAILED` flag on the SUMMARY but the run itself is still `PARTIAL`/`SUCCESS`.
 4. **Separate `notify-pipeline-health` Lambda.** Does not merge into the existing `notify-daily-digest` Lambda. Audience differs (sales reads digest; ops reads health), trigger conditions differ, and the email format differs.
@@ -95,8 +95,8 @@ This spec defines **Phase A** only. Phase B (cross-run trend dashboards, anomaly
 interface PipelineRunSummary {
     PK: string;                          // "RUN#${execId}"
     SK: 'SUMMARY';
-    GSI4PK: 'PIPELINE_RUNS';
-    GSI4SK: string;                      // "${startedAt}#${execId}" — disambiguates concurrent starts
+    GSI5PK: 'PIPELINE_RUNS';
+    GSI5SK: string;                      // "${startedAt}#${execId}" — disambiguates concurrent starts
     entityType: 'PIPELINE_RUN_SUMMARY';
     executionId: string;
     stepFunctionExecutionArn: string;
@@ -183,20 +183,20 @@ interface PipelineRunSource {
 
 **Rule**: for any stage that never executed (because the pipeline failed before reaching it), the corresponding funnel field is `null`, not `0`. Consumers (UI, health alerts) display `—` for `null` to avoid the false impression that the stage processed zero records.
 
-### GSI4
+### GSI5
 
-| GSI4PK | GSI4SK | Projects |
+| GSI5PK | GSI5SK | Projects |
 |---|---|---|
 | `PIPELINE_RUNS` | `<startedAt>#<execId>` | SUMMARY rows only |
 
-SOURCE rows do not populate `GSI4PK` / `GSI4SK` attributes, so they never appear in the GSI4 index (this is the correct DDB pattern — the index admits any row that writes the index key attributes; we simply omit them on SOURCE rows). SOURCE rows are fetched only via base-table `Query` on `PK=RUN#<execId>` when needed.
+SOURCE rows do not populate `GSI5PK` / `GSI5SK` attributes, so they never appear in the GSI5 index (this is the correct DDB pattern — the index admits any row that writes the index key attributes; we simply omit them on SOURCE rows). SOURCE rows are fetched only via base-table `Query` on `PK=RUN#<execId>` when needed.
 
 ### Query patterns
 
 | Query | Implementation |
 |---|---|
-| List recent N runs | GSI4 query, `ScanIndexForward=false`, `Limit=N`, `KeyConditionExpression='GSI4PK = :pk'`. |
-| Health check window (last 48h) | GSI4 query with `KeyConditionExpression='GSI4PK = :pk AND GSI4SK BETWEEN :lo AND :hi'`, `ScanIndexForward=false`, `Limit=10`. |
+| List recent N runs | GSI5 query, `ScanIndexForward=false`, `Limit=N`, `KeyConditionExpression='GSI5PK = :pk'`. |
+| Health check window (last 48h) | GSI5 query with `KeyConditionExpression='GSI5PK = :pk AND GSI5SK BETWEEN :lo AND :hi'`, `ScanIndexForward=false`, `Limit=10`. |
 | Get one run with all sources | Base-table `Query` on `PK=RUN#<execId>`, returns SUMMARY + 3 SOURCE rows in one round-trip. |
 
 ## Step Function changes
@@ -455,7 +455,7 @@ getPipelineRun: a.query()
 ```
 
 In `tender-api/handler.ts`:
-- `listPipelineRuns(limit)`: GSI4 query `ScanIndexForward=false, Limit=limit ?? 100`. Returns the raw SUMMARY rows array.
+- `listPipelineRuns(limit)`: GSI5 query `ScanIndexForward=false, Limit=limit ?? 100`. Returns the raw SUMMARY rows array.
 - `getPipelineRun(executionId)`: base-table `Query` on `PK=RUN#<execId>`. Returns `{ summary, sources }`.
 
 The `status` filter parameter is intentionally deferred — clients filter client-side until volume warrants server-side.
@@ -476,7 +476,7 @@ amplify/functions/notify-pipeline-health/
 **Schedule**: EventBridge cron `cron(30 2 * * ? *)` — daily 02:30 UTC, 30 minutes after the pipeline cron.
 
 **Permissions**:
-- `dynamodb:Query` on IntelligenceTable + GSI4
+- `dynamodb:Query` on IntelligenceTable + GSI5
 - `dynamodb:BatchGetItem` for SOURCE rows
 - `dynamodb:PutItem` / `dynamodb:GetItem` for idempotency markers
 - `ses:SendEmail`
@@ -620,7 +620,7 @@ Details:
 
 | Phase | Deliverables | Days |
 |---|---|---|
-| 1 | New types + GSI4 schema in `amplify/data/resource.ts`, `pipeline-run-types.ts` | 0.5 |
+| 1 | New types + GSI5 schema in `amplify/data/resource.ts`, `pipeline-run-types.ts` | 0.5 |
 | 2 | `record-pipeline-run` Lambda + unit tests | 1.0 |
 | 3 | Three upstream Lambdas: add `perSource` to `normalize-dedupe` / `prefilter-by-keyword`; add `source/attempted/timeout` to `match-with-llm` output | 0.5 |
 | 4 | Step Function changes in `backend.ts`: inject startedAt, three-tier catch, RecordRunComplete/Failed tasks | 1.0 |
