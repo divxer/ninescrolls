@@ -30,6 +30,7 @@ import { classifyAndStore } from './functions/classify-and-store/resource';
 import { notifyHighPriority } from './functions/notify-high-priority/resource';
 import { notifyDailyDigest } from './functions/notify-daily-digest/resource';
 import { recordPipelineRun } from './functions/record-pipeline-run/resource';
+import { notifyPipelineHealth } from './functions/notify-pipeline-health/resource';
 import { expireOldTenders } from './functions/expire-old-tenders/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
@@ -98,6 +99,7 @@ const backend = defineBackend({
     notifyHighPriority,
     notifyDailyDigest,
     recordPipelineRun,
+    notifyPipelineHealth,
     expireOldTenders,
 });
 
@@ -696,7 +698,7 @@ const tenderLambdas = [
     backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.normalizeDedupe,
     backend.prefilterByKeyword, backend.matchWithLlm, backend.classifyAndStore,
     backend.notifyHighPriority, backend.notifyDailyDigest, backend.recordPipelineRun,
-    backend.expireOldTenders,
+    backend.notifyPipelineHealth, backend.expireOldTenders,
 ];
 
 for (const fn of tenderLambdas) {
@@ -718,6 +720,15 @@ backend.matchWithLlm.resources.lambda.addToRolePolicy(new PolicyStatement({
         'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
     ],
 }));
+
+backend.notifyPipelineHealth.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+    resources: ['*'],
+}));
+backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_TO', 'info@ninescrolls.com');
+backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_FROM', 'info@ninescrolls.com');
+backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource');
 
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
@@ -911,6 +922,11 @@ const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchD
 new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
     schedule: Schedule.cron({ minute: '0', hour: '2', day: '*', month: '*', year: '*' }),
     targets: [new SfnStateMachine(tenderWatchStateMachine)],
+});
+
+new Rule(tenderWatchStack, 'PipelineHealthCheckRule', {
+    schedule: Schedule.cron({ minute: '30', hour: '2', day: '*', month: '*', year: '*' }),
+    targets: [new LambdaFunctionTarget(backend.notifyPipelineHealth.resources.lambda)],
 });
 
 // =============================================================================
