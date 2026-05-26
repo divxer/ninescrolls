@@ -701,6 +701,20 @@ const schema = a.schema({
     .handler(a.handler.function(tenderApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  listPipelineRuns: a
+    .query()
+    .arguments({ limit: a.integer() })
+    .returns(a.json().array())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getPipelineRun: a
+    .query()
+    .arguments({ executionId: a.string().required() })
+    .returns(a.json())
+    .handler(a.handler.function(tenderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   // =========================================================================
   // Insights Image Upload — queries & mutations
   // =========================================================================

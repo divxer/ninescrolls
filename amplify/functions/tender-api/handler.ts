@@ -59,6 +59,10 @@ async function dispatchFieldName(
             return getTender(event.arguments);
         case 'listTenderKeywordConfigs':
             return listKeywordConfigs(event.arguments);
+        case 'listPipelineRuns':
+            return listPipelineRuns(event.arguments);
+        case 'getPipelineRun':
+            return getPipelineRun(event.arguments);
         case 'updateTenderStatus':
             return updateTenderStatus(event.arguments, identity);
         case 'bulkUpdateTenderStatus':
@@ -228,6 +232,31 @@ async function listKeywordConfigs(args: { includeInactive?: boolean }) {
         ExpressionAttributeValues: { ':pk': 'TENDER_KEYWORD_CONFIG_ACTIVE' },
     }));
     return r.Items ?? [];
+}
+
+async function listPipelineRuns(args: { limit?: number }) {
+    const r = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        IndexName: 'GSI5',
+        KeyConditionExpression: 'GSI5PK = :pk',
+        ExpressionAttributeValues: { ':pk': 'PIPELINE_RUNS' },
+        ScanIndexForward: false,
+        Limit: args.limit ?? 100,
+    }));
+    return r.Items ?? [];
+}
+
+async function getPipelineRun(args: { executionId: string }) {
+    const r = await ddb.send(new QueryCommand({
+        TableName: TABLE(),
+        KeyConditionExpression: 'PK = :pk',
+        ExpressionAttributeValues: { ':pk': `RUN#${args.executionId}` },
+    }));
+    const items = r.Items ?? [];
+    return {
+        summary: items.find((i: any) => i.SK === 'SUMMARY') ?? null,
+        sources: items.filter((i: any) => typeof i.SK === 'string' && i.SK.startsWith('SOURCE#')),
+    };
 }
 
 async function updateTenderStatus(
@@ -517,4 +546,4 @@ async function callAnthropic(prompt: string): Promise<string> {
 }
 
 // Export internals for unit tests
-export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig, runPrefilterPreview, translateDescription };
+export { dispatchFieldName, requireAdmin, ddb, TABLE, listTenders, getTender, listKeywordConfigs, listPipelineRuns, getPipelineRun, updateTenderStatus, bulkUpdateTenderStatus, upsertKeywordConfig, runPrefilterPreview, translateDescription };
