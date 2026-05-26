@@ -1,0 +1,71 @@
+{
+    "DataSearchResult": {
+        "GroupTotal": { "rfx": 2, "TotalCount": 2 },
+        "AggsResponse": {},
+        "TotalRecords": 2,
+        "Status": 1,
+        "ErrorCode": "0",
+        "ErrorMessage": "",
+        "Trace": null,
+        "Value": [
+            {
+                "DocumentSearchOutput": {
+                    "DocumentCode": 19293,
+                    "DocumentName": "UCB RFP# 200mm Physical Vapor Deposition System_Materials Science and Engineering 2026",
+                    "DocumentNumber": "003829-Oct2026",
+                    "DocumentStatusInfo": 165,
+                    "DocumentTypeInfo": "1",
+                    "QueryString": "ZGM9MTkyOTMmYnBjPTQxMTk4Mw==",
+                    "CreatedByName": "Alyssa Parker",
+                    "CreatedOn": "2026-10-02T17:00:00.000",
+                    "UpdatedOn": "2026-11-21T18:00:00.000",
+                    "IsConfidential": false,
+                    "BuyerPartnerCode": 411983,
+                    "BuyerPartnerName": "UCB RFP# 200mm Physical Vapor Deposition System_Materials Science and Engineering 2026",
+                    "NumberofAttachments": 1,
+                    "NumberofPartners": 0,
+                    "NumberofSections": 0,
+                    "NumberofSurveys": 0,
+                    "NumberofItems": 0,
+                    "DocumentAdditionalFieldList": [
+                        { "DocumentCode": 19293, "FieldName": "SourceType", "FieldValue": "2", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "EventName", "FieldValue": "RFP", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "EventAuthor", "FieldValue": "Alyssa Parker", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "EmailID", "FieldValue": "alyssa.parker@berkeley.edu", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "Start", "FieldValue": "10/13/2026 8:00:00 AM", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "End", "FieldValue": "10/24/2026 11:59:00 PM", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19293, "FieldName": "AttachmentType", "FieldValue": "1", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false }
+                    ]
+                }
+            },
+            {
+                "DocumentSearchOutput": {
+                    "DocumentCode": 19151,
+                    "DocumentName": "UC Berkeley - Fresh Grab and Go Sushi",
+                    "DocumentNumber": "003902-Feb2026",
+                    "DocumentStatusInfo": 165,
+                    "DocumentTypeInfo": "1",
+                    "QueryString": "ZGM9MTkxNTEmYnBjPTQxMTk4Mw==",
+                    "CreatedByName": "Amanda Salazar",
+                    "CreatedOn": "2026-02-03T16:00:00.000",
+                    "UpdatedOn": "2026-05-22T20:01:23.173",
+                    "IsConfidential": false,
+                    "BuyerPartnerCode": 411983,
+                    "NumberofAttachments": 0,
+                    "NumberofPartners": 0,
+                    "NumberofSections": 0,
+                    "NumberofSurveys": 0,
+                    "NumberofItems": 0,
+                    "DocumentAdditionalFieldList": [
+                        { "DocumentCode": 19151, "FieldName": "SourceType", "FieldValue": "2", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19151, "FieldName": "EventName", "FieldValue": "RFP", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19151, "FieldName": "EventAuthor", "FieldValue": "Amanda Salazar", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19151, "FieldName": "EmailID", "FieldValue": "salazara@berkeley.edu", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19151, "FieldName": "Start", "FieldValue": "5/22/2026 9:00:00 PM", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false },
+                        { "DocumentCode": 19151, "FieldName": "End", "FieldValue": "6/12/2026 9:00:00 PM", "FieldType": 3, "FieldText": null, "FieldID": null, "IsDeleted": false }
+                    ]
+                }
+            }
+        ]
+    }
+}

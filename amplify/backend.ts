@@ -22,6 +22,7 @@ import { tenderApi } from './functions/tender-api/resource';
 // Tender Watch — Phase 1
 import { fetchSam } from './functions/fetch-sam/resource';
 import { fetchTed } from './functions/fetch-ted/resource';
+import { fetchCalusource } from './functions/fetch-calusource/resource';
 import { normalizeDedupe } from './functions/normalize-dedupe/resource';
 import { prefilterByKeyword } from './functions/prefilter-by-keyword/resource';
 import { matchWithLlm } from './functions/match-with-llm/resource';
@@ -88,6 +89,7 @@ const backend = defineBackend({
     // Tender Watch — Phase 1
     fetchSam,
     fetchTed,
+    fetchCalusource,
     normalizeDedupe,
     prefilterByKeyword,
     matchWithLlm,
@@ -681,7 +683,7 @@ const tenderRawBucket = new Bucket(tenderWatchStack, 'TenderWatchRawBucket', {
 
 // --- Grant each Lambda the table + staging-bucket env it needs.
 const tenderLambdas = [
-    backend.fetchSam, backend.fetchTed, backend.normalizeDedupe,
+    backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.normalizeDedupe,
     backend.prefilterByKeyword, backend.matchWithLlm, backend.classifyAndStore,
     backend.notifyHighPriority, backend.notifyDailyDigest, backend.expireOldTenders,
 ];
@@ -693,7 +695,7 @@ for (const fn of tenderLambdas) {
 }
 
 // fetch-* Lambdas write the staging bucket; normalize-dedupe reads it.
-[backend.fetchSam, backend.fetchTed].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
+[backend.fetchSam, backend.fetchTed, backend.fetchCalusource].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
 tenderRawBucket.grantRead(backend.normalizeDedupe.resources.lambda);
 
 // match-with-llm invokes Bedrock — same pattern as classify-org.
@@ -722,12 +724,18 @@ const fetchTedTask = new LambdaInvoke(tenderWatchStack, 'FetchTed', {
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
     payloadResponseOnly: true,
 });
+const fetchCalusourceTask = new LambdaInvoke(tenderWatchStack, 'FetchCalusource', {
+    lambdaFunction: backend.fetchCalusource.resources.lambda,
+    payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
+    payloadResponseOnly: true,
+});
 
 const fetchParallel = new Parallel(tenderWatchStack, 'FetchAllSources', {
     resultPath: '$.fetchResults',
 });
 fetchParallel.branch(fetchSamTask);
 fetchParallel.branch(fetchTedTask);
+fetchParallel.branch(fetchCalusourceTask);
 
 const normalizeTask = new LambdaInvoke(tenderWatchStack, 'NormalizeDedupe', {
     lambdaFunction: backend.normalizeDedupe.resources.lambda,
