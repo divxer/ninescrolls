@@ -67,7 +67,7 @@ This spec defines **Phase A** only. Phase B (cross-run trend dashboards, anomaly
 ┌──────▼───────────┐  ┌────────────────────▼──────────┐  ┌─────────────▼─────────┐
 │ tender-api       │  │ notify-pipeline-health Lambda │  │ Future business-layer │
 │ +listPipelineRuns│  │ EventBridge daily 02:30 UTC   │  │ alarms (Phase B)      │
-│ +getPipelineRun  │  │ 6 rules enabled (Phase A)     │  │ — code prewired, off  │
+│ +getPipelineRun  │  │ 7 rules enabled (Phase A)     │  │ — code prewired, off  │
 └──────┬───────────┘  │ 4 rules pre-wired, disabled   │  └───────────────────────┘
        │              │ → SES email on alerts          │
        │              └────────────────────────────────┘

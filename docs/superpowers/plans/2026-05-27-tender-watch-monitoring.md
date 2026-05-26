@@ -10,6 +10,11 @@
 
 **Spec:** [`docs/superpowers/specs/2026-05-27-tender-watch-monitoring-design.md`](../specs/2026-05-27-tender-watch-monitoring-design.md)
 
+**Pre-commit invariants for every task:**
+- Run the task's specific test command and confirm it passes (TDD red→green→commit).
+- Tasks that touch `amplify/backend.ts` MUST also run `npx tsc --noEmit -p .` before commit — silent CDK type errors don't surface in the vitest suite.
+- Frontend tasks should follow existing admin styling (`mp-card`, `mp-table` if available in `src/styles/admin*.css`) rather than introducing new inline-style blocks. The inline styles shown in Task 12 are scaffolding — port to existing classes during the task if patterns exist.
+
 ---
 
 ## File-touch map
@@ -264,49 +269,11 @@ git commit -m "feat(tender-watch): add pipeline-run types + reduction helpers"
 
 ---
 
-## Task 2: Add GSI5 to IntelligenceTable
+## Task 2: (deferred — folded into Task 8)
 
-**Files:**
-- Modify: `amplify/backend.ts` (around line 440, after the GSI4 block)
+GSI5 creation is no longer a standalone task — it is added in the same backend.ts commit as the Step Function three-tier catch wiring (Task 8), because the index has no consumer until `notify-pipeline-health` (Task 9) and `tender-api` resolvers (Task 11) need it. Combining the two backend.ts touches reduces churn and avoids deploying a never-read GSI.
 
-- [ ] **Step 1: Add the GSI5 block in backend.ts**
-
-After the existing `GSI4` block, insert:
-
-```typescript
-// GSI5: Pipeline run history (operational logs, separate from domain data)
-// - SUMMARY rows: GSI5PK='PIPELINE_RUNS', GSI5SK='<startedAt>#<executionId>'
-// - SOURCE rows omit GSI5PK/GSI5SK so they don't appear in the index.
-intelligenceTable.addGlobalSecondaryIndex({
-    indexName: 'GSI5',
-    partitionKey: { name: 'GSI5PK', type: AttributeType.STRING },
-    sortKey: { name: 'GSI5SK', type: AttributeType.STRING },
-    projectionType: ProjectionType.ALL,
-});
-```
-
-- [ ] **Step 2: Run the type check to confirm the file still compiles**
-
-```bash
-npx tsc --noEmit -p .
-```
-
-Expected: no output (clean).
-
-- [ ] **Step 3: Run the full amplify test suite as a regression guard**
-
-```bash
-npx vitest run amplify/
-```
-
-Expected: all tests pass; no GSI5-related failures (none exist yet).
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add amplify/backend.ts
-git commit -m "feat(intelligence-table): add GSI5 for pipeline run history"
-```
+(The task numbers below preserve continuity with the original outline.)
 
 ---
 
@@ -756,7 +723,7 @@ In `amplify/functions/notify-high-priority/handler.ts`, replace `NotifyResult` a
 ```typescript
 export interface NotifyOutcome {
     status: 'sent' | 'skipped';
-    count: number;
+    count: number;     // tenders included in the email, NOT number of emails sent
 }
 export type NotifyResult = NotifyOutcome; // exported alias for backwards-compat with any importers
 
@@ -764,18 +731,20 @@ export async function handler(event: NotifyHighPriorityEvent): Promise<NotifyOut
     if (event.highPriorityTenderIds.length === 0) {
         return { status: 'skipped', count: 0 };
     }
-    // ... existing SES send logic that today computes `sent` and `failed` ...
-    // After the loop:
-    const count = sent;
-    // If everything failed *but did not throw*, still return sent: the SF catch will only
-    // see thrown errors. Drop the silent-failure counter — throw on first SES error instead.
-    return { status: 'sent', count };
+    // The notify Lambdas each send ONE summary email containing all relevant tenders.
+    // `count` reports how many tenders were included in that single email.
+    // If the SES call throws, the SF catch (Task 8) sets notifyHp.status='failed' —
+    // no partial-send accounting needed because there is only one SES call per Lambda.
+    // ... existing logic that builds the summary email and calls SES once ...
+    return { status: 'sent', count: event.highPriorityTenderIds.length };
 }
 ```
 
 In `amplify/functions/notify-daily-digest/handler.ts`, apply the analogous change with `digestTenderIds`.
 
-For both Lambdas, if a SES error occurs partway through, **throw** rather than swallowing it — the Step Function catch handles the failure path, which produces `notifyHp.status = 'failed'` via the Pass node in Task 8.
+For both Lambdas, if the single SES call throws, **let the throw propagate** — do not catch and swallow. The SF catch in Task 8 converts that into `status: 'failed'` via the Pass node. There is no partial-success state because the email is one atomic SES call containing the whole list.
+
+**If the current Lambda implementation actually issues per-tender SES calls** (verify by reading the existing code first), refactor it to a single summary email before this change — otherwise the `count` semantics in the SUMMARY row become misleading and Phase B trend analysis breaks.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -872,6 +841,86 @@ describe('record-pipeline-run', () => {
         expect(samRow.prefilterCandidates).toBe(8);
         expect(samRow.llmAttemptedCount).toBe(1);
         expect(samRow.llmAvgScore).toBe(95);
+        expect(samRow.completedStages).toEqual(['fetch','normalize','prefilter','match','classify','notify']);
+        expect(samRow.notified).toBe(1);     // notify-hp.status=sent and sam has 1 HP
+    });
+
+    it('marks sources missing from fetchResults as failed (defensive)', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-miss',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            // Only 2 of 3 sources present — the third is implicitly failed.
+            fetchResults: [
+                { source: 'sam', fetched: 1, stagedKey: 'k' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const summary = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SUMMARY');
+        expect(summary.sourcesAttempted).toEqual(['sam', 'ted', 'calusource']);
+        expect(summary.sourcesFailed).toContain('calusource');
+        expect(summary.status).toBe('PARTIAL');
+    });
+
+    it('writes notified=null when fetch succeeded but notify failed', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-notify-failed',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 1, stagedKey: 'k' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [
+                { tenderId: 't1', source: 'sam', matches: [{ productSlug: 'x', productCategory: 'X', score: 90 }], attempted: 1, llmTimeout: false, llmError: false },
+            ],
+            classified: { tendersUpdated: 1, highPriorityTenderIds: ['t1'], digestTenderIds: ['t1'] },
+            notifyHp: { status: 'failed', error: 'SES quota' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const samRow = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SOURCE#sam');
+        expect(samRow.highPriority).toBe(1);
+        expect(samRow.notified).toBeNull();
+    });
+
+    it('writes completedStages=[\"fetch\"] on a failed source', async () => {
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-cs',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:01:00.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 0, stagedKey: null, errorName: 'Timeout', errorCause: 'after 30s' },
+                { source: 'ted', fetched: 1, stagedKey: 'k' },
+                { source: 'calusource', fetched: 1, stagedKey: 'k' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const samRow = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SOURCE#sam');
+        expect(samRow.completedStages).toEqual(['fetch']);
+        expect(samRow.status).toBe('FAILED');
     });
 
     it('writes status=PARTIAL when one source failed', async () => {
@@ -1082,8 +1131,16 @@ function buildFailedSummary(event: RecordEvent): PipelineRunSummary {
 
 function buildCompleteSummary(event: RecordEvent): PipelineRunSummary {
     const fetchResults = event.fetchResults ?? [];
-    const sourcesAttempted = fetchResults.map(r => r.source);
-    const sourcesFailed = fetchResults.filter(r => r.errorName || r.errorCause).map(r => r.source);
+    // sourcesAttempted is a constant — the pipeline always tries all three sources
+    // even if a fetch result is missing from the payload. Derived `sourcesFailed`
+    // includes sources with explicit error AND sources absent from fetchResults.
+    const sourcesAttempted = ALL_SOURCES;
+    const reportedSources = new Set(fetchResults.map(r => r.source));
+    const sourcesMissing = sourcesAttempted.filter(s => !reportedSources.has(s));
+    const sourcesFailed = [
+        ...fetchResults.filter(r => r.errorName || r.errorCause).map(r => r.source),
+        ...sourcesMissing,
+    ];
     const sourcesSucceeded = sourcesAttempted.filter(s => !sourcesFailed.includes(s));
     const status: 'SUCCESS' | 'PARTIAL' = sourcesFailed.length > 0 ? 'PARTIAL' : 'SUCCESS';
 
@@ -1130,7 +1187,7 @@ function buildCompleteSummary(event: RecordEvent): PipelineRunSummary {
     };
 }
 
-function buildSourceRow(event: RecordEvent, fr: FetchOutputLike): PipelineRunSource {
+function buildSourceRow(event: RecordEvent, fr: FetchOutputLike, notifyHpSent: boolean): PipelineRunSource {
     const src = fr.source;
     const failed = !!(fr.errorName || fr.errorCause);
     const matchesForSrc = (event.matches ?? []).filter(m => m.source === src);
@@ -1143,6 +1200,19 @@ function buildSourceRow(event: RecordEvent, fr: FetchOutputLike): PipelineRunSou
         return m != null;
     }).length;
 
+    // completedStages reflects what THIS source actually completed.
+    //   failed fetch  → ['fetch']  (attempt was made; nothing downstream possible)
+    //   success       → all six stages
+    const completedStages: PipelineRunSource['completedStages'] =
+        failed ? ['fetch'] : ['fetch', 'normalize', 'prefilter', 'match', 'classify', 'notify'];
+
+    // notified is the count of THIS source's HP tenders that made it into the
+    // notify-high-priority email. If notify failed or the source itself failed,
+    // we cannot claim notification happened: null > 0 to keep Phase B charts honest.
+    const notified: number | null = failed
+        ? null
+        : (notifyHpSent ? hpForSrc : null);
+
     return {
         ...pipelineRunSourceKey(event.executionId, src),
         entityType: 'PIPELINE_RUN_SOURCE',
@@ -1150,7 +1220,7 @@ function buildSourceRow(event: RecordEvent, fr: FetchOutputLike): PipelineRunSou
         source: src,
         status: failed ? 'FAILED' : 'SUCCESS',
         isPartial: false,
-        completedStages: failed ? [] : ['fetch', 'normalize', 'prefilter', 'match', 'classify', 'notify'],
+        completedStages,
         startedAt: event.startedAt,
         endedAt: event.endedAt,
         durationMs: durationMs(event.startedAt, event.endedAt),
@@ -1159,7 +1229,7 @@ function buildSourceRow(event: RecordEvent, fr: FetchOutputLike): PipelineRunSou
         prefilterCandidates: prefilterCounts?.candidates ?? null,
         scored: failed ? null : scoredForSrc,
         highPriority: failed ? null : hpForSrc,
-        notified: failed ? null : hpForSrc,
+        notified,
         prefilterPassRate: safeDiv(prefilterCounts?.candidates ?? 0, normalizedCounts?.normalized ?? 0),
         llmAttemptedCount: matchesForSrc.length,
         llmScoredCount: scoredForSrc,
@@ -1181,9 +1251,13 @@ export async function handler(event: RecordEvent): Promise<{ ok: true }> {
     await ddb.send(new PutCommand({ TableName: TABLE(), Item: summary }));
 
     if (event.kind === 'COMPLETE' && event.fetchResults) {
+        const notifyHpSent = event.notifyHp?.status === 'sent';
         const writes = event.fetchResults.map(async (fr) => {
             try {
-                await ddb.send(new PutCommand({ TableName: TABLE(), Item: buildSourceRow(event, fr) }));
+                await ddb.send(new PutCommand({
+                    TableName: TABLE(),
+                    Item: buildSourceRow(event, fr, notifyHpSent),
+                }));
             } catch (err) {
                 console.warn(JSON.stringify({
                     event: 'record-pipeline-run.source-row-failed',
@@ -1252,6 +1326,23 @@ git commit -m "feat(record-pipeline-run): Lambda writes SUMMARY + SOURCE rows"
 
 **Files:**
 - Modify: `amplify/backend.ts`
+
+- [ ] **Step 0: Add GSI5 to IntelligenceTable**
+
+After the existing `GSI4` block (Phase 2 email-timeline index, around line 440), insert:
+
+```typescript
+// GSI5: Pipeline run history (operational logs, separate from domain data).
+// SUMMARY rows populate GSI5PK/GSI5SK; SOURCE rows omit them so they never
+// appear in the index. Used by notify-pipeline-health (Task 9) for the
+// 24-48h health window and by tender-api (Task 11) for listPipelineRuns.
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI5',
+    partitionKey: { name: 'GSI5PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI5SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+```
 
 - [ ] **Step 1: Import + register the new Lambda**
 
@@ -1416,7 +1507,7 @@ After the recordRunFailedTask is declared, attach catches to the data-pipeline s
 
 `matchMap` is the existing `Map` state for match-with-llm. Do NOT attach the catch to `fetchParallel` (tier-1 handles that) or to `notifyHighPriorityTask` / `notifyDailyDigestTask` (tier-3 handles those).
 
-- [ ] **Step 7: Wire the success chain to end at RecordRunComplete**
+- [ ] **Step 7: Wire the success chain — and verify RecordRunFailed is terminal**
 
 Find where the SF state machine's `.next(...)` chain currently ends (right after `notifyDailyDigestTask`). Append:
 
@@ -1424,7 +1515,26 @@ Find where the SF state machine's `.next(...)` chain currently ends (right after
 notifyDailyDigestTask.next(recordRunCompleteTask);
 notifyHpFailedPass.next(notifyDailyDigestTask);
 notifyDigestFailedPass.next(recordRunCompleteTask);
+// recordRunFailedTask is intentionally NOT chained — it is the terminal state on the
+// FAILED path. Do not call .next() on it. CDK's chain-then-end semantics guarantee
+// the state machine ends after a state with no transition. (Step Functions itself
+// reaches a terminal state when no .next() is set.)
 ```
+
+Sanity check the resulting ASL: after `cdk synth` or `amplify deploy`, the state machine should contain:
+
+```
+NotifyHighPriority (success) → NotifyDailyDigest
+NotifyHighPriority (Catch[States.ALL]) → NotifyHpFailedPass
+NotifyHpFailedPass → NotifyDailyDigest
+NotifyDailyDigest (success) → RecordRunComplete
+NotifyDailyDigest (Catch[States.ALL]) → NotifyDigestFailedPass
+NotifyDigestFailedPass → RecordRunComplete
+[NormalizeDedupe|Prefilter|MatchMap|ClassifyAndStore] (Catch[States.ALL]) → RecordRunFailed (End)
+RecordRunComplete (End)
+```
+
+The Pass nodes' `resultPath: '$.notifyHp'` ensures both success and failure write to the same slot — `RecordRunComplete` Lambda then reads `$.notifyHp` uniformly without branching.
 
 - [ ] **Step 8: Verify with tsc**
 
