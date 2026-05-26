@@ -42,7 +42,7 @@ beforeEach(() => {
     s3Get.mockReset();
 });
 
-function makeTender(externalId: string, source: 'sam' | 'ted', title: string): NormalizedTender {
+function makeTender(externalId: string, source: 'sam' | 'ted' | 'calusource', title: string): NormalizedTender {
     return {
         source,
         externalId,
@@ -110,5 +110,37 @@ describe('normalize-dedupe handler', () => {
         });
         expect(result.newTenderIds).toEqual([]);
         expect(s3Get).not.toHaveBeenCalled();
+    });
+
+    it('emits perSource counts of fetched / normalized / duplicates', async () => {
+        const samTender = makeTender('sam-1', 'sam', 'PECVD System');
+        const tedTender = makeTender('ted-1', 'ted', 'PECVD System');
+        const calTender = makeTender('cal-1', 'calusource', 'ICP Etcher');
+
+        s3Get.mockResolvedValueOnce(s3JsonBody([samTender]));
+        s3Get.mockResolvedValueOnce(s3JsonBody([tedTender]));
+        s3Get.mockResolvedValueOnce(s3JsonBody([calTender]));
+
+        mockQuery
+            .mockResolvedValueOnce({ Items: [] })
+            .mockResolvedValueOnce({ Items: [{ PK: 'TENDER#ted-existing' }] })
+            .mockResolvedValueOnce({ Items: [] });
+        mockPut.mockResolvedValue({});
+
+        const { handler } = await import('./handler');
+        const result = await handler({
+            executionId: 'exec-ps-1',
+            fetchOutputs: [
+                { source: 'sam', stagedKey: 'k/sam', fetched: 1 },
+                { source: 'ted', stagedKey: 'k/ted', fetched: 1 },
+                { source: 'calusource', stagedKey: 'k/cal', fetched: 1 },
+            ],
+        });
+
+        expect(result.perSource).toEqual({
+            sam: { fetched: 1, normalized: 1, duplicates: 0 },
+            ted: { fetched: 1, normalized: 0, duplicates: 1 },
+            calusource: { fetched: 1, normalized: 1, duplicates: 0 },
+        });
     });
 });

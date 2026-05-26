@@ -21,9 +21,16 @@ export interface NormalizeDedupeEvent {
     fetchOutputs: FetchOutput[];
 }
 
+export interface NormalizeDedupePerSource {
+    fetched: number;
+    normalized: number;
+    duplicates: number;
+}
+
 export interface NormalizeDedupeResult {
     newTenderIds: string[];
     skipped: number;
+    perSource: Record<string, NormalizeDedupePerSource>;
 }
 
 async function loadStaged(key: string): Promise<NormalizedTender[]> {
@@ -88,8 +95,12 @@ export async function handler(event: NormalizeDedupeEvent): Promise<NormalizeDed
     const now = new Date().toISOString();
     const newTenderIds: string[] = [];
     let skipped = 0;
+    const perSource: Record<string, NormalizeDedupePerSource> = {};
 
     for (const fo of event.fetchOutputs) {
+        const src = fo.source;
+        perSource[src] ??= { fetched: 0, normalized: 0, duplicates: 0 };
+        perSource[src].fetched += fo.fetched;
         if (fo.fetched <= 0 || !fo.stagedKey) continue;
         const tenders = await loadStaged(fo.stagedKey);
         for (const t of tenders) {
@@ -100,6 +111,7 @@ export async function handler(event: NormalizeDedupeEvent): Promise<NormalizeDed
             });
             if (await hashExists(hash)) {
                 skipped += 1;
+                perSource[src].duplicates += 1;
                 continue;
             }
             const item = buildItem(t, hash, now);
@@ -110,9 +122,11 @@ export async function handler(event: NormalizeDedupeEvent): Promise<NormalizeDed
                     ConditionExpression: 'attribute_not_exists(PK)',
                 }));
                 newTenderIds.push(item.tenderId);
+                perSource[src].normalized += 1;
             } catch (err) {
                 if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
                     skipped += 1;
+                    perSource[src].duplicates += 1;
                 } else {
                     throw err;
                 }
@@ -120,6 +134,6 @@ export async function handler(event: NormalizeDedupeEvent): Promise<NormalizeDed
         }
     }
 
-    console.log(JSON.stringify({ event: 'normalize-dedupe.done', newTenderIds: newTenderIds.length, skipped }));
-    return { newTenderIds, skipped };
+    console.log(JSON.stringify({ event: 'normalize-dedupe.done', newTenderIds: newTenderIds.length, skipped, perSource }));
+    return { newTenderIds, skipped, perSource };
 }
