@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { generateClient } from 'aws-amplify/data';
+import { getAmplifyDataClient } from '../services/amplifyClient';
 import type { Schema } from '../../amplify/data/resource';
 import { resolveTrafficChannel, extractSearchQuery } from '../services/behaviorAnalytics';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
 
@@ -69,7 +69,7 @@ export function useDashboardAnalytics(): DashboardAnalytics {
       do {
         if (cancelled) return;
 
-        const result = await (client.models.AnalyticsEvent as any)
+        const result = await (client().models.AnalyticsEvent as any)
           .listAnalyticsEventByEventTypeAndTimestamp(
             { eventType: 'page_view', timestamp: { between: [startISO, endISO] } },
             { authMode: 'userPool', limit: 500, nextToken },

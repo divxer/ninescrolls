@@ -5,7 +5,7 @@ import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type Li
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../types/admin';
-import { generateClient } from 'aws-amplify/data';
+import { getAmplifyDataClient } from '../../services/amplifyClient';
 import {
   ComposableMap,
   Geographies,
@@ -15,7 +15,7 @@ import {
 } from 'react-simple-maps';
 import type { Schema } from '../../../amplify/data/resource';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 
 type AnalyticsEvent = Schema['AnalyticsEvent']['type'];
 
@@ -1328,7 +1328,7 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
               );
               for (const e of eventsToFix) {
                 try {
-                  await client.graphql({
+                  await client().graphql({
                     query: `mutation UpdateEvent($input: UpdateAnalyticsEventInput!) {
                       updateAnalyticsEvent(input: $input) { id }
                     }`,
@@ -2794,7 +2794,7 @@ export function AdminAnalyticsPage() {
         do {
           if (cancelled) return results;
 
-          const result = await (client.models.AnalyticsEvent as any)
+          const result = await (client().models.AnalyticsEvent as any)
             .listAnalyticsEventByEventTypeAndTimestamp(
               { eventType, timestamp: { between: [startISO, endISO] } },
               { authMode: 'userPool', limit: 500, nextToken },
@@ -2840,7 +2840,7 @@ export function AdminAnalyticsPage() {
         if (orphanSessionIds.size > 0 && !cancelled) {
           const lookups = Array.from(orphanSessionIds).map(async (sid) => {
             try {
-              const res = await (client.models.AnalyticsEvent as any)
+              const res = await (client().models.AnalyticsEvent as any)
                 .listAnalyticsEventBySessionIdAndTimestamp(
                   { sessionId: sid },
                   { authMode: 'userPool', limit: 20 },
@@ -2972,7 +2972,7 @@ export function AdminAnalyticsPage() {
         lastSeenISO = notification.timestamp;
       }
 
-      (client.models.AnalyticsEvent as any).get(
+      (client().models.AnalyticsEvent as any).get(
         { id: notification.id },
         { authMode: 'userPool' },
       ).then((result: { data: AnalyticsEvent | null }) => {
@@ -3009,7 +3009,7 @@ export function AdminAnalyticsPage() {
         let nextToken: string | undefined;
         do {
           if (cancelled) return results;
-          const result = await (client.models.AnalyticsEvent as any)
+          const result = await (client().models.AnalyticsEvent as any)
             .listAnalyticsEventByEventTypeAndTimestamp(
               { eventType, timestamp: { between: [sinceISO, nowISO] } },
               { authMode: 'userPool', limit: 500, nextToken },

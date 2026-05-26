@@ -1,8 +1,8 @@
-import { generateClient } from 'aws-amplify/data';
+import { getAmplifyDataClient } from './amplifyClient';
 import type { Schema } from '../../amplify/data/resource';
 import type { InsightsPost, ContentType } from '../types';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 
 type DynamoInsightsPost = Schema['InsightsPost']['type'];
 
@@ -97,7 +97,7 @@ export async function fetchAllInsightsPosts(options?: {
   }
   const filter = Object.keys(filterConditions).length > 0 ? filterConditions : undefined;
 
-  const firstPage = await client.models.InsightsPost.list({
+  const firstPage = await client().models.InsightsPost.list({
     limit: 100,
     selectionSet: [...LISTING_SELECTION_SET],
     ...(filter ? { filter } : {}),
@@ -106,7 +106,7 @@ export async function fetchAllInsightsPosts(options?: {
   let cursor = firstPage.nextToken;
 
   while (cursor) {
-    const page = await client.models.InsightsPost.list({
+    const page = await client().models.InsightsPost.list({
       limit: 100,
       selectionSet: [...LISTING_SELECTION_SET],
       nextToken: cursor,
@@ -126,7 +126,7 @@ export async function fetchInsightsPostBySlug(slug: string): Promise<InsightsPos
   const cached = slugCache.get(slug);
   if (!isExpired(cached)) return cached!.data;
 
-  const { data } = await client.models.InsightsPost.listInsightsPostBySlug({ slug });
+  const { data } = await client().models.InsightsPost.listInsightsPostBySlug({ slug });
 
   const post = (!data || data.length === 0) ? null : mapToInsightsPost(data[0]);
 

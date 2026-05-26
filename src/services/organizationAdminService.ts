@@ -1,7 +1,6 @@
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import { getAmplifyDataClient } from './amplifyClient';
 
-const client = generateClient<Schema>();
+const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
 
 export interface ListOrgFilters {
@@ -18,13 +17,13 @@ export interface ListOrgFilters {
 }
 
 export async function listOrganizations(args: ListOrgFilters) {
-  const { data, errors } = await client.queries.listOrganizations(args as any, AUTH);
+  const { data, errors } = await client().queries.listOrganizations(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
 
 export async function getOrganization(orgId: string) {
-  const { data, errors } = await client.queries.getOrganization({ orgId } as any, AUTH);
+  const { data, errors } = await client().queries.getOrganization({ orgId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
@@ -35,25 +34,25 @@ export async function updateOrganizationStatus(args: {
   adminNotes?: string;
   tags?: string[];
 }) {
-  const { data, errors } = await client.mutations.updateOrganizationStatus(args as any, AUTH);
+  const { data, errors } = await client().mutations.updateOrganizationStatus(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
 
 export async function updateOrganizationOwner(args: { orgId: string; ownerSalesRep?: string }) {
-  const { data, errors } = await client.mutations.updateOrganizationOwner(args as any, AUTH);
+  const { data, errors } = await client().mutations.updateOrganizationOwner(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
 
 export async function reclassifyOrganization(args: { orgId: string; force?: boolean }) {
-  const { data, errors } = await client.mutations.reclassifyOrganization(args as any, AUTH);
+  const { data, errors } = await client().mutations.reclassifyOrganization(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
 
 export async function mergeOrganization(args: { sourceOrgId: string; targetOrgId: string }) {
-  const { data, errors } = await client.mutations.mergeOrganization(args as any, AUTH);
+  const { data, errors } = await client().mutations.mergeOrganization(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
   return data;
 }
