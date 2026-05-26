@@ -37,6 +37,18 @@ export async function listKeywordConfigs(includeInactive = false) {
     return data ?? [];
 }
 
+export async function listPipelineRuns(limit = 100) {
+    const { data, errors } = await client.queries.listPipelineRuns({ limit } as any, AUTH);
+    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    return data ?? [];
+}
+
+export async function getPipelineRun(executionId: string) {
+    const { data, errors } = await client.queries.getPipelineRun({ executionId } as any, AUTH);
+    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    return data;
+}
+
 export async function updateTenderStatus(args: { tenderId: string; toStatus: string; note?: string; assignedTo?: string }) {
     const { data, errors } = await client.mutations.updateTenderStatus(args as any, AUTH);
     if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
