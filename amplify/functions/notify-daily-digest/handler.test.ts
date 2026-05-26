@@ -41,7 +41,7 @@ describe('notify-daily-digest handler', () => {
         const { handler } = await import('./handler');
         const result = await handler({ digestTenderIds: ['sam-1', 'sam-2', 'ted-1'] });
 
-        expect(result.sent).toBe(1);
+        expect(result).toEqual({ status: 'sent', count: 3 });
         const [url, opts] = fetchMock.mock.calls[0];
         expect(url).toBe('https://api.sendgrid.com/v3/mail/send');
         const payload = JSON.parse(opts.body);
@@ -53,10 +53,10 @@ describe('notify-daily-digest handler', () => {
         expect(html).toContain('TU Munich');
     });
 
-    it('does not send when the list is empty', async () => {
+    it('returns {status:"skipped", count:0} when no digest tenders supplied', async () => {
         const { handler } = await import('./handler');
         const result = await handler({ digestTenderIds: [] });
-        expect(result.sent).toBe(0);
+        expect(result).toEqual({ status: 'skipped', count: 0 });
         expect(fetchMock).not.toHaveBeenCalled();
     });
 });
