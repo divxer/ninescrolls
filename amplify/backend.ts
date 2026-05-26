@@ -29,6 +29,7 @@ import { matchWithLlm } from './functions/match-with-llm/resource';
 import { classifyAndStore } from './functions/classify-and-store/resource';
 import { notifyHighPriority } from './functions/notify-high-priority/resource';
 import { notifyDailyDigest } from './functions/notify-daily-digest/resource';
+import { recordPipelineRun } from './functions/record-pipeline-run/resource';
 import { expireOldTenders } from './functions/expire-old-tenders/resource';
 import { RestApi, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
@@ -59,7 +60,7 @@ import {
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
-import { SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
+import { LambdaFunction as LambdaFunctionTarget, SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
 
 /** Single source of truth for the CDN custom domain */
 const CDN_DOMAIN = 'cdn.ninescrolls.com';
@@ -96,6 +97,7 @@ const backend = defineBackend({
     classifyAndStore,
     notifyHighPriority,
     notifyDailyDigest,
+    recordPipelineRun,
     expireOldTenders,
 });
 
@@ -436,6 +438,14 @@ intelligenceTable.addGlobalSecondaryIndex({
     projectionType: ProjectionType.ALL,
 });
 
+// GSI5: Pipeline run history for tender-watch operational monitoring.
+intelligenceTable.addGlobalSecondaryIndex({
+    indexName: 'GSI5',
+    partitionKey: { name: 'GSI5PK', type: AttributeType.STRING },
+    sortKey: { name: 'GSI5SK', type: AttributeType.STRING },
+    projectionType: ProjectionType.ALL,
+});
+
 // =============================================================================
 // S3 Bucket: Order & RFQ document storage
 // Directory structure: orders/<orderId>/<stage>/, rfqs/<rfqId>/, temp/
@@ -685,7 +695,8 @@ const tenderRawBucket = new Bucket(tenderWatchStack, 'TenderWatchRawBucket', {
 const tenderLambdas = [
     backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.normalizeDedupe,
     backend.prefilterByKeyword, backend.matchWithLlm, backend.classifyAndStore,
-    backend.notifyHighPriority, backend.notifyDailyDigest, backend.expireOldTenders,
+    backend.notifyHighPriority, backend.notifyDailyDigest, backend.recordPipelineRun,
+    backend.expireOldTenders,
 ];
 
 for (const fn of tenderLambdas) {
@@ -710,7 +721,10 @@ backend.matchWithLlm.resources.lambda.addToRolePolicy(new PolicyStatement({
 
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
-    parameters: { 'executionId.$': '$$.Execution.Name' },
+    parameters: {
+        'executionId.$': '$$.Execution.Name',
+        'startedAt.$': '$$.Execution.StartTime',
+    },
     resultPath: '$.exec',
 });
 
@@ -729,6 +743,21 @@ const fetchCalusourceTask = new LambdaInvoke(tenderWatchStack, 'FetchCalusource'
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
     payloadResponseOnly: true,
 });
+
+const fetchSamFailedPass = new Pass(tenderWatchStack, 'FetchSamFailedPass', {
+    parameters: { source: 'sam', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
+});
+fetchSamTask.addCatch(fetchSamFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
+
+const fetchTedFailedPass = new Pass(tenderWatchStack, 'FetchTedFailedPass', {
+    parameters: { source: 'ted', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
+});
+fetchTedTask.addCatch(fetchTedFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
+
+const fetchCalusourceFailedPass = new Pass(tenderWatchStack, 'FetchCalusourceFailedPass', {
+    parameters: { source: 'calusource', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
+});
+fetchCalusourceTask.addCatch(fetchCalusourceFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
 
 const fetchParallel = new Parallel(tenderWatchStack, 'FetchAllSources', {
     resultPath: '$.fetchResults',
@@ -771,22 +800,65 @@ const classifyTask = new LambdaInvoke(tenderWatchStack, 'ClassifyAndStore', {
     lambdaFunction: backend.classifyAndStore.resources.lambda,
     payload: TaskInput.fromObject({ matchResults: JsonPath.objectAt('$.matches') }),
     payloadResponseOnly: true,
-    resultPath: '$.classification',
+    resultPath: '$.classified',
 });
 
 const notifyHigh = new LambdaInvoke(tenderWatchStack, 'NotifyHighPriority', {
     lambdaFunction: backend.notifyHighPriority.resources.lambda,
-    payload: TaskInput.fromObject({ highPriorityTenderIds: JsonPath.objectAt('$.classification.highPriorityTenderIds') }),
+    payload: TaskInput.fromObject({ highPriorityTenderIds: JsonPath.objectAt('$.classified.highPriorityTenderIds') }),
     payloadResponseOnly: true,
+    resultPath: '$.notifyHp',
 });
+const notifyHpFailedPass = new Pass(tenderWatchStack, 'NotifyHpFailedPass', {
+    parameters: { status: 'failed', 'error.$': '$.notifyHpError.Cause' },
+    resultPath: '$.notifyHp',
+});
+notifyHigh.addCatch(notifyHpFailedPass, { errors: ['States.ALL'], resultPath: '$.notifyHpError' });
+
 const notifyDigest = new LambdaInvoke(tenderWatchStack, 'NotifyDailyDigest', {
     lambdaFunction: backend.notifyDailyDigest.resources.lambda,
-    payload: TaskInput.fromObject({ digestTenderIds: JsonPath.objectAt('$.classification.digestTenderIds') }),
+    payload: TaskInput.fromObject({ digestTenderIds: JsonPath.objectAt('$.classified.digestTenderIds') }),
+    payloadResponseOnly: true,
+    resultPath: '$.notifyDigest',
+});
+const notifyDigestFailedPass = new Pass(tenderWatchStack, 'NotifyDigestFailedPass', {
+    parameters: { status: 'failed', 'error.$': '$.notifyDigestError.Cause' },
+    resultPath: '$.notifyDigest',
+});
+notifyDigest.addCatch(notifyDigestFailedPass, { errors: ['States.ALL'], resultPath: '$.notifyDigestError' });
+
+const recordRunCompleteTask = new LambdaInvoke(tenderWatchStack, 'RecordRunComplete', {
+    lambdaFunction: backend.recordPipelineRun.resources.lambda,
+    payload: TaskInput.fromObject({
+        kind: 'COMPLETE',
+        'executionId.$': '$.exec.executionId',
+        'startedAt.$': '$.exec.startedAt',
+        'endedAt.$': '$$.State.EnteredTime',
+        'stepFunctionExecutionArn.$': '$$.Execution.Id',
+        'fetchResults.$': '$.fetchResults',
+        'normalized.$': '$.normalized',
+        'prefilter.$': '$.prefilter',
+        'matches.$': '$.matches',
+        'classified.$': '$.classified',
+        'notifyHp.$': '$.notifyHp',
+        'notifyDigest.$': '$.notifyDigest',
+    }),
     payloadResponseOnly: true,
 });
-const notifyParallel = new Parallel(tenderWatchStack, 'Notifications', { resultPath: '$.notifyResults' });
-notifyParallel.branch(notifyHigh);
-notifyParallel.branch(notifyDigest);
+
+const recordRunFailedTask = new LambdaInvoke(tenderWatchStack, 'RecordRunFailed', {
+    lambdaFunction: backend.recordPipelineRun.resources.lambda,
+    payload: TaskInput.fromObject({
+        kind: 'FAILED',
+        'executionId.$': '$.exec.executionId',
+        'startedAt.$': '$.exec.startedAt',
+        'endedAt.$': '$$.State.EnteredTime',
+        'stepFunctionExecutionArn.$': '$$.Execution.Id',
+        'errorName.$': '$.error.Error',
+        'errorCause.$': '$.error.Cause',
+    }),
+    payloadResponseOnly: true,
+});
 
 const expireTask = new LambdaInvoke(tenderWatchStack, 'ExpireOldTenders', {
     lambdaFunction: backend.expireOldTenders.resources.lambda,
@@ -794,12 +866,26 @@ const expireTask = new LambdaInvoke(tenderWatchStack, 'ExpireOldTenders', {
     payloadResponseOnly: true,
 });
 
+const noCandidatesClassifiedPass = new Pass(tenderWatchStack, 'NoCandidatesClassified', {
+    parameters: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+    resultPath: '$.classified',
+});
+
+notifyHigh.next(notifyDigest);
+notifyHpFailedPass.next(notifyDigest);
+notifyDigest.next(recordRunCompleteTask);
+notifyDigestFailedPass.next(recordRunCompleteTask);
+recordRunCompleteTask.next(expireTask);
+[normalizeTask, prefilterTask, matchMap, classifyTask].forEach((t) => {
+    t.addCatch(recordRunFailedTask, { errors: ['States.ALL'], resultPath: '$.error' });
+});
+
 const choice = new Choice(tenderWatchStack, 'HasCandidates')
     .when(
         Condition.numberGreaterThan('$.prefilter.candidatesCount', 0),
-        matchMap.next(classifyTask).next(notifyParallel).next(expireTask),
+        matchMap.next(classifyTask).next(notifyHigh),
     )
-    .otherwise(new Succeed(tenderWatchStack, 'NoCandidates'));
+    .otherwise(noCandidatesClassifiedPass.next(notifyHigh));
 
 const definition = passInjectExecutionId
     .next(fetchParallel)
