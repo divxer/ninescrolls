@@ -59,7 +59,7 @@ This spec defines **Phase A** only. Phase B (cross-run trend dashboards, anomaly
                   │  PK=RUN#<execId>  SK=SUMMARY                       │
                   │  PK=RUN#<execId>  SK=SOURCE#sam|ted|calusource     │
                   │  GSI4PK=PIPELINE_RUNS  GSI4SK=<startedAt>#<execId> │
-                  │  (GSI4 only projects SUMMARY rows)                 │
+                  │  (only SUMMARY rows populate GSI4PK/GSI4SK)                 │
                   └────────────────────────┬───────────────────────────┘
                                            │
        ┌───────────────────────────────────┼───────────────────────────┐
@@ -132,11 +132,11 @@ interface PipelineRunSummary {
 - `PARTIAL` — at least one source failed but the data pipeline ran to completion.
 - `FAILED` — top-level catch fired (Normalize / Prefilter / Match / Classify exception).
 
-`notificationStatus` semantics:
-- `SUCCESS` — both notify-high-priority and notify-daily-digest ran without error.
-- `FAILED` — one or both threw.
-- `SKIPPED` — no HP tenders and no digest content (legitimate).
-- `PARTIAL` — one succeeded, the other failed or skipped.
+`notificationStatus` semantics (must match the reduction table later in this spec — single source of truth):
+- `SUCCESS` — both notify Lambdas returned without failure (any combination of `sent` and `skipped` outcomes).
+- `SKIPPED` — both Lambdas returned `skipped` (no HP tenders AND no digest content; a legitimate quiet day).
+- `PARTIAL` — exactly one notify Lambda failed; the other ran (sent or skipped) successfully.
+- `FAILED` — both Lambdas failed.
 
 ### `PipelineRunSource` row
 
@@ -189,7 +189,7 @@ interface PipelineRunSource {
 |---|---|---|
 | `PIPELINE_RUNS` | `<startedAt>#<execId>` | SUMMARY rows only |
 
-SOURCE rows are intentionally NOT projected to GSI4 — fetched only via base-table `Query` on `PK=RUN#<execId>` when needed.
+SOURCE rows do not populate `GSI4PK` / `GSI4SK` attributes, so they never appear in the GSI4 index (this is the correct DDB pattern — the index admits any row that writes the index key attributes; we simply omit them on SOURCE rows). SOURCE rows are fetched only via base-table `Query` on `PK=RUN#<execId>` when needed.
 
 ### Query patterns
 
@@ -236,21 +236,27 @@ The result is that `$.fetchResults` always contains a 3-element array, even on p
 
 ### Tier 2: stage-level top catch → RecordRunFailed
 
+`JsonPath.objectAt('$.fetchResults')` in a Step Functions task payload throws at state-machine evaluation time if the path does not exist. If `fetchParallel` itself failed and produced no `$.fetchResults` slot, the original payload construction would crash and we would lose the SUMMARY write — exactly the case the design must protect against.
+
+**Resolution**: the FAILED-path payload contains ONLY the fields guaranteed to be present (`executionId`, `startedAt` from `InjectExecutionId`; `errorName`, `errorCause` from the catch; SF metadata). The `partialFetchResults` / `partialNormalized` / `partialPrefilter` references are dropped from this design. On FAILED runs, the Lambda writes the SUMMARY row only — no SOURCE rows.
+
 ```typescript
 const recordRunFailedTask = new LambdaInvoke(stack, 'RecordRunFailed', {
     lambdaFunction: backend.recordPipelineRun.resources.lambda,
     payload: TaskInput.fromObject({
         kind: 'FAILED',
-        executionId: JsonPath.stringAt('$.exec.executionId'),
-        startedAt: JsonPath.stringAt('$.exec.startedAt'),
-        endedAt: JsonPath.stringAt('$$.State.EnteredTime'),
-        stepFunctionExecutionArn: JsonPath.stringAt('$$.Execution.Id'),
-        errorName: JsonPath.stringAt('$.error.Error'),
-        errorCause: JsonPath.stringAt('$.error.Cause'),
-        // Best-effort: may be missing on early failures.
-        partialFetchResults: JsonPath.objectAt('$.fetchResults'),
-        partialNormalized: JsonPath.objectAt('$.normalized'),
-        partialPrefilter: JsonPath.objectAt('$.prefilter'),
+        'executionId.$': '$.exec.executionId',
+        'startedAt.$': '$.exec.startedAt',
+        'endedAt.$': '$$.State.EnteredTime',
+        'stepFunctionExecutionArn.$': '$$.Execution.Id',
+        'errorName.$': '$.error.Error',
+        'errorCause.$': '$.error.Cause',
+        // No partialFetchResults / partialNormalized / partialPrefilter — these
+        // would throw "path does not exist" at SF evaluation time when fetchParallel
+        // itself fails. Recovering them safely would require a JSONata-defaults Pass
+        // (verbose) or a DescribeExecution call from the Lambda (extra IAM). The
+        // hard guarantee — SUMMARY always written on failure — is what matters for
+        // Phase A. Best-effort partial-data reconstruction can be a Phase A.5 follow-up.
     }),
 });
 
@@ -261,7 +267,7 @@ const recordRunFailedTask = new LambdaInvoke(stack, 'RecordRunFailed', {
 });
 ```
 
-The `record-pipeline-run` Lambda for the FAILED path is required to write the SUMMARY row even when every `partial*` field is missing — that's the hard guarantee. Only the SUMMARY row is guaranteed; SOURCE rows on the FAILED path are best-effort.
+**Trade-off accepted**: on the FAILED path, only the SUMMARY row is written, no SOURCE rows. The hard guarantee — SUMMARY always written on failure — is preserved. Partial-data reconstruction (e.g. reading `$.fetchResults` when present) deferred to Phase A.5 if it proves valuable in practice.
 
 ### Tier 3: notify catch (separate path, run still continues)
 
@@ -275,19 +281,35 @@ interface NotifyResult {
 }
 ```
 
-Each notify task is then independently catchable:
+Each notify task is then independently catchable. **Critical detail**: success and failure paths must both write to the same `$.notifyHp` / `$.notifyDigest` slot so `RecordRunComplete` reads a uniform shape regardless of outcome.
 
 ```typescript
-const notifyHpFailedPass = new Pass(stack, 'NotifyHpFailedPass', {
-    parameters: { status: 'failed', error: JsonPath.stringAt('$.error.Cause') },
+// Success path: LambdaInvoke writes its return value into $.notifyHp.
+const notifyHpTask = new LambdaInvoke(stack, 'NotifyHighPriority', {
+    lambdaFunction: backend.notifyHighPriority.resources.lambda,
+    payloadResponseOnly: true,
+    resultPath: '$.notifyHp',          // ← success target
 });
-const notifyDigestFailedPass = new Pass(stack, 'NotifyDigestFailedPass', {
-    parameters: { status: 'failed', error: JsonPath.stringAt('$.error.Cause') },
-});
-notifyHpTask.addCatch(notifyHpFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
-notifyDigestTask.addCatch(notifyDigestFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
 
-// Both branches converge at RecordRunComplete, carrying $.notifyHp and $.notifyDigest results.
+// Failure path: scratch the error into $.notifyHpError so the Pass can read it,
+// then have the Pass write its normalized output back into $.notifyHp,
+// overwriting whatever the failure left behind.
+const notifyHpFailedPass = new Pass(stack, 'NotifyHpFailedPass', {
+    parameters: {
+        status: 'failed',
+        error: JsonPath.stringAt('$.notifyHpError.Cause'),
+    },
+    resultPath: '$.notifyHp',          // ← failure also lands at $.notifyHp
+});
+notifyHpTask.addCatch(notifyHpFailedPass, {
+    errors: ['States.ALL'],
+    resultPath: '$.notifyHpError',     // ← temp scratch, not $.notifyHp
+});
+
+// Identical pattern for notifyDigestTask with $.notifyDigest / $.notifyDigestError.
+
+// Both branches converge at RecordRunComplete with $.notifyHp and $.notifyDigest
+// always populated with the same shape: { status: 'sent'|'skipped'|'failed', ... }.
 ```
 
 `RecordRunComplete` reduces the two `NotifyResult` objects into `notificationStatus`:
@@ -465,16 +487,17 @@ amplify/functions/notify-pipeline-health/
 - `ALERT_EMAIL_FROM` default `info@ninescrolls.com`
 - `ZERO_FETCH_ALERT_SOURCES` default `sam,ted,calusource` — comma-separated allowlist for Rule 5
 
-### Phase A: 6 enabled rules
+### Phase A: 7 enabled rules
 
 | # | Level | Condition | Motivation |
 |---|---|---|---|
 | 1 | CRITICAL | No SUMMARY row in last 48h | Cron not firing / SF launch failure |
 | 2 | CRITICAL | latest.status === 'FAILED' | Data pipeline broken |
-| 3 | WARNING | latest.notificationStatus === 'FAILED' | Delivery layer broken, data already in DDB |
+| 3 | WARNING | latest.notificationStatus === 'FAILED' OR `'PARTIAL'` | Delivery layer broken, data already in DDB |
 | 4 | CRITICAL | Same source in `sourcesFailed` of last 2 consecutive runs | Source API persistent regression |
 | 5 | CRITICAL | source.status === 'SUCCESS' AND source.fetched === 0 AND source in `ZERO_FETCH_ALERT_SOURCES` | The fetch-sam regression class — silent zero |
 | 6 | WARNING | sum(llmTimeoutCount across sources) > 0 | Bedrock throttling signal |
+| 7 | WARNING | latest.status !== 'FAILED' AND `batchGetSourceRows(executionId).length < sourcesAttempted.length` | RecordRunComplete wrote SUMMARY but some SOURCE rows failed to land — Rule 5/6 cannot be evaluated without them |
 
 ### Phase A: 4 pre-wired (commented-out) rules
 
@@ -496,7 +519,7 @@ amplify/functions/notify-pipeline-health/
 
 ### Idempotency
 
-Per-alert dedup so identical findings don't spam ops day after day. Key shape:
+Per-alert dedup suppresses repeated alerts **within the same UTC day**, not across days. If a rule keeps firing for 5 days in a row, ops receives 5 emails — once per day — instead of N per day. Key shape:
 
 ```
 ALERT_SENT#<YYYY-MM-DD>#<ruleId>#<scope>
@@ -509,6 +532,7 @@ ALERT_SENT#<YYYY-MM-DD>#<ruleId>#<scope>
 - Rule 4: `<source>` (so sam-2-day-fail and ted-2-day-fail are independent)
 - Rule 5: `<source>` (so simultaneous sam=0 and ted=0 both alert)
 - Rule 6: `bedrock`
+- Rule 7: `<executionId>`
 
 DDB write with `ConditionExpression='attribute_not_exists(PK)'`. TTL 48h. If condition fails, the alert is suppressed for that day.
 
@@ -576,7 +600,9 @@ Details:
 - Two consecutive runs with sam in sourcesFailed → CRITICAL Rule 4
 - Single run with sam failed → Rule 4 does NOT fire
 - notificationStatus=FAILED → WARNING Rule 3
+- notificationStatus=PARTIAL → WARNING Rule 3
 - llmTimeoutCount=5 → WARNING Rule 6
+- SUMMARY present but batchGetSourceRows returns 2 of 3 → WARNING Rule 7
 - Multiple alerts: email contains all, subject takes most severe
 - Idempotency: second invocation same day with same alert set + same scope → no email sent
 - Idempotency: simultaneous sam=0 + ted=0 → both alerts fire (different scopes)
