@@ -36,16 +36,30 @@ export async function listKeywordConfigs(includeInactive = false) {
     return data ?? [];
 }
 
+// AppSync has no native JSON GraphQL type, so `a.json()` and `a.json().array()`
+// returns values as JSON-encoded strings on the wire. The Amplify client does
+// NOT auto-parse — we must JSON.parse each element ourselves.
+function parseJsonField<T>(value: unknown): T | null {
+    if (value == null) return null;
+    if (typeof value === 'string') {
+        try { return JSON.parse(value) as T; } catch { return null; }
+    }
+    return value as T;
+}
+
 export async function listPipelineRuns(limit = 100) {
     const { data, errors } = await client().queries.listPipelineRuns({ limit } as any, AUTH);
     if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data ?? [];
+    const raw = (data ?? []) as unknown[];
+    return raw
+        .map(item => parseJsonField<Record<string, unknown>>(item))
+        .filter((row): row is Record<string, unknown> => row != null);
 }
 
 export async function getPipelineRun(executionId: string) {
     const { data, errors } = await client().queries.getPipelineRun({ executionId } as any, AUTH);
     if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
-    return data;
+    return parseJsonField<{ summary: unknown; sources: unknown[] }>(data);
 }
 
 export async function updateTenderStatus(args: { tenderId: string; toStatus: string; note?: string; assignedTo?: string }) {
