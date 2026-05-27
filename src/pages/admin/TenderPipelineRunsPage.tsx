@@ -31,7 +31,7 @@ export function TenderPipelineRunsPage() {
     async function load() {
         setError(null);
         try {
-            setRows(await listPipelineRuns(100) as PipelineRunSummary[]);
+            setRows(await listPipelineRuns(100) as unknown as PipelineRunSummary[]);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
         }
