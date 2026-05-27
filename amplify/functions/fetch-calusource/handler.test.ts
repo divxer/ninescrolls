@@ -58,6 +58,12 @@ describe('fetch-calusource handler', () => {
         });
         // URL must be a deep-link with the QueryString so admin clicks land on detail (or login)
         expect(body[0].url).toBe('https://smart.gep.com/Sourcing/Rfx?dd=ZGM9MTkyOTMmYnBjPTQxMTk4Mw==&oloc=219');
+        expect(body[0].description).toBe('');
+        expect(body[0].rawPayload.DocumentAdditionalFieldList).toEqual(expect.arrayContaining([
+            expect.objectContaining({ FieldName: 'EmailID', FieldValue: 'alyssa.parker@berkeley.edu' }),
+            expect.objectContaining({ FieldName: 'Start', FieldValue: '10/13/2026 8:00:00 AM' }),
+            expect.objectContaining({ FieldName: 'End', FieldValue: '10/24/2026 11:59:00 PM' }),
+        ]));
 
         // Sushi event — sanity check non-NineScrolls record still normalizes cleanly
         expect(body[1]).toMatchObject({
@@ -72,8 +78,8 @@ describe('fetch-calusource handler', () => {
         const { handler } = await import('./handler');
         await handler({ executionId: 'exec-cal-2' });
 
-        const [url, body] = axiosPost.mock.calls[0];
-        expect(url).toContain('/GetPublicRfxManageData');
+        const [url, body, options] = axiosPost.mock.calls[0];
+        expect(url).toBe('https://smart.gep.com/GetPublicRfxManageData?dd=YnBjPTQxMTk4Mw2');
         expect(body.BuyerPartnerCode).toBe(411983);
         const dateRange = body.AdvanceSearchInput[0].Value as string;
         expect(dateRange).toMatch(/,12\/31\/3000 11:59 pm$/);
@@ -87,6 +93,12 @@ describe('fetch-calusource handler', () => {
         ]));
         // The CulturalCode lets GEP return English names
         expect(body.CultureCode).toBe('en-US');
+        expect(options.headers).toMatchObject({
+            IsAnonymous: true,
+            Origin: 'https://smart.gep.com',
+            Referer: 'https://smart.gep.com/publicRFx/ucal?oloc=215#/',
+        });
+        expect(options.headers['User-Agent']).toContain('Mozilla/5.0');
     });
 
     it('formats the SRCG_ResponseEnd start in PACIFIC TIME, not UTC', async () => {
@@ -189,6 +201,20 @@ describe('fetch-calusource handler', () => {
         expect(axiosPost).toHaveBeenCalledTimes(1);
         expect(result.fetched).toBe(0);
         expect(result.error).toContain('bad request');
+    });
+
+    it('returns source error without retrying GEP Access Denied 404 responses', async () => {
+        const accessDenied = Object.assign(new Error('Access Denied'), { response: { status: 404 } });
+        axiosPost.mockRejectedValueOnce(accessDenied);
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-cal-access-denied' });
+        expect(axiosPost).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
+            source: 'calusource',
+            stagedKey: '',
+            fetched: 0,
+            error: 'Access Denied',
+        });
     });
 
     it('retries 429 rate-limit responses', async () => {

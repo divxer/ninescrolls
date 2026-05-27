@@ -28,6 +28,7 @@ const STAGING_BUCKET = () => process.env.STAGING_BUCKET!;
  * (e.g. "UCB RFP# 200mm Physical Vapor Deposition System").
  */
 const CALUSOURCE_URL = 'https://smart.gep.com/GetPublicRfxManageData?dd=YnBjPTQxMTk4Mw2';
+const CALUSOURCE_PUBLIC_REFERER = 'https://smart.gep.com/publicRFx/ucal?oloc=215#/';
 const UC_BUYER_PARTNER_CODE = 411983;
 const PAGE_SIZE = 100;
 const CALUSOURCE_TIMEOUT_MS = 30_000;
@@ -210,7 +211,14 @@ async function fetchPageWithRetry(body: Record<string, unknown>, pageIndex: numb
         try {
             const { data } = await axios.post<CalusourceResponse>(CALUSOURCE_URL, body, {
                 timeout: CALUSOURCE_TIMEOUT_MS,
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    IsAnonymous: true,
+                    Origin: 'https://smart.gep.com',
+                    Referer: CALUSOURCE_PUBLIC_REFERER,
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125 Safari/537.36',
+                },
             });
             return data;
         } catch (err) {
