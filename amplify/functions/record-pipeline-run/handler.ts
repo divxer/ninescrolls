@@ -20,6 +20,7 @@ type FetchOutputLike = {
     stagedKey: string | null;
     errorName?: string;
     errorCause?: string;
+    error?: string;
 };
 
 type MatchLike = {
@@ -102,7 +103,7 @@ function buildCompleteSummary(event: RecordEvent): PipelineRunSummary {
     const reportedSources = new Set(fetchResults.map(r => r.source));
     const sourcesMissing = ALL_SOURCES.filter(s => !reportedSources.has(s));
     const sourcesFailed = [
-        ...fetchResults.filter(r => r.errorName || r.errorCause).map(r => r.source),
+        ...fetchResults.filter(r => r.errorName || r.errorCause || r.error).map(r => r.source),
         ...sourcesMissing,
     ];
     const sourcesSucceeded = ALL_SOURCES.filter(s => !sourcesFailed.includes(s));
@@ -136,14 +137,14 @@ function buildCompleteSummary(event: RecordEvent): PipelineRunSummary {
         totalScored: matches.filter(m => m.matches.length > 0).length,
         totalHighPriority: event.classified?.highPriorityTenderIds.length ?? 0,
         totalNotified: (event.notifyHp?.count ?? 0) + (event.notifyDigest?.count ?? 0),
-        lastError: sourcesFailed.length > 0 ? fetchResults.find(r => r.errorCause)?.errorCause ?? null : null,
+        lastError: sourcesFailed.length > 0 ? fetchResults.find(r => r.errorCause || r.error)?.errorCause ?? fetchResults.find(r => r.error)?.error ?? null : null,
         createdAt: new Date().toISOString(),
     };
 }
 
 function buildSourceRow(event: RecordEvent, fr: FetchOutputLike, notifyHpSent: boolean): PipelineRunSource {
     const src = fr.source;
-    const failed = Boolean(fr.errorName || fr.errorCause);
+    const failed = Boolean(fr.errorName || fr.errorCause || fr.error);
     const matchesForSrc = (event.matches ?? []).filter(m => m.source === src);
     const llmScores = matchesForSrc.flatMap(m => m.matches.map(x => x.score));
     const normalizedCounts = event.normalized?.perSource[src];
@@ -180,7 +181,7 @@ function buildSourceRow(event: RecordEvent, fr: FetchOutputLike, notifyHpSent: b
         duplicateRate: safeDiv(normalizedCounts?.duplicates ?? 0, fr.fetched ?? 0),
         stagedKey: fr.stagedKey ?? null,
         errorName: fr.errorName ?? null,
-        errorCause: fr.errorCause ?? null,
+        errorCause: fr.errorCause ?? fr.error ?? null,
         createdAt: new Date().toISOString(),
     };
 }
