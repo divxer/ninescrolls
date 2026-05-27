@@ -198,6 +198,43 @@ describe('record-pipeline-run', () => {
         expect(samRow.status).toBe('FAILED');
     });
 
+    it('treats Lambda structured-failure return (error field) as FAILED, not SUCCESS-with-zero', async () => {
+        // When a fetch-* Lambda catches its own exception and returns
+        // { fetched: 0, error: '...' } instead of throwing, the SF Tier-1 Pass
+        // node is NOT triggered. Without this fix the SOURCE row was written as
+        // status=SUCCESS / fetched=0 — silently masking upstream API regressions.
+        const { handler } = await import('./handler');
+        await handler({
+            kind: 'COMPLETE',
+            executionId: 'exec-lambda-error',
+            startedAt: '2026-05-27T02:00:00.000Z',
+            endedAt: '2026-05-27T02:00:30.000Z',
+            stepFunctionExecutionArn: 'arn:..',
+            fetchResults: [
+                { source: 'sam', fetched: 92, stagedKey: 'k/sam' },
+                { source: 'ted', fetched: 129, stagedKey: 'k/ted' },
+                { source: 'calusource', fetched: 0, stagedKey: '', error: 'Request failed with status code 404' },
+            ],
+            normalized: { newTenderIds: [], skipped: 0, perSource: {} },
+            prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
+            matches: [],
+            classified: { tendersUpdated: 0, highPriorityTenderIds: [], digestTenderIds: [] },
+            notifyHp: { status: 'skipped' },
+            notifyDigest: { status: 'skipped' },
+        });
+        const items = ddbPutMock.mock.calls.map(c => c[0].Item);
+        const summary = items.find(i => i.SK === 'SUMMARY');
+        expect(summary.status).toBe('PARTIAL');
+        expect(summary.sourcesFailed).toContain('calusource');
+        expect(summary.sourcesSucceeded).toEqual(expect.arrayContaining(['sam', 'ted']));
+        expect(summary.lastError).toContain('404');
+
+        const calRow = items.find(i => i.SK === 'SOURCE#calusource');
+        expect(calRow.status).toBe('FAILED');
+        expect(calRow.completedStages).toEqual(['fetch']);
+        expect(calRow.errorCause).toContain('404');
+    });
+
     it('treats missing matches as an empty no-candidates run', async () => {
         const { handler } = await import('./handler');
         await handler({
