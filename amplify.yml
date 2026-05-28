@@ -39,3 +39,16 @@ frontend:
       headers:
         - key: 'Cache-Control'
           value: 'max-age=31536000, immutable'
+    # Block crawler indexing of admin pages at the HTTP layer.
+    # Belt-and-suspenders alongside the runtime <meta name="robots"> in
+    # AdminRoute.tsx — works even when JS doesn't execute. Two patterns
+    # because Amplify's customHeaders glob does not match the bare /admin
+    # path with admin/**.
+    - pattern: 'admin'
+      headers:
+        - key: 'X-Robots-Tag'
+          value: 'noindex, nofollow'
+    - pattern: 'admin/**'
+      headers:
+        - key: 'X-Robots-Tag'
+          value: 'noindex, nofollow'
