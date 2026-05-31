@@ -276,27 +276,41 @@ export async function handler(event: FetchTxesbdEvent): Promise<FetchOutput> {
         const seen = new Set<string>();
         const allLines: EsbdLine[] = [];
 
-        // Sequential per-keyword (POST is cheap, parallel risks cookie/bot-manager edge cases).
-        for (const kw of ESBD_KEYWORDS.slice(0, MAX_KEYWORDS_PER_RUN)) {
-            try {
+        // Parallel per-keyword. Initial sequential version timed out at 300s
+        // when one or two keywords hit retry-exhaustion (3× 30s = 90s per
+        // failed keyword, ×10 keywords = up to 15 min worst case). Parallel
+        // with Promise.allSettled caps total time at max-single-query (~30s)
+        // plus GET cookies + S3 staging, and one slow keyword no longer
+        // blocks the rest. NetSuite SCA tolerates concurrent POSTs with the
+        // same JSESSIONID — verified manually 2026-05-31.
+        const settled = await Promise.allSettled(
+            ESBD_KEYWORDS.slice(0, MAX_KEYWORDS_PER_RUN).map(async (kw) => {
                 const lines = await searchEsbd(kw, cookie);
+                return { kw, lines };
+            }),
+        );
+        for (const r of settled) {
+            if (r.status === 'fulfilled') {
+                const { kw, lines } = r.value;
+                let added = 0;
                 for (const ln of lines) {
                     if (!ln.solicitationId || seen.has(ln.solicitationId)) continue;
                     seen.add(ln.solicitationId);
                     allLines.push(ln);
+                    added++;
                 }
                 console.info(JSON.stringify({
                     event: 'fetch-txesbd.keyword-done',
                     keyword: kw,
                     returned: lines.length,
+                    added,
                     uniqueSoFar: seen.size,
                 }));
-            } catch (kwErr) {
-                // One keyword failure does not fail the run — log and continue.
+            } else {
+                // Per-keyword failure does not fail the run — log and continue.
                 console.warn(JSON.stringify({
                     event: 'fetch-txesbd.keyword-failed',
-                    keyword: kw,
-                    error: kwErr instanceof Error ? kwErr.message : String(kwErr),
+                    error: r.reason instanceof Error ? r.reason.message : String(r.reason),
                 }));
             }
         }
