@@ -29,6 +29,7 @@ describe('record-pipeline-run', () => {
                 { source: 'sam', fetched: 11, stagedKey: 'k/sam' },
                 { source: 'ted', fetched: 124, stagedKey: 'k/ted' },
                 { source: 'calusource', fetched: 12, stagedKey: 'k/cal' },
+                { source: 'uofa', fetched: 0, stagedKey: 'k/uofa' },
             ],
             normalized: {
                 newTenderIds: [],
@@ -37,9 +38,10 @@ describe('record-pipeline-run', () => {
                     sam: { fetched: 11, normalized: 9, duplicates: 2 },
                     ted: { fetched: 124, normalized: 100, duplicates: 24 },
                     calusource: { fetched: 12, normalized: 12, duplicates: 0 },
+                    uofa: { fetched: 0, normalized: 0, duplicates: 0 },
                 },
             },
-            prefilter: { candidates: [], candidatesCount: 12, perSource: { sam: { candidates: 8 }, ted: { candidates: 2 }, calusource: { candidates: 2 } } },
+            prefilter: { candidates: [], candidatesCount: 12, perSource: { sam: { candidates: 8 }, ted: { candidates: 2 }, calusource: { candidates: 2 }, uofa: { candidates: 0 } } },
             matches: [
                 { tenderId: 't1', source: 'sam', matches: [{ productSlug: 'rie-etcher', productCategory: 'RIE-ICP', score: 95 }], attempted: 1, llmTimeout: false, llmError: false },
                 { tenderId: 't2', source: 'ted', matches: [], attempted: 1, llmTimeout: false, llmError: false },
@@ -50,7 +52,7 @@ describe('record-pipeline-run', () => {
             notifyDigest: { status: 'sent', count: 1 },
         });
 
-        expect(ddbPutMock).toHaveBeenCalledTimes(4);
+        expect(ddbPutMock).toHaveBeenCalledTimes(5);
         const items = ddbPutMock.mock.calls.map(c => c[0].Item);
         const summary = items.find(i => i.SK === 'SUMMARY');
         expect(summary.status).toBe('SUCCESS');
@@ -87,7 +89,7 @@ describe('record-pipeline-run', () => {
             notifyDigest: { status: 'skipped' },
         });
         const summary = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SUMMARY');
-        expect(summary.sourcesAttempted).toEqual(['sam', 'ted', 'calusource']);
+        expect(summary.sourcesAttempted).toEqual(['sam', 'ted', 'calusource', 'uofa']);
         expect(summary.sourcesFailed).toContain('calusource');
         expect(summary.status).toBe('PARTIAL');
     });
@@ -104,6 +106,7 @@ describe('record-pipeline-run', () => {
                 { source: 'sam', fetched: 11, stagedKey: 'k/sam' },
                 { source: 'ted', fetched: 0, stagedKey: null, errorName: 'Timeout', errorCause: 'after 30s' },
                 { source: 'calusource', fetched: 12, stagedKey: 'k/cal' },
+                { source: 'uofa', fetched: 3, stagedKey: 'k/uofa' },
             ],
             normalized: { newTenderIds: [], skipped: 0, perSource: {} },
             prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
@@ -117,7 +120,7 @@ describe('record-pipeline-run', () => {
         const summary = items.find(i => i.SK === 'SUMMARY');
         expect(summary.status).toBe('PARTIAL');
         expect(summary.sourcesFailed).toEqual(['ted']);
-        expect(summary.sourcesSucceeded).toEqual(['sam', 'calusource']);
+        expect(summary.sourcesSucceeded).toEqual(['sam', 'calusource', 'uofa']);
         expect(summary.notificationStatus).toBe('SKIPPED');
     });
 
@@ -247,6 +250,7 @@ describe('record-pipeline-run', () => {
                 { source: 'sam', fetched: 1, stagedKey: 'k' },
                 { source: 'ted', fetched: 1, stagedKey: 'k' },
                 { source: 'calusource', fetched: 1, stagedKey: 'k' },
+                { source: 'uofa', fetched: 1, stagedKey: 'k' },
             ],
             normalized: { newTenderIds: [], skipped: 0, perSource: {} },
             prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
