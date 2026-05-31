@@ -10,7 +10,7 @@ const TABLE = () => process.env.INTELLIGENCE_TABLE!;
 const ALERT_EMAIL_TO = () => process.env.ALERT_EMAIL_TO ?? 'info@ninescrolls.com';
 const ALERT_EMAIL_FROM = () => process.env.ALERT_EMAIL_FROM ?? 'info@ninescrolls.com';
 const ZERO_FETCH_ALERT_SOURCES = () =>
-    (process.env.ZERO_FETCH_ALERT_SOURCES ?? 'sam,ted,calusource,uofa').split(',').map(s => s.trim()).filter(Boolean);
+    (process.env.ZERO_FETCH_ALERT_SOURCES ?? 'sam,ted,calusource,uofa,txesbd').split(',').map(s => s.trim()).filter(Boolean);
 
 interface Alert {
     level: 'CRITICAL' | 'WARNING';
@@ -34,7 +34,7 @@ async function fetchRecentSummaries(): Promise<PipelineRunSummary[]> {
 }
 
 async function fetchSourceRows(executionId: string): Promise<PipelineRunSource[]> {
-    const sources: TenderSource[] = ['sam', 'ted', 'calusource', 'uofa'];
+    const sources: TenderSource[] = ['sam', 'ted', 'calusource', 'uofa', 'txesbd'];
     const res = await ddb.send(new BatchGetCommand({
         RequestItems: { [TABLE()]: { Keys: sources.map(s => ({ PK: `RUN#${executionId}`, SK: `SOURCE#${s}` })) } },
     }));
@@ -55,14 +55,14 @@ function evaluateRules(runs: PipelineRunSummary[], latestSources: PipelineRunSou
         alerts.push({ level: 'WARNING', ruleId: 'rule-3', scope: latest.executionId, message: `Notification layer ${latest.notificationStatus}: ${latest.notificationError ?? 'unknown'}` });
     }
     if (runs.length >= 2) {
-        for (const src of ['sam', 'ted', 'calusource', 'uofa'] as TenderSource[]) {
+        for (const src of ['sam', 'ted', 'calusource', 'uofa', 'txesbd'] as TenderSource[]) {
             if (runs.slice(0, 2).every(r => (r.sourcesFailed ?? []).includes(src))) {
                 alerts.push({ level: 'CRITICAL', ruleId: 'rule-4', scope: src, message: `Source "${src}" failed in 2 consecutive runs` });
             }
         }
     }
     if (latest.status !== 'FAILED') {
-        const expectedSources = latest.sourcesAttempted ?? ['sam', 'ted', 'calusource', 'uofa'];
+        const expectedSources = latest.sourcesAttempted ?? ['sam', 'ted', 'calusource', 'uofa', 'txesbd'];
         if (latestSources.length < expectedSources.length) {
             alerts.push({ level: 'WARNING', ruleId: 'rule-7', scope: latest.executionId, message: `Run ${latest.executionId} has missing SOURCE rows` });
         }

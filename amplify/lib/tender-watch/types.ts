@@ -7,7 +7,7 @@ export type { TenderStatus };
 
 /** Common shape every fetch-* Lambda emits and normalize-dedupe consumes. */
 export const NormalizedTenderSchema = z.object({
-    source: z.enum(['sam', 'ted', 'calusource', 'uofa', 'uk', 'canada', 'australia', 'singapore', 'korea']),
+    source: z.enum(['sam', 'ted', 'calusource', 'uofa', 'txesbd', 'uk', 'canada', 'australia', 'singapore', 'korea']),
     externalId: z.string().min(1),
     url: z.string().url(),
     title: z.string().min(1),
