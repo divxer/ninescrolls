@@ -3,7 +3,7 @@
  * Spec: docs/superpowers/specs/2026-05-27-tender-watch-monitoring-design.md
  */
 
-export type TenderSource = 'sam' | 'ted' | 'calusource';
+export type TenderSource = 'sam' | 'ted' | 'calusource' | 'uofa';
 
 export interface NotifyOutcome {
     status: 'sent' | 'skipped' | 'failed';
