@@ -734,7 +734,7 @@ backend.notifyPipelineHealth.resources.lambda.addToRolePolicy(new PolicyStatemen
 }));
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_TO', 'info@ninescrolls.com');
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_FROM', 'info@ninescrolls.com');
-backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa,txesbd,nyscr');
+backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa,nyscr');
 
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
@@ -765,11 +765,17 @@ const fetchUofaTask = new LambdaInvoke(tenderWatchStack, 'FetchUofa', {
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
     payloadResponseOnly: true,
 });
-const fetchTxesbdTask = new LambdaInvoke(tenderWatchStack, 'FetchTxesbd', {
-    lambdaFunction: backend.fetchTxesbd.resources.lambda,
-    payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
-    payloadResponseOnly: true,
-});
+// FetchTxesbd is intentionally NOT wired into the Step Function.
+// Diagnosed 2026-05-31 via CloudWatch logs: NetSuite/Akamai blackholes
+// AWS Lambda outbound IPs — every POST to ESBD.Service.ss hangs for 30s
+// regardless of cookie state or User-Agent. The identical 2-step flow
+// works in <2s from a residential IP via curl, confirming an IP-class
+// block (Akamai Bot Manager refusing datacenter traffic). The Lambda
+// resource, types, and Lambda code are preserved so we can re-enable by
+// running from a non-AWS IP (e.g. DigitalOcean droplet pushing to S3,
+// or a residential-IP HTTP proxy). To re-enable inside Lambda, restore
+// the FetchTxesbd LambdaInvoke, FailedPass, fetchParallel.branch call,
+// and add 'txesbd' back to ALL_SOURCES + ZERO_FETCH_ALERT_SOURCES.
 const fetchNyscrTask = new LambdaInvoke(tenderWatchStack, 'FetchNyscr', {
     lambdaFunction: backend.fetchNyscr.resources.lambda,
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
@@ -796,10 +802,7 @@ const fetchUofaFailedPass = new Pass(tenderWatchStack, 'FetchUofaFailedPass', {
 });
 fetchUofaTask.addCatch(fetchUofaFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
 
-const fetchTxesbdFailedPass = new Pass(tenderWatchStack, 'FetchTxesbdFailedPass', {
-    parameters: { source: 'txesbd', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
-});
-fetchTxesbdTask.addCatch(fetchTxesbdFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
+// FetchTxesbdFailedPass removed alongside FetchTxesbd — see note above.
 
 const fetchNyscrFailedPass = new Pass(tenderWatchStack, 'FetchNyscrFailedPass', {
     parameters: { source: 'nyscr', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
@@ -813,7 +816,7 @@ fetchParallel.branch(fetchSamTask);
 fetchParallel.branch(fetchTedTask);
 fetchParallel.branch(fetchCalusourceTask);
 fetchParallel.branch(fetchUofaTask);
-fetchParallel.branch(fetchTxesbdTask);
+// fetchTxesbd branch removed — see note above; re-enable by restoring task + branch.
 fetchParallel.branch(fetchNyscrTask);
 
 const normalizeTask = new LambdaInvoke(tenderWatchStack, 'NormalizeDedupe', {
