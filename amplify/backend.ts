@@ -24,6 +24,7 @@ import { fetchSam } from './functions/fetch-sam/resource';
 import { fetchTed } from './functions/fetch-ted/resource';
 import { fetchCalusource } from './functions/fetch-calusource/resource';
 import { fetchUofa } from './functions/fetch-uofa/resource';
+import { fetchTxesbd } from './functions/fetch-txesbd/resource';
 import { normalizeDedupe } from './functions/normalize-dedupe/resource';
 import { prefilterByKeyword } from './functions/prefilter-by-keyword/resource';
 import { matchWithLlm } from './functions/match-with-llm/resource';
@@ -94,6 +95,7 @@ const backend = defineBackend({
     fetchTed,
     fetchCalusource,
     fetchUofa,
+    fetchTxesbd,
     normalizeDedupe,
     prefilterByKeyword,
     matchWithLlm,
@@ -697,7 +699,7 @@ const tenderRawBucket = new Bucket(tenderWatchStack, 'TenderWatchRawBucket', {
 
 // --- Grant each Lambda the table + staging-bucket env it needs.
 const tenderLambdas = [
-    backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.fetchUofa, backend.normalizeDedupe,
+    backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.fetchUofa, backend.fetchTxesbd, backend.normalizeDedupe,
     backend.prefilterByKeyword, backend.matchWithLlm, backend.classifyAndStore,
     backend.notifyHighPriority, backend.notifyDailyDigest, backend.recordPipelineRun,
     backend.notifyPipelineHealth, backend.expireOldTenders,
@@ -710,7 +712,7 @@ for (const fn of tenderLambdas) {
 }
 
 // fetch-* Lambdas write the staging bucket; normalize-dedupe reads it.
-[backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.fetchUofa].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
+[backend.fetchSam, backend.fetchTed, backend.fetchCalusource, backend.fetchUofa, backend.fetchTxesbd].forEach((fn) => tenderRawBucket.grantWrite(fn.resources.lambda));
 tenderRawBucket.grantRead(backend.normalizeDedupe.resources.lambda);
 
 // match-with-llm invokes Bedrock — same pattern as classify-org.
@@ -730,7 +732,7 @@ backend.notifyPipelineHealth.resources.lambda.addToRolePolicy(new PolicyStatemen
 }));
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_TO', 'info@ninescrolls.com');
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_FROM', 'info@ninescrolls.com');
-backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa');
+backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa,txesbd');
 
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {
@@ -761,6 +763,11 @@ const fetchUofaTask = new LambdaInvoke(tenderWatchStack, 'FetchUofa', {
     payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
     payloadResponseOnly: true,
 });
+const fetchTxesbdTask = new LambdaInvoke(tenderWatchStack, 'FetchTxesbd', {
+    lambdaFunction: backend.fetchTxesbd.resources.lambda,
+    payload: TaskInput.fromObject({ executionId: JsonPath.stringAt('$.exec.executionId') }),
+    payloadResponseOnly: true,
+});
 
 const fetchSamFailedPass = new Pass(tenderWatchStack, 'FetchSamFailedPass', {
     parameters: { source: 'sam', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
@@ -782,6 +789,11 @@ const fetchUofaFailedPass = new Pass(tenderWatchStack, 'FetchUofaFailedPass', {
 });
 fetchUofaTask.addCatch(fetchUofaFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
 
+const fetchTxesbdFailedPass = new Pass(tenderWatchStack, 'FetchTxesbdFailedPass', {
+    parameters: { source: 'txesbd', fetched: 0, stagedKey: null, 'errorName.$': '$.error.Error', 'errorCause.$': '$.error.Cause' },
+});
+fetchTxesbdTask.addCatch(fetchTxesbdFailedPass, { errors: ['States.ALL'], resultPath: '$.error' });
+
 const fetchParallel = new Parallel(tenderWatchStack, 'FetchAllSources', {
     resultPath: '$.fetchResults',
 });
@@ -789,6 +801,7 @@ fetchParallel.branch(fetchSamTask);
 fetchParallel.branch(fetchTedTask);
 fetchParallel.branch(fetchCalusourceTask);
 fetchParallel.branch(fetchUofaTask);
+fetchParallel.branch(fetchTxesbdTask);
 
 const normalizeTask = new LambdaInvoke(tenderWatchStack, 'NormalizeDedupe', {
     lambdaFunction: backend.normalizeDedupe.resources.lambda,

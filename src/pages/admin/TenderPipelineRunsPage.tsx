@@ -80,8 +80,8 @@ export function TenderPipelineRunsPage() {
                                     <td className="px-4 py-3 whitespace-nowrap">{formatDuration(run.durationMs)}</td>
                                     <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-bold ${statusClass(run.status)}`}>{run.status}</span></td>
                                     <td className="px-4 py-3">
-                                        <div className="flex gap-2" title="sam / ted / calusource / uofa">
-                                            {(['sam', 'ted', 'calusource', 'uofa'] as TenderSource[]).map(src => (
+                                        <div className="flex gap-2" title="sam / ted / calusource / uofa / txesbd">
+                                            {(['sam', 'ted', 'calusource', 'uofa', 'txesbd'] as TenderSource[]).map(src => (
                                                 <span key={src} className={`w-3 h-3 rounded-full ${sourceState(run, src)}`} />
                                             ))}
                                         </div>
