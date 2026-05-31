@@ -31,6 +31,7 @@ describe('record-pipeline-run', () => {
                 { source: 'calusource', fetched: 12, stagedKey: 'k/cal' },
                 { source: 'uofa', fetched: 0, stagedKey: 'k/uofa' },
                 { source: 'txesbd', fetched: 0, stagedKey: 'k/txesbd' },
+                { source: 'nyscr', fetched: 0, stagedKey: 'k/nyscr' },
             ],
             normalized: {
                 newTenderIds: [],
@@ -53,7 +54,7 @@ describe('record-pipeline-run', () => {
             notifyDigest: { status: 'sent', count: 1 },
         });
 
-        expect(ddbPutMock).toHaveBeenCalledTimes(6);
+        expect(ddbPutMock).toHaveBeenCalledTimes(7);
         const items = ddbPutMock.mock.calls.map(c => c[0].Item);
         const summary = items.find(i => i.SK === 'SUMMARY');
         expect(summary.status).toBe('SUCCESS');
@@ -90,7 +91,7 @@ describe('record-pipeline-run', () => {
             notifyDigest: { status: 'skipped' },
         });
         const summary = ddbPutMock.mock.calls.map(c => c[0].Item).find(i => i.SK === 'SUMMARY');
-        expect(summary.sourcesAttempted).toEqual(['sam', 'ted', 'calusource', 'uofa', 'txesbd']);
+        expect(summary.sourcesAttempted).toEqual(['sam', 'ted', 'calusource', 'uofa', 'txesbd', 'nyscr']);
         expect(summary.sourcesFailed).toContain('calusource');
         expect(summary.status).toBe('PARTIAL');
     });
@@ -109,6 +110,7 @@ describe('record-pipeline-run', () => {
                 { source: 'calusource', fetched: 12, stagedKey: 'k/cal' },
                 { source: 'uofa', fetched: 3, stagedKey: 'k/uofa' },
                 { source: 'txesbd', fetched: 5, stagedKey: 'k/txesbd' },
+                { source: 'nyscr', fetched: 2, stagedKey: 'k/nyscr' },
             ],
             normalized: { newTenderIds: [], skipped: 0, perSource: {} },
             prefilter: { candidates: [], candidatesCount: 0, perSource: {} },
@@ -122,7 +124,7 @@ describe('record-pipeline-run', () => {
         const summary = items.find(i => i.SK === 'SUMMARY');
         expect(summary.status).toBe('PARTIAL');
         expect(summary.sourcesFailed).toEqual(['ted']);
-        expect(summary.sourcesSucceeded).toEqual(['sam', 'calusource', 'uofa', 'txesbd']);
+        expect(summary.sourcesSucceeded).toEqual(['sam', 'calusource', 'uofa', 'txesbd', 'nyscr']);
         expect(summary.notificationStatus).toBe('SKIPPED');
     });
 
@@ -254,6 +256,7 @@ describe('record-pipeline-run', () => {
                 { source: 'calusource', fetched: 1, stagedKey: 'k' },
                 { source: 'uofa', fetched: 1, stagedKey: 'k' },
                 { source: 'txesbd', fetched: 1, stagedKey: 'k' },
+                { source: 'nyscr', fetched: 1, stagedKey: 'k' },
             ],
             normalized: { newTenderIds: [], skipped: 0, perSource: {} },
             prefilter: { candidates: [], candidatesCount: 0, perSource: {} },

@@ -52,7 +52,7 @@ export interface RecordEvent {
     errorCause?: string;
 }
 
-const ALL_SOURCES: TenderSource[] = ['sam', 'ted', 'calusource', 'uofa', 'txesbd'];
+const ALL_SOURCES: TenderSource[] = ['sam', 'ted', 'calusource', 'uofa', 'txesbd', 'nyscr'];
 
 function durationMs(startedAt: string, endedAt: string): number {
     return Math.max(0, new Date(endedAt).getTime() - new Date(startedAt).getTime());
