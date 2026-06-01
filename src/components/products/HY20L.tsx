@@ -145,7 +145,7 @@ export function HY20L() {
   return (
     <>
       <SEO
-        title="HY-20L - Compact RF Plasma Processing System (20L) | NineScrolls"
+        title="HY-20L - Compact RF Plasma Processing System (20L)"
         description="Compact, research-grade plasma processing system with 20-liter chamber. Ideal for batch plasma cleaning, photoresist ashing, and surface activation. Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations, up to 300W, PLC-controlled operation."
         keywords="HY-20L, plasma cleaning, photoresist ashing, surface activation, RF plasma, batch processing, research plasma system"
         url="/products/hy-20l"

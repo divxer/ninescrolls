@@ -131,7 +131,7 @@ export function PlutoM() {
   return (
     <>
       <SEO
-        title="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber | NineScrolls"
+        title="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber"
         description="200W RF plasma cleaner (13.56 MHz) with ~8L stainless steel chamber. Batch capability meets RF precision. Touchscreen control with recipe storage. Best value in mid-range RF plasma. $12,999 USD."
         keywords="PLUTO-M, RF plasma cleaner, 200W plasma, 8L chamber, batch plasma cleaning, surface activation, 13.56 MHz, research plasma system"
         url="/products/pluto-m"

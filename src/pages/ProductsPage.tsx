@@ -45,7 +45,7 @@ export function ProductsPage() {
   return (
     <>
       <SEO
-        title="Plasma Etching & Thin-Film Systems | ICP‑RIE, RIE, PECVD & ALD | NineScrolls"
+        title="Plasma Etching & Thin-Film Systems | ICP‑RIE, RIE, PECVD & ALD"
         description="Advanced plasma etching and low‑temperature thin‑film tools for labs: ICP‑RIE, RIE, PECVD, ALD. ±3% uniformity, low‑damage processes, 150–200 mm wafers."
         keywords="plasma etching systems, ICP-RIE equipment, RIE vs DRIE comparison, semiconductor plasma etching tools, RIE etcher, DRIE Bosch"
         url="/products/"

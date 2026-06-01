@@ -90,7 +90,7 @@ export function CompactRIE() {
   return (
     <>
       <SEO
-        title="Compact RIE Etcher (SV-RIE) - Ultra-Compact Reactive Ion Etching | NineScrolls"
+        title="Compact RIE Etcher (SV-RIE) - Ultra-Compact Reactive Ion Etching"
         description="Compact RIE etching system with 630mm×600mm footprint. Ideal for research labs, pilot-scale processes, and failure analysis. Touchscreen control, modular design."
         keywords="compact RIE, SV-RIE, small footprint RIE, compact reactive ion etching, research RIE system, failure analysis equipment"
         url="/products/compact-rie"

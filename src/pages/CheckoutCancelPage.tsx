@@ -8,7 +8,7 @@ export function CheckoutCancelPage() {
   return (
     <>
       <SEO
-        title="Payment Cancelled | NineScrolls"
+        title="Payment Cancelled"
         description="Your payment was cancelled."
         url="/checkout/cancel"
       />

@@ -45,7 +45,7 @@ export function CheckoutSuccessPage() {
   return (
     <>
       <SEO
-        title="Order Confirmed | NineScrolls"
+        title="Order Confirmed"
         description="Your order has been successfully placed."
         url="/checkout/success"
       />

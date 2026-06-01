@@ -57,7 +57,7 @@ export function PlasmaCleanerOverviewPage() {
   return (
     <>
       <SEO
-        title="Plasma Cleaners - HY & PLUTO Series | NineScrolls"
+        title="Plasma Cleaners - HY & PLUTO Series"
         description="RF plasma cleaners for research laboratories. HY Series and PLUTO Series — from compact teaching systems to 500W flagship cleaners. US-based sales, support, and warranty."
         keywords="plasma cleaner, RF plasma, research plasma system, HY-4L, HY-20L, PLUTO-T, PLUTO-M, PLUTO-F, batch plasma processing, surface activation"
         url="/products/plasma-cleaner"

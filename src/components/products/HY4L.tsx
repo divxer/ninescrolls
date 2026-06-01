@@ -129,7 +129,7 @@ export function HY4L() {
         mpn: "HY-4L-RF",
         price: "7999",
         url: "https://ninescrolls.com/products/hy-4l-rf",
-        seoTitle: "HY-4L - RF (13.56 MHz) Plasma Cleaner | $7,999 USD | NineScrolls",
+        seoTitle: "HY-4L - RF (13.56 MHz) Plasma Cleaner | $7,999 USD",
         seoDescription: "HY-4L RF Plasma Cleaner. 13.56 MHz RF frequency, 150W power, 4L chamber. In stock. Free shipping. Ships in 3-4 weeks.",
         seoKeywords: "HY-4L RF, 13.56 MHz plasma cleaner, RF plasma system, research plasma equipment, $7999"
       };
@@ -141,7 +141,7 @@ export function HY4L() {
         mpn: "HY-4L-MF",
         price: "6499",
         url: "https://ninescrolls.com/products/hy-4l-mf",
-        seoTitle: "HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner | $6,499 USD | NineScrolls",
+        seoTitle: "HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner | $6,499 USD",
         seoDescription: "HY-4L Mid-Frequency Plasma Cleaner. 40 kHz frequency, 4L chamber. In stock. Free shipping. Ships in 3-4 weeks.",
         seoKeywords: "HY-4L MF, 40 kHz plasma cleaner, mid-frequency plasma system, research plasma equipment, $6499"
       };

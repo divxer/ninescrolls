@@ -228,7 +228,7 @@ export function CheckoutPage() {
   return (
     <>
       <SEO
-        title="Checkout | NineScrolls"
+        title="Checkout"
         description="Complete your order for HY Series plasma systems."
         url="/checkout"
       />
