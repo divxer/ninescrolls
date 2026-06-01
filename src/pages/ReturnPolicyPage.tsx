@@ -7,7 +7,7 @@ export function ReturnPolicyPage() {
   return (
     <>
       <SEO
-        title="Return Policy - NineScrolls"
+        title="Return Policy"
         description="NineScrolls Return Policy for scientific research and semiconductor processing equipment. Learn about our return conditions, process, and resolution options."
         url="/return-policy"
       />

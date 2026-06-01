@@ -3,7 +3,7 @@ import { SEO } from '../components/common/SEO';
 export function PrivacyPage() {
   return (
     <>
-      <SEO title="Privacy Policy - NineScrolls" description="NineScrolls Privacy Policy" url="/privacy" />
+      <SEO title="Privacy Policy" description="NineScrolls Privacy Policy" url="/privacy" />
       <main className="py-24 px-8 max-w-4xl mx-auto">
         <h1 className="text-5xl font-headline font-bold mb-4">Privacy Policy</h1>
         <p className="text-on-surface-variant mb-12">Last updated: September 14, 2025</p>
