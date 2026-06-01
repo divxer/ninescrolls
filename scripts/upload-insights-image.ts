@@ -2,12 +2,21 @@
  * Upload an image for an insights article to the CDN (S3 + Lambda resize).
  *
  * Usage:
- *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/upload-insights-image.ts <slug> <image-file> [--name <name>] [--no-update-cover]
+ *   ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD \
+ *     [AWS_PROFILE=ninescrolls] [CDN_DISTRIBUTION_ID=...] \
+ *     npx tsx scripts/upload-insights-image.ts <slug> <image-file> [options]
  *
  * Options:
  *   --name <name>       Custom filename prefix for the image (default: derived from file name)
  *                        e.g. --name cover → cover-sm.webp, cover-lg.webp, etc.
  *   --no-update-cover   Skip updating the article's imageUrl (use for inline/content images)
+ *   --no-invalidate     Skip CloudFront invalidation after upload
+ *
+ * Env:
+ *   AWS_PROFILE           IAM profile with cloudfront:CreateInvalidation
+ *                         (the SSO admin role does NOT have this; the
+ *                         `ninescrolls` IAM user profile does)
+ *   CDN_DISTRIBUTION_ID   CloudFront distribution ID (defaults to .env value)
  *
  * Example:
  *   npx tsx scripts/upload-insights-image.ts my-article ~/path/to/photo.png --name cover
@@ -18,10 +27,14 @@
  *   2. Uploads the image to S3 temp/
  *   3. Triggers Lambda to resize (sm/md/lg/xl) + generate WebP variants
  *   4. Updates the DynamoDB record's imageUrl to point to the CDN
+ *      (extension-less `-lg` form; renderer builds responsive <picture>)
+ *   5. Invalidates the CloudFront cache for this slug's image directory
+ *      so edge nodes pick up the new bytes immediately
  */
 
 import { readFileSync } from 'fs';
 import path from 'path';
+import { execFileSync } from 'child_process';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
@@ -47,7 +60,7 @@ function getMimeType(filePath: string): string {
   }
 }
 
-async function uploadNewsImage(slug: string, imagePath: string, customName?: string, updateCover = true) {
+async function uploadNewsImage(slug: string, imagePath: string, customName?: string, updateCover = true, skipInvalidate = false) {
   await authenticate();
 
   // 1. Verify the article exists
@@ -114,7 +127,11 @@ async function uploadNewsImage(slug: string, imagePath: string, customName?: str
   }
 
   // 6. Update the article's imageUrl (unless --no-update-cover)
-  const cdnImageUrl = `${cdnBaseUrl}/insights/${slug}/${heroPrefix}-lg.png`;
+  //
+  // Store the extension-less `-lg` form. InsightsPostPage.tsx detects that
+  // shape and builds a responsive <picture> with sm/md/lg/xl .webp sources,
+  // so the same record works whether the source was PNG or JPG.
+  const cdnImageUrl = `${cdnBaseUrl}/insights/${slug}/${heroPrefix}-lg`;
 
   if (updateCover) {
     console.log(`\nUpdating imageUrl to: ${cdnImageUrl}`);
@@ -130,15 +147,45 @@ async function uploadNewsImage(slug: string, imagePath: string, customName?: str
   } else {
     console.log('\nDone! Image uploaded (cover imageUrl not changed).');
   }
-  console.log(`  CDN URL: ${cdnImageUrl}.webp`);
+
+  // 7. Invalidate CloudFront cache for this slug's image directory.
+  //    Without this, edge nodes keep serving the old object until TTL
+  //    expires (can be hours), even after S3 has the new bytes.
+  if (!skipInvalidate) {
+    const distributionId = process.env.CDN_DISTRIBUTION_ID;
+    if (!distributionId) {
+      console.warn('\nCDN_DISTRIBUTION_ID not set; skipping CloudFront invalidation.');
+      console.warn('  Edge caches will keep the old image until their TTL expires.');
+    } else {
+      const invalidationPath = `/insights/${slug}/*`;
+      console.log(`\nInvalidating CloudFront ${distributionId} ${invalidationPath} ...`);
+      try {
+        const out = execFileSync('aws', [
+          'cloudfront', 'create-invalidation',
+          '--distribution-id', distributionId,
+          '--paths', invalidationPath,
+          '--query', 'Invalidation.Id',
+          '--output', 'text',
+        ], { encoding: 'utf-8' });
+        console.log(`Invalidation submitted: ${out.trim()}`);
+      } catch (err) {
+        console.error('\nCloudFront invalidation failed (upload succeeded). Retry with:');
+        console.error(`  aws cloudfront create-invalidation --distribution-id ${distributionId} --paths "${invalidationPath}"`);
+        console.error('Hint: the SSO admin role lacks this permission; set AWS_PROFILE=ninescrolls.');
+      }
+    }
+  } else {
+    console.log('\nCloudFront invalidation skipped (--no-invalidate).');
+  }
 }
 
 // CLI entry
 const nameIdx = process.argv.indexOf('--name');
 const customName = nameIdx !== -1 ? process.argv[nameIdx + 1] : undefined;
 const noUpdateCover = process.argv.includes('--no-update-cover');
+const noInvalidate = process.argv.includes('--no-invalidate');
 const positionalArgs = process.argv.slice(2).filter((arg, i, arr) => {
-  if (arg === '--name' || arg === '--no-update-cover') return false;
+  if (arg === '--name' || arg === '--no-update-cover' || arg === '--no-invalidate') return false;
   if (i > 0 && arr[i - 1] === '--name') return false;
   return true;
 });
@@ -146,11 +193,11 @@ const slug = positionalArgs[0];
 const imagePath = positionalArgs[1];
 
 if (!slug || !imagePath) {
-  console.error('Usage: npx tsx scripts/upload-insights-image.ts <slug> <image-file> [--name <name>] [--no-update-cover]');
+  console.error('Usage: npx tsx scripts/upload-insights-image.ts <slug> <image-file> [--name <name>] [--no-update-cover] [--no-invalidate]');
   process.exit(1);
 }
 
-uploadNewsImage(slug, imagePath, customName, !noUpdateCover).catch((err) => {
+uploadNewsImage(slug, imagePath, customName, !noUpdateCover, noInvalidate).catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
