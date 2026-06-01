@@ -129,7 +129,7 @@ export function PlutoT() {
   return (
     <>
       <SEO
-        title="PLUTO-T | 200W RF Plasma Cleaner | 13.56 MHz | Under $10,000 | NineScrolls"
+        title="PLUTO-T | 200W RF Plasma Cleaner | 13.56 MHz | Under $10,000"
         description="Compact 200W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 1 gas line (optional 2nd). High-power RF cleaning for research labs under $10,000. Authorized US distributor."
         keywords="PLUTO-T, 200W RF plasma cleaner, 13.56 MHz, plasma cleaning, surface activation, polymer treatment, research lab plasma, affordable RF plasma, touchscreen plasma cleaner"
         url="/products/pluto-t"

@@ -25,7 +25,7 @@ export function CartPage() {
     return (
       <>
         <SEO
-          title="Shopping Cart | NineScrolls"
+          title="Shopping Cart"
           description="Your shopping cart is empty."
           url="/cart"
         />
@@ -51,7 +51,7 @@ export function CartPage() {
   return (
     <>
       <SEO
-        title="Shopping Cart | NineScrolls"
+        title="Shopping Cart"
         description="Review your order and proceed to checkout."
         url="/cart"
       />

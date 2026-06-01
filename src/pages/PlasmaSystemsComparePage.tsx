@@ -24,7 +24,7 @@ export function PlasmaSystemsComparePage() {
   return (
     <>
       <SEO
-        title="Compare All Plasma Cleaners — HY & PLUTO Series | NineScrolls"
+        title="Compare All Plasma Cleaners — HY & PLUTO Series"
         description="Compare all 6 plasma cleaners side-by-side: HY-4L, PLUTO-T, HY-20L, PLUTO-M, HY-20LRF, and PLUTO-F. Find the right RF plasma system for your research lab."
         keywords="plasma cleaner comparison, HY Series, PLUTO Series, HY-4L, PLUTO-T, HY-20L, PLUTO-M, HY-20LRF, PLUTO-F, research plasma systems"
         url="/products/plasma-cleaner/compare"

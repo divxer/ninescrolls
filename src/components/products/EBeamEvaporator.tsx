@@ -79,7 +79,7 @@ export function EBeamEvaporator() {
   return (
     <>
       <SEO
-        title="E-Beam Evaporation System (MEB-600) — Multi-Source IR & Photonic Thin-Film Evaporator | NineScrolls"
+        title="E-Beam Evaporation System (MEB-600) — Multi-Source IR & Photonic Thin-Film Evaporator"
         description='MEB-600 combined e-beam (10 kW, 270°) + thermal evaporator with 6×17 cc water-cooled crucibles, INFICON closed-loop quartz monitor, ≤±5% uniformity over Φ6" wafers, Siemens PLC recipe control. Cited in ACS Appl. Mater. Interfaces (2024). For IR sensors, photonic crystals, and optoelectronic thin films.'
         keywords="e-beam evaporator, MEB-600, electron beam evaporation system, thermal evaporator, PVD evaporation, QCM thickness monitor, infrared coating, photonic crystal deposition, PbS evaporation, IR sensor fabrication, lift-off evaporation"
         url="/products/e-beam-evaporator"
