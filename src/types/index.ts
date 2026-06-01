@@ -81,6 +81,9 @@ export const insightCategories = [
   'Photonics',
   'Nanotechnology',
   'Energy',
+  'Process Integration',
+  'Plasma Processing',
+  'Equipment Selection',
   'Equipment Maintenance',
   'Publication Spotlight'
 ];
