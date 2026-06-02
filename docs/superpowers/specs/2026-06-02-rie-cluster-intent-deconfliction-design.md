@@ -64,7 +64,7 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
 
 - **RULE 1 — Definitional RIE opening.** Only the **pillar's** opening paragraph may contain a definitional `Reactive ion etching is…` / `RIE is…`. The other 4 openings must NOT.
 - **RULE 2 — Definitional ICP-RIE opening.** Only the **ICP page's** opening may contain a definitional `ICP-RIE is…` / `Inductively Coupled Plasma … is…`. The comparison page's first 150 words must NOT define ICP-RIE.
-- **RULE 3 — Pillar up-link.** Each non-pillar page carries **exactly one** early up-link to the pillar with anchor text "Reactive Ion Etching (RIE)" — at least one, and **at most one** (no link-stacking). (Phase-1 already added these — **verify count == 1, do not duplicate**.)
+- **RULE 3 — Pillar up-link (scoped to the opening).** Each non-pillar page carries **exactly one EARLY pillar up-link** — in the opening section — anchored "Reactive Ion Etching (RIE)": at least one, at most one, *in the opening*. Additional contextual references to the pillar deeper in the body are allowed and expected; the rule constrains only the **opening canonical-anchor link** to be singular (no link-stacking up top). (Phase-1 added these — verify the opening has exactly one; do not duplicate. A whole-article count of 2+ is fine as long as the opening has exactly one.)
 - **RULE 4 — ICP length.** The ICP page final length is **1,700–2,200 words**.
 - **RULE 5 — H1 (title) ownership.** Exactly one page owns each head-term in its title:
   - pillar → title contains "Reactive Ion Etching"
@@ -109,7 +109,7 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
 - **Drafting:** sequential-subagent workflow (semiconductor-accurate), RULE 2/4/6 checks between sections; then DDB update + provenance HTML committed to `scripts/articles/icp-rie-technology-advanced-etching.html`.
 
 ### Priority 3 — Comparison (`understanding-differences-pe-rie-icp-rie-plasma-etching`) — de-encyclopedia-ize
-- **Title:** → "PE vs RIE vs ICP-RIE: Which Plasma Process Should You Choose?" (RULE 5 — selection intent).
+- **Title:** → "PE vs RIE vs ICP-RIE: Which Plasma Etching Process Should You Choose?" (RULE 5 — selection intent).
 - **Opening (first 150 words):** must NOT re-define ICP-RIE (RULE 2). Go straight to selection framing: Purpose → Comparison Matrix → Selection Guide → Use cases.
 - **First H2:** verify it is comparison/selection-oriented (current "Terminology: What Does PE Mean?" is acceptable as PE-scoping but prefer a selection-first H2; must not become a standalone ICP-RIE or RIE definition — RULE 6).
 - **Internal link:** add a strong link "For a complete explanation of ICP-RIE technology, see our ICP-RIE Technology Guide" → `/insights/icp-rie-technology-advanced-etching` (feeds the new canonical).
@@ -118,7 +118,7 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
 ### Priority 4 — DRIE (`deep-reactive-ion-etching-bosch-process`) — NOT untouched
 GSC (10,583 impr @ 0.32% CTR) shows it is still mis-judged, so:
 - **Title:** unchanged — "Deep Reactive Ion Etching (DRIE): Bosch Process Guide for MEMS & TSV" (already good, RULE 5).
-- **Opening:** rewrite. Open "Deep Reactive Ion Etching (DRIE) is a specialized extension of RIE…" — cede generic RIE intent to the pillar; do NOT open with a generic "Reactive ion etching is…" (RULE 1).
+- **Opening:** rewrite so "Deep Reactive Ion Etching (DRIE)" lands in the first ~20 words and frames DRIE as extending RIE — e.g. "Deep Reactive Ion Etching (DRIE) extends conventional reactive ion etching to create extremely deep, high-aspect-ratio structures…". Cede generic RIE intent to the pillar; do NOT open with a generic "Reactive ion etching is…" (RULE 1), and add no second pillar link (RULE 3).
 - **First H2:** verify "1) Introduction to DRIE and the Bosch Process" stays DRIE-specific (RULE 6 — OK as-is, confirm).
 - **Meta/excerpt:** verify it leads with DRIE/Bosch, not generic RIE.
 - **Link:** verify pillar up-link (RULE 3).
@@ -132,13 +132,16 @@ Already the canonical RIE owner (title + first H2 "1) What is Reactive Ion Etchi
 
 - **4 surgical edits** (ion-milling, comparison, DRIE openings/titles/links + comparison internal link): one **one-shot DDB edit script** — verbatim find/replace, dry-run first, idempotency guards, **not committed** (same pattern as every prior content edit; live source of truth is DDB).
 - **1 content expansion** (ICP page): sequential-subagent draft → DDB `update` → provenance HTML committed to `scripts/articles/`.
-- **No `update-insight-from-html` on the 4 metadata-edited pages** — it replaces the whole content field and would clobber the surgical edits. Use targeted find/replace only.
+- **No `update-insight-from-html` on the 3 metadata-edited pages** — it replaces the whole content field and would clobber the surgical edits. Use targeted regex find/replace only (tolerant of whitespace/attribute drift in the live HTML).
+- **ICP technical-accuracy gate** — after drafting, the ICP body passes a dedicated technical review before going live: ICP density 10¹¹–10¹² cm⁻³ (vs CCP ~10⁹–10¹⁰); source power → plasma density, RF bias → ion energy (the decoupling); low-pressure operation → longer mean free path → anisotropy; ARDE (aspect-ratio-dependent etching) and microloading named correctly. These are the page's E-E-A-T spine.
+- **Auditability** — because the 3 surgical edits live only in DDB, a committed `docs/seo/rie-phase2-change-log.md` records old→new title and old→new opening for every changed page, so a future reader can see why the live pages differ from any historical source.
 
 ## Success metrics (re-pull GSC ~3–4 weeks after deploy)
 
 1. **Pillar position rises** — "reactive ion etching" / "reactive ion etch" climb off page 5 (position 49–50 → materially better) as siblings stop competing.
 2. **ICP page overtakes comparison page** for "icp-rie" / "icp etcher" / "icp plasma etching" head terms.
 3. **Ion-milling impressions DECREASE materially while CTR INCREASES** — e.g. 19K @ 0.27% → ~8K @ ≥1.5%. Impression *drop here is success*, not failure: it means junk generic-RIE exposure was removed and remaining traffic is relevant.
+4. **Query ownership** — on a future GSC page-breakdown for exact query **"reactive ion etching"**, the pillar holds **>90% of cluster impressions** for that query (today it splits pillar 2,252 / comparison 875 / ion-milling 511 / DRIE 50 ≈ 61% pillar share). A sustained single-owner share confirms the deconfliction held and didn't regress.
 
 ---
 
