@@ -29,7 +29,7 @@
 
 ## THE THREE HARD RULES (every subagent gets these verbatim)
 
-**RULE 1 — §3 does NOT discuss origins.** Each defect gets exactly: **Signature** → **Evidence** → **Next step**. NO "Causes: CMP / cleaning / activation / queue time" — that is Surface Prep's territory. Forbidden words in §3 as *causes*: do not write that a defect "is caused by" or "results from" a process step.
+**RULE 1 — §3 does NOT discuss origins.** Each defect gets exactly: **Signature** → **Evidence** → **Next step**. NO "Causes: CMP / cleaning / activation / queue time" — that is Surface Prep's territory. Forbidden *causal* framing in §3 — do not write that a defect "is caused by", "results from", "arises from", "is due to", or "originates" with any process/condition. Even origin-agnostic causal phrasing ("oxide defects often arise when…") is out of bounds; §3 describes what is OBSERVED, never why it happened.
 
 **RULE 2 — §7 stops at the suspect *category*.** Map **Evidence → suspect category → where to fix (link out)**. NEVER the process cause. Allowed: "TEM interfacial layer → suspect surface-state issue → see Surface Preparation." Forbidden: "→ activation too weak → raise RF power."
 
@@ -131,8 +131,8 @@ print("§3 words:",len(t.split()))
 print("6 defects:", all(k in t for k in ['void','particle','oxide','proud','misalign','delamin']))
 print("signature+evidence+next:", all(k in t for k in ['signature','evidence','next step']))
 print("quick-ref table:", '<table' in seg and 'first' in t)
-# RULE 1 leak check — §3 must not assign process causes
-print("RULE1 leak (expect 0):", len(re.findall(r'caused by|results from|because the (cmp|clean|activation|queue)', t)))
+# RULE 1 leak check — §3 must not assign causes (origin-agnostic causal framing also banned)
+print("RULE1 leak (expect 0):", len(re.findall(r'caused by|results from|arise[s]? from|arise[s]? when|due to|originate', t)))
 PY
 ```
 Expected: §3 ≤600; 6 defects present; signature/evidence/next-step present; quick-ref table present; **RULE1 leak = 0**.
@@ -151,7 +151,7 @@ git commit -m "draft(insights): FA §3 signatures & evidence (RULE 1, quick-ref)
 
 - [ ] **Step 1: Write §4 — technique-indexed, table-led**
 
-`<h2 id="toolbox-nd">4. FA Toolbox I — Non-Destructive Inspection</h2>`. Technique-indexed (read down the tools). **Lead with a `<table>`: Technique | Detects | Typical Resolution | Key Limitation** covering: **C-SAM** (scanning acoustic microscopy — voids/delamination at the bond interface), **X-ray** (gross defects, bridging), **CT / 3D X-ray** (3D void distribution through the stack), **IR transmission** (buried-interface anomalies on IR-transparent stacks). Then 1 short paragraph per technique adding only what the table can't carry (when to reach for it). Keep prose lean (RULE 3) — the table does the work.
+`<h2 id="toolbox-nd">4. FA Toolbox I — Non-Destructive Inspection</h2>`. Technique-indexed (read down the tools). **Lead with a `<table>`: Technique | Detects | Typical Resolution | Throughput | Key Limitation** covering: **C-SAM** (scanning acoustic microscopy — voids/delamination at the bond interface; high throughput), **X-ray** (gross defects, bridging; high), **CT / 3D X-ray** (3D void distribution through the stack; medium), **IR transmission** (buried-interface anomalies on IR-transparent stacks; medium). The **Throughput** column matters to FA engineers (can I screen 100 dies, or only 1 sample?) and feeds Figure 2's bubble size. Then 1 short paragraph per technique adding only what the table can't carry (when to reach for it). Keep prose lean (RULE 3) — the table does the work.
 
 - [ ] **Step 2: Verify**
 ```bash
@@ -204,13 +204,13 @@ git commit -m "draft(insights): FA §5 toolbox II physical analysis (moat)"
 
 ---
 
-## Task 5: §6 Electrical FA + Correlation subsection (~400w)
+## Task 5: §6 Electrical FA + Correlation subsection (~400–500w)
 
 **Files:** Modify (append after §5)
 
 - [ ] **Step 1: Write §6**
 
-`<h2 id="electrical-fa">6. Electrical Failure Analysis</h2>`. ~250w: daisy-chain / Kelvin test structures, resistance excursion as the earliest signal, open/short localization that narrows *where* to look before any destructive cut. Then a `<h3>Correlating Electrical and Physical Evidence</h3>` subsection (~150w): the chain high-R → daisy-chain fail → localized region → CT → cross-section/TEM — the layer that ties electrical FA to physical FA, and the thing competitor articles omit. Do NOT explain process causes (that's §7's exit + Surface Prep).
+`<h2 id="electrical-fa">6. Electrical Failure Analysis</h2>`. Allow **400–500 words** (not a hard 400) — this is the most engineering-distinctive section and competitor pages omit it. ~250–300w: daisy-chain / Kelvin test structures, resistance excursion as the earliest signal, and **failure isolation** — open/short localization that narrows *where* to look before any destructive cut (use the term "failure isolation"; it's a real FA search term). Then a `<h3>Correlating Electrical and Physical Evidence</h3>` subsection (~150–200w): the chain high-R → daisy-chain fail → isolated region → CT → cross-section/TEM — the layer that ties electrical FA to physical FA, and the thing competitor articles omit. Do NOT explain process causes (that's §7's exit + Surface Prep).
 
 - [ ] **Step 2: Verify**
 ```bash
@@ -239,7 +239,7 @@ git commit -m "draft(insights): FA §6 electrical FA + correlation"
 
 - [ ] **Step 1: Write §7 — evidence → suspect category → link out (RULE 2)**
 
-`<h2 id="root-cause">7. Root-Cause Decision Tree</h2>`. Map **evidence → suspect category → where to fix**, then link out. STOP at the suspect family (RULE 2). Examples: "void + clean dielectric → suspect surface-prep planarity/cleaning → see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>"; "chain-resistance shift + overlay error → suspect bonding-step alignment → see <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>"; "TEM interfacial layer → suspect surface-state/copper-oxide → Surface Preparation." NEVER write the process cause ("activation power low," "queue time long," "raise RF power"). Insert `<!-- FIGURE 3 PLACEHOLDER -->`.
+`<h2 id="root-cause">7. Root-Cause Decision Tree</h2>`. Map **evidence → suspect category → where to investigate**, then link out. STOP at the suspect family (RULE 2). Examples: "void + clean dielectric → suspect surface-prep planarity/cleaning → see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>"; "chain-resistance shift + overlay error → suspect bonding-step alignment → see <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>"; "TEM interfacial layer → suspect surface-state/copper-oxide → Surface Preparation." NEVER write the process cause ("activation power low," "queue time long," "raise RF power"). **The tree branches by EVIDENCE, never by process step** — do NOT structure it as "Void → CMP / Cleaning / Activation" (that is Surface Prep §8). Insert `<!-- FIGURE 3 PLACEHOLDER -->`.
 
 - [ ] **Step 2: Verify RULE 2**
 ```bash
@@ -301,8 +301,8 @@ git commit -m "draft(insights): FA §8 failure evolution under reliability stres
 
 `<h2 id="faq">Frequently Asked Questions</h2>` with exactly these 6 (each `<h3>` Q + `<p>` A, 2–4 sentences, rule-of-thumb, no body re-explanation):
 1. How do you detect voids in a hybrid bond?
-2. What is the difference between C-SAM and X-ray for hybrid bond inspection?
-3. How is a copper-oxide bond defect confirmed?
+2. How is a copper-oxide bond defect confirmed? (oxide + TEM = high-value long-tail; promoted to #2)
+3. What is the difference between C-SAM and X-ray for hybrid bond inspection?
 4. How do you tell a surface-prep defect from a misalignment defect?
 5. What failure-analysis techniques are destructive vs non-destructive?
 6. How does reliability stress (thermal cycling, EM) reveal latent bonding defects?
@@ -367,7 +367,7 @@ Swap `<!-- FIGURE 1/2/3 PLACEHOLDER -->` for `<figure class="post-figure"><pictu
 
 - [ ] **Step 2: Write `/tmp/fa-figure-prompts.md`, COVER FIRST**
 
-Stage 1 = cover only (navy hero: hybrid-bond cross-section with a highlighted defect, probed by three converging modalities — acoustic / X-ray / cross-section beam; tagline "detect · image · root-cause"; title/subtitle/footer burned in). Stage 2 (after cover approved) = Fig 1 (6-node FA workflow), Fig 2 (**THE signature figure — 2D matrix: x = Information Content, y = Destructiveness**, plotting C-SAM/X-ray/CT low → cross-section/FIB/SEM → TEM/EELS high), Fig 3 (root-cause tree: evidence → suspect category → where-to-fix exits, NOT process cause). White-bg flat inline / navy hero, brand palette.
+Stage 1 = cover only (navy hero: hybrid-bond cross-section with a highlighted defect, probed by three converging modalities — acoustic / X-ray / cross-section beam; tagline "detect · image · root-cause"; title/subtitle/footer burned in). Stage 2 (after cover approved) = Fig 1 (6-node FA workflow), Fig 2 (**THE signature figure — 2D matrix: x = Information Content, y = Destructiveness, with bubble size = Throughput** — C-SAM = low-destructive/low-info but a big bubble (high throughput); TEM = high-destructive/high-info but a tiny bubble (very low throughput); plot X-ray/CT/cross-section/FIB/SEM/EELS between), Fig 3 (root-cause tree: **Evidence → Suspect Family → Where To Investigate** with exits to Surface Prep / hub — NOT "Evidence → Cause", and NOT branched by process step). White-bg flat inline / navy hero, brand palette.
 
 - [ ] **Step 3: Verify markup**
 ```bash
@@ -396,7 +396,7 @@ git commit -m "draft(insights): FA figure blocks + prompts"
 set -a; . ./.env; set +a
 npx tsx scripts/create-insight.ts scripts/articles/hybrid-bonding-failure-analysis.html \
   --category "Process Integration" \
-  --tags "hybrid bonding,failure analysis,C-SAM,scanning acoustic microscopy,X-ray CT,cross-section,TEM,delamination,void detection,daisy chain,reliability,3D integration,advanced packaging,root cause analysis"
+  --tags "hybrid bonding,failure analysis,failure isolation,C-SAM,scanning acoustic microscopy,X-ray CT,cross-section,TEM,delamination,void detection,daisy chain,reliability,3D integration,advanced packaging,root cause analysis"
 ```
 Expected: prints an id + auto-derived (long) slug. **Record the id.**
 
