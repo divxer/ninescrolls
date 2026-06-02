@@ -141,7 +141,7 @@ Summary: Comprehensive guide to DRIE and the Bosch process for deep silicon etch
 
 **ICP-RIE Technology**
 URL: https://ninescrolls.com/insights/icp-rie-technology-advanced-etching
-Summary: ICP-RIE decouples plasma generation from ion energy control, enabling higher plasma density at lower pressure. Benefits include higher etch rates, better uniformity, and superior profile control for SiC, GaN, and high-AR structures.
+Summary: ICP-RIE canonical guide. Defines ICP-RIE and how an induction coil generates high-density plasma (~10^11–10^12 cm^-3) at low pressure; explains the defining decoupling of ICP source power (plasma density) from RF bias power (ion energy / DC self-bias) for independent control of density and energy; covers equipment architecture and applications across logic/memory, SiC/GaN power devices, III-V photonics, and advanced packaging (TSV, deep silicon); includes an ICP-RIE vs RIE summary table. Notes ARDE and microloading as key limitations.
 
 **RIE vs. Ion Milling**
 URL: https://ninescrolls.com/insights/reactive-ion-etching-vs-ion-milling
@@ -378,6 +378,24 @@ Summary: RIE-150A precision etching enables an on-chip q-BIC metasurface color r
 URL: https://ninescrolls.com/insights/icp200-metasurface-flow-visualization
 Published: Light: Science & Applications (Nature), 2025
 Summary: ICP-200 fabricates silicon nanopillars enabling the first fully non-invasive 2D quantitative visualization of transparent flow fields.
+
+---
+
+**Wafer Bonding Technologies for 3D Integration**
+URL: https://ninescrolls.com/insights/wafer-bonding-technologies-for-3d-integration
+Summary: Technology hub for wafer bonding in 3D ICs. Maps the major methods — direct/fusion, anodic, eutectic, thermocompression, adhesive, and Cu-Cu hybrid bonding — and traces the evolution to hybrid bonding for fine-pitch 3D integration (HBM, chiplets, backside power). Covers the bonding process flow, common failure modes (voids, misalignment, dishing), and equipment capability considerations. Links to dedicated guides on surface preparation and failure analysis.
+
+**Surface Preparation for Cu-Cu Hybrid Bonding**
+URL: https://ninescrolls.com/insights/surface-preparation-cu-cu-hybrid-bonding
+Summary: The surface-conditioning chain that decides Cu-Cu hybrid-bond yield, step by step: CMP coplanarity and dishing control, post-CMP cleaning, plasma activation of the dielectric, and copper-oxide / queue-time control before bonding. Explains how each preparation step determines whether a finished stack bonds void-free, and where surface-origin defects come from.
+
+**Hybrid Bonding Failure Analysis**
+URL: https://ninescrolls.com/insights/hybrid-bonding-failure-analysis
+Summary: How Cu-Cu hybrid-bonding defects are detected, imaged, and traced to root cause. Covers the FA toolbox by destructiveness and information content (C-SAM and X-ray/CT for non-destructive screening; cross-section/FIB, SEM, and TEM/EELS for physical characterization), the evidence-to-root-cause workflow, electrical failure analysis, and reliability testing. Routes diagnosed defects back to surface preparation or the bonding step.
+
+**16-Hi HBM: Thermal and Materials Challenges**
+URL: https://ninescrolls.com/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges
+Summary: Why scaling HBM to 16-high for AI memory is bandwidth- and thermal-bound. Covers die thinning and stacking, warpage and stress management, thermal dissipation through the stack, and the bonding/packaging implications (TSVs, hybrid bonding) driving next-generation high-bandwidth memory for AI accelerators.
 
 ---
 
