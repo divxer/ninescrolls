@@ -15,7 +15,7 @@
 
 <p>Failure analysis begins with evidence, not defects. The engineer at the bench does not start by declaring "this is a void" or "this is copper oxide" — they start with a symptom (a die that fails electrical test, a stack that delaminates after thermal cycling) and work backward through evidence until the defect names itself. Naming the defect first is how diagnoses go wrong: it invites you to find the picture you expected instead of the one the part is showing you.</p>
 
-<p>That distinction sets the boundary of this guide. The <a href="/insights/wafer-bonding-technologies-for-3d-integration">hub</a> catalogues what can go wrong; <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a> explains why defects originate and how to prevent them. This page answers a different question — <em>how do I prove what happened?</em> — and the answer is a disciplined chain from observed symptom to documented evidence to a defensible root cause. It is also the one place in the cluster where every defect type converges: void, particle, copper oxide, dishing, misalignment, and delamination all land on the same bench, because at the moment of observation the FA engineer does not yet know which one they have.</p>
+<p>That distinction sets the boundary of this guide. The <a href="/insights/wafer-bonding-technologies-for-3d-integration">hub</a> catalogues what can go wrong; <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a> explains why defects originate and how to prevent them. This page answers a different question — <em>how do I prove what happened?</em> — and the answer is a disciplined chain from observed symptom to documented evidence to a defensible root cause. It is also the one place in the cluster where every defect type converges: void, particle, copper oxide, dishing, misalignment, and delamination all land on the same bench, because at the moment of observation the FA engineer does not yet know which one they have. The same symptom can point to different defect families, which is why it is the evidence — not the symptom — that owns the diagnosis.</p>
 
 <h2 id="fa-workflow">2. The FA Workflow</h2>
 
@@ -30,7 +30,7 @@
   <li><strong>Corrective action.</strong> The suspect family hands off to the team that owns prevention.</li>
 </ol>
 
-<p>The sections that follow walk this chain: first the defect signatures you are matching against (§3), then the inspection and physical-analysis toolboxes that produce the evidence (§4–§5), the electrical methods that localize it (§6), and finally how the evidence resolves to a suspect family (§7) — including defects that only surface under reliability stress (§8).</p>
+<p>The sections that follow walk this chain: first the defect signatures you are matching against (§3), then the inspection and physical-analysis toolboxes that produce the evidence (§4–§5), the electrical methods that localize it (§6), and finally how the evidence resolves to a suspect family (§7) — including defects that only surface under reliability stress (§8). Every tool in the toolbox that follows exists to move a failure one step further down this chain.</p>
 
 <figure class="post-figure">
   <picture>
@@ -45,7 +45,7 @@
 
 <h2 id="signatures">3. Failure Signatures &amp; Evidence</h2>
 
-<p>This section is a defect-indexed lookup: match the symptom in front of you against a signature, confirm it with the listed evidence, and run the next technique. Each entry describes only what is observed at the bench — never how the defect got there. For how any of these defects originate and how to prevent them, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</p>
+<p>This section is a defect-indexed lookup: match the symptom in front of you against a signature, confirm it with the listed evidence, and run the next technique. Each entry describes only what is observed at the bench — never how the defect got there. For where these defects come from and how to prevent them, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</p>
 
 <p><strong>Void (non-contact).</strong> <em>Signature:</em> a local open or high-resistance reading confined to one region. <em>Evidence:</em> a dark or echo indication in C-SAM, a low-density volume in CT, and a visible gap in cross-section. <em>Next step:</em> CT to map the extent, then cross-section through it.</p>
 
@@ -53,7 +53,7 @@
 
 <p><strong>Copper open / oxide interface.</strong> <em>Signature:</em> elevated contact resistance or an open at the bond plane while the dielectric appears intact. <em>Evidence:</em> a thin interfacial layer at the Cu-Cu plane in TEM, with EELS or EDS showing oxygen localized at that plane. <em>Next step:</em> site-specific FIB plus TEM/EELS across a suspect pad.</p>
 
-<p><strong>Proud-copper void.</strong> <em>Signature:</em> voiding localized around the copper pads rather than in the dielectric field. <em>Evidence:</em> cross-section showing copper standing above the dielectric plane with a gap around it. <em>Next step:</em> cross-section across both pad and field to compare the two.</p>
+<p><strong>Proud-copper void.</strong> <em>Signature:</em> localized non-contact around the pad perimeter — voiding that rings the copper pads rather than appearing in the dielectric field. <em>Evidence:</em> cross-section showing copper standing above the dielectric plane with a gap around it. <em>Next step:</em> cross-section across both pad and field to compare the two.</p>
 
 <p><strong>Misalignment / overlay.</strong> <em>Signature:</em> a daisy-chain resistance shift, with opens or shorts appearing at sites that should test good — the point where every defect family converges, since the symptom alone does not name it. <em>Evidence:</em> overlay metrology and a FIB cross-section showing pads off-register. <em>Next step:</em> overlay measurement, then a targeted cross-section at a suspect site.</p>
 
@@ -93,7 +93,7 @@
     </tr>
     <tr>
       <td><strong>2D X-ray</strong></td>
-      <td>Gross voids, bridging, gross misalignment, foreign material</td>
+      <td>Gross voids, bridging, large overlay error, foreign material</td>
       <td>~µm</td>
       <td>High</td>
       <td>Poor contrast for low-Z / thin interfacial features; planar projection hides depth</td>
@@ -164,7 +164,7 @@
   </tbody>
 </table>
 
-<p>This section embodies one trade-off. C-SAM (§4) is non-destructive but low-information; TEM/EELS is fully destructive but resolves the bond at atomic and chemical scale. The FA engineer climbs this ladder only as far as the question requires, and only after non-destructive inspection (§4) has aimed the cut — you spend the part once, so you spend it on a known coordinate. That least-destructive-to-most-destructive axis against information yield is exactly what Figure 2 plots.</p>
+<p>This section embodies one trade-off. C-SAM (§4) is non-destructive but low-information; TEM/EELS is fully destructive but resolves the bond at atomic and chemical scale. The FA engineer climbs this ladder only as far as the question requires, and only after non-destructive inspection (§4) has aimed the cut — you spend the part once, so you spend it on a known coordinate. That least-destructive-to-most-destructive axis against information yield is exactly what Figure 2 plots. No single tool dominates the matrix; each occupies a different operating point, which is why a real FA flow uses several in sequence rather than one.</p>
 
 <figure class="post-figure">
   <picture>
@@ -189,7 +189,7 @@
 
 <h3>Correlating Electrical and Physical Evidence</h3>
 
-<p>The full chain runs in one direction: a high-resistance or open daisy-chain reading flags the failure, failure isolation narrows it to a region or pad, CT localizes the suspect site in three dimensions through the stack, and a cross-section or TEM lamella is taken at that exact site. Electrical FA and physical FA are not two separate workflows that happen to share a part — the electrical result aims the physical cut, and the physical image then confirms or overturns the electrical hypothesis. A chain that reads open and a cross-section that shows a clean separated interface at the isolated pad are the same finding, observed twice.</p>
+<p>Electrical FA tells you where to cut; physical FA tells you what the cut reveals. The full chain runs in one direction: a high-resistance or open daisy-chain reading flags the failure, failure isolation narrows it to a region or pad, CT localizes the suspect site in three dimensions through the stack, and a cross-section or TEM lamella is taken at that exact site. Electrical FA and physical FA are not two separate workflows that happen to share a part — the electrical result aims the physical cut, and the physical image then confirms or overturns the electrical hypothesis. A chain that reads open and a cross-section that shows a clean separated interface at the isolated pad are the same finding, observed twice.</p>
 
 <p>This correlation layer is what separates rigorous failure analysis from "image something and hope." Without it, you cut blind and report whatever the section happens to show; with it, every destructive step is a test of a prior electrical hypothesis, and a result that contradicts the electrical signature is a signal to keep looking rather than a defect to write up. The discipline stops here at the physical evidence — naming the process that produced it belongs to §7.</p>
 
@@ -217,6 +217,10 @@
   </picture>
   <figcaption>Figure 3. The root-cause tree branches by evidence, not process step — it stops at a suspect family and hands off to the guide that owns prevention. Naming the process cause is deliberately out of scope.</figcaption>
 </figure>
+
+<h3>Reading the Tree</h3>
+
+<p>A single piece of evidence rarely fixes a family on its own — the tree is read by convergence, not by first hit. A C-SAM void could be a planarity problem or a particle; only when the cross-section shows a clean interface with no particle at the center does the surface-readiness family hold. A daisy-chain open could be misalignment or a copper-oxide joint; overlay metrology and a TEM interfacial check separate the two. The rule is to require two independent observations — typically one electrical or non-destructive, one physical — to point at the same family before you assign it. A lone indication is a lead, not a conclusion, and assigning a family on one ambiguous signal is how an FA report sends the wrong team chasing the wrong fix.</p>
 
 <p>That is the boundary of this guide: the chain ends at a suspect family, and the named process cause together with its correction lives in the linked guides, not here.</p>
 
