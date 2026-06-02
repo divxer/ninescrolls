@@ -110,6 +110,55 @@
 
 <p>The engineer sequences these by throughput: C-SAM first, because it screens a full wafer or area fast and flags where the interface is unbonded. X-ray and CT follow to localize the indication in three dimensions and resolve through the stack, trading speed for depth. IR is used where the stack is transparent enough to permit it. All of this happens before any destructive step — these techniques locate the anomaly so the cross-section, SEM, and TEM work in §5 is aimed at a known coordinate, not exploratory. The throughput column is the practical screening question at the bench: 100 dies in an afternoon, or one sample overnight.</p>
 
+<h2 id="toolbox-pa">5. FA Toolbox II — Physical Analysis</h2>
+
+<p>Physical analysis trades non-destructiveness for information: each step down this list destroys more of the part and reveals more of the interface.</p>
+
+<table>
+  <thead>
+    <tr><th>Technique</th><th>Reveals</th><th>Destructiveness</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Mechanical polish / lapping</strong></td>
+      <td>Exposes the bond interface in plan or angled view</td>
+      <td>Semi-destructive</td>
+    </tr>
+    <tr>
+      <td><strong>Decapsulation</strong></td>
+      <td>Removes mold/package to reach the die for package-level issues</td>
+      <td>Semi-destructive</td>
+    </tr>
+    <tr>
+      <td><strong>Cross-section (mechanical / ion polish)</strong></td>
+      <td>Interface morphology — voids, gaps, recess, separation</td>
+      <td>Destructive</td>
+    </tr>
+    <tr>
+      <td><strong>FIB (focused ion beam)</strong></td>
+      <td>Site-specific extraction of a single suspect pad / region</td>
+      <td>Destructive (localized)</td>
+    </tr>
+    <tr>
+      <td><strong>SEM</strong></td>
+      <td>Interface structure and void morphology at high magnification</td>
+      <td>Destructive (on a section)</td>
+    </tr>
+    <tr>
+      <td><strong>TEM</strong></td>
+      <td>Atomic-scale interface — the Cu-Cu bond plane, interfacial layers</td>
+      <td>Highly destructive</td>
+    </tr>
+    <tr>
+      <td><strong>EDS / EELS</strong></td>
+      <td>Interfacial chemistry / composition (e.g. oxygen at the bond plane)</td>
+      <td>Highly destructive (on a TEM lamella)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This section embodies one trade-off. C-SAM (§4) is non-destructive but low-information; TEM/EELS is fully destructive but resolves the bond at atomic and chemical scale. The FA engineer climbs this ladder only as far as the question requires, and only after non-destructive inspection (§4) has aimed the cut — you spend the part once, so you spend it on a known coordinate. That least-destructive-to-most-destructive axis against information yield is exactly what Figure 2 plots.</p>
+
 <!-- FIGURE 2 PLACEHOLDER -->
 
 </body>
