@@ -64,7 +64,7 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
 
 - **RULE 1 — Definitional RIE opening.** Only the **pillar's** opening paragraph may contain a definitional `Reactive ion etching is…` / `RIE is…`. The other 4 openings must NOT.
 - **RULE 2 — Definitional ICP-RIE opening.** Only the **ICP page's** opening may contain a definitional `ICP-RIE is…` / `Inductively Coupled Plasma … is…`. The comparison page's first 150 words must NOT define ICP-RIE.
-- **RULE 3 — Pillar up-link.** Each non-pillar page carries exactly one early up-link to the pillar with anchor text "Reactive Ion Etching (RIE)". (Phase-1 already added these — **verify, do not duplicate**.)
+- **RULE 3 — Pillar up-link.** Each non-pillar page carries **exactly one** early up-link to the pillar with anchor text "Reactive Ion Etching (RIE)" — at least one, and **at most one** (no link-stacking). (Phase-1 already added these — **verify count == 1, do not duplicate**.)
 - **RULE 4 — ICP length.** The ICP page final length is **1,700–2,200 words**.
 - **RULE 5 — H1 (title) ownership.** Exactly one page owns each head-term in its title:
   - pillar → title contains "Reactive Ion Etching"
@@ -75,6 +75,7 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
 - **RULE 6 — No generic-RIE H2 on non-pillar pages (most important; Google infers topic from H2s).** A non-pillar page may *mention* "reactive ion etching (RIE)" but must not target it as a primary topic. The **first substantive H2** of each non-pillar page must be page-specific.
   - Forbidden on non-pillar pages: `What is Reactive Ion Etching?`, `How Reactive Ion Etching Works`, `Reactive Ion Etching Process`.
   - Allowed: `What Is ICP-RIE?`, `How the Bosch Process Enables Deep Etching`, `RIE vs Ion Milling: Mechanism Comparison`, etc.
+- **RULE 7 — Comparison pages may compare, but never become canonical owners.** The comparison page (`PE vs RIE vs ICP-RIE`) and the ion-milling page (`RIE vs Ion Milling`) must remain comparison/selection-focused: they answer **"which should I choose?"**, not **"what is X?"**. They may *summarize* a technology (a row in a matrix, a one-line definition for context) but must NOT become the canonical owner of any individual technology topic — no expansion that turns a comparison page into a `What is ICP-RIE?` / `What is RIE?` encyclopedia entry. This permanently prevents a future rewrite from re-creating the ICP-intent split that RULE 2 just fixed.
 
 ---
 
@@ -95,7 +96,11 @@ Same discipline as the Advanced Packaging cluster's hard rules. Each is checkabl
   3. ICP source power vs RF bias power (independent ion-density / energy control)
   4. Why ICP achieves high-density plasma
   5. ICP-RIE equipment architecture
-  6. Process applications (SiC/GaN, III-V, deep-Si, advanced packaging)
+  6. Semiconductor manufacturing applications (structured for long-tail capture — e.g. "ICP etching for GaN", "ICP etching SiC"):
+     - Logic & Memory
+     - SiC/GaN power devices
+     - III-V photonics
+     - Advanced packaging (TSV, deep-Si)
   7. ICP-RIE advantages
   8. ICP-RIE limitations
   9. ICP-RIE vs RIE (summary table)
