@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Hybrid Bonding Failure Analysis: Detecting, Imaging, and Root-Causing Bond Defects</title>
+</head>
+<body>
+<h1>Hybrid Bonding Failure Analysis: Detecting, Imaging, and Root-Causing Bond Defects</h1>
+
+<p><strong>Target Readers:</strong> Failure-analysis, packaging, and reliability engineers diagnosing Cu-Cu hybrid bonding defects in 3D-integrated devices, advanced memory, and CMOS image sensors.</p>
+
+<p>This guide is about diagnosis — how a hybrid-bonding defect is detected, imaged, characterized, and traced to root cause. For what can go wrong at a high level, see our <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>; for how these defects originate in surface preparation and how to prevent them, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation for Cu-Cu Hybrid Bonding</a>. This page picks up where prevention ends: you have a failing or suspect bond — now prove what happened.</p>
+
+<!-- COVER FIGURE PLACEHOLDER -->
+
+<h2 id="fa-mindset">1. The Failure-Analysis Mindset</h2>
+
+<p>Failure analysis begins with evidence, not defects. The engineer at the bench does not start by declaring "this is a void" or "this is copper oxide" — they start with a symptom (a die that fails electrical test, a stack that delaminates after thermal cycling) and work backward through evidence until the defect names itself. Naming the defect first is how diagnoses go wrong: it invites you to find the picture you expected instead of the one the part is showing you.</p>
+
+<p>That distinction sets the boundary of this guide. The <a href="/insights/wafer-bonding-technologies-for-3d-integration">hub</a> catalogues what can go wrong; <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a> explains why defects originate and how to prevent them. This page answers a different question — <em>how do I prove what happened?</em> — and the answer is a disciplined chain from observed symptom to documented evidence to a defensible root cause. It is also the one place in the cluster where every defect type converges: void, particle, copper oxide, dishing, misalignment, and delamination all land on the same bench, because at the moment of observation the FA engineer does not yet know which one they have.</p>
+
+<h2 id="fa-workflow">2. The FA Workflow</h2>
+
+<p>Hybrid-bonding failure analysis follows a fixed sequence, and the discipline is in not skipping forward. Each stage either localizes the problem or builds the evidence the next stage needs, and the most destructive techniques come last — once you cross-section a part, you cannot un-cut it.</p>
+
+<ol>
+  <li><strong>Observed symptom.</strong> An electrical failure, a yield excursion, a reliability reject — the entry point, no defect assumed.</li>
+  <li><strong>Non-destructive inspection.</strong> Acoustic, X-ray, and IR imaging find and locate anomalies without touching the part.</li>
+  <li><strong>Physical characterization.</strong> Cross-section, SEM, and TEM expose the interface and resolve morphology and chemistry.</li>
+  <li><strong>Evidence correlation.</strong> The electrical signature and the physical image are reconciled into one consistent story.</li>
+  <li><strong>Suspect root-cause family.</strong> The evidence points to a category — surface-state, particle, alignment — not yet a process knob.</li>
+  <li><strong>Corrective action.</strong> The suspect family hands off to the team that owns prevention.</li>
+</ol>
+
+<p>The sections that follow walk this chain: first the defect signatures you are matching against (§3), then the inspection and physical-analysis toolboxes that produce the evidence (§4–§5), the electrical methods that localize it (§6), and finally how the evidence resolves to a suspect family (§7) — including defects that only surface under reliability stress (§8).</p>
+
+<!-- FIGURE 1 PLACEHOLDER -->
+
+</body>
+</html>
