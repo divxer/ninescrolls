@@ -177,5 +177,23 @@
 
 <p>This correlation layer is what separates rigorous failure analysis from "image something and hope." Without it, you cut blind and report whatever the section happens to show; with it, every destructive step is a test of a prior electrical hypothesis, and a result that contradicts the electrical signature is a signal to keep looking rather than a defect to write up. The discipline stops here at the physical evidence — naming the process that produced it belongs to §7.</p>
 
+<h2 id="root-cause">7. Root-Cause Decision Tree</h2>
+
+<p>The FA engineer's job ends at a defensible suspect family — the category the correlated evidence implicates — and hands off there to the team that owns prevention. The tree below maps evidence to a suspect family to where the investigation continues; it deliberately stops short of naming the process that produced the defect.</p>
+
+<ul>
+  <li><strong>C-SAM void + clean dielectric in cross-section</strong> &rarr; suspect a surface-readiness issue (planarity / cleanliness) &rarr; see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</li>
+  <li><strong>Isolated void with a particle at its center in cross-section</strong> &rarr; suspect a particle / contamination issue &rarr; see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</li>
+  <li><strong>TEM interfacial layer + EELS oxygen at the bond plane</strong> &rarr; suspect a copper-surface-state issue &rarr; see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</li>
+  <li><strong>Daisy-chain resistance shift + overlay error on cross-section</strong> &rarr; suspect a bonding-step alignment issue &rarr; see <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>.</li>
+  <li><strong>Large-area C-SAM echo appearing only after stress</strong> &rarr; suspect a marginal / latent interface &rarr; reliability evolution, §8 below.</li>
+</ul>
+
+<p>Read the tree by evidence, not by process step: the left column is what you observed at the bench, the right column is the family that owns it and where the trail continues. The same discipline that aimed every cut now constrains the conclusion — you report the suspect family the evidence supports, no further.</p>
+
+<!-- FIGURE 3 PLACEHOLDER -->
+
+<p>That is the boundary of this guide: the chain ends at a suspect family, and the named process cause together with its correction lives in the linked guides, not here.</p>
+
 </body>
 </html>
