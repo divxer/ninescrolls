@@ -38,19 +38,19 @@
 
 <h2 id="signatures">3. Failure Signatures &amp; Evidence</h2>
 
-<p>This section is a defect-indexed lookup: match the symptom in front of you against a signature, confirm it with the listed evidence, and run the next technique. Each entry describes only what is observed at the bench — never how the defect got there. For origins, follow the per-defect link to <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</p>
+<p>This section is a defect-indexed lookup: match the symptom in front of you against a signature, confirm it with the listed evidence, and run the next technique. Each entry describes only what is observed at the bench — never how the defect got there. For how any of these defects originate and how to prevent them, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>.</p>
 
-<p><strong>Void (non-contact).</strong> <em>Signature:</em> a local open or high-resistance reading confined to one region. <em>Evidence:</em> a dark or echo indication in C-SAM, a low-density volume in CT, and a visible gap in cross-section. <em>Next step:</em> CT to map the extent, then cross-section through it (for the upstream source, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Void (non-contact).</strong> <em>Signature:</em> a local open or high-resistance reading confined to one region. <em>Evidence:</em> a dark or echo indication in C-SAM, a low-density volume in CT, and a visible gap in cross-section. <em>Next step:</em> CT to map the extent, then cross-section through it.</p>
 
-<p><strong>Particle-induced void.</strong> <em>Signature:</em> a single isolated void disproportionately larger than any nearby feature. <em>Evidence:</em> a ring or halo in C-SAM, with cross-section showing a particle at the center. <em>Next step:</em> cross-section and SEM the void center to confirm the particle (see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Particle-induced void.</strong> <em>Signature:</em> a single isolated void disproportionately larger than any nearby feature. <em>Evidence:</em> a ring or halo in C-SAM, with cross-section showing a particle at the center. <em>Next step:</em> cross-section and SEM the void center to confirm the particle.</p>
 
-<p><strong>Copper open / oxide interface.</strong> <em>Signature:</em> elevated contact resistance or an open at the bond plane while the dielectric appears intact. <em>Evidence:</em> a thin interfacial layer at the Cu-Cu plane in TEM, with EELS or EDS showing oxygen localized at that plane. <em>Next step:</em> site-specific FIB plus TEM/EELS across a suspect pad (see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Copper open / oxide interface.</strong> <em>Signature:</em> elevated contact resistance or an open at the bond plane while the dielectric appears intact. <em>Evidence:</em> a thin interfacial layer at the Cu-Cu plane in TEM, with EELS or EDS showing oxygen localized at that plane. <em>Next step:</em> site-specific FIB plus TEM/EELS across a suspect pad.</p>
 
-<p><strong>Proud-copper void.</strong> <em>Signature:</em> voiding localized around the copper pads rather than in the dielectric field. <em>Evidence:</em> cross-section showing copper standing above the dielectric plane with a gap around it. <em>Next step:</em> cross-section across both pad and field to compare the two (see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Proud-copper void.</strong> <em>Signature:</em> voiding localized around the copper pads rather than in the dielectric field. <em>Evidence:</em> cross-section showing copper standing above the dielectric plane with a gap around it. <em>Next step:</em> cross-section across both pad and field to compare the two.</p>
 
-<p><strong>Misalignment / overlay.</strong> <em>Signature:</em> a daisy-chain resistance shift, with opens or shorts appearing at sites that should test good — the point where every defect family converges, since the symptom alone does not name it. <em>Evidence:</em> overlay metrology and a FIB cross-section showing pads off-register. <em>Next step:</em> overlay measurement, then a targeted cross-section at a suspect site (see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Misalignment / overlay.</strong> <em>Signature:</em> a daisy-chain resistance shift, with opens or shorts appearing at sites that should test good — the point where every defect family converges, since the symptom alone does not name it. <em>Evidence:</em> overlay metrology and a FIB cross-section showing pads off-register. <em>Next step:</em> overlay measurement, then a targeted cross-section at a suspect site.</p>
 
-<p><strong>Delamination.</strong> <em>Signature:</em> intermittent or stress-dependent opens, sometimes with audible or visible separation. <em>Evidence:</em> a large-area echo in C-SAM and an interface separation in cross-section. <em>Next step:</em> a C-SAM map to find the front, then cross-section at it (see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation</a>).</p>
+<p><strong>Delamination.</strong> <em>Signature:</em> intermittent or stress-dependent opens, sometimes with audible or visible separation. <em>Evidence:</em> a large-area echo in C-SAM and an interface separation in cross-section. <em>Next step:</em> a C-SAM map to find the front, then cross-section at it.</p>
 
 <p>When the defect is still unnamed, the symptom alone fixes the first tool to reach for — the <strong>Symptom-to-First-Tool Quick Reference</strong> below collapses the entries above into that single decision.</p>
 
@@ -206,6 +206,28 @@
 <p><strong>Temperature-humidity bias (THB).</strong> Moisture under bias degrades the dielectric and attacks the bond periphery. <em>FA signature:</em> degradation that works edge-in, corrosion products and leakage, with the physical analysis aimed at the die edge and seal rather than the field.</p>
 
 <p>Because the workflow is time-agnostic, a reliability reject and a day-0 yield reject route to the same bench and run through the same suspect-family logic of §7 — the read-point that produced the part is metadata, not a different diagnosis.</p>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>How do you detect voids in a hybrid bond?</h3>
+<p>Scanning acoustic microscopy (C-SAM) is the first tool — it images unbonded area at the interface non-destructively and screens at high throughput. X-ray CT then maps a void's 3D extent, and a cross-section confirms it. A local open or high-resistance reading is the electrical signature that sends you to C-SAM in the first place.</p>
+
+<h3>How is a copper-oxide bond defect confirmed?</h3>
+<p>By TEM on a site-specific FIB lamella across a suspect pad: an oxide interface shows as a thin interfacial layer at the Cu-Cu plane, and EELS or EDS confirms oxygen localized there. The electrical signature that points you to it is elevated contact resistance or an open while the surrounding dielectric appears bonded.</p>
+
+<h3>What is the difference between C-SAM and X-ray for hybrid bond inspection?</h3>
+<p>C-SAM uses ultrasound and is sensitive to unbonded interfaces — voids and delamination — making it the workhorse for bond-integrity screening. X-ray is sensitive to density and is better for gross defects, bridging, and foreign material; CT extends it to 3D localization. In practice C-SAM screens, X-ray/CT localizes.</p>
+
+<h3>How do you tell a surface-prep defect from a misalignment defect?</h3>
+<p>By the evidence, not the symptom — both can present as an open. A cross-section showing pads off-register points to a bonding-step alignment issue; a void or interfacial layer with pads correctly registered points to a surface-readiness issue. The root-cause tree (§7) routes the two to different owners.</p>
+
+<h3>What failure-analysis techniques are destructive vs non-destructive?</h3>
+<p>Non-destructive: C-SAM, X-ray, CT, and IR — they locate anomalies without touching the part. Destructive: cross-section, FIB, SEM, TEM, and EDS/EELS — they expose and resolve the interface but consume the sample. The discipline is to run the non-destructive tools first so the destructive cut is aimed.</p>
+
+<h3>How does reliability stress reveal latent bonding defects?</h3>
+<p>A marginal interface can pass at t=0 and fail later: thermal cycling propagates interfacial cracks and delamination, electromigration nucleates voids at the Cu-Cu joint, and temperature-humidity bias degrades the bond periphery. The failure surfaces at TC500 or HTOL 1000h, but the FA workflow that diagnoses it is the same one used at bonding.</p>
+
+<p>Most hybrid-bonding root causes lead back to surface preparation — the part of the flow most under your control. NineScrolls builds the plasma equipment behind two of its links: our <a href="/products/plasma-cleaner">plasma cleaners</a> for cleaning and dielectric activation, and our <a href="/products/icp-etcher">ICP-RIE systems</a> for controlled, low-energy surface activation. If you are closing the loop from failure analysis back to prevention, we are glad to help.</p>
 
 </body>
 </html>
