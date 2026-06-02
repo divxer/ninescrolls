@@ -161,5 +161,21 @@
 
 <!-- FIGURE 2 PLACEHOLDER -->
 
+<h2 id="electrical-fa">6. Electrical Failure Analysis</h2>
+
+<p>Hybrid bonds are not tested one pad at a time — they are tested through <strong>daisy chains and Kelvin / four-point test structures</strong> designed into the wafer. A daisy chain is a long series of bonded pads wired into one continuous loop, so a single resistance measurement reports on hundreds or thousands of interfaces at once; a Kelvin structure isolates the resistance of an individual contact by separating the force and sense paths. These structures exist because chain resistance is the earliest, cheapest signal that an interface is marginal — you read a number before you cut anything.</p>
+
+<p>A <strong>resistance excursion</strong> — a chain that reads high against its reference, or an outright open — is usually the first evidence of a bonding problem, well before any imaging. A clean Cu-Cu interface adds negligible series resistance; an oxidized or incompletely bonded one does not, and a missing contact reads as infinite. The chain tells you that something is wrong long before C-SAM or cross-section tells you what it is.</p>
+
+<p>What it does not tell you, by itself, is <em>where</em>. <strong>Failure isolation</strong> is the work of narrowing a chain-level failure to a specific region or a specific pad. Chain-segment resistance brackets the failing site between voltage taps; Kelvin taps measure individual contacts directly; and active techniques — OBIRCH, thermal-emission microscopy, EOTPR (time-domain reflectometry) — localize where the open or high-resistance site sits along the chain. The point of all of this is economy of destruction: it lets the cross-section, FIB, and TEM work of §5 be aimed at one coordinate instead of an entire die.</p>
+
+<p>This is the leverage of electrical FA. It tells you <strong>where</strong> before physical FA tells you <strong>what</strong> — it converts "this die fails" into "this pad, this chain segment," and that conversion is what makes the rest of the analysis affordable.</p>
+
+<h3>Correlating Electrical and Physical Evidence</h3>
+
+<p>The full chain runs in one direction: a high-resistance or open daisy-chain reading flags the failure, failure isolation narrows it to a region or pad, CT localizes the suspect site in three dimensions through the stack, and a cross-section or TEM lamella is taken at that exact site. Electrical FA and physical FA are not two separate workflows that happen to share a part — the electrical result aims the physical cut, and the physical image then confirms or overturns the electrical hypothesis. A chain that reads open and a cross-section that shows a clean separated interface at the isolated pad are the same finding, observed twice.</p>
+
+<p>This correlation layer is what separates rigorous failure analysis from "image something and hope." Without it, you cut blind and report whatever the section happens to show; with it, every destructive step is a test of a prior electrical hypothesis, and a result that contradicts the electrical signature is a signal to keep looking rather than a defect to write up. The discipline stops here at the physical evidence — naming the process that produced it belongs to §7.</p>
+
 </body>
 </html>
