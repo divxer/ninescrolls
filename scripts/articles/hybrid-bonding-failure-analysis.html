@@ -68,5 +68,49 @@
   </tbody>
 </table>
 
+<h2 id="toolbox-nd">4. FA Toolbox I — Non-Destructive Inspection</h2>
+
+<p>Before any cut, the FA engineer reaches for tools that find and locate an anomaly without touching the part. Read this table down the technique column — the screening question is always coverage versus resolution.</p>
+
+<table>
+  <thead>
+    <tr><th>Technique</th><th>Detects</th><th>Typical Resolution</th><th>Throughput</th><th>Key Limitation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>C-SAM (scanning acoustic microscopy)</strong></td>
+      <td>Voids, delamination, unbonded area at the bond interface</td>
+      <td>~µm-class lateral, interface-depth</td>
+      <td>High (full-wafer / full-area screening)</td>
+      <td>Needs acoustic coupling; limited on very thin or stacked layers; misses sub-resolution voids</td>
+    </tr>
+    <tr>
+      <td><strong>2D X-ray</strong></td>
+      <td>Gross voids, bridging, gross misalignment, foreign material</td>
+      <td>~µm</td>
+      <td>High</td>
+      <td>Poor contrast for low-Z / thin interfacial features; planar projection hides depth</td>
+    </tr>
+    <tr>
+      <td><strong>X-ray CT / 3D X-ray</strong></td>
+      <td>3D void distribution and location through the stack</td>
+      <td>Sub-µm to µm (sample-size dependent)</td>
+      <td>Medium–Low</td>
+      <td>Slow; small field of view at high resolution; sample size limited</td>
+    </tr>
+    <tr>
+      <td><strong>IR (infrared) transmission / microscopy</strong></td>
+      <td>Buried-interface anomalies, gross voids on IR-transparent stacks</td>
+      <td>~µm</td>
+      <td>Medium</td>
+      <td>Only works through IR-transparent layers; blocked by metal or heavily doped Si</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The engineer sequences these by throughput: C-SAM first, because it screens a full wafer or area fast and flags where the interface is unbonded. X-ray and CT follow to localize the indication in three dimensions and resolve through the stack, trading speed for depth. IR is used where the stack is transparent enough to permit it. All of this happens before any destructive step — these techniques locate the anomaly so the cross-section, SEM, and TEM work in §5 is aimed at a known coordinate, not exploratory. The throughput column is the practical screening question at the bench: 100 dies in an afternoon, or one sample overnight.</p>
+
+<!-- FIGURE 2 PLACEHOLDER -->
+
 </body>
 </html>
