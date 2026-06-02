@@ -148,7 +148,7 @@ set -a; . ./.env; set +a
 npx tsx scripts/rie-deconfliction-edits.ts --dry-run 2>&1 | grep -v "npm warn"
 ```
 
-Expected: 5 lines, all `WOULD EDIT` (or `SKIP … guard present` on re-runs). **Zero `FAIL … anchor NOT found`.** If any FAIL: the live HTML drifted — re-fetch that page's exact string and fix the `find` before applying.
+Expected: 5 lines, all `WOULD EDIT` (or `SKIP … guard present` on re-runs). **Zero `FAIL` lines.** A FAIL prints `expected exactly 1 anchor match, found N`: `found 0` = the live HTML drifted (re-fetch the exact string, fix the `find`); `found 2+` = the snippet is ambiguous (tighten the `find` to a unique span). Fix before applying.
 
 - [ ] **Step 3: Apply**
 
@@ -288,6 +288,11 @@ Dispatch a **fresh subagent as a domain reviewer** (not the author) over `script
 3. **Low-pressure operation** (typ. mTorr range) → longer mean free path → more directional ions → better anisotropy. (Sections 2/4)
 4. **ARDE** is named and correctly defined as **Aspect-Ratio-Dependent Etching** (deeper/narrower features etch slower); **microloading** = local etch-rate dependence on pattern density. (Section 8)
 5. No invented vendor specs, no fabricated numeric ranges, no claim that contradicts the pillar or comparison page.
+6. **Keyword-ownership semantic check** (human-judgment layer over the grep checks — confirms R1/R2/R6/R8 by *meaning*, not just regex):
+   - ALLOWED to own: "ICP-RIE", "ICP etcher", "ICP plasma etching", "high-density plasma etching" (R8).
+   - The opening paragraph must NOT read as a definition of plain RIE (no "Reactive ion etching is…") — RIE appears only as contrast with the single pillar link (R1).
+   - The first H2 must be ICP-specific (`What Is ICP-RIE?`), never `What Is Reactive Ion Etching?` (R6).
+   - The page must not drift into being a generic RIE explainer or a PE/RIE/ICP-RIE comparison (that's the comparison page's job, R7).
 
 Reviewer returns `PASS` or a list of `CORRECTION:` items. If corrections: apply them to the HTML, re-run Step 5's word-count grep, then re-gate. Do **not** proceed to Task 4 until `PASS`.
 
