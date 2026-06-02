@@ -27,6 +27,7 @@
 | R5 | Title ownership: pillar="Reactive Ion Etching", ICP="ICP-RIE", DRIE="Deep Reactive Ion Etching", comparison/ion-milling=comparison intent. |
 | R6 | No non-pillar page has a generic-RIE first H2 (`What is Reactive Ion Etching?` etc.). |
 | R7 | Comparison + ion-milling pages stay comparison/selection; never `What is X?` canonical bodies. |
+| R8 (advisory) | Only the ICP page targets "ICP etcher"/"ICP-RIE" in title or first H2; no `What Is an ICP Etcher?` H2 elsewhere. |
 
 **Page IDs (DDB):**
 - ion-milling `reactive-ion-etching-vs-ion-milling` = `fc4956be-1255-4d49-8a47-3348ac1f8118`
@@ -123,7 +124,10 @@ const EDITS: Edit[] = [
     if (!p) { console.error(`SKIP ${e.slug}: not found`); continue; }
     const cur: string = p[e.field] || '';
     if (cur.includes(e.guard)) { console.log(`SKIP ${e.slug}.${e.field} [${e.note}]: guard present (idempotent)`); continue; }
-    if (!e.find.test(cur)) { console.error(`FAIL ${e.slug}.${e.field} [${e.note}]: anchor NOT found`); continue; }
+    // Require EXACTLY ONE match before replacing — refuse on 0 (drift) or 2+ (ambiguous, would mis-replace).
+    const g = new RegExp(e.find.source, 'gi');
+    const n = (cur.match(g) || []).length;
+    if (n !== 1) { console.error(`FAIL ${e.slug}.${e.field} [${e.note}]: expected exactly 1 anchor match, found ${n}`); continue; }
     p[e.field] = cur.replace(e.find, e.replace);
     console.log(`${dry ? 'WOULD EDIT' : 'EDIT'} ${e.slug}.${e.field} [${e.note}]`);
   }
@@ -423,7 +427,7 @@ Expected: `one-shots removed` (both deleted).
 
 - [ ] **Step 2: Record the governance framework in memory**
 
-Append to `memory/seo_strategy.md` under the RIE Phase 2 section: "Phase 2 DONE (2026-06-02). 7-rule RIE Cluster Governance Framework enforced (R1 RIE-def-opening pillar-only; R2 ICP-def-opening ICP-only; R3 exactly-one pillar uplink; R4 ICP 1700-2200w; R5 title ownership; R6 no generic-RIE first-H2 on non-pillar; R7 comparison pages never canonical). ICP page expanded 841→~1950w as ICP-RIE canonical. Surgical edits live in DDB only (one-shot not committed). Measure GSC in ~3-4 wks: pillar off page 5, ICP overtakes comparison for icp-rie, ion-milling impressions DOWN + CTR UP."
+Append to `memory/seo_strategy.md` under the RIE Phase 2 section: "Phase 2 DONE (2026-06-02). 7-rule RIE Cluster Governance Framework enforced (R1 RIE-def-opening pillar-only; R2 ICP-def-opening ICP-only; R3 exactly-one pillar uplink; R4 ICP 1700-2200w; R5 title ownership; R6 no generic-RIE first-H2 on non-pillar; R7 comparison pages never canonical; R8 advisory: 'ICP etcher'/'ICP-RIE' head-term + first-H2 belong to ICP page only). ICP page expanded 841→~1950w as ICP-RIE canonical. Surgical edits live in DDB only (one-shot not committed). Measure GSC in ~3-4 wks: pillar off page 5, ICP overtakes comparison for icp-rie, ion-milling impressions DOWN + CTR UP."
 
 - [ ] **Step 3: Write the committed SEO change-log (auditability for DDB-only edits)**
 
