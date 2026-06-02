@@ -11,8 +11,6 @@
 
 <p>This guide is about diagnosis — how a hybrid-bonding defect is detected, imaged, characterized, and traced to root cause. For what can go wrong at a high level, see our <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>; for how these defects originate in surface preparation and how to prevent them, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation for Cu-Cu Hybrid Bonding</a>. This page picks up where prevention ends: you have a failing or suspect bond — now prove what happened.</p>
 
-<!-- COVER FIGURE PLACEHOLDER -->
-
 <h2 id="fa-mindset">1. The Failure-Analysis Mindset</h2>
 
 <p>Failure analysis begins with evidence, not defects. The engineer at the bench does not start by declaring "this is a void" or "this is copper oxide" — they start with a symptom (a die that fails electrical test, a stack that delaminates after thermal cycling) and work backward through evidence until the defect names itself. Naming the defect first is how diagnoses go wrong: it invites you to find the picture you expected instead of the one the part is showing you.</p>
@@ -34,7 +32,16 @@
 
 <p>The sections that follow walk this chain: first the defect signatures you are matching against (§3), then the inspection and physical-analysis toolboxes that produce the evidence (§4–§5), the electrical methods that localize it (§6), and finally how the evidence resolves to a suspect family (§7) — including defects that only surface under reliability stress (§8).</p>
 
-<!-- FIGURE 1 PLACEHOLDER -->
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-workflow-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-workflow-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-workflow-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-workflow-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-workflow-lg.png" alt="The six-stage hybrid bonding failure-analysis workflow: observed symptom, non-destructive inspection, physical characterization, evidence correlation, suspect root-cause family, corrective action" loading="lazy" decoding="async" />
+  </picture>
+  <figcaption>Figure 1. The failure-analysis workflow — symptom to corrective action, with the most destructive techniques last. Each stage localizes the problem or builds the evidence the next stage needs.</figcaption>
+</figure>
 
 <h2 id="signatures">3. Failure Signatures &amp; Evidence</h2>
 
@@ -159,7 +166,16 @@
 
 <p>This section embodies one trade-off. C-SAM (§4) is non-destructive but low-information; TEM/EELS is fully destructive but resolves the bond at atomic and chemical scale. The FA engineer climbs this ladder only as far as the question requires, and only after non-destructive inspection (§4) has aimed the cut — you spend the part once, so you spend it on a known coordinate. That least-destructive-to-most-destructive axis against information yield is exactly what Figure 2 plots.</p>
 
-<!-- FIGURE 2 PLACEHOLDER -->
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-toolbox-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-toolbox-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-toolbox-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-toolbox-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/fa-toolbox-matrix-lg.png" alt="A 2D matrix of hybrid-bonding FA techniques plotting information content (x-axis) against destructiveness (y-axis), with bubble size showing throughput: C-SAM low/low but high throughput, TEM/EELS high/high but very low throughput" loading="lazy" decoding="async" />
+  </picture>
+  <figcaption>Figure 2. The FA toolbox as a trade-off: information content vs destructiveness, bubble size = throughput. C-SAM screens fast but tells little; TEM/EELS resolves the bond atom-by-atom but consumes the part. Climb only as far as the question requires.</figcaption>
+</figure>
 
 <h2 id="electrical-fa">6. Electrical Failure Analysis</h2>
 
@@ -191,7 +207,16 @@
 
 <p>Read the tree by evidence, not by process step: the left column is what you observed at the bench, the right column is the family that owns it and where the trail continues. The same discipline that aimed every cut now constrains the conclusion — you report the suspect family the evidence supports, no further.</p>
 
-<!-- FIGURE 3 PLACEHOLDER -->
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/root-cause-decision-tree-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/root-cause-decision-tree-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/root-cause-decision-tree-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/root-cause-decision-tree-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/hybrid-bonding-failure-analysis/root-cause-decision-tree-lg.png" alt="A root-cause decision tree branching by evidence to a suspect family then an exit: C-SAM void to surface-readiness, TEM oxygen to copper-surface-state, overlay error to bonding-step alignment, post-stress echo to latent interface" loading="lazy" decoding="async" />
+  </picture>
+  <figcaption>Figure 3. The root-cause tree branches by evidence, not process step — it stops at a suspect family and hands off to the guide that owns prevention. Naming the process cause is deliberately out of scope.</figcaption>
+</figure>
 
 <p>That is the boundary of this guide: the chain ends at a suspect family, and the named process cause together with its correction lives in the linked guides, not here.</p>
 
