@@ -76,10 +76,10 @@ tool-first entry.
 
 | § | Title | Words | Focus |
 |---|---|---|---|
-| 1 | The Failure-Analysis Mindset | ~250 | Diagnosis-not-prevention framing; the one-line definition; **dual-defer**: overview → hub §6, origins → Surface Prep §8. Establish "FA finds *evidence*, not defects." |
-| 2 | The FA Workflow | ~250 | The spine: Symptom → Inspection → Characterization → Root Cause → Corrective Action. **Figure 1.** |
-| 3 | Failure Signatures & Evidence | ~500 | **Defect-indexed.** Per defect — void, particle-void, copper open/oxide, proud-copper void, **misalignment**, delamination — give ONLY: Signature / Evidence / Next step (RULE 1: no origins). |
-| 4 | FA Toolbox I — Non-Destructive Inspection | ~450 | **Technique-indexed.** C-SAM (voids/delamination), X-ray (gross defects), CT (3D void distribution), IR (buried-interface). Lead with a **table: Technique \| Detects \| Doesn't see / Limits**. |
+| 1 | The Failure-Analysis Mindset | ~250 | Diagnosis-not-prevention framing; the one-line definition; **dual-defer**: overview → hub §6, origins → Surface Prep §8. **MUST open on the philosophy line (verbatim intent): "Failure analysis begins with evidence, not defects."** — this keeps the page evidence-centric, not a defect catalogue. |
+| 2 | The FA Workflow | ~250 | The spine (6 nodes, real FA): Observed Symptom → Non-Destructive Inspection → Physical Characterization → Evidence Correlation → Suspect Root-Cause Family → Corrective Action. **Figure 1.** |
+| 3 | Failure Signatures & Evidence | ~500 | **Defect-indexed.** Per defect — void, particle-void, copper open/oxide, proud-copper void, **misalignment**, delamination — give ONLY: Signature / Evidence / Next step (RULE 1: no origins). **End the section with a "Symptom-to-First-Tool Quick Reference" table** (~80–100w): Open circuit→electrical test; High resistance→daisy chain; Void indication→C-SAM; Delamination→C-SAM; Misalignment suspicion→overlay/cross-section; Interfacial anomaly→TEM. (Answers the engineer's real first question: "what do I look with first?") |
+| 4 | FA Toolbox I — Non-Destructive Inspection | ~450 | **Technique-indexed.** C-SAM (voids/delamination), X-ray (gross defects), CT (3D void distribution), IR (buried-interface). Lead with a **table: Technique \| Detects \| Typical Resolution \| Key Limitation** (engineer-reading order, not "doesn't see"). |
 | 5 | FA Toolbox II — Physical Analysis | ~550 | Semi-destructive (polish, decap) → destructive (cross-section, FIB, SEM, TEM, EDS/EELS). **Table.** **Figure 2** (the Toolbox ladder — the moat). |
 | 6 | Electrical Failure Analysis | ~400 | Daisy chains / test structures, resistance excursion, open/short localization. **Includes a short subsection "Correlating Electrical and Physical Evidence"** (~150–200w): high-R → daisy-chain fail → localized region → CT → cross-section. The layer that ties electrical FA to physical FA — territory Surface Prep never touches. |
 | 7 | Root-Cause Decision Tree | ~350 | **Evidence → suspect category**, then link out (RULE 2: stop at family). **Figure 3** (decision tree with arrows out to Surface Prep / hub). |
@@ -107,8 +107,8 @@ imageUrl extension-less `-lg`.
 |---|---|---|---|---|
 | Cover | navy hero | `cover` | top | a hybrid-bond cross-section with a highlighted defect, probed by three converging inspection modalities (acoustic / X-ray / cross-section); tagline "detect · image · root-cause" |
 | Fig 1 | The FA Workflow | `fa-workflow` | §2 | Symptom → Inspection → Characterization → Root Cause → Corrective Action (the spine) |
-| Fig 2 | The Hybrid Bonding FA Toolbox | `fa-toolbox-ladder` | §5 | **signature figure** — a ladder/triage from non-destructive → semi-destructive → destructive, each rung "technique → what it detects → destructiveness" |
-| Fig 3 | Root-Cause Decision Tree | `root-cause-decision-tree` | §7 | evidence → suspect category, arrows OUT to Surface Prep (prevention) / hub (bonding-step); stops at the family, does not show process causes |
+| Fig 2 | The Hybrid Bonding FA Toolbox | `fa-toolbox-matrix` | §5 | **THE signature figure** — a **2D matrix: x-axis = Information Content, y-axis = Destructiveness**. Plot C-SAM / X-ray / CT (low destructiveness) … cross-section / FIB / SEM … TEM / EELS (high destructiveness, high information). Conveys the real engineering trade-off (C-SAM = non-destructive but low info; TEM = atomic detail but fully destructive), not a flat ladder. |
+| Fig 3 | Root-Cause Decision Tree | `root-cause-decision-tree` | §7 | evidence → **suspect category** → **where to fix** (arrows OUT to Surface Prep / hub). MUST show suspect *category* and the exit, NOT the actual process cause (RULE 2). e.g. "TEM interfacial layer → suspect surface-state → Surface Preparation" — never "→ activation too weak → raise RF power". |
 
 Heavy use of **tables in §4/§5** to keep prose down (RULE 3).
 
