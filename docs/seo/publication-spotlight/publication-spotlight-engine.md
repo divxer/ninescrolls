@@ -18,6 +18,14 @@ NineScrolls has built its content infrastructure (etching/deposition/packaging t
 - **20% B1** commentary (NineScrolls-lens only)
 - **Velocity ceiling:** quality over cadence; no page ships to hit a number.
 
+## Gate 0.5 — Existing Topic & Evidence Ownership (run BEFORE deciding to create a page)
+Authority > URL count. The Engine's most important job is not finding papers — it's **not duplicating URLs**. Before creating a new Spotlight, run two checks:
+
+- **Level A — Topic ownership.** Does a NineScrolls Guide already own this topic? If **yes → enrich the guide**, don't create a competing page (this is the cannibalization the RIE cluster had to undo). A new standalone Spotlight is the default **only when no** existing page owns the topic.
+- **Level B — Evidence ownership.** Does that guide already **cite this exact paper / use its data**? If **yes → default to *attribution enrichment* only** — name the NineScrolls/Tailong model that produced the already-cited data; do **not** add a new section, figure, or re-synthesis.
+
+Worked example (2026-06-04, Gate 0.5's first stress test): the ICP-S-150 single-crystal-diamond paper (Sci Reports 2025) was a strong A1 candidate, but it hit **Level B** — the **Diamond Semiconductor Processing** guide already owned diamond ICP etching AND already cited that paper as ref [1] (with the parameter-trends figure + 1:46 selectivity). The paper was effectively already absorbed, just cited from a *process-knowledge* angle rather than an *equipment-validation* angle. So the action degraded to a **one-sentence equipment attribution** in §5 — no new page. New standalone Spotlights are reserved for topics with **no** competing guide (e.g. RIE-100 SERS, thermoelectric dry etching).
+
 ## The 5 gates (every Spotlight passes all)
 1. **Source** — A1 > A2 > B1 (Gate-1 automation finds A1 candidates).
 2. **Linkable Asset (kill gate)** — "If I were a UCLA PhD, why cite this?" Must carry a filled `Why this is citable:` field = exactly one of **Original figure** / **Original data synthesis** / **Original framework** (e.g. Failure-Analysis Funnel, Surface-Conditioning Chain, Failure Routing Map). Can't fill it → don't publish.
