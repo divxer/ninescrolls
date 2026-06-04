@@ -4,7 +4,7 @@
 
 **Goal:** A runnable `npx tsx scripts/citation-sweep.ts` that sweeps OpenAlex + Crossref for papers citing NineScrolls equipment, dedupes against a ledger, grades/scores them (A1-confirmed/probable/unverified), and writes a ranked `weekly-candidate-queue.md` — candidates only, no writing/publishing/outreach.
 
-**Architecture:** Pure-TypeScript modules under `scripts/citation-monitor/` (each one responsibility), orchestrated by a thin `scripts/citation-sweep.ts` entry. Domain logic (detect/classify/score/dedupe) is pure and unit-tested; API clients are thin and tested with injected/mocked `fetch`. Persistence is plain repo files under `docs/seo/publication-spotlight/` — no DynamoDB, no Lambda. Gmail Scholar-Alert ingestion and outreach are **out of scope (v1.1+)**.
+**Architecture:** Two layers. (1) A deterministic, unit-tested **script** — pure-TS modules under `scripts/citation-monitor/` orchestrated by a thin `scripts/citation-sweep.ts` entry (detect/classify/score/dedupe are pure and tested; API clients are thin with mocked `fetch`; persistence = plain repo files under `docs/seo/publication-spotlight/`, no DynamoDB/Lambda). (2) A **Claude Cowork scheduled task** (Task 9) that is the *weekly trigger* — it runs the script, commits the refreshed queue, and reports A1-confirmed candidates. The script is built/proven first; the schedule wires it last. Gmail Scholar-Alert ingestion and outreach are **out of scope (v1.1+)** — but the Cowork-task host is chosen precisely so those agentic steps can be added to the routine's prompt later.
 
 **Tech Stack:** TypeScript, `tsx` (run), `vitest` (`npm test`, co-located `*.test.ts`, jsdom env), global `fetch` (Node 23). No new dependencies. No API keys (OpenAlex + Crossref are open; pass `mailto=info@ninescrolls.com` for the polite pool).
 
@@ -1072,29 +1072,47 @@ git commit -m "feat(citation-monitor): orchestrator sweep->dedupe->score->queue 
 
 ---
 
-## Task 9: Schedule wiring (note) + PR
+## Task 9: Create the Cowork scheduled task + PR
 
-**Files:** none (configuration + PR)
+The script is the *what-runs*; this task creates the **Claude Cowork scheduled task** that is the *weekly trigger*. The routine's action is to run the script, commit the refreshed queue/ledger/run-log, and report the top A1-confirmed candidates. (v1.1 will extend the routine's prompt to also read Gmail Scholar Alerts before the script runs.)
 
-- [ ] **Step 1: Document the weekly schedule in the README**
+**Files:** `docs/seo/publication-spotlight/README.md` (+ the scheduled task, created via the schedule feature — not a repo file)
+
+- [ ] **Step 1: Create the scheduled task via the `schedule` skill**
+
+Invoke the **`schedule`** skill (Claude Code routines / `scheduled-tasks`) to create a recurring task:
+- **Cadence:** weekly, **Sunday 09:00 UTC** (cron `0 9 * * 0`).
+- **Name:** `citation-sweep-weekly`.
+- **Prompt the routine runs (verbatim):**
+  > Run `npx tsx scripts/citation-sweep.ts` in the ninescrolls repo. It sweeps OpenAlex + Crossref for papers citing NineScrolls equipment and rewrites `docs/seo/publication-spotlight/weekly-candidate-queue.md`, the run log, and the ledger. Then: (1) `git add docs/seo/publication-spotlight/ && git commit -m "chore(citation-monitor): weekly sweep <date>"` on a branch `citation-sweep/<date>` and open a PR; (2) reply with the count of new candidates and the **A1-confirmed** rows (title · journal · score) so I can decide which to write. Do NOT write, publish, or send any outreach — candidates only. If OpenAlex/Crossref are unreachable, report that and still commit whatever the run produced.
+
+  If the `schedule` skill is unavailable in this environment, fall back to the `scheduled-tasks` MCP (`create_scheduled_task`) or `CronCreate` with the same cadence, name, and prompt.
+
+- [ ] **Step 2: Verify the task was registered**
+
+List scheduled tasks (`scheduled-tasks` `list_scheduled_tasks`, or the `schedule` skill's list view) and confirm `citation-sweep-weekly` appears with cadence `Sunday 09:00 UTC`. Record its task id in the README.
+
+- [ ] **Step 3: Document the schedule in the README**
 
 Append to `docs/seo/publication-spotlight/README.md`:
 
 ```markdown
 ## Schedule (v1)
-Run weekly, **Sunday 09:00 UTC**, via a Claude Cowork scheduled task whose action is:
-`npx tsx scripts/citation-sweep.ts` (in an attended session so the v1.1 Gmail step can be added later).
-The sweep is safe to run unattended — it only reads open APIs and writes repo files.
+A Claude Cowork scheduled task **`citation-sweep-weekly`** runs **Sunday 09:00 UTC** (cron `0 9 * * 0`).
+Its action: run `npx tsx scripts/citation-sweep.ts`, commit the refreshed queue/ledger/run-log on a
+`citation-sweep/<date>` branch + open a PR, and report the new A1-confirmed candidates. Candidates only.
+v1.1 will extend the routine to read Gmail Scholar Alerts before the sweep.
+Task id: <fill in from Step 2>.
 ```
 
-- [ ] **Step 2: Commit the README update**
+- [ ] **Step 4: Commit the README update**
 
 ```bash
 git add docs/seo/publication-spotlight/README.md
-git commit -m "docs(citation-monitor): document weekly schedule (Sun 09:00 UTC)"
+git commit -m "docs(citation-monitor): wire + document weekly Cowork scheduled task"
 ```
 
-- [ ] **Step 3: Push + open PR**
+- [ ] **Step 5: Push + open PR**
 
 ```bash
 git push -u origin docs/publication-spotlight-engine
