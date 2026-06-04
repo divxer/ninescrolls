@@ -135,6 +135,29 @@ Opening the queue each week immediately shows the highest-value A1 to write next
 
 **Match-confidence / false-positive guard:** equipment strings like "ICP-100" are generic; require corroboration (e.g. co-occurrence with "NineScrolls", or known model+vendor context) before scoring as A1. Low-confidence hits are flagged, not auto-promoted.
 
+### Runtime & persistence (v1 decision)
+
+**Host: a Claude Cowork scheduled task** (not website infra). Rationale: this is the *content-operations input pump*, not a website feature — its two hardest/most-valuable parts (reading Gmail Scholar Alerts; LLM triage of match-confidence and A1-vs-A2) are native to a Claude agent and painful in a Lambda. Building Lambda + DynamoDB + admin UI for a human-review queue would be over-engineering at v1.
+
+**Reliability tiering (graceful degrade):**
+- **Core (must always run):** the OpenAlex + Crossref sweep — pure HTTP, no auth, runs in any headless/cron context.
+- **Enhancement (best-effort):** Gmail Scholar-Alert ingestion. If a headless run can't reach the Gmail MCP, the task **degrades gracefully** (logs "alerts skipped", still emits candidates from the API sweep) — it must never fail the whole run.
+
+**Cadence:** weekly, Sunday 09:00 UTC.
+
+**Persistence — committed repo files (no DDB):**
+```
+docs/seo/publication-spotlight/
+  citation-ledger.json        # known citations (dedupe key = DOI); seeded from MEB-600 verified citations
+  weekly-candidate-queue.md   # current ranked A1 candidate queue (human reads this)
+  runs/2026-06-07.md          # per-run log (sources hit, new vs dup, degrade events)
+```
+Durable, versioned, diff-able; no infra to stand up.
+
+**Boundary (reaffirmed):** sourcing automation only — discovers & ranks. No auto-writing, no auto-publishing, no auto-outreach.
+
+**v2 graduation criterion:** only after the queue proves valuable for **6–8 consecutive weeks** (and/or the team needs shared access) → port the OpenAlex/Crossref sweep to an Amplify scheduled Lambda + EventBridge, store candidates in DynamoDB, and surface the queue in the admin panel. Same "prove it as a task, then fold into infra" path used for the llms-validation tool and one-shot DDB scripts.
+
 ---
 
 ## Non-goals / boundaries
