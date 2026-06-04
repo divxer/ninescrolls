@@ -28,7 +28,7 @@ Five RIE-cluster pages cannibalize each other for the same head terms. Cluster s
 - **"icp" family** (2,310 impr, position 22.5): comparison 45/1,469 **vs** ICP page 38/839 — two URLs split the ICP intent; the *dedicated* ICP page is **thin (841 words)** and **losing** to the comparison page for its own head term.
 
 **Two diagnoses:**
-1. **Generic-RIE dilution** — ion-milling + comparison + DRIE bleed impressions on "reactive ion etching"/"reactive ion etch", keeping the pillar on page 5. The ion-milling page is the largest leak (19K impr @ 0.27% CTR = junk exposure for queries it should not target).
+1. **Generic-RIE dilution** — ion-milling + comparison + DRIE bleed impressions on "reactive ion etching"/"reactive ion etch", keeping the pillar on page 5. The ion-milling page is the largest leak (19K impr @ 0.27% CTR = junk exposure for queries it should not target). **[REVISED 2026-06-02 — see "Diagnosis refinement" below: query-level data shows ion-milling's impressions are legitimate ion-beam long-tail, not junk; cannibalization was smaller than this aggregate implied.]**
 2. **ICP intent split** — the thin ICP page loses to the encyclopedia-style comparison page; Google can't tell which is the ICP-RIE authority.
 
 ---
@@ -137,12 +137,26 @@ Already the canonical RIE owner (title + first H2 "1) What is Reactive Ion Etchi
 - **ICP technical-accuracy gate** — after drafting, the ICP body passes a dedicated technical review before going live: ICP density 10¹¹–10¹² cm⁻³ (vs CCP ~10⁹–10¹⁰); source power → plasma density, RF bias → ion energy (the decoupling); low-pressure operation → longer mean free path → anisotropy; ARDE (aspect-ratio-dependent etching) and microloading named correctly. These are the page's E-E-A-T spine.
 - **Auditability** — because the 3 surgical edits live only in DDB, a committed `docs/seo/rie-phase2-change-log.md` records old→new title and old→new opening for every changed page, so a future reader can see why the live pages differ from any historical source.
 
-## Success metrics (re-pull GSC ~3–4 weeks after deploy)
+## Diagnosis refinement — query-level GSC review (2026-06-02, post-deploy)
 
-1. **Pillar position rises** — "reactive ion etching" / "reactive ion etch" climb off page 5 (position 49–50 → materially better) as siblings stop competing.
-2. **ICP page overtakes comparison page** for "icp-rie" / "icp etcher" / "icp plasma etching" head terms.
-3. **Ion-milling impressions DECREASE materially while CTR INCREASES** — e.g. 19K @ 0.27% → ~8K @ ≥1.5%. Impression *drop here is success*, not failure: it means junk generic-RIE exposure was removed and remaining traffic is relevant.
-4. **Query ownership** — on a future GSC page-breakdown for exact query **"reactive ion etching"**, the pillar holds **>90% of cluster impressions** for that query (today it splits pillar 2,252 / comparison 875 / ion-milling 511 / DRIE 50 ≈ 61% pillar share). A sustained single-owner share confirms the deconfliction held and didn't regress.
+A detailed query-level GSC pull (28-day window, sorted by impressions) **partially revises the original cannibalization thesis**, which was built on the 3-month aggregate + clicks-sorted tables:
+
+- **ion-milling page** (4,788 impr, avg position **8.2**): its named queries are ALL on-topic ion-milling/IBE ("ion beam etching", "ion milling etching", "mtj ion beam etching redeposition", "ion beam etcher"). The huge impression count is a **legitimate anonymized long-tail** of ion-beam micro-queries (top named query only 44 impr; the bulk is sub-threshold long-tail). It is **NOT** cannibalizing "reactive ion etching."
+- **DRIE page** (4,200 impr, position **8.9**): same — all queries are on-topic DRIE/Bosch ("deep reactive ion etching", "silicon drie", "bosch process etching").
+- **ICP page** already ranks position **13** and owns the right ICP-RIE terms — a good base for the canonical expansion.
+- **Exact "reactive ion etching"** (28-day): pillar already holds ~98% impression share (256/262) but at **position 73.8** — so the live problem on this term is *position*, not splitting.
+
+**Conclusion:** real cannibalization was **smaller** than the aggregate implied. The "19K junk impressions @ 0.27%" framing was an artifact; those impressions are legitimate topical long-tail at mediocre position/CTR. The work remains net-positive (ICP thin→canonical is real upside; RULE 5/6/7 prevent future drift), but the metrics below are corrected accordingly.
+
+## Success metrics (re-pull GSC ~3–4 weeks after deploy) — CORRECTED 2026-06-02
+
+1. **Pillar position rises** — "reactive ion etching" / "reactive ion etch" climb off page 7 (recent position ~73; 3-mo ~49) toward page 1 as intent signals consolidate. (Primary win to watch.)
+2. **ICP page overtakes comparison page** for "icp-rie" / "icp etcher" / "icp plasma etching" head terms, and its own position improves from ~13. (Strongest expected win — the canonical expansion.)
+3. ~~Ion-milling impressions decrease while CTR increases.~~ **RETRACTED — invalid metric.** Ion-milling's impressions are legitimate on-topic ion-beam long-tail, not junk; a decline would be *bad*, not success. (Replaced by #3' below.)
+3'. **No topical regression** — ion-milling and DRIE retain their page-1 positions (~8–9) and impression volume on their own ion-beam / DRIE queries; the opening/H2 edits must not cost them their existing topical ranking.
+4. **Query ownership** — on a future GSC page-breakdown for exact query **"reactive ion etching"**, the pillar holds **>90% of cluster impressions** (already ~98% in recent 28-day data; track as a guardrail against regression rather than a gain).
+
+**Separate future opportunity (not part of this project):** ion-milling & DRIE rank page-1 (pos 8–9) on their own terms but at ~0.2% CTR — a titles/snippet optimization candidate, distinct from intent deconfliction.
 
 ---
 
