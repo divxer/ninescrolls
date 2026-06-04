@@ -1,0 +1,69 @@
+
+      <p style="display:inline-block;background:#2563eb;color:#fff;font-size:0.85em;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:16px;">PUBLICATION SPOTLIGHT</p>
+
+      <p>Researchers at <strong>Qufu Normal University</strong> showed that a reactive-ion etcher can do more than remove material: under SF₆ plasma, an <strong>RIE-100</strong> system <em>self-organizes</em> ordered composite nanotube arrays through an unusual reaction among the silicon-dioxide layer, fluoride ions, and the aluminum sample stage. The resulting ~330 nm tubes act as a strong surface-enhanced Raman (SERS) substrate, with an enhancement factor of 1.8 × 10⁶ — a reminder that an etcher can be a <em>nanostructure-synthesis</em> tool, not just a subtractive one.</p>
+
+      <h2>Highlights</h2>
+      <ul>
+        <li>An <strong>RIE-100</strong> reactive ion etcher <strong>self-organizes</strong> ordered composite nanotube arrays from SF₆ plasma byproducts — a constructive, not subtractive, use of an etcher.</li>
+        <li>The formation mechanism is pinned down by <strong>four independent lines of evidence</strong> (time series, silicon control, no-aluminum control, XPS).</li>
+        <li>XPS proves the walls are an <strong>Al–F–O–C composite</strong> (44.5 at% F, 10.8 at% Al) — the fluoride chemistry and the aluminum sample stage are built into the structure.</li>
+        <li>~330 nm tubes / ~60 nm walls give a SERS enhancement factor of <strong>1.8 × 10⁶</strong>; as a demonstration, SERS + machine learning classified four pesticides at ≥95% accuracy (with spectral preprocessing).</li>
+        <li>Published in <strong>ACS Applied Nano Materials</strong>, 2025, <strong>8</strong>, 9544–9554 (RIE-100, Beijing Zhongke Tailong Electronic Technology).</li>
+      </ul>
+
+      <h2>Why This Paper Matters</h2>
+      <p>Reactive ion etching is almost always framed as a <em>subtractive</em> process — removing material to transfer a pattern. This work shows the same tool operating in a <em>constructive</em> regime: the plasma's own reaction byproducts redeposit and self-organize into a functional nanostructure. That reframes a reactive-ion etcher from "pattern transfer" to "nanostructure synthesis," which is the genuinely transferable lesson here — independent of the SERS or pesticide-sensing application that motivated the study.</p>
+
+      <h2>The Composite Nanotube Formation Mechanism</h2>
+      <figure class="post-figure">
+        <picture>
+          <source srcset="https://cdn.ninescrolls.com/insights/rie100-composite-nanotube-formation-sers/cna-formation-mechanism-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/rie100-composite-nanotube-formation-sers/cna-formation-mechanism-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/rie100-composite-nanotube-formation-sers/cna-formation-mechanism-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/rie100-composite-nanotube-formation-sers/cna-formation-mechanism-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/rie100-composite-nanotube-formation-sers/cna-formation-mechanism-lg.png" alt="Composite nanotube array formation mechanism in an RIE-100: PS microsphere template, SF₆ plasma, SiO₂ exposure, aluminum sample-stage participation, Al–F–O–C composite wall growth, nanotube evolution, and SERS hotspot generation" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+        </picture>
+        <figcaption>How an RIE-100 self-organizes composite nanotube arrays: a self-assembled polystyrene-microsphere template defines the lattice; SF₆ plasma drives a reaction among the SiO₂ layer, fluoride radicals, and aluminum liberated from the sample stage; the byproducts redeposit as composite Al–F–O–C walls that grow into hollow tubes (~330 nm dia, ~60 nm walls), creating dense SERS hotspots.</figcaption>
+      </figure>
+      <p>Starting from a self-assembled monolayer of polystyrene microspheres as a template, SF₆ plasma in the RIE-100 attacks the exposed regions. Rather than simply etching downward, reaction products involving the SiO₂ layer, fluoride radicals from SF₆, and aluminum liberated from the sample stage redeposit and self-organize into composite walls around each template site. Over roughly 300–600 s the walls thicken and define hollow tubes. Critically, the walls are <strong>not silicon</strong>: XPS shows an aluminum–fluorine–oxygen–carbon composite (F 44.5, O 23.1, C 21.6, Al 10.8 at%) — direct evidence that both the fluoride chemistry and the aluminum stage are built into the final structure.</p>
+
+      <h2>Four Independent Lines of Evidence</h2>
+      <p>The mechanism is not inferred from the final image — it is pinned down by four independent controls, each isolating one part of the story:</p>
+      <ul>
+        <li><strong>Time series.</strong> SEM at 300 / 350 / 500 / 600 s shows progressive wall growth and tube definition.</li>
+        <li><strong>Silicon control.</strong> Silicon etched alone under the same conditions forms pillars/cones — <em>not</em> tubes — so the tube geometry is not a plain silicon-etch artifact.</li>
+        <li><strong>No-aluminum control.</strong> An oxide layer etched without the aluminum stage yields different structures, showing the aluminum stage is causally required.</li>
+        <li><strong>XPS composition.</strong> The finished walls are an Al–F–O–C composite, chemically confirming the proposed reaction pathway.</li>
+      </ul>
+
+      <h2>Performance Outcomes</h2>
+      <p>The arrays are an effective SERS substrate: an enhancement factor of <strong>1.8 × 10⁶</strong> for 4-ATP (10⁻⁷ M detected on the array versus 10⁻¹ M on bare silicon). As an application demonstration, the substrates detected four pesticides — carbendazim, carbaryl, thiram, and thiabendazole — and pairing the spectra with machine learning reached <strong>≥95% classification accuracy with spectral preprocessing</strong>. The raw-spectra baselines were more modest (SVM 70%, k-NN 66%, decision tree 51%; AUC 0.79–0.87), a useful reminder that the preprocessing pipeline — not the substrate alone — carries much of the classifier's performance.</p>
+
+      <div style="background:#f5f5f5;border-left:4px solid #3b82f6;padding:12px 18px;border-radius:6px;margin:20px 0;">
+        <strong>Key numbers — read the paper in 60 seconds</strong>
+        <ul style="margin:8px 0 0;">
+          <li>Tube diameter — <strong>~330 nm</strong></li>
+          <li>Wall thickness — <strong>~60 nm</strong></li>
+          <li>SERS enhancement factor — <strong>1.8 × 10⁶</strong></li>
+          <li>Wall composition (XPS) — <strong>44.5 at% F, 10.8 at% Al</strong> (Al–F–O–C composite)</li>
+          <li>Pesticide ML accuracy — <strong>≥95%</strong> with spectral preprocessing (51–70% raw)</li>
+        </ul>
+      </div>
+
+      <h2>What It Means for Plasma Nanofabrication</h2>
+      <p>Self-organized structure formation widens what a reactive-ion etcher is <em>for</em>. The same levers that govern conventional etching — gas chemistry, chamber hardware, and exposure time — also control this constructive regime, connecting it to broader <a href="/insights/reactive-ion-etching-guide">reactive ion etching</a>, <a href="/insights/plasma-etching-explained-fundamentals-applications">plasma etching fundamentals</a>, and <a href="/insights/nanofabrication-techniques-nanoscale-future">nanofabrication</a> practice. Fabricating a functional nanostructure directly in an etcher — without a separate deposition or templating tool — is an attractive route for sensing and <a href="/insights/etching-beyond-silicon-new-materials">surface engineering of emerging materials</a>.</p>
+
+      <h2>Equipment Used</h2>
+      <p>A <strong>Beijing Zhongke Tailong RIE-100</strong> reactive ion etcher operating with SF₆ plasma chemistry. For the underlying process principles, see our <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching guide</a>.</p>
+
+      <h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
+      <ul>
+        <li><a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE): Principles, Applications, and Equipment Guide</a></li>
+        <li><a href="/insights/plasma-etching-explained-fundamentals-applications">Plasma Etching Fundamentals</a></li>
+        <li><a href="/insights/nanofabrication-techniques-nanoscale-future">Nanofabrication Techniques</a></li>
+        <li><a href="/insights/etching-beyond-silicon-new-materials">Etching Beyond Silicon</a></li>
+      </ul>
+
+      <h2>References</h2>
+      <p>Liu, S., Song, J., Feng, S., Li, J., Wang, X., Wang, X., Wang, Y. &amp; Liu, G. "Composite Nanotube Arrays for Pesticide Detection Assisted with Machine Learning Based on SERS Effect." <em>ACS Applied Nano Materials</em> <strong>8</strong>, 9544–9554 (2025). doi:10.1021/acsanm.5c01351</p>
