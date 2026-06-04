@@ -18,6 +18,13 @@ NineScrolls has built its content infrastructure (etching/deposition/packaging t
 - **20% B1** commentary (NineScrolls-lens only)
 - **Velocity ceiling:** quality over cadence; no page ships to hit a number.
 
+## Gate 0.5 — Existing Topic Ownership (run BEFORE deciding to create a page)
+Authority > URL count. Before writing a new Spotlight, ask two questions:
+1. **Does a NineScrolls Guide already own this topic?** If yes → **enrich the guide**, don't create a competing page (avoids the cannibalization the RIE cluster had to undo). A new standalone Spotlight is only the default when **no** existing page owns the topic.
+2. **Does that guide already cite this exact paper?** If yes → the enrichment may be just the **equipment attribution** (name the NineScrolls/Tailong model that produced the cited data), not a new section or figure.
+
+Worked example (2026-06-04): the ICP-S-150 single-crystal-diamond paper (Sci Reports 2025) was a strong A1 candidate, but the **Diamond Semiconductor Processing** guide already owned diamond ICP etching AND already cited that paper as ref [1] (with the parameter-trends figure + 1:46 selectivity). So the action was NOT a new page — just a one-sentence equipment attribution in §5. → new standalone Spotlights are reserved for topics with no competing guide (e.g. RIE-100 SERS, thermoelectric dry etching).
+
 ## The 5 gates (every Spotlight passes all)
 1. **Source** — A1 > A2 > B1 (Gate-1 automation finds A1 candidates).
 2. **Linkable Asset (kill gate)** — "If I were a UCLA PhD, why cite this?" Must carry a filled `Why this is citable:` field = exactly one of **Original figure** / **Original data synthesis** / **Original framework** (e.g. Failure-Analysis Funnel, Surface-Conditioning Chain, Failure Routing Map). Can't fill it → don't publish.
