@@ -1,9 +1,31 @@
-# Gate-1 Citation Monitor — Scheduled-Task Prompt (Operational Spec)
+# Gate-1 Citation Sourcing — Reference + (Deferred) Automation Prompt
 
-This file IS the Gate-1 automation. There is no Lambda, no script, no database — a Claude Cowork
-scheduled task runs the prompt below weekly (**Sunday 09:00 UTC**). It is **candidates-only**:
-it discovers and ranks papers that cite NineScrolls/Tailong equipment, and never writes, publishes,
-or sends outreach.
+> **STATUS (2026-06-04): email-only v1.** Decision: the Google Scholar Alert emails are sufficient —
+> no Cowork scheduled task, no script, no queue/ledger files are being run. Sourcing = the alerts
+> below land in info@ninescrolls.com; a human reads them and picks A1 papers to spotlight.
+> The **Sourcing Reference** section is the durable value of this file. The full agent prompt further
+> down is a **deferred blueprint** — only revive it if the email volume outgrows manual triage (v1.1).
+
+## Active Google Scholar Alerts (created 2026-06-04, delivered to info@ninescrolls.com)
+- `"Beijing Zhongke Tailong"` — primary, highest precision
+- `"Zhongke Tailong"` — short form
+- `中科泰隆` — Chinese name
+- `"MEB-600"` — evaporator model (separate OEM)
+- `"Tailong Electronics"` — pre-existing, low precision (candidate for removal)
+
+## Sourcing Reference (durable — use this for manual triage)
+- **Real manufacturer name in papers:** "Beijing Zhongke Tailong Electronic Technology Co., Ltd." (中科泰隆). NOT "Tailong Electronics"; "NineScrolls" gets ≈0 academic recall.
+- **Vendor aliases:** Beijing Zhongke Tailong Electronic Technology / Beijing Zhongke Tailong / Zhongke Tailong / 中科泰隆 / Tailong (loose) / NineScrolls (secondary).
+- **Model list is OPEN** — known: RIE-150, RIE-150A, RIE-100, ICP-100, ICP-200, ICP-S-150, PECVD-150LL, MEB-600; capture any new `RIE-###` / `ICP-S-###` / `PECVD-###`.
+- **MEB-600 caveat:** different OEM (Chuangshi Weina / 创世威纳) — never name that OEM publicly; identify MEB-600 by model string only.
+- **Manual backlog harvest:** alerts are prospective (new papers only). To get existing papers, Scholar-search `"Beijing Zhongke Tailong"` directly (3+ pages of real results as of 2026-06-04, e.g. Sci Reports 2025 ICP-S-150 diamond etch, ACS Applied Nano 2025 RIE-100 SERS, Materials 2026).
+- **APIs are weak here:** OpenAlex/Crossref token-shred model strings ("ICP-S-150" → 126k intracranial-pressure hits) and don't index the Methods-section attribution; Google Scholar full text is the only precise source.
+
+---
+
+## (DEFERRED) Weekly automation prompt — only if email volume outgrows manual triage
+
+This file WOULD be the Gate-1 automation if automated: a Claude Cowork scheduled task running the prompt below weekly (**Sunday 09:00 UTC**), **candidates-only** — discovers/ranks papers, never writes/publishes/outreaches. Not active under the email-only v1 decision.
 
 **Sourcing reality (validated 2026-06-04 by live test):**
 - The precise source is **Google Scholar full text**, keyed on the **manufacturer name**

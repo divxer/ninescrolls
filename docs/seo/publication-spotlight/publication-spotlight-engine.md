@@ -1,6 +1,6 @@
 # Publication Spotlight Engine — Operating Standard
 
-NineScrolls has built its content infrastructure (etching/deposition/packaging topic graph). The remaining SEO lever is **domain authority**, and `Authority ≈ Content × Distribution`. This engine is the governance standard for earning authority through publication-grounded content. It is a **standard, not software** — the only automated piece is the Gate-1 candidate finder (see `scheduled-task-prompt.md`).
+NineScrolls has built its content infrastructure (etching/deposition/packaging topic graph). The remaining SEO lever is **domain authority**, and `Authority ≈ Content × Distribution`. This engine is the governance standard for earning authority through publication-grounded content. It is a **standard, not software**. Gate-1 sourcing is handled by Google Scholar Alert emails (email-only v1); see `citation-sourcing-reference.md` for the active alerts, vendor aliases, and manual-triage reference.
 
 ## Content taxonomy (B2 is banned)
 | Type | Definition | Authority value |
@@ -32,4 +32,4 @@ NineScrolls has built its content infrastructure (etching/deposition/packaging t
 - **Comparison pages never become canonical owners** (RULE 7 from the RIE cluster): they answer "which to choose?", not "what is X?".
 - **A1-first allocation is a hard floor**, not a target — the engine's central risk is sliding A1→B2.
 
-See `scheduled-task-prompt.md` for the Gate-1 candidate-finder (the only automated component).
+See `citation-sourcing-reference.md` for Gate-1 sourcing (Scholar Alerts + manual-triage reference).
