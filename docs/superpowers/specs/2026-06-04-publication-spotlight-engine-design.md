@@ -27,6 +27,13 @@ GSC analysis (2026-06-02, recorded in `memory/seo_strategy.md`) settled the stra
 
 **A1 is NineScrolls' irreproducible asset** — no competitor can write it, because it depends on real customers publishing real results with named NineScrolls tools (RIE-150, ICP-100, PECVD-150LL, ICP-S-150, MEB-600, RIE-150A, ICP-200, …). It is the engine's center of gravity.
 
+**A1 confidence grading (mandatory — set by Gate-1 automation, enforced editorially).** Generic model strings like `ICP-100` / `RIE-150` are easily mismatched, so A1 is graded, not binary:
+- **A1-confirmed** — model string **plus** explicit NineScrolls / vendor context. → eligible for the **Spotlight writing queue**.
+- **A1-probable** — model string present, vendor context incomplete/ambiguous. → **manual-verification queue only**; never auto-promoted to writing.
+- **A1-unverified** — only a generic model string hit, no corroboration. → flagged, low score, not promoted.
+
+**Only A1-confirmed enters the writing queue.** A1-probable must be human-verified into A1-confirmed first.
+
 **B1 rule:** allowed *only* with a NineScrolls-specific lens that links into the cluster. Forbidden vs allowed:
 - ❌ "TSMC Announces A13 Process" (pure news → B2)
 - ✅ "What TSMC A13 Means for Hybrid Bonding Yield Requirements" (links to Surface Preparation, Wafer Bonding, Failure Analysis → cluster reinforcement)
@@ -66,20 +73,32 @@ Before publishing, ask: **"If I were a UCLA PhD student, why would I cite this p
 
 Level 3 assets are the most citable and the highest-leverage output of the whole engine.
 
+**Mandatory pre-publish field (hard rule).** Every Spotlight must carry a filled `Why this is citable:` field, whose value is **exactly one of**:
+- `Original figure`
+- `Original data synthesis`
+- `Original framework`
+
+If the field cannot be filled with one of these three, **the page does not publish.** (This is Gate 2 made into a required field, not a verbal principle — the implementation plan renders it as a checklist/required front-matter.)
+
 ### Gate 3 — Internal Graph
 Each Spotlight must link **≥3 existing cluster pages** and be back-linked from **≥3 existing pages** — weaving it into the topic network, not stranding it.
 
 ### Gate 4 — Outreach (Distribution — from day 1)
-After publishing, at least one outreach touch to the natural, warm audiences (NineScrolls' actual prospects — not cold link-building):
-- Paper **authors** — "Your work was featured."
-- **Labs / research groups** — "We highlighted your publication."
-- **Cleanroom managers** — "We referenced your process flow."
-- **University centers** (UCLA, UCSD, Stanford, Berkeley, …).
+After publishing, complete **≥2 channels** of outreach (not just one — one email is not "distribution") to the natural, warm audiences (NineScrolls' actual prospects — not cold link-building), and **record the result** of each in the outreach tracker:
+- Paper **author email** — "Your work was featured."
+- **Lab / research-group page** — "We highlighted your publication."
+- **University center / cleanroom facility manager** (UCLA, UCSD, Stanford, Berkeley, …) — "We referenced your process flow."
+- **LinkedIn / X light touch** (tag author/lab/institution).
 
-Gate-1's automation pre-populates this list (authors + affiliations come free from the citation APIs).
+**Requirement: ≥2 of the above per Spotlight, each logged with outcome (sent / replied / linked / no-response).** Gate-1's automation pre-populates the targets (authors + affiliations come free from the citation APIs).
 
-### Gate 5 — Measurement (authority metrics, NOT CTR)
-Track: **impressions growth, referring domains, branded queries, assisted clicks.** Explicitly **not** CTR (proven a non-lever for this site). Review monthly.
+### Gate 5 — Measurement (authority metrics, NOT CTR) — split leading vs lagging
+Explicitly **not** CTR (proven a non-lever for this site). Separate the two horizons so the program isn't misjudged as "failing" in month 1 just because backlinks/rankings lag:
+
+- **Leading indicators (weekly/monthly — did we do the work?):** A1 candidates found, Spotlights published (with A1 share), outreach touches sent + replies, pages added to the internal graph.
+- **Lagging indicators (8–12+ weeks — did authority move?):** referring domains, branded-query impressions, assisted clicks, ranking movement on cluster head terms.
+
+Score leading indicators early; only judge lagging indicators after the authority-accrual lag.
 
 ---
 
@@ -155,6 +174,17 @@ docs/seo/publication-spotlight/
 Durable, versioned, diff-able; no infra to stand up.
 
 **Boundary (reaffirmed):** sourcing automation only — discovers & ranks. No auto-writing, no auto-publishing, no auto-outreach.
+
+**Build order (pinned — API sweep is core, Gmail is enhancement, do NOT start with Gmail):**
+1. repo file structure (`docs/seo/publication-spotlight/…`)
+2. seed `citation-ledger.json` (from MEB-600 verified citations in memory)
+3. OpenAlex + Crossref sweep (the reliable, auth-free core)
+4. dedupe-vs-ledger + scoring (with A1 confidence grading)
+5. emit `weekly-candidate-queue.md` + `runs/<date>.md`
+6. **then** Gmail Scholar-Alert ingestion (→ **v1.1**)
+7. **then** outreach template / checklist (Gate-4 support)
+
+**v1 MVP = steps 1–5** (`OpenAlex/Crossref → dedupe ledger → scored candidate queue`). Steps 6–7 are v1.1+. This ordering is fixed so the buildable, testable core ships first and Gmail's headless-auth risk never blocks the MVP.
 
 **v2 graduation criterion:** only after the queue proves valuable for **6–8 consecutive weeks** (and/or the team needs shared access) → port the OpenAlex/Crossref sweep to an Amplify scheduled Lambda + EventBridge, store candidates in DynamoDB, and surface the queue in the admin panel. Same "prove it as a task, then fold into infra" path used for the llms-validation tool and one-shot DDB scripts.
 
