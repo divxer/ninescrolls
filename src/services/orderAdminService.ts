@@ -5,9 +5,18 @@ const AUTH = { authMode: 'userPool' as const };
 
 // --- Orders ---
 
-export async function listOrders(status?: string, limit?: number, nextToken?: string) {
+interface ListOrdersArgs {
+  status?: string;
+  search?: string;
+  limit?: number;
+  nextToken?: string;
+}
+
+export async function listOrders(opts: ListOrdersArgs = {}) {
+  const { status, search, limit, nextToken } = opts;
   const args: Record<string, unknown> = {};
   if (status) args.status = status;
+  if (search) args.search = search;
   if (limit) args.limit = limit;
   if (nextToken) args.nextToken = nextToken;
   const { data, errors } = await client().queries.listOrders(args as any, AUTH);

@@ -301,6 +301,15 @@ const schema = a.schema({
     upcomingDeliveries: a.integer().required(),
     overdueOrders: a.integer().required(),
     expiredQuotes: a.integer().required(),
+    // Stalled active order (max daysSinceLastUpdate among non-terminal statuses, > 14d).
+    // Null when no order qualifies.
+    stalledOrderId: a.string(),
+    stalledInstitution: a.string(),
+    stalledStatus: a.ref('OrderStatus'),
+    stalledQuoteNumber: a.string(),
+    stalledDaysSinceLastUpdate: a.integer(),
+    // Avg days from poDate to productionStartDate across orders where both are set.
+    avgPoToProductionDays: a.float(),
   }),
 
   PresignedUploadUrl: a.customType({
@@ -546,6 +555,7 @@ const schema = a.schema({
     .query()
     .arguments({
       status: a.ref('OrderStatus'),
+      search: a.string(),
       limit: a.integer(),
       nextToken: a.string(),
     })

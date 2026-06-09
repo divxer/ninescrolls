@@ -4,6 +4,16 @@ import { ORDER_STATUSES } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
 const TERMINAL_STATUSES = ['CLOSED', 'DECLINED'];
+// Statuses considered "active" for stalled-order surfacing. INSTALLED is excluded
+// because installed orders sit there indefinitely without harm.
+const STALLED_CANDIDATE_STATUSES = ['INQUIRY', 'QUOTING', 'QUOTE_SENT', 'PO_RECEIVED', 'IN_PRODUCTION', 'SHIPPED'];
+const STALLED_THRESHOLD_DAYS = 14;
+// Statuses where poDate→productionStartDate may exist, used for transmission velocity.
+const VELOCITY_STATUSES = ['IN_PRODUCTION', 'SHIPPED', 'INSTALLED', 'CLOSED'];
+
+function daysBetween(later: Date, earlier: Date): number {
+    return Math.floor((later.getTime() - earlier.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 export async function orderStats(_event: AppSyncEvent) {
     const byStatus: Record<string, number> = {};
@@ -103,6 +113,66 @@ export async function orderStats(_event: AppSyncEvent) {
         }
     }
 
+    // Stalled order: scan candidate active statuses, pick the one with the largest
+    // (now - updatedAt) above the threshold.
+    let stalledOrderId: string | null = null;
+    let stalledInstitution: string | null = null;
+    let stalledStatus: string | null = null;
+    let stalledQuoteNumber: string | null = null;
+    let stalledDaysSinceLastUpdate: number | null = null;
+    let maxDays = STALLED_THRESHOLD_DAYS;
+
+    // PO→Production velocity: aggregate across statuses where production has started.
+    let veloTotalDays = 0;
+    let veloCount = 0;
+
+    const stalledAndVelocityStatuses = Array.from(new Set([...STALLED_CANDIDATE_STATUSES, ...VELOCITY_STATUSES]));
+
+    // TODO: paginate if any status bucket exceeds the 1MB DDB query response cap.
+    // Current order volumes are well below that, and existing per-status queries
+    // (expired quotes, upcoming deliveries) use the same single-shot pattern.
+    await Promise.all(
+        stalledAndVelocityStatuses.map(async (status) => {
+            const result = await docClient.send(new QueryCommand({
+                TableName: TABLE_NAME(),
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'GSI1PK = :pk',
+                ExpressionAttributeValues: { ':pk': `ORDER_STATUS#${status}` },
+            }));
+            for (const order of result.Items || []) {
+                if (STALLED_CANDIDATE_STATUSES.includes(status)) {
+                    const updatedAt = order.updatedAt as string | undefined;
+                    if (updatedAt) {
+                        const days = daysBetween(now, new Date(updatedAt));
+                        if (days > maxDays) {
+                            maxDays = days;
+                            stalledOrderId = (order.orderId as string) || null;
+                            stalledInstitution = (order.institution as string) || null;
+                            stalledStatus = status;
+                            stalledQuoteNumber = (order.quoteNumber as string) || null;
+                            stalledDaysSinceLastUpdate = days;
+                        }
+                    }
+                }
+                if (VELOCITY_STATUSES.includes(status)) {
+                    const po = order.poDate as string | undefined;
+                    const prod = order.productionStartDate as string | undefined;
+                    if (po && prod) {
+                        const days = daysBetween(new Date(prod), new Date(po));
+                        if (days >= 0) {
+                            veloTotalDays += days;
+                            veloCount++;
+                        }
+                    }
+                }
+            }
+        }),
+    );
+
+    const avgPoToProductionDays = veloCount > 0
+        ? Math.round((veloTotalDays / veloCount) * 10) / 10
+        : null;
+
     return {
         totalActive,
         byStatus,
@@ -110,5 +180,11 @@ export async function orderStats(_event: AppSyncEvent) {
         upcomingDeliveries,
         overdueOrders,
         expiredQuotes,
+        stalledOrderId,
+        stalledInstitution,
+        stalledStatus,
+        stalledQuoteNumber,
+        stalledDaysSinceLastUpdate,
+        avgPoToProductionDays,
     };
 }

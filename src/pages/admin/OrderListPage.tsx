@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type Order, type OrderStatus } from '../../types/admin';
-import { quoteExpiryStatus, daysUntilExpiry, isQuoteExpired } from '../../lib/orderHelpers';
+import { quoteExpiryStatus, daysUntilExpiry } from '../../lib/orderHelpers';
 
 const STATUS_ICONS: Record<string, string> = {
   INQUIRY: 'search',
@@ -15,6 +15,8 @@ const STATUS_ICONS: Record<string, string> = {
   INSTALLED: 'verified',
   CLOSED: 'lock',
 };
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 function formatCurrency(value: number | null | undefined): string {
   if (value == null) return '-';
@@ -45,10 +47,19 @@ function ExpiryBadge({ order }: { order: Order }) {
 
 export function OrderListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const { orders, loading, error } = useOrders(statusFilter === 'All' ? undefined : statusFilter);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const { orders, loading, loadingMore, hasMore, error, loadMore } = useOrders({
+    status: statusFilter === 'All' ? undefined : statusFilter,
+    search: debouncedSearch || undefined,
+  });
   const { stats } = useOrderStats();
-  const [search, setSearch] = useState('');
-  const [expiredOnly, setExpiredOnly] = useState(false);
 
   const byStatus = useMemo(() => {
     if (!stats) return {} as Record<string, number>;
@@ -57,46 +68,15 @@ export function OrderListPage() {
     return (parsed || {}) as Record<string, number>;
   }, [stats]);
 
-  const filtered = useMemo(() => {
-    let list = orders;
-    if (expiredOnly) list = list.filter(o => isQuoteExpired(o));
-    if (!search.trim()) return list;
-    const q = search.toLowerCase();
-    return list.filter(o =>
-      o.institution.toLowerCase().includes(q) ||
-      o.quoteNumber?.toLowerCase().includes(q) ||
-      o.poNumber?.toLowerCase().includes(q) ||
-      o.productModel.toLowerCase().includes(q) ||
-      o.productName?.toLowerCase().includes(q),
-    );
-  }, [orders, search, expiredOnly]);
-
   const expiredCount = stats?.expiredQuotes ?? 0;
 
-  // Find the stalled order (highest daysSinceLastUpdate, not CLOSED/INSTALLED)
-  const stalledOrder = useMemo(() => {
-    const active = orders.filter(o =>
-      o.status !== 'CLOSED' && o.status !== 'INSTALLED' && o.status !== 'DECLINED' && o.daysSinceLastUpdate > 14,
-    );
-    return active.sort((a, b) => b.daysSinceLastUpdate - a.daysSinceLastUpdate)[0] || null;
-  }, [orders]);
+  // Stats-driven (correct under pagination).
+  const stalledOrderId = stats?.stalledOrderId ?? null;
+  const stalledStatus = stats?.stalledStatus ?? null;
+  const stalledLabel = stalledStatus ? STATUS_LABELS[stalledStatus as OrderStatus] : '';
+  const avgVelocity = stats?.avgPoToProductionDays != null ? stats.avgPoToProductionDays.toFixed(1) : null;
 
-  // Avg days from PO_RECEIVED to IN_PRODUCTION (transmission velocity)
-  const avgVelocity = useMemo(() => {
-    const withDates = orders.filter(o => o.poDate && o.productionStartDate);
-    if (withDates.length === 0) return null;
-    const total = withDates.reduce((sum, o) => {
-      const po = new Date(o.poDate!).getTime();
-      const prod = new Date(o.productionStartDate!).getTime();
-      return sum + Math.max(0, (prod - po) / (1000 * 60 * 60 * 24));
-    }, 0);
-    return (total / withDates.length).toFixed(1);
-  }, [orders]);
-
-  // Stepper statuses: all on forward path (excludes DECLINED)
   const stepperStatuses = FORWARD_PATH;
-
-  // Determine "current" stepper state: the latest status that has orders
   const currentStepIdx = useMemo(() => {
     let latest = -1;
     stepperStatuses.forEach((s, i) => {
@@ -152,11 +132,10 @@ export function OrderListPage() {
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-headline font-bold text-lg uppercase tracking-wider text-on-primary-fixed-variant">Lifecycle Management</h3>
             <div className="text-[11px] font-label text-on-surface-variant uppercase tracking-widest bg-surface-container-low px-3 py-1 rounded">
-              {orders.length} Active Orders
+              {stats.totalActive} Active Orders
             </div>
           </div>
           <div className="relative flex justify-between items-start overflow-x-auto scrollbar-hide min-w-0">
-            {/* Progress line */}
             <div className="absolute top-4 left-0 w-full h-[1px] bg-outline-variant/20 z-0" />
             {stepperStatuses.map((status, idx) => {
               const count = byStatus[status] || 0;
@@ -214,7 +193,7 @@ export function OrderListPage() {
             <div className="flex items-center gap-4">
               <h4 className="font-headline font-bold text-sm uppercase tracking-widest">Global Order Ledger</h4>
               <span className="text-[10px] bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-full font-bold">
-                {filtered.length} Total
+                {orders.length}{hasMore ? '+' : ''} Loaded
               </span>
             </div>
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
@@ -223,23 +202,11 @@ export function OrderListPage() {
                 <input
                   type="text"
                   placeholder="Search orders..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="bg-surface-container-low border-none rounded-lg py-1.5 pl-9 pr-4 text-sm w-full md:w-56 focus:ring-1 focus:ring-secondary/20 placeholder:text-on-surface-variant/50 transition-all"
                 />
               </div>
-              <label className="flex items-center gap-2 text-xs text-on-surface-variant cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={expiredOnly}
-                  onChange={(e) => {
-                    setExpiredOnly(e.target.checked);
-                    if (e.target.checked) setStatusFilter('All');
-                  }}
-                  className="rounded border-outline-variant"
-                />
-                Show expired only
-              </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -255,7 +222,7 @@ export function OrderListPage() {
 
           {/* Mobile order cards */}
           <div className="md:hidden divide-y divide-outline-variant/5">
-            {filtered.map(order => (
+            {orders.map(order => (
               <div
                 key={order.orderId}
                 className="p-4 cursor-pointer hover:bg-primary-fixed/30 transition-colors"
@@ -280,7 +247,7 @@ export function OrderListPage() {
                 </div>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {orders.length === 0 && (
               <div className="text-center py-12 text-on-surface-variant text-sm">No orders found.</div>
             )}
           </div>
@@ -299,7 +266,7 @@ export function OrderListPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(order => (
+                {orders.map(order => (
                   <tr
                     key={order.orderId}
                     className="hover:bg-primary-fixed transition-colors cursor-pointer group"
@@ -341,7 +308,7 @@ export function OrderListPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {orders.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant text-sm">
                       No orders found.
@@ -352,14 +319,25 @@ export function OrderListPage() {
             </table>
           </div>
 
-          {/* Pagination footer */}
-          <div className="p-4 md:p-6 border-t border-outline-variant/10 flex items-center justify-between">
+          {/* Load More footer */}
+          <div className="p-4 md:p-6 border-t border-outline-variant/10 flex items-center justify-between gap-3">
             <span className="text-[11px] font-label uppercase tracking-widest text-on-surface-variant">
-              Showing {filtered.length} of {orders.length} Transmissions
+              {hasMore
+                ? `Showing ${orders.length} — more available`
+                : `Showing all ${orders.length} Transmission${orders.length === 1 ? '' : 's'}`}
             </span>
-            <div className="flex gap-1">
-              <div className="w-8 h-8 flex items-center justify-center rounded bg-primary text-white text-xs font-bold">1</div>
-            </div>
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-4 py-2 bg-surface-container-low text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container transition-colors rounded flex items-center gap-2 disabled:opacity-60"
+              >
+                {loadingMore && (
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                )}
+                {loadingMore ? 'Loading' : 'Load more'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -388,7 +366,8 @@ export function OrderListPage() {
             <div className="space-y-4">
               {FORWARD_PATH.filter(s => (byStatus[s] || 0) > 0).slice(0, 4).map(status => {
                 const count = byStatus[status] || 0;
-                const pct = orders.length > 0 ? Math.round((count / orders.length) * 100) : 0;
+                const total = stats?.totalActive ?? 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                 return (
                   <div key={status}>
                     <div className="flex justify-between text-[11px] font-bold uppercase tracking-tighter mb-1.5">
@@ -405,7 +384,7 @@ export function OrderListPage() {
           </div>
 
           {/* Stalled Transmission Alert */}
-          {stalledOrder && (
+          {stalledOrderId && stats && (
             <div className="p-6 border border-outline-variant/20 rounded-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded bg-tertiary-fixed flex items-center justify-center">
@@ -417,10 +396,10 @@ export function OrderListPage() {
                 </div>
               </div>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                Order <strong>{stalledOrder.quoteNumber || stalledOrder.orderId.slice(0, 8)}</strong> ({stalledOrder.institution}) has been in '{STATUS_LABELS[stalledOrder.status as OrderStatus]}' status for {stalledOrder.daysSinceLastUpdate} days.
+                Order <strong>{stats.stalledQuoteNumber || stalledOrderId.slice(0, 8)}</strong> ({stats.stalledInstitution}) has been in '{stalledLabel}' status for {stats.stalledDaysSinceLastUpdate} days.
               </p>
               <Link
-                to={`/admin/orders/${stalledOrder.orderId}`}
+                to={`/admin/orders/${stalledOrderId}`}
                 className="mt-4 w-full py-2 bg-surface text-[10px] font-bold uppercase tracking-widest border border-outline-variant/30 hover:bg-surface-container-low transition-colors rounded flex items-center justify-center no-underline text-on-surface"
               >
                 Review Transmission
@@ -445,10 +424,10 @@ export function OrderListPage() {
                   : `${expiredCount} sent quotes have passed their validity date.`}
               </p>
               <button
-                onClick={() => { setExpiredOnly(true); setStatusFilter('All'); }}
+                onClick={() => setStatusFilter('QUOTE_SENT')}
                 className="mt-4 w-full py-2 bg-surface text-[10px] font-bold uppercase tracking-widest border border-outline-variant/30 hover:bg-surface-container-low transition-colors rounded flex items-center justify-center text-on-surface"
               >
-                Filter Expired
+                Filter Quote Sent
               </button>
             </div>
           )}
