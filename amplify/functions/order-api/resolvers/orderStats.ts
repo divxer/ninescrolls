@@ -128,6 +128,9 @@ export async function orderStats(_event: AppSyncEvent) {
 
     const stalledAndVelocityStatuses = Array.from(new Set([...STALLED_CANDIDATE_STATUSES, ...VELOCITY_STATUSES]));
 
+    // TODO: paginate if any status bucket exceeds the 1MB DDB query response cap.
+    // Current order volumes are well below that, and existing per-status queries
+    // (expired quotes, upcoming deliveries) use the same single-shot pattern.
     await Promise.all(
         stalledAndVelocityStatuses.map(async (status) => {
             const result = await docClient.send(new QueryCommand({

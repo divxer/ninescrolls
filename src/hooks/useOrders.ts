@@ -23,7 +23,7 @@ export function useOrders(options: UseOrdersOptions | string = {}) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    svc.listOrders(status, search, pageSize)
+    svc.listOrders({ status, search, limit: pageSize })
       .then((data) => {
         if (cancelled) return;
         setOrders((data?.items as Order[]) || []);
@@ -45,7 +45,7 @@ export function useOrders(options: UseOrdersOptions | string = {}) {
   const loadMore = useCallback(() => {
     if (!nextToken || loadingMore) return;
     setLoadingMore(true);
-    svc.listOrders(status, search, pageSize, nextToken)
+    svc.listOrders({ status, search, limit: pageSize, nextToken })
       .then((data) => {
         setOrders((prev) => [...prev, ...((data?.items as Order[]) || [])]);
         setNextToken((data?.nextToken as string | null) ?? null);

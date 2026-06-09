@@ -323,8 +323,11 @@ describe('order-api handler', () => {
             mockQuery.mockResolvedValueOnce({ Items: [] });
             // QUOTE_SENT expired-quotes query
             mockQuery.mockResolvedValueOnce({ Items: [] });
-            // Fallback for stalled+velocity GSI1 queries (8 statuses): empty
-            mockQuery.mockResolvedValue({ Items: [] });
+            // Stalled+velocity GSI1 queries (8 unique statuses), all empty.
+            // Use Once-variants to avoid the default leaking into later tests.
+            for (let i = 0; i < 8; i++) {
+                mockQuery.mockResolvedValueOnce({ Items: [] });
+            }
 
             const result = await handler(
                 makeAppSyncEvent('orderStats'),
