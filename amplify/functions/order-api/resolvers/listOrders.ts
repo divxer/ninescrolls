@@ -42,7 +42,7 @@ export async function listOrders(event: AppSyncEvent) {
                 ScanIndexForward: false,
                 ExclusiveStartKey: queryKey,
             }));
-            const pageItems = (result.Items || []);
+            const pageItems: Record<string, unknown>[] = result.Items || [];
             const filtered = searchTerm ? pageItems.filter((it) => matchesSearch(it, searchTerm)) : pageItems;
             items.push(...filtered);
             queryKey = result.LastEvaluatedKey;
@@ -65,7 +65,7 @@ export async function listOrders(event: AppSyncEvent) {
                 },
                 ExclusiveStartKey: scanKey,
             }));
-            const pageItems = (result.Items || []);
+            const pageItems: Record<string, unknown>[] = result.Items || [];
             const filtered = searchTerm ? pageItems.filter((it) => matchesSearch(it, searchTerm)) : pageItems;
             allOrders.push(...filtered);
             scanKey = result.LastEvaluatedKey;
