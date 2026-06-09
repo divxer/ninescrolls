@@ -2,28 +2,68 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Order, OrderStats, OrderLog, OrderDocument } from '../types/admin';
 import * as svc from '../services/orderAdminService';
 
-export function useOrders(statusFilter?: string) {
+interface UseOrdersOptions {
+  status?: string;
+  search?: string;
+  pageSize?: number;
+}
+
+export function useOrders(options: UseOrdersOptions | string = {}) {
+  // Backwards-compat: callers that pass a bare status string still work.
+  const opts: UseOrdersOptions = typeof options === 'string' ? { status: options } : options;
+  const { status, search, pageSize = 50 } = opts;
+
   const [orders, setOrders] = useState<Order[]>([]);
+  const [nextToken, setNextToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const refresh = useCallback(() => {
-    setLoading(true);
-    svc.listOrders(statusFilter)
-      .then((data) => { setOrders((data?.items as Order[]) || []); setLoading(false); })
-      .catch((err) => { setError(err); setLoading(false); });
-  }, [statusFilter]);
-
-  useEffect(() => {
+  const fetchFirstPage = useCallback(() => {
     let cancelled = false;
     setLoading(true);
-    svc.listOrders(statusFilter)
-      .then((data) => { if (!cancelled) { setOrders((data?.items as Order[]) || []); setLoading(false); } })
-      .catch((err) => { if (!cancelled) { setError(err); setLoading(false); } });
+    setError(null);
+    svc.listOrders(status, search, pageSize)
+      .then((data) => {
+        if (cancelled) return;
+        setOrders((data?.items as Order[]) || []);
+        setNextToken((data?.nextToken as string | null) ?? null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err);
+        setLoading(false);
+      });
     return () => { cancelled = true; };
-  }, [statusFilter]);
+  }, [status, search, pageSize]);
 
-  return { orders, loading, error, refresh };
+  const refresh = useCallback(() => {
+    fetchFirstPage();
+  }, [fetchFirstPage]);
+
+  const loadMore = useCallback(() => {
+    if (!nextToken || loadingMore) return;
+    setLoadingMore(true);
+    svc.listOrders(status, search, pageSize, nextToken)
+      .then((data) => {
+        setOrders((prev) => [...prev, ...((data?.items as Order[]) || [])]);
+        setNextToken((data?.nextToken as string | null) ?? null);
+        setLoadingMore(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setLoadingMore(false);
+      });
+  }, [nextToken, loadingMore, status, search, pageSize]);
+
+  useEffect(() => {
+    const cancel = fetchFirstPage();
+    return cancel;
+  }, [fetchFirstPage]);
+
+  const hasMore = nextToken !== null;
+  return { orders, loading, loadingMore, hasMore, error, refresh, loadMore };
 }
 
 export function useOrder(orderId: string | undefined) {

@@ -106,6 +106,12 @@ export interface OrderStats {
   upcomingDeliveries: number;
   overdueOrders: number;
   expiredQuotes: number;
+  stalledOrderId?: string | null;
+  stalledInstitution?: string | null;
+  stalledStatus?: OrderStatus | null;
+  stalledQuoteNumber?: string | null;
+  stalledDaysSinceLastUpdate?: number | null;
+  avgPoToProductionDays?: number | null;
 }
 
 export interface RfqSubmission {

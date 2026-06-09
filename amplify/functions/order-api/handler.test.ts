@@ -208,6 +208,79 @@ describe('order-api handler', () => {
 
             expect(result.items).toHaveLength(1);
         });
+
+        it('server-side search filters scan results by quoteNumber substring', async () => {
+            mockScan.mockResolvedValueOnce({
+                Items: [
+                    { ...SAMPLE_ORDER, orderId: 'ord-1', quoteNumber: 'NS-Q-2026-GH-001' },
+                    { ...SAMPLE_ORDER, orderId: 'ord-2', quoteNumber: 'NS-Q-2026-XY-999' },
+                ],
+            });
+            // contacts for the one matched order
+            mockQuery.mockResolvedValueOnce({ Items: [] });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'GH-001' }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0].orderId).toBe('ord-1');
+        });
+
+        it('server-side search matches institution case-insensitively', async () => {
+            mockScan.mockResolvedValueOnce({
+                Items: [
+                    { ...SAMPLE_ORDER, orderId: 'ord-1', institution: 'Stanford University' },
+                    { ...SAMPLE_ORDER, orderId: 'ord-2', institution: 'MIT' },
+                ],
+            });
+            mockQuery.mockResolvedValueOnce({ Items: [] });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'stanford' }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0].institution).toBe('Stanford University');
+        });
+
+        it('search combined with status filters within the GSI1 bucket', async () => {
+            mockQuery
+                .mockResolvedValueOnce({
+                    Items: [
+                        { ...SAMPLE_ORDER, orderId: 'ord-1', poNumber: 'PO-2026-GH-001' },
+                        { ...SAMPLE_ORDER, orderId: 'ord-2', poNumber: 'PO-2026-OTHER' },
+                    ],
+                }) // GSI1 query
+                .mockResolvedValueOnce({ Items: [] }); // contacts
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { status: 'PO_RECEIVED', search: 'GH-001' }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0].orderId).toBe('ord-1');
+        });
+
+        it('returns empty when search matches nothing', async () => {
+            mockScan.mockResolvedValueOnce({
+                Items: [{ ...SAMPLE_ORDER, quoteNumber: 'Q-1' }],
+            });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'nomatch' }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items).toHaveLength(0);
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -250,6 +323,8 @@ describe('order-api handler', () => {
             mockQuery.mockResolvedValueOnce({ Items: [] });
             // QUOTE_SENT expired-quotes query
             mockQuery.mockResolvedValueOnce({ Items: [] });
+            // Fallback for stalled+velocity GSI1 queries (8 statuses): empty
+            mockQuery.mockResolvedValue({ Items: [] });
 
             const result = await handler(
                 makeAppSyncEvent('orderStats'),
@@ -259,6 +334,104 @@ describe('order-api handler', () => {
 
             expect(result.totalActive).toBe(3);
             expect(result.byStatus.INQUIRY).toBe(3);
+            expect(result.stalledOrderId).toBeNull();
+            expect(result.avgPoToProductionDays).toBeNull();
+        });
+
+        it('surfaces the most-stalled active order', async () => {
+            const now = new Date();
+            const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString();
+
+            const originalImpl = mockSend.getMockImplementation();
+            mockSend.mockReset();
+            mockSend.mockImplementation((cmd: { Select?: string; ExpressionAttributeValues?: Record<string, string> }) => {
+                const pk = cmd.ExpressionAttributeValues?.[':pk'];
+                // COUNT queries → 0 for everything (we're only testing stalled surfacing)
+                if (cmd.Select === 'COUNT') return Promise.resolve({ Count: 0 });
+                // QUOTING bucket has a 45-day stalled order; QUOTE_SENT has a 20-day one.
+                if (pk === 'ORDER_STATUS#QUOTING') {
+                    return Promise.resolve({
+                        Items: [
+                            { orderId: 'ord-stalled', institution: 'Acme U', quoteNumber: 'Q-STALE', updatedAt: daysAgo(45) },
+                            { orderId: 'ord-fresh', institution: 'Fresh U', updatedAt: daysAgo(2) },
+                        ],
+                    });
+                }
+                if (pk === 'ORDER_STATUS#QUOTE_SENT') {
+                    return Promise.resolve({ Items: [{ orderId: 'ord-mild', institution: 'Mild U', updatedAt: daysAgo(20) }] });
+                }
+                return Promise.resolve({ Items: [] });
+            });
+
+            try {
+                const result = await handler(
+                    makeAppSyncEvent('orderStats'),
+                    {} as any,
+                    vi.fn(),
+                );
+                expect(result.stalledOrderId).toBe('ord-stalled');
+                expect(result.stalledStatus).toBe('QUOTING');
+                expect(result.stalledQuoteNumber).toBe('Q-STALE');
+                expect(result.stalledInstitution).toBe('Acme U');
+                expect(result.stalledDaysSinceLastUpdate).toBeGreaterThanOrEqual(44);
+                expect(result.stalledDaysSinceLastUpdate).toBeLessThanOrEqual(46);
+            } finally {
+                mockSend.mockReset();
+                if (originalImpl) mockSend.mockImplementation(originalImpl);
+            }
+        });
+
+        it('returns null stalled fields when nothing exceeds the 14-day threshold', async () => {
+            const now = new Date();
+            const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString();
+
+            const originalImpl = mockSend.getMockImplementation();
+            mockSend.mockReset();
+            mockSend.mockImplementation((cmd: { Select?: string; ExpressionAttributeValues?: Record<string, string> }) => {
+                if (cmd.Select === 'COUNT') return Promise.resolve({ Count: 0 });
+                const pk = cmd.ExpressionAttributeValues?.[':pk'];
+                if (pk === 'ORDER_STATUS#QUOTING') {
+                    return Promise.resolve({ Items: [{ orderId: 'ord-x', institution: 'X U', updatedAt: daysAgo(10) }] });
+                }
+                return Promise.resolve({ Items: [] });
+            });
+
+            try {
+                const result = await handler(makeAppSyncEvent('orderStats'), {} as any, vi.fn());
+                expect(result.stalledOrderId).toBeNull();
+                expect(result.stalledDaysSinceLastUpdate).toBeNull();
+            } finally {
+                mockSend.mockReset();
+                if (originalImpl) mockSend.mockImplementation(originalImpl);
+            }
+        });
+
+        it('averages PO→Production days across orders with both dates', async () => {
+            const originalImpl = mockSend.getMockImplementation();
+            mockSend.mockReset();
+            mockSend.mockImplementation((cmd: { Select?: string; ExpressionAttributeValues?: Record<string, string> }) => {
+                if (cmd.Select === 'COUNT') return Promise.resolve({ Count: 0 });
+                const pk = cmd.ExpressionAttributeValues?.[':pk'];
+                // 5-day gap and 15-day gap → avg 10
+                if (pk === 'ORDER_STATUS#IN_PRODUCTION') {
+                    return Promise.resolve({
+                        Items: [
+                            { orderId: 'a', poDate: '2026-03-01', productionStartDate: '2026-03-06' },
+                            { orderId: 'b', poDate: '2026-03-01', productionStartDate: '2026-03-16' },
+                            { orderId: 'c', poDate: '2026-03-01' }, // missing prod date → skipped
+                        ],
+                    });
+                }
+                return Promise.resolve({ Items: [] });
+            });
+
+            try {
+                const result = await handler(makeAppSyncEvent('orderStats'), {} as any, vi.fn());
+                expect(result.avgPoToProductionDays).toBe(10);
+            } finally {
+                mockSend.mockReset();
+                if (originalImpl) mockSend.mockImplementation(originalImpl);
+            }
         });
 
         it('counts QUOTE_SENT orders with past quoteValidUntil as expiredQuotes', async () => {
