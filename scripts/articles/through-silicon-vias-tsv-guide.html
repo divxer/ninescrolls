@@ -40,7 +40,45 @@
 
 <p>But the sequence above hides the real decision. It is not how each step works &mdash; it is <em>where in the device flow the via gets made</em>. That choice &mdash; via-first, via-middle, or via-last &mdash; shapes everything downstream.</p>
 
-<!-- SECTIONS 4 AND 5 INSERT HERE -->
+<h2 id="via-timing">4. Via-First vs Via-Middle vs Via-Last</h2>
+
+<blockquote style="border-left:4px solid #2563eb;background:#eff6ff;padding:16px 20px;margin:24px 0;font-size:1.1em;">
+  <p style="margin:0;"><strong>Via timing is not a process decision. It is a thermal-budget and ownership decision &mdash; who makes the via, and what has already been built when they do.</strong></p>
+</blockquote>
+
+<p>The three options are named for where the via lands in the device flow, and each one answers the pull-quote's two questions differently.</p>
+
+<p><strong>Via-first</strong> puts the vias into the wafer before the transistors exist &mdash; before front-end-of-line (FEOL) processing begins. That ordering has one elegant consequence and one severe one. The elegant consequence is alignment: because every later layer is patterned relative to wafers that already contain vias, the devices and interconnect are built around the vias rather than aimed at them, and registration is essentially native. The severe consequence is thermal. A via formed first must survive everything that follows &mdash; including front-end steps that run near or above 1000&nbsp;&deg;C. Copper cannot enter that thermal territory: it would diffuse, deform, and contaminate the front end. So via-first conductors are typically conservative choices such as doped polysilicon, which tolerates the heat but conducts far worse than copper, eroding the electrical advantage that justified the via in the first place. The result is an option commonly described as the least used in mainstream logic and memory flows &mdash; viable for specialty devices and certain MEMS-adjacent or power applications, but typically a niche answer rather than a default one. Ownership sits unambiguously with whoever runs the front end, because the via precedes everything they build.</p>
+
+<p><strong>Via-middle</strong> forms the via after FEOL but before the back-end-of-line (BEOL) interconnect stack &mdash; the transistors exist, the wiring above them does not. This window is the reason via-middle is typically described as the mainstream choice for HBM-class memory and 3D logic stacking. With the front end complete, no remaining step demands extreme temperature, so copper becomes usable and the via inherits copper's low resistance. Because the via is patterned in the fab, on fab-grade lithography, against alignment marks shared with the device layers, registration to the transistors is excellent and the vias can be fine &mdash; the few-micrometer, roughly 10:1 geometries of Section 2. And because the step sits inside the device flow, the foundry owns it: the via is a fab process, qualified and yielded like any other fab process, with the foundry carrying responsibility for its interaction with the layers above and below. The cost of that ownership is intrusion &mdash; the via interrupts the device flow, and every wafer pays for via processing whether or not the dies are eventually stacked &mdash; which is why via-middle tends to appear where stacking is the whole point of the product.</p>
+
+<p><strong>Via-last</strong> forms the via after BEOL is complete, often from the back side of the thinned wafer. Historically this is the route CMOS image sensors pioneered, and it remains the option most accessible to OSATs &mdash; the outsourced assembly and test houses &mdash; because it requires no entry into the device flow at all. The finished wafer arrives intact and protected; nothing about via formation interrupts transistor or interconnect processing, and the foundry's process is untouched. The difficulty moves to the via itself. It must travel through, or land precisely against, a completed stack of devices and wiring, and it must be aligned to features that were patterned long before, from the opposite side of a thinned wafer. Post-stack alignment of that kind is the central problem of via-last, and it pushes the geometry coarse: diameters and pitches are typically larger than via-middle can achieve, and achievable density is correspondingly lower. In exchange, ownership and economics open up &mdash; an OSAT can add vias to wafers from any foundry, with no foundry cooperation in the via step.</p>
+
+<p>Choosing among the three is not a matter of weighing pros and cons in the abstract. The decision resolves in a fixed order:</p>
+
+<ol>
+  <li><strong>Thermal budget</strong> &mdash; what high-temperature steps must the via still survive? This eliminates options before preference enters: any front-end heat remaining ahead of the via rules out copper, and usually rules out the timing itself.</li>
+  <li><strong>Alignment requirement</strong> &mdash; how precisely must vias land relative to device layers? Fab-grade lithography against shared marks (via-middle) and post-stack alignment from the backside (via-last) are different leagues, and the floorplan's pitch budget decides which league is required.</li>
+  <li><strong>FEOL/foundry compatibility &amp; ownership</strong> &mdash; who makes the via: the foundry inside the device flow, or the OSAT after it? Ownership decides supply chain, liability, and cost structure &mdash; not just process capability.</li>
+  <li><strong>Cost &amp; yield risk</strong> &mdash; the earlier the via, the more subsequent processing its yield multiplies into; a via defect introduced before BEOL forfeits the entire interconnect stack built on top of it.</li>
+</ol>
+
+<p>In practice the order resolves quickly. Thermal budget and ownership rarely leave more than one realistic option on the table, which is why high-bandwidth memory stacks typically land on via-middle and why image sensors, with their packaging-driven requirements and post-fab supply chains, pioneered via-last. The matrix below compresses the whole section into one view.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-lg.png" alt="TSV integration selection matrix comparing via-first, via-middle, and via-last across thermal budget, alignment, foundry ownership, cost, yield risk, and typical use cases, with the four-step decision order" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The TSV Integration Selection Framework: via-first, via-middle, and via-last compared across the dimensions that actually decide &mdash; thermal budget, alignment, ownership, cost, and yield risk. Via timing is not a process decision; it is a thermal-budget and ownership decision.</figcaption>
+</figure>
+
+<p>Read the matrix column by column &mdash; each timing is a column, each deciding dimension a row &mdash; and apply the four-step order from top to bottom: the surviving column is your via timing.</p>
+
+<!-- SECTION 5 INSERTS HERE -->
 
 <h2 id="etch-requirements">6. What the Packaging Spec Demands of the Etch</h2>
 
