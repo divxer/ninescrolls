@@ -130,7 +130,8 @@ A per-example count over 160 words FAILS even if the h3 count is 3 — trim that
   1. **Cover the title:** can you still tell what question the article answers? (Must be "when do I switch interconnects?", not "what is hybrid bonding?")
   2. **Remove all figures:** does the core argument still stand in prose alone? (Figures must visualize, not carry, the reasoning.)
   3. **Delete §5:** does the rest still work as an article? **If YES, that's a FAILURE** — §5 isn't central enough; rewrite §5 until its removal guts the piece.
-  Fix and re-run Gate-E until all three pass.
+  4. **Delete §6 (the Framework figure section):** does the article still have a reusable framework? **If NO, that's a FAILURE** — the figure is carrying logic that belongs in §5's prose. Ideal state: §5 = reasoning, §6 = visualization; the framework survives the figure's removal.
+  Fix and re-run Gate-E until all four pass.
 
 - [ ] **Step 4: Commit** — `git commit -am "feat(insights): HB-vs-microbump §6-8 + FAQ/refs/CTA + full rule audit + Gate-E"`
 
