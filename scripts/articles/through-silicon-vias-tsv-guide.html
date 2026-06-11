@@ -73,7 +73,7 @@
     <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
     <img src="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-lg.png" alt="TSV integration selection matrix comparing via-first, via-middle, and via-last across thermal budget, alignment, foundry ownership, cost, yield risk, and typical use cases, with the four-step decision order" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
   </picture>
-  <figcaption>The TSV Integration Selection Framework: via-first, via-middle, and via-last compared across the dimensions that actually decide &mdash; thermal budget, alignment, ownership, cost, and yield risk. Via timing is not a process decision; it is a thermal-budget and ownership decision.</figcaption>
+  <figcaption>The TSV Integration Selection Framework compares via-first, via-middle, and via-last across the real decision axes: thermal budget, alignment, ownership, cost, and yield risk.</figcaption>
 </figure>
 
 <p>Read the matrix column by column &mdash; each timing is a column, each deciding dimension a row &mdash; and apply the four-step order from top to bottom: the surviving column is your via timing.</p>
@@ -84,11 +84,11 @@
 
 <table class="insights-table">
   <thead>
-    <tr><th>Application</th><th>Diameter</th><th>Depth</th><th>Aspect ratio</th><th>Pitch</th><th>Keep-out zone</th></tr>
+    <tr><th>Application</th><th>Diameter</th><th>Depth</th><th>Aspect ratio</th><th>Pitch</th><th>KOZ constraint (floorplan impact)</th></tr>
   </thead>
   <tbody>
-    <tr><td>CIS</td><td>~1&ndash;5 &micro;m class</td><td>Follows thinned-die thickness (thinnest of the four)</td><td>Moderate to high</td><td>Finest</td><td>Smallest in absolute terms; grows with via size</td></tr>
-    <tr><td>3D Logic</td><td>Single-digit &micro;m</td><td>Follows thinned-die thickness</td><td>Commonly around 10:1</td><td>Fine</td><td>Often the binding floorplan constraint</td></tr>
+    <tr><td>CIS</td><td>~1&ndash;5 &micro;m class</td><td>Follows thinned-die thickness (thinnest of the four)</td><td>Moderate to high</td><td>Finest</td><td>Managed; small in absolute terms</td></tr>
+    <tr><td>3D Logic</td><td>Single-digit &micro;m</td><td>Follows thinned-die thickness</td><td>Commonly around 10:1</td><td>Fine</td><td>Most binding floorplan constraint</td></tr>
     <tr><td>HBM</td><td>~5 &micro;m class</td><td>Follows thinned-die thickness (tens of &micro;m)</td><td>Commonly around 10:1</td><td>Fine to moderate</td><td>Grows with via size; budgeted per die</td></tr>
     <tr><td>Interposer</td><td>~10 &micro;m and up</td><td>Follows final interposer thickness</td><td>Around 10:1</td><td>Coarsest</td><td>Largest in absolute terms, least binding (passive silicon)</td></tr>
   </tbody>
@@ -125,7 +125,7 @@
 
 <p><strong>The via bottom must support a clean reveal.</strong> After thinning, the copper must emerge at a predictable depth with a profile the backside process can cap reliably; a ragged or uneven bottom turns the reveal into a yield event.</p>
 
-<p>Meeting these numbers is the province of deep-silicon etch engineering &mdash; see the <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE guide</a> for how.</p>
+<p>Meeting these numbers is the province of deep-silicon etch engineering &mdash; covered in our DRIE guide for how.</p>
 
 <h2 id="challenges">7. Manufacturing Challenges and Cost</h2>
 
@@ -133,7 +133,7 @@
 
 <p>The defining physical challenge remains copper's thermal expansion. Copper expands several times faster than silicon, so every thermal excursion after fill pushes the copper against its confinement. The visible symptom is copper pumping &mdash; the via protruding above the surface after anneal &mdash; which threatens any layer built on top. The invisible symptom is the stress field in the surrounding silicon, which is why the keep-out zone of Section 2 exists at all, and why it grows with via size: a larger copper volume stresses a larger region, sterilizing more floorplan area per via. The density argument and the reliability argument are the same argument.</p>
 
-<p>Stacking adds a brutal statistical problem. Dies must be tested and confirmed known-good <em>before</em> stacking, because bonding a good die to a bad one discards both. And the vias themselves compound: a TSV chain is electrically a series circuit, so per-via yield is multiplied across every via in the path. At 99.99% per-via yield, a net with ten thousand vias still fails roughly one time in three. Per-million defect rates, acceptable in many process steps, are not acceptable here &mdash; which is why TSV manufacturing is, above all, an exercise in driving defect densities to levels most fab steps never need to reach.</p>
+<p>Stacking adds a brutal statistical problem. Dies must be tested and confirmed known-good <em>before</em> stacking, because bonding a good die to a bad one discards both. And the vias themselves compound: a TSV chain is electrically a series circuit, so per-via yield is multiplied across every via in the path. Even very high per-via yield can become unacceptable once multiplied across thousands of vias and stacked interfaces &mdash; which is why TSV manufacturing is, above all, an exercise in driving defect densities to levels most fab steps never need to reach.</p>
 
 <h2 id="takeaways">8. Key Takeaways</h2>
 
