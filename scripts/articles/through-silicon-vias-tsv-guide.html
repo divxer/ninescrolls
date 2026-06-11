@@ -1,0 +1,170 @@
+<p><strong>Every 2.5D and 3D package stands on the same vertical foundation: copper running straight through silicon.</strong> The through-silicon via &mdash; the TSV &mdash; lets signals and power cross a die or interposer in micrometers instead of millimeters, and this guide treats it as exactly that: a packaging element. What a TSV is, when in the flow to make it (via-first, via-middle, or via-last), and how big to design it &mdash; those questions belong here. How stacked dies actually join belongs to our <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>, and the application story TSVs made famous &mdash; HBM &mdash; has <a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">its own deep dive</a>. The central argument is simple: <em>where</em> in the flow the via gets made matters more than how any single step works.</p>
+
+<h2 id="why-tsv">1. Why 2.5D/3D Integration Needs TSVs</h2>
+
+<p>A through-silicon via is a copper conductor that passes vertically through a thinned silicon die or interposer, electrically connecting the front side to the back side. That single sentence carries the whole value proposition: without a TSV, a signal leaving the top of a die must detour to reach the component below &mdash; out to the die edge through wire bonds, or down and across through package substrate traces &mdash; a path measured in millimeters. With a TSV, the same signal crosses in the thickness of thinned silicon, typically tens of micrometers. The interconnect shrinks by two to three orders of magnitude, and its resistance, inductance, and capacitance shrink with it.</p>
+
+<p>That shortening is not a refinement; it is what makes modern package architectures possible at all. In 2.5D integration, an interposer routes thousands of connections between chiplets sitting side by side &mdash; and TSVs are how those connections, plus the power feeding every chiplet, get from the interposer's routing layers down to the package substrate. In 3D integration, dies stack face-to-back, and TSVs are the vertical bus itself: every signal and every milliamp crossing between stacked dies passes through them. HBM's wide, power-efficient memory interface &mdash; thousands of bits in parallel at modest per-pin speed &mdash; is only sensible because TSVs make thousands of short vertical connections cheap in power terms; delivered through package-level routing instead, the power budget collapses before the wiring does.</p>
+
+<p>At modern bandwidth and power densities, TSVs are the load-bearing element of the whole 2.5D/3D structure &mdash; which is why their geometry deserves the same design attention as the dies they connect.</p>
+
+<h2 id="anatomy">2. TSV Anatomy and Design Parameters</h2>
+
+<p>Structurally, a TSV is a layered cylinder: a via etched through the silicon, lined with a dielectric (typically silicon oxide) for isolation, a thin barrier that keeps copper from diffusing into the silicon, and the copper fill that does the conducting. The via is built blind &mdash; the wafer is later thinned from the backside until the copper is exposed for connection. Four parameters define the design.</p>
+
+<p><strong>Diameter.</strong> Interposer vias typically run on the order of 10 &micro;m or more, while vias in stacked memory and logic dies push down to a few micrometers. Smaller diameters save silicon area and reduce capacitance, but make every downstream step &mdash; lining, filling, revealing &mdash; more difficult.</p>
+
+<p><strong>Depth.</strong> Depth is set by how thin the die or interposer will ultimately be &mdash; typically on the order of 50&ndash;100 &micro;m for interposers, considerably less for aggressively stacked dies. Depth and diameter are coupled through the <strong>aspect ratio</strong> (depth divided by diameter): a 5 &micro;m via through 50 &micro;m of silicon is a 10:1 structure. Designs typically sit around 10:1, and aspect ratio is the single number that most strongly governs how difficult the via is to manufacture.</p>
+
+<p><strong>Pitch.</strong> The center-to-center spacing sets how many vertical connections fit in a given area &mdash; the whole point of the exercise. The instinct is that pitch scales with diameter: shrink the hole, pack them tighter. It does not, because of the fourth parameter.</p>
+
+<p><strong>Keep-out zone (KOZ).</strong> Copper and silicon expand at very different rates with temperature, so a copper-filled via leaves the surrounding silicon under mechanical stress. That stress shifts the electrical behavior of nearby transistors, so design rules forbid active devices within a keep-out zone around each via &mdash; an exclusion area extending micrometers beyond the via wall, scaling with via size, process, and device sensitivity. In TSV design, density is rarely limited by the hole diameter alone; it is often limited by the keep-out zone created by stress, layout rules, and device sensitivity. A via occupying a few square micrometers can sterilize many times that area for device placement &mdash; which is why KOZ, not diameter, usually decides how many TSVs a floorplan can afford.</p>
+
+<!-- OPTIONAL FIGURE: tsv-anatomy — cut if not generated -->
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-anatomy-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-anatomy-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-anatomy-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-anatomy-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-anatomy-lg.png" alt="TSV anatomy cross-section: oxide liner, barrier layer, copper fill through thinned silicon, with the surrounding keep-out zone annotated" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>Anatomy of a through-silicon via: dielectric liner for isolation, barrier, and copper core &mdash; surrounded by the keep-out zone (KOZ), the stress-driven exclusion area that, more often than the via diameter, sets how densely TSVs can be packed.</figcaption>
+</figure>
+
+<h2 id="integration-flow">3. From Wafer to Stack: The TSV Integration Flow</h2>
+
+<p>On paper, building a TSV is a clean sequence. A hard mask or photoresist pattern defines the via openings on the wafer. The vias themselves are then formed, almost universally by deep reactive ion etching &mdash; for how the etch achieves these deep, vertical profiles, see our <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE guide</a>. From there the layered cylinder of Section 2 gets built from the outside in: a dielectric liner is deposited along the via walls to isolate the future conductor from the silicon, followed by a thin diffusion barrier and a copper seed layer that gives electroplating something to grow on. Electroplated copper then fills the via from the bottom up, and an anneal stabilizes the copper's grain structure before any heat-sensitive steps follow. Chemical-mechanical planarization strips the copper overburden back to a flat surface so that normal interconnect processing can continue above the vias.</p>
+
+<p>All of this happens while the via is still blind &mdash; a copper-filled well that stops partway through a full-thickness wafer. The via only becomes a <em>through</em>-silicon via at the end: the wafer is mounted to a carrier, thinned from the backside by grinding and etching, and the buried copper is revealed and capped with backside metallization. Only then can the die or interposer be bonded, stacked, and connected into a package.</p>
+
+<p>But the sequence above hides the real decision. It is not how each step works &mdash; it is <em>where in the device flow the via gets made</em>. That choice &mdash; via-first, via-middle, or via-last &mdash; shapes everything downstream.</p>
+
+<h2 id="via-timing">4. Via-First vs Via-Middle vs Via-Last</h2>
+
+<blockquote style="border-left:4px solid #2563eb;background:#eff6ff;padding:16px 20px;margin:24px 0;font-size:1.1em;">
+  <p style="margin:0;"><strong>Via timing is not a process decision. It is a thermal-budget and ownership decision &mdash; who makes the via, and what has already been built when they do.</strong></p>
+</blockquote>
+
+<p>The three options are named for where the via lands in the device flow, and each one answers the pull-quote's two questions differently.</p>
+
+<p><strong>Via-first</strong> puts the vias into the wafer before the transistors exist &mdash; before front-end-of-line (FEOL) processing begins. That ordering has one elegant consequence and one severe one. The elegant consequence is alignment: because every later layer is patterned relative to wafers that already contain vias, the devices and interconnect are built around the vias rather than aimed at them, and registration is essentially native. The severe consequence is thermal. A via formed first must survive everything that follows &mdash; including front-end steps that run near or above 1000&nbsp;&deg;C. Copper cannot enter that thermal territory: it would diffuse, deform, and contaminate the front end. So via-first conductors are typically conservative choices such as doped polysilicon, which tolerates the heat but conducts far worse than copper, eroding the electrical advantage that justified the via in the first place. The result is an option commonly described as the least used in mainstream logic and memory flows &mdash; viable for specialty devices and certain MEMS-adjacent or power applications, but typically a niche answer rather than a default one. Ownership sits unambiguously with whoever runs the front end, because the via precedes everything they build.</p>
+
+<p><strong>Via-middle</strong> forms the via after FEOL but before the back-end-of-line (BEOL) interconnect stack &mdash; the transistors exist, the wiring above them does not. This window is the reason via-middle is typically described as the mainstream choice for HBM-class memory and 3D logic stacking. With the front end complete, no remaining step demands extreme temperature, so copper becomes usable and the via inherits copper's low resistance. Because the via is patterned in the fab, on fab-grade lithography, against alignment marks shared with the device layers, registration to the transistors is excellent and the vias can be fine &mdash; the few-micrometer, roughly 10:1 geometries of Section 2. And because the step sits inside the device flow, the foundry owns it: the via is a fab process, qualified and yielded like any other fab process, with the foundry carrying responsibility for its interaction with the layers above and below. The cost of that ownership is intrusion &mdash; the via interrupts the device flow, and every wafer pays for via processing whether or not the dies are eventually stacked &mdash; which is why via-middle tends to appear where stacking is the whole point of the product.</p>
+
+<p><strong>Via-last</strong> forms the via after BEOL is complete, often from the back side of the thinned wafer. Historically this is the route CMOS image sensors pioneered, and it remains the option most accessible to OSATs &mdash; the outsourced assembly and test houses &mdash; because it requires no entry into the device flow at all. The finished wafer arrives intact and protected; nothing about via formation interrupts transistor or interconnect processing, and the foundry's process is untouched. The difficulty moves to the via itself. It must travel through, or land precisely against, a completed stack of devices and wiring, and it must be aligned to features that were patterned long before, from the opposite side of a thinned wafer. Post-stack alignment of that kind is the central problem of via-last, and it pushes the geometry coarse: diameters and pitches are typically larger than via-middle can achieve, and achievable density is correspondingly lower. In exchange, ownership and economics open up &mdash; an OSAT can add vias to wafers from any foundry, with no foundry cooperation in the via step.</p>
+
+<p>Choosing among the three is not a matter of weighing pros and cons in the abstract. The decision resolves in a fixed order:</p>
+
+<ol>
+  <li><strong>Thermal budget</strong> &mdash; what high-temperature steps must the via still survive? This eliminates options before preference enters: any front-end heat remaining ahead of the via rules out copper, and usually rules out the timing itself.</li>
+  <li><strong>Alignment requirement</strong> &mdash; how precisely must vias land relative to device layers? Fab-grade lithography against shared marks (via-middle) and post-stack alignment from the backside (via-last) are different leagues, and the floorplan's pitch budget decides which league is required.</li>
+  <li><strong>FEOL/foundry compatibility &amp; ownership</strong> &mdash; who makes the via: the foundry inside the device flow, or the OSAT after it? Ownership decides supply chain, liability, and cost structure &mdash; not just process capability.</li>
+  <li><strong>Cost &amp; yield risk</strong> &mdash; the earlier the via, the more subsequent processing its yield multiplies into; a via defect introduced before BEOL forfeits the entire interconnect stack built on top of it.</li>
+</ol>
+
+<p>In practice the order resolves quickly. Thermal budget and ownership rarely leave more than one realistic option on the table, which is why high-bandwidth memory stacks typically land on via-middle and why image sensors, with their packaging-driven requirements and post-fab supply chains, pioneered via-last. The matrix below compresses the whole section into one view.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-integration-selection-matrix-lg.png" alt="TSV integration selection matrix comparing via-first, via-middle, and via-last across thermal budget, alignment, foundry ownership, cost, yield risk, and typical use cases, with the four-step decision order" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The TSV Integration Selection Framework compares via-first, via-middle, and via-last across the real decision axes: thermal budget, alignment, ownership, cost, and yield risk.</figcaption>
+</figure>
+
+<p>Read the matrix column by column &mdash; each timing is a column, each deciding dimension a row &mdash; and apply the four-step order from top to bottom: the surviving column is your via timing.</p>
+
+<h2 id="design-rules">5. TSV Design Rules by Application</h2>
+
+<p>The four application classes that dominate TSV deployment are best read as one design space. CMOS image sensors sit at the small, dense extreme &mdash; pixel-level interconnect, with vias fine enough to track the pixel array itself. Interposers sit at the large, sparse extreme, where area is cheaper and TSV density matters less than robustness. 3D logic and HBM occupy the middle. The values below are typical ranges and relative tendencies, not specifications.</p>
+
+<table class="insights-table">
+  <thead>
+    <tr><th>Application</th><th>Diameter</th><th>Depth</th><th>Aspect ratio</th><th>Pitch</th><th>KOZ constraint (floorplan impact)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>CIS</td><td>~1&ndash;5 &micro;m class</td><td>Follows thinned-die thickness (thinnest of the four)</td><td>Moderate to high</td><td>Finest</td><td>Managed; small in absolute terms</td></tr>
+    <tr><td>3D Logic</td><td>Single-digit &micro;m</td><td>Follows thinned-die thickness</td><td>Commonly around 10:1</td><td>Fine</td><td>Most binding floorplan constraint</td></tr>
+    <tr><td>HBM</td><td>~5 &micro;m class</td><td>Follows thinned-die thickness (tens of &micro;m)</td><td>Commonly around 10:1</td><td>Fine to moderate</td><td>Grows with via size; budgeted per die</td></tr>
+    <tr><td>Interposer</td><td>~10 &micro;m and up</td><td>Follows final interposer thickness</td><td>Around 10:1</td><td>Coarsest</td><td>Largest in absolute terms, least binding (passive silicon)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>CIS</strong> pioneered fine TSVs because the application demanded it: connecting a pixel array to its readout from the back side, at geometries near the pixel pitch. Vias in the ~1&ndash;5 &micro;m class, via-last heritage, the densest packing of the four.</p>
+
+<p><strong>3D logic</strong> stacking pushes single-digit-micrometer vias formed via-middle &mdash; and it is where the keep-out zone bites first: achievable TSV density is typically set by stress and layout rules, not by how small a hole can be etched.</p>
+
+<p><strong>HBM</strong> stacks commonly run thousands of vias in the ~5 &micro;m class through each thinned DRAM die, formed via-middle, with depth following the die thickness. The TSV carries the signal through the silicon; whether the connections between stacked dies are bumps or bonds is its own decision &mdash; see our <a href="/insights/hybrid-bonding-vs-micro-bump">hybrid bonding vs micro-bump comparison</a>.</p>
+
+<p><strong>Interposers</strong> carry the largest vias of the four &mdash; ~10 &micro;m and up &mdash; through the thickest silicon, with depth following the final interposer thickness. Because the silicon is typically passive, the keep-out zone binds less and pitch stays coarse; the design pressure is uniformity and cost across very large die areas.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-design-rule-map-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-design-rule-map-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-design-rule-map-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-design-rule-map-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/tsv-design-rule-map-lg.png" alt="TSV design rule map: a design-space chart plotting via diameter against pitch and depth for CIS, 3D logic, HBM, and interposer application classes, with keep-out zone tendency annotated" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The TSV design-rule map: four application classes arranged from small and dense (CIS) to large and sparse (interposer). Ranges are application-dependent and should be treated as design-space anchors, not universal specifications.</figcaption>
+</figure>
+
+<h2 id="etch-requirements">6. What the Packaging Spec Demands of the Etch</h2>
+
+<p>From the packaging side, the via-formation step is a black box with a specification sheet attached. The package does not care how the silicon is removed; it cares that the resulting hole meets four kinds of requirements, each driven by a downstream step that fails without it.</p>
+
+<p><strong>Depth and aspect ratio follow from the application class.</strong> An interposer that will be thinned to 100 &micro;m needs vias deeper than 100 &micro;m at diameters around 10 &micro;m; an HBM die thinned to 50 &micro;m or below needs a few-micrometer via at aspect ratios near 10:1; a CMOS image sensor stack has its own geometry again. The package architecture fixes these numbers before any wafer is processed, because the final stack height and the floorplan's KOZ budget depend on them.</p>
+
+<p><strong>CD and depth must be uniform across the wafer.</strong> Every via on the wafer must land inside the plating and CMP process window: if vias at the wafer edge are shallower or wider than vias at the center, some will underfill or overfill, and a single bad via can strand an entire die. The packaging spec therefore states uniformity as a hard limit, not a preference.</p>
+
+<p><strong>Sidewalls must be smooth and slightly tapered.</strong> The dielectric liner and the barrier are thin conformal films that must coat the wall continuously from top to bottom. A rough or reentrant wall starves that coverage &mdash; a gap in the liner leaks current into the substrate, and a gap in the barrier lets copper diffuse into the silicon. A gentle positive taper exists to make continuous coverage achievable.</p>
+
+<p><strong>The via bottom must support a clean reveal.</strong> After thinning, the copper must emerge at a predictable depth with a profile the backside process can cap reliably; a ragged or uneven bottom turns the reveal into a yield event.</p>
+
+<p>Meeting these numbers is the province of deep-silicon etch engineering &mdash; covered in our DRIE guide for how.</p>
+
+<h2 id="challenges">7. Manufacturing Challenges and Cost</h2>
+
+<p>The economics of TSVs are counterintuitive: the via itself is cheap. Etching millions of holes in parallel costs little per hole. What costs money is the chain the via drags behind it &mdash; liner and barrier deposition into deep narrow geometries, copper plating and its anneal, CMP, carrier mounting, wafer thinning, via reveal, backside metallization, and the test steps wrapped around all of it. Cost-per-wafer is dominated by that chain, which is why TSV-based packages tend to make sense only where the bandwidth or form-factor payoff is large.</p>
+
+<p>The defining physical challenge remains copper's thermal expansion. Copper expands several times faster than silicon, so every thermal excursion after fill pushes the copper against its confinement. The visible symptom is copper pumping &mdash; the via protruding above the surface after anneal &mdash; which threatens any layer built on top. The invisible symptom is the stress field in the surrounding silicon, which is why the keep-out zone of Section 2 exists at all, and why it grows with via size: a larger copper volume stresses a larger region, sterilizing more floorplan area per via. The density argument and the reliability argument are the same argument.</p>
+
+<p>Stacking adds a brutal statistical problem. Dies must be tested and confirmed known-good <em>before</em> stacking, because bonding a good die to a bad one discards both. And the vias themselves compound: a TSV chain is electrically a series circuit, so per-via yield is multiplied across every via in the path. Even very high per-via yield can become unacceptable once multiplied across thousands of vias and stacked interfaces &mdash; which is why TSV manufacturing is, above all, an exercise in driving defect densities to levels most fab steps never need to reach.</p>
+
+<h2 id="takeaways">8. Key Takeaways</h2>
+
+<ul>
+  <li><strong>A TSV is a packaging entity.</strong> Define it by what it is &mdash; a copper conductor through thinned silicon &mdash; when in the flow it gets made, and how big it must be; the process details belong downstream.</li>
+  <li><strong>Via timing is settled by thermal budget and ownership.</strong> What high-temperature steps remain ahead of the via, and who makes it &mdash; foundry or OSAT &mdash; typically decide via-first vs via-middle vs via-last before preference enters.</li>
+  <li><strong>TSV density is more often KOZ-bound than diameter-bound.</strong> The stress field around the copper, not the hole size, usually decides how many vias a floorplan can afford.</li>
+  <li><strong>Design values are design-space anchors.</strong> Diameter, depth, aspect ratio, and pitch shift with the application class; treat published ranges as tendencies, not specifications.</li>
+  <li><strong>A TSV is only one part of the vertical interconnect stack.</strong> The next design decisions &mdash; TSV reveal, copper filling, and bonding strategy &mdash; each deserve their own treatment.</li>
+</ul>
+
+<h2>Frequently Asked Questions</h2>
+
+<h3>What is a TSV?</h3>
+<p>A through-silicon via (TSV) is a copper conductor that passes vertically through a thinned silicon die or interposer, electrically connecting its front side to its back side. It replaces millimeter-scale package detours with a path tens of micrometers long &mdash; the load-bearing vertical interconnect of 2.5D and 3D packages.</p>
+
+<h3>What is the difference between via-first, via-middle, and via-last?</h3>
+<p>The names mark where via formation lands in the device flow. Via-first makes the via before the transistors exist: alignment is native, but the via must survive front-end heat, which rules out copper and leaves it a niche option. Via-middle forms the via after the transistors but before the interconnect stack: copper works, fab-grade alignment enables fine geometry, and the foundry owns the step &mdash; commonly the mainstream choice for stacked memory and 3D logic. Via-last adds vias after the wafer is complete: coarser geometry, but accessible to OSATs without entering the device flow.</p>
+
+<h3>How dense can TSVs be?</h3>
+<p>Less dense than the via diameter suggests. TSV density is typically bounded by the keep-out zone &mdash; the stress-driven exclusion area around each copper-filled via where active devices cannot be placed &mdash; rather than by the hole itself. Floorplans therefore budget vias by KOZ, not by diameter.</p>
+
+<h3>Is TSV etching the same as DRIE?</h3>
+<p>TSV etching is the packaging requirement; DRIE is one common silicon-etching technology used to form high-aspect-ratio vias. This article covers TSV integration and packaging requirements &mdash; what the via must look like and when it gets made. For etch mechanisms, process trade-offs, and profile control, see our <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE guide</a>. The two terms describe different layers of the same problem: the package sets the geometry and the schedule, and the etch technology is judged by how well it delivers them.</p>
+
+<h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
+<ul>
+  <li><a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies for 3D Integration</a></li>
+  <li><a href="/insights/hybrid-bonding-vs-micro-bump">Hybrid Bonding vs Micro-Bump</a></li>
+  <li><a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">From UCLA's Semiconductor Hub to 16-Hi HBM: Thermal and Materials Challenges</a></li>
+  <li><a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive Ion Etching (DRIE) Guide</a></li>
+</ul>
+
+<p>NineScrolls supplies deep-silicon etch (ICP) and deposition equipment used in via-formation flows, from research-scale TSV development to pilot production. Specifying a via etch or liner deposition step? <a href="/contact">Talk to our engineers</a>.</p>
