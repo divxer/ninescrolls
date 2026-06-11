@@ -1,0 +1,30 @@
+<p><strong>The interconnect crossover: where micro-bumps stop scaling and hybrid bonding takes over.</strong> Every advanced package faces the same interconnect decision, and this guide answers one question only — <em>when</em> do you switch? It deliberately does not cover how the bonding itself works: for the mechanism and why hybrid bonding won the post-bump era, see our <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>; for the surface chemistry that makes a Cu-Cu bond succeed, see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation for Cu-Cu Hybrid Bonding</a>; and for diagnosing bonds that have already failed, see <a href="/insights/hybrid-bonding-failure-analysis">Hybrid Bonding Failure Analysis</a>. What remains — the crossover itself — is the decision this page exists to settle.</p>
+
+<h2 id="quick-answer">1. The Quick Answer: Micro-Bump or Hybrid Bonding?</h2>
+
+<p>If you arrived with a pitch number in hand, here is the answer up front. The decision space divides into three zones:</p>
+
+<ul>
+  <li><strong>Above roughly 20 &micro;m pitch &mdash; fine-pitch micro-bump / Cu-pillar wins.</strong> The process is mature, the supply chain is deep, cost per connection is low, and assembly throughput is high. At these pitches there is no technical case for paying hybrid bonding's process burden.</li>
+  <li><strong>Roughly 10&ndash;20 &micro;m &mdash; the transition zone.</strong> Both technologies are viable here, and the right answer depends on architecture and economics: how many connections you need, what bandwidth and power budget the design demands, what volume you will run, and what process capability you can access. This is where most real selection decisions actually live.</li>
+  <li><strong>Below roughly 10 &micro;m &mdash; hybrid bonding is effectively the only option.</strong> The connection density and short interconnect lengths that designs at this pitch require are simply not reachable with solder-based joints.</li>
+</ul>
+
+<p>Note the "roughly" in every boundary &mdash; these are zones, not hard thresholds, and they shift with design rules, materials, and process maturity. The rest of this article explains <em>why</em> the crossover happens where it does, and how to make the call when your design lands inside the transition zone.</p>
+
+<h2 id="why-not-shrink">2. Why Not Just Keep Shrinking Micro-Bumps?</h2>
+
+<p>The instinctive objection to the quick answer is fair: micro-bumps have been shrinking for decades &mdash; why would they stop now? Micro-bumps are not a dead end that appeared overnight. They are the latest rung of a continuous interconnect evolution that has been climbing the same ladder since flip chip was introduced. C4 solder balls connected die to substrate at pitches of hundreds of micrometers. Copper pillar capped with solder took that down to roughly 40&ndash;100 &micro;m. Fine-pitch micro-bumps pushed it further still, to roughly 10&ndash;40 &micro;m. Each rung did the same three things: it shrank the pitch, raised the connection density, and shortened the interconnect.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-evolution-ladder-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-evolution-ladder-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-evolution-ladder-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-evolution-ladder-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-evolution-ladder-lg.png" alt="Interconnect evolution ladder: flip chip to copper pillar to fine-pitch micro-bump to hybrid bonding, with pitch decreasing, density increasing, and interconnect length decreasing" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The interconnect evolution ladder: flip chip &rarr; copper pillar &rarr; fine-pitch micro-bump &rarr; hybrid bonding. Each generation shrinks pitch, raises connection density, and shortens the interconnect &mdash; hybrid bonding is the next rung, not a separate technology tree.</figcaption>
+</figure>
+
+<p>Seen this way, the natural question writes itself: why not climb one more rung &mdash; shrink the micro-bump again and skip the disruption of a new bonding approach entirely? The answer, and the reason the crossover exists at all, is that below roughly 10&ndash;20 &micro;m the obstacle is no longer manufacturing precision but the physics of solder itself. That is where the next section begins.</p>
