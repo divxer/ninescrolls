@@ -51,7 +51,7 @@ The early keyword H2 (§1) gives the **direct answer up front** (serves the "hyb
 | 2 | The Question — why not just keep shrinking micro-bumps? *(includes the **Interconnect Evolution Ladder** mini-figure)* | 230 | sets the crossover premise |
 | 3 | The Micro-Bump Scaling Wall | 420 | bump collapse, solder bridging, current crowding, parasitics/RC, routing congestion, fine-pitch throughput |
 | 4 | What Hybrid Bonding Changes (at the interconnect level) | 280 | pad-less direct Cu-Cu, pitch/density step; **link hub for mechanism** (R3) |
-| 5 | The Crossover Region | **700–800** | **THE THOUGHT CORE / article climax** — NineScrolls' judgment: pitch zones, yield economics (known-good-die, test cost, rework impossibility of HB), thermal crossover, cost/throughput crossover, why the transition zone is architecture-dependent. This is the original analysis the Decision Map visualizes. |
+| 5 | The Crossover Region | **700–800** | **THE THOUGHT CORE / article climax** — NineScrolls' judgment: pitch zones, yield economics (known-good-die, test cost, rework impossibility of HB), thermal crossover, cost/throughput crossover, why the transition zone is architecture-dependent. This is the original analysis the framework figure visualizes. **MUST include the citable selection principle (see below).** |
 | 6 | The Interconnect Selection Framework | 200–250 | **Level-3 asset figure** + how-to-read (graphics of §5's judgment, not new analysis) |
 | 7 | Application Examples | 360–450 | HBM / logic-on-logic chiplets / CIS — **120–150w each**, pattern = Example → why chosen → link out (HBM4) (R4); deliberately thin so future dedicated pages (e.g. "Hybrid Bonding for CIS") face no internal competition |
 | 8 | Key Takeaways — the selection framework | 190 | decision summary |
@@ -68,6 +68,14 @@ A pitch-only zoning chart would blend into the many existing industry pitch-road
 - The reader's selection logic: find your density requirement on x → the technologies above it on y are your candidates → the zone tells you the default winner and when economics overrides it.
 
 Numbers stated **conservatively and literature-framed** (ranges, "roughly," cited), never hard-coded. Citable as "NineScrolls' interconnect selection framework."
+
+## The citable selection principle (§5, required)
+
+§5 must state an explicit, quotable **selection order** — the sentence outsiders cite when they cite the framework (not just the chart):
+
+> **"Hybrid bonding is not adopted when it becomes possible. It is adopted when density requirements outweigh manufacturing economics."**
+
+Backed by the explicit decision order: **(1) Density requirement → (2) Yield economics → (3) Cost structure → (4) Throughput constraint.** Rendered prominently (e.g. a pull-quote/callout block) so it is visually liftable. This is what elevates the page from "analysis + chart" to "NineScrolls' framework."
 
 ## Secondary asset — Interconnect Evolution Ladder (mini-figure, §2)
 
