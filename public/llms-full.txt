@@ -393,6 +393,10 @@ Summary: The surface-conditioning chain that decides Cu-Cu hybrid-bond yield, st
 URL: https://ninescrolls.com/insights/hybrid-bonding-failure-analysis
 Summary: How Cu-Cu hybrid-bonding defects are detected, imaged, and traced to root cause. Covers the FA toolbox by destructiveness and information content (C-SAM and X-ray/CT for non-destructive screening; cross-section/FIB, SEM, and TEM/EELS for physical characterization), the evidence-to-root-cause workflow, electrical failure analysis, and reliability testing. Routes diagnosed defects back to surface preparation or the bonding step.
 
+**Hybrid Bonding vs Micro-Bump: Where Each Technology Wins**
+URL: https://ninescrolls.com/insights/hybrid-bonding-vs-micro-bump
+Summary: Selection guide for the interconnect crossover. Explains why micro-bump scaling hits a wall (collapse, bridging, IMC growth, current crowding, parasitics), what hybrid bonding changes at the interconnect level, and where each technology wins: micro-bump dominant above ~20 µm pitch, transition at ~10–20 µm, hybrid bonding below ~10 µm. Centers on the Interconnect Selection Framework (connection density vs manufacturing economics, all four generations: flip chip, Cu pillar, fine-pitch micro-bump, hybrid bonding) and the selection principle that hybrid bonding is adopted when density requirements outweigh manufacturing economics, applied via a four-step decision order (density requirement → yield economics → cost structure → throughput constraint). Defers mechanism to the Wafer Bonding hub, chemistry to Surface Preparation, defects to Failure Analysis.
+
 **16-Hi HBM: Thermal and Materials Challenges**
 URL: https://ninescrolls.com/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges
 Summary: Why scaling HBM to 16-high for AI memory is bandwidth- and thermal-bound. Covers die thinning and stacking, warpage and stress management, thermal dissipation through the stack, and the bonding/packaging implications (TSVs, hybrid bonding) driving next-generation high-bandwidth memory for AI accelerators.
