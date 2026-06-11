@@ -29,6 +29,7 @@
 | Rule | Check |
 |---|---|
 | R1 | `grep -icE "scallop|C4F8|passivation cycle|Bosch cycle" f` == 0 outside link anchors (verify any hits are inside `<a>…</a>`); no H2 matching `etch.*(process|mechanism|principle)` |
+| **R3b** | **`grep -icE "ARDE|microloading|notching|scallop" f` == 0 article-wide** — these are the terms engineers write *naturally* when describing etch behavior; any hit means the page has drifted into DRIE territory regardless of R3's phrasing checks |
 | R2 | exactly 1 link each: `/insights/deep-reactive-ion-etching-bosch-process` (in §3), `/insights/wafer-bonding-technologies-for-3d-integration`, HBM4 slug |
 | R3 | §6 HARD AUDIT (manual + grep): `awk '/Demands of the Etch/,/Manufacturing Challenges/' f \| grep -icE "control(ling)? the etch|tune|tuning|optimi[sz]e the etch|recipe"` == 0; every ¶ answers "what packaging needs", none "how to etch" |
 | R4 | HBM/interposer reference blocks ≤150 words each |
@@ -52,7 +53,7 @@
   - **§2 `<h2>2. TSV Anatomy and Design Parameters</h2>` (~350w):** the via structure (oxide liner / barrier / seed / Cu fill), the 5 design parameters (diameter, depth, AR, pitch, KOZ). MUST include (approx): *"In TSV design, density is rarely limited by the hole diameter alone; it is often limited by the keep-out zone created by stress, layout rules, and device sensitivity."* Include the OPTIONAL anatomy figure block (prefix `tsv-anatomy`, standard `<picture>` markup, `https://cdn.ninescrolls.com/insights/through-silicon-vias-tsv-guide/` base) — marked clearly so it can be cut if the user skips that figure.
   - Rules: R1 forbidden terms; no "what is DRIE" content. Never `--no-verify`.
 
-- [ ] **Step 2: Rule-grep** (R1 terms=0; hub+HBM4 links present; KOZ ≥2 + density-limiter sentence; word count ~710).
+- [ ] **Step 2: Rule-grep** (R1 terms=0; hub+HBM4 links present; KOZ ≥2; word count ~710) **+ the pre-seed sentence lock** — `grep -ic "density is rarely limited by the hole diameter" f` must be ≥1 (protects the sentence from later agents editing it away).
 
 - [ ] **Step 3: Commit** — `git add scripts/articles/through-silicon-vias-tsv-guide.html && git commit -m "feat(insights): TSV scaffold + lead + §1-2"`
 
@@ -65,7 +66,7 @@
   - **§6 `<h2>6. What the Packaging Spec Demands of the Etch</h2>` (~300w):** REQUIREMENTS LANGUAGE ONLY (R3 hard audit): depth/AR targets per application class; CD + depth uniformity (plating window); sidewall smoothness & taper (liner/barrier step coverage); bottom profile (reveal). Each stated as "the package requires X because Y-downstream-step needs it." Closes with the DRIE defer (one more anchor allowed). FORBIDDEN: control/tune/optimize-the-etch phrasing.
   - **§7 `<h2>7. Manufacturing Challenges and Cost</h2>` (~300w):** cost-per-via & cost-per-wafer drivers; Cu pumping & stress → KOZ; test access/known-good-die; yield stack-up across the chain.
 
-- [ ] **Step 2: Rule-grep + §6 HARD AUDIT** (read every §6 paragraph; any mechanism-language sentence → rewrite as requirement; grep from rule table).
+- [ ] **Step 2: Rule-grep + §6 HARD AUDIT** (read every §6 paragraph; any mechanism-language sentence → rewrite as requirement; grep from rule table **including R3b** — ARDE/microloading/notching/scallop = 0; these leak in §6 most easily).
 
 - [ ] **Step 3: Commit** — `git commit -am "feat(insights): TSV §3 integration flow + §6 etch requirements + §7 challenges"`
 
@@ -79,6 +80,8 @@
   - The 4-step decision order as an `<ol>` with EXACT bolded terms: **Thermal budget** → **Alignment requirement** → **FEOL/foundry compatibility & ownership** → **Cost & yield risk**.
   - Primary asset figure block (prefix `tsv-integration-selection-matrix`) + how-to-read sentence. Hedged claims ("typically", "commonly").
 - [ ] **Step 2: Greps** (pull-quote=1; 4 terms present; §4 words 800–900) **+ full manual read** (this section carries the page).
+
+- [ ] **Step 2b: Gate-C — early collapse test (do NOT wait for Gate-E).** Mentally delete §4: the article MUST collapse into a generic "TSV overview." If the remaining sections still feel like a complete article, §4 is too weak — the via-timing analysis is the ONLY thing this page owns that nothing else on the web does. Rewrite §4 until its removal guts the piece. Gate-E re-runs this test later as confirmation; Gate-C catches it while rewriting is cheap.
 - [ ] **Step 3: Commit** — `git commit -am "feat(insights): TSV §4 via-timing thought core + Key Insight + selection matrix block"`
 
 ## Task 4: §5 Design Rules + §8 + FAQ/Related/CTA + FULL AUDIT + Gate-E
@@ -101,9 +104,9 @@
 
 **① COVER (approve first; 3:2 navy hero):** Ultra-high-res editorial cover, deep navy (#1e3a5f) gradient. Subject: a glowing cross-section of a 3D die stack on an interposer, with bright copper through-silicon vias passing vertically through the silicon layers like pillars of light, connecting stacked dies top to bottom; one via shown enlarged in cutaway revealing liner/barrier/copper core. Electric-blue + copper palette, premium material realism, no people. Text: header "NINESCROLLS · INSIGHTS", title "Through-Silicon Vias (TSV)", subtitle "Integration Flows · Design Rules · Manufacturing", footer "ninescrolls.com". Perfect spelling.
 
-**② §4 PRIMARY — TSV Integration Selection Matrix (`tsv-integration-selection-matrix`, ~1200×900, white bg, brand palette):** A two-layer reference MATRIX (not a flowchart). Three columns: VIA-FIRST · VIA-MIDDLE · VIA-LAST (column headers with small timeline icons: before FEOL / between FEOL and BEOL / after BEOL). Seven rows: Best for · Thermal budget · Alignment requirement · Foundry ownership · Cost · Yield risk · Typical use cases (cells: Via-middle → "HBM, 3D logic"; Via-last → "CIS, backside power/coarse vias"; Via-first → "rare — specialty"). Short verdict text per cell, green/amber/red tint accents. Beneath the matrix a horizontal decision-order strip: "1 Thermal budget → 2 Alignment → 3 Foundry ownership → 4 Cost & yield". Footer "ninescrolls.com · TSV Integration Selection Framework". All text exactly as written, perfectly spelled.
+**② §4 PRIMARY — TSV Integration Selection Matrix (`tsv-integration-selection-matrix`, ~1200×900, white bg, brand palette):** A two-layer reference MATRIX (not a flowchart). Three columns: VIA-FIRST · VIA-MIDDLE · VIA-LAST (column headers with small timeline icons: before FEOL / between FEOL and BEOL / after BEOL). Seven rows: Best for · Thermal budget · Alignment requirement · Foundry ownership · Cost · Yield risk · Typical use cases (cells: Via-middle → "HBM, 3D logic"; Via-last → "CIS, backside power/coarse vias"; Via-first → "rare — specialty"). Short verdict text per cell, green/amber/red tint accents. Add a **Technology Ownership icon layer**: each column carries a small ownership badge — Via-First/Via-Middle: "FOUNDRY", Via-Last: "OSAT / Foundry" — visually expressing the Key Insight's "ownership decision". Beneath the matrix a horizontal decision-order strip: "1 Thermal budget → 2 Alignment → 3 Foundry ownership → 4 Cost & yield". Footer "ninescrolls.com · TSV Integration Selection Framework". All text exactly as written, perfectly spelled.
 
-**③ §5 SECONDARY — TSV Design-Rule Map (`tsv-design-rule-map`, ~1200×900, white bg):** Top: compact table Application (CIS / 3D Logic / HBM / Interposer) × (Diameter · Depth · Aspect Ratio · Pitch · Keep-Out Zone), values as relative ranges ("~1–5 µm", "small", "large", arrows) — header note "Typical range / relative tendency". Bottom: a 2-axis design space, x = Via diameter (small→large), y = TSV density (high→low), with four labeled ellipses: CIS (top-left, smallest/densest), 3D Logic, HBM, Interposer (bottom-right, largest/sparsest). Footer "ninescrolls.com · TSV Design Rules by Application". Caption space noting design-space anchors.
+**③ §5 SECONDARY — TSV Design-Rule Map (`tsv-design-rule-map`, ~1200×900, white bg):** Top: compact table Application (CIS / 3D Logic / HBM / Interposer) × (Diameter · Depth · Aspect Ratio · Pitch · Keep-Out Zone), **figure values are RELATIVE ONLY — "Very small / Small / Medium / Large" + trend arrows, NO absolute µm numbers in the image** (figures get screenshotted and travel without their disclaimers; the hedged numeric ranges live only in the article's HTML table where the caption guards them) — header note "Typical range / relative tendency". Bottom: a 2-axis design space, x = Via diameter (small→large), y = TSV density (high→low), with four labeled ellipses: CIS (top-left, smallest/densest), 3D Logic, HBM, Interposer (bottom-right, largest/sparsest). Footer "ninescrolls.com · TSV Design Rules by Application". Caption space noting design-space anchors.
 
 **④ OPTIONAL — TSV anatomy mini (`tsv-anatomy`, compact):** cross-section of one via: silicon, oxide liner, barrier, Cu fill, surrounding KOZ ring annotated "keep-out zone (stress)". Cuttable if skipped — then remove the §2 figure block.
 
@@ -172,9 +175,11 @@ URL: https://ninescrolls.com/insights/through-silicon-vias-tsv-guide
 Summary: Entity guide to TSVs from the packaging engineer's view. Covers TSV anatomy and design parameters (diameter, depth, aspect ratio, pitch, and the keep-out zone as the real density limiter), the wafer-to-stack integration flow, and the central decision: via-first vs via-middle vs via-last — framed by the principle that via timing is a thermal-budget and ownership decision, applied through a four-step order (thermal budget → alignment → foundry ownership → cost & yield). Includes the TSV Integration Selection Matrix and a Design-Rule Map by application (CIS, 3D logic, HBM, interposer; ranges as design-space anchors). States packaging requirements on the etch (depth, uniformity, sidewall for liner and plating) and defers etch mechanisms to the DRIE guide; bonding to the Wafer Bonding hub; application narrative to the 16-Hi HBM article.
 ```
 
-- [ ] **Step 4: Publish** (`update({id, isDraft:false})`), verify in DDB (title/slug/figures/pull-quote), CDN 200s, live render check (Chrome: title, H2s, pull-quote, matrix figure).
+- [ ] **Step 4: Entity Ownership Audit (pre-publish, human judgment).** Read the article as a stranger who searched "what is a TSV". After reading, do they clearly know: (a) what a TSV *is*, (b) *when* to use one, (c) *why* via-first/middle/last? If the honest answer is "they know the TSV *process*" rather than "they know the TSV *entity*", the page has failed its charter — fix before publishing (usually: strengthen §1/§2 definition framing, not add process detail).
 
-- [ ] **Step 5: Delete one-shot** — `rm scripts/create-tsv-article.ts`
+- [ ] **Step 5: Publish** (`update({id, isDraft:false})`), verify in DDB (title/slug/figures/pull-quote), CDN 200s, live render check (Chrome: title, H2s, pull-quote, matrix figure).
+
+- [ ] **Step 6: Delete one-shot** — `rm scripts/create-tsv-article.ts`
 
 ## Task 7: Commit provenance + llms + PR
 
@@ -197,7 +202,9 @@ gh pr create --title "feat(insights): Through-Silicon Vias (TSV) entity page (Ad
   2. **HBM4** → similar one sentence at its TSV/packaging-implications region.
   3. **hybrid-bonding-vs-micro-bump** → one sentence near takeaways/related ("the other half of the vertical interconnect story — the via that carries signals through silicon — see…").
   4. **DRIE §4 Applications** → one sentence after its TSV application mention: "For TSV as a packaging element — via-first/middle/last and design rules — see <a>Through-Silicon Vias (TSV)</a>." **Touch ONLY that body sentence; the DRIE title and H2s must remain byte-identical** (RIE-cluster R5/R6) — verify with a before/after grep of its title + H2 list.
-- [ ] **Step 3: dry-run → apply → verify** (each of the 4 pages links the TSV page exactly once; TSV page links all 4 back; DRIE title/H2s unchanged) → `rm scripts/tsv-backlinks.ts`.
+- [ ] **Step 3: Phase-B1 (immediate) — dry-run → apply edits 1–3 only** (hub, HBM4, hybrid-bonding-vs-micro-bump); verify each links the TSV page exactly once and the TSV page links back → keep the one-shot for B2.
+
+- [ ] **Step 4: Phase-B2 (deferred ~1 week) — the DRIE edit.** DRIE is a mature traffic page (page-1 positions on its own terms); its edit cost is higher than the other three. After ~1 week with no anomalies on the TSV page, apply edit 4 (DRIE §4 Applications sentence), verify the DRIE **title and full H2 list are byte-identical** before/after, then `rm scripts/tsv-backlinks.ts`. Record the pending B2 in memory so it isn't lost.
 
 ## Task 9: Memory + wrap
 
