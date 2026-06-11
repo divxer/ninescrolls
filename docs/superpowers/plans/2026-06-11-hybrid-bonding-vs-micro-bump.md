@@ -91,12 +91,16 @@ grep -ic "what is hybrid bonding" $f                  # still 0 (R1)
 
 followed by the explicit 4-step decision order (Density requirement → Yield economics → Cost structure → Throughput constraint) as an ordered list.
 
-- [ ] **Step 2: Rule-grep + manual read** (this section carries the article — read it fully, not just grep)
+- [ ] **Step 2: Rule-grep + manual read** (this section carries the article — read it fully, not just grep). The 4-step framework is checked **term by term** so a future edit can't keep the pull-quote but silently drop the decision order:
 
 ```bash
 f=scripts/articles/hybrid-bonding-vs-micro-bump.html
-grep -c "Hybrid bonding is not adopted when it becomes possible" $f   # expect 1
-grep -ic "density requirement" $f    # >=1 (decision order present)
+grep -c "Hybrid bonding is not adopted when it becomes possible" $f   # expect 1 (pull-quote)
+grep -ic "density requirement" $f     # >=1
+grep -ic "yield economics" $f         # >=1
+grep -ic "cost structure" $f          # >=1
+grep -ic "throughput constraint" $f   # >=1
+# ALL FOUR must be present — the framework is the asset, not just the quote.
 ```
 
 - [ ] **Step 3: Commit** — `git commit -am "feat(insights): HB-vs-microbump §5 crossover thought-core + selection principle"`
@@ -112,14 +116,23 @@ f=scripts/articles/hybrid-bonding-vs-micro-bump.html
 echo "R5 words:"; sed 's/<[^>]*>/ /g' $f | tr -s ' ' '\n' | grep -c .          # 2400-2800
 echo "R1:"; grep -ic "what is hybrid bonding" $f                                # 0
 echo "R7 h3 count in §7:"; awk '/Winning Today/,/Key Takeaways/' $f | grep -c "<h3>"   # 3
+echo "R7 PER-EXAMPLE word counts (each must be 120-160):"
+awk '/Winning Today/,/Key Takeaways/' $f | awk -v RS='<h3>' 'NR>1 {gsub(/<[^>]*>/," "); n=split($0,w,/[ \t\n]+/); c=0; for(i=1;i<=n;i++) if(w[i]!="") c++; print "  example " (NR-1) ": " c " words"}'
 echo "R6 framework figure:"; grep -c "interconnect-selection-framework" $f      # >=4
 echo "pull-quote:"; grep -c "not adopted when it becomes possible" $f           # 1
+echo "4-step framework terms:"; for t in "density requirement" "yield economics" "cost structure" "throughput constraint"; do grep -ic "$t" $f; done  # each >=1
 echo "all 4 cluster links:"; for l in wafer-bonding-technologies surface-preparation-cu-cu hybrid-bonding-failure-analysis 16-hi-hbm; do grep -oc "$l" $f; done   # each >=1
 ```
 
-If word count is out of band: trim §3/§7 prose (keep §5 intact) or deepen §5. Fix, re-audit.
+A per-example count over 160 words FAILS even if the h3 count is 3 — trim that example. If total word count is out of band: trim §3/§7 prose (keep §5 intact) or deepen §5. Fix, re-audit.
 
-- [ ] **Step 3: Commit** — `git commit -am "feat(insights): HB-vs-microbump §6-8 + FAQ/refs/CTA + full rule audit"`
+- [ ] **Step 3: Gate-E — Editorial Audit (human-judgment, beyond grep).** Read the full article and answer three questions; any "no/yes-wrongly" blocks publish:
+  1. **Cover the title:** can you still tell what question the article answers? (Must be "when do I switch interconnects?", not "what is hybrid bonding?")
+  2. **Remove all figures:** does the core argument still stand in prose alone? (Figures must visualize, not carry, the reasoning.)
+  3. **Delete §5:** does the rest still work as an article? **If YES, that's a FAILURE** — §5 isn't central enough; rewrite §5 until its removal guts the piece.
+  Fix and re-run Gate-E until all three pass.
+
+- [ ] **Step 4: Commit** — `git commit -am "feat(insights): HB-vs-microbump §6-8 + FAQ/refs/CTA + full rule audit + Gate-E"`
 
 ## Task 5: Figure prompts file + cover-first gate (USER ACTION)
 
@@ -151,7 +164,9 @@ const SLUG = 'hybrid-bonding-vs-micro-bump';
 (async () => {
   await authenticate();
   const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug: SLUG });
-  if (existing?.length) { console.log('SKIP exists', (existing[0] as any).id); return; }
+  // FAIL loudly, never silently skip — a re-run against an existing draft must be a
+  // conscious decision (use an update script), not a false "created" success.
+  if (existing?.length) { console.error(`FAIL: slug already exists, id=${(existing[0] as any).id}. Use an update one-shot instead.`); process.exit(1); }
   const { data, errors } = await client.models.InsightsPost.create({
     title: 'Hybrid Bonding vs Micro-Bump: Where Each Technology Wins',
     slug: SLUG,
@@ -183,15 +198,17 @@ AWS_PROFILE=ninescrolls npx tsx scripts/upload-insights-image.ts hybrid-bonding-
 
 Each: expect 8 generated files + CloudFront invalidation submitted.
 
-- [ ] **Step 3: Publish** — one-shot update `isDraft: false` (same client pattern, `update({ id, isDraft: false })`), then verify live in DDB: title/slug/category correct, both figure prefixes present in content, imageUrl extension-less.
+- [ ] **Step 3: llms sync BEFORE publish** (ordering is deliberate: publish must never outrun the LLM corpus — site ≠ llms.txt drift accumulates silently). Make the `public/llms.txt` + `public/llms-full.txt` edits specified in Task 7 Step 1 NOW, while the article is still a draft.
 
-- [ ] **Step 4: Live render check** (Chrome): page title, H2 list, pull-quote visible, figures load (curl the CDN lg.webp URLs → 200).
+- [ ] **Step 4: Publish** — one-shot update `isDraft: false` (same client pattern, `update({ id, isDraft: false })`), then verify live in DDB: title/slug/category correct, both figure prefixes present in content, imageUrl extension-less.
 
-- [ ] **Step 5: Delete one-shots** — `rm scripts/create-hbmb-article.ts`
+- [ ] **Step 5: Live render check** (Chrome): page title, H2 list, pull-quote visible, figures load (curl the CDN lg.webp URLs → 200).
 
-## Task 7: Commit provenance + llms sync + PR
+- [ ] **Step 6: Delete one-shots** — `rm scripts/create-hbmb-article.ts`
 
-- [ ] **Step 1: llms sync** — add to `public/llms.txt` under `## Insights — Advanced Packaging & 3D Integration`:
+## Task 7: Commit provenance + llms + PR
+
+- [ ] **Step 1: llms entries** (already EDITED in Task 6 Step 3 — committed here). Content to add — `public/llms.txt` under `## Insights — Advanced Packaging & 3D Integration`:
 
 ```markdown
 - [Hybrid Bonding vs Micro-Bump](https://ninescrolls.com/insights/hybrid-bonding-vs-micro-bump): Interconnect selection guide — where micro-bumps stop scaling and hybrid bonding takes over; pitch zones, yield economics, thermal and cost crossovers, and the Interconnect Selection Framework
@@ -229,9 +246,11 @@ gh pr create --title "feat(insights): Hybrid Bonding vs Micro-Bump (Advanced Pac
 
 - [ ] **Step 3: dry-run → apply → verify** bidirectional counts (new page → 4 cluster links; hub & HBM4 → 1 link each to new page) → `rm scripts/hbmb-backlinks.ts`.
 
+**Standardization note:** this is the third Phase-B link pass (after surface-prep and FA). The pattern is now stable — fetch-verbatim-anchors → rx() tolerant find → exactly-one-match guard → idempotency guard → dry-run → apply → verify-bidirectional → delete. Record it in memory as the **"Phase-B Link Pass" standard module** so TSV Etching, Temporary Bonding, HBM Reliability, and W2W-vs-D2W all reuse it verbatim (Task 9).
+
 ## Task 9: Memory + wrap
 
-- [ ] **Step 1: Update `memory/seo_strategy.md`:** spoke #4 PUBLISHED (slug, date, PR#, framework asset + citable principle); cluster = 5 pages / 5 intents complete; next spokes = TSV Etching → Temporary Bonding/Debonding → HBM Reliability (note candidate: Wafer-to-Wafer vs Die-to-Wafer); backlinks DDB-only note (re-running update-insight-from-html on hub/HBM4 would clobber them).
+- [ ] **Step 1: Update `memory/seo_strategy.md`:** spoke #4 PUBLISHED (slug, date, PR#, framework asset + citable principle); cluster = 5 pages / 5 intents complete; **"Phase-B Link Pass" recorded as a standard reusable module** (the 8-step pattern from Task 8); next-spoke priority **updated per review: TSV Etching → Wafer-to-Wafer vs Die-to-Wafer (strong selection intent; forms a dual decision-framework pair with this article) → Temporary Bonding/Debonding → HBM Reliability**; backlinks DDB-only note (re-running update-insight-from-html on hub/HBM4 would clobber them); Gate-E (editorial audit: title-cover / figure-removal / §5-deletion tests) recorded as a standard step for all future cluster articles.
 
 - [ ] **Step 2: Report** completion to user with live URL + merged-PR link + verification evidence.
 
