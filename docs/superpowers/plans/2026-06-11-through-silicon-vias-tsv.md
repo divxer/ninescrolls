@@ -29,7 +29,7 @@
 | Rule | Check |
 |---|---|
 | R1 | `grep -icE "scallop|C4F8|passivation cycle|Bosch cycle" f` == 0 outside link anchors (verify any hits are inside `<a>…</a>`); no H2 matching `etch.*(process|mechanism|principle)` |
-| **R3b** | **`grep -icE "ARDE|microloading|notching|scallop" f` == 0 article-wide** — these are the terms engineers write *naturally* when describing etch behavior; any hit means the page has drifted into DRIE territory regardless of R3's phrasing checks |
+| **R3b** | **`grep -icE "ARDE|microloading|notching|scallop" f` == 0 article-wide, INCLUDING link anchors (supersedes R1's anchor exception for these four terms — anchor text never needs them)** — these are the terms engineers write *naturally* when describing etch behavior; any hit means the page has drifted into DRIE territory regardless of R3's phrasing checks |
 | R2 | exactly 1 link each: `/insights/deep-reactive-ion-etching-bosch-process` (in §3), `/insights/wafer-bonding-technologies-for-3d-integration`, HBM4 slug |
 | R3 | §6 HARD AUDIT (manual + grep): `awk '/Demands of the Etch/,/Manufacturing Challenges/' f \| grep -icE "control(ling)? the etch|tune|tuning|optimi[sz]e the etch|recipe"` == 0; every ¶ answers "what packaging needs", none "how to etch" |
 | R4 | HBM/interposer reference blocks ≤150 words each |
