@@ -31,3 +31,35 @@
   </picture>
   <figcaption>Anatomy of a through-silicon via: dielectric liner for isolation, barrier, and copper core &mdash; surrounded by the keep-out zone (KOZ), the stress-driven exclusion area that, more often than the via diameter, sets how densely TSVs can be packed.</figcaption>
 </figure>
+
+<h2 id="integration-flow">3. From Wafer to Stack: The TSV Integration Flow</h2>
+
+<p>On paper, building a TSV is a clean sequence. A hard mask or photoresist pattern defines the via openings on the wafer. The vias themselves are then formed, almost universally by deep reactive ion etching &mdash; for how the etch achieves these deep, vertical profiles, see our <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE guide</a>. From there the layered cylinder of Section 2 gets built from the outside in: a dielectric liner is deposited along the via walls to isolate the future conductor from the silicon, followed by a thin diffusion barrier and a copper seed layer that gives electroplating something to grow on. Electroplated copper then fills the via from the bottom up, and an anneal stabilizes the copper's grain structure before any heat-sensitive steps follow. Chemical-mechanical planarization strips the copper overburden back to a flat surface so that normal interconnect processing can continue above the vias.</p>
+
+<p>All of this happens while the via is still blind &mdash; a copper-filled well that stops partway through a full-thickness wafer. The via only becomes a <em>through</em>-silicon via at the end: the wafer is mounted to a carrier, thinned from the backside by grinding and etching, and the buried copper is revealed and capped with backside metallization. Only then can the die or interposer be bonded, stacked, and connected into a package.</p>
+
+<p>But the sequence above hides the real decision. It is not how each step works &mdash; it is <em>where in the device flow the via gets made</em>. That choice &mdash; via-first, via-middle, or via-last &mdash; shapes everything downstream.</p>
+
+<!-- SECTIONS 4 AND 5 INSERT HERE -->
+
+<h2 id="etch-requirements">6. What the Packaging Spec Demands of the Etch</h2>
+
+<p>From the packaging side, the via-formation step is a black box with a specification sheet attached. The package does not care how the silicon is removed; it cares that the resulting hole meets four kinds of requirements, each driven by a downstream step that fails without it.</p>
+
+<p><strong>Depth and aspect ratio follow from the application class.</strong> An interposer that will be thinned to 100 &micro;m needs vias deeper than 100 &micro;m at diameters around 10 &micro;m; an HBM die thinned to 50 &micro;m or below needs a few-micrometer via at aspect ratios near 10:1; a CMOS image sensor stack has its own geometry again. The package architecture fixes these numbers before any wafer is processed, because the final stack height and the floorplan's KOZ budget depend on them.</p>
+
+<p><strong>CD and depth must be uniform across the wafer.</strong> Every via on the wafer must land inside the plating and CMP process window: if vias at the wafer edge are shallower or wider than vias at the center, some will underfill or overfill, and a single bad via can strand an entire die. The packaging spec therefore states uniformity as a hard limit, not a preference.</p>
+
+<p><strong>Sidewalls must be smooth and slightly tapered.</strong> The dielectric liner and the barrier are thin conformal films that must coat the wall continuously from top to bottom. A rough or reentrant wall starves that coverage &mdash; a gap in the liner leaks current into the substrate, and a gap in the barrier lets copper diffuse into the silicon. A gentle positive taper exists to make continuous coverage achievable.</p>
+
+<p><strong>The via bottom must support a clean reveal.</strong> After thinning, the copper must emerge at a predictable depth with a profile the backside process can cap reliably; a ragged or uneven bottom turns the reveal into a yield event.</p>
+
+<p>Meeting these numbers is the province of deep-silicon etch engineering &mdash; see the <a href="/insights/deep-reactive-ion-etching-bosch-process">DRIE guide</a> for how.</p>
+
+<h2 id="challenges">7. Manufacturing Challenges and Cost</h2>
+
+<p>The economics of TSVs are counterintuitive: the via itself is cheap. Etching millions of holes in parallel costs little per hole. What costs money is the chain the via drags behind it &mdash; liner and barrier deposition into deep narrow geometries, copper plating and its anneal, CMP, carrier mounting, wafer thinning, via reveal, backside metallization, and the test steps wrapped around all of it. Cost-per-wafer is dominated by that chain, which is why TSV-based packages tend to make sense only where the bandwidth or form-factor payoff is large.</p>
+
+<p>The defining physical challenge remains copper's thermal expansion. Copper expands several times faster than silicon, so every thermal excursion after fill pushes the copper against its confinement. The visible symptom is copper pumping &mdash; the via protruding above the surface after anneal &mdash; which threatens any layer built on top. The invisible symptom is the stress field in the surrounding silicon, which is why the keep-out zone of Section 2 exists at all, and why it grows with via size: a larger copper volume stresses a larger region, sterilizing more floorplan area per via. The density argument and the reliability argument are the same argument.</p>
+
+<p>Stacking adds a brutal statistical problem. Dies must be tested and confirmed known-good <em>before</em> stacking, because bonding a good die to a bad one discards both. And the vias themselves compound: a TSV chain is electrically a series circuit, so per-via yield is multiplied across every via in the path. At 99.99% per-via yield, a net with ten thousand vias still fails roughly one time in three. Per-million defect rates, acceptable in many process steps, are not acceptable here &mdash; which is why TSV manufacturing is, above all, an exercise in driving defect densities to levels most fab steps never need to reach.</p>
