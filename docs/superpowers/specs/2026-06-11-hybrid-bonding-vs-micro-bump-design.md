@@ -37,7 +37,7 @@ The `InsightsPost` schema has a **single `title` field** that renders as both th
 - **R2 — dual-defer up top.** The opening defers to the **Wafer Bonding hub** (mechanism + why-hybrid-won) and points lightly to **Surface Preparation** and **Failure Analysis** for their domains.
 - **R3 — §3 hard boundary.** "What Hybrid Bonding Changes" covers only the *interconnect-level* change (pad-less direct Cu-Cu, pitch scaling). NO CMP/surface-conditioning detail (surface-prep owns), NO defect/FA detail (FA owns).
 - **R4 — applications defer.** §6 examples ≤200 words each and **link out** to the HBM4 article; do not re-explain HBM (HBM4 owns the application narrative).
-- **R5 — length.** Target **2,400–2,800 words** (tighter than a guide because it defers mechanism).
+- **R5 — length.** Target **2,400–2,800 words** (tighter than a guide because it defers mechanism). **[CORRECTED at drafting, 2026-06-11: the section-budget table below sums to ~3,030, so the 2,800 cap was arithmetically inconsistent with the mandated structure. Effective R5 = ~2,900–3,100 with §5 (700–800) and R7 floors protected; the published draft is 3,068.]**
 - **R6 — single climax asset.** The Interconnect Selection Decision Map is the one Level-3 asset; the article builds to it.
 
 ## Structure (8 sections + budget; ~2,600w target)

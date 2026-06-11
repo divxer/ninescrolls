@@ -77,3 +77,73 @@
 </ol>
 
 <p>Inside the transition zone, walk the four steps in order. The first one that returns a decisive answer settles the selection &mdash; the questions below it no longer matter.</p>
+
+<h2 id="framework">6. The Interconnect Selection Framework</h2>
+
+<p>Everything Section 5 argued compresses into a single map.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-selection-framework-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-selection-framework-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-selection-framework-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-selection-framework-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/hybrid-bonding-vs-micro-bump/interconnect-selection-framework-lg.png" alt="Interconnect selection framework: connection density versus manufacturing readiness and cost economics, plotting flip chip, copper pillar, fine-pitch micro-bump, and hybrid bonding, with micro-bump dominant, transition, and hybrid bonding dominant zones" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The Interconnect Selection Framework: connection density (x) versus manufacturing readiness and cost economics (y). All four interconnect generations plotted; zones mark where each technology wins by default &mdash; and where the &sect;5 decision order settles contested cases.</figcaption>
+</figure>
+
+<p>Read it left to right. Find your design's connection-density requirement on the x-axis. The technologies sitting above that point are your candidates; anything below it is disqualified before economics enters the discussion. The zone you land in gives the default winner: in the micro-bump-dominant zone (above roughly 20 &micro;m pitch), assembly-grade economics win without argument; in the hybrid-bonding-dominant zone (below roughly 10 &micro;m), density forces the choice regardless of cost. Only inside the transition zone does the map stop answering &mdash; there, apply the four-step decision order from Section 5 in sequence: density requirement, yield economics, cost structure, throughput constraint. The first decisive answer settles it. The boundaries are drawn as bands, not lines &mdash; they shift with design rules, process maturity, and volume, which is why the framework asks for your numbers rather than handing you one of its own.</p>
+
+<h2 id="applications">7. Where Each Interconnect Is Winning Today</h2>
+
+<h3>High-Bandwidth Memory (HBM)</h3>
+
+<p>HBM is the textbook resident of the transition zone. Current production generations still ship on fine-pitch micro-bumps: the pitch sits where solder remains viable, the supply chain is deep, and known-good-die screening keeps yield economics on micro-bump's side. But the roadmap squeezes from two directions at once. The march toward 16-Hi stacks puts more dies in the same package height, forcing thinner dies and finer pitches toward the scaling wall of Section 3 &mdash; and every added die raises the bandwidth and thermal load the bumped interface must carry, the two pressures Section 5 identified as forcing the switch early. That is why successive HBM roadmaps place hybrid bonding in their tallest stacks. For the full thermal and materials picture, see our <a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM deep dive</a>.</p>
+
+<h3>Logic-on-Logic Chiplets</h3>
+
+<p>Flagship compute crossed first, and the framework predicts exactly why. 3D-stacked cache and SoIC-class logic-on-logic products need vertical connection densities that solder physics cannot deliver &mdash; step one of the decision order returns a decisive answer, and the questions below it never get asked. Just as important, these packages are best positioned to absorb hybrid bonding's no-rework risk: each unit is a flagship processor carrying enough margin to pay for stack losses, and pre-bond test coverage on logic dies is among the industry's best. So logic-on-logic stacking became hybrid bonding's marquee application even while most of the packaging market stays comfortably on bumps &mdash; a hard density requirement and high value-per-package, aligned in one product. For how the bonding itself works, see the <a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies Guide</a>.</p>
+
+<h3>CMOS Image Sensors (CIS)</h3>
+
+<p>Image sensors were hybrid bonding's first mass-production home, years before compute. The reason is pure density: a stacked sensor wants an electrical connection at or near every pixel, and pixel-level pitches sit far below anything a solder joint can reach &mdash; micro-bump was never a candidate. The economics lined up early too: sensors bond wafer-to-wafer in enormous, uniform volumes, and mature W2W flows reached yields that made the no-rework risk acceptable long before logic could follow. CIS therefore shows the framework's forced-choice zone running in production at scale, not as a roadmap promise. One lesson from this earliest adopter carries to every application after it: at these densities, surface quality decides yield. That subject has its own page &mdash; see <a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation for Cu-Cu Hybrid Bonding</a>.</p>
+
+<h2 id="takeaways">8. Key Takeaways</h2>
+
+<ul>
+  <li><strong>Three zones.</strong> Above roughly 20 &micro;m pitch, micro-bump wins by default; below roughly 10 &micro;m, hybrid bonding is effectively the only option; the 10&ndash;20 &micro;m band is the contested transition zone.</li>
+  <li><strong>The principle.</strong> Adoption is not triggered by feasibility &mdash; it happens when density requirements outweigh manufacturing economics.</li>
+  <li><strong>The decision order.</strong> Ask in sequence: density requirement, yield economics, cost structure, throughput constraint.</li>
+  <li><strong>Thermal can force the switch early</strong> &mdash; even above the pitch wall, if the stack cannot get its heat out through a bumped interface.</li>
+  <li><strong>Inside the transition zone, the first decisive answer wins</strong> &mdash; the questions below it no longer matter.</li>
+</ul>
+
+<h2>Frequently Asked Questions</h2>
+
+<h3>At what pitch does hybrid bonding replace micro-bumps?</h3>
+
+<p>There is no single number. Above roughly 20 &micro;m pitch, micro-bump wins by default; below roughly 10 &micro;m, hybrid bonding is effectively forced; in the 10&ndash;20 &micro;m band, both are viable and the decision order settles the call. The boundaries shift with design rules and process maturity &mdash; treat them as zones, not thresholds.</p>
+
+<h3>Is hybrid bonding more expensive than micro-bump?</h3>
+
+<p>Per package at modest connection counts, yes. But the right metric is cost per I/O, and it inverts at high density: a hybrid-bonded interface amortizes its cost across hundreds of thousands of connections, while micro-bump pushed past its comfort zone bleeds yield until its cost per connection climbs higher.</p>
+
+<h3>Can a design use both micro-bumps and hybrid bonding?</h3>
+
+<p>Yes &mdash; the selection is made per interface, not per product. A package can use hybrid bonding for the die-to-die interface where density demands it, and micro-bumps or Cu-pillar at the substrate level where coarser pitch suffices. Mixed packages are the normal outcome.</p>
+
+<h3>Why can't micro-bumps just keep shrinking?</h3>
+
+<p>Because below roughly 10&ndash;20 &micro;m pitch the obstacle is solder physics, not manufacturing precision. Shrinking the joint makes molten solder collapse and bridge unpredictably, lets brittle intermetallics take over the joint, drives electromigration risk up, and leaves bump parasitics consuming bandwidth and power budgets &mdash; while cost per connection starts climbing instead of falling. The technology stops paying for itself before it stops working.</p>
+
+<h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
+
+<ul>
+  <li><a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies for 3D Integration</a> &mdash; how each bonding approach works.</li>
+  <li><a href="/insights/surface-preparation-cu-cu-hybrid-bonding">Surface Preparation for Cu-Cu Hybrid Bonding</a> &mdash; the surface chemistry behind bond yield.</li>
+  <li><a href="/insights/hybrid-bonding-failure-analysis">Hybrid Bonding Failure Analysis</a> &mdash; diagnosing bonds that failed.</li>
+  <li><a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM: Thermal and Materials Challenges</a> &mdash; the memory roadmap driving the crossover.</li>
+</ul>
+
+<p>NineScrolls supplies plasma surface-activation and cleaning equipment used in advanced bonding flows. Evaluating an interconnect transition? <a href="/contact">Contact our team</a> to discuss process capability.</p>
