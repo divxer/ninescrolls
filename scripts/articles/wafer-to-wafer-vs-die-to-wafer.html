@@ -1,0 +1,64 @@
+<p><strong>By the time an advanced package reaches this decision, most of its architecture is already fixed.</strong> You have chosen the interconnect &mdash; <a href="/insights/hybrid-bonding-vs-micro-bump">copper-to-copper pads or micro-bumps</a> &mdash; and you have chosen <a href="/insights/through-silicon-vias-tsv-guide">when in the flow the vias get made</a>. The mechanics of how surfaces actually join belong to our <a href="/insights/wafer-bonding-technologies-for-3d-integration">wafer bonding technologies guide</a>; this article takes them as solved. One decision remains, and it is the last one standing: bond complete wafers face-to-face, or place known-good dies one at a time onto a target wafer? The question this page exists to answer is sharper than a pros-and-cons list: when do you lose the choice of format, and when do you keep it?</p>
+
+<h2 id="quick-answer">1. The Quick Answer: W2W or D2W?</h2>
+
+<p>If you need the verdict before the framework, here it is in three lines.</p>
+
+<ul>
+  <li><strong>If the two designs' die sizes and steppings do not match, the decision is already made.</strong> Wafer-to-wafer requires every die on the top wafer to land on its partner on the bottom wafer &mdash; identical die dimensions, identical layout across the wafer. When they differ, W2W is physically out before economics ever enters the discussion. Die-to-wafer is the only format left.</li>
+  <li><strong>If geometry matches, yields are high, and the product chases the absolute density limit, wafer-to-wafer earns its place.</strong> Bonding full wafers delivers the tightest alignment and finest interconnect pitch available, which is commonly why stacked image sensors &mdash; one design, mature yields, density-critical &mdash; are the canonical W2W product.</li>
+  <li><strong>Everything else lands on die-to-wafer.</strong> Heterogeneous dies, imperfect yields, mixed suppliers &mdash; D2W absorbs all three, which is why it is typically the default for chiplet-era products.</li>
+</ul>
+
+<p>The rest of this article turns those verdicts into a framework you can apply in order &mdash; starting with the constraint that decides before you do.</p>
+
+<h2 id="framework">2. The Selection Framework</h2>
+
+<blockquote style="border-left:4px solid #2563eb;background:#eff6ff;padding:16px 20px;margin:24px 0;font-size:1.1em;">
+  <p style="margin:0;"><strong>Wafer-to-wafer is not the default. It is a privilege earned by matched geometry and high yield. When either condition breaks, the industry falls back to die-to-wafer.</strong></p>
+</blockquote>
+
+<p>That principle unpacks into four gates, applied in order. The order matters: the early gates are hard constraints that no business case can override, while the later ones are economics that a business case can argue. Most products never reach the later gates &mdash; they exit at the first or second and land on die-to-wafer before cost modeling even begins.</p>
+
+<h3>Gate A &mdash; Geometry</h3>
+
+<p>Wafer-to-wafer bonds two complete wafers face-to-face, which means the two designs must tile identically: the same die size, the same stepping across the wafer, layouts mirrored so that every die on the top wafer lands precisely on its partner below. There is no mechanism for adjustment &mdash; the wafer is bonded as a whole, and every die pair inherits whatever the full-wafer layout dictates.</p>
+
+<p>This is why a geometry mismatch is not a disadvantage to be weighed against W2W's benefits. It is a physical disqualification. If the dies differ in size, or the reticle layouts cannot be made to coincide, there is no degree of yield improvement or cost concession that reopens the option &mdash; which is exactly why this gate runs first. Heterogeneous products &mdash; dies of different sizes, built on different process nodes, often sourced from different vendors &mdash; exit here, before yield or throughput is ever discussed. A logic die and a memory die that were never designed to the same footprint cannot be wafer-bonded to each other, full stop.</p>
+
+<p>In practice, this single gate decides more real products than the other three combined.</p>
+
+<h3>Gate B &mdash; Yield Economics</h3>
+
+<p>Survive Gate A and the question becomes statistical. Wafer-to-wafer bonding is blind: every die on wafer A bonds to whatever sits opposite it on wafer B, functional or not. The yield of the bonded stack is therefore the product of the two wafers' yields &mdash; a 90%-yielding wafer bonded to another 90%-yielding wafer produces roughly 81% good stacks, and every good die consumed by a bad partner is the direct, unavoidable cost of whole-wafer parallelism.</p>
+
+<p>Die-to-wafer restores choice. Dies are tested before assembly, and only known-good dies are placed &mdash; the same known-good-die logic that governs <a href="/insights/hybrid-bonding-vs-micro-bump">the interconnect decision</a>, surfacing here at the format layer. The question this page asks is the format version of it: is die yield high enough, and are the dies cheap enough, that blind pairing destroys less value than per-die test and handling adds? For high-yield, small, uniform dies &mdash; the image-sensor profile &mdash; the answer is commonly yes: the occasional sacrificed die costs less than testing and placing millions individually. For large, expensive, or yield-immature dies, the arithmetic inverts decisively. One scrapped good die on a leading-edge logic wafer can outweigh an entire wafer's worth of handling cost, and the product exits to die-to-wafer here.</p>
+
+<h3>Gate C &mdash; Throughput</h3>
+
+<p>Gate C asks whether the parallelism wafer-to-wafer preserves is actually worth what Gates A and B demanded to keep it. A single aligned wafer bond joins every die pair on the wafer simultaneously: one alignment, one bond, thousands of stacks. Die-to-wafer replaces that single act with thousands of pick-and-place operations, each adding serial time, each a particle-exposure event, and each carrying its own alignment step with its own error budget.</p>
+
+<p>At image-sensor-like volumes &mdash; hundreds of millions of units of one design &mdash; whole-wafer parallelism is decisive economics, and a product that has already survived Gates A and B will typically take it. At chiplet volumes, with high-value dies assembled in smaller quantities, the calculus reverses: serialization is simply the price of the selectivity that Gate B bought, and it is usually a price worth paying. Note what this gate is not: it is not a tiebreaker that rescues a product that failed earlier. Throughput only votes among survivors.</p>
+
+<h3>Gate D &mdash; Maximum Density (the bonus gate)</h3>
+
+<p>The fourth gate is explicitly not an entry criterion &mdash; it is the prize. Wafer-to-wafer aligns once, at wafer level, with lithographic-class registration, and that single alignment is preserved across every die pair on the wafer. The result is the finest interconnect pitch the format can achieve. Die-to-wafer must re-align for every individual die, and each placement lands coarser than what one wafer-level alignment delivers.</p>
+
+<p>But this advantage only matters after a product has survived Gates A through C. Products operating at extreme interconnect pitch &mdash; HBM-class memory stacks, high-end logic-on-logic &mdash; still commonly land on die-to-wafer, because they failed Gate A or Gate B long before density was considered: mismatched die sizes, or dies too valuable to pair blind. Stated plainly: fine pitch does not imply wafer-to-wafer; surviving the first three gates does. Density is what W2W pays out to qualifiers, never the reason a product qualifies.</p>
+
+<p>So the procedure is mechanical: run the gates in order, and the first failure routes the product to die-to-wafer &mdash; no appeal, no weighting. Surviving all four, and wanting the density that Gate D pays out, is precisely what the opening principle means by a privilege earned.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/wafer-to-wafer-vs-die-to-wafer/w2w-d2w-selection-framework-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/wafer-to-wafer-vs-die-to-wafer/w2w-d2w-selection-framework-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/wafer-to-wafer-vs-die-to-wafer/w2w-d2w-selection-framework-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/wafer-to-wafer-vs-die-to-wafer/w2w-d2w-selection-framework-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/wafer-to-wafer-vs-die-to-wafer/w2w-d2w-selection-framework-lg.png" alt="W2W versus D2W selection framework: four gates in order — geometry match, yield economics, throughput, and maximum density as a bonus gate — with fails routing to die-to-wafer and survivors qualifying for wafer-to-wafer" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The W2W/D2W selection framework: four gates in order &mdash; geometry, yield economics, throughput, and the density bonus. The first failure routes to die-to-wafer.</figcaption>
+</figure>
+
+<p>Read the figure top to bottom: each gate's fail arrow exits left to die-to-wafer, and only a product that passes every level reaches the wafer-to-wafer outcome at the base.</p>
+
+<!-- SECTIONS 3+ INSERT HERE -->
