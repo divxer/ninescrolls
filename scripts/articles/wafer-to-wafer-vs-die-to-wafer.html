@@ -7,7 +7,7 @@
 <ul>
   <li><strong>If the two designs' die sizes and steppings do not match, the decision is already made.</strong> Wafer-to-wafer requires every die on the top wafer to land on its partner on the bottom wafer &mdash; identical die dimensions, identical layout across the wafer. When they differ, W2W is physically out before economics ever enters the discussion. Die-to-wafer is the only format left.</li>
   <li><strong>If geometry matches, yields are high, and the product chases the absolute density limit, wafer-to-wafer earns its place.</strong> Bonding full wafers delivers the tightest alignment and finest interconnect pitch available, which is commonly why stacked image sensors &mdash; one design, mature yields, density-critical &mdash; are the canonical W2W product.</li>
-  <li><strong>Everything else lands on die-to-wafer.</strong> Heterogeneous dies, imperfect yields, mixed suppliers &mdash; D2W absorbs all three, which is why it is typically the default for chiplet-era products.</li>
+  <li><strong>Most remaining cases trend toward die-to-wafer.</strong> Heterogeneous dies, imperfect yields, mixed suppliers &mdash; D2W absorbs all three, which is why it is typically the default for chiplet-era products.</li>
 </ul>
 
 <p>The rest of this article turns those verdicts into a framework you can apply in order &mdash; starting with the constraint that decides before you do.</p>
@@ -30,7 +30,7 @@
 
 <h3>Gate B &mdash; Yield Economics</h3>
 
-<p>Survive Gate A and the question becomes statistical. Wafer-to-wafer bonding is blind: every die on wafer A bonds to whatever sits opposite it on wafer B, functional or not. The yield of the bonded stack is therefore the product of the two wafers' yields &mdash; a 90%-yielding wafer bonded to another 90%-yielding wafer produces roughly 81% good stacks, and every good die consumed by a bad partner is the direct, unavoidable cost of whole-wafer parallelism.</p>
+<p>Survive Gate A and the question becomes statistical. Wafer-to-wafer bonding is blind: every die on wafer A bonds to whatever sits opposite it on wafer B, functional or not. The stack yield compounds across both wafers, so one wafer's defects consume good dies from the other side &mdash; and every good die consumed by a bad partner is the direct, unavoidable cost of whole-wafer parallelism.</p>
 
 <p>Die-to-wafer restores choice. Dies are tested before assembly, and only known-good dies are placed &mdash; the same known-good-die logic that governs <a href="/insights/hybrid-bonding-vs-micro-bump">the interconnect decision</a>, surfacing here at the format layer. The question this page asks is the format version of it: is die yield high enough, and are the dies cheap enough, that blind pairing destroys less value than per-die test and handling adds? For high-yield, small, uniform dies &mdash; the image-sensor profile &mdash; the answer is commonly yes: the occasional sacrificed die costs less than testing and placing millions individually. For large, expensive, or yield-immature dies, the arithmetic inverts decisively. One scrapped good die on a leading-edge logic wafer can outweigh an entire wafer's worth of handling cost, and the product exits to die-to-wafer here.</p>
 
@@ -59,11 +59,11 @@
   <figcaption>The W2W/D2W selection framework: four gates in order &mdash; geometry, yield economics, throughput, and the density bonus. The first failure routes to die-to-wafer.</figcaption>
 </figure>
 
-<p>Read the figure top to bottom: each gate's fail arrow exits left to die-to-wafer, and only a product that passes every level reaches the wafer-to-wafer outcome at the base.</p>
+<p>Read the figure top to bottom: each hard gate's fail arrow exits to die-to-wafer; only products that survive the hard gates can make a credible wafer-to-wafer case, and Gate D strengthens that case when maximum density matters.</p>
 
 <h2 id="why-w2w">3. Why W2W Delivers the Highest Density</h2>
 
-<p>Strip away the qualifiers and wafer-to-wafer&rsquo;s density advantage reduces to one structural fact: alignment happens once. The two wafers are registered to each other globally, with lithographic-class precision, and that single registration is inherited by every die pair on the wafer. There is no per-die placement step, so there is no per-die placement error to budget for &mdash; whatever accuracy the wafer-level alignment achieves, thousands of die pairs receive it simultaneously. Die-to-wafer must re-establish alignment for every individual placement, each with its own tolerance, and the compounded budget typically lands coarser. This is why the finest interconnect pitches in production have commonly appeared in wafer-bonded products first: the format removes the very step where placement error is born.</p>
+<p>Strip away the qualifiers and wafer-to-wafer&rsquo;s density advantage reduces to one structural fact: alignment happens once. The two wafers are registered to each other globally, with lithographic-class precision, and that single registration is inherited by every die pair on the wafer. There is no per-die placement step, so there is no per-die placement error to budget for &mdash; whatever accuracy the wafer-level alignment achieves, thousands of die pairs receive it simultaneously. Die-to-wafer must re-establish alignment for every individual placement, each with its own tolerance, and the compounded budget typically lands coarser. Wafer-level alignment is one reason W2W has been important in the earliest high-density bonded products: the format removes the very step where placement error is born.</p>
 
 <p>The economics compound the physics. One aligned bond joins every stack on the wafer in a single act, so the cost of that act is amortized over thousands of stacks at once. Equipment time, handling, and inspection scale per wafer rather than per die, which is why, at high volume, the per-stack cost of wafer-level assembly typically undercuts any serial alternative. Parallelism is not a side benefit of the format; it is the format.</p>
 
@@ -145,4 +145,4 @@
   <li><a href="/insights/hybrid-bonding-failure-analysis">Hybrid Bonding Failure Analysis</a> &mdash; diagnosis, when a bonded stack underperforms</li>
 </ul>
 
-<p>NineScrolls supplies <strong>surface activation and cleaning systems</strong> used in wafer bonding flows, where surface readiness is staked at wafer scale. <a href="/contact">Contact our team</a> to discuss your integration requirements.</p>
+<p>NineScrolls supplies <strong>surface preparation and cleaning systems</strong> used in wafer bonding flows, where surface readiness is staked at wafer scale. <a href="/contact">Contact our team</a> to discuss your integration requirements.</p>
