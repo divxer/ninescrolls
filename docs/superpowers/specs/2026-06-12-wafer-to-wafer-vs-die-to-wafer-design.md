@@ -32,7 +32,7 @@ The decision-chain terminus: `interconnect selection (HB-vs-µbump) → via timi
 - **Gate A — Geometry.** Do die sizes and steppings match? Mismatch → W2W is physically out (the hard constraint comes first; no economics can override it).
 - **Gate B — Yield Economics.** Can the product tolerate blind bonding (no die selection)? W2W bonds every die against every die, good or bad. (LINK HB-vs-µbump §5 for the interconnect-level KGD analysis; this page owns only the format-level layer.)
 - **Gate C — Throughput.** Is whole-wafer parallelism worth preserving? One bond step vs thousands of pick-and-place operations — each placement adding serial time, particle exposure, and per-die alignment risk.
-- **Gate D — Pitch & Alignment.** Does the product demand extreme interconnect density? Wafer-level alignment achieves the finest pitch; per-die placement is coarser.
+- **Gate D — Maximum Density.** Are you pursuing the absolute density limit? W2W's wafer-level alignment preserves the finest achievable pitch — **but Gate D is a BONUS criterion, not an entry criterion**: it only matters after surviving Gates A–C. Real products at extreme pitch (HBM-class stacks, high-end logic, heterogeneous chiplets) still commonly land on D2W because they fail Gate A or B first. NEVER write "fine pitch → W2W" as a rule — professional readers will correctly reject it.
 
 ## Structure (budget sum ≈ 2,820; R-length **2,700–3,000**, summed first)
 
@@ -43,10 +43,10 @@ The decision-chain terminus: `interconnect selection (HB-vs-µbump) → via timi
 | 2 | **The Selection Framework** | **850–950** | **THE THOUGHT CORE — deliberately dominant** (readers searching the query come for exactly this; §3–§5 are evidence). Principle pull-quote at top, then Gates A–D, one argued passage each. L3 asset figure here. |
 | 3 | Why W2W Delivers the Highest Density | 300 | wafer-level alignment physics + parallel economics; CIS as living proof (one line, link) |
 | 4 | Why D2W Dominates Heterogeneous Integration | 300 | different sizes/nodes/vendors + KGD picking + chiplet reality |
-| 5 | Application Snapshots — **order: CIS → Chiplet → HBM** | 300–375 | 100–125w each, link out, never upstage the framework. Progression logic: CIS = purest W2W → Chiplet = purest D2W → **HBM last = the real-world engineering compromise between them** (most complex case closes the section with synthesis) |
+| 5 | Application Snapshots — **order: CIS → Chiplet → HBM** | 300–360 | link out, never upstage the framework. Progression: CIS = purest W2W → Chiplet = purest D2W → **HBM last = the real-world compromise** (synthesis close). **HARD WORD CAPS: CIS ≤120w, Chiplet ≤120w, HBM ≤100w — HBM MUST be the shortest** (the cluster's most common drift = pages mutating into HBM pages; no HBM3/4/5 generational detail, that's the HBM4 article's domain) |
 | 6 | **The Complete Decision Chain** (capstone close) | 250 | the cluster's decision path united; **Fig B = the full AP Cluster Map** (see below) |
 | 7 | Key Takeaways | 150 | final bullet = the decision-chain hook (three sibling pages cross-linked) |
-| — | FAQ (4) + Related + CTA | 300 | FAQ incl. "Is D2W the same as chip-on-wafer (CoW)?" (captures CoW queries) |
+| — | FAQ (4) + Related + CTA | 300 | FAQ incl. (a) "Is D2W the same as chip-on-wafer (CoW)?" (captures CoW queries) and (b) **"Why doesn't everyone use wafer-to-wafer bonding?" (70–90w — captures the known-good-die / KGD long-tail; engineers searching 'why not wafer to wafer' are really asking about the KGD problem; answer names "known-good die (KGD)" explicitly + links HB-vs-µbump §5)** |
 
 ## Boundary rules
 
@@ -54,13 +54,13 @@ The decision-chain terminus: `interconnect selection (HB-vs-µbump) → via timi
 - **R3b (this page's leak-term ban):** `plasma activation`, `CMP`, `dishing`, `queue time` (surface-prep domain), `C-SAM`, `FIB` (FA domain) = 0 article-wide including anchors.
 - **Hedge hard rule:** no absolute adoption claims (typically/commonly/often); CIS/HBM/chiplet claims hedged.
 - **Figure-numbers rule:** relative labels only in images; any numeric ranges live in guarded prose/tables.
-- **Gates at drafting:** Gate-C (collapse test immediately after §2 — if the article survives §2's deletion, §2 failed), Gate-E 4-test, Intent-Ownership audit (reader leaves knowing the DECISION, not a bonding overview), Density-style framing check not needed here; FAQ word-lock on the CoW answer (~70–90w defer-style if it risks growing).
+- **Gates at drafting:** Gate-C (collapse test immediately after §2 — if the article survives §2's deletion, §2 failed), Gate-E 4-test, Intent-Ownership audit (reader leaves knowing the DECISION, not a bonding overview), **Gate F — Reversal Test: delete every W2W/D2W term from the article — if it still reads as a coherent piece, the author wrote a generic bonding article (FAIL); if it collapses into nonsense, it genuinely discusses format selection (PASS)**; FAQ word-locks (CoW + KGD answers, 70–90w each).
 
 ## Figures (3, cover-first gate; relative labels only)
 
 1. **Cover** — navy hero: split scene — left, two full wafers closing face-to-face (one aligned bond); right, a placement head setting individual dies onto a carrier wafer; glowing seam between.
-2. **Fig A — W2W/D2W Selection Framework (L3 primary):** the four-gate sequential elimination flow (Gate A Geometry → Gate B Yield Economics → Gate C Throughput → Gate D Pitch & Alignment), each gate with its question + the "fails → D2W" exit arrows and the "survives all → W2W candidate" terminal; beneath, a two-column outcome strip (W2W: finest pitch · highest parallelism · blind bonding | D2W: KGD picking · heterogeneous freedom · serial placement). Gate-sequence form chosen deliberately: the logic is ordered elimination, not multi-dimension comparison (vs the TSV matrix).
-3. **Fig B — The Advanced Packaging Decision Chain (capstone, cluster-reusable):** the full cluster map — `Surface Preparation → Via Timing (First/Middle/Last) → Bonding Method (Fusion/Hybrid/TC) → Integration Format (W2W/D2W) → Failure Analysis` — each node labeled with its owning article. This figure IS the AP cluster's map; future pages reuse it.
+2. **Fig A — W2W/D2W Selection Framework (L3 primary):** the four-gate sequential elimination flow (Gate A Geometry → Gate B Yield Economics → Gate C Throughput → Gate D Maximum Density), gates A–C with "fails → D2W" exit arrows, Gate D styled visually as a BONUS gate ("survives A–C AND pursues the density limit → W2W"), terminal "otherwise → D2W"; beneath, a two-column outcome strip (W2W: finest pitch · highest parallelism · blind bonding | D2W: KGD picking · heterogeneous freedom · serial placement). Gate-sequence form chosen deliberately: the logic is ordered elimination, not multi-dimension comparison (vs the TSV matrix).
+3. **Fig B — The Advanced Packaging Decision Chain. CLUSTER ASSET LEVEL = L3, CANONICAL & SINGLE-SOURCED:** the full cluster map — `Surface Preparation → Via Timing (First/Middle/Last) → Bonding Method (Fusion/Hybrid/TC) → Integration Format (W2W/D2W) → Failure Analysis` — each node labeled with its owning article. **This is the AP cluster's official map, formally declared a cluster-wide reusable asset: future AP pages (TSV sub-pages, Temporary Bonding, HBM Reliability) MUST reuse THIS figure (same CDN asset or its updated successor), never redraw their own variant — preventing version drift across pages.** Record this rule in memory at publish.
 
 ## Internal graph / Phase-B
 
@@ -69,4 +69,4 @@ The decision-chain terminus: `interconnect selection (HB-vs-µbump) → via timi
 
 ## Metadata
 
-Category `Process Integration` · readTime 12 · author `NineScrolls Engineering` · tags `["wafer-to-wafer","die-to-wafer","W2W","D2W","hybrid bonding","advanced packaging","3D integration","chip-on-wafer","chiplets"]` · relatedProducts → `/products/plasma-cleaner` (surface activation for bonding flows). Schema gotchas per standing notes (no lastModifiedDate; JSON.stringify for a.json(); FAIL-on-existing create).
+Category `Process Integration` · readTime 12 · author `NineScrolls Engineering` · tags `["wafer-to-wafer","die-to-wafer","W2W","D2W","hybrid bonding","advanced packaging","3D integration","chip-on-wafer","chiplets"]` · relatedProducts → `/products/plasma-cleaner` (metadata may route to the product; the BODY still must not say "plasma activation" — R3b stands; metadata routes, prose stays in-lane). Schema gotchas per standing notes (no lastModifiedDate; JSON.stringify for a.json(); FAIL-on-existing create).
