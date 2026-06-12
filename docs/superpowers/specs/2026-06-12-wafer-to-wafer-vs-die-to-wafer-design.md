@@ -20,7 +20,7 @@ The decision-chain terminus: `interconnect selection (HB-vs-µbump) → via timi
 
 - **Title (= H1):** `Wafer-to-Wafer vs Die-to-Wafer: When Does Each Integration Strategy Win?`
 - **Slug:** `wafer-to-wafer-vs-die-to-wafer`
-- **Excerpt:** "Wafer-to-wafer (W2W) vs die-to-wafer (D2W) bonding — the four-gate selection framework: geometry match, yield economics, throughput, and alignment. When each integration strategy wins, from CIS to chiplets to HBM."
+- **Excerpt:** "Wafer-to-wafer (W2W) vs die-to-wafer (D2W) bonding — the four-gate selection framework: geometry match, yield economics, throughput, and maximum density. When each integration strategy wins, from CIS to chiplets to HBM."
 - **Query capture:** "wafer to wafer vs die to wafer bonding", "W2W vs D2W", "die to wafer hybrid bonding"; "chip on wafer / CoW" captured via a FAQ ("Is D2W the same as chip-on-wafer?").
 
 ## The citable principle (§2 top, pull-quote — LOCKED wording, IEEE/IEDM register)
