@@ -44,7 +44,7 @@ The AP cluster's missing **Reliability layer** — but NOT a sequential node in 
 | 7 | Reliability Is a System Problem | 200 | close: reliability is the cross-cutting dimension across the whole chain; HBM as the lead case where all mechanisms converge |
 | — | FAQ (5) + Related + CTA | 320 | see FAQ below |
 
-**Length note:** budget sums ~2,920; the matrix table + figure blocks + per-section depth push the rendered total toward the band. If drafting lands below 3,100, deepen §2/§6 (the mechanism core and the climax), not the peripherals. **§6 dominance is a HARD RULE: words(§6) ≥ words(§2)** (the climax must outweigh the core mechanism section).
+**Length note:** budget sums ~2,920; the matrix table + figure blocks + per-section depth push the rendered total toward the band. If drafting lands below 3,100, deepen ONLY §2 (the physics chain: Si / Cu / dielectric / underfill / substrate — each CTE differential → residual stress, told fully) and §6 (each matrix row 80–120w: mitigation → why it works → why it creates a new cost). Do NOT grow FAQ, CTA, Related, §7, or §3/Warpage to hit length. **§6 dominance is a HARD RULE: words(§6) ≥ words(§2)** (the climax must outweigh the core mechanism section).
 
 ## Primary asset — Reliability Trade-Off Matrix (§6, the climax, family-matched to Debond Matrix)
 
@@ -64,7 +64,7 @@ Each row argued in prose. Relative labels only in the figure (no numbers). The m
 
 NOT a decision asset (avoids a dual climax). A simple cascade showing the physics:
 `CTE mismatch → residual stress → { warpage · cracking · fatigue }`
-Its only job is to help the reader see how one root driver fans out into the mechanisms the later sections cover. Visually lighter than the §6 matrix; clearly subordinate.
+Its only job is to help the reader see how one root driver fans out into the mechanisms the later sections cover. Visually lighter than the §6 matrix; clearly subordinate. **Anti-promotion safeguard (write into the plan): Fig B must NOT appear in the excerpt, lead, social/OG card, or related-preview — only the §6 matrix (Fig A) or the cover may represent the page. This prevents an editing pass from accidentally promoting the explanatory map to climax.**
 
 ## Boundary rules (greppable)
 
@@ -73,6 +73,7 @@ Its only job is to help the reader see how one root driver fans out into the mec
 - **Gate-R2 — Diagnosis Leakage.** Diagnostic terms (`SAM`, `C-SAM`, `X-ray`, `XCT`, `FIB`, `SEM`, `EDX`) may appear in AT MOST ONE place, only as a defer-link to FA — never as toolbox/how-to content. Across more than one subsection = FAIL (drifted into FA territory).
 - **Gate-R3 — Product Leakage.** Product/vendor terms (`HBM4`, `HBM3E`, `HBM5`, `NVIDIA`, `AMD`) capped to a small share (target: ≤ ~6 total, concentrated in §5/§7 as case framing). Over = FAIL (became a news page, not evergreen reliability).
 - **Gate-R4 — Mitigation Ownership (NEW, the deepest drift risk).** Every §6 mitigation must have a clear cluster-wide owner; where its primary explanation already lives on another page, §6 gives it only a 1–2 sentence reference + link, never a full treatment. Ownership map: underfill → Reliability (this page) · heat spreader → HBM4 · TSV pitch/KOZ → TSV · plasma-activated bonding → HBM4 · temporary carrier → Temporary Bonding · interconnect choice (bump vs bond) → HB-vs-µbump. This stops §6 from quietly re-teaching the whole cluster.
+- **Gate-R5 — Solution Depth (NEW, complements R4).** Any mitigation whose owner is another page may not exceed ONE paragraph (~120 words) before linking to that owner — no matter how interesting it gets. R4 says *who owns it*; R5 says *how deep this page may go* before deferring. Greppable proxy: the prose for any non-Reliability-owned mitigation (heat spreader, plasma-activated bonding, temporary carrier, interconnect choice) stays ≤120w and carries its defer-link.
 - **R3b-style hedge + figure-numbers-relative-only + Gate-C (delete §6 → collapses) + Gate-E 4-test + Gate-F Reversal (delete reliability/stress/failure terms → must collapse) + Intent audit + Matrix Inversion Test (mask the "you may worsen" column → each mitigation must still be distinguishable by its DISTINCT primary cost; not a generic "everything has trade-offs").**
 
 ## FAQ (5)
