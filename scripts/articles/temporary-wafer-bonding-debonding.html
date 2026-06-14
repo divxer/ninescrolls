@@ -56,3 +56,46 @@
   </picture>
   <figcaption>The thin-wafer processing flow &mdash; from temporary bond to carrier removal &mdash; with each step's handling, stress, and yield risk. The flow is a coupled system: the adhesive chosen at the start must survive every step and still release cleanly at the end.</figcaption>
 </figure>
+
+<h2 id="why-hard">4. Why Debonding Is the Hard Part</h2>
+
+<p>Bonding and debonding are not two equal halves of the same problem &mdash; they are wildly asymmetric, and almost all of the difficulty lives on one side. Bonding a full-thickness device wafer to a carrier is the easy half: at that moment the device wafer is still thick, flat, and robust, with bulk silicon to absorb whatever clamping, heat, or chemistry the bonding step applies. It can shrug off insults that would destroy it later. The hard half is releasing it afterward.</p>
+
+<p>By the time debond arrives, everything that made the device wafer forgiving is gone. It has been ground thin and is now fragile; it commonly carries through-vias and backside structures that did not exist at bond time; and it can no longer take the stress, heat, or contamination that bonding could absorb without a second thought. The very same adhesive that <em>had</em> to survive grinding loads and downstream thermal excursions must now let go on command &mdash; without cracking the device, without leaving residue, and without imposing stress the thinned wafer can no longer carry.</p>
+
+<p>That inversion is the entire engineering tension. The adhesive is asked for maximum hold during processing and clean release at the end, and those two demands point in opposite directions. Hold harder and release becomes harder; make release easy and the bond risks failing mid-flow. Because the release side is where the wafer is most fragile and the constraints are tightest, it is the debond step &mdash; not the bond step &mdash; that decides the whole temporary-bonding strategy. The method you pick to resolve that release is the real decision, and it is the one the next section is built to make.</p>
+
+<h2 id="debond-selection">5. Debonding Method Selection</h2>
+
+<p>Four debonding methods dominate practice, and the temptation is to treat them as a menu of interchangeable options. They are not. Each one exists to answer a different <em>first</em> question about the thinned device &mdash; one dominant constraint that, more than anything else, decides whether that method even belongs in the conversation. Read each of the four below for the constraint it leads with, and the apparent overlap between them disappears.</p>
+
+<h3>Laser Debonding</h3>
+
+<p>The first question laser debonding answers is <strong>mechanical and thermal sensitivity</strong>: how little stress and heat can the device tolerate? Laser exists to release a fragile device at room temperature with near-zero applied force. A release layer absorbs laser energy delivered through a transparent carrier, and the bond lets go where the beam has passed &mdash; the device itself is never pushed, slid, or baked. Reach for it first when the thinned stack can tolerate neither heat nor mechanical load, because no other method releases this gently. What you pay for that gentleness is structural: the carrier must be transparent to the laser wavelength, you need the laser tool itself (capital cost, plus throughput limited by scanning the beam across each wafer), and the absorbed release layer typically leaves residue that has to be cleaned off afterward. The gentleness is real, and so is its price.</p>
+
+<h3>Thermal-Slide Debonding</h3>
+
+<p>The first question here is <strong>thermal budget</strong>: how much heat does the device still have left to give? Thermal-slide debonding heats the assembly until the adhesive softens, then slides the carrier off laterally while the stack is still warm. It is mechanically simple, runs at high throughput, and asks for comparatively little tool cost &mdash; in pure economics it is often the most attractive option on the table. But it spends thermal budget to work, and it applies shear as the carrier slides. Choose it first when the device can still tolerate elevated temperature with margin to spare. The moment the remaining thermal budget is gone &mdash; consumed by earlier steps or by temperature-sensitive structures already on the wafer &mdash; it is ruled out, no matter how good its throughput and cost look on paper. Attractiveness does not buy back a thermal budget that has already been spent.</p>
+
+<h3>Mechanical (Peel) Debonding</h3>
+
+<p>The first question is <strong>force tolerance</strong>: how much peel load can the stack physically survive? Mechanical debonding separates carrier from device with a room-temperature peel or lift &mdash; no heat applied at all, the fastest and most tool-light option of the four, with essentially zero thermal cost. That makes it tempting whenever thermal budget is tight. But it is also the most mechanically aggressive method, because the separation force is delivered straight into the thinned wafer and its films. The entire decision reduces to one question: can the device and its layers take the peel force without cracking or delaminating? Choose it first when the stack is mechanically robust enough to absorb that load &mdash; and rule it out the instant the wafer or its films are too fragile to survive being pulled apart, however fast and cheap the method would otherwise be.</p>
+
+<h3>Chemical (Solvent) Debonding</h3>
+
+<p>The first question is <strong>time and material compatibility</strong>: can a solvent reach the adhesive, and will it leave the device alone while it works? Chemical debonding uses a solvent to dissolve or release the adhesive, commonly reaching it through a perforated carrier or an edge-accessible path. It is gentle on both fronts at once &mdash; little heat, little force &mdash; which makes it the natural fallback when neither thermal nor mechanical budget remains to spend. The cost moves elsewhere. First to time: solvent access is diffusion-limited, so the release is typically slow. Second to compatibility: the solvent must not attack any material the device exposes, and the edge or perforation geometry must actually let the chemistry reach the adhesive in reasonable time. Choose it first when gentleness is non-negotiable and you can afford the clock &mdash; provided the chemistry and the device's exposed materials can coexist.</p>
+
+<p>Step back and the four first-constraints collapse into just two axes. How much thermal budget remains decides between the heat-spending and heat-free methods; how much mechanical stress the device can take decides between the force-applying and force-free ones. Laser answers &ldquo;neither heat nor force,&rdquo; thermal-slide answers &ldquo;heat is fine,&rdquo; mechanical answers &ldquo;force is fine,&rdquo; and chemical answers &ldquo;neither, and time is available.&rdquo; That is exactly what the matrix below maps: not a catalog of methods, but a placement of each one in the region where its dominant constraint is the binding one.</p>
+
+<figure class="post-figure">
+  <picture>
+    <source srcset="https://cdn.ninescrolls.com/insights/temporary-wafer-bonding-debonding/debonding-method-selection-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/temporary-wafer-bonding-debonding/debonding-method-selection-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/temporary-wafer-bonding-debonding/debonding-method-selection-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+    <source srcset="https://cdn.ninescrolls.com/insights/temporary-wafer-bonding-debonding/debonding-method-selection-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+    <img src="https://cdn.ninescrolls.com/insights/temporary-wafer-bonding-debonding/debonding-method-selection-matrix-lg.png" alt="Debonding method selection matrix: laser, thermal-slide, mechanical, and chemical debonding placed by thermal budget and mechanical sensitivity" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+  </picture>
+  <figcaption>The debonding method selection matrix: laser, thermal-slide, mechanical, and chemical debonding mapped by thermal budget and device sensitivity. The method follows the two constraints the thinned device imposes.</figcaption>
+</figure>
+
+<p>Read it by locating your device on the two axes first &mdash; how much thermal budget it has left and how much mechanical stress it can take &mdash; and the method whose region you land in is the one whose first constraint your device already satisfies.</p>
