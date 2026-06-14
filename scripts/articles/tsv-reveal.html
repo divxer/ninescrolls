@@ -41,3 +41,35 @@
   <figcaption>The TSV reveal window: a narrow band of recess depth between under-reveal and over-reveal that must be hit uniformly across the wafer at once.</figcaption>
 </figure>
 <p>Read the figure left to right as a single depth axis: the band in the middle is the only region where every tip is exposed and intact, and the process steps along the spine mark where on that axis each operation leaves the wafer.</p>
+
+<h2 id="failure-modes">6. Reveal Failure Modes</h2>
+<p>Read against the window, the ways a reveal goes wrong are the ways the chain misses or fails to hold that target band. Each has a cause that lives in the reveal itself.</p>
+<p><strong>Under-reveal</strong> is the recess stopped short. The etch or the preceding thinning did not reach far enough, so the copper tips are still buried under residual silicon or stand only barely proud of the recessed plane. The tips were never cleared, and the via that should have become a contact instead presents as an open or a high-resistance connection &mdash; the metal is there, but nothing reaches it.</p>
+<p><strong>Over-reveal</strong> is the opposite cause: the recess, or the CMP that follows it, advanced too far. Once the silicon is gone and the metal is exposed, any further removal works on the copper itself &mdash; the tips dish, the soft copper smears across the surface, and protrusion height is lost. The stop came late, and the process kept cutting into the very feature it was meant to expose.</p>
+<p><strong>Across-wafer non-uniformity</strong> is the hardest reveal defect, because it is not a single wrong depth but two at once. The window held at the center but not the edge, or held at the edge but not the center &mdash; so some vias are correctly revealed while others, on the same wafer in the same step, are under- or over-revealed. It cannot be corrected by changing the average depth, because moving the average only trades one region's error for another's; the error is in the spread, not the mean.</p>
+<p><strong>Passivation voids or incomplete coverage</strong> is a defect of the protective layer rather than the depth. The backside dielectric laid over the exposed copper has gaps &mdash; thin spots, pinholes, or regions the deposition did not cover &mdash; leaving copper unprotected and un-isolated where it should have been sealed.</p>
+<p>Each of these is described here at the moment of reveal &mdash; the cause, not the consequence. What an escaped reveal defect becomes once the part is in service &mdash; how an under-revealed open or a damaged tip plays out as a system reliability problem over time &mdash; belongs to the <a href="/insights/3d-packaging-reliability">3D packaging reliability hub</a>, and we leave that downstream story there.</p>
+
+<h2 id="why-yield">7. Why Reveal Determines Yield</h2>
+<p>Reveal is the single plane where every upstream choice is graded at the same instant. A via etched too short, a fill that left a void, an uneven thinning that tilted the wafer &mdash; none of these announce themselves when they happen. They surface here, all at once, as an open tip that never cleared the silicon or a damaged tip that the recess cut into. The reveal does not author most of these problems; it is simply the moment they all come due together.</p>
+<p>That is why the reveal carries so much of the yield. Restated plainly: the reveal asks not how much to take away but exactly where to halt &mdash; and to halt at that one depth everywhere on the wafer simultaneously. A process that removes silicon beautifully but cannot hold its stopping plane edge to center will still lose vias, because the grade is pass-fail at every via at once. Where those upstream choices &mdash; the etch, the fill, the thinning targets &mdash; are made and why is the subject of the parent <a href="/insights/through-silicon-vias-tsv-guide">TSV guide</a>. What an escaped defect costs once the part ships &mdash; the downstream reliability bill &mdash; is the subject of the <a href="/insights/3d-packaging-reliability">3D packaging reliability hub</a>. Between those two, the reveal is the gate where the work is finally weighed.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>What is TSV reveal?</h3>
+<p>TSV reveal is the set of backside operations that exposes the buried copper via tips from the thinned wafer backside, converting a blind via &mdash; copper sealed inside the silicon &mdash; into a true through-via that connects the front of the wafer to the back. It reaches the plane where the copper first appears and leaves the tips standing clear so they can be contacted.</p>
+<h3>Is TSV reveal the same as backgrinding?</h3>
+<p>No. Backgrinding is a coarse, high-removal step that brings the backside surface <em>near</em> the via tips &mdash; it answers proximity and is deliberately stopped short with silicon still over the tips. Reveal is the precise stop that follows: the selective silicon recess that actually exposes the copper. Grinding gets you close; reveal arrives at the exact plane.</p>
+<h3>What is the reveal etch?</h3>
+<p>The reveal etch is the selective plasma silicon recess that removes the thin residual silicon left by grinding while leaving the copper and its barrier liner essentially untouched. Because it attacks silicon far faster than metal, the surface drops while the tips do not, so the copper ends up protruding above a freshly recessed silicon plane.</p>
+<h3>Why is TSV reveal hard?</h3>
+<p>Because it is a stopping problem. There is only a narrow window of recess depth that exposes every tip without cutting into the copper, and that one depth has to be hit uniformly across the whole wafer at the same instant &mdash; edge and center together. Removing silicon is easy; halting at exactly the right plane everywhere at once is not.</p>
+
+<h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
+<ul>
+  <li><a href="/insights/through-silicon-vias-tsv-guide">Through-Silicon Vias (TSV): The Complete Guide</a></li>
+  <li><a href="/insights/temporary-wafer-bonding-debonding">Temporary Wafer Bonding and Debonding</a></li>
+  <li><a href="/insights/deep-reactive-ion-etching-bosch-process">Deep Reactive-Ion Etching (DRIE)</a></li>
+  <li><a href="/insights/3d-packaging-reliability">Reliability Challenges in High-Density 3D Packaging</a></li>
+  <li><a href="/insights/16-hi-hbm">16-Hi HBM: Stacking Toward Higher Bandwidth Memory</a></li>
+</ul>
+<p>NineScrolls supplies the plasma etch and process equipment commonly used in via-reveal and backside flows, including the selective silicon recess and the deposition steps that follow. To discuss a reveal or backside process, <a href="/contact">get in touch with our team</a>.</p>
