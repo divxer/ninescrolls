@@ -49,7 +49,7 @@
 
 <p>The two joint types fatigue for different reasons. A solder micro-bump is comparatively soft: it yields and creeps, absorbing some strain through plastic flow, but that same ductility means it accumulates damage cycle after cycle until a crack runs through the joint. A rigid Cu-Cu hybrid bond does not relieve strain the same way &mdash; it is stiff, so it transfers stress rather than flowing to accommodate it, and the failure tends to localize at the bond interface or in the surrounding dielectric instead. Which interconnect a stack should use is a design trade-off in its own right, and we do not re-derive that choice here; it belongs to our <a href="/insights/hybrid-bonding-vs-micro-bump">hybrid bonding vs micro-bump comparison</a>.</p>
 
-<p>One practical caveat: knowing that <em>a</em> joint has fatigued is not the same as knowing <em>which</em> one. In a stack of thousands of interconnects, isolating which joint has opened is the work of failure analysis, covered in our <a href="/insights/hybrid-bonding-failure-analysis">hybrid bonding failure analysis guide</a>. This page stays on the mechanism: the cycle-by-cycle accumulation of strain is why these joints have a finite life, regardless of which one happens to go first.</p>
+<p>One practical caveat: knowing that <em>a</em> joint has fatigued is not the same as knowing <em>which</em> one. In a stack of thousands of interconnects, localizing the opened joint belongs to failure analysis, covered in our <a href="/insights/hybrid-bonding-failure-analysis">hybrid bonding failure analysis guide</a>. This page stays on the mechanism: the cycle-by-cycle accumulation of strain is why these joints have a finite life, regardless of which one happens to go first.</p>
 
 <h2 id="temperature">5. When Temperature Becomes Stress</h2>
 
@@ -139,7 +139,7 @@
   <figcaption>The reliability trade-off matrix: every mitigation relocates stress &mdash; what each fix targets, and what it worsens in return.</figcaption>
 </figure>
 
-<p>Read each row left to right: the fix and the failure it answers sit on the left, and the new stress it creates sits on the right &mdash; never select a mitigation without checking the cost in its own row.</p>
+
 
 <h2 id="system-problem">7. Reliability Is a System Problem</h2>
 
@@ -162,7 +162,7 @@
 <p>A temperature differential across a stack means neighboring layers expand by different amounts, and that differential expansion is mechanical strain, so heat is a continuous, internally generated stress that feeds fatigue and delamination, not only a cooling concern. The hotter the joint, the faster it ages. Cooling <em>solutions</em> are covered separately in our <a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM thermal and materials guide</a>; this page owns the mechanism, not the remedy.</p>
 
 <h3>Can you eliminate reliability trade-offs?</h3>
-<p>No. Every mitigation typically relocates stress rather than removing it: adding underfill, stiffening the substrate, or changing the interconnect each buys margin in one place by spending it in another. The goal is not a free improvement but a deliberate allocation of where the stress goes &mdash; exactly what the trade-off matrix above is built to make visible.</p>
+<p>Not in a simple sense. Every mitigation typically relocates stress rather than removing it: adding underfill, stiffening the substrate, or changing the interconnect each buys margin in one place by spending it in another. The goal is not a free improvement but a deliberate allocation of where the stress goes &mdash; exactly what the trade-off matrix above is built to make visible.</p>
 
 <h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
 <ul>
@@ -170,7 +170,7 @@
   <li><a href="/insights/through-silicon-vias-tsv-guide">Through-Silicon Vias (TSV) Guide</a> &mdash; how via timing and geometry load the copper-silicon boundary.</li>
   <li><a href="/insights/hybrid-bonding-vs-micro-bump">Hybrid Bonding vs Micro-Bump</a> &mdash; the interconnect choice that fixes how a stack relieves or transfers strain.</li>
   <li><a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM: Thermal and Materials Challenges</a> &mdash; the cooling solutions that answer the thermal stresses described here.</li>
-  <li><a href="/insights/wafer-bonding-technologies">Wafer Bonding Technologies</a> &mdash; the bonding-flow hub these reliability mechanisms sit within.</li>
+  <li><a href="/insights/wafer-bonding-technologies-for-3d-integration">Wafer Bonding Technologies</a> &mdash; the bonding-flow hub these reliability mechanisms sit within.</li>
 </ul>
 
 <p>NineScrolls supplies the surface preparation and cleaning systems used in wafer bonding flows, where bond-interface readiness sets the reliability budget every later stage spends. <a href="/contact">Contact our team</a> to discuss your process requirements.</p>
