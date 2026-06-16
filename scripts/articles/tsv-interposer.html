@@ -33,3 +33,39 @@
   <figcaption>Same TSV, opposite job: a vertical spine that stacks dies in 3D, or a lateral bridge whose vias route a routing layer down to the package in 2.5D.</figcaption>
 </figure>
 <p>Read the figure by its direction of travel, not by the packages it draws: follow the via straight up through the stack on one side, and trace it sideways across the routing then down to the package on the other &mdash; the same conductor, pointed two opposite ways.</p>
+
+<h2 id="where-fits">5. Where the Interposer Fits</h2>
+<p>The interposer sits between the dies and the package, and it tends to appear wherever side-by-side chips need to talk faster than a substrate allows &mdash; and wherever that lateral traffic still has to reach the package through the interposer's own vias.</p>
+<p><strong>High-bandwidth memory beside a logic die.</strong> A stack of HBM placed next to a logic die routes its connections across the interposer's surface to that die; the interposer's TSVs then carry the shared lines down to the package. The thermal and materials pressures of those tall memory stacks are covered in our <a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM guide</a>.</p>
+<p><strong>Chiplet designs across one interposer.</strong> Several chiplets can be spread over a single interposer, talking neighbor-to-neighbor through its routing while its vias drop that traffic to the package. How those chiplets are joined is a separate question &mdash; see our <a href="/insights/wafer-to-wafer-vs-die-to-wafer">wafer-to-wafer vs die-to-wafer guide</a>.</p>
+<p><strong>CoWoS-style 2.5D.</strong> This is the productized form of the pattern: chips sit on a silicon interposer whose surface routes them laterally and whose vias carry that routing down to the package beneath.</p>
+
+<h2 id="why-not-substrate">6. Why Not Route Directly in the Package?</h2>
+<p>It is a fair question to press on. A silicon interposer is a large, expensive piece of silicon, and it carries its own through-silicon vias that have to be etched, lined, and filled. If the package already sits underneath, why add a silicon layer at all &mdash; why not just route the chips in the package substrate?</p>
+<p>The answer is line density. An organic substrate tends to hit a routing-density ceiling, and side-by-side high-bandwidth dies blow straight past it: the number of fine-pitch connections they exchange is more than the substrate can typically pattern. Silicon can be patterned far finer, so the interposer buys a routing pitch the substrate cannot reach &mdash; and the vias are how that finer routing escapes the silicon to the package below.</p>
+<p>That density comes at a price the industry generally tolerates. There is the added cost of the silicon layer and the vias punched through it &mdash; how that cost-chain stacks up is the parent guide's territory, in our <a href="/insights/through-silicon-vias-tsv-guide">TSV guide</a>. There is the reticle-size limit, which caps how large a single interposer can be patterned; designs that need more area tend to be stitched together to exceed it. And there is large-area warpage, which grows with the silicon's footprint &mdash; the mechanism behind it belongs to our <a href="/insights/3d-packaging-reliability">3D packaging reliability hub</a>, not this page.</p>
+<p>The point underneath all of it: for these workloads the density is usually worth the silicon. And the silicon you pay for is, quite literally, the silicon the vias punch through to reach the package.</p>
+
+<h2 id="completes">7. The Interposer Completes the Picture</h2>
+<p>The through-silicon via started out, in your reading, as a tool for stacking &mdash; a rung between one die and the next. The interposer shows it has a second life. Lay it under a row of side-by-side chips and the same conductor stops being a rung and becomes the routing backbone of a whole 2.5D system: the path by which a dense lateral routing layer escapes downward to the package. One structure, two architectures &mdash; vertical in a stack, lateral-then-down in an interposer.</p>
+<p>That gives the via three properties worth holding together. It has a <em>depth</em> &mdash; how far it is exposed when the wafer is thinned, covered in our <a href="/insights/tsv-reveal">TSV reveal guide</a>. It has a <em>fill</em> &mdash; which way the copper grows inside it, covered in our <a href="/insights/tsv-copper-fill">TSV copper fill guide</a>. And now it has a <em>role in space</em> &mdash; where the chips sit around it. Depth, fill, and placement are three views of the one structure mapped in our <a href="/insights/through-silicon-vias-tsv-guide">TSV guide</a>.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>What is a silicon interposer?</h3>
+<p>A silicon interposer is a thin silicon routing layer that sits between side-by-side dies and the package substrate. Its top surface carries dense metal routing that links the chips to one another, and it carries its own through-silicon vias down through the silicon to connect that routing to the package below.</p>
+<h3>What is the difference between 2.5D and 3D packaging?</h3>
+<p>In 3D packaging the dies are stacked vertically, and each die's TSVs point up to connect to the die above. In 2.5D the dies sit side by side on an interposer that routes them laterally, and the interposer's TSVs point down to carry that routing to the package. It is the same through-silicon via doing opposite jobs &mdash; up in a stack, down under a row of chips.</p>
+<h3>Why use a silicon interposer instead of the package substrate?</h3>
+<p>An organic package substrate tends to fall short of the routing density that side-by-side high-bandwidth dies demand &mdash; they exchange more fine-pitch connections than it can typically pattern. Silicon can be patterned much finer, so an interposer reaches the density the substrate cannot.</p>
+<h3>Does an interposer have TSVs?</h3>
+<p>Yes. An interposer carries its own through-silicon vias, and their job is to take the dense routing on its top surface down to the package &mdash; a different job from a 3D stack's die TSVs, which connect one die up to the next. Both are explained in our <a href="/insights/through-silicon-vias-tsv-guide">TSV guide</a>.</p>
+
+<h3 style="margin-top: 32px; color: #854d0e;">Related Articles</h3>
+<ul>
+  <li><a href="/insights/through-silicon-vias-tsv-guide">Through-Silicon Vias (TSV): The Complete Guide</a> &mdash; the parent guide on what the via is and how it is dimensioned.</li>
+  <li><a href="/insights/tsv-reveal">TSV Reveal</a> &mdash; how far the via is exposed when the wafer is thinned.</li>
+  <li><a href="/insights/tsv-copper-fill">TSV Copper Fill</a> &mdash; which way the copper grows inside the via.</li>
+  <li><a href="/insights/from-ucla-s-semiconductor-hub-to-16-hi-hbm-the-thermal-and-materials-challenges">16-Hi HBM: Thermal &amp; Materials Challenges</a> &mdash; the memory application that pushes these stacks hardest.</li>
+  <li><a href="/insights/wafer-to-wafer-vs-die-to-wafer">Wafer-to-Wafer vs Die-to-Wafer</a> &mdash; how the chiplets on an interposer are assembled.</li>
+</ul>
+<p>NineScrolls supplies deep-silicon etch (ICP) systems used to form the interposer through-silicon vias that carry its routing down to the package. <a href="/contact">Talk to our engineers</a> about your interposer or TSV process.</p>
