@@ -28,10 +28,10 @@
 
 | Rule | Check |
 |---|---|
-| Principle | `grep -c "opposite architectural job" f` == 1 (pull-quote; figcaption uses a short variant) |
+| Principle (structural, not exact-phrase) | a `<blockquote>` exists inside §4 AND §4 contains all of `vertical`, `lateral`, and `TSV`/`via` — i.e. the role-contrast is stated. (Do NOT CI-gate on the exact sentence; copy edits must not break the build.) For the §4-ordering check, anchor on a stable token: first `<blockquote` offset OR first `lateral` offset < first `GPU`/`HBM`/`chiplet` offset. |
 | Intuition-breaker | `grep -c "to do the opposite" f` ≥1 (§4 opener) |
-| **§4 dominance** | `awk` word counts: **words(§4) ≥ every other section** AND §4 in 460–540 |
-| **§4 ordering** | the first byte-offset of the principle phrase `opposite architectural job` is LESS than the first offset of `GPU`/`HBM`/`chiplet` in the file (principle precedes any application) |
+| **§4 dominance** | `awk` word counts: **words(§4) ≥ every other section** (the real rule). Soft band 420–650 (not a hard CI gate — dominance is what matters, not 500±40). |
+| **§4 ordering** | first offset of the §4 `<blockquote>` (the principle) < first offset of `GPU`/`HBM`/`chiplet` in the file (principle precedes any application — anchor on the blockquote, not an exact phrase) |
 | **Gate-T1 TSV-anchor** | each of §1–§6: `grep -ic "via\|TSV\|vertical conductor"` ≥1 in the section |
 | **R3b leak-ban** | `grep -ocE "\\b(HBM3E?\|HBM[45]\|NVIDIA\|AMD)\\b" f` ≤ 2; `wafer-to-wafer`/`die-to-wafer`/`known-good` only inside `<a>…</a>` (W2W defer); parent's design-rule numbers (`10 &micro;m`, `50&ndash;100`, "large, sparse") NOT present |
 | **§5 caps** | §5 total ≤200w; per-app (HBM / chiplet / CoWoS) ≤70w each |
@@ -76,8 +76,9 @@
   - One how-to-read sentence after the figure (about reading the vertical-vs-lateral direction).
 
 - [ ] **Step 2: §4-dominance grep + §4-ordering grep + Gate-C (manual).**
-  - Word check: §4 460–540 AND `words(§4) ≥ every other section`.
-  - **§4-ordering:** first offset of `opposite architectural job` < first offset of `GPU`/`HBM`/`chiplet` in the file.
+  - Word check: §4 in the soft band 420–650 AND (the hard rule) `words(§4) ≥ every other section`.
+  - **§4 principle present (structural):** §4 contains a `<blockquote>` AND the words `vertical` + `lateral` + (`TSV` or `via`) — do not gate on the exact sentence.
+  - **§4-ordering:** first offset of the §4 `<blockquote>` < first offset of `GPU`/`HBM`/`chiplet` in the file.
   - **Gate-C:** delete §4 — the page must collapse to a generic "what is an interposer" explainer with no owned insight. If it survives as coherent, §4 is too weak — the same-TSV-opposite-job thesis must be what makes the page worth existing.
 
 - [ ] **Step 3: Commit** — `git commit -am "feat(insights): TSV Interposer §4 Same-TSV-Opposite-Job climax (Role-Contrast asset; Gate-C + ordering)"`
@@ -138,7 +139,7 @@ const SLUG = 'tsv-interposer';
 (async () => {
   await authenticate();
   const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug: SLUG });
-  if (existing?.length) { console.error(`FAIL: slug exists, id=${(existing[0] as any).id}. Use an update one-shot.`); process.exit(1); }
+  if (existing?.length) { console.error(`FAIL: slug exists, id=${(existing[0] as any).id}. This create one-shot is first-publish only.`); process.exit(1); }
   const { data, errors } = await client.models.InsightsPost.create({
     title: 'TSV Interposer: The Silicon Routing Layer Between Dies and Package',
     slug: SLUG,
@@ -178,6 +179,8 @@ Summary: The third sub-page of the TSV mini-hub (closing it) — owns the interp
 
 - [ ] **Step 5: Publish** (`update({id, isDraft:false})`) → verify DDB (title/slug/figure/principle) → CDN 200s (cover + figure lg.webp) → live render → `rm scripts/create-tsv-interposer-article.ts`.
 
+**Post-publish edits / corrections (typo, content, added figure):** the create one-shot FAILS-on-existing by design. To edit a LIVE article, write a small `update`-by-slug one-shot (look up the id via `listInsightsPostBySlug`, then `client.models.InsightsPost.update({ id, content: readFileSync(...) })`); NOT committed; same EXACT-slug + pre-publish-link-check discipline. This is the standard path for the review-polish round that follows every publish.
+
 ## Task 6: Provenance + PR
 
 - [ ] **Step 1:**
@@ -204,7 +207,7 @@ gh pr create --title "feat(insights): TSV Interposer (TSV mini-hub sub-page #3, 
   1. **parent §1 → Interposer edge (CLOSES the mini-hub):** after the "chiplets sitting side by side" clause, add `(the interposer itself is covered in <a href="/insights/tsv-interposer">TSV Interposer</a>)`. This completes parent → all three children.
   2. **HBM4 → Interposer:** at an HBM4 silicon-interposer mention, append a link to `/insights/tsv-interposer`.
   3. *(optional, only if a clean anchor exists)* a light Reveal or Cu-Fill → Interposer sibling note.
-- [ ] **Step 3: dry-run → apply → verify EXACT-slug** (parent → tsv-interposer ≥1; HBM4 → tsv-interposer 1; parent now links all 3 children: grep parent for `/insights/tsv-reveal`, `/insights/tsv-copper-fill`, `/insights/tsv-interposer` — each ≥1) → `rm scripts/tsv-interposer-backlinks.ts`. **NO B2.**
+- [ ] **Step 3: dry-run → apply → verify EXACT-slug** — (a) parent → tsv-interposer ≥1; (b) HBM4 → tsv-interposer 1; (c) parent now links all 3 children: grep parent for `/insights/tsv-reveal`, `/insights/tsv-copper-fill`, `/insights/tsv-interposer` — each ≥1; (d) **child→parent backlink: the Interposer page links back to `/insights/through-silicon-vias-tsv-guide` ≥1** (guards against a child that links out to HBM/W2W/Reliability but forgets its own parent). → `rm scripts/tsv-interposer-backlinks.ts`. **NO B2.**
 
 ## Task 8: Memory + wrap
 
