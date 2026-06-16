@@ -59,7 +59,7 @@
 
 ## Task 2: §4 Same TSV, Opposite Job (CLIMAX, Role-Contrast asset) + Gate-C + ordering
 
-- [ ] **Step 1: Dispatch subagent.** Append §4 `<h2 id="opposite-job">4. Same TSV, Opposite Job: 2.5D vs 3D</h2>` (460–540w):
+- [ ] **Step 1: Dispatch subagent.** Append §4 `<h2 id="opposite-job">4. Same TSV, Opposite Job: 2.5D vs 3D</h2>` (~500w target, soft band 420–650; the hard rule is §4 ≥ every other section):
   - OPEN with the intuition-breaker (plain `<p>`): **You have met the TSV as a way to stack chips. The interposer uses the very same structure to do the opposite — to spread chips out.**
   - Then the principle pull-quote (house blockquote markup):
     ```html
