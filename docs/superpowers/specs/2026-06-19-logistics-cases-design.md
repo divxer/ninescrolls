@@ -75,7 +75,7 @@ structurally supporting multi-leg round-trips. No join table.
 | Field | Type | Notes |
 |-------|------|-------|
 | `caseId` | id, required | |
-| `caseNumber` | string, required | e.g. `NS-LOG-2026-0001` |
+| `caseNumber` | string, required | plain sequential: `NS-LOG-YYYY-0001` (no customer/region segment) |
 | `caseType` | enum `CaseType`, required | discriminator |
 | `relatedOrderId` | string? | convenience direct link for equipment cases |
 | `relatedEntityType` | enum `RelatedEntityType`? | generic association |
@@ -233,8 +233,9 @@ Mirrors the existing `Order` / `order-api` implementation.
   - `listLogisticsCases` — server-side filter (`caseType`, `currentStage`,
     `customsRequired`) + pagination, following the `listOrders` Lambda-resolver pattern.
   - `getLogisticsCase`
-  - `createLogisticsCase` — prefills `enabledStages` from `caseType`, sets
-    `currentStage` to the first enabled stage (or `DRAFT`).
+  - `createLogisticsCase` — prefills `enabledStages` from `caseType`, always sets
+    `currentStage = DRAFT`. The case only enters a business stage on the first
+    `advanceLogisticsStage` call.
   - `updateLogisticsCase`
   - `advanceLogisticsStage` — validates target ∈ `enabledStages` (or is `DRAFT`/
     `CANCELLED`), appends a `LogisticsLog` entry, updates `currentStage` + `updatedAt`.
@@ -263,8 +264,7 @@ Mirrors the existing `Order` / `order-api` implementation.
 
 ## 6. Data Flow
 
-1. Create case → choose `caseType` → `enabledStages` prefilled, `currentStage` = first
-   enabled stage.
+1. Create case → choose `caseType` → `enabledStages` prefilled, `currentStage = DRAFT`.
 2. Add leg(s) → set direction, carrier/tracking, `customsRequired`, `customsStatus`.
 3. Advance stage → validate target ∈ `enabledStages` → append `LogisticsLog` → update
    `currentStage`.
