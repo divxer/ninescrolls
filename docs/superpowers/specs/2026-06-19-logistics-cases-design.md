@@ -55,7 +55,10 @@ their `Order`.
 ### Explicitly out of scope (YAGNI — Phase 2+)
 - **No customer-facing UI of any kind in Phase 1.** Data model reserves fields so a
   Phase 2 read-only shared link (no login) can be generated later.
-- No carrier-API auto-status polling (17track / AfterShip).
+- **No carrier-API integration.** Phase 1 stores `carrier`, `trackingNumber`, and an optional
+  `trackingUrl` only; status is entered manually. Carrier / AfterShip / 17track API polling may
+  be added in Phase 2 if shipment volume or customer status requests justify it — the cost
+  (accounts, quotas, webhooks, retries, status mapping, exception handling) is not warranted now.
 - No notifications/reminders.
 - No file/document attachments (the existing `OrderDocument` pattern can be reused later
   if needed).
@@ -103,6 +106,7 @@ structurally supporting multi-leg round-trips. No join table.
 | `customsStatus` | ref `CustomsStatus`? | per-leg clearance state |
 | `carrier` | string? | |
 | `trackingNumber` | string? | |
+| `trackingUrl` | string? | optional carrier tracking link; entered manually or auto-built from carrier+number in the UI. **No carrier-API polling in Phase 1.** |
 | `freightForwarder` | string? | |
 | `blOrAwb` | string? | bill of lading / air waybill |
 | `containerNo` | string? | |

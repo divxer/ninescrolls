@@ -378,6 +378,7 @@ export interface ShipmentLeg {
   customsStatus?: CustomsStatus;
   carrier?: string;
   trackingNumber?: string;
+  trackingUrl?: string; // optional manual/auto-built link; Phase 1 has NO carrier-API polling
   freightForwarder?: string;
   blOrAwb?: string;
   containerNo?: string;
@@ -954,7 +955,7 @@ Expected: PASS (3 tests).
 
 ```bash
 git add amplify/functions/logistics-api/resolvers/listLogisticsCases.ts amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts
-git commit -m "feat(logistics): listLogisticsCases resolver (stage GSI1 + scan fallback)"
+git commit -m "feat(logistics): listLogisticsCases resolver with listing query"
 ```
 
 ---
@@ -965,7 +966,7 @@ git commit -m "feat(logistics): listLogisticsCases resolver (stage GSI1 + scan f
 - Create: `amplify/functions/logistics-api/resolvers/advanceLogisticsStage.ts`
 - Test: `amplify/functions/logistics-api/resolvers/advanceLogisticsStage.test.ts`
 
-Behavior: fetch case; validate `targetStage` is enabled for the case type (or DRAFT/CANCELLED); append a `milestoneLog` entry; update `currentStage`, `GSI1PK`, `GSI1SK`, `updatedAt`.
+Behavior: fetch case; validate `targetStage` is enabled for the case type (or DRAFT/CANCELLED); append a `milestoneLog` entry; update `currentStage`, `GSI1SK`, `updatedAt` (the listing partition `GSI1PK='LOGISTICS_CASES'` stays constant — only the recency sort key changes).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1345,7 +1346,7 @@ import type { AppSyncEvent, ShipmentLeg } from '../lib/types.js';
 import { LEG_DIRECTIONS, CUSTOMS_STATUSES, type LegDirection, type CustomsStatus } from '../lib/stages.js';
 
 const LEG_FIELDS = [
-  'direction', 'customsRequired', 'customsStatus', 'carrier', 'trackingNumber',
+  'direction', 'customsRequired', 'customsStatus', 'carrier', 'trackingNumber', 'trackingUrl',
   'freightForwarder', 'blOrAwb', 'containerNo', 'declaredValueUSD', 'hsCode',
   'shippedAt', 'clearedAt', 'deliveredAt',
 ] as const;
@@ -1706,6 +1707,7 @@ In `amplify/data/resource.ts`, after the `OrderStats`/related custom types block
     customsStatus: a.ref('CustomsStatus'),
     carrier: a.string(),
     trackingNumber: a.string(),
+    trackingUrl: a.string(),
     freightForwarder: a.string(),
     blOrAwb: a.string(),
     containerNo: a.string(),
