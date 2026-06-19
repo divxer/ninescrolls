@@ -84,11 +84,11 @@ structurally supporting multi-leg round-trips. No join table.
 | `contactName` | string? | |
 | `customsRequired` | boolean, required | **case-level**: does this case involve customs at all |
 | `currentStage` | ref `LogisticsStage`, required | answers "where is it stuck" |
-| `enabledStages` | `LogisticsStage[]`, required | subset for this caseType; prefilled on create, editable |
+| `enabledStages` | `LogisticsStage[]`, required | subset for this caseType; prefilled on create. **Stored, not editable in Phase 1** (no resolver mutates it). |
 | `legs` | `ShipmentLeg[]` | embedded |
 | `milestoneLog` | `LogisticsLog[]` | embedded, timestamped stage events |
-| `isCustomerVisible` | boolean, required | default `false`; Phase 2 shared-link gate |
-| `publicToken` | string? | Phase 2 read-only link token; null until sharing enabled |
+| `isCustomerVisible` | boolean, required | default `false`. **Frozen in Phase 1** — set at creation only, no resolver mutates it (prevents `visible=true` with a null token). Becomes mutable in Phase 2 alongside token generation. |
+| `publicToken` | string? | Phase 2 read-only link token; null in Phase 1. Generated only when sharing is enabled in Phase 2. |
 | `notes` | string? | |
 | `createdAt` / `updatedAt` | datetime, required | |
 | `createdBy` | string, required | |
@@ -228,20 +228,33 @@ legs[1].customsStatus  = RELEASED
 
 Mirrors the existing `Order` / `order-api` implementation.
 
-- **DynamoDB table** `LogisticsCase`.
+- **Storage: the shared single table** `NineScrollsIntelligence` (same table Orders/RFQs/Leads
+  use) — **not** a new dedicated table. A case is one item: `PK='LOGISTICS#<caseId>'`,
+  `SK='META'`, with `legs[]` and `milestoneLog[]` embedded as JSON attributes. A year-scoped
+  counter item (`PK='COUNTER#LOGISTICS_CASE'`, `SK='YEAR#<year>'`) backs the sequential
+  `caseNumber`.
+- **Listing index (no Scan):** all cases share one listing partition on GSI1 —
+  `GSI1PK='LOGISTICS_CASES'`, `GSI1SK='<updatedAt>#<caseId>'`. The default admin list and
+  stats are **recency-sorted Queries on this partition, never Scans**. `stage` / `caseType` /
+  `customsRequired` / `search` are applied as in-memory filters over the (tiny) single-partition
+  result. Every mutation that touches `updatedAt` rewrites `GSI1SK` to keep ordering fresh. If
+  stage-filter volume ever grows, promote `currentStage` to a dedicated GSI2 partition
+  (`GSI2PK='LOGISTICS_STAGE#<stage>'`) — out of scope for Phase 1.
 - **`amplify/data/resource.ts`**: add the custom types + enums above, plus operations:
-  - `listLogisticsCases` — server-side filter (`caseType`, `currentStage`,
-    `customsRequired`) + pagination, following the `listOrders` Lambda-resolver pattern.
+  - `listLogisticsCases` — GSI1 `LOGISTICS_CASES` Query + in-memory filter + pagination.
   - `getLogisticsCase`
   - `createLogisticsCase` — prefills `enabledStages` from `caseType`, always sets
     `currentStage = DRAFT`. The case only enters a business stage on the first
     `advanceLogisticsStage` call.
-  - `updateLogisticsCase`
+  - `updateLogisticsCase` — edits a whitelist of mutable fields only (not `caseType`,
+    `currentStage`, `enabledStages`, `legs`, `milestoneLog`, `isCustomerVisible`, `publicToken`).
   - `advanceLogisticsStage` — validates target ∈ `enabledStages` (or is `DRAFT`/
-    `CANCELLED`), appends a `LogisticsLog` entry, updates `currentStage` + `updatedAt`.
+    `CANCELLED`), appends a `LogisticsLog` entry, updates `currentStage` + `updatedAt` + `GSI1SK`.
+  - `addLeg` / `updateLeg` / `removeLeg` — mutate the embedded `legs[]`.
   - `logisticsStats` — counts by `caseType` and `currentStage`, count of
     customs-in-progress cases, count of stalled cases.
-- **`amplify/functions/logistics-api/`** — new Lambda dir, structured like `order-api`.
+- **`amplify/functions/logistics-api/`** — new Lambda dir, structured like `order-api`;
+  granted read/write on the shared `INTELLIGENCE_TABLE`.
 - **`src/services/logisticsAdminService.ts`** + types — mirrors `orderAdminService.ts`.
 
 ---

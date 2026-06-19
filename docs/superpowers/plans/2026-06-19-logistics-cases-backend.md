@@ -4,7 +4,9 @@
 
 **Goal:** Build the backend (AppSync custom types + `logistics-api` Lambda resolvers over the existing single-table DynamoDB) and a thin frontend service for the internal Logistics Cases ledger.
 
-**Architecture:** A `LogisticsCase` is one DynamoDB item in the shared `NineScrollsIntelligence` table (`PK=LOGISTICS#<caseId>`, `SK=META`), with `legs[]` and `milestoneLog[]` stored as embedded JSON attributes on that item. Stage queries use GSI1 (`GSI1PK=LOGISTICS_STAGE#<stage>`). A new `logistics-api` Lambda mirrors the existing `order-api` (field-name → resolver dispatch). The Amplify Data schema exposes custom types + queries/mutations, all `allow.authenticated()`.
+**Architecture:** A `LogisticsCase` is one DynamoDB item in the shared `NineScrollsIntelligence` table (`PK=LOGISTICS#<caseId>`, `SK=META`), with `legs[]` and `milestoneLog[]` stored as embedded JSON attributes on that item. **All logistics cases share a single listing index partition** (`GSI1PK='LOGISTICS_CASES'`, `GSI1SK='<updatedAt>#<caseId>'`) so the default admin list is a recency-sorted **Query, never a Scan**. Stage / caseType / customsRequired filters are applied in-memory over that single-partition Query result (the partition is tiny — dozens of cases — so this is optimal and avoids overloading a second GSI). Every mutation that changes `updatedAt` rewrites `GSI1SK` to keep list ordering fresh. A new `logistics-api` Lambda mirrors the existing `order-api` (field-name → resolver dispatch). The Amplify Data schema exposes custom types + queries/mutations, all `allow.authenticated()`.
+
+**Indexing rule (P0):** No resolver in this plan may use `ScanCommand`. `listLogisticsCases` and `logisticsStats` both Query `GSI1PK='LOGISTICS_CASES'`. If stage-filter volume ever grows enough that in-memory filtering is wasteful, promote `currentStage` to a dedicated GSI2 partition (`GSI2PK='LOGISTICS_STAGE#<stage>'`) — out of scope for Phase 1.
 
 **Tech Stack:** AWS Amplify Gen 2 (`@aws-amplify/backend`), AppSync, DynamoDB (single-table, `@aws-sdk/lib-dynamodb`), TypeScript, vitest, Node 22 Lambda.
 
@@ -46,8 +48,10 @@
 
 | Item | PK | SK | Key attributes |
 |------|----|----|----------------|
-| Case meta | `LOGISTICS#<caseId>` | `META` | all case fields + `legs` (JSON array) + `milestoneLog` (JSON array); `GSI1PK=LOGISTICS_STAGE#<currentStage>`, `GSI1SK=<updatedAt>#<caseId>` |
+| Case meta | `LOGISTICS#<caseId>` | `META` | all case fields + `legs` (JSON array) + `milestoneLog` (JSON array); **`GSI1PK='LOGISTICS_CASES'`** (constant), **`GSI1SK='<updatedAt>#<caseId>'`** (rewritten on every mutation) |
 | Year counter | `COUNTER#LOGISTICS_CASE` | `YEAR#<year>` | `seq` (number) |
+
+> **Embedded-array size note:** `milestoneLog[]` and `legs[]` live on the META item (DynamoDB 400 KB item limit). Fine for Phase 1 volume. If `milestoneLog` ever approaches practical item-size limits, split it into `LOGISTICS#<caseId>` / `LOG#<timestamp>` items — not needed now.
 
 ---
 
@@ -339,8 +343,9 @@ const ddbClient = new DynamoDBClient({});
 export const docClient = DynamoDBDocumentClient.from(ddbClient);
 
 export const TABLE_NAME = () => process.env.INTELLIGENCE_TABLE!;
-export const SLACK_WEBHOOK_URL = () => process.env.SLACK_WEBHOOK_URL;
 ```
+
+(No `SLACK_WEBHOOK_URL` — Phase 1 has no notifications.)
 
 Create `amplify/functions/logistics-api/lib/types.ts`:
 
@@ -396,8 +401,8 @@ export interface LogisticsLogEntry {
 export interface LogisticsCaseItem {
   PK: string;
   SK: 'META';
-  GSI1PK: string;
-  GSI1SK: string;
+  GSI1PK: 'LOGISTICS_CASES'; // constant listing partition — never per-stage
+  GSI1SK: string;            // '<updatedAt>#<caseId>'
   caseId: string;
   caseNumber: string;
   caseType: CaseType;
@@ -576,7 +581,8 @@ describe('createLogisticsCase', () => {
     expect(put.Item.legs).toEqual([]);
     expect(put.Item.milestoneLog).toHaveLength(1);
     expect(put.Item.milestoneLog[0].action).toBe('CASE_CREATED');
-    expect(put.Item.GSI1PK).toBe('LOGISTICS_STAGE#DRAFT');
+    expect(put.Item.GSI1PK).toBe('LOGISTICS_CASES');
+    expect(put.Item.GSI1SK).toMatch(/#lc-/);
     expect(res).not.toBeNull();
   });
 
@@ -661,7 +667,7 @@ export async function createLogisticsCase(event: AppSyncEvent) {
   const item: LogisticsCaseItem = {
     PK: `LOGISTICS#${caseId}`,
     SK: 'META',
-    GSI1PK: 'LOGISTICS_STAGE#DRAFT',
+    GSI1PK: 'LOGISTICS_CASES',
     GSI1SK: `${now}#${caseId}`,
     caseId,
     caseNumber,
@@ -794,7 +800,7 @@ git commit -m "feat(logistics): getLogisticsCase resolver"
 - Create: `amplify/functions/logistics-api/resolvers/listLogisticsCases.ts`
 - Test: `amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts`
 
-Mirrors `order-api/resolvers/listOrders.ts`: GSI1 query when `stage` given, else Scan for `begins_with(PK, 'LOGISTICS#') AND SK = 'META'`; optional `caseType` and `customsRequired` filters applied in-memory; base64 `nextToken` pagination; sort by `updatedAt` desc.
+**No Scan.** Always Query the single listing partition `GSI1PK='LOGISTICS_CASES'` with `ScanIndexForward=false` (newest first — `GSI1SK` is `<updatedAt>#<caseId>`). Apply `stage` / `caseType` / `customsRequired` / `search` as in-memory filters across paged Query results (loop up to `MAX_PAGES` to fill a page). base64 `nextToken` pagination.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -802,6 +808,7 @@ Create `amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts`:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const send = vi.fn();
 vi.mock('../lib/dynamodb.js', () => ({
@@ -815,37 +822,53 @@ beforeEach(() => send.mockReset());
 
 function item(over: Record<string, unknown>) {
   return {
-    PK: `LOGISTICS#${over.caseId}`, SK: 'META', GSI1PK: 'x', GSI1SK: 'y',
+    PK: `LOGISTICS#${over.caseId}`, SK: 'META', GSI1PK: 'LOGISTICS_CASES', GSI1SK: 'y',
     caseId: 'lc-x', caseType: 'EQUIPMENT', currentStage: 'IN_TRANSIT',
     customsRequired: true, updatedAt: '2026-06-01T00:00:00Z', legs: [], milestoneLog: [],
     ...over,
   };
 }
 
+function evt(args: Record<string, unknown>) {
+  return { info: { fieldName: 'listLogisticsCases', parentTypeName: 'Query' }, arguments: args };
+}
+
 describe('listLogisticsCases', () => {
-  it('queries GSI1 when stage is provided and strips DDB keys', async () => {
+  it('always Queries the LOGISTICS_CASES listing partition and never Scans', async () => {
     send.mockResolvedValueOnce({ Items: [item({ caseId: 'lc-1' })], LastEvaluatedKey: undefined });
-    const res = await listLogisticsCases({
-      info: { fieldName: 'listLogisticsCases', parentTypeName: 'Query' },
-      arguments: { stage: 'IN_TRANSIT' },
-    });
+    const res = await listLogisticsCases(evt({}));
+
+    // P0: every command issued must be a QueryCommand, none a ScanCommand.
+    for (const call of send.mock.calls) {
+      expect(call[0]).toBeInstanceOf(QueryCommand);
+      expect(call[0]).not.toBeInstanceOf(ScanCommand);
+    }
     const cmd = send.mock.calls[0][0].input;
     expect(cmd.IndexName).toBe('GSI1');
-    expect(cmd.ExpressionAttributeValues[':pk']).toBe('LOGISTICS_STAGE#IN_TRANSIT');
+    expect(cmd.ExpressionAttributeValues[':pk']).toBe('LOGISTICS_CASES');
+    expect(cmd.ScanIndexForward).toBe(false);
     expect(res.items[0].caseId).toBe('lc-1');
     expect((res.items[0] as Record<string, unknown>).PK).toBeUndefined();
     expect(res.nextToken).toBeNull();
   });
 
-  it('scans and filters by caseType when no stage', async () => {
+  it('filters by stage in-memory over the listing Query (still no Scan)', async () => {
+    send.mockResolvedValueOnce({
+      Items: [item({ caseId: 'lc-1', currentStage: 'IN_TRANSIT' }), item({ caseId: 'lc-2', currentStage: 'DELIVERED' })],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await listLogisticsCases(evt({ stage: 'IN_TRANSIT' }));
+    expect(send.mock.calls[0][0]).toBeInstanceOf(QueryCommand);
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].currentStage).toBe('IN_TRANSIT');
+  });
+
+  it('filters by caseType in-memory', async () => {
     send.mockResolvedValueOnce({
       Items: [item({ caseId: 'lc-1', caseType: 'SAMPLE' }), item({ caseId: 'lc-2', caseType: 'EQUIPMENT' })],
       LastEvaluatedKey: undefined,
     });
-    const res = await listLogisticsCases({
-      info: { fieldName: 'listLogisticsCases', parentTypeName: 'Query' },
-      arguments: { caseType: 'SAMPLE' },
-    });
+    const res = await listLogisticsCases(evt({ caseType: 'SAMPLE' }));
     expect(res.items).toHaveLength(1);
     expect(res.items[0].caseType).toBe('SAMPLE');
   });
@@ -862,12 +885,13 @@ Expected: FAIL — module not found.
 Create `amplify/functions/logistics-api/resolvers/listLogisticsCases.ts`:
 
 ```typescript
-import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { toCaseResponse } from '../lib/types.js';
 import type { AppSyncEvent, LogisticsCaseItem } from '../lib/types.js';
 
 const SEARCH_FIELDS = ['caseNumber', 'customerName', 'contactName', 'relatedOrderId'] as const;
+const LISTING_PK = 'LOGISTICS_CASES';
 const MAX_PAGES = 20;
 
 function matchesSearch(it: Record<string, unknown>, needle: string): boolean {
@@ -889,53 +913,34 @@ export async function listLogisticsCases(event: AppSyncEvent) {
   const startKey = nextToken ? JSON.parse(Buffer.from(nextToken, 'base64').toString()) : undefined;
   const term = search?.trim() || undefined;
 
-  const extraFilter = (it: Record<string, unknown>) =>
-    (!caseType || it.caseType === caseType)
+  const passesFilters = (it: Record<string, unknown>) =>
+    (!stage || it.currentStage === stage)
+    && (!caseType || it.caseType === caseType)
     && (customsRequired === undefined || it.customsRequired === customsRequired)
     && (!term || matchesSearch(it, term));
 
-  let collected: Record<string, unknown>[] = [];
-  let lastKey: Record<string, unknown> | undefined;
-
-  if (stage) {
-    let key = startKey;
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const r = await docClient.send(new QueryCommand({
-        TableName: TABLE_NAME(),
-        IndexName: 'GSI1',
-        KeyConditionExpression: 'GSI1PK = :pk',
-        ExpressionAttributeValues: { ':pk': `LOGISTICS_STAGE#${stage}` },
-        ScanIndexForward: false,
-        ExclusiveStartKey: key,
-      }));
-      collected.push(...(r.Items || []).filter(extraFilter));
-      key = r.LastEvaluatedKey;
-      if (!key || collected.length >= effectiveLimit) break;
-    }
-    lastKey = key;
-    collected = collected.slice(0, effectiveLimit);
-  } else {
-    let key = startKey;
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const r = await docClient.send(new ScanCommand({
-        TableName: TABLE_NAME(),
-        FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-        ExpressionAttributeValues: { ':pk': 'LOGISTICS#', ':sk': 'META' },
-        ExclusiveStartKey: key,
-      }));
-      collected.push(...(r.Items || []).filter(extraFilter));
-      key = r.LastEvaluatedKey;
-      if (!key || collected.length >= effectiveLimit) break;
-    }
-    lastKey = key;
-    collected.sort((a, b) =>
-      ((b.updatedAt as string) || '').localeCompare((a.updatedAt as string) || ''));
-    collected = collected.slice(0, effectiveLimit);
+  // P0: ALWAYS Query the single listing partition, newest first. Never Scan.
+  const collected: Record<string, unknown>[] = [];
+  let key = startKey;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const r = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME(),
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :pk',
+      ExpressionAttributeValues: { ':pk': LISTING_PK },
+      ScanIndexForward: false, // GSI1SK = '<updatedAt>#<caseId>' → recency-sorted
+      ExclusiveStartKey: key,
+    }));
+    collected.push(...(r.Items || []).filter(passesFilters));
+    key = r.LastEvaluatedKey;
+    if (!key || collected.length >= effectiveLimit) break;
   }
 
+  const items = collected.slice(0, effectiveLimit);
+
   return {
-    items: collected.map((it) => toCaseResponse(it as LogisticsCaseItem)),
-    nextToken: lastKey ? Buffer.from(JSON.stringify(lastKey)).toString('base64') : null,
+    items: items.map((it) => toCaseResponse(it as LogisticsCaseItem)),
+    nextToken: key ? Buffer.from(JSON.stringify(key)).toString('base64') : null,
   };
 }
 ```
@@ -943,7 +948,7 @@ export async function listLogisticsCases(event: AppSyncEvent) {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts`
-Expected: PASS (2 tests).
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -980,7 +985,7 @@ import { advanceLogisticsStage } from './advanceLogisticsStage.js';
 beforeEach(() => send.mockReset());
 
 const baseCase = {
-  PK: 'LOGISTICS#lc-1', SK: 'META', GSI1PK: 'LOGISTICS_STAGE#DRAFT', GSI1SK: 'x',
+  PK: 'LOGISTICS#lc-1', SK: 'META', GSI1PK: 'LOGISTICS_CASES', GSI1SK: 'x',
   caseId: 'lc-1', caseNumber: 'NS-LOG-2026-0001', caseType: 'EQUIPMENT',
   customerName: 'HORIBA', customsRequired: true, currentStage: 'DRAFT',
   enabledStages: ['PRODUCTION', 'FAT_PASSED'], legs: [], milestoneLog: [],
@@ -1004,7 +1009,9 @@ describe('advanceLogisticsStage', () => {
     const res = await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION', detail: 'kickoff' }));
     const upd = send.mock.calls[1][0].input;
     expect(upd.ExpressionAttributeValues[':stage']).toBe('PRODUCTION');
-    expect(upd.ExpressionAttributeValues[':gsi1pk']).toBe('LOGISTICS_STAGE#PRODUCTION');
+    // Listing partition is constant; only the recency sort key is refreshed.
+    expect(upd.ExpressionAttributeValues[':gsi1sk']).toMatch(/#lc-1$/);
+    expect(upd.UpdateExpression).not.toContain('GSI1PK');
     expect(upd.ExpressionAttributeValues[':log'][0].toStage).toBe('PRODUCTION');
     expect(res?.currentStage).toBe('PRODUCTION');
   });
@@ -1073,11 +1080,12 @@ export async function advanceLogisticsStage(event: AppSyncEvent) {
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(),
     Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
+    // GSI1PK stays 'LOGISTICS_CASES' (listing partition) — only GSI1SK is refreshed
+    // so the case re-sorts to the top of the recency-ordered list.
     UpdateExpression:
-      'SET currentStage = :stage, GSI1PK = :gsi1pk, GSI1SK = :gsi1sk, milestoneLog = :log, updatedAt = :now',
+      'SET currentStage = :stage, GSI1SK = :gsi1sk, milestoneLog = :log, updatedAt = :now',
     ExpressionAttributeValues: {
       ':stage': stage,
-      ':gsi1pk': `LOGISTICS_STAGE#${stage}`,
       ':gsi1sk': `${now}#${caseId}`,
       ':log': milestoneLog,
       ':now': now,
@@ -1136,13 +1144,24 @@ function evt(input: Record<string, unknown>) {
 }
 
 describe('updateLogisticsCase', () => {
-  it('updates only whitelisted fields', async () => {
+  it('updates whitelisted fields, refreshes GSI1SK, ignores frozen/unknown fields', async () => {
     send.mockResolvedValueOnce({}).mockResolvedValueOnce({ Item: { caseId: 'lc-1' } });
-    await updateLogisticsCase(evt({ customerName: 'BAE', customsRequired: true, caseType: 'HACK' }));
+    await updateLogisticsCase(evt({
+      customerName: 'BAE', customsRequired: true,
+      caseType: 'HACK',            // unknown → ignored
+      isCustomerVisible: true,     // Phase 2 frozen → ignored
+    }));
     const upd = send.mock.calls[0][0].input;
     expect(upd.ExpressionAttributeValues[':customerName']).toBe('BAE');
     expect(upd.ExpressionAttributeValues[':customsRequired']).toBe(true);
+    expect(upd.ExpressionAttributeValues[':gsi1sk']).toMatch(/#lc-1$/);
+    expect(upd.ExpressionAttributeValues[':isCustomerVisible']).toBeUndefined();
     expect(JSON.stringify(upd)).not.toContain('HACK');
+  });
+
+  it('rejects an invalid relatedEntityType', async () => {
+    await expect(updateLogisticsCase(evt({ relatedEntityType: 'BOGUS' })))
+      .rejects.toThrow(/relatedEntityType/);
   });
 
   it('throws when no editable fields supplied', async () => {
@@ -1165,11 +1184,14 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { buildCaseResponse } from '../lib/caseHelper.js';
 import type { AppSyncEvent } from '../lib/types.js';
+import { RELATED_ENTITY_TYPES, type RelatedEntityType } from '../lib/stages.js';
 
+// Phase 1: caseType, currentStage, enabledStages, legs, milestoneLog, isCustomerVisible,
+// and publicToken are NOT editable here (dedicated resolvers or frozen to Phase 2).
 const EDITABLE = [
   'customerName', 'contactName', 'customsRequired',
   'relatedOrderId', 'relatedEntityType', 'relatedEntityId',
-  'notes', 'isCustomerVisible',
+  'notes',
 ] as const;
 
 export async function updateLogisticsCase(event: AppSyncEvent) {
@@ -1177,8 +1199,15 @@ export async function updateLogisticsCase(event: AppSyncEvent) {
   if (!caseId) throw new Error('caseId is required');
   const input: Record<string, unknown> = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
-  const setParts: string[] = ['updatedAt = :now'];
-  const values: Record<string, unknown> = { ':now': new Date().toISOString() };
+  if (input.relatedEntityType !== undefined
+    && !RELATED_ENTITY_TYPES.includes(input.relatedEntityType as RelatedEntityType)) {
+    throw new Error(`relatedEntityType must be one of: ${RELATED_ENTITY_TYPES.join(', ')}`);
+  }
+
+  const now = new Date().toISOString();
+  // Baseline always refreshes updatedAt + the recency sort key.
+  const setParts: string[] = ['updatedAt = :now', 'GSI1SK = :gsi1sk'];
+  const values: Record<string, unknown> = { ':now': now, ':gsi1sk': `${now}#${caseId}` };
 
   for (const field of EDITABLE) {
     if (input[field] !== undefined) {
@@ -1187,7 +1216,7 @@ export async function updateLogisticsCase(event: AppSyncEvent) {
     }
   }
 
-  if (setParts.length === 1) throw new Error('No editable fields supplied');
+  if (setParts.length === 2) throw new Error('No editable fields supplied');
 
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(),
@@ -1203,7 +1232,7 @@ export async function updateLogisticsCase(event: AppSyncEvent) {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/functions/logistics-api/resolvers/updateLogisticsCase.test.ts`
-Expected: PASS (2 tests).
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -1289,6 +1318,12 @@ describe('leg mutations', () => {
     expect(upd.ExpressionAttributeValues[':legs']).toHaveLength(1);
     expect(upd.ExpressionAttributeValues[':legs'][0].legId).toBe('leg-2');
   });
+
+  it('removeLeg throws when leg id not found (no silent success)', async () => {
+    send.mockResolvedValueOnce(caseWithLeg([{ legId: 'leg-1' }]));
+    await expect(removeLeg(evt('removeLeg', { caseId: 'lc-1', legId: 'nope' })))
+      .rejects.toThrow(/leg not found/i);
+  });
 });
 ```
 
@@ -1333,11 +1368,12 @@ function pickLegFields(input: Record<string, unknown>): Partial<ShipmentLeg> {
 }
 
 async function persistLegs(caseId: string, legs: ShipmentLeg[]) {
+  const now = new Date().toISOString();
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(),
     Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
-    UpdateExpression: 'SET legs = :legs, updatedAt = :now',
-    ExpressionAttributeValues: { ':legs': legs, ':now': new Date().toISOString() },
+    UpdateExpression: 'SET legs = :legs, updatedAt = :now, GSI1SK = :gsi1sk',
+    ExpressionAttributeValues: { ':legs': legs, ':now': now, ':gsi1sk': `${now}#${caseId}` },
   }));
   return buildCaseResponse(caseId);
 }
@@ -1380,15 +1416,16 @@ export async function removeLeg(event: AppSyncEvent) {
 
   const current = await fetchCase(caseId);
   if (!current) throw new Error(`Logistics case not found: ${caseId}`);
-  const legs = (current.legs || []).filter((l) => l.legId !== legId);
-  return persistLegs(caseId, legs);
+  const existing = current.legs || [];
+  if (!existing.some((l) => l.legId === legId)) throw new Error(`Leg not found: ${legId}`);
+  return persistLegs(caseId, existing.filter((l) => l.legId !== legId));
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/functions/logistics-api/resolvers/legMutations.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -1405,7 +1442,7 @@ git commit -m "feat(logistics): add/update/remove embedded shipment legs"
 - Create: `amplify/functions/logistics-api/resolvers/logisticsStats.ts`
 - Test: `amplify/functions/logistics-api/resolvers/logisticsStats.test.ts`
 
-Scans all case META items; returns counts by `caseType`, counts by `currentStage`, count of customs-in-progress cases (`currentStage` in {EXPORT_CUSTOMS, IMPORT_CUSTOMS, CUSTOMS_HOLD}), and count of stalled cases (non-terminal `currentStage`, `updatedAt` older than 14 days).
+**Queries** the `LOGISTICS_CASES` listing partition (same as the list — no Scan); returns counts by `caseType`, counts by `currentStage`, count of customs-in-progress cases (`currentStage` in {EXPORT_CUSTOMS, IMPORT_CUSTOMS, CUSTOMS_HOLD}), and count of stalled cases (non-terminal `currentStage`, `updatedAt` older than 14 days).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1413,6 +1450,7 @@ Create `amplify/functions/logistics-api/resolvers/logisticsStats.test.ts`:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 
 const send = vi.fn();
 vi.mock('../lib/dynamodb.js', () => ({
@@ -1425,7 +1463,7 @@ import { logisticsStats } from './logisticsStats.js';
 beforeEach(() => send.mockReset());
 
 describe('logisticsStats', () => {
-  it('aggregates counts by type, stage, customs, and stalled', async () => {
+  it('aggregates counts by type, stage, customs, and stalled via a GSI1 Query', async () => {
     const old = '2020-01-01T00:00:00Z';
     send.mockResolvedValueOnce({
       Items: [
@@ -1436,6 +1474,7 @@ describe('logisticsStats', () => {
       LastEvaluatedKey: undefined,
     });
     const s = await logisticsStats({ info: { fieldName: 'logisticsStats', parentTypeName: 'Query' }, arguments: {} });
+    expect(send.mock.calls[0][0]).toBeInstanceOf(QueryCommand);
     const byType = JSON.parse(s.byType);
     const byStage = JSON.parse(s.byStage);
     expect(byType.SAMPLE).toBe(2);
@@ -1457,7 +1496,7 @@ Expected: FAIL — module not found.
 Create `amplify/functions/logistics-api/resolvers/logisticsStats.ts`:
 
 ```typescript
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
@@ -1467,13 +1506,15 @@ const STALLED_DAYS = 14;
 const MAX_PAGES = 20;
 
 export async function logisticsStats(_event: AppSyncEvent) {
+  // Query the single listing partition — never Scan.
   const items: Record<string, unknown>[] = [];
   let key: Record<string, unknown> | undefined;
   for (let page = 0; page < MAX_PAGES; page++) {
-    const r = await docClient.send(new ScanCommand({
+    const r = await docClient.send(new QueryCommand({
       TableName: TABLE_NAME(),
-      FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-      ExpressionAttributeValues: { ':pk': 'LOGISTICS#', ':sk': 'META' },
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :pk',
+      ExpressionAttributeValues: { ':pk': 'LOGISTICS_CASES' },
       ExclusiveStartKey: key,
     }));
     items.push(...(r.Items || []));
