@@ -23,6 +23,7 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setNextToken(null); // reset cursor so a stale loadMore can't fire after a filter change
     svc.listLogisticsCases({ stage, caseType, customsRequired, search, limit: pageSize })
       .then((data) => {
         if (cancelled) return;
@@ -64,6 +65,7 @@ export function useLogisticsCase(caseId: string | undefined) {
   const load = useCallback((isActive: () => boolean = () => true) => {
     if (!caseId) { setLoading(false); return; }
     setLoading(true);
+    setError(null);
     svc.getLogisticsCase(caseId)
       .then((data) => { if (isActive()) { setLogisticsCase(data as LogisticsCase | null); setLoading(false); } })
       .catch((err) => { if (isActive()) { setError(err); setLoading(false); } });
