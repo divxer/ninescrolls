@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { orderApi } from '../functions/order-api/resource';
+import { logisticsApi } from '../functions/logistics-api/resource';
 import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 import { tenderApi } from '../functions/tender-api/resource';
@@ -312,6 +313,91 @@ const schema = a.schema({
     avgPoToProductionDays: a.float(),
   }),
 
+  // =========================================================================
+  // Logistics Cases — internal cross-border delivery & customs ledger
+  // =========================================================================
+
+  CaseType: a.enum(['SAMPLE', 'EQUIPMENT', 'SPARE_PART', 'RMA', 'DEMO']),
+
+  LegDirection: a.enum(['INBOUND', 'OUTBOUND', 'RETURN', 'DOMESTIC_TRANSFER']),
+
+  CustomsStatus: a.enum([
+    'NOT_REQUIRED', 'DOCS_READY', 'FILED', 'EXAM', 'HELD', 'RELEASED', 'DUTIES_PAID', 'CLEARED',
+  ]),
+
+  RelatedEntityType: a.enum(['ORDER', 'LEAD', 'SAMPLE_PROJECT', 'CUSTOMER', 'SERVICE_CASE']),
+
+  LogisticsStage: a.enum([
+    'DRAFT', 'AWAITING_SHIPMENT', 'IN_TRANSIT', 'EXPORT_CUSTOMS', 'IMPORT_CUSTOMS',
+    'CUSTOMS_HOLD', 'RECEIVED', 'TESTING', 'REPORT_ISSUED', 'READY_TO_RETURN',
+    'RETURN_IN_TRANSIT', 'RETURNED', 'PRODUCTION', 'FAT_SCHEDULED', 'FAT_PASSED',
+    'READY_TO_SHIP', 'DELIVERED', 'INSTALLATION_SCHEDULED', 'INSTALLED', 'ACCEPTED',
+    'CLOSED', 'CANCELLED',
+  ]),
+
+  ShipmentLeg: a.customType({
+    legId: a.id().required(),
+    direction: a.ref('LegDirection').required(),
+    customsRequired: a.boolean(),
+    customsStatus: a.ref('CustomsStatus'),
+    carrier: a.string(),
+    trackingNumber: a.string(),
+    trackingUrl: a.string(),
+    freightForwarder: a.string(),
+    blOrAwb: a.string(),
+    containerNo: a.string(),
+    declaredValueUSD: a.float(),
+    hsCode: a.string(),
+    shippedAt: a.datetime(),
+    clearedAt: a.datetime(),
+    deliveredAt: a.datetime(),
+  }),
+
+  LogisticsLogEntry: a.customType({
+    action: a.string().required(),
+    fromStage: a.ref('LogisticsStage'),
+    toStage: a.ref('LogisticsStage'),
+    operator: a.string().required(),
+    timestamp: a.datetime().required(),
+    detail: a.string(),
+    internalOnly: a.boolean().required(),
+  }),
+
+  LogisticsCase: a.customType({
+    caseId: a.id().required(),
+    caseNumber: a.string().required(),
+    caseType: a.ref('CaseType').required(),
+    relatedOrderId: a.string(),
+    relatedEntityType: a.ref('RelatedEntityType'),
+    relatedEntityId: a.string(),
+    customerName: a.string().required(),
+    contactName: a.string(),
+    customsRequired: a.boolean().required(),
+    currentStage: a.ref('LogisticsStage').required(),
+    enabledStages: a.ref('LogisticsStage').array().required(),
+    legs: a.ref('ShipmentLeg').array(),
+    milestoneLog: a.ref('LogisticsLogEntry').array(),
+    isCustomerVisible: a.boolean().required(),
+    publicToken: a.string(),
+    notes: a.string(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
+    createdBy: a.string().required(),
+  }),
+
+  LogisticsCaseConnection: a.customType({
+    items: a.ref('LogisticsCase').array().required(),
+    nextToken: a.string(),
+  }),
+
+  LogisticsStats: a.customType({
+    totalActive: a.integer().required(),
+    byType: a.json().required(),
+    byStage: a.json().required(),
+    customsInProgress: a.integer().required(),
+    stalledCases: a.integer().required(),
+  }),
+
   PresignedUploadUrl: a.customType({
     uploadUrl: a.string().required(),
     s3Key: a.string().required(),
@@ -583,6 +669,33 @@ const schema = a.schema({
     .handler(a.handler.function(orderApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  listLogisticsCases: a
+    .query()
+    .arguments({
+      stage: a.ref('LogisticsStage'),
+      caseType: a.ref('CaseType'),
+      customsRequired: a.boolean(),
+      search: a.string(),
+      limit: a.integer(),
+      nextToken: a.string(),
+    })
+    .returns(a.ref('LogisticsCaseConnection').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  getLogisticsCase: a
+    .query()
+    .arguments({ caseId: a.id().required() })
+    .returns(a.ref('LogisticsCase'))
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  logisticsStats: a
+    .query()
+    .returns(a.ref('LogisticsStats').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   listOrderDocuments: a
     .query()
     .arguments({
@@ -791,6 +904,53 @@ const schema = a.schema({
     })
     .returns(a.ref('Order').required())
     .handler(a.handler.function(orderApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  createLogisticsCase: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  updateLogisticsCase: a
+    .mutation()
+    .arguments({ caseId: a.id().required(), input: a.json().required() })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  advanceLogisticsStage: a
+    .mutation()
+    .arguments({
+      caseId: a.id().required(),
+      targetStage: a.ref('LogisticsStage').required(),
+      detail: a.string(),
+      internalOnly: a.boolean(),
+    })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  addLeg: a
+    .mutation()
+    .arguments({ caseId: a.id().required(), input: a.json().required() })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  updateLeg: a
+    .mutation()
+    .arguments({ caseId: a.id().required(), legId: a.id().required(), input: a.json().required() })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  removeLeg: a
+    .mutation()
+    .arguments({ caseId: a.id().required(), legId: a.id().required() })
+    .returns(a.ref('LogisticsCase').required())
+    .handler(a.handler.function(logisticsApi))
     .authorization((allow) => [allow.authenticated()]),
 
   updateOrder: a
