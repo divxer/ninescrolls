@@ -61,14 +61,15 @@ export function LogisticsCaseListPage() {
           value={caseTypeFilter} onChange={setCaseTypeFilter}
           options={['All', ...CASE_TYPES]} labelFor={(o) => (o === 'All' ? 'All' : CASE_TYPE_LABELS[o as keyof typeof CASE_TYPE_LABELS])}
         />
-        <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm">
+        <select aria-label="Filter by stage" value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm">
           <option value="All">All stages</option>
           {LOGISTICS_STAGES.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
         </select>
-        <select value={customsFilter} onChange={(e) => setCustomsFilter(e.target.value)} className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm">
+        <select aria-label="Filter by customs" value={customsFilter} onChange={(e) => setCustomsFilter(e.target.value)} className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm">
           <option value="All">All</option><option value="Customs">Customs</option><option value="None">No customs</option>
         </select>
         <input
+          aria-label="Search cases"
           value={searchInput} onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search case #, customer, contact, order…"
           className="flex-1 min-w-[220px] rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm"
