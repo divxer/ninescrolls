@@ -13,6 +13,7 @@ import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
 import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
+import { logisticsApi } from './functions/logistics-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
@@ -84,6 +85,7 @@ const backend = defineBackend({
     updateOrderStatus,
     documentUpload,
     orderApi,
+    logisticsApi,
     optimizeInsightsImage,
     generateSitemaps,
     submitLead,
@@ -518,6 +520,10 @@ intelligenceTable.grantReadWriteData(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 orderDocumentsBucket.grantReadWrite(backend.orderApi.resources.lambda);
 backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant logistics-api Lambda access (Logistics Cases ledger — shared single table)
+intelligenceTable.grantReadWriteData(backend.logisticsApi.resources.lambda);
+backend.logisticsApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
 // Grant submit-lead Lambda access to Intelligence table + Newsletter table
 intelligenceTable.grantReadWriteData(backend.submitLead.resources.lambda);

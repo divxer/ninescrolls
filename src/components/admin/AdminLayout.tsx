@@ -9,6 +9,7 @@ import '../../styles/Admin.css';
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' },
+  { path: '/admin/logistics', label: 'Logistics', icon: 'local_shipping' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
   { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
   { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
