@@ -43,7 +43,7 @@ export function LogisticsCaseListPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-on-surface">Logistics Cases</h1>
         <Link to="/admin/logistics/new" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary">
-          <span className="material-symbols-rounded text-[18px]">add</span> New Case
+          <span className="material-symbols-outlined text-[18px]">add</span> New Case
         </Link>
       </header>
 

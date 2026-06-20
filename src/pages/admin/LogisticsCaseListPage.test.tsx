@@ -32,4 +32,12 @@ describe('LogisticsCaseListPage', () => {
     expect(screen.getByText('In Transit', { selector: 'span' })).toBeInTheDocument();
     expect(screen.getByText('NS-LOG-2026-0001').closest('a')).toHaveAttribute('href', '/admin/logistics/lc-1');
   });
+
+  it('uses the loaded Material Symbols font for the new case icon', () => {
+    render(<MemoryRouter><LogisticsCaseListPage /></MemoryRouter>);
+
+    const newCaseLink = screen.getByRole('link', { name: /new case/i });
+    expect(newCaseLink.querySelector('.material-symbols-outlined')).toHaveTextContent('add');
+    expect(newCaseLink.querySelector('.material-symbols-rounded')).not.toBeInTheDocument();
+  });
 });

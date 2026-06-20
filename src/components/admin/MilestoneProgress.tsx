@@ -7,7 +7,7 @@ export function MilestoneProgress({
   if (currentStage === 'CANCELLED') {
     return (
       <div className="inline-flex items-center gap-1.5 rounded-full bg-error-container px-3 py-1 text-[11px] font-bold uppercase tracking-tight text-on-error-container">
-        <span className="material-symbols-rounded text-[14px]">cancel</span>Cancelled
+        <span className="material-symbols-outlined text-[14px]">cancel</span>Cancelled
       </div>
     );
   }
@@ -36,7 +36,7 @@ export function MilestoneProgress({
             aria-current={active ? 'step' : undefined}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-tight ${cls}`}
           >
-            <span className="material-symbols-rounded text-[14px]">
+            <span className="material-symbols-outlined text-[14px]">
               {done ? 'check_circle' : active ? 'radio_button_checked' : 'radio_button_unchecked'}
             </span>
             {STAGE_LABELS[stage]}

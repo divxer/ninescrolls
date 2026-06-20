@@ -167,7 +167,7 @@ export function LogisticsCaseDetailPage() {
         <ol className="space-y-2">
           {[...(c.milestoneLog || [])].reverse().map((e, i) => (
             <li key={i} className="flex items-start gap-2 text-sm">
-              <span className="material-symbols-rounded text-[16px] text-on-surface-variant">
+              <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
                 {e.internalOnly ? 'lock' : 'history'}
               </span>
               <div>
