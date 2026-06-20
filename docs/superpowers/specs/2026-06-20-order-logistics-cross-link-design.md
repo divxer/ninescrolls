@@ -43,10 +43,11 @@ not a logistics detail view.
   `listLogisticsCases` query arguments.
 - **Resolver** (`amplify/functions/logistics-api/resolvers/listLogisticsCases.ts`):
   - Destructure `relatedOrderId` (typed `string | null` — AppSync sends unset args as `null`).
-  - Add to `passesFilters`: `(!relatedOrderId || it.relatedOrderId === relatedOrderId)`.
-  - The truthy `!relatedOrderId` guard treats `null`/`undefined`/`''` as "no filter", matching
-    the `stage`/`caseType` pattern and avoiding the `customsRequired === undefined` null bug
-    fixed in PR #195.
+  - Normalize and exact-match: `const orderFilter = relatedOrderId?.trim();` then in
+    `passesFilters`: `(!orderFilter || it.relatedOrderId === orderFilter)`.
+  - The `trim()` avoids `" ORD-123 "`-style misses; the truthy `!orderFilter` guard treats
+    `null`/`undefined`/`''`/whitespace as "no filter", matching the `stage`/`caseType` pattern
+    and avoiding the `customsRequired === undefined` null bug fixed in PR #195.
 - No new query, no new index — reuses the GSI1 `LOGISTICS_CASES` Query + in-memory filter.
 
 ## 4. Order side — `LogisticsPanel`
@@ -70,8 +71,13 @@ A self-contained, read-only panel keyed by `orderId`, mirroring the existing
   - customs: "Customs required" / "No customs" (from `customsRequired`)
   - `updatedAt` (formatted `en-US`)
 - **Wiring:** rendered on `OrderDetailPage` near `ContactsPanel` / `DocumentsPanel`.
-- **Error handling:** the panel is non-blocking — a fetch error renders nothing (or a small
-  inline error) and never breaks the Order page. The hook already exposes `error`.
+- **Render states (all non-blocking — the Order page never flashes or breaks):**
+  - `loading` → render nothing
+  - empty (zero cases) → render nothing
+  - `error` → render nothing **+ `console.warn`** (so a failed fetch leaves a dev-time trace
+    instead of silently vanishing)
+  - loaded with cases → render the section
+  The hook already exposes `loading` / `error` / `cases`.
 
 Example:
 
@@ -110,11 +116,14 @@ LogisticsCaseDetailPage
 
 ## 7. Testing
 
-- **Resolver:** `listLogisticsCases` returns only cases whose `relatedOrderId` matches; a
-  `relatedOrderId: null` arg (AppSync-style) is treated as no-filter (returns all). Add to the
-  existing `listLogisticsCases.test.ts`.
-- **Service/hook:** `listLogisticsCases({ relatedOrderId })` forwards the arg; `useLogisticsCases`
-  passes it through.
+- **Resolver:** `listLogisticsCases` returns only cases whose `relatedOrderId` matches
+  (exact, post-`trim`); a `relatedOrderId: null` arg (AppSync-style) is treated as no-filter
+  (returns all); a padded `" ORD-1 "` still matches `ORD-1`. Add to the existing
+  `listLogisticsCases.test.ts`.
+- **Service/hook:** `listLogisticsCases({ relatedOrderId })` forwards `relatedOrderId` as its
+  own argument and **does NOT route it through `search`** (assert the call args carry
+  `relatedOrderId` and that `search` is untouched) — guards against regressing to fuzzy match.
+  `useLogisticsCases({ relatedOrderId })` passes it through to the service.
 - **LogisticsPanel:** renders rows (caseNumber link, stage badge, customs label) when cases
   exist; renders nothing when the list is empty.
 - **Reverse link:** `LogisticsCaseDetailPage` shows `Related Order: <id>` when `relatedOrderId`
