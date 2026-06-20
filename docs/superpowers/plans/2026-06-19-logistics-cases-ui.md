@@ -110,6 +110,11 @@ describe('logistics types', () => {
   it('nextAdvanceableStages: from CUSTOMS_HOLD resumes the happy path', () => {
     expect(nextAdvanceableStages('CUSTOMS_HOLD', ENABLED_STAGES.EQUIPMENT)).toContain('DELIVERED');
   });
+
+  it('nextAdvanceableStages: terminal stages return nothing', () => {
+    expect(nextAdvanceableStages('CLOSED', ENABLED_STAGES.EQUIPMENT)).toEqual([]);
+    expect(nextAdvanceableStages('CANCELLED', ENABLED_STAGES.EQUIPMENT)).toEqual([]);
+  });
 });
 ```
 
@@ -252,6 +257,9 @@ export function nextAdvanceableStages(
   currentStage: LogisticsStage,
   enabledStages: LogisticsStage[],
 ): LogisticsStage[] {
+  // Terminal stages have nowhere to advance.
+  if (currentStage === 'CLOSED' || currentStage === 'CANCELLED') return [];
+
   const happy = enabledStages.filter((s) => !EXCEPTION_STAGES.has(s));
   const out: LogisticsStage[] = [];
 
@@ -318,7 +326,7 @@ export function parseStatBucket(raw: string | null | undefined): Record<string, 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/types/logistics.test.ts`
-Expected: PASS (10 tests).
+Expected: PASS (11 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -980,7 +988,7 @@ git commit -m "feat(logistics-ui): case list page (filters, stats, table)"
 - Create: `src/pages/admin/LogisticsCaseDetailPage.tsx`
 - Test: `src/pages/admin/LogisticsCaseDetailPage.test.tsx`
 
-Mirror `OrderDetailPage` chrome. This task builds: header + related link; `MilestoneProgress` over `enabledStagesFor(caseType, enabledStages)`; advance-stage control (options = enabled subset + `CANCELLED`, **deduped**, calls `advanceLogisticsStage` then `refresh`); soft customs warning; **read-only** legs list; milestone-log timeline (reverse-chron, `internalOnly` marked). Leg add/edit/remove forms come in **Task 6B**; the case-metadata edit form in **Task 6C**.
+Mirror `OrderDetailPage` chrome. This task builds: header + related link; `MilestoneProgress` over `enabledStagesFor(caseType, enabledStages)`; advance-stage control (**guided next-step options** via `nextAdvanceableStages()`, calls `advanceLogisticsStage` then `refresh`); soft customs warning; **read-only** legs list; milestone-log timeline (reverse-chron, `internalOnly` marked). Leg add/edit/remove forms come in **Task 6B**; the case-metadata edit form in **Task 6C**.
 
 - [ ] **Step 1: Write the failing test**
 
