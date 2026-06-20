@@ -53,6 +53,9 @@ const AdminAnalyticsPage = lazy(() => import('../pages/admin/AdminAnalyticsPage'
 const OrderListPage = lazy(() => import('../pages/admin/OrderListPage').then(m => ({ default: m.OrderListPage })));
 const OrderDetailPage = lazy(() => import('../pages/admin/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const CreateOrderPage = lazy(() => import('../pages/admin/CreateOrderPage').then(m => ({ default: m.CreateOrderPage })));
+const LogisticsCaseListPage = lazy(() => import('../pages/admin/LogisticsCaseListPage').then(m => ({ default: m.LogisticsCaseListPage })));
+const LogisticsCaseDetailPage = lazy(() => import('../pages/admin/LogisticsCaseDetailPage').then(m => ({ default: m.LogisticsCaseDetailPage })));
+const CreateLogisticsCasePage = lazy(() => import('../pages/admin/CreateLogisticsCasePage').then(m => ({ default: m.CreateLogisticsCasePage })));
 const RFQListPage = lazy(() => import('../pages/admin/RFQListPage').then(m => ({ default: m.RFQListPage })));
 const RFQDetailPage = lazy(() => import('../pages/admin/RFQDetailPage').then(m => ({ default: m.RFQDetailPage })));
 const LeadsListPage = lazy(() => import('../pages/admin/LeadsListPage').then(m => ({ default: m.LeadsListPage })));
@@ -139,6 +142,9 @@ export function AdminRoutes() {
           <Route path="orders" element={<OrderListPage />} />
           <Route path="orders/new" element={<CreateOrderPage />} />
           <Route path="orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="logistics" element={<LogisticsCaseListPage />} />
+          <Route path="logistics/new" element={<CreateLogisticsCasePage />} />
+          <Route path="logistics/:caseId" element={<LogisticsCaseDetailPage />} />
           <Route path="rfqs" element={<RFQListPage />} />
           <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
           <Route path="leads" element={<LeadsListPage />} />
