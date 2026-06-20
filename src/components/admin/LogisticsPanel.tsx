@@ -5,13 +5,17 @@ import { StageBadge } from './StageBadge';
 import { CASE_TYPE_LABELS, type CaseType } from '../../types/logistics';
 
 export function LogisticsPanel({ orderId }: { orderId: string }) {
-  const { cases, loading, error } = useLogisticsCases({ relatedOrderId: orderId });
+  const { cases, loading, loadingMore, hasMore, error, loadMore } = useLogisticsCases({ relatedOrderId: orderId });
 
   useEffect(() => {
     // Depend on the message (not the Error instance) so a new instance each render
     // doesn't re-warn on every render.
     if (error) console.warn('LogisticsPanel: failed to load related logistics cases —', error.message);
   }, [error?.message]);
+
+  useEffect(() => {
+    if (!loading && !loadingMore && !error && hasMore) loadMore();
+  }, [error, hasMore, loading, loadingMore, loadMore]);
 
   // Non-blocking: stay invisible while loading, on error, or when the order has no logistics.
   if (loading || error || !cases.length) return null;
