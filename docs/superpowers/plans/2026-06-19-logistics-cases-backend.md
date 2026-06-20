@@ -940,7 +940,7 @@ export async function listLogisticsCases(event: AppSyncEvent) {
   const items = collected.slice(0, effectiveLimit);
 
   return {
-    items: items.map((it) => toCaseResponse(it as LogisticsCaseItem)),
+    items: items.map((it) => toCaseResponse(it as unknown as LogisticsCaseItem)),
     nextToken: key ? Buffer.from(JSON.stringify(key)).toString('base64') : null,
   };
 }
