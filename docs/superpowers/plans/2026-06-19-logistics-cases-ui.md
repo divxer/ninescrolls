@@ -30,8 +30,10 @@
 - `src/hooks/useLogisticsCases.ts` — `useLogisticsCases`, `useLogisticsCase`, `useLogisticsStats`
 - `src/components/admin/StageBadge.tsx` — stage + customs badges
 - `src/components/admin/MilestoneProgress.tsx` — enabled-stage progress bar
+- `src/components/admin/LegForm.tsx` — add/edit shipment leg (Task 6B)
+- `src/components/admin/CaseEditForm.tsx` — edit case metadata (Task 6C)
 - `src/pages/admin/LogisticsCaseListPage.tsx`
-- `src/pages/admin/LogisticsCaseDetailPage.tsx`
+- `src/pages/admin/LogisticsCaseDetailPage.tsx` — built across Tasks 6A/6B/6C
 - `src/pages/admin/CreateLogisticsCasePage.tsx`
 
 **Modified:**
@@ -67,6 +69,12 @@ describe('logistics types', () => {
     expect(enabledStagesFor('EQUIPMENT')).toContain('FAT_PASSED');
     expect(enabledStagesFor('SAMPLE')).toContain('TESTING');
     expect(enabledStagesFor('SAMPLE')).not.toContain('FAT_PASSED');
+  });
+
+  it('enabledStagesFor prefers a stored override when present', () => {
+    expect(enabledStagesFor('EQUIPMENT', ['PRODUCTION', 'CLOSED'])).toEqual(['PRODUCTION', 'CLOSED']);
+    // empty/nullish override → fall back to the default subset
+    expect(enabledStagesFor('EQUIPMENT', [])).toEqual(enabledStagesFor('EQUIPMENT'));
   });
 
   it('DEMO mirrors EQUIPMENT', () => {
@@ -234,20 +242,23 @@ export const LEG_DIRECTION_LABELS: Record<LegDirection, string> = {
 
 export const TERMINAL_STAGES = new Set<LogisticsStage>(['CLOSED', 'CANCELLED']);
 
-/** Parse the JSON-string stat buckets (a.json() round-trips as a string). */
+/** Parse the JSON-string stat buckets (a.json() round-trips as a string). Numbers only. */
 export function parseStatBucket(raw: string | null | undefined): Record<string, number> {
   let parsed: unknown = raw;
   while (typeof parsed === 'string') {
     try { parsed = JSON.parse(parsed); } catch { return {}; }
   }
-  return (parsed || {}) as Record<string, number>;
+  if (!parsed || typeof parsed !== 'object') return {};
+  return Object.fromEntries(
+    Object.entries(parsed as Record<string, unknown>).filter(([, v]) => typeof v === 'number'),
+  ) as Record<string, number>;
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/types/logistics.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -371,6 +382,9 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
     return () => { cancelled = true; };
   }, [stage, caseType, customsRequired, search, pageSize]);
 
+  // Public refresh wrapper — does NOT leak the effect-cleanup function to callers.
+  const refresh = useCallback(() => { fetchFirstPage(); }, [fetchFirstPage]);
+
   const loadMore = useCallback(() => {
     if (!nextToken || loadingMore) return;
     setLoadingMore(true);
@@ -385,7 +399,7 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
 
   useEffect(() => fetchFirstPage(), [fetchFirstPage]);
 
-  return { cases, loading, loadingMore, hasMore: nextToken !== null, error, refresh: fetchFirstPage, loadMore };
+  return { cases, loading, loadingMore, hasMore: nextToken !== null, error, refresh, loadMore };
 }
 
 export function useLogisticsCase(caseId: string | undefined) {
@@ -539,6 +553,10 @@ export function CustomsBadge({ status }: { status?: CustomsStatus | null }) {
 
 Run: `npx vitest run src/components/admin/StageBadge.test.tsx`
 Expected: PASS (3 tests).
+
+> Color note: the literal `bg-cyan-100`/`bg-emerald-100`/`bg-green-100`/`bg-amber-100` classes
+> are intentional — they match the existing `StatusBadge.tsx`, which already mixes raw Tailwind
+> palette classes with Material-3 tokens. Keep them for visual consistency; do not "tokenize".
 
 - [ ] **Step 5: Commit**
 
@@ -789,7 +807,9 @@ export function LogisticsCaseListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {cases.map((c) => (
+              {cases.map((c) => {
+                const customs = worstLegCustoms(c.legs);
+                return (
                 <tr key={c.caseId} className="hover:bg-surface-container-low">
                   <td className="px-4 py-3 font-semibold">
                     <Link to={`/admin/logistics/${c.caseId}`} className="text-primary hover:underline">{c.caseNumber}</Link>
@@ -802,15 +822,16 @@ export function LogisticsCaseListPage() {
                   <td className="px-4 py-3"><StageBadge stage={c.currentStage} /></td>
                   <td className="px-4 py-3">
                     {c.customsRequired
-                      ? (worstLegCustoms(c.legs)
-                          ? <CustomsBadge status={worstLegCustoms(c.legs)} />
+                      ? (customs
+                          ? <CustomsBadge status={customs} />
                           : <span className="text-xs text-on-surface-variant">required</span>)
                       : <span className="text-xs text-on-surface-variant">—</span>}
                   </td>
                   <td className="px-4 py-3">{c.legs?.length ?? 0}</td>
                   <td className="px-4 py-3 text-xs text-on-surface-variant">{new Date(c.updatedAt).toLocaleDateString()}</td>
                 </tr>
-              ))}
+                );
+              })}
               {!cases.length && <tr><td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">No logistics cases.</td></tr>}
             </tbody>
           </table>
@@ -865,13 +886,13 @@ git commit -m "feat(logistics-ui): case list page (filters, stats, table)"
 
 ---
 
-## Task 6: Detail page (`src/pages/admin/LogisticsCaseDetailPage.tsx`)
+## Task 6A: Detail page — read view + advance + history (`src/pages/admin/LogisticsCaseDetailPage.tsx`)
 
 **Files:**
 - Create: `src/pages/admin/LogisticsCaseDetailPage.tsx`
 - Test: `src/pages/admin/LogisticsCaseDetailPage.test.tsx`
 
-Mirror `OrderDetailPage` chrome. Sections: header + related link; `MilestoneProgress` over `enabledStagesFor(caseType, enabledStages)`; advance-stage control (options = enabled subset + `CANCELLED`, calls `advanceLogisticsStage` then `refresh`); soft customs warning; legs section (list + add/edit/remove via `addLeg`/`updateLeg`/`removeLeg`); milestone-log timeline (reverse-chron, `internalOnly` marked); edit panel (`updateLogisticsCase`).
+Mirror `OrderDetailPage` chrome. This task builds: header + related link; `MilestoneProgress` over `enabledStagesFor(caseType, enabledStages)`; advance-stage control (options = enabled subset + `CANCELLED`, **deduped**, calls `advanceLogisticsStage` then `refresh`); soft customs warning; **read-only** legs list; milestone-log timeline (reverse-chron, `internalOnly` marked). Leg add/edit/remove forms come in **Task 6B**; the case-metadata edit form in **Task 6C**.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -967,7 +988,10 @@ export function LogisticsCaseDetailPage() {
   if (error || !c) return <div className="p-6 text-error">{error?.message || 'Case not found'}</div>;
 
   const enabled = enabledStagesFor(c.caseType, c.enabledStages);
-  const advanceOptions: LogisticsStage[] = [...enabled.filter((s) => s !== c.currentStage), 'CANCELLED'];
+  // Dedupe in case a future enabledStages set already contains CANCELLED.
+  const advanceOptions: LogisticsStage[] = Array.from(
+    new Set<LogisticsStage>([...enabled.filter((s) => s !== c.currentStage), 'CANCELLED']),
+  );
   const customsLegMissing = c.customsRequired && (c.legs || []).some((l) => l.customsRequired && !l.customsStatus);
 
   async function advance() {
@@ -1033,12 +1057,10 @@ export function LogisticsCaseDetailPage() {
             {l.freightForwarder && <span className="text-on-surface-variant">{l.freightForwarder}</span>}
             {l.blOrAwb && <span className="text-on-surface-variant">{l.blOrAwb}</span>}
             <CustomsBadge status={l.customsStatus} />
-            <button onClick={async () => { if (caseId) { await svc.removeLeg(caseId, l.legId); refresh(); } }}
-              className="ml-auto text-xs text-error hover:underline">Remove</button>
           </div>
         ))}
         {!(c.legs || []).length && <p className="text-sm text-on-surface-variant">No legs yet.</p>}
-        {/* Add-leg form: mirror the inline form pattern; calls svc.addLeg(caseId, input) then refresh(). */}
+        {/* Task 6B wires the add / edit / remove leg forms into this section. */}
       </section>
 
       {/* Milestone log */}
@@ -1053,7 +1075,7 @@ export function LogisticsCaseDetailPage() {
               <div>
                 <div className="font-medium">
                   {e.fromStage ? `${STAGE_LABELS[e.fromStage]} → ` : ''}{e.toStage ? STAGE_LABELS[e.toStage] : e.action}
-                  {isCustomsStage(e.toStage as LogisticsStage) && <span className="ml-1 text-tertiary">(customs)</span>}
+                  {e.toStage && isCustomsStage(e.toStage) && <span className="ml-1 text-tertiary">(customs)</span>}
                 </div>
                 <div className="text-xs text-on-surface-variant">{e.operator} · {new Date(e.timestamp).toLocaleString()}{e.detail ? ` · ${e.detail}` : ''}</div>
               </div>
@@ -1066,8 +1088,6 @@ export function LogisticsCaseDetailPage() {
 }
 ```
 
-> The add-leg and edit-case forms are inline-form widgets following the same `svc.X(...) → refresh()` pattern shown above. Implement them as small local components in this file (or extract to `src/components/admin/LegForm.tsx` / `CaseEditForm.tsx` if the file grows past ~250 lines — match the repo's threshold).
-
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/pages/admin/LogisticsCaseDetailPage.test.tsx`
@@ -1077,7 +1097,400 @@ Expected: PASS (2 tests).
 
 ```bash
 git add src/pages/admin/LogisticsCaseDetailPage.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx
-git commit -m "feat(logistics-ui): case detail (milestones, advance, legs, history)"
+git commit -m "feat(logistics-ui): case detail read view + advance + history"
+```
+
+---
+
+## Task 6B: Leg management — add / edit / remove (`src/components/admin/LegForm.tsx`)
+
+**Files:**
+- Create: `src/components/admin/LegForm.tsx`
+- Modify: `src/pages/admin/LogisticsCaseDetailPage.tsx` (wire add/edit/remove into the legs section)
+- Test: `src/components/admin/LegForm.test.tsx`
+- Test: extend `src/pages/admin/LogisticsCaseDetailPage.test.tsx` (remove-leg integration)
+
+- [ ] **Step 1: Write the failing LegForm test**
+
+Create `src/components/admin/LegForm.test.tsx`:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { LegForm } from './LegForm';
+
+beforeEach(() => vi.clearAllMocks());
+
+describe('LegForm', () => {
+  it('submits a new leg with direction + entered fields', () => {
+    const onSubmit = vi.fn();
+    render(<LegForm onSubmit={onSubmit} onCancel={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Direction'), { target: { value: 'INBOUND' } });
+    fireEvent.change(screen.getByLabelText('Carrier'), { target: { value: 'FedEx' } });
+    fireEvent.change(screen.getByLabelText('Tracking #'), { target: { value: 'T9' } });
+    fireEvent.click(screen.getByText('Save leg'));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const input = onSubmit.mock.calls[0][0];
+    expect(input).toMatchObject({ direction: 'INBOUND', carrier: 'FedEx', trackingNumber: 'T9' });
+  });
+
+  it('prefills when editing an existing leg', () => {
+    const onSubmit = vi.fn();
+    render(<LegForm onSubmit={onSubmit} onCancel={() => {}} initial={{ legId: 'l1', direction: 'RETURN', carrier: 'DHL' }} />);
+    expect((screen.getByLabelText('Carrier') as HTMLInputElement).value).toBe('DHL');
+    fireEvent.click(screen.getByText('Save leg'));
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ direction: 'RETURN', carrier: 'DHL' });
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `npx vitest run src/components/admin/LegForm.test.tsx`
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Implement `LegForm`**
+
+Create `src/components/admin/LegForm.tsx`:
+
+```tsx
+import { useState } from 'react';
+import {
+  LEG_DIRECTIONS, LEG_DIRECTION_LABELS, CUSTOMS_STATUSES, CUSTOMS_STATUS_LABELS,
+  type ShipmentLeg,
+} from '../../types/logistics';
+
+const FIELD = 'mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm';
+
+export function LegForm({
+  initial, onSubmit, onCancel,
+}: {
+  initial?: Partial<ShipmentLeg>;
+  onSubmit: (input: Record<string, unknown>) => void;
+  onCancel: () => void;
+}) {
+  const [f, setF] = useState({
+    direction: initial?.direction ?? LEG_DIRECTIONS[0],
+    carrier: initial?.carrier ?? '',
+    trackingNumber: initial?.trackingNumber ?? '',
+    trackingUrl: initial?.trackingUrl ?? '',
+    freightForwarder: initial?.freightForwarder ?? '',
+    blOrAwb: initial?.blOrAwb ?? '',
+    containerNo: initial?.containerNo ?? '',
+    customsRequired: initial?.customsRequired ?? false,
+    customsStatus: initial?.customsStatus ?? '',
+    declaredValueUSD: initial?.declaredValueUSD != null ? String(initial.declaredValueUSD) : '',
+    hsCode: initial?.hsCode ?? '',
+  });
+  function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) { setF((p) => ({ ...p, [k]: v })); }
+
+  function submit() {
+    const input: Record<string, unknown> = { direction: f.direction, customsRequired: f.customsRequired };
+    if (f.carrier) input.carrier = f.carrier;
+    if (f.trackingNumber) input.trackingNumber = f.trackingNumber;
+    if (f.trackingUrl) input.trackingUrl = f.trackingUrl;
+    if (f.freightForwarder) input.freightForwarder = f.freightForwarder;
+    if (f.blOrAwb) input.blOrAwb = f.blOrAwb;
+    if (f.containerNo) input.containerNo = f.containerNo;
+    if (f.customsStatus) input.customsStatus = f.customsStatus;
+    if (f.hsCode) input.hsCode = f.hsCode;
+    if (f.declaredValueUSD) input.declaredValueUSD = Number(f.declaredValueUSD);
+    onSubmit(input);
+  }
+
+  return (
+    <div className="rounded-lg border border-outline-variant p-3 space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs">Direction
+          <select aria-label="Direction" value={f.direction} onChange={(e) => set('direction', e.target.value as typeof f.direction)} className={FIELD}>
+            {LEG_DIRECTIONS.map((d) => <option key={d} value={d}>{LEG_DIRECTION_LABELS[d]}</option>)}
+          </select>
+        </label>
+        <label className="text-xs">Carrier
+          <input aria-label="Carrier" value={f.carrier} onChange={(e) => set('carrier', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Tracking #
+          <input aria-label="Tracking #" value={f.trackingNumber} onChange={(e) => set('trackingNumber', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Tracking URL
+          <input aria-label="Tracking URL" value={f.trackingUrl} onChange={(e) => set('trackingUrl', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Freight forwarder
+          <input aria-label="Freight forwarder" value={f.freightForwarder} onChange={(e) => set('freightForwarder', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">B/L or AWB
+          <input aria-label="B/L or AWB" value={f.blOrAwb} onChange={(e) => set('blOrAwb', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Container #
+          <input aria-label="Container #" value={f.containerNo} onChange={(e) => set('containerNo', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">HS code
+          <input aria-label="HS code" value={f.hsCode} onChange={(e) => set('hsCode', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Declared value (USD)
+          <input aria-label="Declared value (USD)" type="number" value={f.declaredValueUSD} onChange={(e) => set('declaredValueUSD', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Customs status
+          <select aria-label="Customs status" value={f.customsStatus} onChange={(e) => set('customsStatus', e.target.value as typeof f.customsStatus)} className={FIELD}>
+            <option value="">—</option>
+            {CUSTOMS_STATUSES.map((s) => <option key={s} value={s}>{CUSTOMS_STATUS_LABELS[s]}</option>)}
+          </select>
+        </label>
+      </div>
+      <label className="flex items-center gap-2 text-xs">
+        <input type="checkbox" checked={f.customsRequired} onChange={(e) => set('customsRequired', e.target.checked)} /> Customs required (this leg)
+      </label>
+      <div className="flex gap-2">
+        <button onClick={submit} className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-on-primary">Save leg</button>
+        <button onClick={onCancel} className="rounded-full border border-outline-variant px-4 py-1.5 text-sm">Cancel</button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Wire LegForm into the detail page**
+
+In `src/pages/admin/LogisticsCaseDetailPage.tsx`, import `LegForm` and add leg state + handlers. Inside the legs `<section>`, replace the read-only rows with editable rows + an add toggle:
+
+```tsx
+// add near other useState:
+const [addingLeg, setAddingLeg] = useState(false);
+const [editingLegId, setEditingLegId] = useState<string | null>(null);
+
+async function saveNewLeg(input: Record<string, unknown>) {
+  if (!caseId) return;
+  await svc.addLeg(caseId, input); setAddingLeg(false); refresh();
+}
+async function saveEditLeg(legId: string, input: Record<string, unknown>) {
+  if (!caseId) return;
+  await svc.updateLeg(caseId, legId, input); setEditingLegId(null); refresh();
+}
+async function deleteLeg(legId: string) {
+  if (!caseId) return;
+  await svc.removeLeg(caseId, legId); refresh();
+}
+```
+
+Legs section body (replaces the read-only list from 6A):
+
+```tsx
+{(c.legs || []).map((l) => (
+  editingLegId === l.legId
+    ? <LegForm key={l.legId} initial={l} onSubmit={(input) => saveEditLeg(l.legId, input)} onCancel={() => setEditingLegId(null)} />
+    : (
+      <div key={l.legId} className="flex flex-wrap items-center gap-3 rounded-lg bg-surface-container-low p-3 text-sm">
+        <span className="font-semibold">{LEG_DIRECTION_LABELS[l.direction]}</span>
+        {l.carrier && <span>{l.carrier}</span>}
+        {l.trackingNumber && (l.trackingUrl
+          ? <a href={l.trackingUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">{l.trackingNumber}</a>
+          : <span>{l.trackingNumber}</span>)}
+        {l.freightForwarder && <span className="text-on-surface-variant">{l.freightForwarder}</span>}
+        {l.blOrAwb && <span className="text-on-surface-variant">{l.blOrAwb}</span>}
+        <CustomsBadge status={l.customsStatus} />
+        <span className="ml-auto flex gap-3">
+          <button onClick={() => setEditingLegId(l.legId)} className="text-xs text-primary hover:underline">Edit</button>
+          <button onClick={() => deleteLeg(l.legId)} className="text-xs text-error hover:underline">Remove</button>
+        </span>
+      </div>
+    )
+))}
+{!(c.legs || []).length && !addingLeg && <p className="text-sm text-on-surface-variant">No legs yet.</p>}
+{addingLeg
+  ? <LegForm onSubmit={saveNewLeg} onCancel={() => setAddingLeg(false)} />
+  : <button onClick={() => setAddingLeg(true)} className="text-sm text-primary hover:underline">+ Add leg</button>}
+```
+
+- [ ] **Step 5: Extend the detail page test (remove integration) + run**
+
+Append to `src/pages/admin/LogisticsCaseDetailPage.test.tsx`:
+
+```typescript
+it('removes a leg via the service', async () => {
+  svc.removeLeg.mockResolvedValueOnce({ ...sampleCase, legs: [] });
+  renderAt();
+  fireEvent.click(screen.getByText('Remove'));
+  await waitFor(() => expect(svc.removeLeg).toHaveBeenCalledWith('lc-1', 'l1'));
+});
+```
+
+Run: `npx vitest run src/components/admin/LegForm.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx`
+Expected: PASS (LegForm 2 + detail 3).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/admin/LegForm.tsx src/components/admin/LegForm.test.tsx src/pages/admin/LogisticsCaseDetailPage.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx
+git commit -m "feat(logistics-ui): shipment leg add/edit/remove on case detail"
+```
+
+---
+
+## Task 6C: Case metadata edit (`src/components/admin/CaseEditForm.tsx`)
+
+**Files:**
+- Create: `src/components/admin/CaseEditForm.tsx`
+- Modify: `src/pages/admin/LogisticsCaseDetailPage.tsx` (wire the edit panel)
+- Test: `src/components/admin/CaseEditForm.test.tsx`
+
+Editable whitelist (matches the backend `updateLogisticsCase` resolver): `customerName`, `contactName`, `customsRequired`, `relatedOrderId`, `relatedEntityType`, `relatedEntityId`, `notes`. NOT `caseType` / `currentStage` / `enabledStages` / `isCustomerVisible` / `publicToken`.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/components/admin/CaseEditForm.test.tsx`:
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { CaseEditForm } from './CaseEditForm';
+
+const base = {
+  caseId: 'lc-1', caseNumber: 'NS-LOG-2026-0001', caseType: 'EQUIPMENT',
+  customerName: 'HORIBA', customsRequired: true, currentStage: 'DRAFT',
+  enabledStages: [], isCustomerVisible: false, createdAt: 'x', updatedAt: 'x', createdBy: 'u',
+} as any;
+
+describe('CaseEditForm', () => {
+  it('submits only edited whitelisted fields', () => {
+    const onSubmit = vi.fn();
+    render(<CaseEditForm logisticsCase={base} onSubmit={onSubmit} onCancel={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Customer'), { target: { value: 'BAE Systems' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ customerName: 'BAE Systems' });
+    // never includes frozen fields
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('caseType');
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('isCustomerVisible');
+  });
+
+  it('rejects relatedEntityType set without an ID', () => {
+    const onSubmit = vi.fn();
+    render(<CaseEditForm logisticsCase={base} onSubmit={onSubmit} onCancel={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Related entity type'), { target: { value: 'LEAD' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/both/i)).toBeInTheDocument();
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `npx vitest run src/components/admin/CaseEditForm.test.tsx`
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Implement `CaseEditForm`**
+
+Create `src/components/admin/CaseEditForm.tsx`:
+
+```tsx
+import { useState } from 'react';
+import { RELATED_ENTITY_TYPES, type LogisticsCase } from '../../types/logistics';
+
+const FIELD = 'mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm';
+
+export function CaseEditForm({
+  logisticsCase: c, onSubmit, onCancel,
+}: {
+  logisticsCase: LogisticsCase;
+  onSubmit: (input: Record<string, unknown>) => void;
+  onCancel: () => void;
+}) {
+  const [f, setF] = useState({
+    customerName: c.customerName,
+    contactName: c.contactName ?? '',
+    customsRequired: c.customsRequired,
+    relatedOrderId: c.relatedOrderId ?? '',
+    relatedEntityType: c.relatedEntityType ?? '',
+    relatedEntityId: c.relatedEntityId ?? '',
+    notes: c.notes ?? '',
+  });
+  const [err, setErr] = useState<string | null>(null);
+  function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) { setF((p) => ({ ...p, [k]: v })); }
+
+  function submit() {
+    if (!f.customerName.trim()) { setErr('Customer name is required'); return; }
+    // relatedEntityType and relatedEntityId must both be empty or both set
+    if (Boolean(f.relatedEntityType) !== Boolean(f.relatedEntityId.trim())) {
+      setErr('Related entity type and ID must both be set or both empty'); return;
+    }
+    setErr(null);
+    onSubmit({
+      customerName: f.customerName.trim(),
+      contactName: f.contactName,
+      customsRequired: f.customsRequired,
+      relatedOrderId: f.relatedOrderId,
+      relatedEntityType: f.relatedEntityType || null,
+      relatedEntityId: f.relatedEntityId || null,
+      notes: f.notes,
+    });
+  }
+
+  return (
+    <div className="rounded-xl border border-outline-variant p-4 space-y-3">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant">Edit case</h2>
+      {err && <p className="text-error text-sm">{err}</p>}
+      <label className="block text-xs">Customer
+        <input aria-label="Customer" value={f.customerName} onChange={(e) => set('customerName', e.target.value)} className={FIELD} />
+      </label>
+      <label className="block text-xs">Contact
+        <input aria-label="Contact" value={f.contactName} onChange={(e) => set('contactName', e.target.value)} className={FIELD} />
+      </label>
+      <label className="flex items-center gap-2 text-xs">
+        <input type="checkbox" checked={f.customsRequired} onChange={(e) => set('customsRequired', e.target.checked)} /> Customs required
+      </label>
+      <label className="block text-xs">Related order ID
+        <input aria-label="Related order ID" value={f.relatedOrderId} onChange={(e) => set('relatedOrderId', e.target.value)} className={FIELD} />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-xs">Related entity type
+          <select aria-label="Related entity type" value={f.relatedEntityType} onChange={(e) => set('relatedEntityType', e.target.value)} className={FIELD}>
+            <option value="">—</option>
+            {RELATED_ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs">Related entity ID
+          <input aria-label="Related entity ID" value={f.relatedEntityId} onChange={(e) => set('relatedEntityId', e.target.value)} className={FIELD} />
+        </label>
+      </div>
+      <label className="block text-xs">Notes
+        <textarea aria-label="Notes" value={f.notes} onChange={(e) => set('notes', e.target.value)} rows={3} className={FIELD} />
+      </label>
+      <div className="flex gap-2">
+        <button onClick={submit} className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-on-primary">Save</button>
+        <button onClick={onCancel} className="rounded-full border border-outline-variant px-4 py-1.5 text-sm">Cancel</button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Wire into the detail page**
+
+In `LogisticsCaseDetailPage.tsx`, import `CaseEditForm`, add `const [editing, setEditing] = useState(false);`, a handler:
+
+```tsx
+async function saveCase(input: Record<string, unknown>) {
+  if (!caseId) return;
+  await svc.updateLogisticsCase(caseId, input); setEditing(false); refresh();
+}
+```
+
+Add an "Edit case" button in the header and render the form when `editing`:
+
+```tsx
+{editing
+  ? <CaseEditForm logisticsCase={c} onSubmit={saveCase} onCancel={() => setEditing(false)} />
+  : <button onClick={() => setEditing(true)} className="text-sm text-primary hover:underline">Edit case details</button>}
+```
+
+- [ ] **Step 5: Run + commit**
+
+Run: `npx vitest run src/components/admin/CaseEditForm.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx`
+Expected: PASS.
+
+```bash
+git add src/components/admin/CaseEditForm.tsx src/components/admin/CaseEditForm.test.tsx src/pages/admin/LogisticsCaseDetailPage.tsx
+git commit -m "feat(logistics-ui): edit case metadata (whitelisted fields + linked-entity validation)"
 ```
 
 ---
@@ -1126,6 +1539,15 @@ describe('CreateLogisticsCasePage', () => {
     fireEvent.click(screen.getByText('Create Case'));
     expect(svc.createLogisticsCase).not.toHaveBeenCalled();
   });
+
+  it('blocks submit when related entity type is set without an ID', async () => {
+    render(<MemoryRouter><CreateLogisticsCasePage /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText(/Customer/i), { target: { value: 'BAE' } });
+    fireEvent.change(screen.getByLabelText(/Related entity type/i), { target: { value: 'LEAD' } });
+    fireEvent.click(screen.getByText('Create Case'));
+    expect(svc.createLogisticsCase).not.toHaveBeenCalled();
+    expect(screen.getByText(/both/i)).toBeInTheDocument();
+  });
 });
 ```
 
@@ -1162,6 +1584,10 @@ export function CreateLogisticsCasePage() {
 
   async function submit() {
     if (!form.customerName.trim()) { setErr('Customer name is required'); return; }
+    // relatedEntityType and relatedEntityId must both be empty or both set
+    if (Boolean(form.relatedEntityType) !== Boolean(form.relatedEntityId.trim())) {
+      setErr('Related entity type and ID must both be set or both empty'); return;
+    }
     setBusy(true); setErr(null);
     try {
       const input: Record<string, unknown> = {
@@ -1242,7 +1668,7 @@ export function CreateLogisticsCasePage() {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/pages/admin/CreateLogisticsCasePage.test.tsx`
-Expected: PASS (2 tests).
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -1257,12 +1683,13 @@ git commit -m "feat(logistics-ui): create case form"
 
 **Files:**
 - Modify: `src/routes/index.tsx`
-- Modify: the admin nav file (locate the Orders nav link first)
+- Modify: `src/components/admin/AdminLayout.tsx` (the `navItems` array, ~line 11)
 
-- [ ] **Step 1: Locate the admin nav**
+- [ ] **Step 1: Confirm the nav location**
 
-Run: `grep -rn "admin/orders\|Orders" src/components src/layouts src/pages/admin 2>/dev/null | grep -iE "to=|nav|link" | head`
-Expected: identifies the sidebar/nav file with the "Orders" entry.
+The admin sidebar renders from a `navItems` array in `src/components/admin/AdminLayout.tsx`
+(e.g. `{ path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' }`). The Logistics
+entry is added there in Step 3.
 
 - [ ] **Step 2: Add lazy imports + routes**
 
@@ -1284,18 +1711,22 @@ After the Order routes (~line 141) add:
 
 - [ ] **Step 3: Add the nav link**
 
-In the admin nav file from Step 1, add a "Logistics" entry next to "Orders", `to="/admin/logistics"`, icon `local_shipping` (matching the Material-Symbols idiom used for SHIPPED in `OrderListPage`).
+In `src/components/admin/AdminLayout.tsx`, add to the `navItems` array (after the Orders entry):
+
+```typescript
+  { path: '/admin/logistics', label: 'Logistics', icon: 'local_shipping' },
+```
 
 - [ ] **Step 4: Typecheck + full UI test sweep**
 
 Run: `npx tsc --noEmit 2>&1 | grep -iE "logistic" ; echo "(none above = clean)"`
-Run: `npx vitest run src/types/logistics.test.ts src/hooks/useLogisticsCases.test.tsx src/components/admin/StageBadge.test.tsx src/components/admin/MilestoneProgress.test.tsx src/pages/admin/LogisticsCaseListPage.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx src/pages/admin/CreateLogisticsCasePage.test.tsx`
+Run: `npx vitest run src/types/logistics.test.ts src/hooks/useLogisticsCases.test.tsx src/components/admin/StageBadge.test.tsx src/components/admin/MilestoneProgress.test.tsx src/components/admin/LegForm.test.tsx src/components/admin/CaseEditForm.test.tsx src/pages/admin/LogisticsCaseListPage.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx src/pages/admin/CreateLogisticsCasePage.test.tsx`
 Expected: all PASS; no logistics typecheck errors.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/routes/index.tsx <admin-nav-file>
+git add src/routes/index.tsx src/components/admin/AdminLayout.tsx
 git commit -m "feat(logistics-ui): register routes + admin nav"
 ```
 
