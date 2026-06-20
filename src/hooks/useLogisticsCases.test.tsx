@@ -25,6 +25,15 @@ describe('useLogisticsCases', () => {
     const { result } = renderHook(() => useLogisticsCases());
     await waitFor(() => expect(result.current.error?.message).toBe('boom'));
   });
+
+  it('forwards relatedOrderId to the service', async () => {
+    vi.mocked(svc.listLogisticsCases).mockResolvedValueOnce({ items: [], nextToken: null } as never);
+    const { result } = renderHook(() => useLogisticsCases({ relatedOrderId: 'ord-1' }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(svc.listLogisticsCases).toHaveBeenCalledWith(
+      expect.objectContaining({ relatedOrderId: 'ord-1' }),
+    );
+  });
 });
 
 describe('useLogisticsCase', () => {
