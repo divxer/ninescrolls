@@ -98,4 +98,26 @@ describe('listLogisticsCases', () => {
     expect(res.items.map((it) => it.caseId)).toEqual(['lc-1', 'lc-2']);
     expect(res.nextToken).toBeTruthy();
   });
+
+  it('filters by relatedOrderId (exact, trimmed)', async () => {
+    send.mockResolvedValueOnce({
+      Items: [
+        item({ caseId: 'lc-1', relatedOrderId: 'ord-1' }),
+        item({ caseId: 'lc-2', relatedOrderId: 'ord-2' }),
+        item({ caseId: 'lc-3' }), // no relatedOrderId
+      ],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await listLogisticsCases(evt({ relatedOrderId: '  ord-1  ' }));
+    expect(res.items.map((it) => it.caseId)).toEqual(['lc-1']);
+  });
+
+  it('treats a null relatedOrderId (AppSync unset) as no filter', async () => {
+    send.mockResolvedValueOnce({
+      Items: [item({ caseId: 'lc-1', relatedOrderId: 'ord-1' }), item({ caseId: 'lc-2' })],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await listLogisticsCases(evt({ relatedOrderId: null }));
+    expect(res.items).toHaveLength(2);
+  });
 });

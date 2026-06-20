@@ -16,21 +16,24 @@ function matchesSearch(it: Record<string, unknown>, needle: string): boolean {
 }
 
 export async function listLogisticsCases(event: AppSyncEvent) {
-  const { stage, caseType, customsRequired, search, limit = 50, nextToken } =
+  const { stage, caseType, customsRequired, relatedOrderId, search, limit = 50, nextToken } =
     event.arguments as {
       // AppSync sends explicitly-unset args as `null` (not `undefined`).
       stage?: string | null; caseType?: string | null; customsRequired?: boolean | null;
+      relatedOrderId?: string | null;
       search?: string | null; limit?: number; nextToken?: string | null;
     };
 
   const effectiveLimit = Math.min(Math.max(limit || 50, 1), 200);
   const startKey = nextToken ? JSON.parse(Buffer.from(nextToken, 'base64').toString()) : undefined;
   const term = search?.trim() || undefined;
+  const orderFilter = relatedOrderId?.trim() || undefined;
 
   const passesFilters = (it: Record<string, unknown>) =>
     (!stage || it.currentStage === stage)
     && (!caseType || it.caseType === caseType)
     && (customsRequired === undefined || customsRequired === null || it.customsRequired === customsRequired)
+    && (!orderFilter || it.relatedOrderId === orderFilter)
     && (!term || matchesSearch(it, term));
 
   // P0: ALWAYS Query the single listing partition, newest first. Never Scan.

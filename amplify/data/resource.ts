@@ -675,6 +675,7 @@ const schema = a.schema({
       stage: a.ref('LogisticsStage'),
       caseType: a.ref('CaseType'),
       customsRequired: a.boolean(),
+      relatedOrderId: a.string(),
       search: a.string(),
       limit: a.integer(),
       nextToken: a.string(),
