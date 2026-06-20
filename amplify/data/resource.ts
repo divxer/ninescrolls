@@ -348,9 +348,9 @@ const schema = a.schema({
     containerNo: a.string(),
     declaredValueUSD: a.float(),
     hsCode: a.string(),
-    shippedAt: a.datetime(),
-    clearedAt: a.datetime(),
-    deliveredAt: a.datetime(),
+    shippedAt: a.date(),
+    clearedAt: a.date(),
+    deliveredAt: a.date(),
   }),
 
   LogisticsLogEntry: a.customType({

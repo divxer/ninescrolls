@@ -29,6 +29,15 @@ describe('logisticsAdminService', () => {
     expect(res?.items).toEqual([]);
   });
 
+  it('listLogisticsCases unwraps JSON-string custom query payloads', async () => {
+    queries.listLogisticsCases.mockResolvedValueOnce({
+      data: JSON.stringify({ items: [{ caseId: 'lc-1' }], nextToken: null }),
+      errors: null,
+    });
+    const res = await listLogisticsCases();
+    expect(res?.items).toEqual([{ caseId: 'lc-1' }]);
+  });
+
   it('createLogisticsCase JSON-stringifies the input', async () => {
     mutations.createLogisticsCase.mockResolvedValueOnce({ data: { caseId: 'lc-1' }, errors: null });
     await createLogisticsCase({ caseType: 'EQUIPMENT', customerName: 'HORIBA' });

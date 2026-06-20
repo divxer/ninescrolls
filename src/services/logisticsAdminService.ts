@@ -3,6 +3,11 @@ import { getAmplifyDataClient } from './amplifyClient';
 const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
 
+function unwrapPayload<T>(data: T | string): T {
+  if (typeof data !== 'string') return data;
+  return JSON.parse(data) as T;
+}
+
 interface ListLogisticsArgs {
   stage?: string;
   caseType?: string;
@@ -22,19 +27,19 @@ export async function listLogisticsCases(opts: ListLogisticsArgs = {}) {
   if (opts.nextToken) args.nextToken = opts.nextToken;
   const { data, errors } = await client().queries.listLogisticsCases(args as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
-  return data;
+  return unwrapPayload(data);
 }
 
 export async function getLogisticsCase(caseId: string) {
   const { data, errors } = await client().queries.getLogisticsCase({ caseId } as any, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
-  return data;
+  return unwrapPayload(data);
 }
 
 export async function fetchLogisticsStats() {
   const { data, errors } = await client().queries.logisticsStats(AUTH as any);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
-  return data;
+  return unwrapPayload(data);
 }
 
 export async function createLogisticsCase(input: Record<string, unknown>) {
