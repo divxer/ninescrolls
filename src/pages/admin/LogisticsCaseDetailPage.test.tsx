@@ -68,4 +68,14 @@ describe('LogisticsCaseDetailPage', () => {
     fireEvent.click(screen.getByText('Remove'));
     await waitFor(() => expect(svc.removeLeg).toHaveBeenCalledWith('lc-1', 'l1'));
   });
+
+  it('surfaces an error and keeps the form open when adding a leg is rejected', async () => {
+    vi.mocked(svc.addLeg).mockRejectedValueOnce(new Error('Leg rejected'));
+    renderAt();
+    fireEvent.click(screen.getByText('+ Add leg'));
+    fireEvent.change(screen.getByLabelText('Direction'), { target: { value: 'OUTBOUND' } });
+    fireEvent.click(screen.getByText('Save leg'));
+    expect(await screen.findByText(/Leg rejected/i)).toBeInTheDocument();
+    expect(screen.getByText('Save leg')).toBeInTheDocument();
+  });
 });

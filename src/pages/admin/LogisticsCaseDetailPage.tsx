@@ -19,6 +19,7 @@ export function LogisticsCaseDetailPage() {
   const [advanceError, setAdvanceError] = useState<string | null>(null);
   const [addingLeg, setAddingLeg] = useState(false);
   const [editingLegId, setEditingLegId] = useState<string | null>(null);
+  const [legError, setLegError] = useState<string | null>(null);
 
   if (loading) return <div className="p-6 text-on-surface-variant">Loading…</div>;
   if (error || !c) return <div className="p-6 text-error">{error?.message || 'Case not found'}</div>;
@@ -44,16 +45,31 @@ export function LogisticsCaseDetailPage() {
 
   async function saveNewLeg(input: Record<string, unknown>) {
     if (!caseId) return;
-    await svc.addLeg(caseId, input); setAddingLeg(false); refresh();
+    setLegError(null);
+    try {
+      await svc.addLeg(caseId, input); setAddingLeg(false); refresh();
+    } catch (e) {
+      setLegError(e instanceof Error ? e.message : 'Failed to add leg');
+    }
   }
   async function saveEditLeg(legId: string, input: Record<string, unknown>) {
     if (!caseId) return;
-    await svc.updateLeg(caseId, legId, input); setEditingLegId(null); refresh();
+    setLegError(null);
+    try {
+      await svc.updateLeg(caseId, legId, input); setEditingLegId(null); refresh();
+    } catch (e) {
+      setLegError(e instanceof Error ? e.message : 'Failed to update leg');
+    }
   }
   async function deleteLeg(legId: string) {
     if (!caseId) return;
     if (!window.confirm('Remove this shipment leg? This cannot be undone.')) return;
-    await svc.removeLeg(caseId, legId); refresh();
+    setLegError(null);
+    try {
+      await svc.removeLeg(caseId, legId); refresh();
+    } catch (e) {
+      setLegError(e instanceof Error ? e.message : 'Failed to remove leg');
+    }
   }
 
   return (
@@ -125,6 +141,7 @@ export function LogisticsCaseDetailPage() {
         {addingLeg
           ? <LegForm onSubmit={saveNewLeg} onCancel={() => setAddingLeg(false)} />
           : <button onClick={() => setAddingLeg(true)} className="text-sm text-primary hover:underline">+ Add leg</button>}
+        {legError && <p className="text-error text-sm">{legError}</p>}
       </section>
 
       {/* Milestone log */}
