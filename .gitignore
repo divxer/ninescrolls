@@ -42,3 +42,7 @@ public/assets/images/insights/
 public/assets/images/products/
 public/assets/images/news/
 .superpowers/
+
+# Auto-generated AI agent artifacts (claude-mem context + stale agent worktrees)
+AGENTS.md
+.claire/
