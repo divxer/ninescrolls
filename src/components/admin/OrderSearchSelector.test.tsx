@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useState } from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
 vi.mock('../../services/orderAdminService');
@@ -35,6 +36,69 @@ describe('OrderSearchSelector', () => {
     render(<OrderSearchSelector value="ord-77" onSelect={vi.fn()} />);
     expect(screen.getByText('Linked order: ord-77')).toBeInTheDocument();
     expect(listOrders).not.toHaveBeenCalled();
+  });
+
+  it('shows the rich chip after a controlled parent accepts a picked order', async () => {
+    vi.mocked(listOrders).mockResolvedValue({
+      items: [{ orderId: 'ord-1', institution: 'HORIBA', quoteNumber: 'NS-Q-2026-HRB-001', productModel: '4" RIE' }],
+      nextToken: null,
+    } as never);
+    function ControlledSelector() {
+      const [value, setValue] = useState('');
+      return (
+        <OrderSearchSelector
+          value={value}
+          onSelect={(order) => setValue(order?.orderId || '')}
+        />
+      );
+    }
+    render(<ControlledSelector />);
+    fireEvent.change(screen.getByLabelText('Search order'), { target: { value: 'horiba' } });
+    await flushDebounce();
+    fireEvent.click(screen.getByText('NS-Q-2026-HRB-001'));
+    expect(screen.getByText('NS-Q-2026-HRB-001 · HORIBA')).toBeInTheDocument();
+    expect(screen.getByText('Clear')).toBeInTheDocument();
+  });
+
+  it('hides old result rows while a new query is loading', async () => {
+    vi.mocked(listOrders)
+      .mockResolvedValueOnce({
+        items: [{ orderId: 'ord-1', institution: 'HORIBA', quoteNumber: 'NS-Q-2026-HRB-001' }],
+        nextToken: null,
+      } as never)
+      .mockResolvedValueOnce({
+        items: [{ orderId: 'ord-2', institution: 'ACME', quoteNumber: 'NS-Q-2026-ACM-002' }],
+        nextToken: null,
+      } as never);
+    render(<OrderSearchSelector value="" onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Search order'), { target: { value: 'horiba' } });
+    await flushDebounce();
+    expect(screen.getByText('NS-Q-2026-HRB-001')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search order'), { target: { value: 'acme' } });
+
+    expect(screen.queryByText('NS-Q-2026-HRB-001')).not.toBeInTheDocument();
+    expect(screen.getByText('Searching…')).toBeInTheDocument();
+    await flushDebounce();
+    expect(screen.getByText('NS-Q-2026-ACM-002')).toBeInTheDocument();
+  });
+
+  it('falls back to the current controlled value when it changes to a different order id', async () => {
+    vi.mocked(listOrders).mockResolvedValue({
+      items: [{ orderId: 'ord-1', institution: 'HORIBA', quoteNumber: 'NS-Q-2026-HRB-001' }],
+      nextToken: null,
+    } as never);
+    const { rerender } = render(<OrderSearchSelector value="" onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Search order'), { target: { value: 'horiba' } });
+    await flushDebounce();
+    fireEvent.click(screen.getByText('NS-Q-2026-HRB-001'));
+    rerender(<OrderSearchSelector value="ord-1" onSelect={vi.fn()} />);
+    expect(screen.getByText('NS-Q-2026-HRB-001 · HORIBA')).toBeInTheDocument();
+
+    rerender(<OrderSearchSelector value="ord-2" onSelect={vi.fn()} />);
+
+    expect(screen.getByText('Linked order: ord-2')).toBeInTheDocument();
+    expect(screen.queryByText('NS-Q-2026-HRB-001 · HORIBA')).not.toBeInTheDocument();
   });
 
   it('uses selectedLabel for a preset value when provided', () => {

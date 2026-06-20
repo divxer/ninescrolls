@@ -31,7 +31,7 @@ export function OrderSearchSelector({ value, onSelect, selectedLabel }: OrderSea
   useEffect(() => {
     const term = query.trim();
     if (!term) { setResults([]); setLoading(false); setError(false); return; }
-    setLoading(true); setError(false);
+    setLoading(true); setError(false); setResults([]);
     let cancelled = false;
     const t = setTimeout(() => {
       orderSvc.listOrders({ search: term, limit: 10 })
@@ -68,7 +68,7 @@ export function OrderSearchSelector({ value, onSelect, selectedLabel }: OrderSea
   // A set value renders a chip. Rich (quote#/institution) only for an order picked this
   // session; otherwise selectedLabel, else a plain label — NEVER a reverse lookup.
   if (value) {
-    const chip = selected
+    const chip = selected?.orderId === value
       ? `${orderLabel(selected)} · ${selected.institution}`
       : (selectedLabel || `Linked order: ${value}`);
     return (
