@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 
 export function generateCaseId(): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  return `lc-${date}-${crypto.randomBytes(2).toString('hex')}`;
+  return `lc-${date}-${crypto.randomBytes(8).toString('hex')}`;
 }
 
 export function generateLegId(): string {

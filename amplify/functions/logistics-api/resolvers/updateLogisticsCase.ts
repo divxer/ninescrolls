@@ -18,6 +18,7 @@ export async function updateLogisticsCase(event: AppSyncEvent) {
   const input: Record<string, unknown> = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
   if (input.relatedEntityType !== undefined
+    && input.relatedEntityType !== null
     && !RELATED_ENTITY_TYPES.includes(input.relatedEntityType as RelatedEntityType)) {
     throw new Error(`relatedEntityType must be one of: ${RELATED_ENTITY_TYPES.join(', ')}`);
   }
@@ -25,23 +26,39 @@ export async function updateLogisticsCase(event: AppSyncEvent) {
   const now = new Date().toISOString();
   // Baseline always refreshes updatedAt + the recency sort key.
   const setParts: string[] = ['updatedAt = :now', 'GSI1SK = :gsi1sk'];
+  const removeParts: string[] = [];
   const values: Record<string, unknown> = { ':now': now, ':gsi1sk': `${now}#${caseId}` };
 
   for (const field of EDITABLE) {
     if (input[field] !== undefined) {
-      setParts.push(`${field} = :${field}`);
-      values[`:${field}`] = input[field];
+      if (input[field] === null) {
+        removeParts.push(field);
+      } else {
+        setParts.push(`${field} = :${field}`);
+        values[`:${field}`] = input[field];
+      }
     }
   }
 
-  if (setParts.length === 2) throw new Error('No editable fields supplied');
+  if (setParts.length === 2 && removeParts.length === 0) throw new Error('No editable fields supplied');
 
-  await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(),
-    Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
-    UpdateExpression: `SET ${setParts.join(', ')}`,
-    ExpressionAttributeValues: values,
-  }));
+  const updateParts = [`SET ${setParts.join(', ')}`];
+  if (removeParts.length > 0) updateParts.push(`REMOVE ${removeParts.join(', ')}`);
+
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(),
+      Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
+      UpdateExpression: updateParts.join(' '),
+      ConditionExpression: 'attribute_exists(PK) AND attribute_exists(SK)',
+      ExpressionAttributeValues: values,
+    }));
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+      throw new Error(`Logistics case not found: ${caseId}`);
+    }
+    throw err;
+  }
 
   return buildCaseResponse(caseId);
 }

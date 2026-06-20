@@ -63,4 +63,15 @@ describe('listLogisticsCases', () => {
     expect(res.items).toHaveLength(1);
     expect(res.items[0].caseType).toBe('SAMPLE');
   });
+
+  it('bounds each DynamoDB page to the requested limit so overflow items are not dropped', async () => {
+    send.mockResolvedValueOnce({
+      Items: [item({ caseId: 'lc-1' }), item({ caseId: 'lc-2' })],
+      LastEvaluatedKey: { PK: 'LOGISTICS#lc-2', SK: 'META' },
+    });
+    const res = await listLogisticsCases(evt({ limit: 2 }));
+    expect(send.mock.calls[0][0].input.Limit).toBe(2);
+    expect(res.items.map((it) => it.caseId)).toEqual(['lc-1', 'lc-2']);
+    expect(res.nextToken).toBeTruthy();
+  });
 });

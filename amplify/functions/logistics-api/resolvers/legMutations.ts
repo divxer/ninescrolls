@@ -17,6 +17,7 @@ function validateLegInput(input: Record<string, unknown>): void {
     throw new Error(`direction must be one of: ${LEG_DIRECTIONS.join(', ')}`);
   }
   if (input.customsStatus !== undefined
+    && input.customsStatus !== null
     && !CUSTOMS_STATUSES.includes(input.customsStatus as CustomsStatus)) {
     throw new Error(`customsStatus must be one of: ${CUSTOMS_STATUSES.join(', ')}`);
   }
@@ -28,14 +29,27 @@ function pickLegFields(input: Record<string, unknown>): Partial<ShipmentLeg> {
   return out as Partial<ShipmentLeg>;
 }
 
-async function persistLegs(caseId: string, legs: ShipmentLeg[]) {
+async function persistLegs(caseId: string, legs: ShipmentLeg[], expectedUpdatedAt: string) {
   const now = new Date().toISOString();
-  await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(),
-    Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
-    UpdateExpression: 'SET legs = :legs, updatedAt = :now, GSI1SK = :gsi1sk',
-    ExpressionAttributeValues: { ':legs': legs, ':now': now, ':gsi1sk': `${now}#${caseId}` },
-  }));
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(),
+      Key: { PK: `LOGISTICS#${caseId}`, SK: 'META' },
+      UpdateExpression: 'SET legs = :legs, updatedAt = :now, GSI1SK = :gsi1sk',
+      ConditionExpression: 'updatedAt = :expectedUpdatedAt',
+      ExpressionAttributeValues: {
+        ':legs': legs,
+        ':now': now,
+        ':gsi1sk': `${now}#${caseId}`,
+        ':expectedUpdatedAt': expectedUpdatedAt,
+      },
+    }));
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+      throw new Error('Logistics case was updated by another user. Please refresh.');
+    }
+    throw err;
+  }
   return buildCaseResponse(caseId);
 }
 
@@ -50,7 +64,7 @@ export async function addLeg(event: AppSyncEvent) {
   if (!current) throw new Error(`Logistics case not found: ${caseId}`);
 
   const leg: ShipmentLeg = { legId: generateLegId(), direction: input.direction as LegDirection, ...pickLegFields(input) };
-  return persistLegs(caseId, [...(current.legs || []), leg]);
+  return persistLegs(caseId, [...(current.legs || []), leg], current.updatedAt);
 }
 
 export async function updateLeg(event: AppSyncEvent) {
@@ -68,7 +82,7 @@ export async function updateLeg(event: AppSyncEvent) {
   if (idx === -1) throw new Error(`Leg not found: ${legId}`);
 
   legs[idx] = { ...legs[idx], ...pickLegFields(input) };
-  return persistLegs(caseId, legs);
+  return persistLegs(caseId, legs, current.updatedAt);
 }
 
 export async function removeLeg(event: AppSyncEvent) {
@@ -79,5 +93,5 @@ export async function removeLeg(event: AppSyncEvent) {
   if (!current) throw new Error(`Logistics case not found: ${caseId}`);
   const existing = current.legs || [];
   if (!existing.some((l) => l.legId === legId)) throw new Error(`Leg not found: ${legId}`);
-  return persistLegs(caseId, existing.filter((l) => l.legId !== legId));
+  return persistLegs(caseId, existing.filter((l) => l.legId !== legId), current.updatedAt);
 }

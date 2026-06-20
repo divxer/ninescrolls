@@ -35,6 +35,8 @@ describe('advanceLogisticsStage', () => {
     const res = await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION', detail: 'kickoff' }));
     const upd = send.mock.calls[1][0].input;
     expect(upd.ExpressionAttributeValues[':stage']).toBe('PRODUCTION');
+    expect(upd.ConditionExpression).toContain('#currentStage = :expectedStage');
+    expect(upd.UpdateExpression).toContain('list_append');
     // Listing partition is constant; only the recency sort key is refreshed.
     expect(upd.ExpressionAttributeValues[':gsi1sk']).toMatch(/#lc-1$/);
     expect(upd.UpdateExpression).not.toContain('GSI1PK');
@@ -42,9 +44,23 @@ describe('advanceLogisticsStage', () => {
     expect(res?.currentStage).toBe('PRODUCTION');
   });
 
+  it('surfaces a concurrency error when the stage changed after fetch', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { ...baseCase } })
+      .mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
+    await expect(advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION' })))
+      .rejects.toThrow(/updated by another user/i);
+  });
+
   it('rejects a stage not enabled for the case type', async () => {
     send.mockResolvedValueOnce({ Item: { ...baseCase } });
     await expect(advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'TESTING' })))
+      .rejects.toThrow(/not enabled/i);
+  });
+
+  it('rejects a stage that is not in the case stored enabledStages', async () => {
+    send.mockResolvedValueOnce({ Item: { ...baseCase, enabledStages: ['PRODUCTION'] } });
+    await expect(advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'FAT_PASSED' })))
       .rejects.toThrow(/not enabled/i);
   });
 

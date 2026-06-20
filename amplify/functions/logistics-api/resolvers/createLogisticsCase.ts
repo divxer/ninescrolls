@@ -87,6 +87,10 @@ export async function createLogisticsCase(event: AppSyncEvent) {
     createdBy: operatorId,
   };
 
-  await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME(),
+    Item: item,
+    ConditionExpression: 'attribute_not_exists(PK)',
+  }));
   return buildCaseResponse(caseId);
 }

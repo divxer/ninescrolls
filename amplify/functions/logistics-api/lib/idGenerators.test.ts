@@ -5,7 +5,7 @@ describe('idGenerators', () => {
   it('generateCaseId is prefixed and unique', () => {
     const a = generateCaseId();
     const b = generateCaseId();
-    expect(a).toMatch(/^lc-\d{8}-[0-9a-f]{4}$/);
+    expect(a).toMatch(/^lc-\d{8}-[0-9a-f]{16}$/);
     expect(a).not.toBe(b);
   });
 

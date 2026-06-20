@@ -25,6 +25,9 @@ export function LegForm({
     customsStatus: initial?.customsStatus ?? '',
     declaredValueUSD: initial?.declaredValueUSD != null ? String(initial.declaredValueUSD) : '',
     hsCode: initial?.hsCode ?? '',
+    shippedAt: initial?.shippedAt ?? '',
+    clearedAt: initial?.clearedAt ?? '',
+    deliveredAt: initial?.deliveredAt ?? '',
   });
   const [err, setErr] = useState<string | null>(null);
   function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) { setF((p) => ({ ...p, [k]: v })); }
@@ -36,16 +39,26 @@ export function LegForm({
       if (!ok) { setErr('Tracking URL must start with http:// or https://'); return; }
     }
     setErr(null);
+    const isEditing = Boolean(initial?.legId);
     const input: Record<string, unknown> = { direction: f.direction, customsRequired: f.customsRequired };
-    if (f.carrier) input.carrier = f.carrier;
-    if (f.trackingNumber) input.trackingNumber = f.trackingNumber;
-    if (f.trackingUrl) input.trackingUrl = f.trackingUrl;
-    if (f.freightForwarder) input.freightForwarder = f.freightForwarder;
-    if (f.blOrAwb) input.blOrAwb = f.blOrAwb;
-    if (f.containerNo) input.containerNo = f.containerNo;
-    if (f.customsStatus) input.customsStatus = f.customsStatus;
-    if (f.hsCode) input.hsCode = f.hsCode;
+    const optional = <K extends keyof typeof f>(field: K) => {
+      const value = f[field];
+      if (value) input[field] = value;
+      else if (isEditing && initial?.[field as keyof ShipmentLeg] != null) input[field] = null;
+    };
+    optional('carrier');
+    optional('trackingNumber');
+    optional('trackingUrl');
+    optional('freightForwarder');
+    optional('blOrAwb');
+    optional('containerNo');
+    optional('customsStatus');
+    optional('hsCode');
+    optional('shippedAt');
+    optional('clearedAt');
+    optional('deliveredAt');
     if (f.declaredValueUSD) input.declaredValueUSD = Number(f.declaredValueUSD);
+    else if (isEditing && initial?.declaredValueUSD != null) input.declaredValueUSD = null;
     onSubmit(input);
   }
 
@@ -86,6 +99,15 @@ export function LegForm({
             <option value="">—</option>
             {CUSTOMS_STATUSES.map((s) => <option key={s} value={s}>{CUSTOMS_STATUS_LABELS[s]}</option>)}
           </select>
+        </label>
+        <label className="text-xs">Shipped
+          <input aria-label="Shipped" type="date" value={f.shippedAt} onChange={(e) => set('shippedAt', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Cleared
+          <input aria-label="Cleared" type="date" value={f.clearedAt} onChange={(e) => set('clearedAt', e.target.value)} className={FIELD} />
+        </label>
+        <label className="text-xs">Delivered
+          <input aria-label="Delivered" type="date" value={f.deliveredAt} onChange={(e) => set('deliveredAt', e.target.value)} className={FIELD} />
         </label>
       </div>
       <label className="flex items-center gap-2 text-xs">

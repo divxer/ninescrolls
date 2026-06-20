@@ -40,6 +40,7 @@ describe('createLogisticsCase', () => {
     expect(put.Item.milestoneLog[0].action).toBe('CASE_CREATED');
     expect(put.Item.GSI1PK).toBe('LOGISTICS_CASES');
     expect(put.Item.GSI1SK).toMatch(/#lc-/);
+    expect(put.ConditionExpression).toBe('attribute_not_exists(PK)');
     expect(res).not.toBeNull();
   });
 

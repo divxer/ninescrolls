@@ -34,6 +34,22 @@ describe('updateLogisticsCase', () => {
     expect(JSON.stringify(upd)).not.toContain('HACK');
   });
 
+  it('requires the case to already exist before updating', async () => {
+    send.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
+    await expect(updateLogisticsCase(evt({ customerName: 'BAE' })))
+      .rejects.toThrow(/not found/i);
+    const upd = send.mock.calls[0][0].input;
+    expect(upd.ConditionExpression).toContain('attribute_exists');
+  });
+
+  it('allows clearing related entity fields with null', async () => {
+    send.mockResolvedValueOnce({}).mockResolvedValueOnce({ Item: { caseId: 'lc-1' } });
+    await updateLogisticsCase(evt({ relatedEntityType: null, relatedEntityId: null }));
+    const upd = send.mock.calls[0][0].input;
+    expect(upd.UpdateExpression).toContain('REMOVE relatedEntityType, relatedEntityId');
+    expect(upd.ExpressionAttributeValues[':relatedEntityType']).toBeUndefined();
+  });
+
   it('rejects an invalid relatedEntityType', async () => {
     await expect(updateLogisticsCase(evt({ relatedEntityType: 'BOGUS' })))
       .rejects.toThrow(/relatedEntityType/);

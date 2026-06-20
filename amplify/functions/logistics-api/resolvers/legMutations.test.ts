@@ -27,6 +27,7 @@ describe('leg mutations', () => {
     send.mockResolvedValueOnce(caseWithLeg([])).mockResolvedValueOnce({}).mockResolvedValueOnce(caseWithLeg([{}]));
     await addLeg(evt('addLeg', { caseId: 'lc-1', input: JSON.stringify({ direction: 'INBOUND', carrier: 'FedEx' }) }));
     const upd = send.mock.calls[1][0].input;
+    expect(upd.ConditionExpression).toContain('updatedAt = :expectedUpdatedAt');
     expect(upd.ExpressionAttributeValues[':legs']).toHaveLength(1);
     expect(upd.ExpressionAttributeValues[':legs'][0].legId).toMatch(/^leg-/);
     expect(upd.ExpressionAttributeValues[':legs'][0].direction).toBe('INBOUND');
@@ -44,6 +45,22 @@ describe('leg mutations', () => {
     await updateLeg(evt('updateLeg', { caseId: 'lc-1', legId: 'leg-1', input: JSON.stringify({ customsStatus: 'RELEASED' }) }));
     const upd = send.mock.calls[1][0].input;
     expect(upd.ExpressionAttributeValues[':legs'][0].customsStatus).toBe('RELEASED');
+  });
+
+  it('updateLeg can clear optional fields with null', async () => {
+    send.mockResolvedValueOnce(caseWithLeg([{ legId: 'leg-1', direction: 'INBOUND', trackingUrl: 'https://x.test', customsStatus: 'FILED' }]))
+      .mockResolvedValueOnce({}).mockResolvedValueOnce(caseWithLeg([{}]));
+    await updateLeg(evt('updateLeg', { caseId: 'lc-1', legId: 'leg-1', input: JSON.stringify({ trackingUrl: null, customsStatus: null }) }));
+    const leg = send.mock.calls[1][0].input.ExpressionAttributeValues[':legs'][0];
+    expect(leg.trackingUrl).toBeNull();
+    expect(leg.customsStatus).toBeNull();
+  });
+
+  it('surfaces a concurrency error when legs changed after fetch', async () => {
+    send.mockResolvedValueOnce(caseWithLeg([{ legId: 'leg-1', direction: 'INBOUND' }]))
+      .mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
+    await expect(updateLeg(evt('updateLeg', { caseId: 'lc-1', legId: 'leg-1', input: JSON.stringify({ carrier: 'DHL' }) })))
+      .rejects.toThrow(/updated by another user/i);
   });
 
   it('updateLeg throws when leg id not found', async () => {

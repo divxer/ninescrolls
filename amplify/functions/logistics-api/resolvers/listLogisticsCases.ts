@@ -43,6 +43,7 @@ export async function listLogisticsCases(event: AppSyncEvent) {
       ExpressionAttributeValues: { ':pk': LISTING_PK },
       ScanIndexForward: false, // GSI1SK = '<updatedAt>#<caseId>' → recency-sorted
       ExclusiveStartKey: key,
+      Limit: effectiveLimit - collected.length,
     }));
     collected.push(...(r.Items || []).filter(passesFilters));
     key = r.LastEvaluatedKey;
