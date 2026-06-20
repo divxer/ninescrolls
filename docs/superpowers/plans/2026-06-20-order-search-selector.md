@@ -41,14 +41,23 @@
 Create `src/components/admin/OrderSearchSelector.test.tsx`:
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 
 vi.mock('../../services/orderAdminService');
 import { listOrders } from '../../services/orderAdminService';
 import { OrderSearchSelector } from './OrderSearchSelector';
 
-beforeEach(() => vi.mocked(listOrders).mockReset());
+// Fake timers make the 300ms debounce deterministic (no CI flakiness). Because timers
+// are faked, do NOT use findBy/waitFor here — advance the debounce + flush the resolved
+// listOrders promise via advanceTimersByTimeAsync (wrapped in act for the state update),
+// then query synchronously.
+beforeEach(() => { vi.useFakeTimers(); vi.mocked(listOrders).mockReset(); });
+afterEach(() => { vi.useRealTimers(); });
+
+async function flushDebounce() {
+  await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+}
 
 describe('OrderSearchSelector', () => {
   it('debounced-searches with the trimmed term and lets you pick an order', async () => {
@@ -59,9 +68,9 @@ describe('OrderSearchSelector', () => {
     const onSelect = vi.fn();
     render(<OrderSearchSelector value="" onSelect={onSelect} />);
     fireEvent.change(screen.getByLabelText('Search order'), { target: { value: '  horiba  ' } });
-    await waitFor(() => expect(listOrders).toHaveBeenCalledWith({ search: 'horiba', limit: 10 }));
-    const row = await screen.findByText('NS-Q-2026-HRB-001');
-    fireEvent.click(row);
+    await flushDebounce();
+    expect(listOrders).toHaveBeenCalledWith({ search: 'horiba', limit: 10 });
+    fireEvent.click(screen.getByText('NS-Q-2026-HRB-001'));
     expect(onSelect).toHaveBeenCalledWith({ orderId: 'ord-1', institution: 'HORIBA' });
   });
 
@@ -83,9 +92,10 @@ describe('OrderSearchSelector', () => {
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 
-  it('does not call listOrders for an empty/whitespace query', () => {
+  it('does not call listOrders for an empty/whitespace query', async () => {
     render(<OrderSearchSelector value="" onSelect={vi.fn()} />);
     fireEvent.change(screen.getByLabelText('Search order'), { target: { value: '   ' } });
+    await flushDebounce();
     expect(listOrders).not.toHaveBeenCalled();
   });
 
@@ -94,7 +104,8 @@ describe('OrderSearchSelector', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(<OrderSearchSelector value="" onSelect={vi.fn()} />);
     fireEvent.change(screen.getByLabelText('Search order'), { target: { value: 'x' } });
-    expect(await screen.findByText('Search failed')).toBeInTheDocument();
+    await flushDebounce();
+    expect(screen.getByText('Search failed')).toBeInTheDocument();
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -161,6 +172,10 @@ export function OrderSearchSelector({ value, onSelect, selectedLabel }: OrderSea
     }, SEARCH_DEBOUNCE_MS);
     return () => { cancelled = true; clearTimeout(t); };
   }, [query]);
+
+  // If the parent clears the value, drop the locally-remembered order so internal
+  // state can't drift out of sync with `value`.
+  useEffect(() => { if (!value) setSelected(null); }, [value]);
 
   function pick(o: OrderResult) {
     setSelected(o);
