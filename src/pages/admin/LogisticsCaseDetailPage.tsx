@@ -4,6 +4,7 @@ import { useLogisticsCase } from '../../hooks/useLogisticsCases';
 import * as svc from '../../services/logisticsAdminService';
 import { StageBadge, CustomsBadge } from '../../components/admin/StageBadge';
 import { MilestoneProgress } from '../../components/admin/MilestoneProgress';
+import { LegForm } from '../../components/admin/LegForm';
 import {
   enabledStagesFor, isCustomsStage, nextAdvanceableStages,
   CASE_TYPE_LABELS, LEG_DIRECTION_LABELS, STAGE_LABELS,
@@ -16,6 +17,8 @@ export function LogisticsCaseDetailPage() {
   const [detail, setDetail] = useState('');
   const [busy, setBusy] = useState(false);
   const [advanceError, setAdvanceError] = useState<string | null>(null);
+  const [addingLeg, setAddingLeg] = useState(false);
+  const [editingLegId, setEditingLegId] = useState<string | null>(null);
 
   if (loading) return <div className="p-6 text-on-surface-variant">Loading…</div>;
   if (error || !c) return <div className="p-6 text-error">{error?.message || 'Case not found'}</div>;
@@ -37,6 +40,20 @@ export function LogisticsCaseDetailPage() {
     } catch (e) {
       setAdvanceError(e instanceof Error ? e.message : 'Failed to advance stage');
     } finally { setBusy(false); }
+  }
+
+  async function saveNewLeg(input: Record<string, unknown>) {
+    if (!caseId) return;
+    await svc.addLeg(caseId, input); setAddingLeg(false); refresh();
+  }
+  async function saveEditLeg(legId: string, input: Record<string, unknown>) {
+    if (!caseId) return;
+    await svc.updateLeg(caseId, legId, input); setEditingLegId(null); refresh();
+  }
+  async function deleteLeg(legId: string) {
+    if (!caseId) return;
+    if (!window.confirm('Remove this shipment leg? This cannot be undone.')) return;
+    await svc.removeLeg(caseId, legId); refresh();
   }
 
   return (
@@ -85,19 +102,29 @@ export function LogisticsCaseDetailPage() {
       <section className="rounded-xl border border-outline-variant p-4 space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant">Shipment Legs</h2>
         {(c.legs || []).map((l) => (
-          <div key={l.legId} className="flex flex-wrap items-center gap-3 rounded-lg bg-surface-container-low p-3 text-sm">
-            <span className="font-semibold">{LEG_DIRECTION_LABELS[l.direction]}</span>
-            {l.carrier && <span>{l.carrier}</span>}
-            {l.trackingNumber && (l.trackingUrl
-              ? <a href={l.trackingUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">{l.trackingNumber}</a>
-              : <span>{l.trackingNumber}</span>)}
-            {l.freightForwarder && <span className="text-on-surface-variant">{l.freightForwarder}</span>}
-            {l.blOrAwb && <span className="text-on-surface-variant">{l.blOrAwb}</span>}
-            <CustomsBadge status={l.customsStatus} />
-          </div>
+          editingLegId === l.legId
+            ? <LegForm key={l.legId} initial={l} onSubmit={(input) => saveEditLeg(l.legId, input)} onCancel={() => setEditingLegId(null)} />
+            : (
+              <div key={l.legId} className="flex flex-wrap items-center gap-3 rounded-lg bg-surface-container-low p-3 text-sm">
+                <span className="font-semibold">{LEG_DIRECTION_LABELS[l.direction]}</span>
+                {l.carrier && <span>{l.carrier}</span>}
+                {l.trackingNumber && (l.trackingUrl
+                  ? <a href={l.trackingUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">{l.trackingNumber}</a>
+                  : <span>{l.trackingNumber}</span>)}
+                {l.freightForwarder && <span className="text-on-surface-variant">{l.freightForwarder}</span>}
+                {l.blOrAwb && <span className="text-on-surface-variant">{l.blOrAwb}</span>}
+                <CustomsBadge status={l.customsStatus} />
+                <span className="ml-auto flex gap-3">
+                  <button onClick={() => setEditingLegId(l.legId)} className="text-xs text-primary hover:underline">Edit</button>
+                  <button onClick={() => deleteLeg(l.legId)} className="text-xs text-error hover:underline">Remove</button>
+                </span>
+              </div>
+            )
         ))}
-        {!(c.legs || []).length && <p className="text-sm text-on-surface-variant">No legs yet.</p>}
-        {/* Task 6B wires the add / edit / remove leg forms into this section. */}
+        {!(c.legs || []).length && !addingLeg && <p className="text-sm text-on-surface-variant">No legs yet.</p>}
+        {addingLeg
+          ? <LegForm onSubmit={saveNewLeg} onCancel={() => setAddingLeg(false)} />
+          : <button onClick={() => setAddingLeg(true)} className="text-sm text-primary hover:underline">+ Add leg</button>}
       </section>
 
       {/* Milestone log */}

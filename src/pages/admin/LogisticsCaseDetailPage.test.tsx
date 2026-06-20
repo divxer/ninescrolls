@@ -60,4 +60,12 @@ describe('LogisticsCaseDetailPage', () => {
     expect(await screen.findByText(/not enabled/i)).toBeInTheDocument();
     expect(svc.advanceLogisticsStage).toHaveBeenCalled();
   });
+
+  it('removes a leg via the service after confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(svc.removeLeg).mockResolvedValueOnce({ ...sampleCase, legs: [] } as never);
+    renderAt();
+    fireEvent.click(screen.getByText('Remove'));
+    await waitFor(() => expect(svc.removeLeg).toHaveBeenCalledWith('lc-1', 'l1'));
+  });
 });
