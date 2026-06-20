@@ -387,8 +387,10 @@ export function LogisticsPanel({ orderId }: { orderId: string }) {
   const { cases, loading, error } = useLogisticsCases({ relatedOrderId: orderId });
 
   useEffect(() => {
-    if (error) console.warn('LogisticsPanel: failed to load related logistics cases', error);
-  }, [error]);
+    // Depend on the message (not the Error instance) so a new instance each render
+    // doesn't re-warn on every render.
+    if (error) console.warn('LogisticsPanel: failed to load related logistics cases —', error.message);
+  }, [error?.message]);
 
   // Non-blocking: stay invisible while loading, on error, or when the order has no logistics.
   if (loading || error || !cases.length) return null;
@@ -434,14 +436,65 @@ git commit -m "feat(logistics-ui): read-only LogisticsPanel for an order (hidden
 
 ---
 
-## Task 5: Wire `LogisticsPanel` into `OrderDetailPage`
+## Task 5: Wire `LogisticsPanel` into `OrderDetailPage` (with wiring test)
 
 **Files:**
 - Modify: `src/pages/admin/OrderDetailPage.tsx`
+- Test: `src/pages/admin/OrderDetailPage.test.tsx` (new — small wiring test)
 
-No new test (the panel + its hidden-when-empty behavior are covered by Task 4; this is wiring). Verified by typecheck + the existing OrderDetailPage tests staying green.
+A focused wiring test catches the easy-to-miss mistakes (forgot the import, wrong placement, wrong prop). It mocks `LogisticsPanel` as a sentinel and the order data hooks + sibling panels, then asserts the panel rendered with the order id.
 
-- [ ] **Step 1: Add the import**
+- [ ] **Step 1: Write the failing wiring test**
+
+Create `src/pages/admin/OrderDetailPage.test.tsx`:
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+
+const mockOrder = {
+  orderId: 'ord-1', status: 'INQUIRY', institution: 'Test University', department: 'Physics',
+  productModel: 'ICP-RIE-200', productName: 'Etcher', configuration: 'Standard',
+  quoteNumber: null, poNumber: null, quoteAmount: null, notes: null,
+  quoteDate: null, quoteValidUntil: null, poDate: null, productionStartDate: null,
+  shipDate: null, installDate: null, closeDate: null, rfqId: null,
+  createdAt: '2026-01-01T00:00:00Z', createdBy: 'u', createdByEmail: 'u@x.com', contacts: [],
+};
+
+vi.mock('../../hooks/useOrders', () => ({
+  useOrder: () => ({ order: mockOrder, loading: false, error: null, refresh: vi.fn() }),
+  useOrderLogs: () => ({ logs: [], loading: false }),
+}));
+vi.mock('../../components/admin/ContactsPanel', () => ({ ContactsPanel: () => null }));
+vi.mock('../../components/admin/DocumentsPanel', () => ({ DocumentsPanel: () => null }));
+vi.mock('../../components/admin/ActivityLog', () => ({ ActivityLog: () => null }));
+vi.mock('../../components/admin/LogisticsPanel', () => ({
+  LogisticsPanel: ({ orderId }: { orderId: string }) => <div data-testid="logistics-panel">LP:{orderId}</div>,
+}));
+
+import { OrderDetailPage } from './OrderDetailPage';
+
+describe('OrderDetailPage wiring', () => {
+  it('renders LogisticsPanel with the order id', () => {
+    render(
+      <MemoryRouter initialEntries={['/admin/orders/ord-1']}>
+        <Routes><Route path="/admin/orders/:orderId" element={<OrderDetailPage />} /></Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('logistics-panel')).toHaveTextContent('LP:ord-1');
+  });
+});
+```
+
+> If `OrderDetailPage` reads an order field not in `mockOrder` and the render throws, add that field to `mockOrder` (it accesses: orderId, status, institution, department, productModel/productName/configuration, the quote/po/production/ship/install/close dates, quoteAmount, quoteNumber, poNumber, notes, rfqId, createdAt, createdBy, createdByEmail, contacts).
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/pages/admin/OrderDetailPage.test.tsx`
+Expected: FAIL — `logistics-panel` testid not found (panel not wired yet).
+
+- [ ] **Step 3: Add the import**
 
 In `src/pages/admin/OrderDetailPage.tsx`, alongside the other panel imports (near `DocumentsPanel`):
 
@@ -449,7 +502,7 @@ In `src/pages/admin/OrderDetailPage.tsx`, alongside the other panel imports (nea
 import { LogisticsPanel } from '../../components/admin/LogisticsPanel';
 ```
 
-- [ ] **Step 2: Render it in the right column**
+- [ ] **Step 4: Render it in the right column**
 
 In the right-column block (after `<DocumentsPanel orderId={order.orderId} currentStatus={order.status} />`, before `<ActivityLog .../>`), add:
 
@@ -461,17 +514,17 @@ In the right-column block (after `<DocumentsPanel orderId={order.orderId} curren
           <ActivityLog logs={logs} loading={logsLoading} />
 ```
 
-- [ ] **Step 3: Verify**
+- [ ] **Step 5: Run test to verify it passes + typecheck**
 
+Run: `npx vitest run src/pages/admin/OrderDetailPage.test.tsx`
+Expected: PASS.
 Run: `npx tsc --noEmit 2>&1 | grep -iE "OrderDetailPage|LogisticsPanel" || echo clean`
 Expected: clean.
-Run: `npx vitest run src/pages/admin/OrderDetailPage.test.tsx 2>&1 | tail -3` (if the file exists)
-Expected: PASS (no regressions). If no such test file exists, skip.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/pages/admin/OrderDetailPage.tsx
+git add src/pages/admin/OrderDetailPage.tsx src/pages/admin/OrderDetailPage.test.tsx
 git commit -m "feat(logistics-ui): show Related Logistics Cases on the order detail page"
 ```
 
@@ -537,7 +590,7 @@ git commit -m "feat(logistics-ui): label the reverse Order link as 'Related Orde
 
 - [ ] **Step 1: Full cross-link test sweep**
 
-Run: `npx vitest run amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts src/services/logisticsAdminService.test.ts src/hooks/useLogisticsCases.test.tsx src/components/admin/LogisticsPanel.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx`
+Run: `npx vitest run amplify/functions/logistics-api/resolvers/listLogisticsCases.test.ts src/services/logisticsAdminService.test.ts src/hooks/useLogisticsCases.test.tsx src/components/admin/LogisticsPanel.test.tsx src/pages/admin/OrderDetailPage.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx`
 Expected: ALL PASS.
 
 - [ ] **Step 2: Typecheck + build**
