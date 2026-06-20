@@ -3,13 +3,10 @@ import {
   type LogisticsStage, type CustomsStatus,
 } from '../../types/logistics';
 
-const TERMINAL = new Set<LogisticsStage>(['CLOSED', 'CANCELLED']);
-
 function stageStyle(stage: LogisticsStage): string {
   if (stage === 'CANCELLED') return 'bg-error-container text-on-error-container';
-  if (stage === 'CLOSED' || TERMINAL.has(stage)) return 'bg-surface-container-high text-on-surface-variant';
+  if (stage === 'CLOSED' || stage === 'DRAFT') return 'bg-surface-container-high text-on-surface-variant';
   if (isCustomsStage(stage)) return 'bg-tertiary-fixed text-on-tertiary-fixed-variant';
-  if (stage === 'DRAFT') return 'bg-surface-container-high text-on-surface-variant';
   return 'bg-secondary-fixed text-secondary';
 }
 
