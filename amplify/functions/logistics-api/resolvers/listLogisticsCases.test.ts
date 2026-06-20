@@ -64,6 +64,30 @@ describe('listLogisticsCases', () => {
     expect(res.items[0].caseType).toBe('SAMPLE');
   });
 
+  it('treats AppSync null args (unset variables) as "no filter" — does not drop cases', async () => {
+    // AppSync sends explicitly-unset GraphQL variables as `null`, not `undefined`.
+    // The customsRequired filter must treat null like undefined, or every case is dropped.
+    send.mockResolvedValueOnce({
+      Items: [item({ caseId: 'lc-1', customsRequired: true })],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await listLogisticsCases(evt({
+      stage: null, caseType: null, customsRequired: null, search: null, limit: 50, nextToken: null,
+    }));
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].caseId).toBe('lc-1');
+  });
+
+  it('still filters when customsRequired is an explicit boolean', async () => {
+    send.mockResolvedValueOnce({
+      Items: [item({ caseId: 'lc-1', customsRequired: true }), item({ caseId: 'lc-2', customsRequired: false })],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await listLogisticsCases(evt({ customsRequired: false }));
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].caseId).toBe('lc-2');
+  });
+
   it('bounds each DynamoDB page to the requested limit so overflow items are not dropped', async () => {
     send.mockResolvedValueOnce({
       Items: [item({ caseId: 'lc-1' }), item({ caseId: 'lc-2' })],
