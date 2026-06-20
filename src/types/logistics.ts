@@ -178,8 +178,6 @@ export const LEG_DIRECTION_LABELS: Record<LegDirection, string> = {
   INBOUND: 'Inbound', OUTBOUND: 'Outbound', RETURN: 'Return', DOMESTIC_TRANSFER: 'Domestic Transfer',
 };
 
-export const TERMINAL_STAGES = new Set<LogisticsStage>(['CLOSED', 'CANCELLED']);
-
 /** Parse the JSON-string stat buckets (a.json() round-trips as a string). Numbers only. */
 export function parseStatBucket(raw: string | null | undefined): Record<string, number> {
   let parsed: unknown = raw;

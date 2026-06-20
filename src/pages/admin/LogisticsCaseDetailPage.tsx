@@ -125,7 +125,7 @@ export function LogisticsCaseDetailPage() {
           </label>
           <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Note (optional)"
             className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm" />
-          <button onClick={advance} disabled={!target || busy}
+          <button onClick={advance} disabled={!target || !advanceOptions.some((s) => s === target) || busy}
             className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50">Advance</button>
         </div>
         {advanceError && <p className="text-error text-sm">{advanceError}</p>}
