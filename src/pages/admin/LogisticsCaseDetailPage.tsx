@@ -95,8 +95,8 @@ export function LogisticsCaseDetailPage() {
       </header>
       <div className="text-sm text-on-surface-variant">
         <span>{c.customerName}</span>{c.contactName ? ` · ${c.contactName}` : ''}
-        {c.relatedOrderId && <> · <Link className="text-primary hover:underline" to={`/admin/orders/${c.relatedOrderId}`}>Order {c.relatedOrderId}</Link></>}
-        {!c.relatedOrderId && c.relatedEntityType && <> · {c.relatedEntityType}: {c.relatedEntityId}</>}
+        {c.relatedOrderId && <> · Related Order: <Link className="text-primary hover:underline" to={`/admin/orders/${c.relatedOrderId}`}>{c.relatedOrderId}</Link></>}
+        {!c.relatedOrderId && c.relatedEntityType && <> · Related: {c.relatedEntityType} {c.relatedEntityId}</>}
       </div>
 
       {editing

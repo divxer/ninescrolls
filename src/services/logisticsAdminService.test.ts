@@ -50,4 +50,12 @@ describe('logisticsAdminService', () => {
     mutations.advanceLogisticsStage.mockResolvedValueOnce({ data: null, errors: [{ message: 'nope' }] });
     await expect(advanceLogisticsStage('lc-1', 'PRODUCTION')).rejects.toThrow('nope');
   });
+
+  it('listLogisticsCases forwards relatedOrderId as its own arg, not via search', async () => {
+    queries.listLogisticsCases.mockResolvedValueOnce({ data: { items: [], nextToken: null }, errors: null });
+    await listLogisticsCases({ relatedOrderId: 'ord-1' });
+    const args = queries.listLogisticsCases.mock.calls[0][0];
+    expect(args.relatedOrderId).toBe('ord-1');
+    expect(args.search).toBeUndefined(); // never conflated with fuzzy search
+  });
 });

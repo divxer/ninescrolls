@@ -4,6 +4,7 @@ import { useOrder, useOrderLogs } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { ContactsPanel } from '../../components/admin/ContactsPanel';
 import { DocumentsPanel } from '../../components/admin/DocumentsPanel';
+import { LogisticsPanel } from '../../components/admin/LogisticsPanel';
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { EditSpecsDialog } from '../../components/admin/EditSpecsDialog';
@@ -378,6 +379,8 @@ export function OrderDetailPage() {
           />
 
           <DocumentsPanel orderId={order.orderId} currentStatus={order.status} />
+
+          <LogisticsPanel orderId={order.orderId} />
 
           <ActivityLog logs={logs} loading={logsLoading} />
         </div>

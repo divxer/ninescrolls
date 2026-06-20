@@ -6,12 +6,13 @@ interface UseLogisticsCasesOptions {
   stage?: string;
   caseType?: string;
   customsRequired?: boolean;
+  relatedOrderId?: string;
   search?: string;
   pageSize?: number;
 }
 
 export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
-  const { stage, caseType, customsRequired, search, pageSize = 50 } = options;
+  const { stage, caseType, customsRequired, relatedOrderId, search, pageSize = 50 } = options;
 
   const [cases, setCases] = useState<LogisticsCase[]>([]);
   const [nextToken, setNextToken] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
     setLoading(true);
     setError(null);
     setNextToken(null); // reset cursor so a stale loadMore can't fire after a filter change
-    svc.listLogisticsCases({ stage, caseType, customsRequired, search, limit: pageSize })
+    svc.listLogisticsCases({ stage, caseType, customsRequired, relatedOrderId, search, limit: pageSize })
       .then((data) => {
         if (cancelled) return;
         setCases((data?.items as LogisticsCase[]) || []);
@@ -33,7 +34,7 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
       })
       .catch((err) => { if (!cancelled) { setError(err); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [stage, caseType, customsRequired, search, pageSize]);
+  }, [stage, caseType, customsRequired, relatedOrderId, search, pageSize]);
 
   // Public refresh wrapper — does NOT leak the effect-cleanup function to callers.
   const refresh = useCallback(() => { fetchFirstPage(); }, [fetchFirstPage]);
@@ -41,14 +42,14 @@ export function useLogisticsCases(options: UseLogisticsCasesOptions = {}) {
   const loadMore = useCallback(() => {
     if (!nextToken || loadingMore) return;
     setLoadingMore(true);
-    svc.listLogisticsCases({ stage, caseType, customsRequired, search, limit: pageSize, nextToken })
+    svc.listLogisticsCases({ stage, caseType, customsRequired, relatedOrderId, search, limit: pageSize, nextToken })
       .then((data) => {
         setCases((prev) => [...prev, ...((data?.items as LogisticsCase[]) || [])]);
         setNextToken((data?.nextToken as string | null) ?? null);
         setLoadingMore(false);
       })
       .catch((err) => { setError(err); setLoadingMore(false); });
-  }, [nextToken, loadingMore, stage, caseType, customsRequired, search, pageSize]);
+  }, [nextToken, loadingMore, stage, caseType, customsRequired, relatedOrderId, search, pageSize]);
 
   useEffect(() => fetchFirstPage(), [fetchFirstPage]);
 

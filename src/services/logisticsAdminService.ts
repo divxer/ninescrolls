@@ -12,6 +12,7 @@ interface ListLogisticsArgs {
   stage?: string;
   caseType?: string;
   customsRequired?: boolean;
+  relatedOrderId?: string;
   search?: string;
   limit?: number;
   nextToken?: string;
@@ -22,6 +23,7 @@ export async function listLogisticsCases(opts: ListLogisticsArgs = {}) {
   if (opts.stage) args.stage = opts.stage;
   if (opts.caseType) args.caseType = opts.caseType;
   if (opts.customsRequired !== undefined) args.customsRequired = opts.customsRequired;
+  if (opts.relatedOrderId) args.relatedOrderId = opts.relatedOrderId;
   if (opts.search) args.search = opts.search;
   if (opts.limit) args.limit = opts.limit;
   if (opts.nextToken) args.nextToken = opts.nextToken;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import * as svc from '../services/logisticsAdminService';
 
 vi.mock('../services/logisticsAdminService');
@@ -24,6 +24,30 @@ describe('useLogisticsCases', () => {
     vi.mocked(svc.listLogisticsCases).mockRejectedValueOnce(new Error('boom'));
     const { result } = renderHook(() => useLogisticsCases());
     await waitFor(() => expect(result.current.error?.message).toBe('boom'));
+  });
+
+  it('forwards relatedOrderId to the service', async () => {
+    vi.mocked(svc.listLogisticsCases).mockResolvedValueOnce({ items: [], nextToken: null } as never);
+    const { result } = renderHook(() => useLogisticsCases({ relatedOrderId: 'ord-1' }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(svc.listLogisticsCases).toHaveBeenCalledWith(
+      expect.objectContaining({ relatedOrderId: 'ord-1' }),
+    );
+  });
+
+  it('forwards relatedOrderId when loading more pages', async () => {
+    vi.mocked(svc.listLogisticsCases)
+      .mockResolvedValueOnce({ items: [], nextToken: 'cursor-1' } as never)
+      .mockResolvedValueOnce({ items: [{ caseId: 'lc-2' }], nextToken: null } as never);
+    const { result } = renderHook(() => useLogisticsCases({ relatedOrderId: 'ord-1' }));
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    act(() => result.current.loadMore());
+
+    await waitFor(() => expect(result.current.cases).toHaveLength(1));
+    expect(svc.listLogisticsCases).toHaveBeenLastCalledWith(
+      expect.objectContaining({ relatedOrderId: 'ord-1', nextToken: 'cursor-1' }),
+    );
   });
 });
 
