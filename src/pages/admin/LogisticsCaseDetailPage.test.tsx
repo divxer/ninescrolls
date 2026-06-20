@@ -78,4 +78,14 @@ describe('LogisticsCaseDetailPage', () => {
     expect(await screen.findByText(/Leg rejected/i)).toBeInTheDocument();
     expect(screen.getByText('Save leg')).toBeInTheDocument();
   });
+
+  it('shows a labeled Related Order link when relatedOrderId is set', async () => {
+    vi.mocked(useLogisticsCase).mockReturnValue({
+      logisticsCase: { ...sampleCase, relatedOrderId: 'ord-77' },
+      loading: false, error: null, refresh: vi.fn(),
+    } as never);
+    renderAt();
+    await waitFor(() => expect(screen.getByText(/Related Order:/)).toBeInTheDocument());
+    expect(screen.getByText('ord-77').closest('a')).toHaveAttribute('href', '/admin/orders/ord-77');
+  });
 });
