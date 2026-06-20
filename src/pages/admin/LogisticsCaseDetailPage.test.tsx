@@ -51,4 +51,13 @@ describe('LogisticsCaseDetailPage', () => {
     fireEvent.click(screen.getByText('Advance'));
     await waitFor(() => expect(svc.advanceLogisticsStage).toHaveBeenCalledWith('lc-1', 'FAT_PASSED', undefined, false));
   });
+
+  it('surfaces an error when the stage transition is rejected', async () => {
+    vi.mocked(svc.advanceLogisticsStage).mockRejectedValueOnce(new Error('Stage PRODUCTION is not enabled'));
+    renderAt();
+    fireEvent.change(screen.getByLabelText('Advance to stage'), { target: { value: 'FAT_PASSED' } });
+    fireEvent.click(screen.getByText('Advance'));
+    expect(await screen.findByText(/not enabled/i)).toBeInTheDocument();
+    expect(svc.advanceLogisticsStage).toHaveBeenCalled();
+  });
 });
