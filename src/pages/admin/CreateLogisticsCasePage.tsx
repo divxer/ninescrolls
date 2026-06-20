@@ -4,6 +4,7 @@ import * as svc from '../../services/logisticsAdminService';
 import {
   CASE_TYPES, CASE_TYPE_LABELS, RELATED_ENTITY_TYPES,
 } from '../../types/logistics';
+import { OrderSearchSelector } from '../../components/admin/OrderSearchSelector';
 
 export function CreateLogisticsCasePage() {
   const navigate = useNavigate();
@@ -17,6 +18,19 @@ export function CreateLogisticsCasePage() {
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function handleOrderSelect(order: { orderId: string; institution: string } | null) {
+    if (order) {
+      setForm((f) => ({
+        ...f,
+        relatedOrderId: order.orderId,
+        // Fill the customer ONLY when empty — never clobber a name the user typed.
+        customerName: f.customerName.trim() === '' ? order.institution : f.customerName,
+      }));
+    } else {
+      setForm((f) => ({ ...f, relatedOrderId: '' }));
+    }
   }
 
   async function submit() {
@@ -69,24 +83,26 @@ export function CreateLogisticsCasePage() {
         Customs required
       </label>
 
-      <label className="block text-sm">Related order ID
-        <input value={form.relatedOrderId} onChange={(e) => set('relatedOrderId', e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2" />
-      </label>
-
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm">Related entity type
-          <select value={form.relatedEntityType} onChange={(e) => set('relatedEntityType', e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2">
-            <option value="">—</option>
-            {RELATED_ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
-        <label className="block text-sm">Related entity ID
-          <input value={form.relatedEntityId} onChange={(e) => set('relatedEntityId', e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2" />
-        </label>
+      <div className="block text-sm">Related Order
+        <OrderSearchSelector value={form.relatedOrderId} onSelect={handleOrderSelect} />
       </div>
+
+      <fieldset className="block text-sm">
+        <legend>Other Related Entity</legend>
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          <label className="block text-sm">Related entity type
+            <select value={form.relatedEntityType} onChange={(e) => set('relatedEntityType', e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2">
+              <option value="">—</option>
+              {RELATED_ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">Related entity ID
+            <input value={form.relatedEntityId} onChange={(e) => set('relatedEntityId', e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2" />
+          </label>
+        </div>
+      </fieldset>
 
       <label className="block text-sm">Notes
         <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3}
