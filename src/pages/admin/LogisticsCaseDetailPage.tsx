@@ -5,6 +5,7 @@ import * as svc from '../../services/logisticsAdminService';
 import { StageBadge, CustomsBadge } from '../../components/admin/StageBadge';
 import { MilestoneProgress } from '../../components/admin/MilestoneProgress';
 import { LegForm } from '../../components/admin/LegForm';
+import { CaseEditForm } from '../../components/admin/CaseEditForm';
 import {
   enabledStagesFor, isCustomsStage, nextAdvanceableStages,
   CASE_TYPE_LABELS, LEG_DIRECTION_LABELS, STAGE_LABELS,
@@ -20,6 +21,8 @@ export function LogisticsCaseDetailPage() {
   const [addingLeg, setAddingLeg] = useState(false);
   const [editingLegId, setEditingLegId] = useState<string | null>(null);
   const [legError, setLegError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [caseEditError, setCaseEditError] = useState<string | null>(null);
 
   if (loading) return <div className="p-6 text-on-surface-variant">Loading…</div>;
   if (error || !c) return <div className="p-6 text-error">{error?.message || 'Case not found'}</div>;
@@ -61,6 +64,15 @@ export function LogisticsCaseDetailPage() {
       setLegError(e instanceof Error ? e.message : 'Failed to update leg');
     }
   }
+  async function saveCase(input: Record<string, unknown>) {
+    if (!caseId) return;
+    setCaseEditError(null);
+    try {
+      await svc.updateLogisticsCase(caseId, input); setEditing(false); refresh();
+    } catch (e) {
+      setCaseEditError(e instanceof Error ? e.message : 'Failed to update case');
+    }
+  }
   async function deleteLeg(legId: string) {
     if (!caseId) return;
     if (!window.confirm('Remove this shipment leg? This cannot be undone.')) return;
@@ -86,6 +98,11 @@ export function LogisticsCaseDetailPage() {
         {c.relatedOrderId && <> · <Link className="text-primary hover:underline" to={`/admin/orders/${c.relatedOrderId}`}>Order {c.relatedOrderId}</Link></>}
         {!c.relatedOrderId && c.relatedEntityType && <> · {c.relatedEntityType}: {c.relatedEntityId}</>}
       </div>
+
+      {editing
+        ? <CaseEditForm logisticsCase={c} onSubmit={saveCase} onCancel={() => setEditing(false)} />
+        : <button onClick={() => setEditing(true)} className="text-sm text-primary hover:underline">Edit case details</button>}
+      {caseEditError && <p className="text-error text-sm">{caseEditError}</p>}
 
       {customsLegMissing && (
         <div className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
