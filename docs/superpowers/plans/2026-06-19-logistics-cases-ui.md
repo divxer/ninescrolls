@@ -56,7 +56,7 @@ Create `src/types/logistics.test.ts`:
 import { describe, it, expect } from 'vitest';
 import {
   LOGISTICS_STAGES, ENABLED_STAGES, CASE_TYPES, STAGE_LABELS,
-  enabledStagesFor, isCustomsStage,
+  enabledStagesFor, isCustomsStage, nextAdvanceableStages,
 } from './logistics';
 
 describe('logistics types', () => {
@@ -89,6 +89,26 @@ describe('logistics types', () => {
 
   it('CASE_TYPES has the five Phase 1 types', () => {
     expect(CASE_TYPES).toEqual(['SAMPLE', 'EQUIPMENT', 'SPARE_PART', 'RMA', 'DEMO']);
+  });
+
+  it('nextAdvanceableStages: from DRAFT offers the first enabled stage + CANCELLED', () => {
+    expect(nextAdvanceableStages('DRAFT', ENABLED_STAGES.EQUIPMENT)).toEqual(['PRODUCTION', 'CANCELLED']);
+  });
+
+  it('nextAdvanceableStages: a single forward step, never a far skip', () => {
+    const r = nextAdvanceableStages('PRODUCTION', ENABLED_STAGES.EQUIPMENT);
+    expect(r).toContain('FAT_SCHEDULED');
+    expect(r).not.toContain('CLOSED');
+  });
+
+  it('nextAdvanceableStages: on a customs stage, offers the CUSTOMS_HOLD branch and the next happy stage', () => {
+    const r = nextAdvanceableStages('IMPORT_CUSTOMS', ENABLED_STAGES.EQUIPMENT);
+    expect(r).toContain('CUSTOMS_HOLD'); // can branch to hold
+    expect(r).toContain('DELIVERED');    // or skip the exception when not held
+  });
+
+  it('nextAdvanceableStages: from CUSTOMS_HOLD resumes the happy path', () => {
+    expect(nextAdvanceableStages('CUSTOMS_HOLD', ENABLED_STAGES.EQUIPMENT)).toContain('DELIVERED');
   });
 });
 ```
@@ -217,6 +237,46 @@ export function isCustomsStage(stage: LogisticsStage): boolean {
   return CUSTOMS_STAGES.has(stage);
 }
 
+/** Optional/branch stages that sit inside enabledStages but are NOT mandatory steps. */
+export const EXCEPTION_STAGES = new Set<LogisticsStage>(['CUSTOMS_HOLD']);
+
+/**
+ * Guided advancement for the detail-page dropdown. Returns the recommended next
+ * stage(s): the next happy-path stage (so you can't accidentally jump
+ * PRODUCTION → CLOSED), PLUS the CUSTOMS_HOLD branch when sitting on a customs
+ * stage, PLUS CANCELLED. The backend still accepts any enabled stage — this only
+ * guides the UI; it does not force a rigid single-step machine through exception
+ * states like CUSTOMS_HOLD.
+ */
+export function nextAdvanceableStages(
+  currentStage: LogisticsStage,
+  enabledStages: LogisticsStage[],
+): LogisticsStage[] {
+  const happy = enabledStages.filter((s) => !EXCEPTION_STAGES.has(s));
+  const out: LogisticsStage[] = [];
+
+  if (currentStage === 'DRAFT') {
+    if (happy[0]) out.push(happy[0]);
+  } else {
+    const hi = happy.indexOf(currentStage);
+    if (hi >= 0) {
+      if (happy[hi + 1]) out.push(happy[hi + 1]);
+    } else {
+      // On an exception stage (e.g. CUSTOMS_HOLD): resume at the next happy stage.
+      const ei = enabledStages.indexOf(currentStage);
+      const resume = enabledStages.slice(ei + 1).find((s) => !EXCEPTION_STAGES.has(s));
+      if (resume) out.push(resume);
+    }
+  }
+
+  if ((currentStage === 'EXPORT_CUSTOMS' || currentStage === 'IMPORT_CUSTOMS')
+    && enabledStages.includes('CUSTOMS_HOLD')) {
+    out.push('CUSTOMS_HOLD');
+  }
+  out.push('CANCELLED');
+  return Array.from(new Set(out));
+}
+
 export const STAGE_LABELS: Record<LogisticsStage, string> = {
   DRAFT: 'Draft', AWAITING_SHIPMENT: 'Awaiting Shipment', IN_TRANSIT: 'In Transit',
   EXPORT_CUSTOMS: 'Export Customs', IMPORT_CUSTOMS: 'Import Customs', CUSTOMS_HOLD: 'Customs Hold',
@@ -258,7 +318,7 @@ export function parseStatBucket(raw: string | null | undefined): Record<string, 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/types/logistics.test.ts`
-Expected: PASS (6 tests).
+Expected: PASS (10 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -407,23 +467,23 @@ export function useLogisticsCase(caseId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const refresh = useCallback(() => {
-    if (!caseId) return;
+  // Single loader shared by the initial effect and refresh(). `isActive` lets the
+  // effect ignore a resolved fetch after unmount; refresh() passes the default.
+  const load = useCallback((isActive: () => boolean = () => true) => {
+    if (!caseId) { setLoading(false); return; }
     setLoading(true);
     svc.getLogisticsCase(caseId)
-      .then((data) => { setLogisticsCase(data as LogisticsCase | null); setLoading(false); })
-      .catch((err) => { setError(err); setLoading(false); });
+      .then((data) => { if (isActive()) { setLogisticsCase(data as LogisticsCase | null); setLoading(false); } })
+      .catch((err) => { if (isActive()) { setError(err); setLoading(false); } });
   }, [caseId]);
 
+  const refresh = useCallback(() => { load(); }, [load]);
+
   useEffect(() => {
-    if (!caseId) { setLoading(false); return; }
     let cancelled = false;
-    setLoading(true);
-    svc.getLogisticsCase(caseId)
-      .then((data) => { if (!cancelled) { setLogisticsCase(data as LogisticsCase | null); setLoading(false); } })
-      .catch((err) => { if (!cancelled) { setError(err); setLoading(false); } });
+    load(() => !cancelled);
     return () => { cancelled = true; };
-  }, [caseId]);
+  }, [load]);
 
   return { logisticsCase, loading, error, refresh };
 }
@@ -598,6 +658,18 @@ describe('MilestoneProgress', () => {
     render(<MilestoneProgress enabledStages={[...enabled]} currentStage="FAT_PASSED" />);
     expect(screen.getByText('FAT Passed').closest('[aria-current]')).toHaveAttribute('aria-current', 'step');
   });
+
+  it('shows DRAFT as the active leading pip when the case is at DRAFT', () => {
+    render(<MilestoneProgress enabledStages={[...enabled]} currentStage="DRAFT" />);
+    expect(screen.getByText('Draft').closest('[aria-current]')).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('Production')).toBeInTheDocument();
+  });
+
+  it('renders a standalone Cancelled state', () => {
+    render(<MilestoneProgress enabledStages={[...enabled]} currentStage="CANCELLED" />);
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(screen.queryByText('Production')).not.toBeInTheDocument();
+  });
 });
 ```
 
@@ -616,10 +688,26 @@ import { STAGE_LABELS, type LogisticsStage } from '../../types/logistics';
 export function MilestoneProgress({
   enabledStages, currentStage,
 }: { enabledStages: LogisticsStage[]; currentStage: LogisticsStage }) {
-  const currentIdx = enabledStages.indexOf(currentStage);
+  // CANCELLED is a terminal exception, not a ladder position — show it on its own.
+  if (currentStage === 'CANCELLED') {
+    return (
+      <div className="inline-flex items-center gap-1.5 rounded-full bg-error-container px-3 py-1 text-[11px] font-bold uppercase tracking-tight text-on-error-container">
+        <span className="material-symbols-rounded text-[14px]">cancel</span>Cancelled
+      </div>
+    );
+  }
+
+  // Always lead with DRAFT (cases open at DRAFT, which is never inside enabledStages);
+  // drop any DRAFT/CANCELLED that might appear inside the stored set.
+  const display: LogisticsStage[] = [
+    'DRAFT',
+    ...enabledStages.filter((s) => s !== 'DRAFT' && s !== 'CANCELLED'),
+  ];
+  const currentIdx = display.indexOf(currentStage);
+
   return (
     <ol className="flex flex-wrap items-center gap-2">
-      {enabledStages.map((stage, i) => {
+      {display.map((stage, i) => {
         const done = currentIdx >= 0 && i < currentIdx;
         const active = stage === currentStage;
         const cls = active
@@ -648,7 +736,7 @@ export function MilestoneProgress({
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/components/admin/MilestoneProgress.test.tsx`
-Expected: PASS (2 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -771,7 +859,7 @@ export function LogisticsCaseListPage() {
         <StatTile label="Active" value={stats?.totalActive ?? 0} />
         <StatTile label="In Customs" value={stats?.customsInProgress ?? 0} />
         <StatTile label="Stalled >14d" value={stats?.stalledCases ?? 0} />
-        <StatTile label="Equipment" value={byType.EQUIPMENT ?? 0} />
+        <StatTile label="Total cases" value={Object.values(byType).reduce((a, b) => a + b, 0)} />
       </div>
 
       {/* Filters */}
@@ -828,7 +916,7 @@ export function LogisticsCaseListPage() {
                       : <span className="text-xs text-on-surface-variant">—</span>}
                   </td>
                   <td className="px-4 py-3">{c.legs?.length ?? 0}</td>
-                  <td className="px-4 py-3 text-xs text-on-surface-variant">{new Date(c.updatedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-xs text-on-surface-variant">{new Date(c.updatedAt).toLocaleDateString('en-US')}</td>
                 </tr>
                 );
               })}
@@ -973,8 +1061,8 @@ import * as svc from '../../services/logisticsAdminService';
 import { StageBadge, CustomsBadge } from '../../components/admin/StageBadge';
 import { MilestoneProgress } from '../../components/admin/MilestoneProgress';
 import {
-  enabledStagesFor, isCustomsStage, CASE_TYPE_LABELS, LEG_DIRECTION_LABELS, STAGE_LABELS,
-  type LogisticsStage,
+  enabledStagesFor, isCustomsStage, nextAdvanceableStages,
+  CASE_TYPE_LABELS, LEG_DIRECTION_LABELS, STAGE_LABELS,
 } from '../../types/logistics';
 
 export function LogisticsCaseDetailPage() {
@@ -988,10 +1076,10 @@ export function LogisticsCaseDetailPage() {
   if (error || !c) return <div className="p-6 text-error">{error?.message || 'Case not found'}</div>;
 
   const enabled = enabledStagesFor(c.caseType, c.enabledStages);
-  // Dedupe in case a future enabledStages set already contains CANCELLED.
-  const advanceOptions: LogisticsStage[] = Array.from(
-    new Set<LogisticsStage>([...enabled.filter((s) => s !== c.currentStage), 'CANCELLED']),
-  );
+  // Guided next-step options (next happy stage + CUSTOMS_HOLD branch + CANCELLED) —
+  // prevents accidental far jumps like PRODUCTION → CLOSED while still allowing
+  // exception states to be skipped. The backend remains the hard floor.
+  const advanceOptions = nextAdvanceableStages(c.currentStage, enabled);
   const customsLegMissing = c.customsRequired && (c.legs || []).some((l) => l.customsRequired && !l.customsStatus);
 
   async function advance() {
@@ -1077,7 +1165,7 @@ export function LogisticsCaseDetailPage() {
                   {e.fromStage ? `${STAGE_LABELS[e.fromStage]} → ` : ''}{e.toStage ? STAGE_LABELS[e.toStage] : e.action}
                   {e.toStage && isCustomsStage(e.toStage) && <span className="ml-1 text-tertiary">(customs)</span>}
                 </div>
-                <div className="text-xs text-on-surface-variant">{e.operator} · {new Date(e.timestamp).toLocaleString()}{e.detail ? ` · ${e.detail}` : ''}</div>
+                <div className="text-xs text-on-surface-variant">{e.operator} · {new Date(e.timestamp).toLocaleString('en-US')}{e.detail ? ` · ${e.detail}` : ''}</div>
               </div>
             </li>
           ))}
@@ -1141,6 +1229,15 @@ describe('LegForm', () => {
     fireEvent.click(screen.getByText('Save leg'));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ direction: 'RETURN', carrier: 'DHL' });
   });
+
+  it('blocks submit on an invalid tracking URL', () => {
+    const onSubmit = vi.fn();
+    render(<LegForm onSubmit={onSubmit} onCancel={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Tracking URL'), { target: { value: 'abc' } });
+    fireEvent.click(screen.getByText('Save leg'));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/http/i)).toBeInTheDocument();
+  });
 });
 ```
 
@@ -1182,9 +1279,16 @@ export function LegForm({
     declaredValueUSD: initial?.declaredValueUSD != null ? String(initial.declaredValueUSD) : '',
     hsCode: initial?.hsCode ?? '',
   });
+  const [err, setErr] = useState<string | null>(null);
   function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) { setF((p) => ({ ...p, [k]: v })); }
 
   function submit() {
+    if (f.trackingUrl) {
+      let ok = false;
+      try { const u = new URL(f.trackingUrl); ok = u.protocol === 'http:' || u.protocol === 'https:'; } catch { ok = false; }
+      if (!ok) { setErr('Tracking URL must start with http:// or https://'); return; }
+    }
+    setErr(null);
     const input: Record<string, unknown> = { direction: f.direction, customsRequired: f.customsRequired };
     if (f.carrier) input.carrier = f.carrier;
     if (f.trackingNumber) input.trackingNumber = f.trackingNumber;
@@ -1240,6 +1344,7 @@ export function LegForm({
       <label className="flex items-center gap-2 text-xs">
         <input type="checkbox" checked={f.customsRequired} onChange={(e) => set('customsRequired', e.target.checked)} /> Customs required (this leg)
       </label>
+      {err && <p className="text-error text-sm">{err}</p>}
       <div className="flex gap-2">
         <button onClick={submit} className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-on-primary">Save leg</button>
         <button onClick={onCancel} className="rounded-full border border-outline-variant px-4 py-1.5 text-sm">Cancel</button>
@@ -1268,6 +1373,7 @@ async function saveEditLeg(legId: string, input: Record<string, unknown>) {
 }
 async function deleteLeg(legId: string) {
   if (!caseId) return;
+  if (!window.confirm('Remove this shipment leg? This cannot be undone.')) return;
   await svc.removeLeg(caseId, legId); refresh();
 }
 ```
@@ -1306,7 +1412,8 @@ Legs section body (replaces the read-only list from 6A):
 Append to `src/pages/admin/LogisticsCaseDetailPage.test.tsx`:
 
 ```typescript
-it('removes a leg via the service', async () => {
+it('removes a leg via the service after confirmation', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
   svc.removeLeg.mockResolvedValueOnce({ ...sampleCase, legs: [] });
   renderAt();
   fireEvent.click(screen.getByText('Remove'));
@@ -1315,7 +1422,7 @@ it('removes a leg via the service', async () => {
 ```
 
 Run: `npx vitest run src/components/admin/LegForm.test.tsx src/pages/admin/LogisticsCaseDetailPage.test.tsx`
-Expected: PASS (LegForm 2 + detail 3).
+Expected: PASS (LegForm 3 + detail 3).
 
 - [ ] **Step 6: Commit**
 
@@ -1738,8 +1845,8 @@ git commit -m "feat(logistics-ui): register routes + admin nav"
 
 - [ ] **Step 1: Start the dev server** — `npm run dev` (port 5173). Requires `amplify_outputs.json` present (it is).
 - [ ] **Step 2:** Sign in to `/admin`, navigate to `/admin/logistics`.
-- [ ] **Step 3:** Create a case (Equipment, a test customer) → lands on detail at DRAFT.
-- [ ] **Step 4:** Advance DRAFT → PRODUCTION; confirm progress bar + history update; confirm only EQUIPMENT stages appear in the advance dropdown.
+- [ ] **Step 3:** Create a case (Equipment, a test customer) → lands on detail at DRAFT; confirm the progress bar shows **Draft** as the active leading pip (not a broken/empty bar).
+- [ ] **Step 4:** Advance DRAFT → PRODUCTION; confirm progress bar + history update; confirm the advance dropdown offers only the **next** stage (PRODUCTION from DRAFT, then FAT_SCHEDULED, etc.) plus Cancelled — not a far jump like CLOSED.
 - [ ] **Step 5:** Add a leg with carrier + tracking + customsStatus; confirm it renders and the list "Customs" column reflects it.
 - [ ] **Step 6:** Back to list; confirm the case appears, filters by caseType/stage/customs work, search by caseNumber works.
 - [ ] **Step 7:** Advance to CANCELLED to retire the test case (keeps lists clean).
