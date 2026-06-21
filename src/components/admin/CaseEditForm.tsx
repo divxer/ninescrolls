@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RELATED_ENTITY_TYPES, type LogisticsCase } from '../../types/logistics';
+import { OrderSearchSelector } from './OrderSearchSelector';
 
 const FIELD = 'mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm';
 
@@ -53,9 +54,12 @@ export function CaseEditForm({
       <label className="flex items-center gap-2 text-xs">
         <input type="checkbox" checked={f.customsRequired} onChange={(e) => set('customsRequired', e.target.checked)} /> Customs required
       </label>
-      <label className="block text-xs">Related order ID
-        <input aria-label="Related order ID" value={f.relatedOrderId} onChange={(e) => set('relatedOrderId', e.target.value)} className={FIELD} />
-      </label>
+      <div className="block text-xs">Related Order
+        <OrderSearchSelector
+          value={f.relatedOrderId}
+          onSelect={(order) => set('relatedOrderId', order ? order.orderId : '')}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <label className="block text-xs">Related entity type
           <select aria-label="Related entity type" value={f.relatedEntityType} onChange={(e) => set('relatedEntityType', e.target.value as typeof f.relatedEntityType)} className={FIELD}>
