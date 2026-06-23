@@ -650,6 +650,10 @@ async function writePageView(
             productName: props.productName || undefined,
             referrer: props.referrer || undefined,
             utmTerm: props.utmTerm || undefined,
+            utmSource: props.utmSource || undefined,
+            utmMedium: props.utmMedium || undefined,
+            utmCampaign: props.utmCampaign || undefined,
+            utmContent: props.utmContent || undefined,
             searchQuery: props.searchQuery || undefined,
 
             ip: mergedIp || undefined,
@@ -1098,7 +1102,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             }
 
             try {
-                const result = await writePageView(properties, userAgent, visitorIp);
+                // Merge UTM campaign attribution from browser context (context.campaign)
+                // into properties so it gets persisted on the page_view record. The
+                // frontend already sends these via collectBrowserContext(); keys map
+                // utm_campaign → name, utm_content → content, etc.
+                const campaign = (clientContext as { campaign?: Record<string, string> } | undefined)?.campaign;
+                const enrichedProps = campaign
+                    ? {
+                        ...properties,
+                        utmSource: properties.utmSource ?? campaign.source,
+                        utmMedium: properties.utmMedium ?? campaign.medium,
+                        utmCampaign: properties.utmCampaign ?? campaign.name,
+                        utmContent: properties.utmContent ?? campaign.content,
+                        utmTerm: properties.utmTerm ?? campaign.term,
+                    }
+                    : properties;
+                const result = await writePageView(enrichedProps, userAgent, visitorIp);
                 console.info(`[PVS] OK pvid=${properties.pageViewId} event=${properties.eventName}`);
 
                 // Send enriched Segment page event (replaces frontend sendServerSideEvent + enriched analytics.page)

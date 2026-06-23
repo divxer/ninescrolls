@@ -2071,6 +2071,16 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
                         {sq || e.utmTerm}
                       </span>
                     )}
+                    {(e.utmSource || e.utmCampaign || e.utmContent) && (
+                      <span
+                        className="inline-flex items-center gap-0.5 rounded text-[11px] ml-1"
+                        title={`utm_source=${e.utmSource || ''} · utm_medium=${e.utmMedium || ''} · utm_campaign=${e.utmCampaign || ''} · utm_content=${e.utmContent || ''}`}
+                        style={{ background: '#ede7f6', color: '#5e35b1', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>sell</span>
+                        {[e.utmSource, e.utmCampaign, e.utmContent].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
                   </>
                 );
               };
