@@ -144,6 +144,10 @@ const schema = a.schema({
       maxScrollDepth: a.integer(),
       lifecycleStage: a.string(),
       utmTerm: a.string(),
+      utmSource: a.string(),
+      utmMedium: a.string(),
+      utmCampaign: a.string(),
+      utmContent: a.string(),
       searchQuery: a.string(),
 
       pathname: a.string(),

@@ -4,6 +4,7 @@ import { isbot } from 'isbot';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { normalizeUtm } from './utm';
 
 /** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
 function isPrivateIP(ip: string): boolean {
@@ -650,6 +651,10 @@ async function writePageView(
             productName: props.productName || undefined,
             referrer: props.referrer || undefined,
             utmTerm: props.utmTerm || undefined,
+            utmSource: props.utmSource || undefined,
+            utmMedium: props.utmMedium || undefined,
+            utmCampaign: props.utmCampaign || undefined,
+            utmContent: props.utmContent || undefined,
             searchQuery: props.searchQuery || undefined,
 
             ip: mergedIp || undefined,
@@ -1098,7 +1103,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             }
 
             try {
-                const result = await writePageView(properties, userAgent, visitorIp);
+                // Merge UTM campaign attribution from browser context (context.campaign)
+                // into properties so it gets persisted on the page_view record. The
+                // frontend already sends these via collectBrowserContext(); keys map
+                // utm_campaign → name, utm_content → content, etc.
+                const campaign = (clientContext as { campaign?: Record<string, unknown> } | undefined)?.campaign;
+                const enrichedProps = campaign
+                    ? {
+                        ...properties,
+                        utmSource: normalizeUtm(properties.utmSource ?? campaign.source),
+                        utmMedium: normalizeUtm(properties.utmMedium ?? campaign.medium),
+                        utmCampaign: normalizeUtm(properties.utmCampaign ?? campaign.name),
+                        utmContent: normalizeUtm(properties.utmContent ?? campaign.content),
+                        utmTerm: normalizeUtm(properties.utmTerm ?? campaign.term),
+                    }
+                    : properties;
+                const result = await writePageView(enrichedProps, userAgent, visitorIp);
                 console.info(`[PVS] OK pvid=${properties.pageViewId} event=${properties.eventName}`);
 
                 // Send enriched Segment page event (replaces frontend sendServerSideEvent + enriched analytics.page)

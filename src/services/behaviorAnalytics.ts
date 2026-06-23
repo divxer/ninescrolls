@@ -200,6 +200,30 @@ export function resolveTrafficChannel(event: {
   return stored || 'direct';
 }
 
+// --- Campaign (UTM) attribution display helpers ---
+
+/** Minimal shape needed to surface UTM campaign attribution in the admin UI. */
+export interface CampaignAttribution {
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+}
+
+/**
+ * True when an event carries any UTM campaign attribution. Used to decide
+ * whether to render the campaign badge — independent of referrer/channel, so
+ * direct QR/print traffic (no referrer) still shows its source.
+ */
+export function hasCampaignAttribution(e: CampaignAttribution): boolean {
+  return Boolean(e.utmSource || e.utmMedium || e.utmCampaign || e.utmContent);
+}
+
+/** Compact human label: "source · campaign · content" (skips empty parts). */
+export function formatCampaignAttribution(e: CampaignAttribution): string {
+  return [e.utmSource, e.utmCampaign, e.utmContent].filter(Boolean).join(' · ');
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {
