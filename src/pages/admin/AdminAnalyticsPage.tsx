@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { matchLinkedLeadsByVisitor } from './linkedLeadsMatch';
-import { resolveTrafficChannel, extractSearchQuery, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
+import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../types/admin';
@@ -2071,17 +2071,23 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
                         {sq || e.utmTerm}
                       </span>
                     )}
-                    {(e.utmSource || e.utmCampaign || e.utmContent) && (
-                      <span
-                        className="inline-flex items-center gap-0.5 rounded text-[11px] ml-1"
-                        title={`utm_source=${e.utmSource || ''} · utm_medium=${e.utmMedium || ''} · utm_campaign=${e.utmCampaign || ''} · utm_content=${e.utmContent || ''}`}
-                        style={{ background: '#ede7f6', color: '#5e35b1', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>sell</span>
-                        {[e.utmSource, e.utmCampaign, e.utmContent].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
                   </>
+                );
+              };
+              // Campaign (UTM) attribution badge — rendered independently of the
+              // referrer/channel badge so direct QR/print traffic (no referrer)
+              // still shows where it came from. Returns null when no UTM present.
+              const campaignBadge = (e: AnalyticsEvent) => {
+                if (!hasCampaignAttribution(e)) return null;
+                return (
+                  <span
+                    className="inline-flex items-center gap-0.5 rounded text-[11px] ml-1"
+                    title={`utm_source=${e.utmSource || ''} · utm_medium=${e.utmMedium || ''} · utm_campaign=${e.utmCampaign || ''} · utm_content=${e.utmContent || ''}`}
+                    style={{ background: '#ede7f6', color: '#5e35b1', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', marginLeft: '4px' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>sell</span>
+                    {formatCampaignAttribution(e)}
+                  </span>
                 );
               };
               const entryEventIds = new Set<string>();
@@ -2165,6 +2171,7 @@ function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, allNews
                           </span>
                         )}
                         {entryEventIds.has(e.id) && referrerBadge(e)}
+                        {campaignBadge(e)}
                         <div className="text-right whitespace-nowrap">
                           {e.eventType === 'page_time_flush' ? (
                             <>

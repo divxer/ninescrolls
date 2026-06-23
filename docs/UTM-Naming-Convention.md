@@ -97,9 +97,9 @@ https://ninescrolls.com/?utm_source=newsletter&utm_medium=email&utm_campaign=mxe
 |---|---|---|
 | 完整 source/medium/campaign/content | **GA4（G-DPS75RLM8D）** → 报告 → 获取 → 流量获取 | 会话来源/媒介、广告系列 |
 | 同样数据（服务端） | Segment 目的地 | `context.campaign.{source, medium, name, content, term}`（注意 campaign → `name`） |
-| 自研管理后台（AdminAnalyticsPage） | ⚠️ 只能看到 `utm_term` + referrer + 渠道分类，**看不到 source/campaign/content** | — |
+| 自研管理后台（AdminAnalyticsPage） | ✅ 访客时间线每个事件显示来源徽章 `source · campaign · content`（悬停看完整 5 个 UTM） | `utmSource/utmMedium/utmCampaign/utmContent/utmTerm` |
 
-> 想让自研后台也显示完整 UTM，需要改代码（约半天）：在 `src/services/analyticsStorageService.ts` 落库字段 + Lambda 写入 + 管理页加列。
+> 自研后台的完整 UTM 支持已上线（PR #199）：`AnalyticsEvent` 落库 `utmSource/utmMedium/utmCampaign/utmContent`，Lambda 从 `context.campaign` 抽取，管理页时间线渲染徽章。**仅对部署后的新流量生效，历史记录不回填。**
 
 ## 命名速查（一句话）
 

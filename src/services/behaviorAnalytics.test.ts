@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractSearchQuery } from './behaviorAnalytics';
+import { extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution } from './behaviorAnalytics';
 
 describe('extractSearchQuery', () => {
   it('extracts query from Google referrer', () => {
@@ -80,5 +80,46 @@ describe('extractSearchQuery', () => {
     expect(extractSearchQuery(
       'https://news.google.com/search?q=semiconductor+news'
     )).toBe('semiconductor news');
+  });
+});
+
+describe('hasCampaignAttribution', () => {
+  it('is true for a direct QR scan with no referrer (utm only)', () => {
+    // Regression: direct QR/print traffic has no referrer; the badge must
+    // still show. Previously the badge was gated behind referrer presence.
+    expect(hasCampaignAttribution({
+      utmSource: 'mrs',
+      utmMedium: 'webinar_sponsor',
+      utmCampaign: 'mxenes_202610',
+      utmContent: 'qr_video',
+    })).toBe(true);
+  });
+
+  it('is true when only one UTM field is present', () => {
+    expect(hasCampaignAttribution({ utmSource: 'mrs' })).toBe(true);
+    expect(hasCampaignAttribution({ utmCampaign: 'mxenes_202610' })).toBe(true);
+    expect(hasCampaignAttribution({ utmContent: 'qr_video' })).toBe(true);
+  });
+
+  it('is false when no UTM fields are present', () => {
+    expect(hasCampaignAttribution({})).toBe(false);
+    expect(hasCampaignAttribution({ utmSource: null, utmMedium: undefined })).toBe(false);
+    expect(hasCampaignAttribution({ utmSource: '' })).toBe(false);
+  });
+});
+
+describe('formatCampaignAttribution', () => {
+  it('joins source · campaign · content, skipping empties', () => {
+    expect(formatCampaignAttribution({
+      utmSource: 'mrs',
+      utmCampaign: 'mxenes_202610',
+      utmContent: 'qr_video',
+    })).toBe('mrs · mxenes_202610 · qr_video');
+  });
+
+  it('omits missing parts', () => {
+    expect(formatCampaignAttribution({ utmSource: 'mrs' })).toBe('mrs');
+    expect(formatCampaignAttribution({ utmSource: 'mrs', utmContent: 'qr_brochure' }))
+      .toBe('mrs · qr_brochure');
   });
 });
