@@ -430,7 +430,7 @@ Create `src/pages/admin/UtmTrafficSummary.test.tsx`:
 
 ```tsx
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { UtmTrafficSummary } from './UtmTrafficSummary';
 import type { UtmEvent } from '../../services/behaviorAnalytics';
 
@@ -452,14 +452,18 @@ describe('UtmTrafficSummary', () => {
     expect(onFilterChange).toHaveBeenCalledWith({ source: 'mrs' });
   });
 
-  it('with source=mrs filter + group by content, shows only MRS content (not linkedin)', () => {
+  it('with source=mrs filter + group by content, qr_video shows Visits=1 (linkedin excluded)', () => {
     render(
       <UtmTrafficSummary events={events} groupBy="content" onGroupByChange={() => {}} filter={{ source: 'mrs' }} onFilterChange={() => {}} />
     );
-    expect(screen.getByText('qr_video')).toBeInTheDocument();
     expect(screen.getByText('qr_brochure')).toBeInTheDocument();
-    // linkedin's qr_video visit is filtered out -> both content rows have 1 visit
-    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(2);
+    // qr_video exists under both mrs and linkedin; with source=mrs it must aggregate to
+    // exactly 1 visit. Assert the Visits cell of the qr_video row precisely — a wrong
+    // aggregation to 2 (linkedin leaking in) must fail this test.
+    const videoRow = screen.getByText('qr_video').closest('tr')!;
+    const cells = within(videoRow).getAllByRole('cell'); // [value, visits, visitors, knownOrgs]
+    expect(cells[1]).toHaveTextContent('1'); // Visits
+    expect(cells[2]).toHaveTextContent('1'); // Visitors
   });
 
   it('shows "no UTM traffic" empty state when there is no UTM data', () => {
@@ -654,10 +658,10 @@ The existing import line is:
 import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
 ```
 
-Add `matchesUtmFilter`, `type UtmFilter`, `type UtmGroupBy`:
+Add `matchesUtmFilter`, `type UtmFilter`, `type UtmGroupBy`, `type UtmEvent` (the `UtmEvent` type is needed for the cast in Step 4 — include it now so it is not forgotten):
 
 ```tsx
-import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, matchesUtmFilter, type TrafficChannel, type LifecycleStage, type UtmFilter, type UtmGroupBy } from '../../services/behaviorAnalytics';
+import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, matchesUtmFilter, type TrafficChannel, type LifecycleStage, type UtmFilter, type UtmGroupBy, type UtmEvent } from '../../services/behaviorAnalytics';
 ```
 
 Add a new import for the component:
@@ -705,7 +709,7 @@ Render the component where the analytics sections are laid out (near the existin
 />
 ```
 
-`filteredEvents` items are `AnalyticsEvent` (schema-derived) and structurally satisfy `UtmEvent` after PR #199; the `as UtmEvent[]` cast keeps TS quiet about optional/excess differences. Also add `UtmEvent` to the type import from Step 1 if you use the cast: `..., type UtmFilter, type UtmGroupBy, type UtmEvent`.
+`filteredEvents` items are `AnalyticsEvent` (schema-derived) and structurally satisfy `UtmEvent` after PR #199; the `as UtmEvent[]` cast keeps TS quiet about optional/excess differences. `UtmEvent` is already imported in Step 1.
 
 - [ ] **Step 5: Typecheck**
 
