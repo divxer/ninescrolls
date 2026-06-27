@@ -102,7 +102,7 @@ export function UtmTrafficSummary({ events, groupBy, onGroupByChange, filter, on
       )}
 
       {rows.length === 0 ? (
-        <p className="text-xs text-on-surface-variant py-6 text-center">暂无 UTM 流量，部署后带 UTM 的新流量才会出现。</p>
+        <p className="text-xs text-on-surface-variant py-6 text-center">No UTM traffic yet — tagged traffic will appear here after deployment.</p>
       ) : visible.length === 0 ? (
         <p className="text-xs text-on-surface-variant py-6 text-center">No matching UTM rows.</p>
       ) : (
