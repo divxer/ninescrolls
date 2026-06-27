@@ -3416,7 +3416,7 @@ export function AdminAnalyticsPage() {
       result = result.filter((o) => typeFilter.has(o.organizationType || 'unknown'));
     }
 
-    if (utmFilter.source !== undefined || utmFilter.campaign !== undefined || utmFilter.content !== undefined) {
+    if (Object.values(utmFilter).some((v) => v !== undefined)) {
       result = result.filter((o) => o.events.some((e) => matchesUtmFilter(e, utmFilter)));
     }
 
