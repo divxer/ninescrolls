@@ -4,7 +4,7 @@
 
 **Goal:** Add a global "UTM Traffic Summary" card to the admin analytics page that aggregates UTM-bearing traffic by Source/Campaign/Content with Visits/Visitors/Known-Organizations, supports search/sort, and click-to-drill-down that filters the existing visitor list.
 
-**Architecture:** All aggregation lives in pure, unit-tested helpers in `src/services/behaviorAnalytics.ts`. A small self-contained presentational component `src/pages/admin/UtmTrafficSummary.tsx` renders the card from those helpers. `AdminAnalyticsPage.tsx` owns the `utmFilter` state, renders the card over its page-level filtered events, and AND-composes `utmFilter` into the existing `enhancedFilteredOrgs` pipeline. No backend/schema changes; purely client-side over already-loaded events.
+**Architecture:** All aggregation lives in pure, unit-tested helpers in `src/services/behaviorAnalytics.ts`. A small self-contained presentational component `src/pages/admin/UtmTrafficSummary.tsx` renders the card from those helpers. `AdminAnalyticsPage.tsx` owns the `utmFilter` state, renders the card over its page-level filtered events, and AND-composes `utmFilter` into the existing `enhancedFilteredOrgs` pipeline (which feeds the rendered `sortedOrgs` list). No backend/schema changes; purely client-side over already-loaded events.
 
 **Tech Stack:** React + TypeScript, Vite, vitest (jsdom) + @testing-library/react, Amplify Gen2 schema-derived types.
 
@@ -14,31 +14,50 @@
 
 ## File Structure
 
-- `src/services/behaviorAnalytics.ts` — **modify**: add types (`UtmGroupBy`, `UtmFilter`, `UtmEvent`, `UtmSummaryRow`) and pure helpers (`normalizeUtmValue`, `isKnownOrganization`, `matchesUtmFilter`, `summarizeUtmTraffic`). One responsibility: analytics computation. Already holds `resolveTrafficChannel`, `hasCampaignAttribution`, etc.
-- `src/services/behaviorAnalytics.test.ts` — **modify**: unit tests for the new helpers.
-- `src/pages/admin/UtmTrafficSummary.tsx` — **create**: presentational card (group-by control, search, sort, chips, table). Owns only local search/sort UI state; receives events/filter via props.
-- `src/pages/admin/UtmTrafficSummary.test.tsx` — **create**: RTL render + interaction test.
+- `src/services/behaviorAnalytics.ts` — **modify**: add types (`UtmGroupBy`, `UtmFilter`, `UtmEvent`, `UtmSummaryRow`) and pure helpers (`normalizeUtmValue`, `isKnownOrganization`, `matchesUtmFilter`, `summarizeUtmTraffic`).
+- `src/services/behaviorAnalytics.test.ts` — **modify**: extend the top import once; add unit tests for the new helpers.
+- `src/pages/admin/UtmTrafficSummary.tsx` — **create**: presentational card.
+- `src/pages/admin/UtmTrafficSummary.test.tsx` — **create**: RTL render + interaction tests.
 - `src/pages/admin/AdminAnalyticsPage.tsx` — **modify**: `utmFilter` state, render `<UtmTrafficSummary>`, AND-compose `utmFilter` into `enhancedFilteredOrgs`.
 - `docs/UTM-Naming-Convention.md` — **modify**: note the new aggregate view.
+
+### Notes that apply across tasks
+
+- **Test imports:** `behaviorAnalytics.test.ts` already has one import from `./behaviorAnalytics`. Do NOT append new `import` statements per task — extend that single top import (done once in Task 1).
+- **Visitor list scope:** the rendered org list is `sortedOrgs` derived from `enhancedFilteredOrgs`. Within an org's detail, the visitor timeline (`byVisitor`, ~line 2025) iterates that org's full event set and is intentionally NOT re-filtered by `utmFilter` — once you have identified an org via the filter, you want to see its complete journey. Filtering at the `enhancedFilteredOrgs` level is the drill-down.
 
 ---
 
 ## Task 1: Pure value/org helpers + types
 
 **Files:**
-- Modify: `src/services/behaviorAnalytics.ts` (insert after the campaign attribution helpers, i.e. after `formatCampaignAttribution`)
+- Modify: `src/services/behaviorAnalytics.ts` (insert after `formatCampaignAttribution`)
 - Test: `src/services/behaviorAnalytics.test.ts`
 
-- [ ] **Step 1: Write the failing tests**
+- [ ] **Step 1: Extend the test file's top import (once for Tasks 1-3)**
+
+In `src/services/behaviorAnalytics.test.ts`, replace the existing single import from `./behaviorAnalytics` with the full set used across Tasks 1-3:
+
+```ts
+import {
+  extractSearchQuery,
+  hasCampaignAttribution,
+  formatCampaignAttribution,
+  normalizeUtmValue,
+  isKnownOrganization,
+  matchesUtmFilter,
+  summarizeUtmTraffic,
+  type UtmEvent,
+} from './behaviorAnalytics';
+```
+
+(If `extractSearchQuery` / `hasCampaignAttribution` / `formatCampaignAttribution` are split across two existing imports, consolidate into this one.)
+
+- [ ] **Step 2: Write the failing tests**
 
 Append to `src/services/behaviorAnalytics.test.ts`:
 
 ```ts
-import {
-  normalizeUtmValue,
-  isKnownOrganization,
-} from './behaviorAnalytics';
-
 describe('normalizeUtmValue', () => {
   it('trims surrounding whitespace', () => {
     expect(normalizeUtmValue('  mrs  ')).toBe('mrs');
@@ -67,12 +86,12 @@ describe('isKnownOrganization', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [ ] **Step 3: Run tests to verify they fail**
 
 Run: `npx vitest run src/services/behaviorAnalytics.test.ts`
 Expected: FAIL — `normalizeUtmValue`/`isKnownOrganization` are not exported.
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 4: Write the implementation**
 
 Insert into `src/services/behaviorAnalytics.ts` after the `formatCampaignAttribution` function:
 
@@ -109,11 +128,11 @@ export interface UtmSummaryRow {
   knownOrganizations: number;
 }
 
-// Org types that are NOT counted as a "known organization" (matches the admin's
-// existing ISP handling in AdminAnalyticsPage.tsx).
+// Org types NOT counted as a "known organization" (matches the admin's existing
+// ISP handling in AdminAnalyticsPage.tsx).
 const NON_KNOWN_ORG_TYPES = new Set(['telecom_isp', 'isp', 'unknown']);
 
-/** Trim a UTM/string value; null/undefined/empty/whitespace-only → undefined. */
+/** Trim a UTM/string value; null/undefined/empty/whitespace-only -> undefined. */
 export function normalizeUtmValue(v: string | null | undefined): string | undefined {
   if (v == null) return undefined;
   const trimmed = v.trim();
@@ -128,12 +147,12 @@ export function isKnownOrganization(e: UtmEvent): boolean {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/services/behaviorAnalytics.test.ts`
-Expected: PASS (all `normalizeUtmValue` + `isKnownOrganization` cases green).
+Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/services/behaviorAnalytics.ts src/services/behaviorAnalytics.test.ts
@@ -146,20 +165,19 @@ git commit -m "feat(analytics): UTM value normalization + known-org helper"
 
 **Files:**
 - Modify: `src/services/behaviorAnalytics.ts` (after `isKnownOrganization`)
-- Test: `src/services/behaviorAnalytics.test.ts`
+- Test: `src/services/behaviorAnalytics.test.ts` (import already extended in Task 1)
 
 - [ ] **Step 1: Write the failing test**
 
 Append to `src/services/behaviorAnalytics.test.ts`:
 
 ```ts
-import { matchesUtmFilter } from './behaviorAnalytics';
-
 describe('matchesUtmFilter', () => {
   const mrs = { utmSource: 'mrs', utmCampaign: 'mxenes_202610', utmContent: 'qr_video' };
 
-  it('matches when normalized field equals filter value (incl. whitespace variants)', () => {
+  it('matches when normalized field equals normalized filter value', () => {
     expect(matchesUtmFilter({ utmSource: ' mrs ' }, { source: 'mrs' })).toBe(true);
+    expect(matchesUtmFilter({ utmSource: 'mrs' }, { source: ' mrs ' })).toBe(true); // filter value also normalized
     expect(matchesUtmFilter(mrs, { source: 'mrs', content: 'qr_video' })).toBe(true);
   });
 
@@ -197,9 +215,9 @@ const UTM_FIELD_BY_KEY: Record<keyof UtmFilter, 'utmSource' | 'utmCampaign' | 'u
 };
 
 /** True when an event satisfies every set key in the filter.
- *  - omitted key → ignored
- *  - null value  → event field must be ABSENT ("(not set)")
- *  - string      → normalized event field must equal it */
+ *  - omitted key -> ignored
+ *  - null value  -> event field must be ABSENT ("(not set)")
+ *  - string      -> normalized event field must equal the normalized filter value */
 export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
   for (const key of Object.keys(filter) as (keyof UtmFilter)[]) {
     const want = filter[key];
@@ -207,7 +225,7 @@ export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
     const got = normalizeUtmValue(e[UTM_FIELD_BY_KEY[key]]);
     if (want === null) {
       if (got !== undefined) return false;
-    } else if (got !== want) {
+    } else if (got !== normalizeUtmValue(want)) {
       return false;
     }
   }
@@ -233,15 +251,13 @@ git commit -m "feat(analytics): matchesUtmFilter predicate with (not set) semant
 
 **Files:**
 - Modify: `src/services/behaviorAnalytics.ts` (after `matchesUtmFilter`)
-- Test: `src/services/behaviorAnalytics.test.ts`
+- Test: `src/services/behaviorAnalytics.test.ts` (import already extended in Task 1)
 
 - [ ] **Step 1: Write the failing test**
 
 Append to `src/services/behaviorAnalytics.test.ts`:
 
 ```ts
-import { summarizeUtmTraffic, type UtmEvent } from './behaviorAnalytics';
-
 const pv = (o: Partial<UtmEvent>): UtmEvent => ({ eventType: 'page_view', ...o });
 
 describe('summarizeUtmTraffic', () => {
@@ -250,9 +266,18 @@ describe('summarizeUtmTraffic', () => {
       pv({ utmSource: 'mrs', visitorId: 'v1' }),
       { eventType: 'pdf_download', utmSource: 'mrs', visitorId: 'v1' }, // excluded
     ];
-    const rows = summarizeUtmTraffic(events, 'source', {});
-    expect(rows).toEqual([
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
       { value: 'mrs', isNotSet: false, visits: 1, visitors: 1, knownOrganizations: 0 },
+    ]);
+  });
+
+  it('excludes page_views with no UTM at all (organic is not in the table)', () => {
+    const events = [
+      pv({ visitorId: 'v1' }),                                // organic -> excluded
+      pv({ utmCampaign: 'mxenes_202610', visitorId: 'v2' }),  // has UTM, no source -> (not set)
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: '(not set)', isNotSet: true, visits: 1, visitors: 1, knownOrganizations: 0 },
     ]);
   });
 
@@ -273,24 +298,22 @@ describe('summarizeUtmTraffic', () => {
       pv({ utmSource: 'mrs', visitorId: 'v1', orgName: 'MIT', organizationType: 'education' }),
       pv({ utmSource: 'mrs', visitorId: 'v2', orgName: 'Comcast', organizationType: 'telecom_isp' }),
     ];
-    const rows = summarizeUtmTraffic(events, 'source', {});
-    expect(rows).toEqual([
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
       { value: 'mrs', isNotSet: false, visits: 3, visitors: 2, knownOrganizations: 1 },
     ]);
   });
 
   it('buckets missing dimension as (not set)', () => {
     const events = [
-      pv({ utmSource: 'mrs', visitorId: 'v1' }),               // no content
+      pv({ utmSource: 'mrs', visitorId: 'v1' }),                          // no content
       pv({ utmSource: 'mrs', visitorId: 'v2', utmContent: 'qr_video' }),
     ];
-    const rows = summarizeUtmTraffic(events, 'content', {});
-    const notSet = rows.find(r => r.isNotSet)!;
+    const notSet = summarizeUtmTraffic(events, 'content', {}).find(r => r.isNotSet)!;
     expect(notSet.value).toBe('(not set)');
     expect(notSet.visits).toBe(1);
   });
 
-  it('applies filter before grouping (mrs → content split shows only MRS)', () => {
+  it('applies filter before grouping (mrs -> content split shows only MRS)', () => {
     const events = [
       pv({ utmSource: 'mrs', visitorId: 'v1', utmContent: 'qr_video' }),
       pv({ utmSource: 'mrs', visitorId: 'v2', utmContent: 'qr_brochure' }),
@@ -309,17 +332,6 @@ describe('summarizeUtmTraffic', () => {
       pv({ utmSource: 'b', visitorId: 'v3' }),
     ];
     expect(summarizeUtmTraffic(events, 'source', {}).map(r => r.value)).toEqual(['b', 'a']);
-  });
-
-  it('excludes page_views with no UTM at all (organic traffic is not in the table)', () => {
-    const events = [
-      pv({ visitorId: 'v1' }),                                   // organic, no UTM → excluded
-      pv({ utmCampaign: 'mxenes_202610', visitorId: 'v2' }),     // has UTM but no source → (not set) source row
-    ];
-    const rows = summarizeUtmTraffic(events, 'source', {});
-    expect(rows).toEqual([
-      { value: '(not set)', isNotSet: true, visits: 1, visitors: 1, knownOrganizations: 0 },
-    ]);
   });
 });
 ```
@@ -340,32 +352,34 @@ const UTM_FIELD_BY_GROUP: Record<UtmGroupBy, 'utmSource' | 'utmCampaign' | 'utmC
   content: 'utmContent',
 };
 
-// Sentinel key for the "(not set)" group —   cannot appear in a real UTM value.
-const NOT_SET_KEY = ' (not set)';
+// Unique symbol for the "(not set)" group — cannot collide with any string value.
+const NOT_SET_GROUP = Symbol('utm-not-set');
 
-/** Aggregate UTM traffic. Counts only page_view events, applies `filter` first,
- *  groups by the normalized `groupBy` value, and returns rows sorted by visits
- *  desc (ties broken by value asc). */
+interface UtmGroupAcc { visits: number; visitors: Set<string>; orgs: Set<string>; isNotSet: boolean }
+
+/** Aggregate UTM traffic. Includes only page_view events that carry at least one
+ *  of source/campaign/content, applies `filter` first, groups by the normalized
+ *  `groupBy` value, and returns rows sorted by visits desc (ties: value asc). */
 export function summarizeUtmTraffic(
   events: UtmEvent[],
   groupBy: UtmGroupBy,
   filter: UtmFilter,
 ): UtmSummaryRow[] {
   const field = UTM_FIELD_BY_GROUP[groupBy];
-  const groups = new Map<string, { visits: number; visitors: Set<string>; orgs: Set<string>; isNotSet: boolean }>();
-  // Organic traffic (no UTM at all) is excluded from the UTM summary entirely.
+  const groups = new Map<string | symbol, UtmGroupAcc>();
+
   const hasAnyUtm = (ev: UtmEvent) => Boolean(
     normalizeUtmValue(ev.utmSource) || normalizeUtmValue(ev.utmCampaign) || normalizeUtmValue(ev.utmContent),
   );
 
   for (const e of events) {
     if (e.eventType !== 'page_view') continue;
-    if (!hasAnyUtm(e)) continue;
-    if (!matchesUtmFilter(e, filter)) continue;
+    if (!hasAnyUtm(e)) continue;                // exclude organic traffic
+    if (!matchesUtmFilter(e, filter)) continue; // apply active filter
 
     const val = normalizeUtmValue(e[field]);
     const isNotSet = val === undefined;
-    const key = isNotSet ? NOT_SET_KEY : val!;
+    const key: string | symbol = isNotSet ? NOT_SET_GROUP : val!;
 
     let g = groups.get(key);
     if (!g) {
@@ -380,7 +394,7 @@ export function summarizeUtmTraffic(
 
   return Array.from(groups.entries())
     .map(([key, g]) => ({
-      value: g.isNotSet ? '(not set)' : key,
+      value: g.isNotSet ? '(not set)' : (key as string),
       isNotSet: g.isNotSet,
       visits: g.visits,
       visitors: g.visitors.size,
@@ -399,7 +413,7 @@ Expected: PASS (all summarize cases green).
 
 ```bash
 git add src/services/behaviorAnalytics.ts src/services/behaviorAnalytics.test.ts
-git commit -m "feat(analytics): summarizeUtmTraffic aggregation (page_view-only, filter-aware)"
+git commit -m "feat(analytics): summarizeUtmTraffic aggregation (page_view-only, UTM-only, filter-aware)"
 ```
 
 ---
@@ -410,7 +424,7 @@ git commit -m "feat(analytics): summarizeUtmTraffic aggregation (page_view-only,
 - Create: `src/pages/admin/UtmTrafficSummary.tsx`
 - Test: `src/pages/admin/UtmTrafficSummary.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing tests**
 
 Create `src/pages/admin/UtmTrafficSummary.test.tsx`:
 
@@ -423,20 +437,14 @@ import type { UtmEvent } from '../../services/behaviorAnalytics';
 const events: UtmEvent[] = [
   { eventType: 'page_view', utmSource: 'mrs', visitorId: 'v1', utmContent: 'qr_video' },
   { eventType: 'page_view', utmSource: 'mrs', visitorId: 'v2', utmContent: 'qr_brochure' },
-  { eventType: 'page_view', utmSource: 'linkedin', visitorId: 'v3' },
+  { eventType: 'page_view', utmSource: 'linkedin', visitorId: 'v3', utmContent: 'qr_video' },
 ];
 
 describe('UtmTrafficSummary', () => {
   it('renders a row per source and calls onFilterChange on row click', () => {
     const onFilterChange = vi.fn();
     render(
-      <UtmTrafficSummary
-        events={events}
-        groupBy="source"
-        onGroupByChange={() => {}}
-        filter={{}}
-        onFilterChange={onFilterChange}
-      />
+      <UtmTrafficSummary events={events} groupBy="source" onGroupByChange={() => {}} filter={{}} onFilterChange={onFilterChange} />
     );
     expect(screen.getByText('mrs')).toBeInTheDocument();
     expect(screen.getByText('linkedin')).toBeInTheDocument();
@@ -444,17 +452,29 @@ describe('UtmTrafficSummary', () => {
     expect(onFilterChange).toHaveBeenCalledWith({ source: 'mrs' });
   });
 
-  it('shows an empty state when there is no UTM traffic', () => {
+  it('with source=mrs filter + group by content, shows only MRS content (not linkedin)', () => {
     render(
-      <UtmTrafficSummary
-        events={[{ eventType: 'page_view', visitorId: 'v1' }]}
-        groupBy="source"
-        onGroupByChange={() => {}}
-        filter={{}}
-        onFilterChange={() => {}}
-      />
+      <UtmTrafficSummary events={events} groupBy="content" onGroupByChange={() => {}} filter={{ source: 'mrs' }} onFilterChange={() => {}} />
+    );
+    expect(screen.getByText('qr_video')).toBeInTheDocument();
+    expect(screen.getByText('qr_brochure')).toBeInTheDocument();
+    // linkedin's qr_video visit is filtered out -> both content rows have 1 visit
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows "no UTM traffic" empty state when there is no UTM data', () => {
+    render(
+      <UtmTrafficSummary events={[{ eventType: 'page_view', visitorId: 'v1' }]} groupBy="source" onGroupByChange={() => {}} filter={{}} onFilterChange={() => {}} />
     );
     expect(screen.getByText(/暂无 UTM 流量/)).toBeInTheDocument();
+  });
+
+  it('shows "no matching rows" when search excludes all rows', () => {
+    render(
+      <UtmTrafficSummary events={events} groupBy="source" onGroupByChange={() => {}} filter={{}} onFilterChange={() => {}} />
+    );
+    fireEvent.change(screen.getByPlaceholderText('Search…'), { target: { value: 'zzz' } });
+    expect(screen.getByText(/No matching UTM rows/)).toBeInTheDocument();
   });
 });
 ```
@@ -572,8 +592,10 @@ export function UtmTrafficSummary({ events, groupBy, onGroupByChange, filter, on
         </div>
       )}
 
-      {visible.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-xs text-on-surface-variant py-6 text-center">暂无 UTM 流量，部署后带 UTM 的新流量才会出现。</p>
+      ) : visible.length === 0 ? (
+        <p className="text-xs text-on-surface-variant py-6 text-center">No matching UTM rows.</p>
       ) : (
         <table className="w-full">
           <thead>
@@ -608,7 +630,7 @@ export function UtmTrafficSummary({ events, groupBy, onGroupByChange, filter, on
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/pages/admin/UtmTrafficSummary.test.tsx`
-Expected: PASS (both render + click and empty-state cases).
+Expected: PASS (all four cases).
 
 - [ ] **Step 5: Commit**
 
@@ -624,9 +646,21 @@ git commit -m "feat(admin): UtmTrafficSummary card component"
 **Files:**
 - Modify: `src/pages/admin/AdminAnalyticsPage.tsx`
 
-- [ ] **Step 1: Add the import**
+- [ ] **Step 1: Extend the behaviorAnalytics import**
 
-At the top import from behaviorAnalytics, extend the existing import (currently `resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, type TrafficChannel, type LifecycleStage`) to also include `matchesUtmFilter, type UtmFilter, type UtmGroupBy`. Add a new import line for the component:
+The existing import line is:
+
+```tsx
+import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
+```
+
+Add `matchesUtmFilter`, `type UtmFilter`, `type UtmGroupBy`:
+
+```tsx
+import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, matchesUtmFilter, type TrafficChannel, type LifecycleStage, type UtmFilter, type UtmGroupBy } from '../../services/behaviorAnalytics';
+```
+
+Add a new import for the component:
 
 ```tsx
 import { UtmTrafficSummary } from './UtmTrafficSummary';
@@ -643,7 +677,7 @@ const [utmGroupBy, setUtmGroupBy] = useState<UtmGroupBy>('source');
 
 - [ ] **Step 3: AND-compose utmFilter into the org list**
 
-In the `enhancedFilteredOrgs` useMemo (~line 3386), add a block alongside the existing `channelFilter` block, and add `utmFilter` to the dependency array:
+In the `enhancedFilteredOrgs` useMemo (~line 3386), add a block alongside the existing `channelFilter` block:
 
 ```tsx
     if (utmFilter.source !== undefined || utmFilter.campaign !== undefined || utmFilter.content !== undefined) {
@@ -651,7 +685,7 @@ In the `enhancedFilteredOrgs` useMemo (~line 3386), add a block alongside the ex
     }
 ```
 
-Update the dependency array of that `useMemo` to include `utmFilter`:
+Update that `useMemo` dependency array to include `utmFilter`:
 
 ```tsx
   }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter, typeFilter, utmFilter]);
@@ -663,7 +697,7 @@ Render the component where the analytics sections are laid out (near the existin
 
 ```tsx
 <UtmTrafficSummary
-  events={filteredEvents}
+  events={filteredEvents as UtmEvent[]}
   groupBy={utmGroupBy}
   onGroupByChange={setUtmGroupBy}
   filter={utmFilter}
@@ -671,7 +705,7 @@ Render the component where the analytics sections are laid out (near the existin
 />
 ```
 
-Note: `filteredEvents` items are `AnalyticsEvent` (schema-derived) and structurally satisfy the `UtmEvent` prop shape (all UtmEvent fields exist on `AnalyticsEvent` after PR #199). If TypeScript complains about excess/optional mismatch, pass `events={filteredEvents as UtmEvent[]}`.
+`filteredEvents` items are `AnalyticsEvent` (schema-derived) and structurally satisfy `UtmEvent` after PR #199; the `as UtmEvent[]` cast keeps TS quiet about optional/excess differences. Also add `UtmEvent` to the type import from Step 1 if you use the cast: `..., type UtmFilter, type UtmGroupBy, type UtmEvent`.
 
 - [ ] **Step 5: Typecheck**
 
@@ -694,16 +728,16 @@ git commit -m "feat(admin): render UTM Traffic Summary and AND-compose utmFilter
 
 - [ ] **Step 1: Update the "报表去哪看" admin row**
 
-Change the admin row note (line ~100) from the per-event-badge-only description to mention the aggregate view. Replace the admin row's middle cell text with:
+In the "报表去哪看（重要）" table, replace the admin row's middle cell so it reads:
 
 ```
 ✅ 访客时间线显示来源徽章 + 全局「UTM Traffic Summary」卡片（按 Source/Campaign/Content 聚合 Visits/Visitors/Known Orgs，点行钻取）
 ```
 
-And append to the note paragraph below the table:
+Append to the note paragraph below the table:
 
 ```
-聚合视图（UTM Traffic Summary，本次新增）：按 Source/Campaign/Content 分组统计，点行可下钻并筛选下方访客列表；仅统计 page_view 落地事件，仅含部署后新流量。
+聚合视图（UTM Traffic Summary，本次新增）：按 Source/Campaign/Content 分组统计，点行可下钻并筛选下方组织列表；仅统计 page_view 落地事件、且仅含至少带一个 UTM 的流量，仅对部署后新流量生效。
 ```
 
 - [ ] **Step 2: Commit**
@@ -717,7 +751,7 @@ git commit -m "docs: note admin UTM Traffic Summary aggregate view"
 
 ## Task 7: Full verification
 
-- [ ] **Step 1: Run the full unit suite for touched modules**
+- [ ] **Step 1: Run the unit suite for touched modules**
 
 Run: `npx vitest run src/services/behaviorAnalytics.test.ts src/pages/admin/UtmTrafficSummary.test.tsx`
 Expected: PASS — all UTM helper + component tests green.
@@ -730,9 +764,9 @@ Expected: exit 0.
 - [ ] **Step 3: Lint the changed files**
 
 Run: `npx eslint src/services/behaviorAnalytics.ts src/pages/admin/UtmTrafficSummary.tsx src/pages/admin/AdminAnalyticsPage.tsx --ext ts,tsx`
-Expected: No NEW errors. (Pre-existing `any` errors in `AdminAnalyticsPage.tsx` may remain — do not introduce new ones in the lines you added.)
+Expected: No NEW errors. (Pre-existing `any` errors in `AdminAnalyticsPage.tsx` may remain — do not introduce new ones in lines you added.)
 
-- [ ] **Step 4: Final commit (if any lint autofix applied)**
+- [ ] **Step 4: Final commit (if lint autofix applied)**
 
 ```bash
 git add -A && git commit -m "chore: lint pass for UTM Traffic Summary" || echo "nothing to commit"
@@ -744,4 +778,5 @@ git add -A && git commit -m "chore: lint pass for UTM Traffic Summary" || echo "
 
 - Conversion attribution (RFQ / downloads / conversion rate) — separate v2 card.
 - ROI metrics — v3.
-- Any backend/schema/DynamoDB changes — this feature is purely client-side over already-loaded events.
+- Any backend/schema/DynamoDB changes — purely client-side over already-loaded events.
+- Re-filtering within-org visitor timelines by `utmFilter` — intentionally shows the full journey once an org is surfaced.
