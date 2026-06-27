@@ -184,3 +184,80 @@ describe('matchesUtmFilter', () => {
     expect(matchesUtmFilter(mrs, { source: 'mrs', campaign: 'other' })).toBe(false);
   });
 });
+
+const pv = (o: Partial<UtmEvent>): UtmEvent => ({ eventType: 'page_view', ...o });
+
+describe('summarizeUtmTraffic', () => {
+  it('counts only page_view events for Visits', () => {
+    const events: UtmEvent[] = [
+      pv({ utmSource: 'mrs', visitorId: 'v1' }),
+      { eventType: 'pdf_download', utmSource: 'mrs', visitorId: 'v1' }, // excluded
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: 'mrs', isNotSet: false, visits: 1, visitors: 1, knownOrganizations: 0 },
+    ]);
+  });
+
+  it('excludes page_views with no UTM at all (organic is not in the table)', () => {
+    const events = [
+      pv({ visitorId: 'v1' }),                                // organic -> excluded
+      pv({ utmCampaign: 'mxenes_202610', visitorId: 'v2' }),  // has UTM, no source -> (not set)
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: '(not set)', isNotSet: true, visits: 1, visitors: 1, knownOrganizations: 0 },
+    ]);
+  });
+
+  it('groups by dimension and collapses whitespace variants', () => {
+    const events = [
+      pv({ utmSource: 'mrs', visitorId: 'v1' }),
+      pv({ utmSource: ' mrs ', visitorId: 'v2' }),
+      pv({ utmSource: 'linkedin', visitorId: 'v3' }),
+    ];
+    const rows = summarizeUtmTraffic(events, 'source', {});
+    expect(rows[0]).toEqual({ value: 'mrs', isNotSet: false, visits: 2, visitors: 2, knownOrganizations: 0 });
+    expect(rows.find(r => r.value === 'linkedin')!.visits).toBe(1);
+  });
+
+  it('counts distinct visitors and known organizations (ISP excluded from org count)', () => {
+    const events = [
+      pv({ utmSource: 'mrs', visitorId: 'v1', orgName: 'MIT', organizationType: 'education' }),
+      pv({ utmSource: 'mrs', visitorId: 'v1', orgName: 'MIT', organizationType: 'education' }),
+      pv({ utmSource: 'mrs', visitorId: 'v2', orgName: 'Comcast', organizationType: 'telecom_isp' }),
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: 'mrs', isNotSet: false, visits: 3, visitors: 2, knownOrganizations: 1 },
+    ]);
+  });
+
+  it('buckets missing dimension as (not set)', () => {
+    const events = [
+      pv({ utmSource: 'mrs', visitorId: 'v1' }),                          // no content
+      pv({ utmSource: 'mrs', visitorId: 'v2', utmContent: 'qr_video' }),
+    ];
+    const notSet = summarizeUtmTraffic(events, 'content', {}).find(r => r.isNotSet)!;
+    expect(notSet.value).toBe('(not set)');
+    expect(notSet.visits).toBe(1);
+  });
+
+  it('applies filter before grouping (mrs -> content split shows only MRS)', () => {
+    const events = [
+      pv({ utmSource: 'mrs', visitorId: 'v1', utmContent: 'qr_video' }),
+      pv({ utmSource: 'mrs', visitorId: 'v2', utmContent: 'qr_brochure' }),
+      pv({ utmSource: 'linkedin', visitorId: 'v3', utmContent: 'qr_video' }),
+    ];
+    const rows = summarizeUtmTraffic(events, 'content', { source: 'mrs' });
+    expect(rows.map(r => r.value).sort()).toEqual(['qr_brochure', 'qr_video']);
+    expect(rows.every(r => r.visits === 1)).toBe(true);
+  });
+
+  it('sorts by visits desc and returns [] for empty input', () => {
+    expect(summarizeUtmTraffic([], 'source', {})).toEqual([]);
+    const events = [
+      pv({ utmSource: 'a', visitorId: 'v1' }),
+      pv({ utmSource: 'b', visitorId: 'v2' }),
+      pv({ utmSource: 'b', visitorId: 'v3' }),
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {}).map(r => r.value)).toEqual(['b', 'a']);
+  });
+});

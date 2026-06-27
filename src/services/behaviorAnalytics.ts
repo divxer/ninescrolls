@@ -298,6 +298,63 @@ export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
   return true;
 }
 
+const UTM_FIELD_BY_GROUP: Record<UtmGroupBy, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
+  source: 'utmSource',
+  campaign: 'utmCampaign',
+  content: 'utmContent',
+};
+
+// Unique symbol for the "(not set)" group — cannot collide with any string value.
+const NOT_SET_GROUP = Symbol('utm-not-set');
+
+interface UtmGroupAcc { visits: number; visitors: Set<string>; orgs: Set<string>; isNotSet: boolean }
+
+/** Aggregate UTM traffic. Includes only page_view events that carry at least one
+ *  of source/campaign/content, applies `filter` first, groups by the normalized
+ *  `groupBy` value, and returns rows sorted by visits desc (ties: value asc). */
+export function summarizeUtmTraffic(
+  events: UtmEvent[],
+  groupBy: UtmGroupBy,
+  filter: UtmFilter,
+): UtmSummaryRow[] {
+  const field = UTM_FIELD_BY_GROUP[groupBy];
+  const groups = new Map<string | symbol, UtmGroupAcc>();
+
+  const hasAnyUtm = (ev: UtmEvent) => Boolean(
+    normalizeUtmValue(ev.utmSource) || normalizeUtmValue(ev.utmCampaign) || normalizeUtmValue(ev.utmContent),
+  );
+
+  for (const e of events) {
+    if (e.eventType !== 'page_view') continue;
+    if (!hasAnyUtm(e)) continue;                // exclude organic traffic
+    if (!matchesUtmFilter(e, filter)) continue; // apply active filter
+
+    const val = normalizeUtmValue(e[field]);
+    const isNotSet = val === undefined;
+    const key: string | symbol = isNotSet ? NOT_SET_GROUP : val!;
+
+    let g = groups.get(key);
+    if (!g) {
+      g = { visits: 0, visitors: new Set(), orgs: new Set(), isNotSet };
+      groups.set(key, g);
+    }
+    g.visits += 1;
+    const vid = normalizeUtmValue(e.visitorId);
+    if (vid) g.visitors.add(vid);
+    if (isKnownOrganization(e)) g.orgs.add(normalizeUtmValue(e.orgName)!);
+  }
+
+  return Array.from(groups.entries())
+    .map(([key, g]) => ({
+      value: g.isNotSet ? '(not set)' : (key as string),
+      isNotSet: g.isNotSet,
+      visits: g.visits,
+      visitors: g.visitors.size,
+      knownOrganizations: g.orgs.size,
+    }))
+    .sort((a, b) => b.visits - a.visits || a.value.localeCompare(b.value));
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {
