@@ -224,6 +224,56 @@ export function formatCampaignAttribution(e: CampaignAttribution): string {
   return [e.utmSource, e.utmCampaign, e.utmContent].filter(Boolean).join(' · ');
 }
 
+// --- UTM traffic summary (admin aggregation) ---
+
+export type UtmGroupBy = 'source' | 'campaign' | 'content';
+
+/** Active UTM filter. A `null` value means "(not set)" — field absent on the
+ *  event. An omitted key is ignored. A string is an exact (normalized) match. */
+export interface UtmFilter {
+  source?: string | null;
+  campaign?: string | null;
+  content?: string | null;
+}
+
+/** Minimal event shape needed for UTM aggregation. */
+export interface UtmEvent {
+  eventType?: string | null;
+  visitorId?: string | null;
+  orgName?: string | null;
+  organizationType?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+}
+
+export interface UtmSummaryRow {
+  value: string;        // display value, or "(not set)"
+  isNotSet: boolean;
+  visits: number;
+  visitors: number;
+  knownOrganizations: number;
+}
+
+// Org types NOT counted as a "known organization" (matches the admin's existing
+// ISP handling in AdminAnalyticsPage.tsx).
+const NON_KNOWN_ORG_TYPES = new Set(['telecom_isp', 'isp', 'unknown']);
+
+/** Trim a UTM/string value; null/undefined/empty/whitespace-only -> undefined. */
+export function normalizeUtmValue(v: string | null | undefined): string | undefined {
+  if (v == null) return undefined;
+  const trimmed = v.trim();
+  return trimmed === '' ? undefined : trimmed;
+}
+
+/** True when the event resolves to a real organization (not ISP/telecom/unknown). */
+export function isKnownOrganization(e: UtmEvent): boolean {
+  if (!normalizeUtmValue(e.orgName)) return false;
+  const type = (e.organizationType || 'unknown').toLowerCase();
+  return !NON_KNOWN_ORG_TYPES.has(type);
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {

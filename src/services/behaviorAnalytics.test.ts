@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution } from './behaviorAnalytics';
+import {
+  extractSearchQuery,
+  hasCampaignAttribution,
+  formatCampaignAttribution,
+  normalizeUtmValue,
+  isKnownOrganization,
+  matchesUtmFilter,
+  summarizeUtmTraffic,
+  type UtmEvent,
+} from './behaviorAnalytics';
 
 describe('extractSearchQuery', () => {
   it('extracts query from Google referrer', () => {
@@ -121,5 +130,32 @@ describe('formatCampaignAttribution', () => {
     expect(formatCampaignAttribution({ utmSource: 'mrs' })).toBe('mrs');
     expect(formatCampaignAttribution({ utmSource: 'mrs', utmContent: 'qr_brochure' }))
       .toBe('mrs · qr_brochure');
+  });
+});
+
+describe('normalizeUtmValue', () => {
+  it('trims surrounding whitespace', () => {
+    expect(normalizeUtmValue('  mrs  ')).toBe('mrs');
+  });
+  it('treats null/undefined/empty/whitespace as absent (undefined)', () => {
+    expect(normalizeUtmValue(null)).toBeUndefined();
+    expect(normalizeUtmValue(undefined)).toBeUndefined();
+    expect(normalizeUtmValue('')).toBeUndefined();
+    expect(normalizeUtmValue('   ')).toBeUndefined();
+  });
+});
+
+describe('isKnownOrganization', () => {
+  it('is true for a real org with a name', () => {
+    expect(isKnownOrganization({ orgName: 'MIT', organizationType: 'education' })).toBe(true);
+  });
+  it('is false for ISP/telecom/unknown org types', () => {
+    expect(isKnownOrganization({ orgName: 'Comcast', organizationType: 'telecom_isp' })).toBe(false);
+    expect(isKnownOrganization({ orgName: 'Verizon', organizationType: 'isp' })).toBe(false);
+    expect(isKnownOrganization({ orgName: 'Some ISP', organizationType: 'unknown' })).toBe(false);
+  });
+  it('is false when orgName is missing/blank', () => {
+    expect(isKnownOrganization({ orgName: '', organizationType: 'education' })).toBe(false);
+    expect(isKnownOrganization({ organizationType: 'education' })).toBe(false);
   });
 });
