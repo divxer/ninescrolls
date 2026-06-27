@@ -97,9 +97,11 @@ https://ninescrolls.com/?utm_source=newsletter&utm_medium=email&utm_campaign=mxe
 |---|---|---|
 | 完整 source/medium/campaign/content | **GA4（G-DPS75RLM8D）** → 报告 → 获取 → 流量获取 | 会话来源/媒介、广告系列 |
 | 同样数据（服务端） | Segment 目的地 | `context.campaign.{source, medium, name, content, term}`（注意 campaign → `name`） |
-| 自研管理后台（AdminAnalyticsPage） | ✅ 访客时间线每个事件显示来源徽章 `source · campaign · content`（悬停看完整 5 个 UTM） | `utmSource/utmMedium/utmCampaign/utmContent/utmTerm` |
+| 自研管理后台（AdminAnalyticsPage） | ✅ 访客时间线显示来源徽章 + 全局「UTM Traffic Summary」卡片（按 Source/Campaign/Content 聚合 Visits/Visitors/Known Orgs，点行钻取） | `utmSource/utmMedium/utmCampaign/utmContent/utmTerm` |
 
 > 自研后台的完整 UTM 支持已上线（PR #199）：`AnalyticsEvent` 落库 `utmSource/utmMedium/utmCampaign/utmContent`，Lambda 从 `context.campaign` 抽取，管理页时间线渲染徽章。**仅对部署后的新流量生效，历史记录不回填。**
+>
+> 聚合视图（UTM Traffic Summary，本次新增）：按 Source/Campaign/Content 分组统计，点行可下钻并筛选下方组织列表；仅统计 page_view 落地事件、且仅含至少带一个 UTM 的流量，仅对部署后新流量生效。
 
 ## 命名速查（一句话）
 
