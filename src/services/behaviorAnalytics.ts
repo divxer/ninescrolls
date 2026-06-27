@@ -243,6 +243,7 @@ export interface UtmEvent {
   orgName?: string | null;
   organizationType?: string | null;
   utmSource?: string | null;
+  // Carried for shape-compatibility only; grouping/filtering use source/campaign/content.
   utmMedium?: string | null;
   utmCampaign?: string | null;
   utmContent?: string | null;
@@ -274,7 +275,9 @@ export function isKnownOrganization(e: UtmEvent): boolean {
   return !NON_KNOWN_ORG_TYPES.has(type);
 }
 
-const UTM_FIELD_BY_KEY: Record<keyof UtmFilter, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
+// `keyof UtmFilter` and `UtmGroupBy` are the same union (source|campaign|content),
+// so a single table typed by `UtmGroupBy` serves both filtering and grouping.
+const UTM_FIELD: Record<UtmGroupBy, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
   source: 'utmSource',
   campaign: 'utmCampaign',
   content: 'utmContent',
@@ -288,7 +291,7 @@ export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
   for (const key of Object.keys(filter) as (keyof UtmFilter)[]) {
     const want = filter[key];
     if (want === undefined) continue;
-    const got = normalizeUtmValue(e[UTM_FIELD_BY_KEY[key]]);
+    const got = normalizeUtmValue(e[UTM_FIELD[key]]);
     if (want === null) {
       if (got !== undefined) return false;
     } else if (got !== normalizeUtmValue(want)) {
@@ -297,12 +300,6 @@ export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
   }
   return true;
 }
-
-const UTM_FIELD_BY_GROUP: Record<UtmGroupBy, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
-  source: 'utmSource',
-  campaign: 'utmCampaign',
-  content: 'utmContent',
-};
 
 // Unique symbol for the "(not set)" group — cannot collide with any string value.
 const NOT_SET_GROUP = Symbol('utm-not-set');
@@ -317,7 +314,7 @@ export function summarizeUtmTraffic(
   groupBy: UtmGroupBy,
   filter: UtmFilter,
 ): UtmSummaryRow[] {
-  const field = UTM_FIELD_BY_GROUP[groupBy];
+  const field = UTM_FIELD[groupBy];
   const groups = new Map<string | symbol, UtmGroupAcc>();
 
   const hasAnyUtm = (ev: UtmEvent) => Boolean(

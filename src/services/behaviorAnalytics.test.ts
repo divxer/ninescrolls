@@ -251,6 +251,23 @@ describe('summarizeUtmTraffic', () => {
     expect(rows.every(r => r.visits === 1)).toBe(true);
   });
 
+  it('counts an event with no visitorId toward visits but not visitors', () => {
+    const events = [pv({ utmSource: 'mrs' })]; // no visitorId
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: 'mrs', isNotSet: false, visits: 1, visitors: 0, knownOrganizations: 0 },
+    ]);
+  });
+
+  it('dedupes known organizations by name across different visitors', () => {
+    const events = [
+      pv({ utmSource: 'mrs', visitorId: 'v1', orgName: 'MIT', organizationType: 'education' }),
+      pv({ utmSource: 'mrs', visitorId: 'v2', orgName: 'MIT', organizationType: 'education' }),
+    ];
+    expect(summarizeUtmTraffic(events, 'source', {})).toEqual([
+      { value: 'mrs', isNotSet: false, visits: 2, visitors: 2, knownOrganizations: 1 },
+    ]);
+  });
+
   it('sorts by visits desc and returns [] for empty input', () => {
     expect(summarizeUtmTraffic([], 'source', {})).toEqual([]);
     const events = [
