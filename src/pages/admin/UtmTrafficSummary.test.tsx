@@ -39,7 +39,7 @@ describe('UtmTrafficSummary', () => {
     render(
       <UtmTrafficSummary events={[{ eventType: 'page_view', visitorId: 'v1' }]} groupBy="source" onGroupByChange={() => {}} filter={{}} onFilterChange={() => {}} />
     );
-    expect(screen.getByText(/暂无 UTM 流量/)).toBeInTheDocument();
+    expect(screen.getByText(/No UTM traffic yet/)).toBeInTheDocument();
   });
 
   it('shows "no matching rows" when search excludes all rows', () => {
