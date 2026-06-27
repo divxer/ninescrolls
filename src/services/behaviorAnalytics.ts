@@ -274,6 +274,30 @@ export function isKnownOrganization(e: UtmEvent): boolean {
   return !NON_KNOWN_ORG_TYPES.has(type);
 }
 
+const UTM_FIELD_BY_KEY: Record<keyof UtmFilter, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
+  source: 'utmSource',
+  campaign: 'utmCampaign',
+  content: 'utmContent',
+};
+
+/** True when an event satisfies every set key in the filter.
+ *  - omitted key -> ignored
+ *  - null value  -> event field must be ABSENT ("(not set)")
+ *  - string      -> normalized event field must equal the normalized filter value */
+export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
+  for (const key of Object.keys(filter) as (keyof UtmFilter)[]) {
+    const want = filter[key];
+    if (want === undefined) continue;
+    const got = normalizeUtmValue(e[UTM_FIELD_BY_KEY[key]]);
+    if (want === null) {
+      if (got !== undefined) return false;
+    } else if (got !== normalizeUtmValue(want)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {

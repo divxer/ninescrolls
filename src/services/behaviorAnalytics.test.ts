@@ -159,3 +159,28 @@ describe('isKnownOrganization', () => {
     expect(isKnownOrganization({ organizationType: 'education' })).toBe(false);
   });
 });
+
+describe('matchesUtmFilter', () => {
+  const mrs = { utmSource: 'mrs', utmCampaign: 'mxenes_202610', utmContent: 'qr_video' };
+
+  it('matches when normalized field equals normalized filter value', () => {
+    expect(matchesUtmFilter({ utmSource: ' mrs ' }, { source: 'mrs' })).toBe(true);
+    expect(matchesUtmFilter({ utmSource: 'mrs' }, { source: ' mrs ' })).toBe(true); // filter value also normalized
+    expect(matchesUtmFilter(mrs, { source: 'mrs', content: 'qr_video' })).toBe(true);
+  });
+
+  it('does not match a different value', () => {
+    expect(matchesUtmFilter(mrs, { source: 'linkedin' })).toBe(false);
+  });
+
+  it('null filter matches an absent field, not a present one', () => {
+    expect(matchesUtmFilter({ utmSource: 'mrs' }, { content: null })).toBe(true);
+    expect(matchesUtmFilter({ utmSource: 'mrs', utmContent: '   ' }, { content: null })).toBe(true);
+    expect(matchesUtmFilter(mrs, { content: null })).toBe(false);
+  });
+
+  it('ignores omitted keys; multiple keys AND together', () => {
+    expect(matchesUtmFilter(mrs, {})).toBe(true);
+    expect(matchesUtmFilter(mrs, { source: 'mrs', campaign: 'other' })).toBe(false);
+  });
+});
