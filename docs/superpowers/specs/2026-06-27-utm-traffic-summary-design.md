@@ -80,17 +80,23 @@ const [utmSort, setUtmSort]       = useState<{ col: 'value'|'visits'|'visitors'|
 
 Metric definitions (computed over events matching the active `utmFilter`):
 
-- **Value** — the grouped dimension value, or `(not set)` when that dimension is
-  missing on the event. The `(not set)` bucket keeps totals reconciling.
-- **Visits** — count of UTM-bearing landing `page_view` events in the group.
-  (UTM lands only on the entry `page_view`; SPA navigation drops the params and
-  `page_view` records carry no `sessionId`, so "Visits" — entry events — is the
-  honest available metric, not "Sessions".)
-- **Visitors** — distinct `visitorId`.
-- **Known Organizations** — distinct `orgName` **only**. Events with no resolved
-  `orgName` (ISP-only, e.g. Comcast / Verizon / Cloudflare) are **not** counted
-  here, to avoid polluting the business signal. ISP detail remains visible in the
-  visitor list.
+- **Value** — the grouped dimension value (trimmed), or `(not set)` when that
+  dimension is missing/empty on the event. The `(not set)` bucket keeps totals
+  reconciling.
+- **Visits** — count of UTM-bearing **`page_view`** events in the group.
+  The aggregation **hard-filters to `eventType === 'page_view'`** so clicks,
+  downloads, and custom events are never counted as visits. (UTM lands only on
+  the entry `page_view`; SPA navigation drops the params and `page_view` records
+  carry no `sessionId`, so "Visits" — entry events — is the honest available
+  metric, not "Sessions".)
+- **Visitors** — distinct `visitorId` among those `page_view` events.
+- **Known Organizations** — distinct `orgName` where the org is a *real*
+  organization, **not** an ISP/telecom. Determination (matches existing admin
+  logic, `AdminAnalyticsPage.tsx:714`): `orgName` is present AND
+  `organizationType` is neither `'telecom_isp'` / `'isp'` nor `'unknown'`.
+  ISP-only visitors (Comcast / Verizon / Cloudflare …) are excluded from this
+  count to keep the business signal clean — but they still count toward Visits
+  and Visitors, and remain visible in the visitor list.
 
 ## Pure helpers (in `behaviorAnalytics.ts`, unit-tested)
 
@@ -101,6 +107,7 @@ interface UtmEvent {
   eventType?: string | null;
   visitorId?: string | null;
   orgName?: string | null;
+  organizationType?: string | null;   // used to exclude ISP/telecom from "Known Organizations"
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
@@ -109,23 +116,37 @@ interface UtmEvent {
 
 interface UtmSummaryRow { value: string; isNotSet: boolean; visits: number; visitors: number; knownOrganizations: number; }
 
+// Normalize a UTM value for comparison/grouping: trim; treat null/undefined/''/
+// whitespace-only as "absent" (returns undefined). Shared by predicate + grouping.
+function normalizeUtmValue(v: string | null | undefined): string | undefined;
+
 // Pure predicate. A filter entry of `null` matches events where that field is
-// missing/empty ("(not set)"). Omitted filter keys are ignored.
+// absent (null/undefined/empty/whitespace, via normalizeUtmValue). A string
+// filter entry matches the normalized field value. Omitted filter keys are
+// ignored. Multiple keys AND together.
 function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean;
 
-// Pure aggregation. Applies `filter` first (so "click mrs then regroup by
-// content" is covered by this function, NOT by component glue), groups the
-// remaining events by `groupBy`, computes distinct visitor/org counts, and
-// returns rows. The "(not set)" group has value="(not set)", isNotSet=true.
+// Pure aggregation. (1) hard-filters to eventType === 'page_view'; (2) applies
+// `filter` (so "click mrs then regroup by content" is covered HERE, not by
+// component glue); (3) groups remaining events by the normalized `groupBy`
+// value; (4) computes distinct visitorId and distinct known-org counts.
+// Events whose group dimension is absent fall into one row with
+// value="(not set)", isNotSet=true. Returns rows sorted by visits desc.
 function summarizeUtmTraffic(events: UtmEvent[], groupBy: UtmGroupBy, filter: UtmFilter): UtmSummaryRow[];
 ```
 
 Notes:
+- **Visits hard-filter**: `summarizeUtmTraffic` counts only `eventType === 'page_view'`.
+- **Normalization**: grouping and matching both go through `normalizeUtmValue`, so
+  `"mrs"` and `" mrs "` collapse to one row, and `null`/`''`/whitespace all map to
+  `(not set)`.
 - `summarizeUtmTraffic` takes `filter` as a parameter (per review) so the core
   "filter + regroup" logic lives in the tested pure function, not in the component.
 - `(not set)` is represented internally as `null` in `UtmFilter`, never the literal
   string `"(not set)"`, so it can never collide with a real campaign/content value.
-  The UI renders the label `(not set)`; the predicate tests field-missing.
+  The UI renders the label `(not set)`; the predicate tests field-absent.
+- **Known org**: a small `isKnownOrganization(e)` helper (or inline check) returns
+  true when `orgName` is present and `organizationType ∉ {'telecom_isp','isp','unknown'}`.
 
 ## Drill-down / filter integration
 
@@ -137,6 +158,18 @@ Notes:
      `o.events.some(e => matchesUtmFilter(e, utmFilter))` pattern as `channelFilter`
      (`AdminAnalyticsPage.tsx` ~lines 3346 / 3374 / 3512).
 - **Clear** button resets `utmFilter` to `{}`.
+
+### Filter composition with existing filters
+
+`utmFilter` is **AND-combined** with the existing filters, never replacing them:
+
+```
+time window  AND  channelFilter  AND  searchFilter  AND  utmFilter
+```
+
+So selecting `source = mrs` further narrows whatever list is already showing
+(e.g. an active channel/region filter stays applied). The summary table and the
+org/visitor list both honor the same composed predicate set.
 
 ## Search & sort
 
@@ -157,13 +190,15 @@ sortable table. Badge styling consistent with existing admin components
 
 vitest unit tests in `src/services/behaviorAnalytics.test.ts`:
 
+- `normalizeUtmValue`: trims; `null`/`undefined`/`''`/`'   '` → `undefined`; `' mrs '` → `'mrs'`.
 - `matchesUtmFilter`:
-  - matches when field equals filter value
-  - `null` filter matches missing/empty field; does NOT match a present value
+  - matches when normalized field equals filter value (incl. whitespace variants: `' mrs '` matches `source='mrs'`)
+  - `null` filter matches absent field (null/undefined/empty/whitespace); does NOT match a present value
   - omitted keys ignored; multiple keys AND together
 - `summarizeUtmTraffic`:
-  - groups by source / campaign / content
-  - distinct visitor and known-organization counts (orgName-only; ISP-less events excluded from org count but still counted in visits/visitors)
+  - **counts only `eventType === 'page_view'`** — a `pdf_download`/`click` event with UTM is excluded from Visits
+  - groups by source / campaign / content; `' mrs '` and `'mrs'` collapse into one row
+  - distinct visitor count; **Known Organizations** counts distinct `orgName` only when `organizationType ∉ {telecom_isp, isp, unknown}` (ISP-only event excluded from org count but still in visits/visitors)
   - `(not set)` bucket for missing dimension (value `(not set)`, `isNotSet: true`)
   - applies `filter` before grouping (e.g. filter `source=mrs`, group by content → only MRS content rows)
   - empty input → `[]`
@@ -171,7 +206,7 @@ vitest unit tests in `src/services/behaviorAnalytics.test.ts`:
 
 ## Files touched
 
-- `src/services/behaviorAnalytics.ts` — add `matchesUtmFilter`, `summarizeUtmTraffic`, `UtmGroupBy` / `UtmFilter` / `UtmSummaryRow` types.
+- `src/services/behaviorAnalytics.ts` — add `normalizeUtmValue`, `isKnownOrganization`, `matchesUtmFilter`, `summarizeUtmTraffic`, and `UtmGroupBy` / `UtmFilter` / `UtmSummaryRow` / `UtmEvent` types.
 - `src/services/behaviorAnalytics.test.ts` — unit tests above.
 - `src/pages/admin/AdminAnalyticsPage.tsx` — state, the new card UI, and wiring `utmFilter` into the existing org/visitor list filter.
 - `docs/UTM-Naming-Convention.md` — update the "报表去哪看" row to note the admin now has an aggregate UTM summary + drill-down (not just per-event badges).
