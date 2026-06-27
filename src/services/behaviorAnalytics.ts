@@ -224,6 +224,134 @@ export function formatCampaignAttribution(e: CampaignAttribution): string {
   return [e.utmSource, e.utmCampaign, e.utmContent].filter(Boolean).join(' · ');
 }
 
+// --- UTM traffic summary (admin aggregation) ---
+
+export type UtmGroupBy = 'source' | 'campaign' | 'content';
+
+/** Active UTM filter. A `null` value means "(not set)" — field absent on the
+ *  event. An omitted key is ignored. A string is an exact (normalized) match. */
+export interface UtmFilter {
+  source?: string | null;
+  campaign?: string | null;
+  content?: string | null;
+}
+
+/** Minimal event shape needed for UTM aggregation. */
+export interface UtmEvent {
+  eventType?: string | null;
+  visitorId?: string | null;
+  orgName?: string | null;
+  organizationType?: string | null;
+  utmSource?: string | null;
+  // Carried for shape-compatibility only; grouping/filtering use source/campaign/content.
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+}
+
+export interface UtmSummaryRow {
+  value: string;        // display value, or "(not set)"
+  isNotSet: boolean;
+  visits: number;
+  visitors: number;
+  knownOrganizations: number;
+}
+
+// Org types NOT counted as a "known organization" (matches the admin's existing
+// ISP handling in AdminAnalyticsPage.tsx).
+const NON_KNOWN_ORG_TYPES = new Set(['telecom_isp', 'isp', 'unknown']);
+
+/** Trim a UTM/string value; null/undefined/empty/whitespace-only -> undefined. */
+export function normalizeUtmValue(v: string | null | undefined): string | undefined {
+  if (v == null) return undefined;
+  const trimmed = v.trim();
+  return trimmed === '' ? undefined : trimmed;
+}
+
+/** True when the event resolves to a real organization (not ISP/telecom/unknown). */
+export function isKnownOrganization(e: UtmEvent): boolean {
+  if (!normalizeUtmValue(e.orgName)) return false;
+  const type = (e.organizationType || 'unknown').toLowerCase();
+  return !NON_KNOWN_ORG_TYPES.has(type);
+}
+
+// `keyof UtmFilter` and `UtmGroupBy` are the same union (source|campaign|content),
+// so a single table typed by `UtmGroupBy` serves both filtering and grouping.
+const UTM_FIELD: Record<UtmGroupBy, 'utmSource' | 'utmCampaign' | 'utmContent'> = {
+  source: 'utmSource',
+  campaign: 'utmCampaign',
+  content: 'utmContent',
+};
+
+/** True when an event satisfies every set key in the filter.
+ *  - omitted key -> ignored
+ *  - null value  -> event field must be ABSENT ("(not set)")
+ *  - string      -> normalized event field must equal the normalized filter value */
+export function matchesUtmFilter(e: UtmEvent, filter: UtmFilter): boolean {
+  for (const key of Object.keys(filter) as (keyof UtmFilter)[]) {
+    const want = filter[key];
+    if (want === undefined) continue;
+    const got = normalizeUtmValue(e[UTM_FIELD[key]]);
+    if (want === null) {
+      if (got !== undefined) return false;
+    } else if (got !== normalizeUtmValue(want)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Unique symbol for the "(not set)" group — cannot collide with any string value.
+const NOT_SET_GROUP = Symbol('utm-not-set');
+
+interface UtmGroupAcc { visits: number; visitors: Set<string>; orgs: Set<string>; isNotSet: boolean }
+
+/** Aggregate UTM traffic. Includes only page_view events that carry at least one
+ *  of source/campaign/content, applies `filter` first, groups by the normalized
+ *  `groupBy` value, and returns rows sorted by visits desc (ties: value asc). */
+export function summarizeUtmTraffic(
+  events: UtmEvent[],
+  groupBy: UtmGroupBy,
+  filter: UtmFilter,
+): UtmSummaryRow[] {
+  const field = UTM_FIELD[groupBy];
+  const groups = new Map<string | symbol, UtmGroupAcc>();
+
+  const hasAnyUtm = (ev: UtmEvent) => Boolean(
+    normalizeUtmValue(ev.utmSource) || normalizeUtmValue(ev.utmCampaign) || normalizeUtmValue(ev.utmContent),
+  );
+
+  for (const e of events) {
+    if (e.eventType !== 'page_view') continue;
+    if (!hasAnyUtm(e)) continue;                // exclude organic traffic
+    if (!matchesUtmFilter(e, filter)) continue; // apply active filter
+
+    const val = normalizeUtmValue(e[field]);
+    const isNotSet = val === undefined;
+    const key: string | symbol = isNotSet ? NOT_SET_GROUP : val!;
+
+    let g = groups.get(key);
+    if (!g) {
+      g = { visits: 0, visitors: new Set(), orgs: new Set(), isNotSet };
+      groups.set(key, g);
+    }
+    g.visits += 1;
+    const vid = normalizeUtmValue(e.visitorId);
+    if (vid) g.visitors.add(vid);
+    if (isKnownOrganization(e)) g.orgs.add(normalizeUtmValue(e.orgName)!);
+  }
+
+  return Array.from(groups.entries())
+    .map(([key, g]) => ({
+      value: g.isNotSet ? '(not set)' : (key as string),
+      isNotSet: g.isNotSet,
+      visits: g.visits,
+      visitors: g.visitors.size,
+      knownOrganizations: g.orgs.size,
+    }))
+    .sort((a, b) => b.visits - a.visits || a.value.localeCompare(b.value));
+}
+
 // --- Behavior Signals ---
 
 interface BehaviorSignal {

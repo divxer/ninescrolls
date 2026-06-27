@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, listOrgOverrides, renameOrg, type OrgOverride, type OrgOverrideSummary } from '../../services/adminClassificationService';
 import { matchLinkedLeadsByVisitor } from './linkedLeadsMatch';
-import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, type TrafficChannel, type LifecycleStage } from '../../services/behaviorAnalytics';
+import { resolveTrafficChannel, extractSearchQuery, hasCampaignAttribution, formatCampaignAttribution, matchesUtmFilter, type TrafficChannel, type LifecycleStage, type UtmFilter, type UtmGroupBy, type UtmEvent } from '../../services/behaviorAnalytics';
+import { UtmTrafficSummary } from './UtmTrafficSummary';
 import { AdminTrendsSection } from './AdminTrendsSection';
 import * as orderAdminService from '../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../types/admin';
@@ -2727,6 +2728,8 @@ export function AdminAnalyticsPage() {
   const [trendsSectionOpen, setTrendsSectionOpen] = useState(true);
   // Enhanced filter state
   const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [utmFilter, setUtmFilter] = useState<UtmFilter>({});
+  const [utmGroupBy, setUtmGroupBy] = useState<UtmGroupBy>('source');
   const [regionFilter, setRegionFilter] = useState<string>('all');
   const [scoreMin, setScoreMin] = useState<string>('');
   const [scoreMax, setScoreMax] = useState<string>('');
@@ -3413,8 +3416,12 @@ export function AdminAnalyticsPage() {
       result = result.filter((o) => typeFilter.has(o.organizationType || 'unknown'));
     }
 
+    if (Object.values(utmFilter).some((v) => v !== undefined)) {
+      result = result.filter((o) => o.events.some((e) => matchesUtmFilter(e, utmFilter)));
+    }
+
     return result;
-  }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter, typeFilter]);
+  }, [searchedOrgs, channelFilter, regionFilter, scoreMin, scoreMax, lifecycleFilter, typeFilter, utmFilter]);
 
   // Unique countries for region filter dropdown
   const availableCountries = useMemo(() => {
@@ -3863,6 +3870,17 @@ export function AdminAnalyticsPage() {
             <span className="text-xs font-medium text-on-surface-variant">Volume / Sessions</span>
           </div>
           <ChannelSummaryChart events={filteredEvents} activeChannel={channelFilter} onChannelClick={(ch) => { setChannelFilter(channelFilter === ch ? 'all' : ch); setFiltersOpen(true); }} />
+        </div>
+
+        {/* UTM Traffic Summary — col-span-12 */}
+        <div className="lg:col-span-12">
+          <UtmTrafficSummary
+            events={filteredEvents as UtmEvent[]}
+            groupBy={utmGroupBy}
+            onGroupByChange={setUtmGroupBy}
+            filter={utmFilter}
+            onFilterChange={setUtmFilter}
+          />
         </div>
 
         {/* Organization Ledger — col-span-9 */}
