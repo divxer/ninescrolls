@@ -9,6 +9,8 @@ import type { OrganizationRecord } from '../types';
  * the behavior-analysis (left) column, and the detection-details (right) card,
  * so they live in one hook rather than being recomputed per panel.
  */
+export type OrgDetection = ReturnType<typeof useOrgDetection>;
+
 export function useOrgDetection(org: OrganizationRecord, override: OrgOverride | null) {
   // ── Per-IP network contexts (for multi-network visitors) ──
   const networkContexts = useMemo(() => {
