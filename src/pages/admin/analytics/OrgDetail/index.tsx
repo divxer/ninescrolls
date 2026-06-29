@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getOrgOverride, classifyOrg, setOrgOverride, undoOrgOverride, renameOrg, type OrgOverride } from '../../../../services/adminClassificationService';
 import { matchLinkedLeadsByVisitor } from '../../linkedLeadsMatch';
-import { resolveTrafficChannel, type TrafficChannel } from '../../../../services/behaviorAnalytics';
 import * as orderAdminService from '../../../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../../../types/admin';
 import { getAmplifyDataClient } from '../../../../services/amplifyClient';
 import type { AnalyticsEvent, OrganizationRecord } from '../types';
 import { formatDuration, engagementLevel, formatRelativeTime, maskIP } from '../format';
-import { getSearchQuery } from '../keywords';
 import { ActivityLedger } from './ActivityLedger';
+import { PagesVisitedCard } from './PagesVisitedCard';
+import { TrafficSourcesCard } from './TrafficSourcesCard';
+import { TechnicalContextCard } from './TechnicalContextCard';
+import { LinkedLeadsPanel } from './LinkedLeadsPanel';
 
 const client = getAmplifyDataClient;
 
@@ -242,10 +244,9 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
     }
   }
 
-  // Collect unique IPs, ISPs, User Agents, and visitor IDs
+  // Collect unique IPs and ISPs
   const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
   const uniqueISPs = Array.from(new Set(org.events.map((e) => e.isp).filter(Boolean))) as string[];
-  const uniqueUAs = Array.from(new Set(org.events.map((e) => e.userAgent).filter(Boolean))) as string[];
 
   // ── Per-IP network contexts (for multi-network visitors) ──
   const networkContexts = useMemo(() => {
@@ -348,85 +349,6 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
       ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant'
       : 'bg-error-container text-on-error-container';
 
-  // Traffic sources computation
-  const channelIcons: Record<string, string> = {
-    paid_search: 'paid', organic_search: 'search', ai_referral: 'smart_toy',
-    paid_social: 'share', organic_social: 'share', email: 'mail',
-    referral: 'link', direct: 'monitor',
-  };
-  const channelLabels: Record<string, string> = {
-    paid_search: 'Paid Search', organic_search: 'Organic Search', ai_referral: 'AI Referral',
-    paid_social: 'Paid Social', organic_social: 'Organic Social', email: 'Email',
-    referral: 'Referral', direct: 'Direct',
-  };
-  const trafficSources = useMemo(() => {
-    const sources = new Map<string, { count: number; channel: TrafficChannel; label: string }>();
-    for (const e of org.events) {
-      const channel = resolveTrafficChannel(e);
-      const hostname = e.referrer
-        ? (() => { try { return new URL(e.referrer).hostname; } catch { return e.referrer; } })()
-        : '';
-      const groupKey = hostname ? `${channel}::${hostname}` : channel;
-      const displayLabel = hostname || (channelLabels[channel] || 'Other');
-      const existing = sources.get(groupKey);
-      if (existing) existing.count += 1;
-      else sources.set(groupKey, { count: 1, channel, label: displayLabel });
-    }
-    return Array.from(sources.entries()).sort((a, b) => b[1].count - a[1].count);
-  }, [org.events]);
-
-  // Search keywords from this org's events
-  const searchKeywords = useMemo(() => {
-    const kws = new Map<string, { count: number; source: 'organic' | 'paid' }>();
-    for (const e of org.events) {
-      const keyword = getSearchQuery(e) || e.utmTerm;
-      if (!keyword) continue;
-      const key = keyword.toLowerCase().trim();
-      const channel = resolveTrafficChannel(e);
-      const source = channel === 'paid_search' ? 'paid' : 'organic';
-      const existing = kws.get(key);
-      if (existing) existing.count++;
-      else kws.set(key, { count: 1, source });
-    }
-    return Array.from(kws.entries()).sort((a, b) => b[1].count - a[1].count);
-  }, [org.events]);
-
-  // Referrer URL for display
-  const primaryReferrer = useMemo(() => {
-    const ev = org.events.find((e) => {
-      if (!e.referrer) return false;
-      try {
-        const host = new URL(e.referrer).hostname.toLowerCase();
-        return !host.includes('ninescrolls') && !host.includes('localhost');
-      } catch { return false; }
-    });
-    return ev?.referrer || null;
-  }, [org.events]);
-
-  // Parse UA for OS/Browser display
-  const parsedUA = useMemo(() => {
-    const ua = uniqueUAs[0] || '';
-    let os = 'Unknown';
-    let browser = 'Unknown';
-    if (ua.includes('Mac OS X')) {
-      const m = ua.match(/Mac OS X (\d+[._]\d+)/);
-      os = m ? `macOS ${m[1].replace(/_/g, '.')}` : 'macOS';
-    } else if (ua.includes('Windows')) {
-      const m = ua.match(/Windows NT (\d+\.\d+)/);
-      os = m ? `Windows ${m[1] === '10.0' ? '10/11' : m[1]}` : 'Windows';
-    } else if (ua.includes('Linux')) os = 'Linux';
-    if (ua.includes('Chrome/')) {
-      const m = ua.match(/Chrome\/(\d+)/);
-      browser = m ? `Chrome ${m[1]}` : 'Chrome';
-    } else if (ua.includes('Firefox/')) {
-      const m = ua.match(/Firefox\/(\d+)/);
-      browser = m ? `Firefox ${m[1]}` : 'Firefox';
-    } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
-      const m = ua.match(/Version\/(\d+)/);
-      browser = m ? `Safari ${m[1]}` : 'Safari';
-    }
-    return { os, browser };
-  }, [uniqueUAs]);
 
   return (
     <div className="space-y-8">
@@ -875,279 +797,22 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
             </div>
           </div>
 
-          {/* Linked RFQs Card */}
-          {linkedRfqs.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">request_quote</span>
-                Linked RFQs
-              </h3>
-              <div className="space-y-3">
-                {linkedRfqs.map(rfq => (
-                  <a
-                    key={rfq.rfqId}
-                    href={`/admin/rfqs/${rfq.rfqId}`}
-                    className="block p-3 bg-surface-container-low rounded-lg hover:bg-surface-container transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-bold text-primary">
-                        {rfq.referenceNumber || rfq.rfqId.slice(0, 12)}
-                      </span>
-                      <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                        rfq.status === 'pending' ? 'bg-tertiary/10 text-tertiary'
-                          : rfq.status === 'converted' ? 'bg-primary/10 text-primary'
-                          : 'bg-surface-container text-on-surface-variant'
-                      }`}>
-                        {rfq.status}
-                      </span>
-                    </div>
-                    {rfq.institution && (
-                      <p className="text-xs font-medium text-on-surface">{rfq.institution}</p>
-                    )}
-                    {rfq.name && (
-                      <p className="text-xs text-on-surface-variant">{rfq.name} {rfq.email && `· ${rfq.email}`}</p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-on-surface-variant">
-                      {rfq.equipmentCategory && <span>{rfq.equipmentCategory}</span>}
-                      {rfq.specificModel && <span>· {rfq.specificModel}</span>}
-                      <span>· {new Date(rfq.submittedAt).toLocaleDateString()}</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Linked Inquiries Card */}
-          {linkedInquiries.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">contact_mail</span>
-                Linked Inquiries
-              </h3>
-              <div className="space-y-3">
-                {linkedInquiries.map(lead => {
-                  const subject = lead.productName || lead.topic || lead.inquiryType || 'General Inquiry';
-                  return (
-                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
-                      <div className="text-sm font-bold text-primary mb-1">{subject}</div>
-                      {lead.name && (
-                        <p className="text-xs text-on-surface">
-                          {lead.name}
-                          {lead.email && (
-                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
-                          )}
-                        </p>
-                      )}
-                      {lead.phone && (
-                        <p className="text-[11px] text-on-surface-variant">{lead.phone}</p>
-                      )}
-                      {lead.organization && (
-                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
-                      )}
-                      {lead.message && (
-                        <p
-                          className="mt-2 pt-2 border-t border-outline-variant/20 text-xs text-on-surface whitespace-pre-wrap line-clamp-3"
-                          title={lead.message}
-                        >
-                          {lead.message}
-                        </p>
-                      )}
-                      <div className="mt-2 text-[10px] text-on-surface-variant">
-                        {new Date(lead.submittedAt).toLocaleString()}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Linked Downloads Card */}
-          {linkedDownloads.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">download</span>
-                Linked Downloads
-              </h3>
-              <div className="space-y-3">
-                {linkedDownloads.map(lead => {
-                  const subject = lead.fileName || lead.productName || 'Download';
-                  return (
-                    <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
-                      <div className="text-sm font-bold text-primary mb-1 break-all" title={subject}>{subject}</div>
-                      {lead.name && (
-                        <p className="text-xs text-on-surface">
-                          {lead.name}
-                          {lead.email && (
-                            <> · <a href={`mailto:${lead.email}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>{lead.email}</a></>
-                          )}
-                        </p>
-                      )}
-                      {lead.organization && (
-                        <p className="text-[11px] text-on-surface-variant">{lead.organization}</p>
-                      )}
-                      {lead.jobTitle && (
-                        <p className="text-[11px] text-on-surface-variant italic">{lead.jobTitle}</p>
-                      )}
-                      {(lead.researchAreas || lead.intent) && (
-                        <div className="mt-2 pt-2 border-t border-outline-variant/20 space-y-1">
-                          {lead.researchAreas && (
-                            <p className="text-xs text-on-surface line-clamp-2" title={lead.researchAreas}>
-                              <span className="font-semibold">Research Areas:</span> {lead.researchAreas}
-                            </p>
-                          )}
-                          {lead.intent && (
-                            <p className="text-xs text-on-surface line-clamp-2" title={lead.intent}>
-                              <span className="font-semibold">Intent:</span> {lead.intent}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      <div className="mt-2 text-[10px] text-on-surface-variant">
-                        {new Date(lead.submittedAt).toLocaleString()}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Linked Newsletter Card */}
-          {linkedNewsletters.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">newspaper</span>
-                Newsletter Signups
-              </h3>
-              <div className="space-y-3">
-                {linkedNewsletters.map(lead => (
-                  <div key={lead.leadId} className="p-3 bg-surface-container-low rounded-lg">
-                    <a
-                      href={`mailto:${lead.email}`}
-                      className="text-sm font-medium text-primary hover:underline break-all"
-                      onClick={(ev) => ev.stopPropagation()}
-                    >
-                      {lead.email}
-                    </a>
-                    {lead.source && (
-                      <p className="text-[11px] text-on-surface-variant mt-0.5 break-all" title={lead.source}>
-                        from: {lead.source}
-                      </p>
-                    )}
-                    <div className="mt-1 text-[10px] text-on-surface-variant">
-                      {new Date(lead.submittedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Linked Leads (RFQs / inquiries / downloads / newsletter signups) */}
+          <LinkedLeadsPanel
+            linkedRfqs={linkedRfqs}
+            linkedInquiries={linkedInquiries}
+            linkedDownloads={linkedDownloads}
+            linkedNewsletters={linkedNewsletters}
+          />
 
           {/* Traffic Sources Card */}
-          {trafficSources.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Traffic Sources</h3>
-              <div className="space-y-4">
-                {trafficSources.map(([groupKey, { count, channel, label: displayLabel }]) => (
-                  <div key={groupKey} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-on-surface-variant">{channelIcons[channel] || 'language'}</span>
-                      <span className="font-medium">{channelLabels[channel] || displayLabel}</span>
-                    </div>
-                    <span className="font-bold">{count} Visit{count !== 1 ? 's' : ''}</span>
-                  </div>
-                ))}
-                {primaryReferrer && (
-                  <div className="mt-2 p-3 bg-surface rounded text-[10px] font-mono text-on-surface-variant break-all">
-                    Referrer: {primaryReferrer}
-                  </div>
-                )}
-                {searchKeywords.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-outline-variant/20">
-                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-3">Search Keywords</p>
-                    <div className="space-y-2">
-                      {searchKeywords.map(([keyword, { count, source }]) => (
-                        <div key={keyword} className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="material-symbols-outlined text-sm text-on-surface-variant">{source === 'paid' ? 'paid' : 'search'}</span>
-                            <span className="text-sm font-medium truncate" title={keyword}>{keyword}</span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${source === 'paid' ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'}`}>
-                              {source}
-                            </span>
-                            <span className="text-[10px] font-bold text-on-surface-variant">{count}x</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <TrafficSourcesCard org={org} />
 
           {/* Technical Context Card */}
-          {uniqueUAs.length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Technical Context</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">User Agent</p>
-                  <p className="text-[11px] font-mono leading-relaxed bg-surface p-3 rounded text-on-surface-variant break-all">
-                    {uniqueUAs[0]}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">OS</p>
-                    <p className="text-sm font-semibold">{parsedUA.os}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Browser</p>
-                    <p className="text-sm font-semibold">{parsedUA.browser}</p>
-                  </div>
-                </div>
-                {(() => {
-                  const vids = [...new Set(org.events.map(e => (e as Record<string, unknown>).visitorId).filter(Boolean).map(String))];
-                  // Hide when multiple visitors — Activity Ledger already shows per-group visitorId
-                  if (vids.length > 1) return null;
-                  return (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Visitor ID</p>
-                      <p className="text-xs font-mono text-on-surface-variant">
-                        {vids.length === 1 ? vids[0].substring(0, 12) : org.key.substring(0, 12)}
-                      </p>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
+          <TechnicalContextCard org={org} />
 
           {/* Pages Visited Card */}
-          {(() => {
-            const pageEvents = org.events.filter((e) => e.pathname);
-            const uniquePages = new Map<string, number>();
-            for (const e of pageEvents) {
-              uniquePages.set(e.pathname!, (uniquePages.get(e.pathname!) || 0) + 1);
-            }
-            return uniquePages.size > 0 ? (
-              <div className="bg-surface-container-lowest rounded-xl p-6 shadow-elevated" style={{ border: '1px solid rgba(196, 198, 207, 0.1)' }}>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary mb-6">Pages Visited</h3>
-                <div className="space-y-1">
-                  {Array.from(uniquePages.entries()).map(([path, count]) => (
-                    <div key={path} className="flex justify-between items-center bg-surface-container-low rounded px-3 py-2">
-                      <span className="text-sm font-medium text-on-surface">{path}</span>
-                      <span className="text-[10px] font-bold bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">{count}x</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null;
-          })()}
+          <PagesVisitedCard org={org} />
         </div>
       </div>
     </div>
