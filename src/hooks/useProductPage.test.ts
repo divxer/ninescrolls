@@ -71,21 +71,4 @@ describe('useProductPage', () => {
     expect(trackAddToCart).toHaveBeenCalledWith('pluto-t', 'PLUTO-T', 9999);
     expect(navigate).toHaveBeenCalledWith('/cart');
   });
-
-  it('downloadBrochure triggers an anchor download with the given href/filename', () => {
-    const anchor = { href: '', download: '', click: vi.fn() } as unknown as HTMLAnchorElement;
-    const origCreate = document.createElement.bind(document);
-    vi.spyOn(document, 'createElement').mockImplementation(
-      (tag: string) => (tag === 'a' ? anchor : origCreate(tag)),
-    );
-    vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
-    vi.spyOn(document.body, 'removeChild').mockImplementation((n) => n);
-
-    const { result } = renderHook(() => useProductPage());
-    act(() => result.current.downloadBrochure('/docs/pluto-f-datasheet.pdf', 'NineScrolls-PLUTO-F-Datasheet.pdf'));
-
-    expect(anchor.href).toBe('/docs/pluto-f-datasheet.pdf');
-    expect(anchor.download).toBe('NineScrolls-PLUTO-F-Datasheet.pdf');
-    expect(anchor.click).toHaveBeenCalledTimes(1);
-  });
 });

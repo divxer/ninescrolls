@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { SEO } from '../common/SEO';
@@ -478,13 +478,13 @@ export function PECVDSystem() {
         </div>
       )}
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="PECVD System Series"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={()=>{ const a=document.createElement('a'); a.href='/docs/pecvd-system-datasheet.pdf'; a.download='NineScrolls-PECVD-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
+        brochureHref="/docs/pecvd-system-datasheet.pdf"
+        brochureFilename="NineScrolls-PECVD-Datasheet.pdf"
         downloadLabel="Download Datasheet"
       />
 

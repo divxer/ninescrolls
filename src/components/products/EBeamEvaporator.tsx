@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { SEO } from '../common/SEO';
@@ -578,13 +578,13 @@ export function EBeamEvaporator() {
         </div>
       )}
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="E-Beam Evaporation System (MEB-600)"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={() => { const a = document.createElement('a'); a.href = '/docs/e-beam-evaporator-datasheet.pdf'; a.download = 'NineScrolls-MEB-600-Spec-Sheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
+        brochureHref="/docs/e-beam-evaporator-datasheet.pdf"
+        brochureFilename="NineScrolls-MEB-600-Spec-Sheet.pdf"
         downloadLabel="Download Datasheet"
       />
 

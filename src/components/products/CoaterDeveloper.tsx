@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { SEO } from '../common/SEO';
@@ -426,13 +426,13 @@ export function CoaterDeveloper() {
         </div>
       )}
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="Coater/Developer System Series"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={()=>{ const a=document.createElement('a'); a.href='/docs/coater-developer-system-datasheet.pdf'; a.download='NineScrolls-Coater-Developer-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }}
+        brochureHref="/docs/coater-developer-system-datasheet.pdf"
+        brochureFilename="NineScrolls-Coater-Developer-Datasheet.pdf"
         downloadLabel="Download Datasheet"
       />
 

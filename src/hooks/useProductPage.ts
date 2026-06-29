@@ -14,9 +14,9 @@ export interface ProductCartItem {
 /**
  * Shared scaffolding for the product detail pages. Every product page has an
  * identical quote/contact modal, and the purchasable ones share the same
- * add-to-cart (cart + GA4 + analytics + navigate) and datasheet-download logic.
- * Each page still owns its own copy, specs, and layout — only this boilerplate
- * is centralized here.
+ * add-to-cart (cart + GA4 + analytics + navigate) logic. Datasheet download is
+ * handled by ProductQuoteModal (via the downloadFile util). Each page still owns
+ * its own copy, specs, and layout — only this boilerplate is centralized here.
  */
 export function useProductPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,14 +66,5 @@ export function useProductPage() {
     navigate('/cart');
   };
 
-  const downloadBrochure = (href: string, filename: string) => {
-    const a = document.createElement('a');
-    a.href = href;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  return { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart, downloadBrochure };
+  return { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart };
 }
