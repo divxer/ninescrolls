@@ -964,21 +964,29 @@ const tenderWatchStateMachine = new StateMachine(tenderWatchStack, 'TenderWatchD
     tracingEnabled: true,
 });
 
-// --- EventBridge daily cron — 02:00 UTC.
-new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
-    schedule: Schedule.cron({ minute: '0', hour: '2', day: '*', month: '*', year: '*' }),
-    targets: [new SfnStateMachine(tenderWatchStateMachine)],
-});
+// --- EventBridge daily crons (02:00–02:45 UTC).
+// Only schedule these in the prod (main-branch) deploy. A sandbox shares the
+// same external integrations (tender APIs, notification channels, Bedrock), so
+// scheduling them there would fire duplicate daily runs — duplicate tender
+// notifications / pipeline-health alerts and extra cost — against prod's. The
+// state machine / lambdas are still created in sandbox (harmless without a
+// trigger) so the backend can be exercised manually.
+if (!isSandbox) {
+    new Rule(tenderWatchStack, 'TenderWatchDailyRule', {
+        schedule: Schedule.cron({ minute: '0', hour: '2', day: '*', month: '*', year: '*' }),
+        targets: [new SfnStateMachine(tenderWatchStateMachine)],
+    });
 
-new Rule(tenderWatchStack, 'PipelineHealthCheckRule', {
-    schedule: Schedule.cron({ minute: '30', hour: '2', day: '*', month: '*', year: '*' }),
-    targets: [new LambdaFunctionTarget(backend.notifyPipelineHealth.resources.lambda)],
-});
+    new Rule(tenderWatchStack, 'PipelineHealthCheckRule', {
+        schedule: Schedule.cron({ minute: '30', hour: '2', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.notifyPipelineHealth.resources.lambda)],
+    });
 
-new Rule(tenderWatchStack, 'ExpireOldTendersRule', {
-    schedule: Schedule.cron({ minute: '45', hour: '2', day: '*', month: '*', year: '*' }),
-    targets: [new LambdaFunctionTarget(backend.expireOldTenders.resources.lambda)],
-});
+    new Rule(tenderWatchStack, 'ExpireOldTendersRule', {
+        schedule: Schedule.cron({ minute: '45', hour: '2', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.expireOldTenders.resources.lambda)],
+    });
+}
 
 // =============================================================================
 // Customer Organization (Phase C)
