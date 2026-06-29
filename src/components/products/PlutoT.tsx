@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
@@ -8,60 +9,23 @@ import { AcademicCitations } from '../common/AcademicCitations';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoT() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [selectedImage, setSelectedImage] = useState<'main' | 'front-view' | 'chamber' | 'samples' | 'with-pump'>('main');
-  const navigate = useNavigate();
-  const { addItem } = useCart();
 
   useScrollToTop();
 
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
   const handleAddToCart = () => {
-    addItem({
+    addToCart({
       id: 'pluto-t',
       name: 'PLUTO-T - 200W RF Plasma Cleaner',
       price: 9999,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/pluto-t/main.jpg'),
       sku: 'pluto-t',
     });
-
-    if (typeof window !== 'undefined') {
-      if (window.gtag) {
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: 9999,
-          items: [{
-            item_id: 'pluto-t',
-            item_name: 'PLUTO-T - 200W RF Plasma Cleaner',
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: 9999,
-            quantity: 1
-          }]
-        });
-      }
-      analytics.trackAddToCart('pluto-t', 'PLUTO-T - 200W RF Plasma Cleaner', 9999);
-    }
-
-    navigate('/cart');
   };
 
   const structuredData = {

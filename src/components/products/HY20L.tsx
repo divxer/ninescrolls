@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -8,66 +9,29 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function HY20L() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
   const [selectedFrequency, setSelectedFrequency] = useState<'rf' | 'mf'>('rf'); // Default to RF
-  const navigate = useNavigate();
-  const { addItem } = useCart();
 
   useScrollToTop();
-
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
 
   const handleAddToCart = () => {
     const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
     const price = selectedFrequency === 'rf' ? 14999 : 11999;
     const sku = selectedFrequency === 'rf' ? 'hy-20l-rf' : 'hy-20l-mf';
 
-    addItem({
+    addToCart({
       id: sku,
       name: `HY-20L - ${frequencyLabel} Plasma Processing System`,
       price: price,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg'),
       sku: sku,
     });
-
-    if (typeof window !== 'undefined') {
-      if (window.gtag) {
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: price,
-          items: [{
-            item_id: sku,
-            item_name: `HY-20L - ${frequencyLabel} Plasma Processing System`,
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: price,
-            quantity: 1
-          }]
-        });
-      }
-      analytics.trackAddToCart(sku, `HY-20L - ${frequencyLabel} Plasma Processing System`, price);
-    }
-
-    navigate('/cart');
   };
 
   const getProductDetails = () => {

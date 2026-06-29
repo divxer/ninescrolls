@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -9,61 +10,24 @@ import { AcademicCitations } from '../common/AcademicCitations';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoM() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open'>('main');
-  const navigate = useNavigate();
-  const { addItem } = useCart();
 
   useScrollToTop();
 
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
   const handleAddToCart = () => {
-    addItem({
+    addToCart({
       id: 'pluto-m',
       name: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
       price: 12999,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/pluto-m/main.jpg'),
       sku: 'pluto-m',
     });
-
-    if (typeof window !== 'undefined') {
-      if (window.gtag) {
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: 12999,
-          items: [{
-            item_id: 'pluto-m',
-            item_name: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: 12999,
-            quantity: 1
-          }]
-        });
-      }
-      analytics.trackAddToCart('pluto-m', 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber', 12999);
-    }
-
-    navigate('/cart');
   };
 
   const structuredData = {
