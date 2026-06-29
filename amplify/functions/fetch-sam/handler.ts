@@ -157,9 +157,7 @@ export async function handler(event: FetchSamEvent): Promise<FetchOutput> {
         // SAM API's `ncode` parameter is single-value. Loop per NAICS code.
         for (const ncode of NAICS_WHITELIST) {
             let offset = 0;
-            let pageIndex = 0;
             for (;;) {
-                pageIndex += 1;
                 const data = await fetchPageWithRetry(
                     { api_key: apiKey, postedFrom, postedTo, ncode, limit: PAGE_SIZE, offset },
                     ncode,

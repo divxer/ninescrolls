@@ -154,17 +154,6 @@ function sanitize(value: string): string {
         .replace(/'/g, '&#39;');
 }
 
-/** Sanitize all string fields in an object (shallow). */
-function _sanitizeStrings<T extends Record<string, unknown>>(obj: T): T {
-    const result = { ...obj };
-    for (const [key, value] of Object.entries(result)) {
-        if (typeof value === 'string') {
-            (result as Record<string, unknown>)[key] = sanitize(value);
-        }
-    }
-    return result;
-}
-
 function generateRfqId(): string {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand = crypto.randomBytes(3).toString('hex');
@@ -369,19 +358,6 @@ async function sendInternalNotification(data: RfqInput, rfqId: string, reference
         'exploring': 'Exploring',
         'prefer-not-to-say': 'Prefer not to say',
     };
-
-    const optionalRows = [
-        data.phone ? `<tr><td style="padding:4px 8px;font-weight:600;">Phone:</td><td style="padding:4px 8px;">${sanitize(data.phone)}</td></tr>` : '',
-        data.department ? `<tr><td style="padding:4px 8px;font-weight:600;">Department:</td><td style="padding:4px 8px;">${sanitize(data.department)}</td></tr>` : '',
-        data.role ? `<tr><td style="padding:4px 8px;font-weight:600;">Role:</td><td style="padding:4px 8px;">${sanitize(data.role)}</td></tr>` : '',
-        data.specificModel ? `<tr><td style="padding:4px 8px;font-weight:600;">Specific Model:</td><td style="padding:4px 8px;">${sanitize(data.specificModel)}</td></tr>` : '',
-        data.budgetRange ? `<tr><td style="padding:4px 8px;font-weight:600;">Budget Range:</td><td style="padding:4px 8px;">${sanitize(data.budgetRange)}</td></tr>` : '',
-        data.timeline ? `<tr><td style="padding:4px 8px;font-weight:600;">Timeline:</td><td style="padding:4px 8px;">${timelineLabels[data.timeline] ?? data.timeline}</td></tr>` : '',
-        data.fundingStatus ? `<tr><td style="padding:4px 8px;font-weight:600;">Funding Status:</td><td style="padding:4px 8px;">${fundingLabels[data.fundingStatus] ?? data.fundingStatus}</td></tr>` : '',
-        data.keySpecifications ? `<tr><td style="padding:4px 8px;font-weight:600;">Key Specs:</td><td style="padding:4px 8px;">${sanitize(data.keySpecifications)}</td></tr>` : '',
-        data.existingEquipment ? `<tr><td style="padding:4px 8px;font-weight:600;">Existing Equipment:</td><td style="padding:4px 8px;">${sanitize(data.existingEquipment)}</td></tr>` : '',
-        data.additionalComments ? `<tr><td style="padding:4px 8px;font-weight:600;">Additional Comments:</td><td style="padding:4px 8px;">${sanitize(data.additionalComments)}</td></tr>` : '',
-    ].filter(Boolean).join('\n');
 
     const shippingSection = data.needsBudgetaryQuote ? `
         <h3 style="margin-top:20px;">Shipping Address (Budgetary Quote)</h3>

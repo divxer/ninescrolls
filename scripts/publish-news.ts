@@ -93,18 +93,20 @@ function findCoverImage(htmlPath: string): string | null {
     try {
       statSync(candidate);
       return candidate;
-    } catch {}
+    } catch {
+      /* file does not exist, try next extension */
+    }
   }
   // Try prefix match: files starting with the HTML basename + "-cover"
   const files = readdirSync(dir);
   const coverFile = files.find(
-    (f) => f.startsWith(base) && /\-cover\.(jpg|png|webp)$/i.test(f),
+    (f) => f.startsWith(base) && /-cover\.(jpg|png|webp)$/i.test(f),
   );
   if (coverFile) return path.join(dir, coverFile);
   // Try any cover image with a shared prefix (first 20 chars)
   const prefix = base.slice(0, 20);
   const fuzzy = files.find(
-    (f) => f.startsWith(prefix) && /\-cover\.(jpg|png|webp)$/i.test(f),
+    (f) => f.startsWith(prefix) && /-cover\.(jpg|png|webp)$/i.test(f),
   );
   if (fuzzy) return path.join(dir, fuzzy);
   return null;

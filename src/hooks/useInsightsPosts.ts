@@ -45,6 +45,7 @@ export function useInsightsPosts(options?: {
       });
 
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depend on primitive option fields, not the recreated options object
   }, [options?.contentType, options?.includeDrafts]);
 
   return { posts, loading, error };

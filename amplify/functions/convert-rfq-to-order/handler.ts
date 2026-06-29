@@ -1,7 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
-    DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand,
+    DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { S3Client, CopyObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'node:crypto';

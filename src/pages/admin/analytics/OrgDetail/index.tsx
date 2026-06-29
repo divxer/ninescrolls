@@ -77,6 +77,7 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
       if (!cancelled) setOverrideLoading(false);
     });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- classify once per org name; org.events would re-trigger AI classification
   }, [org.orgName]);
 
   // ── Linked RFQ lookup ──────────────────────────────────────────────────

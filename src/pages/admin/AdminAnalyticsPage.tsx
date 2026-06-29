@@ -471,7 +471,6 @@ export function AdminAnalyticsPage() {
       if (pollTimer) clearInterval(pollTimer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveMode]);
 
   // Reset live new-event counter when date range changes or full refresh happens

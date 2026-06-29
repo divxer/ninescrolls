@@ -11,6 +11,7 @@ export function LogisticsPanel({ orderId }: { orderId: string }) {
     // Depend on the message (not the Error instance) so a new instance each render
     // doesn't re-warn on every render.
     if (error) console.warn('LogisticsPanel: failed to load related logistics cases —', error.message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on error.message, not the Error instance (see above)
   }, [error?.message]);
 
   useEffect(() => {

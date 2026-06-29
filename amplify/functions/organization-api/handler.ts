@@ -254,7 +254,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
 
     // Update path
     const newGsi1Sk = `${invertedActivityToken(nowIso)}#${canonicalOrgId}`;
-    let updateExpr = 'SET hasActiveInquiry = :hasInquiry, lastActivityAt = :now, updatedAt = :now, GSI1SK = :gsi1Sk, '
+    const updateExpr = 'SET hasActiveInquiry = :hasInquiry, lastActivityAt = :now, updatedAt = :now, GSI1SK = :gsi1Sk, '
         + `${sourceDateField} = :submittedAt, contactCount = if_not_exists(contactCount, :zero) + :countDelta`;
     let addExpr = ` ADD leadScore :delta, ${sourceCountField} :one`;
     if (payload.source === 'order' && payload.orderValueUSD) {

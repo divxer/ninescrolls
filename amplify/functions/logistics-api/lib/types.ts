@@ -77,6 +77,7 @@ export interface LogisticsCaseItem {
 export type LogisticsCaseResponse = Omit<LogisticsCaseItem, 'PK' | 'SK' | 'GSI1PK' | 'GSI1SK'>;
 
 export function toCaseResponse(item: LogisticsCaseItem): LogisticsCaseResponse {
+  // Strip the DDB key fields via rest (ignoreRestSiblings keeps lint happy).
   const { PK, SK, GSI1PK, GSI1SK, ...rest } = item;
   return rest;
 }
