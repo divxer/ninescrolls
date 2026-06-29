@@ -37,7 +37,7 @@ export function OrganizationFilterBar({ filters, onChange }: Props) {
             />
             <select
                 value={filters.sortBy ?? 'activity'}
-                onChange={(e) => onChange({ ...filters, sortBy: e.target.value as any })}
+                onChange={(e) => onChange({ ...filters, sortBy: e.target.value as ListOrgFilters['sortBy'] })}
                 className="bg-surface-container-low px-3 py-2 rounded-lg text-sm text-on-surface border-none outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
             >
                 <option value="activity">Sort: Recent activity</option>

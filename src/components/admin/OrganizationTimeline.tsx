@@ -1,10 +1,34 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+// Timeline entries come from Amplify with no shared domain type; describe just
+// the fields this component reads from each entity.
+export interface RfqEntry {
+    rfqId: string;
+    submittedAt?: string | null;
+    equipmentCategory?: string | null;
+    institution?: string | null;
+}
+
+export interface OrderEntry {
+    orderId: string;
+    quoteDate?: string | null;
+    productModel?: string | null;
+    quoteAmount?: number | null;
+}
+
+export interface LeadEntry {
+    leadId: string;
+    submittedAt?: string | null;
+    type?: string | null;
+    topic?: string | null;
+    productName?: string | null;
+}
+
 interface Props {
-    recentRfqs: any[];
-    recentOrders: any[];
-    recentLeads: any[];
+    recentRfqs: RfqEntry[];
+    recentOrders: OrderEntry[];
+    recentLeads: LeadEntry[];
 }
 
 type Tab = 'rfqs' | 'orders' | 'leads' | 'tenders';

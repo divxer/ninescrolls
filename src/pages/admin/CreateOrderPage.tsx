@@ -76,7 +76,7 @@ export function CreateOrderPage() {
           department: contactDept || undefined,
         },
       });
-      const orderId = (result as any)?.orderId;
+      const orderId = (result as { orderId?: string } | null)?.orderId;
       navigate(orderId ? `/admin/orders/${orderId}` : '/admin/orders');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create order');

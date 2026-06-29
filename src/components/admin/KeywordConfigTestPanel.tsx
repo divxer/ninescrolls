@@ -7,10 +7,17 @@ interface Props {
     formState: ConfigFormState;
 }
 
+// Shape of the prefilter preview result this panel renders. The service returns
+// the AppSync mutation payload, which we narrow to the fields read here.
+interface PrefilterPreviewResult {
+    passed: boolean;
+    matchedKeywords: string[];
+}
+
 export function KeywordConfigTestPanel({ formState }: Props) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [result, setResult] = useState<any>(null);
+    const [result, setResult] = useState<PrefilterPreviewResult | null>(null);
     const [busy, setBusy] = useState(false);
 
     async function run() {
@@ -21,9 +28,9 @@ export function KeywordConfigTestPanel({ formState }: Props) {
                 description,
                 configOverride: formState,
             });
-            setResult(r);
-        } catch (err: any) {
-            notify.error(String(err?.message ?? err));
+            setResult(r as PrefilterPreviewResult | null);
+        } catch (err) {
+            notify.error(String((err as { message?: string })?.message ?? err));
         } finally { setBusy(false); }
     }
 

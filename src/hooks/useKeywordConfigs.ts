@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as svc from '../services/tenderAdminService';
 
+type KeywordConfig = NonNullable<Awaited<ReturnType<typeof svc.listKeywordConfigs>>[number]>;
+
 export function useKeywordConfigs(includeInactive = false) {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<KeywordConfig[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
@@ -11,7 +13,9 @@ export function useKeywordConfigs(includeInactive = false) {
         setError(null);
         try {
             const result = await svc.listKeywordConfigs(includeInactive);
-            setData((result ?? []) as any[]);
+            // Service elements are typed nullable by Amplify but are non-null in
+            // practice; narrow to the non-null config shape for consumers.
+            setData((result ?? []) as KeywordConfig[]);
         } catch (err) {
             setError(err as Error);
         } finally {

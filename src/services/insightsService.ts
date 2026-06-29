@@ -88,7 +88,7 @@ export async function fetchAllInsightsPosts(options?: {
   const cached = listCache.get(cacheKey);
   if (!isExpired(cached)) return cached!.data;
 
-  const filterConditions: Record<string, any> = {};
+  const filterConditions: Record<string, unknown> = {};
   if (!options?.includeDrafts) {
     filterConditions.isDraft = { ne: true };
   }

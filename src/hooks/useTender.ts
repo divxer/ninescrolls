@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as svc from '../services/tenderAdminService';
 
+type TenderData = Awaited<ReturnType<typeof svc.getTender>>;
+
 export function useTender(tenderId: string | undefined) {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<TenderData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 

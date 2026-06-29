@@ -31,7 +31,10 @@ export function Layout({ children }: LayoutProps) {
   // Analytics helper
   const trackProductMenuClick = (label: string, category: string) => {
     if (typeof window !== 'undefined') {
-      const w = window as any;
+      const w = window as unknown as {
+        gtag?: (...args: unknown[]) => void;
+        _hsq?: unknown[];
+      };
       if (typeof w.gtag === 'function') {
         w.gtag('event', 'click', {
           event_category: 'Nav Products',

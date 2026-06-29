@@ -24,7 +24,7 @@ function mapToArticleQuestion(item: DynamoQuestion): ArticleQuestion {
     submittedAt: item.submittedAt,
     answeredAt: item.answeredAt ?? undefined,
     answeredBy: item.answeredBy ?? undefined,
-    purchaseIntent: (item as any).purchaseIntent ?? false, // TODO: drop cast after sandbox regenerates outputs
+    purchaseIntent: (item as { purchaseIntent?: boolean }).purchaseIntent ?? false, // TODO: drop cast after sandbox regenerates outputs
   };
 }
 

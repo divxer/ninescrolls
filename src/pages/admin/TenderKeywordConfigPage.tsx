@@ -34,16 +34,18 @@ export function TenderKeywordConfigPage() {
 
     useEffect(() => {
         if (!selectedCategory) return;
-        const found = configs.find((c: any) => c.productCategory === selectedCategory);
+        const found = configs.find((c) => c.productCategory === selectedCategory);
         if (found) {
             const initial: ConfigFormState = {
                 productCategory: found.productCategory,
-                productSlugs: found.productSlugs ?? [],
-                keywords: found.keywords ?? [],
-                synonyms: found.synonyms ?? [],
-                blacklist: found.blacklist ?? [],
-                naicsCodes: found.naicsCodes ?? [],
-                cpvCodes: found.cpvCodes ?? [],
+                // Amplify types these arrays' elements as nullable; they are
+                // non-null in practice, so narrow to string[] for the form state.
+                productSlugs: (found.productSlugs ?? []) as string[],
+                keywords: (found.keywords ?? []) as string[],
+                synonyms: (found.synonyms ?? []) as string[],
+                blacklist: (found.blacklist ?? []) as string[],
+                naicsCodes: (found.naicsCodes ?? []) as string[],
+                cpvCodes: (found.cpvCodes ?? []) as string[],
                 isActive: found.isActive ?? true,
             };
             setFormState(initial);
@@ -56,7 +58,7 @@ export function TenderKeywordConfigPage() {
     function newCategory() {
         const name = prompt('New category name (immutable; used as PK):');
         if (!name?.trim()) return;
-        if (configs.some((c: any) => c.productCategory === name)) {
+        if (configs.some((c) => c.productCategory === name)) {
             notify.error('Category already exists');
             return;
         }
@@ -81,8 +83,8 @@ export function TenderKeywordConfigPage() {
             await svc.upsertKeywordConfig(formState);
             notify.success('Saved — takes effect on next daily run');
             refresh();
-        } catch (err: any) {
-            notify.error(String(err?.message ?? err));
+        } catch (err) {
+            notify.error(String((err as { message?: string })?.message ?? err));
         } finally { setBusy(false); }
     }
 

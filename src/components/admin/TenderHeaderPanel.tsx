@@ -6,8 +6,26 @@ import { TenderStatusChangeDialog } from './TenderStatusChangeDialog';
 const STATUSES = ['new', 'reviewing', 'pursuing', 'submitted', 'won', 'lost', 'not_relevant'] as const;
 const NOTE_REQUIRED = new Set(['not_relevant', 'lost']);
 
+// Tender records come from Amplify with no shared domain type; describe just the
+// fields this panel reads.
+interface TenderRecord {
+    tenderId: string;
+    title?: string | null;
+    agency?: string | null;
+    country?: string | null;
+    status?: string | null;
+    overallScore?: number | null;
+    isHighPriority?: boolean | null;
+    deadline?: string | null;
+    sourceUrl?: string | null;
+    source?: string | null;
+    assignedTo?: string | null;
+    naicsCodes?: (string | null)[] | null;
+    cpvCodes?: (string | null)[] | null;
+}
+
 interface Props {
-    tender: any;
+    tender: TenderRecord;
     onUpdated: () => void;
 }
 
@@ -24,8 +42,8 @@ export function TenderHeaderPanel({ tender, onUpdated }: Props) {
             await svc.updateTenderStatus({ tenderId: tender.tenderId, toStatus, note, assignedTo });
             notify.success(`Status → ${toStatus}`);
             onUpdated();
-        } catch (err: any) {
-            const msg = String(err?.message ?? err);
+        } catch (err) {
+            const msg = String((err as { message?: string })?.message ?? err);
             if (/Conflict/i.test(msg)) {
                 notify.error('Tender modified by another user — refreshing.');
                 onUpdated();
@@ -82,7 +100,7 @@ export function TenderHeaderPanel({ tender, onUpdated }: Props) {
                 />
             </div>
             <div className="mt-4 space-y-2">
-                <a href={tender.sourceUrl} target="_blank" rel="noreferrer" className="block px-3 py-1.5 rounded-md text-xs text-center bg-primary text-on-primary hover:bg-primary/90">
+                <a href={tender.sourceUrl ?? undefined} target="_blank" rel="noreferrer" className="block px-3 py-1.5 rounded-md text-xs text-center bg-primary text-on-primary hover:bg-primary/90">
                     View on {tender.source}
                 </a>
                 {tender.status !== 'not_relevant' && (
@@ -93,8 +111,8 @@ export function TenderHeaderPanel({ tender, onUpdated }: Props) {
             </div>
             {(tender.naicsCodes?.length || tender.cpvCodes?.length) ? (
                 <div className="mt-4 text-xs">
-                    {tender.naicsCodes?.length > 0 && <div className="mb-1"><strong>NAICS:</strong> {tender.naicsCodes.join(', ')}</div>}
-                    {tender.cpvCodes?.length > 0 && <div><strong>CPV:</strong> {tender.cpvCodes.join(', ')}</div>}
+                    {(tender.naicsCodes?.length ?? 0) > 0 && <div className="mb-1"><strong>NAICS:</strong> {tender.naicsCodes?.join(', ')}</div>}
+                    {(tender.cpvCodes?.length ?? 0) > 0 && <div><strong>CPV:</strong> {tender.cpvCodes?.join(', ')}</div>}
                 </div>
             ) : null}
             {pending && (

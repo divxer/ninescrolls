@@ -6,8 +6,26 @@ import {
 } from '../../services/organizationAdminService';
 import { MergeOrgDialog } from './MergeOrgDialog';
 
+// Org records come from Amplify with no shared domain type; describe just the
+// fields this panel reads.
+interface OrgRecord {
+    orgId: string;
+    displayName?: string | null;
+    primaryDomain?: string | null;
+    type?: string | null;
+    country?: string | null;
+    leadScore?: number | null;
+    firstSeenAt?: string | null;
+    lastActivityAt?: string | null;
+    aiClassifiedAt?: string | null;
+    aiProvider?: string | null;
+    status?: string | null;
+    ownerSalesRep?: string | null;
+    aliasDomains?: (string | null)[] | null;
+}
+
 interface Props {
-    org: any;
+    org: OrgRecord;
     onUpdate: () => void;
 }
 
@@ -136,12 +154,12 @@ export function OrganizationHeaderPanel({ org, onUpdate }: Props) {
                 </button>
             </div>
 
-            {org.aliasDomains?.length > 0 && (
+            {(org.aliasDomains?.length ?? 0) > 0 && (
                 <div className="mt-6 pt-6 border-t border-outline-variant/10">
                     <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">Alias domains</p>
                     <ul className="space-y-1.5">
-                        {org.aliasDomains.map((d: string) => (
-                            <li key={d} className="flex items-center gap-2 text-sm text-on-surface-variant">
+                        {org.aliasDomains?.map((d) => (
+                            <li key={d ?? ''} className="flex items-center gap-2 text-sm text-on-surface-variant">
                                 <span className="material-symbols-outlined text-on-surface-variant/60 text-sm">link</span>
                                 <span className="italic">{d}</span>
                             </li>

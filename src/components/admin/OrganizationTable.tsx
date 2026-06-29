@@ -1,10 +1,25 @@
 import { Link } from 'react-router-dom';
 
-interface Props {
-    items: any[];
+// Org rows come from Amplify with no shared domain type; describe just the
+// fields this table reads.
+export interface OrgRow {
+    orgId: string;
+    displayName?: string | null;
+    primaryDomain?: string | null;
+    type?: string | null;
+    country?: string | null;
+    leadScore?: number | null;
+    lastActivityAt?: string | null;
+    status?: string | null;
+    ownerSalesRep?: string | null;
+    firstSeenAt?: string | null;
 }
 
-function relativeTime(iso: string | undefined): string {
+interface Props {
+    items: OrgRow[];
+}
+
+function relativeTime(iso: string | null | undefined): string {
     if (!iso) return '—';
     const ms = Date.now() - new Date(iso).getTime();
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -86,11 +101,11 @@ export function OrganizationTable({ items }: Props) {
                     >
                         <div className="flex items-center justify-between mb-2">
                             <span className="font-headline font-bold text-primary text-sm truncate pr-2">{org.displayName ?? org.orgId}</span>
-                            <OrgStatusChip status={org.status} />
+                            <OrgStatusChip status={org.status ?? ''} />
                         </div>
                         <div className="text-xs text-on-surface-variant italic mb-2">{org.primaryDomain}</div>
                         <div className="flex items-center justify-between gap-3 mb-2">
-                            <TypeChip type={org.type} />
+                            <TypeChip type={org.type ?? ''} />
                             <span className="text-[10px] text-on-surface-variant">{org.country ?? '—'}</span>
                         </div>
                         <LeadScoreBar score={org.leadScore ?? 0} />
@@ -130,11 +145,11 @@ export function OrganizationTable({ items }: Props) {
                                 </Link>
                             </td>
                             <td className="px-6 py-5 text-on-surface-variant text-sm italic">{org.primaryDomain}</td>
-                            <td className="px-6 py-5"><TypeChip type={org.type} /></td>
+                            <td className="px-6 py-5"><TypeChip type={org.type ?? ''} /></td>
                             <td className="px-6 py-5 text-sm text-on-surface-variant">{org.country ?? '—'}</td>
                             <td className="px-6 py-5"><LeadScoreBar score={org.leadScore ?? 0} /></td>
                             <td className="px-6 py-5 text-sm text-on-surface-variant">{relativeTime(org.lastActivityAt)}</td>
-                            <td className="px-6 py-5"><OrgStatusChip status={org.status} /></td>
+                            <td className="px-6 py-5"><OrgStatusChip status={org.status ?? ''} /></td>
                             <td className="px-6 py-5 text-sm text-on-surface">{org.ownerSalesRep ?? <span className="text-on-surface-variant/60 italic">—</span>}</td>
                         </tr>
                     ))}

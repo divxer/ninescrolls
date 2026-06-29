@@ -60,7 +60,7 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
                       },
                     },
                     authMode: 'userPool',
-                  } as any);
+                  } as Parameters<ReturnType<typeof client>['graphql']>[0]);
                 } catch { /* best-effort backfill */ }
               }
             }

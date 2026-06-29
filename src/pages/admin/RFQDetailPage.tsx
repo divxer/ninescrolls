@@ -29,7 +29,7 @@ export function RFQDetailPage() {
     notes?: string;
   }) {
     const result = await svc.convertRfqToOrder(rfq!.rfqId, overrides);
-    const orderId = (result as any)?.orderId;
+    const orderId = (result as { orderId?: string } | null)?.orderId;
     if (orderId) {
       navigate(`/admin/orders/${orderId}`);
     } else {

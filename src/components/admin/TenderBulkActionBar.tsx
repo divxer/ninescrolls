@@ -21,8 +21,8 @@ export function TenderBulkActionBar({ selectedIds, onCleared, onUpdated }: Props
             notify.success(`${count}/${selectedIds.length} tenders → ${target}`);
             onUpdated();
             onCleared();
-        } catch (err: any) {
-            notify.error(String(err?.message ?? err));
+        } catch (err) {
+            notify.error(String((err as { message?: string })?.message ?? err));
         } finally {
             setBusy(false);
         }

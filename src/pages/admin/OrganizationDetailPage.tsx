@@ -1,7 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
 import { useOrganization } from '../../hooks/useOrganization';
 import { OrganizationHeaderPanel } from '../../components/admin/OrganizationHeaderPanel';
-import { OrganizationTimeline } from '../../components/admin/OrganizationTimeline';
+import {
+    OrganizationTimeline,
+    type RfqEntry,
+    type OrderEntry,
+    type LeadEntry,
+} from '../../components/admin/OrganizationTimeline';
 
 interface AggregateCardProps {
     label: string;
@@ -73,9 +78,9 @@ export function OrganizationDetailPage() {
                         />
                     </div>
                     <OrganizationTimeline
-                        recentRfqs={data.recentRfqs ?? []}
-                        recentOrders={data.recentOrders ?? []}
-                        recentLeads={data.recentLeads ?? []}
+                        recentRfqs={(data.recentRfqs ?? []) as RfqEntry[]}
+                        recentOrders={(data.recentOrders ?? []) as OrderEntry[]}
+                        recentLeads={(data.recentLeads ?? []) as LeadEntry[]}
                     />
                 </main>
             </div>

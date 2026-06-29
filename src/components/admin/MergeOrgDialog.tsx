@@ -4,8 +4,22 @@ import { Modal } from './Modal';
 import { useOrganizations } from '../../hooks/useOrganizations';
 import { mergeOrganization } from '../../services/organizationAdminService';
 
+// Minimal Org shape this dialog reads from. Org records come from Amplify with
+// no shared domain type, so we describe just the fields consumed here.
+interface OrgSummary {
+    orgId: string;
+    displayName?: string | null;
+    primaryDomain?: string | null;
+    type?: string | null;
+    leadScore?: number | null;
+    rfqCount?: number | null;
+    orderCount?: number | null;
+    leadCount?: number | null;
+    aliasDomains?: unknown[] | null;
+}
+
 interface MergeOrgDialogProps {
-    sourceOrg: any;
+    sourceOrg: OrgSummary;
     open: boolean;
     onClose: () => void;
 }
@@ -23,7 +37,7 @@ export function MergeOrgDialog({ sourceOrg, open, onClose }: MergeOrgDialogProps
     const [error, setError] = useState('');
 
     const candidates = useMemo(() => {
-        const items: any[] = data?.items ?? [];
+        const items = (data?.items ?? []) as OrgSummary[];
         const filtered = items.filter((o) => o.orgId !== sourceOrg.orgId);
         if (!search.trim()) return filtered;
         const needle = search.toLowerCase();

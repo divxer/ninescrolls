@@ -1,7 +1,17 @@
 import { useState } from 'react';
 
+// Audit log entries come from Amplify with no shared domain type; describe just
+// the fields this component reads.
+export interface TenderAuditEntry {
+    changedAt?: string | null;
+    changedBy?: string | null;
+    fromStatus?: string | null;
+    toStatus?: string | null;
+    note?: string | null;
+}
+
 interface Props {
-    log: any[];
+    log: TenderAuditEntry[];
 }
 
 export function TenderAuditLog({ log }: Props) {

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as svc from '../services/organizationAdminService';
 
+type OrganizationData = Awaited<ReturnType<typeof svc.getOrganization>>;
+
 export function useOrganization(orgId: string | undefined) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
