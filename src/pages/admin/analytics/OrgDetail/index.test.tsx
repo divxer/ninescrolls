@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { AnalyticsEvent, OrganizationRecord } from '../types';
 
@@ -31,6 +31,8 @@ vi.mock('../../../../services/amplifyClient', () => ({
 }));
 
 import { OrgDetail } from './index';
+import { getOrgOverride } from '../../../../services/adminClassificationService';
+import { listRfqs } from '../../../../services/orderAdminService';
 
 const ev = (p: Record<string, unknown>): AnalyticsEvent =>
   ({ id: 'e', timestamp: '2026-01-01T00:00:00.000Z', ...p } as unknown as AnalyticsEvent);
@@ -91,10 +93,12 @@ describe('OrgDetail smoke test', () => {
     expect(screen.getByText('Traffic Sources')).toBeInTheDocument();
     expect(screen.getByText('Technical Context')).toBeInTheDocument();
 
-    // async org-override classification settles without throwing
-    await waitFor(() => {
-      expect(screen.getByText(/Back to list/i)).toBeInTheDocument();
-    });
+    // The async org-override classification actually runs and settles:
+    // getOrgOverride is invoked for this org, and the provider label it
+    // resolves ("Bedrock") renders only after that promise settles — so this
+    // asserts genuine async behavior, not a synchronously-rendered element.
+    await waitFor(() => expect(getOrgOverride).toHaveBeenCalledWith('MIT'));
+    expect(await screen.findByText(/Bedrock/)).toBeInTheDocument();
   });
 
   it('calls onBack when the back control is clicked', async () => {
@@ -127,5 +131,34 @@ describe('OrgDetail smoke test', () => {
     // the extracted ActivityLedger child renders visited paths from org.events
     expect(await screen.findByText('Activity Ledger')).toBeInTheDocument();
     expect(screen.getAllByText(/\/products\/hy-20l/).length).toBeGreaterThan(0);
+  });
+
+  it('renders linked RFQs (timestamp-matched) for an org with an rfq_submission event', async () => {
+    const rfqTime = '2026-01-03T00:00:00.000Z';
+    // Event has no rfqId in properties → component falls back to listRfqs and
+    // matches by timestamp proximity (±60s), exercising the orderAdminService branch.
+    (listRfqs as Mock).mockResolvedValueOnce({
+      items: [
+        { rfqId: 'rfq-123', referenceNumber: 'RFQ-2026-001', status: 'pending', institution: 'MIT', submittedAt: rfqTime },
+      ],
+    });
+
+    render(
+      <OrgDetail
+        org={makeOrg({
+          events: [
+            ev({ id: 'rfq1', eventType: 'rfq_submission', visitorId: 'v1', timestamp: rfqTime, properties: '{}' }),
+          ],
+        })}
+        onBack={vi.fn()}
+        allContactLeads={[]}
+        allDownloadGateLeads={[]}
+        allNewsletterLeads={[]}
+      />,
+    );
+
+    expect(await screen.findByText('Linked RFQs')).toBeInTheDocument();
+    expect(screen.getByText('RFQ-2026-001')).toBeInTheDocument();
+    expect(listRfqs).toHaveBeenCalled();
   });
 });
