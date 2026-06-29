@@ -71,16 +71,16 @@ export function useDashboardAnalytics(): DashboardAnalytics {
 
         // GSI query method is not present on the generated model type, so we
         // describe just the call signature we rely on instead of using `any`.
-        const queryByEventType = (
+        const analyticsEventModel = (
           client().models.AnalyticsEvent as unknown as {
             listAnalyticsEventByEventTypeAndTimestamp: (
               key: { eventType: string; timestamp: { between: [string, string] } },
               opts: { authMode: string; limit: number; nextToken: string | undefined },
             ) => Promise<{ data?: AnalyticsEvent[] | null; nextToken?: string | null }>;
           }
-        ).listAnalyticsEventByEventTypeAndTimestamp;
+        );
 
-        const result = await queryByEventType(
+        const result = await analyticsEventModel.listAnalyticsEventByEventTypeAndTimestamp(
           { eventType: 'page_view', timestamp: { between: [startISO, endISO] } },
           { authMode: 'userPool', limit: 500, nextToken },
         );
