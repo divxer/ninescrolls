@@ -19,20 +19,20 @@ export interface ListTendersArgs {
 }
 
 export async function listTenders(args: ListTendersArgs) {
-    const { data, errors } = await client().queries.listTenders(args as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().queries.listTenders(args, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
 }
 
 export async function getTender(tenderId: string) {
-    const { data, errors } = await client().queries.getTender({ tenderId } as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().queries.getTender({ tenderId }, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
 }
 
 export async function listKeywordConfigs(includeInactive = false) {
-    const { data, errors } = await client().queries.listTenderKeywordConfigs({ includeInactive } as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().queries.listTenderKeywordConfigs({ includeInactive }, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data ?? [];
 }
 
@@ -48,8 +48,8 @@ function parseJsonField<T>(value: unknown): T | null {
 }
 
 export async function listPipelineRuns(limit = 100) {
-    const { data, errors } = await client().queries.listPipelineRuns({ limit } as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().queries.listPipelineRuns({ limit }, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     const raw = (data ?? []) as unknown[];
     return raw
         .map(item => parseJsonField<Record<string, unknown>>(item))
@@ -57,20 +57,20 @@ export async function listPipelineRuns(limit = 100) {
 }
 
 export async function getPipelineRun(executionId: string) {
-    const { data, errors } = await client().queries.getPipelineRun({ executionId } as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().queries.getPipelineRun({ executionId }, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return parseJsonField<{ summary: unknown; sources: unknown[] }>(data);
 }
 
 export async function updateTenderStatus(args: { tenderId: string; toStatus: string; note?: string; assignedTo?: string }) {
-    const { data, errors } = await client().mutations.updateTenderStatus(args as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().mutations.updateTenderStatus(args, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
 }
 
 export async function bulkUpdateTenderStatus(args: { tenderIds: string[]; toStatus: string }): Promise<number> {
-    const { data, errors } = await client().mutations.bulkUpdateTenderStatus(args as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().mutations.bulkUpdateTenderStatus(args, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data as number;
 }
 
@@ -84,8 +84,8 @@ export async function upsertKeywordConfig(args: {
     cpvCodes: string[];
     isActive: boolean;
 }) {
-    const { data, errors } = await client().mutations.upsertTenderKeywordConfig(args as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().mutations.upsertTenderKeywordConfig(args, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
 }
 
@@ -94,7 +94,7 @@ export async function runPrefilterPreview(args: {
     description: string;
     naicsCodes?: string[];
     cpvCodes?: string[];
-    configOverride?: any;
+    configOverride?: unknown;
 }) {
     // AppSync's AWSJSON scalar (a.json() in schema) expects a JSON-encoded string,
     // not a raw object. Match the orderAdminService.createOrder pattern.
@@ -102,14 +102,14 @@ export async function runPrefilterPreview(args: {
         ...args,
         configOverride: args.configOverride ? JSON.stringify(args.configOverride) : undefined,
     };
-    const { data, errors } = await client().mutations.runPrefilterPreview(payload as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().mutations.runPrefilterPreview(payload, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data;
 }
 
 export async function translateTenderDescription(tenderId: string, force = false): Promise<string> {
-    const { data, errors } = await client().mutations.translateTenderDescription({ tenderId, force } as any, AUTH);
-    if (errors?.length) throw new Error(errors.map((e: any) => e.message).join(', '));
+    const { data, errors } = await client().mutations.translateTenderDescription({ tenderId, force }, AUTH);
+    if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
     return data as string;
 }
 
@@ -123,10 +123,10 @@ export async function translateTenderDescription(tenderId: string, force = false
  */
 export async function exportTendersAsCsv(filters: ListTendersArgs): Promise<Blob> {
     const MAX_ROWS = 500;
-    const page: any = await listTenders({ ...filters, limit: MAX_ROWS });
-    const rows = ((page?.items ?? []) as any[]).slice(0, MAX_ROWS);
+    const page = await listTenders({ ...filters, limit: MAX_ROWS });
+    const rows = ((page?.items ?? []) as Record<string, unknown>[]).slice(0, MAX_ROWS);
     const header = ['tenderId', 'source', 'title', 'agency', 'country', 'postedDate', 'deadline', 'overallScore', 'status', 'sourceUrl'];
-    const escape = (v: any) => {
+    const escape = (v: unknown) => {
         const s = v == null ? '' : String(v);
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
