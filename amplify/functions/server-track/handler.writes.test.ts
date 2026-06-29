@@ -50,6 +50,12 @@ async function loadHandler(env: Record<string, string> = {}) {
     vi.stubEnv('SEGMENT_WRITE_KEY', 'SG.test-key');
     vi.stubEnv('ANALYTICS_EVENT_TABLE', 'test-table');
     vi.stubEnv('ENABLE_DDB_WRITE', 'true');
+    // Neutralize ambient/CI values so notifyAppSync + AI classify stay inert
+    // unless a test opts in — a GRAPHQL_ENDPOINT set in the environment would
+    // otherwise make notifyAppSync hit fetch and break the call-count assertions.
+    vi.stubEnv('GRAPHQL_ENDPOINT', '');
+    vi.stubEnv('GRAPHQL_API_KEY', '');
+    vi.stubEnv('CLASSIFY_ORG_FUNCTION_NAME', '');
     for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v);
     return (await import('./handler')).handler;
 }
@@ -61,8 +67,11 @@ async function invoke(handler: Awaited<ReturnType<typeof loadHandler>>, event: A
 const cmds = (name: string) =>
     mockSend.mock.calls.map(([c]) => c).filter((c) => (c as { constructor: { name: string } }).constructor.name === name);
 const putItem = () => (cmds('PutCommand')[0] as { input: { Item: Record<string, unknown> } }).input.Item;
+const putCmd = () => cmds('PutCommand')[0] as { input: { ConditionExpression?: string } };
+const fetchUrls = () => vi.mocked(fetch).mock.calls.map((c) => String(c[0]));
 
 beforeEach(() => {
+    vi.unstubAllEnvs();
     mockSend.mockReset();
     mockLambdaSend.mockReset();
     mockSend.mockResolvedValue({});
@@ -77,9 +86,13 @@ describe('writePageTimeFlush (via page_time_flush branch)', () => {
         expect(res.statusCode).toBe(200);
         expect(JSON.parse(res.body)).toEqual({ success: true });
         // Private IP skips the parent-check / IP-lookup entirely.
+        expect(cmds('PutCommand')).toHaveLength(1);
         expect(cmds('GetCommand')).toHaveLength(0);
         expect(cmds('UpdateCommand')).toHaveLength(0);
         expect(fetch).not.toHaveBeenCalled();
+
+        // The authoritative write must carry the idempotency guard.
+        expect(putCmd().input.ConditionExpression).toBe('attribute_not_exists(id)');
 
         const item = putItem();
         expect(item.id).toBe('ptf-pv1-1');
@@ -145,7 +158,11 @@ describe('writePageTimeFlush (via page_time_flush branch)', () => {
 
         expect(res.statusCode).toBe(200);
         expect(cmds('GetCommand')).toHaveLength(1);
-        expect(fetch).toHaveBeenCalled();
+        // Both IP providers are queried in parallel.
+        const urls = fetchUrls();
+        expect(urls).toHaveLength(2);
+        expect(urls.some((u) => u.includes('ipinfo.io/8.8.8.8'))).toBe(true);
+        expect(urls.some((u) => u.includes('ipapi.co/8.8.8.8'))).toBe(true);
         const item = putItem();
         expect(item.organizationType).toBe('education');
         expect(item.orgName).toBe('Stanford University'); // AS prefix stripped
@@ -187,7 +204,15 @@ describe('writePageTimeFlush (via page_time_flush branch)', () => {
         const res = await invoke(handler, ptfEvent({ ip: '8.8.8.8', isBot: false }));
 
         expect(res.statusCode).toBe(200);
-        expect(mockLambdaSend).toHaveBeenCalledTimes(1); // confident first try, no retry
+        // Both IP providers queried, then classify-org invoked once (confident, no retry).
+        const urls = fetchUrls();
+        expect(urls.some((u) => u.includes('ipinfo.io/8.8.8.8'))).toBe(true);
+        expect(urls.some((u) => u.includes('ipapi.co/8.8.8.8'))).toBe(true);
+        expect(mockLambdaSend).toHaveBeenCalledTimes(1);
+        const lambdaCall = mockLambdaSend.mock.calls[0][0] as { input: { FunctionName: string; Payload: string } };
+        expect(lambdaCall.input.FunctionName).toBe('classify-fn');
+        const classifyBody = JSON.parse(JSON.parse(lambdaCall.input.Payload).body);
+        expect(classifyBody.orgName).toBe('Acme Corp');
         const update = cmds('UpdateCommand')[0] as { input: { ExpressionAttributeValues: Record<string, unknown> } };
         expect(update).toBeDefined();
         expect(update.input.ExpressionAttributeValues[':aiOrgType']).toBe('education');
