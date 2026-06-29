@@ -39,8 +39,12 @@ describe('isPrivateIP', () => {
         }
     });
 
-    it('returns false for malformed input (incl. IPv6 / non-numeric)', () => {
-        for (const ip of ['', 'not-an-ip', '10.0.0', '10.0.0.0.1', '::1', 'a.b.c.d']) {
+    // isPrivateIP is IPv4-only by design: any non-dotted-quad input — including
+    // IPv6 (even the fc00::/7 private range) — returns false ("not private").
+    // Documenting that contract here; IPv6 support would be a separate change.
+    it('returns false for malformed or non-IPv4 input', () => {
+        for (const ip of ['', 'not-an-ip', '10.0.0', '10.0.0.0.1', 'a.b.c.d',
+            '::1', 'fc00::1', '2001:db8::1']) {
             expect(isPrivateIP(ip), ip).toBe(false);
         }
     });
@@ -88,6 +92,7 @@ describe('validatePageTimeFlush', () => {
         ['invalid activeSeconds', { activeSeconds: -1 }],
         ['invalid idleSeconds', { idleSeconds: -1 }],
         ['invalid hiddenSeconds', { hiddenSeconds: -1 }],
+        ['invalid wallClockSeconds', { wallClockSeconds: -1 }],
         ['invalid flushReason', { flushReason: 'beforeunload' }],
         ['missing isFinal', { isFinal: 'yes' }],
         ['invalid endedAt', { endedAt: Infinity }],
@@ -162,10 +167,18 @@ describe('handler dispatch/validation', () => {
         expect(res.headers?.['Access-Control-Allow-Origin']).toBe('https://ninescrolls.com');
     });
 
-    it('rejects non-POST/GET methods with 405', async () => {
+    it('returns 405 for GET without the pixel query param', async () => {
         const handler = await loadHandler();
         const res = await invoke(handler, makeEvent({ httpMethod: 'GET' }));
         expect(res.statusCode).toBe(405);
+    });
+
+    it('returns 405 for other non-POST methods (PUT/DELETE)', async () => {
+        const handler = await loadHandler();
+        for (const method of ['PUT', 'DELETE']) {
+            const res = await invoke(handler, makeEvent({ httpMethod: method }));
+            expect(res.statusCode, method).toBe(405);
+        }
     });
 
     it('returns 500 when SEGMENT_WRITE_KEY is not configured', async () => {
