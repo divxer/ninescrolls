@@ -69,6 +69,42 @@ const cmds = (name: string) =>
 const putItem = () => (cmds('PutCommand')[0] as { input: { Item: Record<string, unknown> } }).input.Item;
 const putCmd = () => cmds('PutCommand')[0] as { input: { ConditionExpression?: string } };
 const fetchUrls = () => vi.mocked(fetch).mock.calls.map((c) => String(c[0]));
+const segmentUrls = () => fetchUrls().filter((u) => u.includes('api.segment.io'));
+
+// Fetch stub for the page_view path: Segment always responds 200; IP-lookup
+// providers respond only when a public IP triggers lookupIP().
+function stubPageViewFetch(opts: { companyType?: string; org?: string; segmentStatus?: number } = {}) {
+    const segStatus = opts.segmentStatus ?? 200;
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+        if (url.includes('api.segment.io')) return Promise.resolve({ status: segStatus, text: async () => '' });
+        if (url.includes('ipinfo.io')) {
+            return Promise.resolve({ ok: true, json: async () => ({
+                ip: '8.8.8.8', country: 'US', city: 'Austin', org: opts.org ?? 'Org',
+                company: opts.companyType ? { type: opts.companyType } : undefined,
+            }) });
+        }
+        if (url.includes('ipapi.co')) return Promise.resolve({ ok: true, json: async () => ({ ip: '8.8.8.8' }) });
+        return Promise.resolve({ status: 200, text: async () => '' });
+    }));
+}
+
+function pvEvent(propsOverride: Record<string, unknown> = {}, context?: unknown): APIGatewayProxyEvent {
+    return {
+        httpMethod: 'POST',
+        headers: { origin: 'https://ninescrolls.com' },
+        queryStringParameters: null,
+        body: JSON.stringify({
+            type: 'track', event: 'page_view_store', anonymousId: 'a',
+            properties: {
+                pageViewId: 'pv9', eventName: 'Page View', eventType: 'page_view',
+                pathname: '/x', behaviorScore: 12, ...propsOverride,
+            },
+            ...(context ? { context } : {}),
+        }),
+        isBase64Encoded: false,
+        requestContext: {},
+    } as unknown as APIGatewayProxyEvent;
+}
 
 beforeEach(() => {
     vi.unstubAllEnvs();
@@ -218,5 +254,139 @@ describe('writePageTimeFlush (via page_time_flush branch)', () => {
         expect(update.input.ExpressionAttributeValues[':aiOrgType']).toBe('education');
         expect(update.input.ExpressionAttributeValues[':isTgt']).toBe(true);
         expect(update.input.ExpressionAttributeValues[':leadTier']).toBe('B');
+    });
+});
+
+describe('writePageView (via page_view_store branch)', () => {
+    it('happy path: private IP → single Put (pv-<id>), one Segment page event, 200', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        const res = await invoke(handler, pvEvent({ ip: '10.0.0.1' }));
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual({ success: true, segmentForwarded: true });
+        expect(cmds('PutCommand')).toHaveLength(1);
+        expect(cmds('GetCommand')).toHaveLength(0);
+        expect(cmds('UpdateCommand')).toHaveLength(0);
+
+        const put = putCmd() as { input: { ConditionExpression?: string; Item: Record<string, unknown> } };
+        expect(put.input.Item.id).toBe('pv-pv9');
+        expect(put.input.ConditionExpression).toBe('attribute_not_exists(id)');
+
+        // Private IP → no IP-lookup; exactly one Segment "page" call.
+        expect(fetchUrls().some((u) => u.includes('ipinfo.io'))).toBe(false);
+        expect(segmentUrls()).toEqual(['https://api.segment.io/v1/page']);
+    });
+
+    it('idempotent duplicate: Put ConditionalCheckFailedException → 200 duplicate:true', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        mockSend.mockImplementation((cmd) => {
+            if ((cmd as { constructor: { name: string } }).constructor.name === 'PutCommand') {
+                return Promise.reject(Object.assign(new Error('exists'), { name: 'ConditionalCheckFailedException' }));
+            }
+            return Promise.resolve({});
+        });
+        const res = await invoke(handler, pvEvent({ ip: '10.0.0.1' }));
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toEqual({ success: true, duplicate: true });
+    });
+
+    it('non-page_view event → Segment "track" event named after eventName', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        const res = await invoke(handler, pvEvent({
+            ip: '10.0.0.1', eventType: 'rfq_submit', eventName: 'RFQ Submitted',
+        }));
+        expect(res.statusCode).toBe(200);
+        expect(segmentUrls()).toEqual(['https://api.segment.io/v1/track']);
+    });
+
+    it('merges UTM campaign from client context into the persisted record', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        await invoke(handler, pvEvent(
+            { ip: '10.0.0.1' },
+            { campaign: { source: 'google', medium: 'cpc', name: 'spring_sale' } },
+        ));
+        const item = putItem();
+        expect(item.utmSource).toBe('google');
+        expect(item.utmMedium).toBe('cpc');
+        expect(item.utmCampaign).toBe('spring_sale');
+    });
+
+    it('public education IP → categorical target → 2nd "Target Customer Detected" Segment event, no Update', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch({ companyType: 'education', org: 'AS32 Stanford University' });
+        const res = await invoke(handler, pvEvent({ ip: '8.8.8.8' }));
+
+        expect(res.statusCode).toBe(200);
+        expect(fetchUrls().some((u) => u.includes('ipinfo.io/8.8.8.8'))).toBe(true);
+        expect(fetchUrls().some((u) => u.includes('ipapi.co/8.8.8.8'))).toBe(true);
+        // education is categorical (not in AI set) → no DDB Update in writePageView.
+        expect(cmds('UpdateCommand')).toHaveLength(0);
+        const item = putItem();
+        expect(item.organizationType).toBe('education');
+        // page event + Target Customer Detected track event.
+        expect(segmentUrls()).toEqual([
+            'https://api.segment.io/v1/page',
+            'https://api.segment.io/v1/track',
+        ]);
+    });
+
+    it('public business IP → classify-org Lambda → AI Update + Target Customer Segment event', async () => {
+        const handler = await loadHandler({ CLASSIFY_ORG_FUNCTION_NAME: 'classify-fn' });
+        stubPageViewFetch({ companyType: 'business', org: 'Acme Corp' });
+        mockLambdaSend.mockResolvedValue({
+            Payload: Buffer.from(JSON.stringify({
+                statusCode: 200,
+                body: JSON.stringify({
+                    organizationType: 'education', isTargetCustomer: true,
+                    confidence: 0.9, reason: 'academic', provider: 'bedrock',
+                }),
+            })),
+        });
+        const res = await invoke(handler, pvEvent({ ip: '8.8.8.8' }));
+
+        expect(res.statusCode).toBe(200);
+        expect(mockLambdaSend).toHaveBeenCalledTimes(1);
+        const update = cmds('UpdateCommand')[0] as { input: { Key: Record<string, unknown>; ExpressionAttributeValues: Record<string, unknown> } };
+        expect(update.input.Key.id).toBe('pv-pv9');
+        expect(update.input.ExpressionAttributeValues[':aiOrgType']).toBe('education');
+        expect(update.input.ExpressionAttributeValues[':isTgt']).toBe(true);
+        expect(segmentUrls()).toEqual([
+            'https://api.segment.io/v1/page',
+            'https://api.segment.io/v1/track',
+        ]);
+    });
+
+    it('AI classify null then retries after 2s, succeeds on second invoke', async () => {
+        const handler = await loadHandler({ CLASSIFY_ORG_FUNCTION_NAME: 'classify-fn' });
+        stubPageViewFetch({ companyType: 'business', org: 'Acme Corp' });
+        // First invoke: non-200 → classifyOrgViaLambda returns null → triggers retry.
+        mockLambdaSend.mockResolvedValueOnce({ Payload: Buffer.from(JSON.stringify({ statusCode: 500, body: '{}' })) });
+        mockLambdaSend.mockResolvedValueOnce({
+            Payload: Buffer.from(JSON.stringify({
+                statusCode: 200,
+                body: JSON.stringify({
+                    organizationType: 'education', isTargetCustomer: true,
+                    confidence: 0.8, reason: 'retry hit', provider: 'anthropic',
+                }),
+            })),
+        });
+
+        vi.useFakeTimers();
+        try {
+            const pending = invoke(handler, pvEvent({ ip: '8.8.8.8' }));
+            await vi.advanceTimersByTimeAsync(2000); // step over the retry sleep
+            const res = await pending;
+            expect(res.statusCode).toBe(200);
+        } finally {
+            vi.useRealTimers();
+        }
+
+        expect(mockLambdaSend).toHaveBeenCalledTimes(2);
+        const update = cmds('UpdateCommand')[0] as { input: { ExpressionAttributeValues: Record<string, unknown> } };
+        expect(update.input.ExpressionAttributeValues[':provider']).toBe('anthropic');
     });
 });
