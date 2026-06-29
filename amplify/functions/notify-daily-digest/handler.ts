@@ -20,8 +20,8 @@ function escapeHtml(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-async function loadTenders(ids: string[]): Promise<Record<string, unknown>[]> {
-    const out: Record<string, unknown>[] = [];
+async function loadTenders(ids: string[]): Promise<any[]> {
+    const out: any[] = [];
     for (let i = 0; i < ids.length; i += 100) {
         const batch = ids.slice(i, i + 100);
         const res = await ddb.send(new BatchGetCommand({
@@ -41,17 +41,17 @@ export async function handler(event: DigestEvent): Promise<DigestOutcome> {
     const tenders = await loadTenders(event.digestTenderIds);
     if (tenders.length === 0) return { status: 'skipped', count: 0 };
 
-    const byCountry = new Map<string, Record<string, unknown>[]>();
+    const byCountry = new Map<string, any[]>();
     for (const t of tenders) {
-        const c = (t.country as string) ?? 'XX';
+        const c = t.country ?? 'XX';
         if (!byCountry.has(c)) byCountry.set(c, []);
         byCountry.get(c)!.push(t);
     }
-    for (const arr of byCountry.values()) arr.sort((a, b) => (b.overallScore as number) - (a.overallScore as number));
+    for (const arr of byCountry.values()) arr.sort((a, b) => b.overallScore - a.overallScore);
 
     const sections = [...byCountry.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([c, items]) => {
         const rows = items.map((t) =>
-            `<tr><td>${t.overallScore}</td><td><a href="${escapeHtml(t.sourceUrl as string)}">${escapeHtml(t.title as string)}</a></td><td>${escapeHtml(t.agency as string)}</td><td>${t.deadline ?? 'N/A'}</td></tr>`
+            `<tr><td>${t.overallScore}</td><td><a href="${escapeHtml(t.sourceUrl)}">${escapeHtml(t.title)}</a></td><td>${escapeHtml(t.agency)}</td><td>${t.deadline ?? 'N/A'}</td></tr>`
         ).join('');
         return `<h3>${escapeHtml(c)} (${items.length})</h3><table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse"><thead><tr><th>Score</th><th>Title</th><th>Agency</th><th>Deadline</th></tr></thead><tbody>${rows}</tbody></table>`;
     }).join('\n');
