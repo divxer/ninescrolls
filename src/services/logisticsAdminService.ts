@@ -1,4 +1,5 @@
 import { getAmplifyDataClient } from './amplifyClient';
+import type { LogisticsStage } from '../types/logistics';
 
 const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
@@ -27,26 +28,26 @@ export async function listLogisticsCases(opts: ListLogisticsArgs = {}) {
   if (opts.search) args.search = opts.search;
   if (opts.limit) args.limit = opts.limit;
   if (opts.nextToken) args.nextToken = opts.nextToken;
-  const { data, errors } = await client().queries.listLogisticsCases(args as any, AUTH);
+  const { data, errors } = await client().queries.listLogisticsCases(args, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return unwrapPayload(data);
 }
 
 export async function getLogisticsCase(caseId: string) {
-  const { data, errors } = await client().queries.getLogisticsCase({ caseId } as any, AUTH);
+  const { data, errors } = await client().queries.getLogisticsCase({ caseId }, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return unwrapPayload(data);
 }
 
 export async function fetchLogisticsStats() {
-  const { data, errors } = await client().queries.logisticsStats(AUTH as any);
+  const { data, errors } = await client().queries.logisticsStats(AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return unwrapPayload(data);
 }
 
 export async function createLogisticsCase(input: Record<string, unknown>) {
   const { data, errors } = await client().mutations.createLogisticsCase(
-    { input: JSON.stringify(input) } as any, AUTH,
+    { input: JSON.stringify(input) }, AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
@@ -54,7 +55,7 @@ export async function createLogisticsCase(input: Record<string, unknown>) {
 
 export async function updateLogisticsCase(caseId: string, input: Record<string, unknown>) {
   const { data, errors } = await client().mutations.updateLogisticsCase(
-    { caseId, input: JSON.stringify(input) } as any, AUTH,
+    { caseId, input: JSON.stringify(input) }, AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
@@ -64,7 +65,7 @@ export async function advanceLogisticsStage(
   caseId: string, targetStage: string, detail?: string, internalOnly?: boolean,
 ) {
   const { data, errors } = await client().mutations.advanceLogisticsStage(
-    { caseId, targetStage, detail, internalOnly } as any, AUTH,
+    { caseId, targetStage: targetStage as LogisticsStage, detail, internalOnly }, AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
@@ -72,7 +73,7 @@ export async function advanceLogisticsStage(
 
 export async function addLeg(caseId: string, input: Record<string, unknown>) {
   const { data, errors } = await client().mutations.addLeg(
-    { caseId, input: JSON.stringify(input) } as any, AUTH,
+    { caseId, input: JSON.stringify(input) }, AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
@@ -80,14 +81,14 @@ export async function addLeg(caseId: string, input: Record<string, unknown>) {
 
 export async function updateLeg(caseId: string, legId: string, input: Record<string, unknown>) {
   const { data, errors } = await client().mutations.updateLeg(
-    { caseId, legId, input: JSON.stringify(input) } as any, AUTH,
+    { caseId, legId, input: JSON.stringify(input) }, AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }
 
 export async function removeLeg(caseId: string, legId: string) {
-  const { data, errors } = await client().mutations.removeLeg({ caseId, legId } as any, AUTH);
+  const { data, errors } = await client().mutations.removeLeg({ caseId, legId }, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }
