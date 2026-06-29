@@ -154,17 +154,6 @@ function sanitize(value: string): string {
         .replace(/'/g, '&#39;');
 }
 
-/** Sanitize all string fields in an object (shallow). */
-function _sanitizeStrings<T extends Record<string, unknown>>(obj: T): T {
-    const result = { ...obj };
-    for (const [key, value] of Object.entries(result)) {
-        if (typeof value === 'string') {
-            (result as Record<string, unknown>)[key] = sanitize(value);
-        }
-    }
-    return result;
-}
-
 function generateRfqId(): string {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand = crypto.randomBytes(3).toString('hex');

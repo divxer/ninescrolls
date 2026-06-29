@@ -18,12 +18,12 @@ module.exports = {
     // (mostly in service/API layers). Keeping it visible without blocking the
     // lint gate; the backlog is being cleaned up gradually.
     '@typescript-eslint/no-explicit-any': 'warn',
-    // Allow intentionally-unused identifiers via a leading underscore (e.g.
-    // required-by-signature callback params).
+    // Allow intentionally-unused function params via a leading underscore, and
+    // ignore destructured siblings pulled out alongside a `...rest` (used to
+    // strip fields). Vars/caught-errors are still checked normally.
     '@typescript-eslint/no-unused-vars': ['error', {
       argsIgnorePattern: '^_',
-      varsIgnorePattern: '^_',
-      caughtErrorsIgnorePattern: '^_',
+      ignoreRestSiblings: true,
     }],
   },
 }

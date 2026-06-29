@@ -1126,8 +1126,6 @@ if (!isSandbox) {
 // See docs/superpowers/specs/2026-05-15-tender-watch-phase-2-design.md
 // =============================================================================
 
-const _tenderApiStack = Stack.of(backend.tenderApi.resources.lambda);
-
 intelligenceTable.grantReadWriteData(backend.tenderApi.resources.lambda);
 backend.tenderApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
