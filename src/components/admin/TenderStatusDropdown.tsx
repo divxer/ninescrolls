@@ -6,8 +6,15 @@ import { TenderStatusChangeDialog } from './TenderStatusChangeDialog';
 const STATUSES = ['new', 'reviewing', 'pursuing', 'submitted', 'won', 'lost', 'not_relevant'] as const;
 const NOTE_REQUIRED = new Set(['not_relevant', 'lost']);
 
+// Tender records come from Amplify with no shared domain type; describe just the
+// fields this dropdown reads.
+interface TenderRecord {
+    tenderId: string;
+    status?: string | null;
+}
+
 interface Props {
-    tender: any;
+    tender: TenderRecord;
     onUpdated: () => void;
 }
 
@@ -19,8 +26,8 @@ export function TenderStatusDropdown({ tender, onUpdated }: Props) {
             await svc.updateTenderStatus({ tenderId: tender.tenderId, toStatus, note });
             notify.success(`Status → ${toStatus}`);
             onUpdated();
-        } catch (err: any) {
-            const msg = String(err?.message ?? err);
+        } catch (err) {
+            const msg = String((err as { message?: string })?.message ?? err);
             if (/Conflict/i.test(msg)) {
                 notify.error('Tender was modified by another user — refreshing.');
                 onUpdated();

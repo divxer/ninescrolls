@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTenders } from '../../hooks/useTenders';
 import { TenderKpiCards } from '../../components/admin/TenderKpiCards';
 import { TenderFilterBar } from '../../components/admin/TenderFilterBar';
-import { TenderTable } from '../../components/admin/TenderTable';
+import { TenderTable, type TenderRow } from '../../components/admin/TenderTable';
 import { TenderBulkActionBar } from '../../components/admin/TenderBulkActionBar';
 import * as svc from '../../services/tenderAdminService';
 import type { ListTendersArgs } from '../../services/tenderAdminService';
@@ -41,8 +41,8 @@ export function TenderListPage() {
             a.click();
             URL.revokeObjectURL(url);
             notify.success('CSV downloaded');
-        } catch (err: any) {
-            notify.error(String(err?.message ?? err));
+        } catch (err) {
+            notify.error(String((err as { message?: string })?.message ?? err));
         }
     }
 
@@ -60,8 +60,10 @@ export function TenderListPage() {
         setSearchParams(p);
     }
 
-    const items = (data?.items ?? []) as any[];
-    const totalActive = (data as any)?.totalActiveUnfiltered ?? items.length;
+    // Connection items are typed nullable by Amplify but are non-null in
+    // practice; narrow to the table's row shape for KPI computation + rendering.
+    const items = (data?.items ?? []) as TenderRow[];
+    const totalActive = data?.totalActiveUnfiltered ?? items.length;
 
     // Compute KPI values client-side from the loaded page
     const now = Date.now();

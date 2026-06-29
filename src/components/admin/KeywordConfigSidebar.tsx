@@ -1,5 +1,9 @@
+import type * as svc from '../../services/tenderAdminService';
+
+type KeywordConfig = NonNullable<Awaited<ReturnType<typeof svc.listKeywordConfigs>>[number]>;
+
 interface Props {
-    configs: any[];
+    configs: KeywordConfig[];
     selectedCategory: string | null;
     onSelect: (productCategory: string) => void;
     onNew: () => void;

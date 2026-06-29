@@ -3,6 +3,15 @@ import { getAmplifyDataClient } from './amplifyClient';
 const client = getAmplifyDataClient;
 const AUTH = { authMode: 'userPool' as const };
 
+// Generated Amplify input type for a given query/mutation's first argument.
+// Used to narrow conditionally-built args objects to the exact generated input
+// shape (instead of an `any` cast).
+type AmplifyClient = ReturnType<typeof client>;
+type QueryArgs<K extends keyof AmplifyClient['queries']> =
+  Parameters<AmplifyClient['queries'][K]>[0];
+type MutationArgs<K extends keyof AmplifyClient['mutations']> =
+  Parameters<AmplifyClient['mutations'][K]>[0];
+
 export interface ImageUploadResult {
   cdnBaseUrl: string;
   heroPrefix: string;
@@ -20,7 +29,7 @@ export async function getImageUploadUrl(
   mimeType: string,
 ) {
   const { data, errors } = await client().queries.getInsightsImageUploadUrl(
-    { slug, fileName, mimeType } as any,
+    { slug, fileName, mimeType } as QueryArgs<'getInsightsImageUploadUrl'>,
     AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
@@ -72,7 +81,7 @@ export async function getContentImageUploadUrl(
   mimeType: string,
 ) {
   const { data, errors } = await client().queries.getContentImageUploadUrl(
-    { slug, fileName, mimeType } as any,
+    { slug, fileName, mimeType } as QueryArgs<'getContentImageUploadUrl'>,
     AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
@@ -86,7 +95,7 @@ export async function getContentImageUploadUrl(
  */
 export async function deleteInsightsImages(slug: string) {
   const { data, errors } = await client().mutations.deleteInsightsImages(
-    { slug } as any,
+    { slug } as MutationArgs<'deleteInsightsImages'>,
     AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
@@ -101,7 +110,7 @@ export async function processImage(
   slug: string,
 ): Promise<ImageUploadResult> {
   const { data, errors } = await client().mutations.processInsightsImage(
-    { s3Key, slug } as any,
+    { s3Key, slug } as MutationArgs<'processInsightsImage'>,
     AUTH,
   );
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));

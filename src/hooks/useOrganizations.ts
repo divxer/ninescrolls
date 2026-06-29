@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import * as svc from '../services/organizationAdminService';
 import type { ListOrgFilters } from '../services/organizationAdminService';
 
+type OrganizationsData = Awaited<ReturnType<typeof svc.listOrganizations>>;
+
 export function useOrganizations(initialFilters: ListOrgFilters = {}) {
   const [filters, setFilters] = useState<ListOrgFilters>(initialFilters);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OrganizationsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

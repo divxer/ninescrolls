@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom';
 
+// Match records come from Amplify with no shared domain type; describe just the
+// fields this card reads.
+export interface TenderMatch {
+    productSlug?: string | null;
+    score?: number | null;
+    reasoning?: string | null;
+    matchedKeywords?: (string | null)[] | null;
+}
+
 interface Props {
-    match: any;
+    match: TenderMatch;
 }
 
 export function TenderMatchCard({ match }: Props) {
@@ -16,10 +25,10 @@ export function TenderMatchCard({ match }: Props) {
             {match.reasoning && (
                 <p className="mt-1 text-xs italic text-on-surface-variant">"{match.reasoning}"</p>
             )}
-            {match.matchedKeywords?.length > 0 && (
+            {(match.matchedKeywords?.length ?? 0) > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                    {match.matchedKeywords.map((k: string) => (
-                        <span key={k} className="px-2 py-0.5 text-[10px] rounded-full bg-secondary-container text-on-secondary-container">{k}</span>
+                    {match.matchedKeywords?.map((k) => (
+                        <span key={k ?? ''} className="px-2 py-0.5 text-[10px] rounded-full bg-secondary-container text-on-secondary-container">{k}</span>
                     ))}
                 </div>
             )}

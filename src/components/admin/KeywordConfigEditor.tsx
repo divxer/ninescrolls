@@ -49,7 +49,7 @@ export function KeywordConfigEditor({ initial, onChange, isDirty }: Props) {
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{field}</label>
                     <TagInput
                         value={state[field] as string[]}
-                        onChange={(v) => update(field, v as any)}
+                        onChange={(v) => update(field, v as ConfigFormState[typeof field])}
                         placeholder={`Add ${field}...`}
                     />
                 </div>

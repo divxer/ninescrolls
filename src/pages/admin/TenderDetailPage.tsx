@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTender } from '../../hooks/useTender';
 import { TenderHeaderPanel } from '../../components/admin/TenderHeaderPanel';
-import { TenderMatchCard } from '../../components/admin/TenderMatchCard';
-import { TenderAuditLog } from '../../components/admin/TenderAuditLog';
+import { TenderMatchCard, type TenderMatch } from '../../components/admin/TenderMatchCard';
+import { TenderAuditLog, type TenderAuditEntry } from '../../components/admin/TenderAuditLog';
 import * as svc from '../../services/tenderAdminService';
 import { notify } from '../../lib/notify';
 
@@ -29,8 +29,8 @@ export function TenderDetailPage() {
             await svc.translateTenderDescription(tenderId);
             notify.success('Translation cached');
             refresh();
-        } catch (err: any) {
-            notify.error(String(err?.message ?? err));
+        } catch (err) {
+            notify.error(String((err as { message?: string })?.message ?? err));
         } finally {
             setTranslating(false);
         }
@@ -71,12 +71,12 @@ export function TenderDetailPage() {
                         <h3 className="font-headline text-base font-bold text-on-surface mb-2">Product matches ({data.matches.length})</h3>
                         {data.matches.length === 0
                             ? <p className="text-xs text-on-surface-variant">No product matches recorded.</p>
-                            : data.matches.map((m: any) => <TenderMatchCard key={m.productSlug} match={m} />)}
+                            : (data.matches as TenderMatch[]).map((m) => <TenderMatchCard key={m.productSlug} match={m} />)}
                     </section>
 
                     <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4">
                         <h3 className="font-headline text-base font-bold text-on-surface mb-2">Audit log</h3>
-                        <TenderAuditLog log={data.log ?? []} />
+                        <TenderAuditLog log={(data.log ?? []) as TenderAuditEntry[]} />
                     </section>
                 </main>
             </div>

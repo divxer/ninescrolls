@@ -353,7 +353,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
     return Object.keys(newErrors).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent, asDraft?: boolean) {
+  async function handleSubmit(e: React.SyntheticEvent, asDraft?: boolean) {
     e.preventDefault();
     const submitAsDraft = asDraft ?? isDraft;
     if (!validate()) return;
@@ -422,7 +422,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                   type="button"
                   className="px-5 py-2.5 bg-surface-container-lowest border-none rounded text-xs font-label uppercase tracking-widest font-bold hover:bg-surface-container-low transition-all"
                   disabled={isSubmitting}
-                  onClick={(e) => handleSubmit(e as any, true)}
+                  onClick={(e) => handleSubmit(e, true)}
                 >
                   {isSubmitting ? 'Saving...' : 'Save Draft'}
                 </button>
@@ -431,7 +431,7 @@ export function InsightsForm({ initialData, onSubmit, isSubmitting }: InsightsFo
                 type="button"
                 className="px-6 py-2.5 bg-primary text-white rounded text-xs font-label uppercase tracking-widest font-bold hover:shadow-lg transition-all"
                 disabled={isSubmitting}
-                onClick={(e) => handleSubmit(e as any, false)}
+                onClick={(e) => handleSubmit(e, false)}
               >
                 {isSubmitting ? 'Publishing...' : initialData && !isDraft ? 'Update' : 'Publish Now'}
               </button>

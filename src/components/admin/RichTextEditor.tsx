@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import type { ComponentProps } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 
 // Self-hosted TinyMCE: import core, theme, model, icons, and plugins
@@ -42,7 +43,8 @@ interface RichTextEditorProps {
 export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextEditorProps) {
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const editorRef = useRef<any>(null);
+  type TinyMCEEditor = Parameters<NonNullable<ComponentProps<typeof Editor>['onInit']>>[1];
+  const editorRef = useRef<TinyMCEEditor | null>(null);
 
   const handleImageUpload = useCallback(
     (cb: (url: string, meta?: Record<string, string>) => void) => {

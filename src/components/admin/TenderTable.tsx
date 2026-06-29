@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom';
 import { TenderStatusDropdown } from './TenderStatusDropdown';
 
+// Tender rows come from Amplify with no shared domain type; describe just the
+// fields this table reads (and passes to TenderStatusDropdown).
+export interface TenderRow {
+    tenderId: string;
+    title?: string;
+    agency?: string;
+    country?: string | null;
+    deadline?: string | null;
+    overallScore?: number | null;
+    status?: string | null;
+    postedDate?: string | null;
+}
+
 interface Props {
-    items: any[];
+    items: TenderRow[];
     selectedIds: string[];
     onToggleSelected: (id: string) => void;
     onRefresh: () => void;

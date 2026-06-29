@@ -1,10 +1,14 @@
 import { useOrganizations } from '../../hooks/useOrganizations';
 import { OrganizationKpiCards } from '../../components/admin/OrganizationKpiCards';
 import { OrganizationFilterBar } from '../../components/admin/OrganizationFilterBar';
-import { OrganizationTable } from '../../components/admin/OrganizationTable';
+import { OrganizationTable, type OrgRow } from '../../components/admin/OrganizationTable';
 
 export function OrganizationListPage() {
     const { data, loading, error, filters, setFilters, refresh } = useOrganizations({});
+
+    // Connection items are typed nullable by Amplify but are non-null in
+    // practice; narrow to the table's row shape for KPI computation + rendering.
+    const orgItems = (data?.items ?? []) as OrgRow[];
 
     return (
         <div>
@@ -27,13 +31,13 @@ export function OrganizationListPage() {
 
             {data && (
                 <OrganizationKpiCards
-                    total={data.totalActiveCount ?? data.items.length}
-                    highLeadScore={(data.items ?? []).filter((o: any) => (o.leadScore ?? 0) >= 50).length}
-                    newThisWeek={(data.items ?? []).filter((o: any) => {
+                    total={data.totalActiveCount ?? orgItems.length}
+                    highLeadScore={orgItems.filter((o) => (o.leadScore ?? 0) >= 50).length}
+                    newThisWeek={orgItems.filter((o) => {
                         const seen = new Date(o.firstSeenAt ?? 0).getTime();
                         return seen >= Date.now() - 7 * 24 * 60 * 60 * 1000;
                     }).length}
-                    withoutOwner={(data.items ?? []).filter((o: any) => !o.ownerSalesRep).length}
+                    withoutOwner={orgItems.filter((o) => !o.ownerSalesRep).length}
                     onClickKpi={(kpi) => {
                         if (kpi === 'highLeadScore') setFilters({ ...filters, minLeadScore: 50 });
                         else if (kpi === 'withoutOwner') setFilters({ ...filters, ownerSalesRep: undefined });
@@ -50,7 +54,7 @@ export function OrganizationListPage() {
             {error && (
                 <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body mb-6">Error: {error.message}</div>
             )}
-            {data && <OrganizationTable items={data.items ?? []} />}
+            {data && <OrganizationTable items={orgItems} />}
         </div>
     );
 }
