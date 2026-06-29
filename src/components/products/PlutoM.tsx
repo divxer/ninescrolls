@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
 import { AcademicCitations } from '../common/AcademicCitations';
@@ -789,21 +789,14 @@ export function PlutoM() {
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="PLUTO-M"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={() => {
-          closeContactForm();
-          const link = document.createElement('a');
-          link.href = '/NineScrolls-Equipment-Guide.pdf';
-          link.download = 'NineScrolls-Equipment-Guide.pdf';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }}
+        brochureHref="/NineScrolls-Equipment-Guide.pdf"
+        brochureFilename="NineScrolls-Equipment-Guide.pdf"
+        closeOnDownload
       />
     </>
   );

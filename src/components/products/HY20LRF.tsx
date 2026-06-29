@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
 
@@ -12,14 +12,10 @@ import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function HY20LRF() {
-  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart, downloadBrochure } = useProductPage();
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
 
   useScrollToTop();
-
-  const handleDownloadBrochure = () => {
-    downloadBrochure('/docs/hy-20lrf-datasheet.pdf', 'NineScrolls-HY-20LRF-Datasheet.pdf');
-  };
 
   const handleAddToCart = () => {
     addToCart({
@@ -579,13 +575,13 @@ export function HY20LRF() {
         </div>
       </section>
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
-        onDownloadBrochure={handleDownloadBrochure}
         productName="HY-20LRF"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+        brochureHref="/docs/hy-20lrf-datasheet.pdf"
+        brochureFilename="NineScrolls-HY-20LRF-Datasheet.pdf"
       />
     </>
   );

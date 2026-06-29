@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { SEO } from '../common/SEO';
@@ -559,15 +559,13 @@ export function ICPEtcher() {
         </div>
       )}
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
         productName="ICP Etcher Series"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-        onDownloadBrochure={()=>{
-          const a=document.createElement('a'); a.href='/docs/icp-etcher-datasheet.pdf'; a.download='NineScrolls-ICP-Etcher-Datasheet.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }}
+        brochureHref="/docs/icp-etcher-datasheet.pdf"
+        brochureFilename="NineScrolls-ICP-Etcher-Datasheet.pdf"
         downloadLabel="Download Datasheet"
       />
 

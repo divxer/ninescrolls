@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useProductPage } from '../../hooks/useProductPage';
-import { QuoteModal } from '../common/QuoteModal';
+import { ProductQuoteModal } from './ProductQuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
 
@@ -12,14 +12,10 @@ import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoF() {
-  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart, downloadBrochure } = useProductPage();
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open' | 'chamber-interior'>('main');
 
   useScrollToTop();
-
-  const handleDownloadBrochure = () => {
-    downloadBrochure('/docs/pluto-f-datasheet.pdf', 'NineScrolls-PLUTO-F-Datasheet.pdf');
-  };
 
   const handleAddToCart = () => {
     addToCart({
@@ -820,13 +816,13 @@ export function PlutoF() {
         </div>
       </section>
 
-      <QuoteModal
+      <ProductQuoteModal
         isOpen={isModalOpen}
         defaultIsQuote={isQuoteIntent}
         onClose={closeContactForm}
-        onDownloadBrochure={handleDownloadBrochure}
         productName="PLUTO-F"
-        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+        brochureHref="/docs/pluto-f-datasheet.pdf"
+        brochureFilename="NineScrolls-PLUTO-F-Datasheet.pdf"
       />
     </>
   );
