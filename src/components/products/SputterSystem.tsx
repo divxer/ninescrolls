@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { AcademicCitations } from '../common/AcademicCitations';
@@ -9,8 +10,7 @@ import { SEO } from '../common/SEO';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function SputterSystem() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm } = useProductPage();
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
 
@@ -26,17 +26,6 @@ export function SputterSystem() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
 
   const structuredData = {
     "@context": "https://schema.org/",

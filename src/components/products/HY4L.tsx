@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
@@ -8,20 +9,16 @@ import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function HY4L() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart } = useProductPage();
   const [gateOpen, setGateOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<'main' | 'image1' | 'image2'>('main');
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { addItem } = useCart();
 
   // Determine frequency from URL parameter or path
   // Support both: /products/hy-4l?config=rf and /products/hy-4l-rf
@@ -61,63 +58,18 @@ export function HY4L() {
 
   useScrollToTop();
 
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
   const handleAddToCart = () => {
     const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
     const price = selectedFrequency === 'rf' ? 7999 : 6499;
     const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
 
-    // Add item to cart
-    addItem({
+    addToCart({
       id: sku,
       name: `HY-4L - ${frequencyLabel} Plasma Cleaner`,
       price: price,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg'),
       sku: sku,
     });
-
-    // Track add to cart event for Google Analytics and Google Merchants
-    if (typeof window !== 'undefined') {
-      // Google Analytics 4 e-commerce event
-      if (window.gtag) {
-        const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
-        const price = selectedFrequency === 'rf' ? 7999 : 6499;
-        const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
-
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: price,
-          items: [{
-            item_id: sku,
-            item_name: `HY-4L - ${frequencyLabel} Plasma Cleaner`,
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: price,
-            quantity: 1
-          }]
-        });
-      }
-
-      // Analytics service tracking
-      const frequencyLabel = selectedFrequency === 'rf' ? 'RF (13.56 MHz)' : 'Mid-Frequency (40 kHz)';
-      const price = selectedFrequency === 'rf' ? 7999 : 6499;
-      const sku = selectedFrequency === 'rf' ? 'hy-4l-rf' : 'hy-4l-mf';
-      analytics.trackAddToCart(sku, `HY-4L - ${frequencyLabel} Plasma Cleaner`, price);
-    }
-
-    // Navigate to cart page
-    navigate('/cart');
   };
 
   // Get product details based on selected frequency

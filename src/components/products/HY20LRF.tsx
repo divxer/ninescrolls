@@ -1,75 +1,34 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function HY20LRF() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart, downloadBrochure } = useProductPage();
   const [selectedImage, setSelectedImage] = useState<'main' | 'front'>('main');
-  const navigate = useNavigate();
-  const { addItem } = useCart();
 
   useScrollToTop();
 
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
   const handleDownloadBrochure = () => {
-    const a = document.createElement('a');
-    a.href = '/docs/hy-20lrf-datasheet.pdf';
-    a.download = 'NineScrolls-HY-20LRF-Datasheet.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBrochure('/docs/hy-20lrf-datasheet.pdf', 'NineScrolls-HY-20LRF-Datasheet.pdf');
   };
 
   const handleAddToCart = () => {
-    addItem({
+    addToCart({
       id: 'hy-20lrf',
       name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
       price: 14499,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg'),
       sku: 'hy-20lrf',
     });
-
-    if (typeof window !== 'undefined') {
-      if (window.gtag) {
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: 14499,
-          items: [{
-            item_id: 'hy-20lrf',
-            item_name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: 14499,
-            quantity: 1
-          }]
-        });
-      }
-      analytics.trackAddToCart('hy-20lrf', 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner', 14499);
-    }
-
-    navigate('/cart');
   };
 
   const structuredData = {

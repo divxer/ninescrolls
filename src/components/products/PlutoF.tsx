@@ -1,75 +1,34 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useProductPage } from '../../hooks/useProductPage';
 import { QuoteModal } from '../common/QuoteModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { TrustSection } from '../common/TrustSection';
 
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../common/SEO';
-import { analytics } from '../../services/analytics';
-import { useCart } from '../../contexts/useCart';
 import { Breadcrumbs } from '../common/Breadcrumbs';
 import { cdnUrl } from '../../config/imageConfig';
 
 export function PlutoF() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isQuoteIntent, setIsQuoteIntent] = useState(false);
+  const { isModalOpen, isQuoteIntent, openContactForm, closeContactForm, addToCart, downloadBrochure } = useProductPage();
   const [selectedImage, setSelectedImage] = useState<'main' | 'with-pump' | 'chamber-open' | 'chamber-interior'>('main');
-  const navigate = useNavigate();
-  const { addItem } = useCart();
 
   useScrollToTop();
 
-  const openContactForm = (quote = false) => {
-    setIsQuoteIntent(quote);
-    setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeContactForm = () => {
-    setIsModalOpen(false);
-    document.body.style.overflow = 'auto';
-  };
-
   const handleDownloadBrochure = () => {
-    const a = document.createElement('a');
-    a.href = '/docs/pluto-f-datasheet.pdf';
-    a.download = 'NineScrolls-PLUTO-F-Datasheet.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBrochure('/docs/pluto-f-datasheet.pdf', 'NineScrolls-PLUTO-F-Datasheet.pdf');
   };
 
   const handleAddToCart = () => {
-    addItem({
+    addToCart({
       id: 'pluto-f',
       name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
       price: 15999,
-      quantity: 1,
       image: cdnUrl('/assets/images/products/pluto-f/main.jpg'),
       sku: 'pluto-f',
     });
-
-    if (typeof window !== 'undefined') {
-      if (window.gtag) {
-        window.gtag('event', 'add_to_cart', {
-          currency: 'USD',
-          value: 15999,
-          items: [{
-            item_id: 'pluto-f',
-            item_name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
-            item_category: 'Plasma Systems',
-            item_category2: 'Research Equipment',
-            price: 15999,
-            quantity: 1
-          }]
-        });
-      }
-      analytics.trackAddToCart('pluto-f', 'PLUTO-F - 500W RF Flagship Plasma Cleaner', 15999);
-    }
-
-    navigate('/cart');
   };
 
   const structuredData = {
