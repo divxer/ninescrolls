@@ -165,6 +165,11 @@ describe('OrgDetail smoke test', () => {
   // Header interactions — the rename + target-override handlers live in
   // OrgDetailHeader; these cover that moved logic.
   it('marks a target customer as not-target via the header override button', async () => {
+    // Return a realistic manual override so the post-mutation UI can be asserted.
+    (setOrgOverride as Mock).mockResolvedValueOnce({
+      found: true, source: 'manual', isTargetCustomer: false, organizationType: 'education',
+    });
+
     render(
       <OrgDetail
         org={makeOrg({ isTargetCustomer: true })}
@@ -177,6 +182,9 @@ describe('OrgDetail smoke test', () => {
 
     fireEvent.click(await screen.findByText('Mark as Not Target'));
     await waitFor(() => expect(setOrgOverride).toHaveBeenCalledWith('MIT', false));
+    // Post-mutation UI: success copy + the override becomes manual (Undo appears).
+    expect(await screen.findByText(/Marked as non-target customer/i)).toBeInTheDocument();
+    expect(screen.getByText('Undo Override')).toBeInTheDocument();
   });
 
   it('renames the organization from the header', async () => {
@@ -195,5 +203,8 @@ describe('OrgDetail smoke test', () => {
     fireEvent.change(input, { target: { value: 'MIT Renamed' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => expect(renameOrg).toHaveBeenCalledWith('MIT', 'MIT Renamed'));
+    // Post-mutation UI: heading reflects the new name + success copy shown.
+    expect(await screen.findByRole('heading', { name: 'MIT Renamed' })).toBeInTheDocument();
+    expect(screen.getByText(/Renamed to "MIT Renamed"/i)).toBeInTheDocument();
   });
 });
