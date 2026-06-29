@@ -92,8 +92,8 @@ async function callBedrock(prompt: string): Promise<LlmMatch[]> {
                 messages: [{ role: 'user', content: prompt }],
             }),
         }), { abortSignal: ctrl.signal });
-        const text = await (res.body as any).transformToString('utf-8');
-        const wrap = JSON.parse(text);
+        const text = await (res.body as { transformToString(enc: string): Promise<string> }).transformToString('utf-8');
+        const wrap = JSON.parse(text) as { content?: { text?: string }[] };
         const inner: string = wrap.content?.[0]?.text ?? '[]';
         return parseLlmJson(inner) as LlmMatch[];
     } finally { clearTimeout(t); }
@@ -106,13 +106,13 @@ async function callAnthropic(prompt: string): Promise<LlmMatch[]> {
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
     });
-    const block = (res.content[0] as any);
+    const block = (res.content[0] as { text?: string });
     const text: string = block?.text ?? '[]';
     return parseLlmJson(text) as LlmMatch[];
 }
 
 export async function handler(event: MatchEvent): Promise<MatchResult> {
-    let tender: any;
+    let tender: Record<string, unknown> | undefined;
     let configs: TenderKeywordConfigItem[] = [];
 
     try {
@@ -151,7 +151,7 @@ export async function handler(event: MatchEvent): Promise<MatchResult> {
     }
 
     const source = (tender.source ?? 'unknown') as string;
-    const prompt = buildPrompt(tender, configs);
+    const prompt = buildPrompt(tender as { title: string; description: string }, configs);
     let llmOut: LlmMatch[] = [];
     let bedrockErr: unknown = null;
     let anthropicErr: unknown = null;

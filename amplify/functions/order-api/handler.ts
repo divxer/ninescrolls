@@ -25,8 +25,9 @@ import { deleteDocument } from './resolvers/deleteDocument.js';
 import { declineRfq } from './resolvers/declineRfq.js';
 import { convertRfqToOrder } from './resolvers/convertRfqToOrder.js';
 import { revertRfqToPending } from './resolvers/revertRfqToPending.js';
+import type { AppSyncEvent } from './lib/types.js';
 
-const resolvers: Record<string, (event: any) => Promise<any>> = {
+const resolvers: Record<string, (event: AppSyncEvent) => Promise<unknown>> = {
     // Queries
     listOrders,
     getOrder,
@@ -55,13 +56,20 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
     revertRfqToPending,
 };
 
-export const handler = async (event: any) => {
+export const handler = async (event: Record<string, unknown>) => {
     console.log('order-api event keys:', Object.keys(event));
-    console.log('order-api identity:', JSON.stringify(event.identity));
+    console.log('order-api identity:', JSON.stringify((event as { identity?: unknown }).identity));
+
+    const evt = event as {
+        info?: { fieldName?: string };
+        fieldName?: string;
+        typeName?: string;
+        arguments?: unknown;
+    };
 
     // Amplify Gen 2 a.handler.function() sends { typeName, fieldName, arguments, identity, ... }
     // Standard AppSync sends { info: { fieldName, parentTypeName }, arguments, identity, ... }
-    const fieldName = event.info?.fieldName ?? event.fieldName;
+    const fieldName = evt.info?.fieldName ?? evt.fieldName;
 
     if (!fieldName) {
         console.error('order-api: full event:', JSON.stringify(event));
@@ -76,9 +84,9 @@ export const handler = async (event: any) => {
     }
 
     // Normalize event so resolvers can use event.arguments consistently
-    const normalizedEvent = event.info
+    const normalizedEvent = evt.info
         ? event  // Standard AppSync format
-        : { ...event, info: { fieldName, parentTypeName: event.typeName }, arguments: event.arguments };
+        : { ...event, info: { fieldName, parentTypeName: evt.typeName }, arguments: evt.arguments };
 
-    return resolver(normalizedEvent);
+    return resolver(normalizedEvent as unknown as AppSyncEvent);
 };

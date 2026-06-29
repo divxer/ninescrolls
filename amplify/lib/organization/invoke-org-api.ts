@@ -40,8 +40,8 @@ export interface UpsertFromSubmissionResult {
 export async function invokeOrganizationApi(
     payload: UpsertFromSubmissionPayload,
 ): Promise<UpsertFromSubmissionResult>;
-export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<any>;
-export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<any> {
+export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<unknown>;
+export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<unknown> {
     const res = await lambda.send(new InvokeCommand({
         FunctionName: FUNCTION_NAME(),
         InvocationType: 'RequestResponse',
@@ -50,7 +50,7 @@ export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<any
     const text = res.Payload ? new TextDecoder().decode(res.Payload) : '';
     const parsed = text ? JSON.parse(text) : null;
     if (res.FunctionError) {
-        const message = parsed?.errorMessage ?? res.FunctionError;
+        const message = (parsed as { errorMessage?: string } | null)?.errorMessage ?? res.FunctionError;
         throw new Error(`organization-api error: ${message}`);
     }
     return parsed;
