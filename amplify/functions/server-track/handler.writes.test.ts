@@ -70,6 +70,11 @@ const putItem = () => (cmds('PutCommand')[0] as { input: { Item: Record<string, 
 const putCmd = () => cmds('PutCommand')[0] as { input: { ConditionExpression?: string } };
 const fetchUrls = () => vi.mocked(fetch).mock.calls.map((c) => String(c[0]));
 const segmentUrls = () => fetchUrls().filter((u) => u.includes('api.segment.io'));
+// Decode the JSON payloads POSTed to Segment (in call order), so tests can
+// assert the actual event type/name/properties, not just the endpoint.
+const segmentPayloads = () => vi.mocked(fetch).mock.calls
+    .filter((c) => String(c[0]).includes('api.segment.io'))
+    .map((c) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>);
 
 // Fetch stub for the page_view path: Segment always responds 200; IP-lookup
 // providers respond only when a public IP triggers lookupIP().
@@ -273,9 +278,11 @@ describe('writePageView (via page_view_store branch)', () => {
         expect(put.input.Item.id).toBe('pv-pv9');
         expect(put.input.ConditionExpression).toBe('attribute_not_exists(id)');
 
-        // Private IP → no IP-lookup; exactly one Segment "page" call.
-        expect(fetchUrls().some((u) => u.includes('ipinfo.io'))).toBe(false);
-        expect(segmentUrls()).toEqual(['https://api.segment.io/v1/page']);
+        // Private IP → no IP-lookup; the ONLY fetch is the single Segment "page" call.
+        expect(fetchUrls()).toEqual(['https://api.segment.io/v1/page']);
+        const [page] = segmentPayloads();
+        expect(page.type).toBe('page');
+        expect(page.name).toBe('/x');
     });
 
     it('idempotent duplicate: Put ConditionalCheckFailedException → 200 duplicate:true', async () => {
@@ -300,6 +307,9 @@ describe('writePageView (via page_view_store branch)', () => {
         }));
         expect(res.statusCode).toBe(200);
         expect(segmentUrls()).toEqual(['https://api.segment.io/v1/track']);
+        const [track] = segmentPayloads();
+        expect(track.type).toBe('track');
+        expect(track.event).toBe('RFQ Submitted');
     });
 
     it('merges UTM campaign from client context into the persisted record', async () => {
@@ -332,6 +342,13 @@ describe('writePageView (via page_view_store branch)', () => {
             'https://api.segment.io/v1/page',
             'https://api.segment.io/v1/track',
         ]);
+        const [, tc] = segmentPayloads();
+        expect(tc.type).toBe('track');
+        expect(tc.event).toBe('Target Customer Detected');
+        const tcProps = tc.properties as Record<string, unknown>;
+        expect(tcProps.organizationType).toBe('education');
+        expect(tcProps.orgName).toBe('Stanford University');
+        expect(tcProps.leadTier).toBe('B');
     });
 
     it('public business IP → classify-org Lambda → AI Update + Target Customer Segment event', async () => {
@@ -358,6 +375,11 @@ describe('writePageView (via page_view_store branch)', () => {
             'https://api.segment.io/v1/page',
             'https://api.segment.io/v1/track',
         ]);
+        const [, tc] = segmentPayloads();
+        expect(tc.event).toBe('Target Customer Detected');
+        const tcProps = tc.properties as Record<string, unknown>;
+        expect(tcProps.organizationType).toBe('education'); // AI-refined type
+        expect(tcProps.leadTier).toBe('B');
     });
 
     it('AI classify null then retries after 2s, succeeds on second invoke', async () => {
