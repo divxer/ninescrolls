@@ -7,7 +7,7 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { normalizeUtm } from './utm';
 
 /** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
-function isPrivateIP(ip: string): boolean {
+export function isPrivateIP(ip: string): boolean {
     const parts = ip.split('.').map(Number);
     if (parts.length !== 4 || parts.some(isNaN)) return false;
     const [a, b] = parts;
@@ -52,7 +52,7 @@ const allowedOrigins = [
     'https://www.ninescrolls.com',
 ];
 
-const getCorsHeaders = (origin?: string) => {
+export const getCorsHeaders = (origin?: string) => {
     const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     return {
         'Access-Control-Allow-Origin': allowedOrigin,
@@ -289,7 +289,7 @@ const VALID_FLUSH_REASONS = new Set([
 // beforeunload and pagehide events to flushReason='pagehide'
 // (see SegmentAnalytics.tsx handleUnload).
 
-function validatePageTimeFlush(p: Record<string, unknown>): string | null {
+export function validatePageTimeFlush(p: Record<string, unknown>): string | null {
     if (typeof p.pageViewId !== 'string' || !p.pageViewId) return 'missing pageViewId';
     if (typeof p.sessionId !== 'string' || !p.sessionId) return 'missing sessionId';
     if (typeof p.tabId !== 'string' || !p.tabId) return 'missing tabId';
@@ -568,7 +568,7 @@ async function writePageTimeFlush(
 
 // ─── page_view_store validation ──────────────────────────────────────────────
 
-function validatePageViewStore(p: Record<string, unknown>): string | null {
+export function validatePageViewStore(p: Record<string, unknown>): string | null {
     if (typeof p.pageViewId !== 'string' || !p.pageViewId) return 'missing pageViewId';
     if (typeof p.eventName !== 'string' || !p.eventName) return 'missing eventName';
     if (typeof p.eventType !== 'string' || !p.eventType) return 'missing eventType';
