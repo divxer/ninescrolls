@@ -133,6 +133,8 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
         />
       ) : (
         <Editor
+          // TinyMCE 7+ requires a license key; 'gpl' for self-hosted GPL use.
+          licenseKey="gpl"
           onInit={(_evt, editor) => {
             editorRef.current = editor;
           }}
