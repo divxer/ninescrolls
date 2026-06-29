@@ -306,6 +306,7 @@ export function RFQPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     analytics.trackCustomEvent('RFQ Step 1: Your Information', { step: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount (avoid duplicate step-1 tracking)
   }, []);
 
   useEffect(() => {

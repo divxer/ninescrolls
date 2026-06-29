@@ -1,5 +1,3 @@
-import type { AppSyncResolverHandler } from 'aws-lambda';
-
 // Queries
 import { listOrders } from './resolvers/listOrders.js';
 import { getOrder } from './resolvers/getOrder.js';

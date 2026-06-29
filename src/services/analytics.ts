@@ -63,8 +63,8 @@ class Analytics {
       // 定义占位符 gtag 函数（只在不存在时设置，避免覆盖已存在的）
       // 🔥 关键：使用 arguments 对象而不是数组，这样 GA4 脚本才能正确处理
       if (!window.gtag) {
-        window.gtag = function() {
-          window.dataLayer.push(arguments);
+        window.gtag = function(...args: unknown[]) {
+          window.dataLayer.push(args);
         };
       }
       

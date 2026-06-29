@@ -56,6 +56,7 @@ export function HY4L() {
   useEffect(() => {
     const frequency = getFrequencyFromURL();
     setSelectedFrequency(frequency);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getFrequencyFromURL only reads location.search, already a dep
   }, [location.pathname, location.search]);
 
   useScrollToTop();

@@ -73,8 +73,6 @@ describe('organization-api dispatcher', () => {
     });
 });
 
-import { classifyEmailDomain } from '../../lib/organization/etld';
-
 describe('upsertFromSubmission', () => {
     const NOW_ISO = '2026-05-16T12:00:00.000Z';
     beforeEach(() => {

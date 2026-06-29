@@ -117,7 +117,7 @@ async function uploadNewsImage(slug: string, imagePath: string, customName?: str
     process.exit(1);
   }
 
-  const { cdnBaseUrl, heroPrefix, fallbackExt, files, error } = result as any;
+  const { cdnBaseUrl, heroPrefix, files, error } = result as any;
   if (error) {
     console.warn(`  Partial errors: ${error}`);
   }

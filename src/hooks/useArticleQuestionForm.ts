@@ -42,7 +42,7 @@ export function useArticleQuestionForm({ slug, onSuccessRedirect, onPurchaseInte
     ensureScript().then(() => {
       try {
         const widget = widgetRef.current;
-        const turnstile = (window as unknown as { turnstile?: { render: Function; reset: Function } }).turnstile;
+        const turnstile = (window as unknown as { turnstile?: { render: (...args: unknown[]) => string; reset: (...args: unknown[]) => void } }).turnstile;
         if (!widget || !turnstile) return;
         widgetIdRef.current = turnstile.render(widget, {
           sitekey: turnstileSiteKey,
@@ -65,7 +65,7 @@ export function useArticleQuestionForm({ slug, onSuccessRedirect, onPurchaseInte
 
   const resetToken = useCallback(() => {
     setToken('');
-    const turnstile = (window as unknown as { turnstile?: { reset: Function } }).turnstile;
+    const turnstile = (window as unknown as { turnstile?: { reset: (...args: unknown[]) => void } }).turnstile;
     if (widgetIdRef.current && turnstile) {
       turnstile.reset(widgetIdRef.current);
     }

@@ -131,7 +131,6 @@ export async function handler(_event: unknown): Promise<{ ok: true; alertsSent: 
     const today = new Date().toISOString().slice(0, 10);
     const fresh: Alert[] = [];
     for (const alert of alerts) {
-        // eslint-disable-next-line no-await-in-loop
         if (!(await alreadySent(today, alert))) fresh.push(alert);
     }
     if (fresh.length === 0) return { ok: true, alertsSent: 0 };

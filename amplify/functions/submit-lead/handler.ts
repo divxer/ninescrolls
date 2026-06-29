@@ -30,8 +30,6 @@ const ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ];
 
-const LEAD_TYPES = ['contact', 'download_gate', 'newsletter'] as const;
-
 const INTENTS = [
     'Actively looking to buy',
     'Looking to buy within 1 year',
@@ -617,7 +615,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         const leadId = generateLeadId(data.type);
 
         // 4. Type-specific handling
-        let responsePayload: Record<string, unknown> = { success: true, leadId };
+        const responsePayload: Record<string, unknown> = { success: true, leadId };
 
         if (data.type === 'newsletter') {
             const { alreadySubscribed } = await handleNewsletterDedup(data.email, data.source || 'website');

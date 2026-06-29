@@ -77,6 +77,6 @@ export interface LogisticsCaseItem {
 export type LogisticsCaseResponse = Omit<LogisticsCaseItem, 'PK' | 'SK' | 'GSI1PK' | 'GSI1SK'>;
 
 export function toCaseResponse(item: LogisticsCaseItem): LogisticsCaseResponse {
-  const { PK, SK, GSI1PK, GSI1SK, ...rest } = item;
+  const { PK: _PK, SK: _SK, GSI1PK: _GSI1PK, GSI1SK: _GSI1SK, ...rest } = item;
   return rest;
 }
