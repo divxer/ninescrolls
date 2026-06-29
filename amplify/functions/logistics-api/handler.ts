@@ -5,8 +5,9 @@ import { advanceLogisticsStage } from './resolvers/advanceLogisticsStage.js';
 import { updateLogisticsCase } from './resolvers/updateLogisticsCase.js';
 import { addLeg, updateLeg, removeLeg } from './resolvers/legMutations.js';
 import { logisticsStats } from './resolvers/logisticsStats.js';
+import type { AppSyncEvent } from './lib/types.js';
 
-const resolvers: Record<string, (event: any) => Promise<any>> = {
+const resolvers: Record<string, (event: AppSyncEvent) => Promise<unknown>> = {
   listLogisticsCases,
   getLogisticsCase,
   logisticsStats,
@@ -18,8 +19,14 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
   removeLeg,
 };
 
-export const handler = async (event: any) => {
-  const fieldName = event.info?.fieldName ?? event.fieldName;
+export const handler = async (event: Record<string, unknown>) => {
+  const evt = event as {
+    info?: { fieldName?: string };
+    fieldName?: string;
+    typeName?: string;
+    arguments?: unknown;
+  };
+  const fieldName = evt.info?.fieldName ?? evt.fieldName;
   if (!fieldName) {
     console.error('logistics-api: full event:', JSON.stringify(event));
     throw new Error(`Cannot determine fieldName. Event keys: ${Object.keys(event).join(', ')}`);
@@ -28,9 +35,9 @@ export const handler = async (event: any) => {
   const resolver = resolvers[fieldName];
   if (!resolver) throw new Error(`No resolver for field: ${fieldName}`);
 
-  const normalizedEvent = event.info
+  const normalizedEvent = evt.info
     ? event
-    : { ...event, info: { fieldName, parentTypeName: event.typeName }, arguments: event.arguments };
+    : { ...event, info: { fieldName, parentTypeName: evt.typeName }, arguments: evt.arguments };
 
-  return resolver(normalizedEvent);
+  return resolver(normalizedEvent as unknown as AppSyncEvent);
 };
