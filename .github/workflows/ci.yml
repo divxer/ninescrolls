@@ -23,12 +23,14 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Use `npm install --no-ignore-optional` (not `npm ci`) to match amplify.yml
-      # and to install platform-specific optional deps (e.g. the Linux rollup
-      # native binary) — `npm ci` trips the npm optional-deps bug (npm/cli#4828)
-      # because the committed lockfile is generated on macOS.
+      # The committed lockfile is generated on macOS, so it omits the Linux
+      # rollup native binary and trips the npm optional-deps bug (npm/cli#4828)
+      # on the runner. Remove it and install fresh — exactly what amplify.yml
+      # does — so npm resolves platform-correct optional deps.
       - name: Install dependencies
-        run: npm install --no-ignore-optional
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --no-ignore-optional
 
       # amplify_outputs.json is generated at deploy time and gitignored. The app
       # only does Amplify.configure(outputs), so a stub is enough for the import
