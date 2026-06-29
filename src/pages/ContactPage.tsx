@@ -41,11 +41,6 @@ export function ContactPage() {
   const userHasManuallySelected = useRef(false);
   const lastSyncedTopic = useRef(topic);
 
-  // Redirect quote requests to the dedicated RFQ page
-  if (topic === 'quote') {
-    return <Navigate to="/request-quote" replace />;
-  }
-
   // Sync inquiry type when topic URL actually changes (browser back/forward)
   useEffect(() => {
     if (topic !== lastSyncedTopic.current) {
@@ -71,6 +66,13 @@ export function ContactPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [topic]);
+
+  // Redirect quote requests to the dedicated RFQ page.
+  // Must run after all hooks so hook order stays constant across renders
+  // (e.g. when topic changes from a non-quote value to "quote").
+  if (topic === 'quote') {
+    return <Navigate to="/request-quote" replace />;
+  }
 
   const handleFormSuccess = () => {
     setSelectedInquiryType(null);
