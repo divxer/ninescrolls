@@ -244,7 +244,7 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
     }
   }
 
-  // Collect unique IPs, ISPs, User Agents, and visitor IDs
+  // Collect unique IPs and ISPs
   const uniqueIPs = Array.from(new Set(org.events.map((e) => e.ip).filter(Boolean))) as string[];
   const uniqueISPs = Array.from(new Set(org.events.map((e) => e.isp).filter(Boolean))) as string[];
 
