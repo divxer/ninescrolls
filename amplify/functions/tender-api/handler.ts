@@ -26,14 +26,13 @@ const ANTHROPIC_TIMEOUT_MS = 20000;
 
 const ADMIN_GROUP = 'admin';
 
-export async function handler(event: AppSyncResolverEvent<Record<string, unknown>> & { fieldName?: string }): Promise<unknown> {
+export async function handler(event: AppSyncResolverEvent<any> & { fieldName?: string }): Promise<unknown> {
     requireAdmin(event);
-    const identity = (event.identity as { username?: string } | null)?.username ?? 'unknown';
+    const identity = (event.identity as any)?.username ?? 'unknown';
     // Amplify Gen 2's `a.handler.function()` path sends fieldName at the event root.
     // Standard AppSync wraps it under event.info. Support both.
-    const fieldName = (event.info as { fieldName?: string } | undefined)?.fieldName
-        ?? (event as { fieldName?: string }).fieldName;
-    return dispatchFieldName(fieldName as string, event, identity);
+    const fieldName = ((event.info as any)?.fieldName) ?? (event as any).fieldName;
+    return dispatchFieldName(fieldName, event, identity);
 }
 
 /**
@@ -41,8 +40,8 @@ export async function handler(event: AppSyncResolverEvent<Record<string, unknown
  * containing 'admin'. Other auth modes (IAM, API key) leave `event.identity.groups`
  * undefined and are rejected here.
  */
-function requireAdmin(event: AppSyncResolverEvent<Record<string, unknown>>): void {
-    const groups = (event.identity as { groups?: string[] } | null)?.groups ?? [];
+function requireAdmin(event: AppSyncResolverEvent<any>): void {
+    const groups = (event.identity as any)?.groups ?? [];
     if (!groups.includes(ADMIN_GROUP)) {
         throw new Error('Unauthorized: admin group required');
     }
@@ -50,7 +49,7 @@ function requireAdmin(event: AppSyncResolverEvent<Record<string, unknown>>): voi
 
 async function dispatchFieldName(
     fieldName: string,
-    event: AppSyncResolverEvent<Record<string, unknown>>,
+    event: AppSyncResolverEvent<any>,
     identity: string,
 ): Promise<unknown> {
     switch (fieldName) {
@@ -124,29 +123,29 @@ async function listTenders(args: ListTendersArgs) {
             })),
         ),
     );
-    let items: Record<string, unknown>[] = queries.flatMap((q) => q.Items ?? []);
+    let items: any[] = queries.flatMap((q) => q.Items ?? []);
 
     // In-memory filters
     if (!args.includeExpired) {
         items = items.filter((i) => !i.isExpired);
     }
     if (args.countries?.length) {
-        items = items.filter((i) => args.countries!.includes(i.country as string));
+        items = items.filter((i) => args.countries!.includes(i.country));
     }
     if (typeof args.minScore === 'number') {
-        items = items.filter((i) => ((i.overallScore as number) ?? 0) >= args.minScore!);
+        items = items.filter((i) => (i.overallScore ?? 0) >= args.minScore!);
     }
     if (args.postedDateFrom) {
-        items = items.filter((i) => ((i.postedDate as string) ?? '') >= args.postedDateFrom!);
+        items = items.filter((i) => (i.postedDate ?? '') >= args.postedDateFrom!);
     }
     if (args.postedDateTo) {
-        items = items.filter((i) => ((i.postedDate as string) ?? '') <= args.postedDateTo!);
+        items = items.filter((i) => (i.postedDate ?? '') <= args.postedDateTo!);
     }
     if (args.search) {
         const needle = args.search.toLowerCase();
         items = items.filter((i) =>
-            ((i.title as string) ?? '').toLowerCase().includes(needle) ||
-            ((i.agency as string) ?? '').toLowerCase().includes(needle),
+            (i.title ?? '').toLowerCase().includes(needle) ||
+            (i.agency ?? '').toLowerCase().includes(needle),
         );
     }
     if (args.categories?.length) {
@@ -158,11 +157,11 @@ async function listTenders(args: ListTendersArgs) {
     }
 
     // Sort
-    const cmp = (a: Record<string, unknown>, b: Record<string, unknown>) => {
-        let av: string | number; let bv: string | number;
-        if (sortBy === 'score') { av = (a.overallScore as number) ?? 0; bv = (b.overallScore as number) ?? 0; }
-        else if (sortBy === 'postedDate') { av = (a.postedDate as string) ?? ''; bv = (b.postedDate as string) ?? ''; }
-        else if (sortBy === 'deadline') { av = (a.deadline as string) ?? '9999-99-99'; bv = (b.deadline as string) ?? '9999-99-99'; }
+    const cmp = (a: any, b: any) => {
+        let av: any; let bv: any;
+        if (sortBy === 'score') { av = a.overallScore ?? 0; bv = b.overallScore ?? 0; }
+        else if (sortBy === 'postedDate') { av = a.postedDate ?? ''; bv = b.postedDate ?? ''; }
+        else if (sortBy === 'deadline') { av = a.deadline ?? '9999-99-99'; bv = b.deadline ?? '9999-99-99'; }
         else { av = 0; bv = 0; }
         const dir = sortDir === 'asc' ? 1 : -1;
         return av < bv ? -dir : av > bv ? dir : 0;
@@ -181,7 +180,7 @@ async function listTenders(args: ListTendersArgs) {
             })),
         ),
     );
-    const totalActiveUnfiltered = countQueries.reduce((sum, q) => sum + (q.Count ?? 0), 0);
+    const totalActiveUnfiltered = countQueries.reduce((sum, q) => sum + ((q as any).Count ?? 0), 0);
 
     return {
         items: items.slice(0, limit),
@@ -212,7 +211,7 @@ async function getTender(args: { tenderId: string }) {
     if (!metaRes.Item) throw new Error(`Tender not found: ${args.tenderId}`);
     return {
         tender: metaRes.Item,
-        matches: (matchesRes.Items ?? []).sort((a, b) => ((b.score as number) ?? 0) - ((a.score as number) ?? 0)),
+        matches: (matchesRes.Items ?? []).sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0)),
         log: logRes.Items ?? [],
     };
 }
@@ -255,8 +254,8 @@ async function getPipelineRun(args: { executionId: string }) {
     }));
     const items = r.Items ?? [];
     return {
-        summary: items.find((i) => i.SK === 'SUMMARY') ?? null,
-        sources: items.filter((i) => typeof i.SK === 'string' && i.SK.startsWith('SOURCE#')),
+        summary: items.find((i: any) => i.SK === 'SUMMARY') ?? null,
+        sources: items.filter((i: any) => typeof i.SK === 'string' && i.SK.startsWith('SOURCE#')),
     };
 }
 
@@ -311,8 +310,8 @@ async function updateTenderStatus(
             ExpressionAttributeValues: exprValues,
             ReturnValues: 'ALL_NEW',
         }));
-    } catch (err) {
-        if ((err as { name?: string })?.name === 'ConditionalCheckFailedException') {
+    } catch (err: any) {
+        if (err?.name === 'ConditionalCheckFailedException') {
             throw new Error('Conflict: tender was modified by another user');
         }
         throw err;
@@ -410,7 +409,7 @@ async function runPrefilterPreview(args: {
     description: string;
     naicsCodes?: string[];
     cpvCodes?: string[];
-    configOverride?: unknown;
+    configOverride?: any;
 }) {
     const tender = {
         title: args.title,
@@ -524,8 +523,8 @@ async function callBedrock(prompt: string): Promise<string> {
                 messages: [{ role: 'user', content: prompt }],
             }),
         }), { abortSignal: ctrl.signal });
-        const text = await (res.body as { transformToString(enc: string): Promise<string> }).transformToString('utf-8');
-        const wrap = JSON.parse(text) as { content?: Array<{ text?: string }> };
+        const text = await (res.body as any).transformToString('utf-8');
+        const wrap = JSON.parse(text);
         return ((wrap.content?.[0]?.text as string) ?? '').trim();
     } finally {
         clearTimeout(t);
@@ -542,7 +541,7 @@ async function callAnthropic(prompt: string): Promise<string> {
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
     });
-    const block = res.content[0] as { text?: string };
+    const block = res.content[0] as any;
     return ((block?.text as string) ?? '').trim();
 }
 

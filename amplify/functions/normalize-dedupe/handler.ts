@@ -36,7 +36,7 @@ export interface NormalizeDedupeResult {
 async function loadStaged(key: string): Promise<NormalizedTender[]> {
     const res = await s3.send(new GetObjectCommand({ Bucket: STAGING_BUCKET(), Key: key }));
     if (!res.Body) return [];
-    const text = await (res.Body as { transformToString(enc: string): Promise<string> }).transformToString('utf-8');
+    const text = await (res.Body as any).transformToString('utf-8');
     return JSON.parse(text) as NormalizedTender[];
 }
 

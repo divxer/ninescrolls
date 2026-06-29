@@ -297,7 +297,7 @@ export const processInsightsImage: Schema['processInsightsImage']['functionHandl
 export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandler'] =
     async (event) => {
         const { slug } = event.arguments;
-        const dryRun = (event.arguments as { dryRun?: boolean }).dryRun ?? false;
+        const dryRun = (event.arguments as any).dryRun ?? false;
 
         if (!slug) {
             throw new Error('slug is required');
@@ -361,10 +361,6 @@ export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandl
 // Main dispatcher — Amplify Gen 2 AppSync resolver entry point
 // Routes to the correct handler based on event.fieldName
 // ---------------------------------------------------------------------------
-// Heterogeneous AppSync dispatch: each resolver is a distinct
-// Schema[...]['functionHandler'] with its own (mutually incompatible) arguments
-// type, so a single typed resolver map can't be expressed without widening.
-// Kept intentionally (deferred) — the handler param below is typed honestly.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const resolvers: Record<string, (...args: any[]) => any> = {
     getInsightsImageUploadUrl,
@@ -373,9 +369,8 @@ const resolvers: Record<string, (...args: any[]) => any> = {
     deleteInsightsImages,
 };
 
-export const handler = async (
-    event: { info?: { fieldName?: string }; fieldName?: string;[key: string]: unknown },
-) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const handler = async (event: any) => {
     const fieldName = event.info?.fieldName ?? event.fieldName;
 
     if (!fieldName) {

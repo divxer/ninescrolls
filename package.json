@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm install --no-ignore-optional && npm run lint && tsc && vite build && npm run generate-seo",
+    "build": "npm install --no-ignore-optional && npm run lint && tsc && npm run typecheck:amplify && vite build && npm run generate-seo",
+    "typecheck:amplify": "tsc --noEmit -p amplify/tsconfig.json",
     "generate-seo": "npx tsx scripts/generate-seo.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
     "preview": "vite preview",
