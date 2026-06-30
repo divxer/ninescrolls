@@ -6,6 +6,8 @@ import { z } from 'zod';
 import crypto from 'node:crypto';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeRfqScore } from '../../lib/organization/lead-score';
+import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
+import { buildRfqEmitArgs } from '../../lib/crm/emit-builders';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -630,6 +632,19 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 },
             }));
         }
+
+        // Emit rfq_submitted timeline event to CRM (async fire-and-forget;
+        // the helper logs/swallows its own dispatch failures — never blocks the response).
+        await emitTimelineEventToCrm(buildRfqEmitArgs(
+            {
+                rfqId,
+                submittedAt,
+                email: data.email,
+                equipmentCategory: data.equipmentCategory,
+                specificModel: data.specificModel,
+            },
+            matchedOrgId ?? null,
+        ));
 
         // 7. Move attachments from temp/ → rfqs/<rfqId>/
         let attachmentKeys: string[] = [];
