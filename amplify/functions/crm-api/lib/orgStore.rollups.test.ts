@@ -6,33 +6,36 @@ import { createReviewOrgFromDomain, bumpOrgRollupOnCreate, recomputeRollupsForOr
 beforeEach(() => mockSend.mockReset());
 
 describe('createReviewOrgFromDomain', () => {
-  it('claims the domain index, writes the review org + name index, returns the new id', async () => {
-    mockSend.mockResolvedValueOnce({}); // claim ORGDOMAIN (conditional put ok)
-    mockSend.mockResolvedValueOnce({}); // put ORG review record
-    mockSend.mockResolvedValueOnce({}); // put ORGNAME index
+  it('atomically claims domain + writes org META (SK=META) + name index, returns the new id', async () => {
+    mockSend.mockResolvedValueOnce({}); // single TransactWrite
     const id = await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z');
     expect(id).toBe('org-NEW');
-    const orgItem = mockSend.mock.calls[1][0].input.Item;
+    const txn = mockSend.mock.calls[0][0].input.TransactItems;
+    expect(mockSend).toHaveBeenCalledTimes(1); // all-or-nothing, one round trip
+    const claim = txn[0].Put;
+    expect(claim.Item.PK).toBe('ORGDOMAIN#newcorp.com');
+    expect(claim.ConditionExpression).toMatch(/attribute_not_exists/); // the idempotency anchor
+    const orgItem = txn[1].Put.Item;
+    expect(orgItem.PK).toBe('ORG#org-NEW');
+    expect(orgItem.SK).toBe('META'); // shares the authoritative org metadata row, NOT a shadow 'A'
     expect(orgItem.status).toBe('review');
     expect(orgItem.createdByResolution).toBe(true);
     expect(orgItem.primaryDomain).toBe('newcorp.com');
     expect(orgItem.GSI1PK).toBe('ORG_STATUS#review');
-    const nameItem = mockSend.mock.calls[2][0].input.Item;
+    const nameItem = txn[2].Put.Item;
     expect(nameItem.PK).toBe('ORGNAME#newcorp'); // normalizeOrgName('newcorp')
     expect(nameItem.orgId).toBe('org-NEW');
   });
-  it('on claim race, returns the existing org id without creating', async () => {
-    mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
+  it('on claim race (transaction cancelled), returns the existing org id without writing', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('cancelled'), { name: 'TransactionCanceledException' }));
     mockSend.mockResolvedValueOnce({ Item: { orgId: 'org-EXISTING' } }); // getOrgIdByDomain
     const id = await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z');
     expect(id).toBe('org-EXISTING');
   });
   it('does NOT set lastActivityAt when the triggering event is internal-only', async () => {
-    mockSend.mockResolvedValueOnce({}); // claim
-    mockSend.mockResolvedValueOnce({}); // org put
-    mockSend.mockResolvedValueOnce({}); // name index
+    mockSend.mockResolvedValueOnce({}); // single TransactWrite
     await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z', true);
-    const orgItem = mockSend.mock.calls[1][0].input.Item;
+    const orgItem = mockSend.mock.calls[0][0].input.TransactItems[1].Put.Item;
     expect(orgItem.firstSeenAt).toBe('2026-06-19T10:00:00Z');
     expect(orgItem.lastActivityAt).toBeUndefined();
   });
@@ -48,7 +51,7 @@ describe('bumpOrgRollupOnCreate', () => {
     mockSend.mockResolvedValueOnce({});
     await bumpOrgRollupOnCreate({ orgId: 'org-1', kind: 'order_created', occurredAt: '2026-06-19T10:00:00Z' });
     const upd = mockSend.mock.calls[0][0].input;
-    expect(upd.Key).toEqual({ PK: 'ORG#org-1', SK: 'A' });
+    expect(upd.Key).toEqual({ PK: 'ORG#org-1', SK: 'META' });
     expect(upd.UpdateExpression).toMatch(/orderCount/);
   });
   it('internalOnly note is a no-op (never advances lastActivityAt)', async () => {

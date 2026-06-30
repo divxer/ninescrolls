@@ -1,7 +1,11 @@
-import { GetCommand, PutCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from './dynamodb';
 import { generateOrgId } from './idGenerators';
 import { normalizeOrgName } from './normalize';
+
+// Authoritative Organization metadata row shares the ORG#<id> partition with organization-api,
+// which keys it as SK='META'. CRM rollups/auto-create MUST target the same row, never a shadow.
+const ORG_META_SK = 'META';
 
 export async function getOrgIdByDomain(domain: string): Promise<string | null> {
   const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `ORGDOMAIN#${domain}`, SK: 'A' } }));
@@ -22,24 +26,12 @@ function isRealOrg(orgId: string): boolean {
 
 export async function createReviewOrgFromDomain(domain: string, occurredAt: string, isInternalOnly = false): Promise<string> {
   const orgId = generateOrgId();
-  // Race-safe claim: the domain index is the idempotency anchor.
-  try {
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME(),
-      Item: { PK: `ORGDOMAIN#${domain}`, SK: 'A', entityType: 'ORG_DOMAIN_INDEX', domain, orgId },
-      ConditionExpression: 'attribute_not_exists(PK)',
-    }));
-  } catch (err: unknown) {
-    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
-      const existing = await getOrgIdByDomain(domain);
-      if (existing) return existing;
-    }
-    throw err;
-  }
   const nowIso = new Date().toISOString();
   const displayName = domain.split('.')[0];
+  const normName = normalizeOrgName(displayName);
+
   const orgItem: Record<string, unknown> = {
-    PK: `ORG#${orgId}`, SK: 'A',
+    PK: `ORG#${orgId}`, SK: ORG_META_SK,
     GSI1PK: 'ORG_STATUS#review', GSI1SK: `${nowIso}#${orgId}`,
     entityType: 'ORGANIZATION',
     orgId, primaryDomain: domain, displayName,
@@ -50,16 +42,38 @@ export async function createReviewOrgFromDomain(domain: string, occurredAt: stri
   };
   // The triggering event only advances customer-facing lastActivityAt when it is NOT internal-only.
   if (!isInternalOnly) orgItem.lastActivityAt = occurredAt;
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME(),
-    Item: orgItem,
-    ConditionExpression: 'attribute_not_exists(PK)',
-  }));
-  // Maintain the name index so organization_name_match resolves this org without Plan 2 backfill.
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME(),
-    Item: { PK: `ORGNAME#${normalizeOrgName(displayName)}`, SK: 'A', entityType: 'ORG_NAME_INDEX', normName: normalizeOrgName(displayName), orgId },
-  }));
+
+  // Atomic claim+create: the domain index is the idempotency anchor. Writing it in the same
+  // transaction as the org META row + name index means a race or mid-sequence failure can never
+  // orphan the claim (pointing at a non-existent org) or leave a ghost review-org in the queue.
+  try {
+    await docClient.send(new TransactWriteCommand({
+      TransactItems: [
+        {
+          Put: {
+            TableName: TABLE_NAME(),
+            Item: { PK: `ORGDOMAIN#${domain}`, SK: 'A', entityType: 'ORG_DOMAIN_INDEX', domain, orgId },
+            ConditionExpression: 'attribute_not_exists(PK)',
+          },
+        },
+        { Put: { TableName: TABLE_NAME(), Item: orgItem } },
+        {
+          Put: {
+            TableName: TABLE_NAME(),
+            Item: { PK: `ORGNAME#${normName}`, SK: 'A', entityType: 'ORG_NAME_INDEX', normName, orgId },
+          },
+        },
+      ],
+    }));
+  } catch (err: unknown) {
+    // The domain was already claimed (concurrent or prior call) → the transaction cancels and
+    // nothing is written. Return the existing winner.
+    if ((err as { name?: string }).name === 'TransactionCanceledException') {
+      const existing = await getOrgIdByDomain(domain);
+      if (existing) return existing;
+    }
+    throw err;
+  }
   return orgId;
 }
 
@@ -77,7 +91,7 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
     try {
       await docClient.send(new UpdateCommand({
         TableName: TABLE_NAME(),
-        Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
+        Key: { PK: `ORG#${args.orgId}`, SK: ORG_META_SK },
         UpdateExpression: expr,
         ConditionExpression: 'attribute_not_exists(lastActivityAt) OR lastActivityAt < :occ',
         ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
@@ -103,7 +117,7 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
   if (sets.length === 0) return; // pure internal note → nothing to roll up
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(),
-    Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
+    Key: { PK: `ORG#${args.orgId}`, SK: ORG_META_SK },
     UpdateExpression: 'SET ' + sets.join(', '),
     ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
   }));
@@ -150,7 +164,7 @@ export async function recomputeRollupsForOrg(orgId: string): Promise<void> {
   }
 
   await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(), Key: { PK: `ORG#${orgId}`, SK: 'A' },
+    TableName: TABLE_NAME(), Key: { PK: `ORG#${orgId}`, SK: ORG_META_SK },
     UpdateExpression: updateExpression,
     ExpressionAttributeValues: values,
   }));
