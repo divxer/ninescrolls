@@ -69,4 +69,28 @@ describe('advanceLogisticsStage', () => {
     await expect(advanceLogisticsStage(evt({ caseId: 'missing', targetStage: 'PRODUCTION' })))
       .rejects.toThrow(/not found/i);
   });
+
+  it('omits the detail field entirely when no note is provided (no undefined written to DynamoDB)', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { ...baseCase } })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ Item: { ...baseCase, currentStage: 'PRODUCTION' } });
+    await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION' }));
+
+    // The DocumentClient rejects undefined values (no removeUndefinedValues), so a blank
+    // Note must not produce a detail:undefined key on the appended milestone entry.
+    const appendedEntry = send.mock.calls[1][0].input.ExpressionAttributeValues[':log'][0];
+    expect('detail' in appendedEntry).toBe(false);
+    expect(Object.values(appendedEntry)).not.toContain(undefined);
+  });
+
+  it('keeps the detail field when a note is provided', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { ...baseCase } })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ Item: { ...baseCase, currentStage: 'PRODUCTION' } });
+    await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION', detail: 'kickoff' }));
+    const appendedEntry = send.mock.calls[1][0].input.ExpressionAttributeValues[':log'][0];
+    expect(appendedEntry.detail).toBe('kickoff');
+  });
 });
