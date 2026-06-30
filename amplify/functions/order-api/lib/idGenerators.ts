@@ -13,3 +13,7 @@ export function generateContactId(): string {
 export function generateDocId(): string {
     return `doc-${crypto.randomBytes(3).toString('hex')}`;
 }
+
+export function generateLogId(): string {
+    return `olog-${crypto.randomBytes(6).toString('hex')}`;
+}

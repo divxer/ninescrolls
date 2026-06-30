@@ -116,6 +116,7 @@ export interface ContactItem {
 export interface LogItem {
     PK: string;
     SK: string;
+    id?: string; // stable per-entry id (olog-...). Optional: legacy entries predate this field.
     action: string;
     fromStatus?: OrderStatus;
     toStatus?: OrderStatus;
