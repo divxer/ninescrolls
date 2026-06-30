@@ -135,9 +135,23 @@ export async function recomputeRollupsForOrg(orgId: string): Promise<void> {
     const l = KIND_TO_LATEST[e.kind]; if (l && (!latest[l] || e.occurredAt > (latest[l] as string))) latest[l] = e.occurredAt;
   }
 
+  const values: Record<string, unknown> = {
+    ':r': counts.rfqCount, ':o': counts.orderCount, ':l': counts.leadCount,
+    ':lr': latest.latestRFQDate, ':lo': latest.latestOrderDate, ':ll': latest.latestLeadDate,
+  };
+  // When no customer-facing event remains, REMOVE lastActivityAt rather than writing a NULL —
+  // a NULL would make the monotonic guard (attribute_not_exists OR < :occ) fail forever after.
+  let updateExpression = 'SET rfqCount = :r, orderCount = :o, leadCount = :l, latestRFQDate = :lr, latestOrderDate = :lo, latestLeadDate = :ll';
+  if (lastActivityAt !== null) {
+    updateExpression += ', lastActivityAt = :la';
+    values[':la'] = lastActivityAt;
+  } else {
+    updateExpression += ' REMOVE lastActivityAt';
+  }
+
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: { PK: `ORG#${orgId}`, SK: 'A' },
-    UpdateExpression: 'SET rfqCount = :r, orderCount = :o, leadCount = :l, latestRFQDate = :lr, latestOrderDate = :lo, latestLeadDate = :ll, lastActivityAt = :la',
-    ExpressionAttributeValues: { ':r': counts.rfqCount, ':o': counts.orderCount, ':l': counts.leadCount, ':lr': latest.latestRFQDate, ':lo': latest.latestOrderDate, ':ll': latest.latestLeadDate, ':la': lastActivityAt },
+    UpdateExpression: updateExpression,
+    ExpressionAttributeValues: values,
   }));
 }

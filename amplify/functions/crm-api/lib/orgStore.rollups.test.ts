@@ -65,4 +65,16 @@ describe('recomputeRollupsForOrg', () => {
     expect(vals[':r']).toBe(1);
     expect(vals[':o']).toBe(1);
   });
+  it('REMOVEs lastActivityAt (never writes NULL) when only internalOnly/voided events remain', async () => {
+    mockSend
+      .mockResolvedValueOnce({ Items: [
+        { kind: 'note', occurredAt: '2026-05-01T00:00:00Z', isInternalOnly: true },
+        { kind: 'order_created', occurredAt: '2026-03-01T00:00:00Z', voided: true },
+      ] })
+      .mockResolvedValueOnce({}); // final update
+    await recomputeRollupsForOrg('org-1');
+    const upd = mockSend.mock.calls[1][0].input;
+    expect(upd.UpdateExpression).toMatch(/REMOVE lastActivityAt/);
+    expect(upd.ExpressionAttributeValues[':la']).toBeUndefined();
+  });
 });

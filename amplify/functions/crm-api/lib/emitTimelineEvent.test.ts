@@ -74,7 +74,7 @@ describe('emitTimelineEvent', () => {
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-OLD');
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-NEW');
   });
-  it('re-emit where original rollup never landed (rollupApplied=false), same org: compensates the bump', async () => {
+  it('re-emit where original rollup never landed (rollupApplied=false), same org: recomputes (idempotent, no double-count)', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
     upsertContact.mockResolvedValueOnce('ct-terry');
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
@@ -82,7 +82,8 @@ describe('emitTimelineEvent', () => {
     mockSend.mockResolvedValueOnce({}); // overwrite put
     await emitTimelineEvent(baseEvt);
     expect(mockSend.mock.calls[1][0].input.Item.rollupApplied).toBe(true);
-    expect(bumpOrgRollupOnCreate).toHaveBeenCalledWith(expect.objectContaining({ orgId: 'org-df', kind: 'rfq_submitted' }));
-    expect(recomputeRollupsForOrg).not.toHaveBeenCalled();
+    // recompute is authoritative + idempotent, so it cannot double-count if the first bump landed.
+    expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-df');
+    expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
   });
 });

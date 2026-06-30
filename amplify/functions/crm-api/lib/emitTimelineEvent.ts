@@ -70,7 +70,10 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
       await recomputeRollupsForOrg(oldOrgId!);
       await recomputeRollupsForOrg(orgId);
     } else if (needsCompensation) {
-      await bumpOrgRollupOnCreate({ orgId, kind: args.kind, occurredAt: args.occurredAt, isInternalOnly: args.isInternalOnly ?? false });
+      // The original bump may have landed before the mark crashed; an incremental re-bump
+      // would double-count. Recompute is derived from the authoritative event set, so it is
+      // safe whether or not the first bump ran.
+      await recomputeRollupsForOrg(orgId);
     }
     return;
   }
