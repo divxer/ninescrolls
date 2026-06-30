@@ -4,7 +4,7 @@ vi.mock('@aws-sdk/client-lambda', () => ({
   LambdaClient: class { send = (...a: unknown[]) => send(...a); },
   InvokeCommand: class { constructor(public input: Record<string, unknown>) {} },
 }));
-import { invokeCrmApi, emitTimelineEventToCrm } from './invoke-crm-api';
+import { emitTimelineEventToCrm } from './invoke-crm-api';
 
 const args = {
   source: 'rfq', kind: 'rfq_submitted', sourceEntityType: 'rfq', sourceEntityId: 'rfq-1',
