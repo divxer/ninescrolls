@@ -120,10 +120,12 @@ export async function confirmDocumentUpload(event: AppSyncEvent) {
             matchedOrgId = null;
         }
 
+        // Link via the order's matchedOrgId only. Do NOT pass the operator (admin) email as the
+        // resolve fallback — that would mis-resolve an unmatched order to a NineScrolls-domain org.
+        // An unmatched quote resolves to `unresolved` (Needs-Linking) and is repaired by 2B backfill.
         await emitTimelineEventToCrm(buildQuoteSentEmitArgs(
             { orderId: args.orderId, matchedOrgId },
             { id: docId, fileName: args.fileName, uploadedAt: now },
-            operator,
         ));
     }
 

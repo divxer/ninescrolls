@@ -1142,6 +1142,11 @@ describe('order-api handler', () => {
                 occurredAt: expect.any(String),
                 resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
             }));
+            // The operator (admin) email must NOT leak into resolution — link is matchedOrgId only.
+            const quoteArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'quote_sent',
+            )?.[0] as { resolveInput?: { email?: string } } | undefined;
+            expect(quoteArg?.resolveInput?.email).toBeUndefined();
 
             // occurredAt must equal the document's uploadedAt (the resolver's `now`).
             const emitArg = mockEmitTimelineEventToCrm.mock.calls.find(
