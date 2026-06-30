@@ -5,9 +5,8 @@ const resolveLinks = vi.fn();
 vi.mock('./resolveLinks', () => ({ resolveLinks: (i: unknown) => resolveLinks(i) }));
 const upsertContact = vi.fn();
 vi.mock('./contactStore', () => ({ upsertContact: (a: unknown) => upsertContact(a) }));
-const createReviewOrgFromDomain = vi.fn(); const bumpOrgRollupOnCreate = vi.fn(); const recomputeRollupsForOrg = vi.fn();
+const bumpOrgRollupOnCreate = vi.fn(); const recomputeRollupsForOrg = vi.fn();
 vi.mock('./orgStore', () => ({
-  createReviewOrgFromDomain: (d: string, o: string, i?: boolean) => createReviewOrgFromDomain(d, o, i),
   bumpOrgRollupOnCreate: (a: unknown) => bumpOrgRollupOnCreate(a),
   recomputeRollupsForOrg: (o: string) => recomputeRollupsForOrg(o),
 }));
@@ -15,7 +14,7 @@ const getTimelineEvent = vi.fn();
 vi.mock('./timelineStore', () => ({ getTimelineEvent: (id: string) => getTimelineEvent(id) }));
 
 import { emitTimelineEvent } from './emitTimelineEvent';
-beforeEach(() => { mockSend.mockReset(); resolveLinks.mockReset(); upsertContact.mockReset(); createReviewOrgFromDomain.mockReset(); bumpOrgRollupOnCreate.mockReset(); recomputeRollupsForOrg.mockReset(); getTimelineEvent.mockReset(); });
+beforeEach(() => { mockSend.mockReset(); resolveLinks.mockReset(); upsertContact.mockReset(); bumpOrgRollupOnCreate.mockReset(); recomputeRollupsForOrg.mockReset(); getTimelineEvent.mockReset(); });
 
 const baseEvt = {
   source: 'rfq' as const, kind: 'rfq_submitted', sourceEntityType: 'rfq', sourceEntityId: 'rfq-1',
@@ -39,16 +38,6 @@ describe('emitTimelineEvent', () => {
     expect(put.ConditionExpression).toMatch(/attribute_not_exists/);
     expect(bumpOrgRollupOnCreate).toHaveBeenCalledWith(expect.objectContaining({ orgId: 'org-df', kind: 'rfq_submitted' }));
     expect(mockSend.mock.calls[1][0].input.UpdateExpression).toMatch(/rollupApplied/);
-  });
-  it('email_domain_new: materializes review org, uses real id, upserts contact there', async () => {
-    resolveLinks.mockResolvedValueOnce({ orgId: 'new-org:newcorp.com', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_new', confidence: 0.8 });
-    createReviewOrgFromDomain.mockResolvedValueOnce('org-REVIEW');
-    upsertContact.mockResolvedValueOnce('ct-1');
-    mockSend.mockResolvedValueOnce({}); mockSend.mockResolvedValueOnce({});
-    await emitTimelineEvent({ ...baseEvt, resolveInput: { ...baseEvt.resolveInput, email: 'first@newcorp.com' } });
-    expect(createReviewOrgFromDomain).toHaveBeenCalledWith('newcorp.com', '2026-06-19T10:00:00Z', false);
-    expect(mockSend.mock.calls[0][0].input.Item.orgId).toBe('org-REVIEW');
-    expect(upsertContact).toHaveBeenCalledWith(expect.objectContaining({ orgId: 'org-REVIEW' }));
   });
   it('unresolved: no contact upsert, no rollup bump', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'unresolved-rfq-rfq-1', contactId: null, resolutionStatus: 'unresolved', resolutionReason: 'unresolved', confidence: 0 });

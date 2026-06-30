@@ -1,80 +1,47 @@
-import { GetCommand, UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from './dynamodb';
-import { generateOrgId } from './idGenerators';
-import { normalizeOrgName } from './normalize';
+import { classifyEmailDomain } from '../../../lib/organization/etld';
 
-// Authoritative Organization metadata row shares the ORG#<id> partition with organization-api,
-// which keys it as SK='META'. CRM rollups/auto-create MUST target the same row, never a shadow.
+// The authoritative Organization metadata row is owned by organization-api: keyed
+// PK=ORG#<orgId>, SK='META', where the canonical orgId IS the eTLD+1 domain. CRM rollups target
+// that exact row. In P1, CRM RESOLVES against existing orgs but never creates them — auto-create
+// is deferred to P2 (via the shared/canonical organization-api upsert path).
 const ORG_META_SK = 'META';
-
-export async function getOrgIdByDomain(domain: string): Promise<string | null> {
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `ORGDOMAIN#${domain}`, SK: 'A' } }));
-  return (res.Item?.orgId as string | undefined) ?? null;
-}
-
-export async function getOrgIdByName(normName: string): Promise<string | null> {
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `ORGNAME#${normName}`, SK: 'A' } }));
-  return (res.Item?.orgId as string | undefined) ?? null;
-}
 
 const KIND_TO_COUNT: Record<string, string> = { rfq_submitted: 'rfqCount', order_created: 'orderCount', lead_captured: 'leadCount' };
 const KIND_TO_LATEST: Record<string, string> = { rfq_submitted: 'latestRFQDate', order_created: 'latestOrderDate', lead_captured: 'latestLeadDate' };
 
 function isRealOrg(orgId: string): boolean {
-  return !orgId.startsWith('unresolved-') && !orgId.startsWith('new-org:');
+  return !orgId.startsWith('unresolved-');
 }
 
-export async function createReviewOrgFromDomain(domain: string, occurredAt: string, isInternalOnly = false): Promise<string> {
-  const orgId = generateOrgId();
-  const nowIso = new Date().toISOString();
-  const displayName = domain.split('.')[0];
-  const normName = normalizeOrgName(displayName);
+// Resolve a single domain key to a canonical orgId via the organization-api lookup index.
+// GSI2PK=ORG_DOMAIN#<domain> matches BOTH the org META row (GSI2PK=ORG_DOMAIN#<canonical>) and
+// any ORG_DOMAIN_LOOKUP alias item; both carry `orgId`.
+async function lookupOrgIdByDomainKey(domainKey: string): Promise<string | null> {
+  const res = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME(),
+    IndexName: 'GSI2',
+    KeyConditionExpression: 'GSI2PK = :pk',
+    ExpressionAttributeValues: { ':pk': `ORG_DOMAIN#${domainKey}` },
+    Limit: 1,
+  }));
+  const item = (res.Items ?? [])[0] as { orgId?: string } | undefined;
+  return item?.orgId ?? null;
+}
 
-  const orgItem: Record<string, unknown> = {
-    PK: `ORG#${orgId}`, SK: ORG_META_SK,
-    GSI1PK: 'ORG_STATUS#review', GSI1SK: `${nowIso}#${orgId}`,
-    entityType: 'ORGANIZATION',
-    orgId, primaryDomain: domain, displayName,
-    status: 'review', createdByResolution: true, linkLocked: false,
-    rfqCount: 0, orderCount: 0, leadCount: 0,
-    firstSeenAt: occurredAt,
-    createdAt: nowIso, updatedAt: nowIso,
-  };
-  // The triggering event only advances customer-facing lastActivityAt when it is NOT internal-only.
-  if (!isInternalOnly) orgItem.lastActivityAt = occurredAt;
-
-  // Atomic claim+create: the domain index is the idempotency anchor. Writing it in the same
-  // transaction as the org META row + name index means a race or mid-sequence failure can never
-  // orphan the claim (pointing at a non-existent org) or leave a ghost review-org in the queue.
-  try {
-    await docClient.send(new TransactWriteCommand({
-      TransactItems: [
-        {
-          Put: {
-            TableName: TABLE_NAME(),
-            Item: { PK: `ORGDOMAIN#${domain}`, SK: 'A', entityType: 'ORG_DOMAIN_INDEX', domain, orgId },
-            ConditionExpression: 'attribute_not_exists(PK)',
-          },
-        },
-        { Put: { TableName: TABLE_NAME(), Item: orgItem } },
-        {
-          Put: {
-            TableName: TABLE_NAME(),
-            Item: { PK: `ORGNAME#${normName}`, SK: 'A', entityType: 'ORG_NAME_INDEX', normName, orgId },
-          },
-        },
-      ],
-    }));
-  } catch (err: unknown) {
-    // The domain was already claimed (concurrent or prior call) → the transaction cancels and
-    // nothing is written. Return the existing winner.
-    if ((err as { name?: string }).name === 'TransactionCanceledException') {
-      const existing = await getOrgIdByDomain(domain);
-      if (existing) return existing;
-    }
-    throw err;
+// Find an EXISTING org for an email's domain using the canonical eTLD+1 identity model owned by
+// organization-api. Checks an alias mapping first (a domain manually pointed at another company),
+// then the canonical eTLD+1 itself. Returns null for free-mail/invalid domains, or when no org
+// exists yet — P1 does not create one (the caller routes that to the Needs-Linking queue).
+export async function findExistingOrgIdByEmail(email: string): Promise<string | null> {
+  const { orgId: canonical, domain } = classifyEmailDomain(email);
+  if (!canonical) return null; // free-mail or unparseable → no corporate org
+  if (domain && domain !== canonical) {
+    const aliasOrgId = await lookupOrgIdByDomainKey(domain);
+    if (aliasOrgId) return aliasOrgId;
   }
-  return orgId;
+  return lookupOrgIdByDomainKey(canonical);
 }
 
 export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string; occurredAt: string; isInternalOnly?: boolean }): Promise<void> {

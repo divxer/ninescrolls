@@ -1,9 +1,7 @@
 import crypto from 'node:crypto';
 
-export function generateOrgId(): string {
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return `org-${date}-${crypto.randomBytes(2).toString('hex')}`;
-}
+// Note: CRM does not generate org ids — the canonical orgId is the eTLD+1 domain owned by
+// organization-api (see orgStore.findExistingOrgIdByEmail). Org creation is deferred to P2.
 
 export function generateAuditId(): string {
     return `audit-${crypto.randomBytes(6).toString('hex')}`;

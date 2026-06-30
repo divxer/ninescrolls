@@ -1,6 +1,6 @@
-import { normalizeEmail, domainOf, normalizeOrgName, isFreeEmailDomain, isDenylistedDomain } from './normalize';
-import { getOrgIdByDomain, getOrgIdByName } from './orgStore';
+import { normalizeEmail } from './normalize';
 import { getContactByEmail } from './contactStore';
+import { findExistingOrgIdByEmail } from './orgStore';
 import type { ResolveResult } from './types';
 
 export type ResolveInput = {
@@ -11,12 +11,17 @@ export type ResolveInput = {
   lockedContactId?: string;
   matchedOrgId?: string;
   email?: string;
-  organizationName?: string;
   priorVisitorOrgId?: string;
 };
 
-const STRONG_CHANNELS = new Set(['rfq', 'lead', 'order', 'quote', 'logistics']);
-
+// P1 resolution ladder. It RESOLVES against existing orgs only — it never creates an org.
+// Org identity is the canonical eTLD+1 model owned by organization-api; auto-create of a new
+// review org for an unknown corporate domain is deferred to P2. A corporate domain with no
+// existing org therefore falls through to `unresolved` (→ Needs-Linking queue).
+//
+// Ladder: manual → existing_matchedOrgId → contact_email_exact → email_domain_exact
+//       → visitor_prior_event (analytics only) → unresolved.
+// (organization_name_match and email_domain_new are reserved ResolutionReason values for P2.)
 export async function resolveLinks(input: ResolveInput): Promise<ResolveResult> {
   if (input.lockedOrgId) {
     return { orgId: input.lockedOrgId, contactId: input.lockedContactId ?? null, resolutionStatus: 'manually_linked', resolutionReason: 'manual', confidence: 1.0 };
@@ -26,29 +31,16 @@ export async function resolveLinks(input: ResolveInput): Promise<ResolveResult> 
   }
 
   const email = input.email ? normalizeEmail(input.email) : null;
-  const domain = email ? domainOf(email) : null;
-
   if (email) {
+    // A curated Contact outranks domain logic (the Terry/Diamond Foundry case).
     const contact = await getContactByEmail(email);
     if (contact?.orgId) {
       return { orgId: contact.orgId, contactId: contact.contactId, resolutionStatus: 'resolved', resolutionReason: 'contact_email_exact', confidence: 0.9 };
     }
-  }
-
-  if (domain && !isFreeEmailDomain(domain)) {
-    const orgId = await getOrgIdByDomain(domain);
-    if (orgId) {
-      return { orgId, contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 };
-    }
-    if (STRONG_CHANNELS.has(input.channel) && !isDenylistedDomain(domain)) {
-      return { orgId: `new-org:${domain}`, contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_new', confidence: 0.8 };
-    }
-  }
-
-  if (input.organizationName) {
-    const orgId = await getOrgIdByName(normalizeOrgName(input.organizationName));
-    if (orgId) {
-      return { orgId, contactId: null, resolutionStatus: 'resolved', resolutionReason: 'organization_name_match', confidence: 0.7 };
+    // Existing org by canonical eTLD+1 domain (free-mail domains return null inside the lookup).
+    const existingOrgId = await findExistingOrgIdByEmail(email);
+    if (existingOrgId) {
+      return { orgId: existingOrgId, contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 };
     }
   }
 

@@ -2,23 +2,38 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSend = vi.fn();
 vi.mock('./dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
 
-import { getOrgIdByDomain, getOrgIdByName } from './orgStore';
+import { findExistingOrgIdByEmail } from './orgStore';
 import { getContactByEmail } from './contactStore';
 import { getTimelineEvent } from './timelineStore';
 
 beforeEach(() => mockSend.mockReset());
 
-describe('lookups', () => {
-  it('getOrgIdByDomain returns orgId or null', async () => {
-    mockSend.mockResolvedValueOnce({ Item: { orgId: 'org-1' } });
-    expect(await getOrgIdByDomain('diamondfoundry.com')).toBe('org-1');
-    mockSend.mockResolvedValueOnce({});
-    expect(await getOrgIdByDomain('unknown.com')).toBeNull();
+describe('findExistingOrgIdByEmail (canonical eTLD+1 + ORG_DOMAIN# lookup)', () => {
+  it('resolves a corporate email to an existing org via the ORG_DOMAIN# GSI2 lookup', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [{ orgId: 'diamondfoundry.com' }] });
+    const orgId = await findExistingOrgIdByEmail('Terry@DiamondFoundry.com');
+    expect(orgId).toBe('diamondfoundry.com');
+    const q = mockSend.mock.calls[0][0].input;
+    expect(q.IndexName).toBe('GSI2');
+    expect(q.ExpressionAttributeValues[':pk']).toBe('ORG_DOMAIN#diamondfoundry.com');
   });
-  it('getOrgIdByName returns orgId', async () => {
-    mockSend.mockResolvedValueOnce({ Item: { orgId: 'org-2' } });
-    expect(await getOrgIdByName('diamond foundry inc')).toBe('org-2');
+  it('returns null when no org exists for the domain (P1 does not create one)', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [] });
+    expect(await findExistingOrgIdByEmail('first@newcorp.com')).toBeNull();
   });
+  it('returns null for free-mail domains without querying', async () => {
+    expect(await findExistingOrgIdByEmail('someone@gmail.com')).toBeNull();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+  it('checks the alias/subdomain before the canonical eTLD+1', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [{ orgId: 'diamondfoundry.com' }] }); // alias hit on the subdomain
+    const orgId = await findExistingOrgIdByEmail('terry@mail.diamondfoundry.com');
+    expect(orgId).toBe('diamondfoundry.com');
+    expect(mockSend.mock.calls[0][0].input.ExpressionAttributeValues[':pk']).toBe('ORG_DOMAIN#mail.diamondfoundry.com');
+  });
+});
+
+describe('store reads', () => {
   it('getContactByEmail returns contact or null', async () => {
     mockSend.mockResolvedValueOnce({ Items: [{ contactId: 'ct-x', orgId: 'org-1', email: 'a@b.com' }] });
     expect((await getContactByEmail('a@b.com'))?.contactId).toBe('ct-x');

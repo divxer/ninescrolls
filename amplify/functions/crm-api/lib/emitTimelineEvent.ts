@@ -5,7 +5,7 @@ import { timelineEventKeys } from './keys';
 import { normalizeEmail } from './normalize';
 import { resolveLinks, type ResolveInput } from './resolveLinks';
 import { upsertContact } from './contactStore';
-import { createReviewOrgFromDomain, bumpOrgRollupOnCreate, recomputeRollupsForOrg } from './orgStore';
+import { bumpOrgRollupOnCreate, recomputeRollupsForOrg } from './orgStore';
 import { getTimelineEvent } from './timelineStore';
 import type { TimelineEventItem, TimelineSource } from './types';
 
@@ -24,16 +24,14 @@ export type EmitArgs = {
   payload?: Record<string, unknown> | null;
 };
 
-const isSentinelOrg = (orgId: string) => orgId.startsWith('unresolved-') || orgId.startsWith('new-org:');
+// P1 never creates orgs, so the only sentinel is the per-event unresolved placeholder.
+const isSentinelOrg = (orgId: string) => orgId.startsWith('unresolved-');
 
 export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
   const id = timelineId(args.idInput);
   const resolved = await resolveLinks(args.resolveInput);
 
-  let orgId = resolved.orgId;
-  if (resolved.resolutionReason === 'email_domain_new' && orgId.startsWith('new-org:')) {
-    orgId = await createReviewOrgFromDomain(orgId.slice('new-org:'.length), args.occurredAt, args.isInternalOnly ?? false);
-  }
+  const orgId = resolved.orgId;
 
   let contactId = resolved.contactId;
   const email = args.resolveInput.email ? normalizeEmail(args.resolveInput.email) : null;
