@@ -3,6 +3,8 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeLeadScore } from '../../lib/organization/lead-score';
+import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
+import { buildLeadEmitArgs } from '../../lib/crm/emit-builders';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 
@@ -679,6 +681,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 },
             }));
         }
+
+        // Emit lead_captured timeline event to CRM (async fire-and-forget;
+        // the helper logs/swallows its own dispatch failures — never blocks the response).
+        await emitTimelineEventToCrm(buildLeadEmitArgs(
+            {
+                leadId,
+                submittedAt,
+                type: data.type,
+                email: data.email,
+                productName: (data as { productName?: string }).productName,
+                inquiryType: (data as { inquiryType?: string }).inquiryType,
+            },
+            matchedOrgId ?? null,
+        ));
 
         // 7. Non-blocking side effects: emails, HubSpot, SendGrid contacts
         const sideEffects: Promise<void>[] = [
