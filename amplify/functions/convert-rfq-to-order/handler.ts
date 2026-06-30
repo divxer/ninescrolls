@@ -7,6 +7,8 @@ import { S3Client, CopyObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'node:crypto';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeOrderScore } from '../../lib/organization/lead-score';
+import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
+import { buildOrderCreatedEmitArgs } from '../../lib/crm/emit-builders';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -183,9 +185,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
         // 2b. Upsert customer Organization + (if previously unmatched) backfill matchedOrgId/GSI2PK
         const primaryEmail = (rfq.email as string | undefined) ?? undefined;
+        let orgResult: { matchedOrgId?: string | null } | undefined;
         if (primaryEmail) {
             try {
-                const orgResult = await invokeOrganizationApi({
+                orgResult = await invokeOrganizationApi({
                     action: 'upsertFromSubmission',
                     source: 'order',
                     email: primaryEmail,
@@ -214,6 +217,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 }));
             }
         }
+
+        // 2c. Emit order_created timeline event (fire-and-forget) — after order write + org backfill.
+        // finalMatchedOrgId must reflect what the backfill ACTUALLY wrote: org-api result wins,
+        // otherwise fall back to the RFQ's pre-existing match.
+        const finalMatchedOrgId = orgResult?.matchedOrgId ?? rfq.matchedOrgId ?? null;
+        await emitTimelineEventToCrm(buildOrderCreatedEmitArgs(
+            { orderId, createdAt: now, productModel },
+            { matchedOrgId: finalMatchedOrgId, email: primaryEmail, rfqId: req.rfqId },
+        ));
 
         // 3. Create ORDER_CONTACT from RFQ contact info — §12.3
         const contactItem: Record<string, unknown> = {

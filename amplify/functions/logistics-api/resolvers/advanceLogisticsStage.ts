@@ -1,8 +1,10 @@
-import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { fetchCase, buildCaseResponse } from '../lib/caseHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import { generateMilestoneId } from '../lib/idGenerators.js';
+import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { buildLogisticsMilestoneEmitArgs } from '../../../lib/crm/emit-builders.js';
 import type { AppSyncEvent, LogisticsLogEntry } from '../lib/types.js';
 import { LOGISTICS_STAGES, UNIVERSAL_STAGES, type LogisticsStage } from '../lib/stages.js';
 
@@ -25,15 +27,18 @@ export async function advanceLogisticsStage(event: AppSyncEvent) {
 
   const now = new Date().toISOString();
   const { email: operator } = getOperatorInfo(event);
+  const milestoneId = generateMilestoneId();
+  const entryInternalOnly = internalOnly ?? false;
   const entry: LogisticsLogEntry = {
-    id: generateMilestoneId(),
+    id: milestoneId,
     action: 'STAGE_ADVANCED',
     fromStage: current.currentStage,
     toStage: stage,
     operator,
     timestamp: now,
-    detail: detail || undefined,
-    internalOnly: internalOnly ?? false,
+    internalOnly: entryInternalOnly,
+    // Only include detail when present — the DocumentClient rejects undefined values.
+    ...(detail ? { detail } : {}),
   };
 
   try {
@@ -62,5 +67,26 @@ export async function advanceLogisticsStage(event: AppSyncEvent) {
     throw err;
   }
 
-  return buildCaseResponse(caseId);
+  const response = await buildCaseResponse(caseId);
+
+  // Fire-and-forget CRM timeline emit (emit site #7). Logistics has no customer email —
+  // the org link comes from the related Order's matchedOrgId, if any.
+  const relatedOrderId = current.relatedOrderId;
+  let relatedOrgId: string | null = null;
+  if (relatedOrderId) {
+    try {
+      const res = await docClient.send(new GetCommand({
+        TableName: TABLE_NAME(),
+        Key: { PK: `ORDER#${relatedOrderId}`, SK: 'META' },
+      }));
+      relatedOrgId = (res.Item?.matchedOrgId as string | undefined) ?? null;
+    } catch { relatedOrgId = null; }
+  }
+  await emitTimelineEventToCrm(buildLogisticsMilestoneEmitArgs(
+    { caseId, caseType: current.caseType },
+    { id: milestoneId, toStage: stage, fromStage: current.currentStage, timestamp: now, internalOnly: entryInternalOnly, action: 'STAGE_ADVANCED' },
+    relatedOrgId,
+  ));
+
+  return response;
 }

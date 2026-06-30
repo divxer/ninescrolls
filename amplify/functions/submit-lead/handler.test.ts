@@ -48,6 +48,11 @@ vi.mock('../../lib/organization/invoke-org-api', () => ({
     invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
 }));
 
+const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/crm/invoke-crm-api', () => ({
+    emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+}));
+
 // Mock global fetch (Turnstile, SendGrid, HubSpot)
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -103,6 +108,16 @@ const VALID_NEWSLETTER = {
     type: 'newsletter',
     email: 'subscriber@stanford.edu',
     source: 'footer',
+};
+
+const VALID_DOWNLOAD_GATE = {
+    type: 'download_gate',
+    fullName: 'Dr. Jane Smith',
+    email: 'jane@stanford.edu',
+    organization: 'Stanford University',
+    researchAreas: 'Plasma etching',
+    intent: 'Actively looking to buy',
+    fileName: 'ICP-Etcher-Datasheet.pdf',
 };
 
 // ---------------------------------------------------------------------------
@@ -178,6 +193,33 @@ describe('submit-lead handler', () => {
         const backfillParams = backfillCall![0] as { ExpressionAttributeValues: Record<string, string> };
         expect(backfillParams.ExpressionAttributeValues[':id']).toBe('stanford.edu');
         expect(backfillParams.ExpressionAttributeValues[':gsi2']).toBe('ORG#stanford.edu');
+    });
+
+    it.each([
+        { name: 'contact', body: VALID_CONTACT, summaryRe: /Contact/i },
+        { name: 'download_gate', body: VALID_DOWNLOAD_GATE, summaryRe: /Downloaded/i },
+        { name: 'newsletter', body: VALID_NEWSLETTER, summaryRe: /Newsletter/i },
+    ])('emits lead_captured timeline event after the lead write commits ($name)', async ({ body: leadBody, summaryRe }) => {
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
+        const event = makeEvent(leadBody);
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockEmitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+
+        const emitArg = mockEmitTimelineEventToCrm.mock.calls[0][0] as {
+            source: string;
+            kind: string;
+            sourceEntityId: string;
+            summary: string;
+            resolveInput: { matchedOrgId?: string };
+        };
+        const responseBody = JSON.parse((result as { body: string }).body);
+        expect(emitArg.source).toBe('lead');
+        expect(emitArg.kind).toBe('lead_captured');
+        expect(emitArg.sourceEntityId).toBe(responseBody.leadId);
+        expect(emitArg.summary).toMatch(summaryRe);
+        expect(emitArg.resolveInput.matchedOrgId).toBe('stanford.edu');
     });
 
     it('returns 200 and skips backfill when organization-api throws', async () => {

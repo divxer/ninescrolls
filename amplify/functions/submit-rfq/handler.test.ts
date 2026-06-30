@@ -60,6 +60,12 @@ vi.mock('../../lib/organization/invoke-org-api', () => ({
     invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
 }));
 
+// Mock CRM timeline emit (fire-and-forget; helper swallows its own dispatch failures)
+const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/crm/invoke-crm-api', () => ({
+    emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+}));
+
 // Mock global fetch for Turnstile and notifications
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -507,6 +513,27 @@ describe('submit-rfq handler', () => {
         const backfillParams = backfillCall![0] as { ExpressionAttributeValues: Record<string, string> };
         expect(backfillParams.ExpressionAttributeValues[':id']).toBe('stanford.edu');
         expect(backfillParams.ExpressionAttributeValues[':gsi2']).toBe('ORG#stanford.edu');
+    });
+
+    it('emits rfq_submitted timeline event after the RFQ write commits', async () => {
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'diamondfoundry.com' });
+        const event = makeEvent({ ...VALID_RFQ, email: 'jane.smith@diamondfoundry.com' });
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockEmitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+
+        const emitArg = mockEmitTimelineEventToCrm.mock.calls[0][0] as {
+            source: string;
+            kind: string;
+            sourceEntityId: string;
+            resolveInput: { matchedOrgId?: string };
+        };
+        const body = JSON.parse((result as { body: string }).body);
+        expect(emitArg.source).toBe('rfq');
+        expect(emitArg.kind).toBe('rfq_submitted');
+        expect(emitArg.sourceEntityId).toBe(body.rfqId);
+        expect(emitArg.resolveInput.matchedOrgId).toBe('diamondfoundry.com');
     });
 
     it('returns 200 and skips backfill when organization-api throws', async () => {

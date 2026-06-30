@@ -1,9 +1,11 @@
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
 import { VALID_STAGES, DOCUMENT_TYPES, MAX_FILE_SIZE, getOperatorInfo } from '../lib/types.js';
 import { generateDocId, generateLogId } from '../lib/idGenerators.js';
 import { buildDocumentResponse } from '../lib/orderHelper.js';
+import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { buildQuoteSentEmitArgs } from '../../../lib/crm/emit-builders.js';
 import type { AppSyncEvent, DocumentItem } from '../lib/types.js';
 
 export async function confirmDocumentUpload(event: AppSyncEvent) {
@@ -101,5 +103,31 @@ export async function confirmDocumentUpload(event: AppSyncEvent) {
         },
     }));
 
-    return buildDocumentResponse(docItem);
+    const response = buildDocumentResponse(docItem);
+
+    // Emit quote_sent timeline event when the confirmed document is a quotation
+    // (fire-and-forget; helper swallows its own dispatch failures).
+    if (args.docType === 'QUOTATION') {
+        // matchedOrgId is not loaded above; read it from ORDER#<id>/META (low-frequency event).
+        let matchedOrgId: string | null = null;
+        try {
+            const orderRes = await docClient.send(new GetCommand({
+                TableName: TABLE_NAME(),
+                Key: { PK: `ORDER#${args.orderId}`, SK: 'META' },
+            }));
+            matchedOrgId = (orderRes.Item?.matchedOrgId as string | undefined) ?? null;
+        } catch {
+            matchedOrgId = null;
+        }
+
+        // Link via the order's matchedOrgId only. Do NOT pass the operator (admin) email as the
+        // resolve fallback — that would mis-resolve an unmatched order to a NineScrolls-domain org.
+        // An unmatched quote resolves to `unresolved` (Needs-Linking) and is repaired by 2B backfill.
+        await emitTimelineEventToCrm(buildQuoteSentEmitArgs(
+            { orderId: args.orderId, matchedOrgId },
+            { id: docId, fileName: args.fileName, uploadedAt: now },
+        ));
+    }
+
+    return response;
 }

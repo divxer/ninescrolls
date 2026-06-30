@@ -6,9 +6,17 @@ vi.mock('../lib/dynamodb.js', () => ({
   TABLE_NAME: () => 'TestTable',
 }));
 
+const emitTimelineEventToCrm = vi.fn();
+vi.mock('../../../lib/crm/invoke-crm-api', () => ({
+  emitTimelineEventToCrm: (...a: unknown[]) => emitTimelineEventToCrm(...a),
+}));
+
 import { createLogisticsCase } from './createLogisticsCase.js';
 
-beforeEach(() => send.mockReset());
+beforeEach(() => {
+  send.mockReset();
+  emitTimelineEventToCrm.mockReset();
+});
 
 function evt(input: Record<string, unknown>) {
   return {
@@ -42,6 +50,50 @@ describe('createLogisticsCase', () => {
     expect(put.Item.GSI1SK).toMatch(/#lc-/);
     expect(put.ConditionExpression).toBe('attribute_not_exists(PK)');
     expect(res).not.toBeNull();
+  });
+
+  it('emits a logistics_milestone keyed off the related order matchedOrgId', async () => {
+    // counter Update → Put → buildCaseResponse Get → ORDER META Get
+    send
+      .mockResolvedValueOnce({ Attributes: { seq: 3 } })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ Item: { PK: 'LOGISTICS#lc-x', SK: 'META', caseId: 'lc-x', currentStage: 'DRAFT' } })
+      .mockResolvedValueOnce({ Item: { matchedOrgId: 'ORG#acme' } });
+
+    await createLogisticsCase(
+      evt({ caseType: 'EQUIPMENT', customerName: 'HORIBA', relatedOrderId: 'ord-9' }),
+    );
+
+    expect(emitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+    const emitArgs = emitTimelineEventToCrm.mock.calls[0][0];
+    const initialEntry = send.mock.calls[1][0].input.Item.milestoneLog[0];
+    expect(emitArgs.kind).toBe('logistics_milestone');
+    expect(emitArgs.idInput.milestoneId).toBe(initialEntry.id);
+    expect(initialEntry.id).toMatch(/^mlog-/);
+    expect(emitArgs.idInput.stage).toBe('DRAFT');
+    expect(emitArgs.summary).toMatch(/created/i);
+    expect(emitArgs.summary).toMatch(/EQUIPMENT/);
+    expect(emitArgs.isInternalOnly).toBe(initialEntry.internalOnly);
+    expect(emitArgs.resolveInput.matchedOrgId).toBe('ORG#acme');
+
+    // ORDER META lookup keyed off the related order id.
+    const getInput = send.mock.calls[3][0].input;
+    expect(getInput.Key).toEqual({ PK: 'ORDER#ord-9', SK: 'META' });
+  });
+
+  it('emits with undefined matchedOrgId when there is no relatedOrderId', async () => {
+    send
+      .mockResolvedValueOnce({ Attributes: { seq: 4 } })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ Item: { PK: 'LOGISTICS#lc-y', SK: 'META', caseId: 'lc-y', currentStage: 'DRAFT' } });
+
+    await createLogisticsCase(evt({ caseType: 'SAMPLE', customerName: 'HORIBA' }));
+
+    expect(emitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+    const emitArgs = emitTimelineEventToCrm.mock.calls[0][0];
+    expect(emitArgs.resolveInput.matchedOrgId).toBeUndefined();
+    // No ORDER META GetCommand issued.
+    expect(send).toHaveBeenCalledTimes(3);
   });
 
   it('rejects an unknown caseType', async () => {

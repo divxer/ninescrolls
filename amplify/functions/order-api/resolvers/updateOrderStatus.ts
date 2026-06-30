@@ -5,6 +5,8 @@ import { isValidTransition, STATUS_DATE_FIELD, FEEDBACK_STAGE_ROLES, FEEDBACK_ST
 import { fetchOrder, buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import { generateLogId } from '../lib/idGenerators.js';
+import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { buildOrderStageChangedEmitArgs } from '../../../lib/crm/emit-builders.js';
 import type { AppSyncEvent, OrderStatus, ContactItem } from '../lib/types.js';
 
 export async function updateOrderStatus(event: AppSyncEvent) {
@@ -84,12 +86,13 @@ export async function updateOrderStatus(event: AppSyncEvent) {
     }
 
     // 3. Write ORDER_LOG
+    const logId = generateLogId();
     await docClient.send(new PutCommand({
         TableName: TABLE_NAME(),
         Item: {
             PK: `ORDER#${orderId}`,
             SK: `LOG#${now}`,
-            id: generateLogId(),
+            id: logId,
             action: 'STATUS_CHANGE',
             fromStatus: currentStatus,
             toStatus: newStatus,
@@ -174,6 +177,12 @@ export async function updateOrderStatus(event: AppSyncEvent) {
         `${emoji} [${currentOrder.productModel}] ${currentOrder.institution} → ${newStatus}`,
     );
 
-    // 6. Return full Order
+    // 6. Emit order_stage_changed timeline event (fire-and-forget; helper swallows failures)
+    await emitTimelineEventToCrm(buildOrderStageChangedEmitArgs(
+        { orderId, matchedOrgId: currentOrder.matchedOrgId },
+        { id: logId, toStatus: newStatus, fromStatus: currentStatus, timestamp: now },
+    ));
+
+    // 7. Return full Order
     return buildFullOrderResponse(orderId);
 }

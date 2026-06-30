@@ -49,6 +49,18 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
     getSignedUrl: vi.fn().mockResolvedValue('https://s3.example.com/presigned'),
 }));
 
+// Org-api + CRM emit mocks (createOrder org upsert + order_created emit — Plan 2A)
+const mockInvokeOrgApi = vi.fn().mockResolvedValue({ matchedOrgId: null });
+vi.mock('../../lib/organization/invoke-org-api', () => ({
+    invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
+}));
+
+// CRM timeline emit (fire-and-forget; helper swallows its own dispatch failures)
+const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/crm/invoke-crm-api', () => ({
+    emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+}));
+
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 global.fetch = mockFetch;
 
@@ -580,6 +592,116 @@ describe('order-api handler', () => {
                 vi.fn(),
             )).rejects.toThrow(/YYYY-MM-DD/);
         });
+
+        it('upserts org from primary contact email, backfills matchedOrgId, and emits order_created', async () => {
+            mockPut.mockResolvedValue({});
+            mockUpdate.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford' });
+
+            const result = await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result).toBeDefined();
+
+            expect(mockInvokeOrgApi).toHaveBeenCalledWith(expect.objectContaining({
+                action: 'upsertFromSubmission',
+                source: 'order',
+                email: 'jane@stanford.edu',
+            }));
+
+            // matchedOrgId backfilled onto ORDER#<id>/META
+            const orgBackfill = mockUpdate.mock.calls.length > 0
+                ? mockSend.mock.calls.find((c: unknown[]) => {
+                    const arg = c[0] as { Key?: { SK?: string }; ExpressionAttributeValues?: Record<string, unknown> };
+                    return arg.Key?.SK === 'META'
+                        && arg.ExpressionAttributeValues
+                        && Object.values(arg.ExpressionAttributeValues).includes('org-stanford');
+                })
+                : undefined;
+            expect(orgBackfill).toBeTruthy();
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+        });
+
+        it('skips org invoke when no primary contact email and emits with null matchedOrgId', async () => {
+            // Force a missing primary email by stubbing validation? createOrder requires contactEmail,
+            // so we simulate the no-email path by ensuring org-api is not called for an empty email.
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: '   ',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockInvokeOrgApi).not.toHaveBeenCalled();
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: undefined }),
+            }));
+        });
+
+        it('still creates order and emits when org-api invoke rejects (non-fatal)', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockRejectedValueOnce(new Error('org-api down'));
+
+            const result = await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // order still returned despite org-api failure
+            expect(result).toBeDefined();
+            expect(result.orderId).toBeDefined();
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: undefined }),
+            }));
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -664,6 +786,49 @@ describe('order-api handler', () => {
 
             expect(result).toBeDefined();
             expect(mockUpdate).toHaveBeenCalled();
+        });
+
+        it('emits order_stage_changed with the stable LOG id, toStatus, timestamp, and matchedOrgId', async () => {
+            mockGet.mockResolvedValueOnce({ Item: SAMPLE_ORDER });
+            mockUpdate.mockResolvedValue({});
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, status: 'QUOTING' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('updateOrderStatus', {
+                    orderId: 'ord-20260310-abcd',
+                    newStatus: 'QUOTING',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // Find the LOG PutCommand the resolver wrote (STATUS_CHANGE).
+            const logItem = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string; id?: string; SK?: string } })
+                .find((arg) => arg?.Item?.action === 'STATUS_CHANGE')?.Item as
+                    { id?: string; SK?: string } | undefined;
+            expect(logItem?.id).toMatch(/^olog-/);
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_stage_changed',
+                idInput: expect.objectContaining({
+                    orderLogId: logItem?.id,
+                    toStatus: 'QUOTING',
+                }),
+                occurredAt: expect.any(String),
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+
+            // occurredAt must equal the LOG entry timestamp (the resolver's `now`).
+            const emitArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'order_stage_changed',
+            )?.[0] as { occurredAt?: string; idInput?: { occurredAt?: string } } | undefined;
+            const logTimestamp = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string; timestamp?: string } })
+                .find((arg) => arg?.Item?.action === 'STATUS_CHANGE')?.Item?.timestamp;
+            expect(emitArg?.occurredAt).toBe(logTimestamp);
         });
 
         it('throws on invalid transition', async () => {
@@ -937,6 +1102,81 @@ describe('order-api handler', () => {
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow('Unsupported file type');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // confirmDocumentUpload
+    // -----------------------------------------------------------------------
+    describe('confirmDocumentUpload', () => {
+        it('emits quote_sent when a QUOTATION document is confirmed', async () => {
+            mockPut.mockResolvedValue({});
+            // GetCommand on ORDER#<id>/META → order carries a matchedOrgId
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, matchedOrgId: 'org-stanford' } });
+
+            await handler(
+                makeAppSyncEvent('confirmDocumentUpload', {
+                    orderId: 'ord-20260310-abcd',
+                    s3Key: 'temp/ord-20260310-abcd/quote.pdf',
+                    fileName: 'quote.pdf',
+                    mimeType: 'application/pdf',
+                    fileSize: 1024,
+                    stage: 'QUOTING',
+                    docType: 'QUOTATION',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // Recover the docId from the ORDER_DOCUMENT PutCommand the resolver wrote.
+            const docItem = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { docId?: string; SK?: string } })
+                .find((arg) => typeof arg?.Item?.SK === 'string' && arg.Item.SK.startsWith('DOC#'))?.Item as
+                    { docId?: string } | undefined;
+            expect(docItem?.docId).toMatch(/^doc-/);
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                source: 'quote',
+                kind: 'quote_sent',
+                sourceEntityId: docItem?.docId,
+                occurredAt: expect.any(String),
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+            // The operator (admin) email must NOT leak into resolution — link is matchedOrgId only.
+            const quoteArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'quote_sent',
+            )?.[0] as { resolveInput?: { email?: string } } | undefined;
+            expect(quoteArg?.resolveInput?.email).toBeUndefined();
+
+            // occurredAt must equal the document's uploadedAt (the resolver's `now`).
+            const emitArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'quote_sent',
+            )?.[0] as { occurredAt?: string } | undefined;
+            const uploadedAt = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { uploadedAt?: string; SK?: string } })
+                .find((arg) => typeof arg?.Item?.SK === 'string' && arg.Item.SK.startsWith('DOC#'))?.Item?.uploadedAt;
+            expect(emitArg?.occurredAt).toBe(uploadedAt);
+        });
+
+        it('does NOT emit quote_sent for a non-QUOTATION document', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValue({ Item: { ...SAMPLE_ORDER, matchedOrgId: 'org-stanford' } });
+
+            await handler(
+                makeAppSyncEvent('confirmDocumentUpload', {
+                    orderId: 'ord-20260310-abcd',
+                    s3Key: 'temp/ord-20260310-abcd/po.pdf',
+                    fileName: 'po.pdf',
+                    mimeType: 'application/pdf',
+                    fileSize: 1024,
+                    stage: 'PO_RECEIVED',
+                    docType: 'PURCHASE_ORDER',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockEmitTimelineEventToCrm).not.toHaveBeenCalled();
         });
     });
 

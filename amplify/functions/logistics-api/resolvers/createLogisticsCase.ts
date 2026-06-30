@@ -1,8 +1,10 @@
-import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateCaseId, formatCaseNumber, generateMilestoneId } from '../lib/idGenerators.js';
 import { buildCaseResponse } from '../lib/caseHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
+import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { buildLogisticsMilestoneEmitArgs } from '../../../lib/crm/emit-builders.js';
 import type { AppSyncEvent, LogisticsCaseItem } from '../lib/types.js';
 import {
   CASE_TYPES, ENABLED_STAGES, RELATED_ENTITY_TYPES,
@@ -54,6 +56,11 @@ export async function createLogisticsCase(event: AppSyncEvent) {
   const caseNumber = formatCaseNumber(year, seq);
   const { sub: operatorId, email: operator } = getOperatorInfo(event);
 
+  // CASE_CREATED milestone — id/internalOnly captured so they can be reused
+  // for the fire-and-forget CRM timeline emit after the case commits.
+  const milestoneId = generateMilestoneId();
+  const milestoneInternalOnly = false;
+
   const item: LogisticsCaseItem = {
     PK: `LOGISTICS#${caseId}`,
     SK: 'META',
@@ -72,14 +79,14 @@ export async function createLogisticsCase(event: AppSyncEvent) {
     enabledStages: ENABLED_STAGES[caseType],
     legs: [],
     milestoneLog: [{
-      id: generateMilestoneId(),
+      id: milestoneId,
       action: 'CASE_CREATED',
       fromStage: null,
       toStage: 'DRAFT',
       operator,
       timestamp: now,
       detail: `${caseType} case created for ${input.customerName.trim()}`,
-      internalOnly: false,
+      internalOnly: milestoneInternalOnly,
     }],
     isCustomerVisible: false,
     notes: input.notes || undefined,
@@ -93,5 +100,27 @@ export async function createLogisticsCase(event: AppSyncEvent) {
     Item: item,
     ConditionExpression: 'attribute_not_exists(PK)',
   }));
-  return buildCaseResponse(caseId);
+
+  const response = await buildCaseResponse(caseId);
+
+  // Fire-and-forget CRM timeline emit (emit site #8). Logistics has no customer email —
+  // the org link comes from the related Order's matchedOrgId, if any.
+  const relatedOrderId = input.relatedOrderId;
+  let relatedOrgId: string | null = null;
+  if (relatedOrderId) {
+    try {
+      const res = await docClient.send(new GetCommand({
+        TableName: TABLE_NAME(),
+        Key: { PK: `ORDER#${relatedOrderId}`, SK: 'META' },
+      }));
+      relatedOrgId = (res.Item?.matchedOrgId as string | undefined) ?? null;
+    } catch { relatedOrgId = null; }
+  }
+  await emitTimelineEventToCrm(buildLogisticsMilestoneEmitArgs(
+    { caseId, caseType },
+    { id: milestoneId, toStage: 'DRAFT', fromStage: null, timestamp: now, internalOnly: milestoneInternalOnly, action: 'CASE_CREATED' },
+    relatedOrgId,
+  ));
+
+  return response;
 }
