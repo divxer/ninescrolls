@@ -1106,6 +1106,76 @@ describe('order-api handler', () => {
     });
 
     // -----------------------------------------------------------------------
+    // confirmDocumentUpload
+    // -----------------------------------------------------------------------
+    describe('confirmDocumentUpload', () => {
+        it('emits quote_sent when a QUOTATION document is confirmed', async () => {
+            mockPut.mockResolvedValue({});
+            // GetCommand on ORDER#<id>/META → order carries a matchedOrgId
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, matchedOrgId: 'org-stanford' } });
+
+            await handler(
+                makeAppSyncEvent('confirmDocumentUpload', {
+                    orderId: 'ord-20260310-abcd',
+                    s3Key: 'temp/ord-20260310-abcd/quote.pdf',
+                    fileName: 'quote.pdf',
+                    mimeType: 'application/pdf',
+                    fileSize: 1024,
+                    stage: 'QUOTING',
+                    docType: 'QUOTATION',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // Recover the docId from the ORDER_DOCUMENT PutCommand the resolver wrote.
+            const docItem = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { docId?: string; SK?: string } })
+                .find((arg) => typeof arg?.Item?.SK === 'string' && arg.Item.SK.startsWith('DOC#'))?.Item as
+                    { docId?: string } | undefined;
+            expect(docItem?.docId).toMatch(/^doc-/);
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                source: 'quote',
+                kind: 'quote_sent',
+                sourceEntityId: docItem?.docId,
+                occurredAt: expect.any(String),
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+
+            // occurredAt must equal the document's uploadedAt (the resolver's `now`).
+            const emitArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'quote_sent',
+            )?.[0] as { occurredAt?: string } | undefined;
+            const uploadedAt = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { uploadedAt?: string; SK?: string } })
+                .find((arg) => typeof arg?.Item?.SK === 'string' && arg.Item.SK.startsWith('DOC#'))?.Item?.uploadedAt;
+            expect(emitArg?.occurredAt).toBe(uploadedAt);
+        });
+
+        it('does NOT emit quote_sent for a non-QUOTATION document', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValue({ Item: { ...SAMPLE_ORDER, matchedOrgId: 'org-stanford' } });
+
+            await handler(
+                makeAppSyncEvent('confirmDocumentUpload', {
+                    orderId: 'ord-20260310-abcd',
+                    s3Key: 'temp/ord-20260310-abcd/po.pdf',
+                    fileName: 'po.pdf',
+                    mimeType: 'application/pdf',
+                    fileSize: 1024,
+                    stage: 'PO_RECEIVED',
+                    docType: 'PURCHASE_ORDER',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockEmitTimelineEventToCrm).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // deleteDocument
     // -----------------------------------------------------------------------
     describe('deleteDocument', () => {
