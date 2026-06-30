@@ -59,7 +59,7 @@ Re-emit only *missing* events. For each enumerated source record, build the expe
 **Critical maintenance invariant.** The sweep's enumeration must produce **exactly** the set of events live-emit produces — same kinds, same stable-key ids — or it under-emits (misses) or over-emits (orphan ids live-emit never makes). It therefore mirrors each 2A site's emit condition (e.g. `order_stage_changed` only for `STATUS_CHANGE` logs; `quote_sent` only for `QUOTATION` docs). **Adding a future emit site requires updating this enumeration to match.** `occurredAt` is read from the stored record's business timestamp (`submittedAt` / `log.timestamp` / `doc.uploadedAt` / `milestone.timestamp`), guaranteeing the sweep's id equals live-emit's.
 
 **Hot vs cold scope:**
-- **hot — best-effort.** Recent audit via parent `updatedAt > now−24h` *where reliable*, plus any cheap child-recency source that exists. NOTE: parent `updatedAt` does not reliably cover child sub-entries — e.g. `confirmDocumentUpload` writes `DOC#`/`LOG#` but may not bump `ORDER#/META.updatedAt`, so a dropped `quote_sent` can escape hot. That is acceptable: hot is best-effort.
+- **hot — best-effort.** Recent audit filtering each channel by **its own recency field** (`submittedAt` for rfq/lead; `updatedAt` for order/logistics) `> now−24h` — never one global `updatedAt`. NOTE: an order/logistics parent `updatedAt` does not reliably cover child sub-entries — e.g. `confirmDocumentUpload` writes `DOC#`/`LOG#` but may not bump `ORDER#/META.updatedAt`, so a dropped `quote_sent` can escape hot. That is acceptable: hot is best-effort; cold is the authoritative backstop.
 - **cold — authoritative + exhaustive.** The full set, paginated across fires via the durable cursor; **guarantees eventual coverage of child rows without global recency indexes**.
 
 **Existence check:** one `getTimelineEvent(expectedId)` per expected event (cheap; `BatchGetItem` is a later optimization). Per-record errors are isolated (§5).
@@ -113,7 +113,7 @@ Fields: `cursor` (channel position + `LastEvaluatedKey`), `hasMore`, `lease` (to
 
 - **Small P1 refactor:** extract the inline `markRollupClean` arrow in `crm-api/lib/emitTimelineEvent.ts` into an exported `markRollupApplied(id)` helper; `emitTimelineEvent` and the sweep both call it (so the repair path can't drift). Verify `recomputeRollupsForOrg`'s sentinel no-op (else add the `unresolved-` skip in the sweep).
 - **New `crm-api/lib/sweep/`:**
-  - `sweepState.ts` — durable cursor/lease on `CRM_SWEEP#<mode>#<pass>/STATE` (read, acquire-lease, persist-page heartbeat, release).
+  - `sweepState.ts` — durable cursor/lease on `CRM_SWEEP#<mode>#<pass>/STATE` (read, acquire-lease → returns a token, persist-page heartbeat, release). **Every cursor/heartbeat/release write is conditioned on `lease = :token`** so only the current owner can advance or clear a pass — a stale invocation whose lease was re-acquired by a later fire is rejected.
   - `existencePass.ts` — deterministic-order per-channel enumeration → expected id via 2A builders → `getTimelineEvent` → `emitTimelineEvent` if missing.
   - `dirtyRollupPass.ts` — scan `rollupApplied=false` → recompute(pending)+recompute(org) → `markRollupApplied`.
   - `reconcileSweep.ts` — action entry: `hot`→existence(recent); `cold`→existence(full)+dirty.
@@ -129,10 +129,10 @@ Fields: `cursor` (channel position + `LastEvaluatedKey`), `hasMore`, `lease` (to
 | Layer | Coverage |
 |---|---|
 | `markRollupApplied` (unit) + emit regression | helper does `SET rollupApplied=:t REMOVE rollupPendingOrgId`; `emitTimelineEvent` suite still green after the extraction |
-| `sweepState` (unit, mocked ddb) | acquire-lease skips when an active lease exists; lease = `max(2×timeout,5min)`; per-page persist advances cursor + heartbeat; final page clears cursor + releases; admin override cursor |
-| `existencePass` (unit, mocked store/emit/builders) | missing → emit with correct id/args; present → no emit; deterministic channel order; each channel incl. `order_stage_changed` **only for STATUS_CHANGE logs**, `quote_sent` **only for QUOTATION docs**, one `logistics_milestone` per entry; hot filters `updatedAt>cutoff`; per-record error isolation; pagination (`limit`→cursor) |
+| `sweepState` (unit, mocked ddb) | acquire-lease skips when an active lease exists; lease = `max(2×timeout,5min)`; per-page persist advances cursor + heartbeat **conditioned on the lease token** (stale token → conditional failure); final page clears cursor + releases (also token-conditioned); admin override cursor |
+| `existencePass` (unit, mocked store/emit/builders) | missing → emit with correct id/args; present → no emit; deterministic channel order; each channel incl. `order_stage_changed` **only for STATUS_CHANGE logs**, `quote_sent` **only for QUOTATION docs**, one `logistics_milestone` per *usable* entry (legacy entries missing `toStage`/`timestamp` skipped); hot filters each channel by **its own recency field** (`submittedAt` rfq/lead, `updatedAt` order/logistics) `>cutoff`; per-record error isolation; channel cursor `{channel, key}` pagination |
 | `dirtyRollupPass` (unit) | dirty rows → recompute(pendingOrgId)+recompute(orgId)+`markRollupApplied`; sentinel `unresolved-` skipped; none dirty → no-op; pagination |
-| `reconcileSweep` + handler (unit) | hot→existence only; cold→both passes; lease-held→skip; summary shape; `{action:'reconcileSweep'}` dispatches; emit/AppSync paths intact |
+| `reconcileSweep` + handler (unit) | hot→existence only; cold→both passes; lease-held→skip; **whole-pass throw caught (logged `crm.sweep.pass_failed`, failed summary) and cold dirty-rollup still runs**; summary shape; `{action:'reconcileSweep'}` dispatches; emit/AppSync paths intact |
 | backend (typecheck) | `Rule` + `RuleTargetInput` + 120s timeout |
 
 ---

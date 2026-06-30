@@ -143,17 +143,29 @@ describe('sweepState', () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('held'), { name: 'ConditionalCheckFailedException' }));
     expect(await acquireLease('cold', 'existence', 120, 'now-iso')).toBeNull();
   });
-  it('persistPage writes cursor + counters + heartbeat without clearing the lease', async () => {
+  it('persistPage writes cursor + counters + heartbeat, conditioned on the lease token', async () => {
     mockSend.mockResolvedValueOnce({});
-    await persistPage('cold', 'existence', { cursor: { k: 1 }, hasMore: true, counters: { scanned: 10 }, leaseExpiresAt: 'later' });
+    await persistPage('cold', 'existence', 'tok', { cursor: { k: 1 }, hasMore: true, counters: { scanned: 10 }, leaseExpiresAt: 'later' });
     const upd = mockSend.mock.calls[0][0].input;
     expect(JSON.stringify(upd)).toContain('hasMore');
     expect(JSON.stringify(upd)).toContain('cursor');
+    expect(upd.ConditionExpression).toBe('lease = :token');
+    expect(upd.ExpressionAttributeValues[':token']).toBe('tok');
   });
-  it('releaseLease clears cursor + lease on completion', async () => {
+  it('persistPage rejects when the lease token is stale (another owner re-acquired)', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('stale'), { name: 'ConditionalCheckFailedException' }));
+    await expect(persistPage('cold', 'existence', 'old', { cursor: {}, hasMore: true, counters: {}, leaseExpiresAt: 'x' })).rejects.toThrow();
+  });
+  it('releaseLease clears cursor + lease, conditioned on the lease token', async () => {
     mockSend.mockResolvedValueOnce({});
-    await releaseLease('cold', 'existence', { lastSummary: { scanned: 10 } });
-    expect(mockSend).toHaveBeenCalled();
+    await releaseLease('cold', 'existence', 'tok', { lastSummary: { scanned: 10 } });
+    const upd = mockSend.mock.calls[0][0].input;
+    expect(upd.ConditionExpression).toBe('lease = :token');
+    expect(upd.ExpressionAttributeValues[':token']).toBe('tok');
+  });
+  it('releaseLease rejects when the lease token is stale', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('stale'), { name: 'ConditionalCheckFailedException' }));
+    await expect(releaseLease('cold', 'existence', 'old', { lastSummary: {} })).rejects.toThrow();
   });
   it('readState returns the stored item or a default', async () => {
     mockSend.mockResolvedValueOnce({ Item: { cursor: { k: 2 }, hasMore: true } });
@@ -216,23 +228,28 @@ export async function acquireLease(mode: SweepMode, pass: SweepPass, lambdaTimeo
   }
 }
 
-// Persist progress AFTER each page: cursor + counters + a lease heartbeat (keeps the pass owning the lease).
-export async function persistPage(mode: SweepMode, pass: SweepPass, p: { cursor?: Record<string, unknown>; hasMore: boolean; counters: Record<string, number>; leaseExpiresAt: string }): Promise<void> {
+// Persist progress AFTER each page: cursor + counters + a lease heartbeat. Conditioned on `lease = :token`
+// so ONLY the current owner can advance the cursor — if a stale invocation (whose lease expired and was
+// re-acquired by another fire) tries to persist, the conditional fails and the write is rejected.
+export async function persistPage(mode: SweepMode, pass: SweepPass, leaseToken: string, p: { cursor?: Record<string, unknown>; hasMore: boolean; counters: Record<string, number>; leaseExpiresAt: string }): Promise<void> {
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: stateKey(mode, pass),
     UpdateExpression: 'SET #c = :c, hasMore = :h, counters = :n, leaseExpiresAt = :exp',
+    ConditionExpression: 'lease = :token',
     ExpressionAttributeNames: { '#c': 'cursor' },
-    ExpressionAttributeValues: { ':c': p.cursor ?? null, ':h': p.hasMore, ':n': p.counters, ':exp': p.leaseExpiresAt },
+    ExpressionAttributeValues: { ':c': p.cursor ?? null, ':h': p.hasMore, ':n': p.counters, ':exp': p.leaseExpiresAt, ':token': leaseToken },
   }));
 }
 
-// Final page: clear cursor + release lease, record summary + completion.
-export async function releaseLease(mode: SweepMode, pass: SweepPass, p: { lastSummary: Record<string, unknown> }): Promise<void> {
+// Final page: clear cursor + release lease, record summary + completion. Also conditioned on `lease = :token`
+// so a stale owner can't clear a lease another fire now holds.
+export async function releaseLease(mode: SweepMode, pass: SweepPass, leaseToken: string, p: { lastSummary: Record<string, unknown> }): Promise<void> {
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: stateKey(mode, pass),
     UpdateExpression: 'SET hasMore = :f, lastSummary = :s, lastCompletedAt = :now REMOVE #c, lease, leaseExpiresAt',
+    ConditionExpression: 'lease = :token',
     ExpressionAttributeNames: { '#c': 'cursor' },
-    ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString() },
+    ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString(), ':token': leaseToken },
   }));
 }
 ```
@@ -262,7 +279,7 @@ This is the single place encoding the **live-emit-mirroring invariant**. Each fu
 - [ ] **Step 1: Write the failing test**
 
 ```typescript
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { rfqEvents, leadEvents, orderCreatedEvents, orderStageEvents, quoteEvents, logisticsEvents } from './sourceToEvents';
 
 describe('sourceToEvents (pure, mirrors live-emit)', () => {
@@ -303,16 +320,20 @@ describe('sourceToEvents (pure, mirrors live-emit)', () => {
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('tev-quote-doc-1');
   });
-  it('logisticsEvents → one per milestoneLog entry, internalOnly + org passthrough', () => {
+  it('logisticsEvents → one per usable entry; skips legacy entries missing id/toStage/timestamp', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = logisticsEvents(
       { caseId: 'lc-1', caseType: 'SAMPLE', milestoneLog: [
         { id: 'mlog-x', action: 'CASE_CREATED', toStage: 'DRAFT', timestamp: '2026-06-01T00:00:00Z', internalOnly: false },
         { id: 'mlog-y', action: 'STAGE_ADVANCED', toStage: 'SHIPPED', fromStage: 'DRAFT', timestamp: '2026-06-02T00:00:00Z', internalOnly: true },
+        { id: 'mlog-z', action: 'NOTE', timestamp: '2026-06-03T00:00:00Z', internalOnly: false }, // legacy: no toStage → skipped
       ] },
       'x.com',
     );
     expect(out.map((e) => e.id)).toEqual(['tev-logistics-lc-1-log-mlog-x', 'tev-logistics-lc-1-log-mlog-y']);
     expect(out[1].args.isInternalOnly).toBe(true);
+    expect(warnSpy).toHaveBeenCalled(); // malformed-skip is logged, not silent
+    warnSpy.mockRestore();
   });
 });
 ```
@@ -364,14 +385,20 @@ export function quoteEvents(order: { orderId: string; matchedOrgId?: string | nu
     .map(({ d, docId }) => withId(buildQuoteSentEmitArgs(order, { id: docId!, fileName: d.fileName, uploadedAt: d.uploadedAt })));
 }
 
-export function logisticsEvents(c: { caseId: string; caseType?: string | null; milestoneLog?: Array<{ id?: string; action: string; toStage: string; fromStage?: string | null; timestamp: string; internalOnly?: boolean }> }, matchedOrgId: string | null): ExpectedEvent[] {
-  return (c.milestoneLog ?? [])
-    .filter((m) => !!m.id)
-    .map((m) => withId(buildLogisticsMilestoneEmitArgs(
-      { caseId: c.caseId, caseType: c.caseType },
-      { id: m.id!, toStage: m.toStage, fromStage: m.fromStage ?? null, timestamp: m.timestamp, internalOnly: m.internalOnly ?? false, action: m.action },
-      matchedOrgId,
-    )));
+// `toStage`/`timestamp` are OPTIONAL on the source LogisticsLogEntry (legacy entries predate the
+// stable-id + structured-stage fields). Skip entries missing id/toStage/timestamp rather than emit a
+// malformed event; log a count so silent drops are visible (this is an audit tool).
+export function logisticsEvents(c: { caseId: string; caseType?: string | null; milestoneLog?: Array<{ id?: string; action: string; toStage?: string | null; fromStage?: string | null; timestamp?: string; internalOnly?: boolean }> }, matchedOrgId: string | null): ExpectedEvent[] {
+  const entries = c.milestoneLog ?? [];
+  const usable = entries.filter((m) => !!m.id && !!m.toStage && !!m.timestamp);
+  if (usable.length !== entries.length) {
+    console.warn(JSON.stringify({ event: 'crm.sweep.logistics.skipped_malformed', caseId: c.caseId, skipped: entries.length - usable.length }));
+  }
+  return usable.map((m) => withId(buildLogisticsMilestoneEmitArgs(
+    { caseId: c.caseId, caseType: c.caseType },
+    { id: m.id!, toStage: m.toStage!, fromStage: m.fromStage ?? null, timestamp: m.timestamp!, internalOnly: m.internalOnly ?? false, action: m.action },
+    matchedOrgId,
+  )));
 }
 ```
 
@@ -771,6 +798,17 @@ describe('reconcileSweep', () => {
     await reconcileSweep({ mode: 'hot', limit: 100 });
     expect(runExistencePage).not.toHaveBeenCalled();
   });
+  it('isolates a whole-pass failure (logs pass_failed) and still runs the cold dirty-rollup pass', async () => {
+    runExistencePage.mockRejectedValueOnce(new Error('scan boom'));
+    runDirtyRollupPage.mockResolvedValueOnce({ counters: { dirtyFound: 1, repaired: 1, errors: 0 }, hasMore: false });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await reconcileSweep({ mode: 'cold', limit: 100 });
+    expect(out.summary.existence).toMatchObject({ failed: true });
+    expect(runDirtyRollupPage).toHaveBeenCalled();          // existence failure did NOT block dirty-rollup
+    expect(out.summary.dirty).toMatchObject({ repaired: 1 });
+    expect(releaseLease).toHaveBeenCalledTimes(1);           // only dirty released; the failed existence pass left its lease to expire
+    errSpy.mockRestore();
+  });
 });
 ```
 
@@ -791,28 +829,39 @@ const LAMBDA_TIMEOUT_SEC = 120; // keep in sync with crm-api/resource.ts
 const HOT_CUTOFF_MS = 24 * 60 * 60 * 1000;
 const MAX_PAGES_PER_INVOCATION = 50; // safety bound within the 120s timeout
 
+const LEASE_MS = Math.max(2 * LAMBDA_TIMEOUT_SEC, 300) * 1000; // longer than any single invocation
+
 export interface SweepArgs { mode: SweepMode; limit?: number; cursor?: Record<string, unknown>; }
 type PageResult = { counters: Record<string, number>; cursor?: unknown; hasMore: boolean };
+type PassSummary = Record<string, number> | { skipped: true } | { failed: true; error: string };
 
 // Run a pass under its own lease, LOOPING pages and PERSISTING AFTER EACH page (cursor + counters +
-// lease heartbeat); release on completion. A crash mid-pass leaves a durable cursor + an expiring
-// lease, so the next fire resumes from the last persisted page. An admin override cursor is honored.
-async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: unknown, runner: (cursor: unknown) => Promise<PageResult>): Promise<Record<string, number> | { skipped: true }> {
-  const nowIso = new Date().toISOString();
-  const lease = await acquireLease(mode, pass, LAMBDA_TIMEOUT_SEC, nowIso);
-  if (!lease) return { skipped: true };
-  const state = await readState(mode, pass);
-  let cursor: unknown = overrideCursor ?? state.cursor;
-  const total: Record<string, number> = {};
-  const leaseExpiresAt = new Date(Date.parse(nowIso) + Math.max(2 * LAMBDA_TIMEOUT_SEC, 300) * 1000).toISOString();
-  for (let page = 0; page < MAX_PAGES_PER_INVOCATION; page++) {
-    const { counters, cursor: next, hasMore } = await runner(cursor);
-    for (const [k, v] of Object.entries(counters)) total[k] = (total[k] ?? 0) + v;
-    cursor = next;
-    if (!hasMore) { await releaseLease(mode, pass, { lastSummary: total }); return total; }
-    await persistPage(mode, pass, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: total, leaseExpiresAt });
+// a freshly-computed lease heartbeat); release on completion. Every state write carries the lease
+// token, so a stale invocation can't corrupt a pass another fire now owns. A WHOLE-PASS throw
+// (scan/query/state error, or a lost-lease conditional failure) is CAUGHT here: it is logged as
+// `crm.sweep.pass_failed`, the lease is left to expire (NOT released), and a failed summary is
+// returned — so the caller's other pass still runs and the next fire resumes from the persisted
+// cursor. An admin override cursor is honored.
+async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: unknown, runner: (cursor: unknown) => Promise<PageResult>): Promise<PassSummary> {
+  try {
+    const lease = await acquireLease(mode, pass, LAMBDA_TIMEOUT_SEC, new Date().toISOString());
+    if (!lease) return { skipped: true };
+    const state = await readState(mode, pass);
+    let cursor: unknown = overrideCursor ?? state.cursor;
+    const total: Record<string, number> = {};
+    for (let page = 0; page < MAX_PAGES_PER_INVOCATION; page++) {
+      const { counters, cursor: next, hasMore } = await runner(cursor);
+      for (const [k, v] of Object.entries(counters)) total[k] = (total[k] ?? 0) + v;
+      cursor = next;
+      if (!hasMore) { await releaseLease(mode, pass, lease, { lastSummary: total }); return total; }
+      const leaseExpiresAt = new Date(Date.now() + LEASE_MS).toISOString(); // per-page heartbeat
+      await persistPage(mode, pass, lease, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: total, leaseExpiresAt });
+    }
+    return total; // hit the page budget; cursor is persisted + lease expires → the next fire resumes
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'crm.sweep.pass_failed', mode, pass, error: err instanceof Error ? err.message : String(err) }));
+    return { failed: true, error: err instanceof Error ? err.message : String(err) };
   }
-  return total; // hit the page budget; cursor is persisted + lease expires → the next fire resumes
 }
 
 export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode; summary: Record<string, unknown> }> {
@@ -820,6 +869,8 @@ export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode
   const cutoffIso = new Date(Date.now() - HOT_CUTOFF_MS).toISOString();
   const summary: Record<string, unknown> = {};
 
+  // runPass never throws — it catches its own pass failure — so the cold dirty-rollup pass runs
+  // independently of the existence pass's outcome.
   summary.existence = await runPass(args.mode, 'existence', args.cursor, (cursor) =>
     runExistencePage({ mode: args.mode, limit, cursor: cursor as never, cutoffIso: args.mode === 'hot' ? cutoffIso : undefined }));
 
@@ -908,7 +959,7 @@ git commit -m "feat(crm-api): reconcileSweep action dispatch + 120s timeout (2C-
 
 In `amplify/backend.ts`:
 - Add `RuleTargetInput` to the `aws-cdk-lib/aws-events` import (line ~68: `import { Rule, Schedule, RuleTargetInput } from 'aws-cdk-lib/aws-events';`).
-- Inside the existing `if (!isSandbox) { ... }` block (the Tender-Watch cron block, ~`:973-995`) — or a new `if (!isSandbox)` block in the same stack — add:
+- Add the Rules to **`feedbackStack`** — confirmed (`amplify/backend.ts:401`) as the stack that creates the `intelligenceTable` and grants `backend.crmApi` read/write to it (`amplify/backend.ts:531`), so the target Lambda lives in the same stack (no cross-stack target). Guard with `if (!isSandbox)` (the module-level const at `amplify/backend.ts:596`). **Placement:** add the block AFTER line 596 (so `isSandbox` is defined) — e.g. alongside the existing `if (!isSandbox)` cron blocks (~`:980+`); `feedbackStack` and `backend.crmApi` are both in scope there. Add a sibling `if (!isSandbox) { ... }` block:
 ```typescript
 // CRM timeline reconciliation sweep (durability backstop for the async emit projection).
 new Rule(feedbackStack, 'CrmSweepHotRule', {
@@ -924,7 +975,7 @@ new Rule(feedbackStack, 'CrmSweepColdRule', {
   })],
 });
 ```
-> Use the correct stack variable for these Rules — `feedbackStack` is where the intelligence table + crm-api live (verify; the Tender Rules use `tenderWatchStack`). Place the crm Rules in the stack that already references `backend.crmApi` to avoid cross-stack target issues. Confirm `backend.crmApi` is the registered name (it is, from P1) and that `LambdaFunctionTarget` accepts the `{ event }` options object (it does — `aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`).
+> Stack is **`feedbackStack`** (confirmed above) — the same stack that owns the intelligence table and grants `backend.crmApi`, so the Lambda target is in-stack. `backend.crmApi` is the registered name (from P1). `LambdaFunctionTarget` accepts the `{ event }` options object (`aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`). The `isSandbox` flag already exists in `backend.ts` (Tender crons use it); reuse it — do not redefine.
 
 - [ ] **Step 2: Typecheck**
 
@@ -977,12 +1028,12 @@ git commit -m "chore(crm-api): 2C-sweep complete — reconciliation sweep live" 
 - §2 cron `!isSandbox` + `RuleTargetInput`, 120s timeout → Tasks 7, 8. ✓
 - §3 existence pass: deterministic channel order, builders, live-emit-mirroring (STATUS_CHANGE-only, QUOTATION-only, per-milestone), hot-recent/cold-full, cheapest-access-path/scan-fallback → Tasks 3, 4. ✓
 - §4 dirty-rollup: scan `rollupApplied=false` (no GSI), recompute pending+org, `markRollupApplied`, sentinel skip → Tasks 1, 5. ✓
-- §5 per-pass durable cursor/lease (`CRM_SWEEP#<mode>#<pass>`), lease=`max(2×timeout,5min)`, per-page persist, override cursor, error isolation, summary → Tasks 2, 6 (+ error isolation in Tasks 4/5). ✓
+- §5 per-pass durable cursor/lease (`CRM_SWEEP#<mode>#<pass>`), lease=`max(2×timeout,5min)`, **token-conditioned** per-page persist (per-page heartbeat expiry), override cursor, per-record error isolation, **whole-pass catch → `pass_failed` + cold dirty-rollup still runs**, summary → Tasks 2, 6 (+ error isolation in Tasks 4/5). ✓
 - §6 `markRollupApplied` extraction + sentinel-noop verification → Task 1 (recompute no-op confirmed; Task 5 keeps a defensive `unresolved-` skip). ✓
 - §7 test layers → each task's tests + Task 9. ✓
 
 **Deferred (per §8, not in this plan):** void reconciliation, analytics rollup (2C-analytics), `rollupApplied` GSI, admin trigger UI (Plan 3), `BatchGetItem`.
 
-**Placeholder scan:** none. Source-row shapes are now **baked** (no "confirm later"): the existence pass (Task 4) discriminates source channels by **PK prefix + `SK='META'`** (source rows carry NO `entityType`), with per-channel hot-recency (`submittedAt` for rfq/lead, `updatedAt` for order/logistics) and stored DOC `docId` — all verified against the live RFQ/LEAD/ORDER/LOGISTICS writes. The dirty-rollup pass (Task 5) filters the **materialized** `TLEVENT#` rows on `entityType = 'TIMELINE_EVENT'`, which those rows DO carry (`emitTimelineEvent` sets it). The only remaining `> NOTE:` (Task 8 stack/cron variable) instructs the implementer to confirm the real backend identifier by reading `amplify/backend.ts` — binding, not guessing.
+**Placeholder scan:** none. Source-row shapes are now **baked** (no "confirm later"): the existence pass (Task 4) discriminates source channels by **PK prefix + `SK='META'`** (source rows carry NO `entityType`), with per-channel hot-recency (`submittedAt` for rfq/lead, `updatedAt` for order/logistics) and stored DOC `docId` — all verified against the live RFQ/LEAD/ORDER/LOGISTICS writes. The dirty-rollup pass (Task 5) filters the **materialized** `TLEVENT#` rows on `entityType = 'TIMELINE_EVENT'`, which those rows DO carry (`emitTimelineEvent` sets it). Task 8's stack is now resolved to **`feedbackStack`** (confirmed at `amplify/backend.ts:401` table-owner + `:531` crm-api grant; `isSandbox` const at `:596`) — no "verify" hedging left.
 
-**Type consistency:** `ExpectedEvent { id, args }` (Task 3) consumed by `reconcileExpectedEvents`/`runExistencePage` (Task 4). `SweepMode`/`SweepPass`/state helpers (Task 2) used by `reconcileSweep` (Task 6). `markRollupApplied(id)` (Task 1) used by `dirtyRollupPass` (Task 5) + emit. `runExistencePage`/`runDirtyRollupPage` return `{ counters, cursor?, hasMore }` consumed identically by `runPass` (Task 6).
+**Type consistency:** `ExpectedEvent { id, args }` (Task 3) consumed by `reconcileExpectedEvents`/`runExistencePage` (Task 4). `SweepMode`/`SweepPass`/state helpers (Task 2) used by `reconcileSweep` (Task 6). `persistPage(mode, pass, leaseToken, {...})` / `releaseLease(mode, pass, leaseToken, {...})` (Task 2) — the `leaseToken` 3rd arg is threaded from `acquireLease`'s return through `runPass` (Task 6). `markRollupApplied(id)` (Task 1) used by `dirtyRollupPass` (Task 5) + emit. `runExistencePage`/`runDirtyRollupPage` return `{ counters, cursor?, hasMore }` consumed identically by `runPass` (Task 6), whose `PassSummary` is `Record<string,number> | { skipped: true } | { failed: true, error }`.
