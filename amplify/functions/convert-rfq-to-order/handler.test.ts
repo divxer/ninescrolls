@@ -37,6 +37,12 @@ vi.mock('../../lib/organization/invoke-org-api', () => ({
     invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
 }));
 
+// Mock CRM timeline emit (fire-and-forget; helper swallows its own dispatch failures)
+const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/crm/invoke-crm-api', () => ({
+    emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+}));
+
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 global.fetch = mockFetch;
 
@@ -83,6 +89,7 @@ describe('convert-rfq-to-order handler', () => {
         mockPut.mockResolvedValue({});
         mockUpdate.mockResolvedValue({});
         mockInvokeOrgApi.mockResolvedValue({ matchedOrgId: null });
+        mockEmitTimelineEventToCrm.mockResolvedValue(undefined);
 
         const mod = await import('./handler');
         handler = mod.handler;
@@ -176,5 +183,48 @@ describe('convert-rfq-to-order handler', () => {
         const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
         const result = await handler(event, {} as never, (() => {}) as never);
         expect((result as { statusCode: number }).statusCode).toBe(200);
+    });
+
+    it('emits order_created with the org-api matchedOrgId (finalMatchedOrgId)', async () => {
+        // RFQ had no prior match; org-api upsert resolves the org → emit must use that value.
+        mockGet.mockResolvedValue({ Item: { ...PENDING_RFQ, matchedOrgId: undefined } });
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford-upserted' });
+
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
+        const result = await handler(event, {} as never, (() => {}) as never);
+        const body = JSON.parse((result as { body: string }).body);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockEmitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+
+        const emitArg = mockEmitTimelineEventToCrm.mock.calls[0][0] as {
+            kind: string;
+            sourceEntityId: string;
+            resolveInput: { matchedOrgId?: string };
+            payload: { rfqId?: string | null };
+        };
+        expect(emitArg.kind).toBe('order_created');
+        expect(emitArg.sourceEntityId).toBe(body.orderId);
+        expect(emitArg.payload.rfqId).toBe('rfq-20260310-abc123');
+        // finalMatchedOrgId = orgResult.matchedOrgId (org-api won)
+        expect(emitArg.resolveInput.matchedOrgId).toBe('org-stanford-upserted');
+    });
+
+    it('falls back to the RFQ existing matchedOrgId when org-api returns null', async () => {
+        // RFQ already matched; org-api returns null → emit must keep the RFQ's existing value.
+        mockGet.mockResolvedValue({ Item: { ...PENDING_RFQ, matchedOrgId: 'org-stanford' } });
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: null });
+
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(mockEmitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+
+        const emitArg = mockEmitTimelineEventToCrm.mock.calls[0][0] as {
+            resolveInput: { matchedOrgId?: string };
+        };
+        // finalMatchedOrgId = rfq.matchedOrgId (org-api returned null)
+        expect(emitArg.resolveInput.matchedOrgId).toBe('org-stanford');
     });
 });
