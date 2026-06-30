@@ -1,7 +1,7 @@
 # Customer 360 Timeline — Phase 1 Design Spec
 
 **Date:** 2026-06-29
-**Status:** Approved for planning
+**Status:** Approved for planning (with required clarifications — see §10)
 **Scope:** Phase 1 of a multi-phase Customer Intelligence Platform for NineScrolls
 
 ---
@@ -49,7 +49,7 @@ This is too large for one spec. It is decomposed into independent spec → plan 
 | Phase | Deliverable | One-liner |
 |---|---|---|
 | **P1 (this spec)** | Materialized `TimelineEvent` + lightweight `Contact` + write-time org/contact resolution + backfill of structured data + upgraded Organization 360 UI + manual note/email/call entry | Make existing data **trustworthy, persisted, visible** |
-| P2 | Gmail OAuth / Twilio / automated comms sync; deeper entity resolution (auto org/contact matching, fuzzy match, merge automation, behavior-score write-back) | Upgrade "good-enough heuristics" into "reliable automation" |
+| P2 | Gmail OAuth / Twilio / automated comms sync; deeper entity resolution (auto org/contact matching, fuzzy match, **`personId` / Contact merge & multi-identity**, behavior-score write-back) | Upgrade "good-enough heuristics" into "reliable automation" |
 | P3 | Sales workflow (follow-up reminders, Next Action, Deal Stage / board, quote-expiry tracking) | Grow proactive actions on top of the Timeline |
 
 ### Chosen architecture: Scheme A — Materialized Timeline
@@ -86,8 +86,7 @@ New persisted entities follow the **`a.customType` + Lambda + DynamoDB + GSI** p
 ### 3.1 `TimelineEvent`
 
 ```
-id                deterministic → tev-{sourceEntityType}-{sourceEntityId}-{kind}[-{seq}]
-                  (re-emit / backfill UPSERTS the same row; never duplicates)
+id                deterministic, built from a STABLE source key (never a mutable seq) — see §3.5
 orgId             resolved at write; if unresolvable → unresolved-{sourceEntityType}-{sourceEntityId}
                   (per-event id — NO global UNRESOLVED partition / hot-key)
 resolutionStatus  resolved | unresolved | manually_linked
@@ -103,7 +102,8 @@ kind              site_visit_session | rfq_submitted | rfq_status_changed | quot
                   note | call | email_manual | ...
 summary           one-line, render-ready ("Submitted RFQ for ICP-1000W")
 sourceEntityType / sourceEntityId   pointer back to the authoritative record
-isInternalOnly    bool  (reuse Logistics internal/visible concept; hidden by default in UI)
+isInternalOnly    bool  (reuse Logistics internal/visible concept; hidden by default AND
+                         enforced server-side — see §8.1)
 voided            bool  (source cancelled/deleted → greyed, not removed)
 createdBy         operator (manual entries)
 payload           json  (channel-specific extras)
@@ -123,7 +123,7 @@ createdAt / updatedAt
 ### 3.2 `Contact` (lightweight, P1)
 
 ```
-contactId       deterministic from normalized email
+contactId       deterministic from normalized email (P1 trade-off — see note)
 email           required, lowercased/trimmed   ← the ONLY match key in P1
 name / title / role
 phone?          reserved for P2 Twilio matching; nullable
@@ -135,6 +135,18 @@ createdAt / updatedAt
 ```
 
 **GSIs:** `byEmail` (email), `byOrg` (orgId). No fuzzy/name matching, no merge automation (P2).
+
+> **P1 trade-off — email-derived `contactId`:** in P1 `contactId` is derived from the normalized
+> email and is **intentionally non-mergeable automatically** — if a person changes email they
+> appear as two contacts. This is accepted for P1. **P2** introduces a generated `personId` plus
+> a multi-identity model (sketch below) so a person can hold several emails/phones and contacts
+> can be merged. P1 code should not assume `contactId == hash(email)` is permanent.
+>
+> ```
+> # P2 direction (NOT built in P1):
+> Contact         { contactId(generated), primaryEmail, emails[], ... }
+> ContactIdentity { type = email|phone|gmail|twilio, value, contactId }
+> ```
 
 ### 3.3 `Organization` — minimal additions
 
@@ -161,6 +173,27 @@ reason
 timestamp
 ```
 
+### 3.5 Deterministic id rules (REQUIRED — must use stable source keys, never mutable seq)
+
+Ids must key off **stable, immutable source identifiers** (a log-entry id, a version id) — never
+a recomputable sequence number, which shifts if history is reordered, deleted, or inserted.
+
+```
+order_created          tev-order-{orderId}-created
+order_stage_changed    tev-order-{orderId}-stage-{orderLogId}
+rfq_submitted          tev-rfq-{rfqId}-submitted
+rfq_status_changed     tev-rfq-{rfqId}-status-{statusLogId}        (or {changedAtHash} fallback)
+quote_sent             tev-quote-{quoteVersionId}                  (per quote version, not Order)
+lead_captured          tev-lead-{leadId}
+logistics_milestone    tev-logistics-{caseId}-log-{logEntryId}
+site_visit_session     tev-analytics-session-{sessionId}          (one per session — see §4.3)
+manual (note/call/...) tev-manual-{generatedId}
+```
+
+> **Planning dependency:** if a source table does **not** yet expose a stable per-event id
+> (e.g. `OrderLog.id`, a logistics log-entry id, an RFQ status-log id, a quote version id),
+> **planning must add it first**. This is a hard prerequisite for idempotency.
+
 ### Design invariants
 1. **Nothing is ever dropped** — unresolvable events get a per-event `unresolved-…` orgId and
    surface in the Needs-Linking queue; the write never fails.
@@ -184,7 +217,7 @@ cause of the "untrustworthy" feeling.
 | 2 | `existing_matchedOrgId` | source carries `matchedOrgId` (e.g. `Order.matchedOrgId`) | 1.0 |
 | 3 | `contact_email_exact` | existing `Contact` with that email already has an `orgId` | 0.9 |
 | 4 | `email_domain_exact` | email domain = Org `primaryDomain`/`aliasDomains`, **excluding free domains** | 0.95 |
-| 5 | `email_domain_new` | corporate domain, no Org yet → **auto-create Org** (`status=review`, `createdByResolution=true`) | 0.8 |
+| 5 | `email_domain_new` | corporate domain, no Org yet → **auto-create Org** (`status=review`, `createdByResolution=true`). **Strong-signal channels only — see guard** | 0.8 |
 | 6 | `organization_name_match` | normalized name == Org `displayName`/alias (**exact-normalized, no fuzzy**) | 0.7 |
 | 7 | `visitor_prior_event` | `visitorId` resolved to an Org on an earlier event — **analytics/session rollups ONLY**, never RFQ/Lead/Order | 0.5 |
 | — | `unresolved` | none matched → `unresolved-{type}-{id}`, Needs-Linking queue | 0 |
@@ -194,12 +227,18 @@ cause of the "untrustworthy" feeling.
 > Org's domain aliases are not yet maintained — trust the Contact, do not create a duplicate Org.
 
 **Free-domain handling:** personal-domain emails (gmail/outlook/qq/163/yahoo…) skip steps 4–5
-but may still hit 3 or 6; otherwise `unresolved` rather than spawning junk orgs. Auto-create
-(step 5) is **corporate domains only**.
+but may still hit 3 or 6; otherwise `unresolved` rather than spawning junk orgs.
+
+**`email_domain_new` auto-create guards (anti-garbage):**
+- **Strong-signal channels only** — auto-create is allowed when the source is **RFQ / Lead /
+  Order**. An **analytics-only** event (anonymous visit + IP/org inference) **must NOT**
+  auto-create an Organization; it resolves against existing orgs or goes `unresolved`.
+- **Domain denylist** — never auto-create for: free email providers, generic hosting providers,
+  proxy / cloud / CDN domains, and a maintained known-vendor list. Such domains go `unresolved`
+  (or name-match) instead, keeping the Review-New-Orgs queue clean.
 
 **`visitor_prior_event` restriction:** allowed only for analytics/session rollups. Never used
-for strong-signal records (RFQ/Lead/Order) to avoid shared-PC / proxy contamination of real
-customers.
+for strong-signal records (RFQ/Lead/Order) to avoid shared-PC / proxy contamination.
 
 ### 4.2 Contact resolution (lightweight)
 
@@ -208,11 +247,18 @@ customers.
 - No match → create `Contact` (deterministic id from email), attach resolved `orgId`.
 - `linkLocked` Contact/Org is never auto-overwritten.
 
-### 4.3 Analytics exception
+### 4.3 Analytics session rollup (definition)
 
 `AnalyticsEvent` (high-volume public `a.model`) is **not** resolved/emitted per page view. A
-session is rolled up into a **single** `site_visit_session` event at session close via the
-existing `server-track` path. Resolution stays off the hot public write path.
+session is rolled up into a **single** `site_visit_session` event. Session lifecycle:
+
+- **Session close = 30 min inactivity.** A scheduled rollup processes sessions whose
+  `lastSeenAt < now − 30min` (there is rarely a real browser "close" event).
+- **One event per `sessionId`**, deterministic id `tev-analytics-session-{sessionId}` (a later
+  rollup of the same session updates the same row — page count etc. may grow until finalized).
+- Enters the Timeline only above the **signal threshold** (§5.2).
+- Resolution stays off the hot public write path; `visitor_prior_event` applies here only and
+  **never** auto-creates an Org (§4.1 guard).
 
 ---
 
@@ -222,10 +268,10 @@ existing `server-track` path. Resolution stays off the hot public write path.
 
 ```
 emitTimelineEvent({
-  source, kind, sourceEntityType, sourceEntityId,
+  source, kind, sourceEntityType, sourceEntityId, stableKey,
   occurredAt, summary, resolveInput, payload, isInternalOnly?, createdBy?
 })
-→ resolveLinks() → upsert Contact → UPSERT TimelineEvent (deterministic id) → bump Org rollups
+→ resolveLinks() → upsert Contact → UPSERT TimelineEvent (deterministic id, §3.5) → bump Org rollups
 ```
 
 ### 5.2 Catalog (P1)
@@ -238,7 +284,7 @@ emitTimelineEvent({
 | Quote (`orderApi`) | `quote_sent` | **quote document/version creation or explicit "send" action** — NOT a bare `quoteDate` edit | inherits Order resolution |
 | Logistics (`logisticsApi`) | `logistics_milestone` | each stage change / log entry; honors `internalOnly` | `relatedOrderId` → its Org |
 | Manual (`crm-api`) | `note`, `call`, `email_manual` | admin adds from 360 UI | explicit Org/Contact → `manual`, 1.0 |
-| Analytics (`server-track` rollup) | `site_visit_session` | one per session at close, **above signal threshold** | visitorId, IP-org |
+| Analytics (scheduled rollup) | `site_visit_session` | session closed (§4.3), **above signal threshold** | visitorId, IP-org |
 
 **Analytics signal threshold** — a session enters the Timeline only if it includes:
 `product_page_viewed | rfq_page_viewed | download | return_visit | session_pages ≥ 3`.
@@ -251,12 +297,12 @@ Homepage-only single-page visits never enter a customer Timeline.
 
 1. **Emit only after the source write commits** — same Lambda, after the DDB put succeeds.
    The source record is always authoritative; the Timeline is a projection.
-2. **Idempotent deterministic id** — `order_stage_changed` keyed off `OrderLog` entry id,
-   `logistics_milestone` off log-entry id, etc. Re-emit / backfill updates the same row.
+2. **Idempotent deterministic id (§3.5)** — keyed off stable log/version ids. Re-emit / backfill
+   updates the same row.
 3. **Non-blocking** — emit is wrapped; failure is logged + queued for the sweep; it **never**
    rolls back or blocks the business write.
 4. **Rollups increment on first create only** — conditional put keyed on the deterministic id,
-   so re-runs do not inflate counts. Replaces scattered per-channel counting.
+   so re-runs do not inflate counts. (Re-link consistency is handled by recompute — §7.3.)
 5. **Monotonic rollups** — `lastActivityAt = max(existing, event.occurredAt)` (and same for
    `latestRFQ/Order/LeadDate`). Backfilling old events never drags "recent activity" backwards.
 
@@ -267,13 +313,15 @@ Homepage-only single-page visits never enter a customer Timeline.
 Backfill uses the **exact same** `resolveLinks` + `emitTimelineEvent` code path as live writes
 (no parallel migration logic). Idempotent → safely re-runnable.
 
-### 6.1 Mechanism — server-side
+### 6.1 Mechanism — server-side, paginated job (one mutation = one page)
 
 A `crm-api` admin mutation `runTimelineBackfill({ channel, dryRun, cursor, limit })`:
 - Runs **inside the Lambda** (same IAM/SDK/resolver as production — avoids local-script drift).
-- **Resumable** via cursor; idempotent (re-run over a page is a no-op update).
-- Triggered from a small `scripts/backfill-timeline.ts` driver (existing `scripts/` + admin-creds
-  pattern) or an admin button.
+- **One invocation processes ONE page only** — it does **not** attempt to finish the whole
+  channel in a single call (Lambda timeout). Returns `{ nextCursor, processedCount, hasMore }`.
+- A small `scripts/backfill-timeline.ts` driver (existing `scripts/` + admin-creds pattern) — or
+  an admin button — **loops** the mutation until `hasMore == false`.
+- Idempotent (re-run over a page is a no-op update).
 
 ### 6.2 Scope
 
@@ -292,7 +340,7 @@ A `crm-api` admin mutation `runTimelineBackfill({ channel, dryRun, cursor, limit
 
 ### 6.4 Cutover
 
-1. Backfill (dry-run → real).
+1. Backfill (dry-run → real, looped to completion).
 2. Parallel-run: old `getCustomerTimeline` and new `byOrg` read; compare on known orgs (HORIBA,
    Diamond Foundry).
 3. Switch 360 UI to `TimelineEvent`. Keep old query one release as fallback, then retire.
@@ -314,23 +362,44 @@ After source DDB put succeeds, single attempt, wrapped. Success → event writte
 bumped. Failure → log + set `timelineSynced=false` on the source record (a 1-field hint, no new
 infra). Business write already committed.
 
-### 7.2 Layer 2 — scheduled reconciliation sweep (durable safety net)
-A scheduled Lambda (~every 15 min) that:
-1. For each source record, **computes the expected deterministic TimelineEvent id(s) and checks
-   existence** → missing → (re-)emit idempotently. `timelineSynced=false` is only a fast-path
-   index, **never the sole trigger** (a forgotten-emit path may have no flag at all).
-2. Runs the §6.5 reconciliation check → flags drift.
+### 7.2 Layer 2 — reconciliation sweep (hot path + cold audit)
+Existence-based: for each source record in scope, **compute the expected deterministic
+TimelineEvent id(s) and check existence** → missing → (re-)emit idempotently. `timelineSynced=false`
+is only a fast-path index, **never the sole trigger** (a forgotten-emit path may have no flag).
 
-> ⚠️ Per the Amplify env constraint, scheduled crons **fire in the live sandbox too** — this
-> sweep must be guarded with `if (!isSandbox)` so a dev sandbox does not double-process
+To avoid scanning the entire source set every 15 minutes, the sweep is **two-tier**:
+
+| Tier | Frequency | Scope |
+|---|---|---|
+| **Hot sweep** | ~every 15 min | only records with `updatedAt > now − 24h` **or** `timelineSynced=false` |
+| **Cold audit** | daily / weekly | full set, **sharded or sampled** — catches forgotten emits the hot path missed |
+
+Both also run the §6.5 reconciliation drift check.
+
+> ⚠️ Per the Amplify env constraint, scheduled crons **fire in the live sandbox too** — both
+> sweeps must be guarded with `if (!isSandbox)` so a dev sandbox does not double-process
 > production-shaped data.
 
-### 7.3 Admin queues
+### 7.3 Admin queues + re-link rollup consistency
 
 | Queue | Contains | Action |
 |---|---|---|
-| **Needs Linking** | events with `resolutionStatus=unresolved` | pick correct Org/Contact → `manually_linked` + `linkLocked` + confidence 1.0, re-point orgId, re-run rollups, **write `LinkAuditLog`**. Offer **"apply to all events from same email/domain/visitor"** — **same-domain bulk is corporate-domain only** (disabled for free domains) |
-| **Review New Orgs** | auto-created orgs (`status=review`, `createdByResolution=true`) | approve / rename / **merge into existing Org** (re-points child events; writes `LinkAuditLog`) |
+| **Needs Linking** | events with `resolutionStatus=unresolved` | pick correct Org/Contact → `manually_linked` + `linkLocked` + confidence 1.0, re-point orgId, **recompute rollups (below)**, **write `LinkAuditLog`**. Offer **"apply to all events from same email/domain/visitor"** — **same-domain bulk is corporate-domain only** (disabled for free domains) |
+| **Review New Orgs** | auto-created orgs (`status=review`, `createdByResolution=true`) | approve / rename / **merge into existing Org** (re-points child events; recompute rollups; writes `LinkAuditLog`) |
+
+**Re-link rollup consistency (REQUIRED):** a re-link / merge moves events between orgs, so
+incremental counting is **not** safe (old org would keep a stale count, new org would miss it,
+and `lastActivityAt` cannot simply decrement). Re-link therefore triggers a **full rollup
+recompute for both affected orgs**, not an incremental delta:
+
+```
+on re-link(event, oldOrgId → newOrgId):
+  recomputeRollupsForOrg(oldOrgId)   # counts, latest*Date, lastActivityAt re-derived from its events
+  recomputeRollupsForOrg(newOrgId)
+```
+
+This is a low-frequency manual operation, so a full recompute per affected org is entirely
+acceptable and is the only way to keep counts and `lastActivityAt` correct.
 
 ### 7.4 Observability
 Emit success/fail, **unresolved rate**, auto-create rate, sweep re-emit count, rollup-drift
@@ -340,7 +409,7 @@ unresolved rate spike, or sweep repeatedly re-emitting the same rows (a real bug
 ### 7.5 Edge cases (P1 stance)
 - **Source corrected** → re-emit updates the same row; `linkLocked` manual link preserved.
 - **Source voided/cancelled** → `voided=true` on its events (greyed, not removed).
-- **Contact email change / duplicate-person merge** → **P2** (no fuzzy/merge automation in P1).
+- **Contact email change / duplicate-person merge** → **P2** (`personId` + multi-identity).
 
 ---
 
@@ -368,8 +437,11 @@ Contacts (3)   ·   RFQs 2 · Orders 1 · Leads 4 · $48k · first seen 6/18
 
 - Each row carries a **resolution badge** (`domain·0.95`, `manual`, `name·0.7`), a link to the
   source record, and a **re-link** action (feeds Needs-Linking; writes `LinkAuditLog`).
-- **`internalOnly` events hidden by default**, shown only via the admin toggle — logistics
-  internals, costs, internal notes never default into the customer interaction history.
+- **`internalOnly` filtering is enforced server-side, not only in the UI (REQUIRED).** The
+  query layer must default to **excluding** `internalOnly` events; only an authenticated admin
+  query with explicit `includeInternalOnly=true` may return them. UI default-hidden + admin
+  toggle is the presentation layer; the API is the security boundary — because the Timeline will
+  carry costs, internal notes, logistics exceptions, quote strategy, and sensitive customer info.
 - Voided rows greyed.
 
 ### 8.2 Manual entry + queues + health
@@ -384,12 +456,13 @@ Contacts (3)   ·   RFQs 2 · Orders 1 · Leads 4 · $48k · first seen 6/18
 
 | Layer | Tests |
 |---|---|
-| `resolveLinks` (unit) | table-driven per ladder rung; **ordering** (contact-email beats domain — the Terry case); free-domain skips 4–5; `visitor_prior_event` rejected for RFQ/Lead/Order; auto-create stamps `review` + `createdByResolution` |
-| Emit/idempotency (unit) | deterministic id; re-emit updates not duplicates; rollup `max()` monotonic; **count-on-create-only** |
-| Catalog (unit) | each channel emits expected kind/summary; analytics threshold (homepage-only excluded; product/RFQ/download/≥3-pages included); `quote_sent` from doc/version not `quoteDate` edit |
-| Failure/sweep (integration) | emit-after-commit; failure flags + sweep **existence-based** re-emit; forgotten-emit (no flag) still caught |
-| Backfill (integration) | dry-run report counts; idempotent re-run; monotonic rollup preserved |
-| Linking/audit (integration) | unresolved → manual link → `linkLocked` survives re-emit; bulk-apply gated to corporate domain; **re-link writes `LinkAuditLog` with old/new org+contact, operator, reason, timestamp** |
+| `resolveLinks` (unit) | table-driven per ladder rung; **ordering** (contact-email beats domain — the Terry case); free-domain skips 4–5; `email_domain_new` blocked for analytics-only + denylist domains; `visitor_prior_event` rejected for RFQ/Lead/Order; auto-create stamps `review` + `createdByResolution` |
+| Emit/idempotency (unit) | **deterministic id keyed off stable log/version id** (re-emit after log reorder/insert/delete does NOT duplicate); rollup `max()` monotonic; **count-on-create-only** |
+| Catalog (unit) | each channel emits expected kind/summary; analytics threshold; analytics session id = `tev-analytics-session-{sessionId}`, one per session; `quote_sent` from doc/version not `quoteDate` edit |
+| Failure/sweep (integration) | emit-after-commit; failure flags + sweep **existence-based** re-emit; forgotten-emit (no flag) still caught; **hot vs cold sweep scope** |
+| Backfill (integration) | dry-run report counts; **paginated loop (`hasMore`/`nextCursor`)**; idempotent re-run; monotonic rollup preserved |
+| Re-link/audit (integration) | unresolved → manual link → `linkLocked` survives re-emit; **re-link triggers recompute for BOTH old & new org**; bulk-apply gated to corporate domain; **re-link writes `LinkAuditLog` with old/new org+contact, operator, reason, timestamp** |
+| Authorization (integration) | non-admin query never returns `internalOnly` events; admin `includeInternalOnly=true` does |
 
 ---
 
@@ -402,6 +475,32 @@ authoritative; the Timeline becomes a trustworthy, persisted, auditable projecti
 
 ### Reserved for later phases
 - **P2:** Gmail OAuth + Twilio sync (fields/enums already reserved); auto org/contact matching,
-  fuzzy match, duplicate-person merge automation; behavior-score write-back to Organization.
+  fuzzy match, **`personId` + multi-identity Contact merge**; behavior-score write-back to
+  Organization.
 - **P3:** Sales workflow — follow-up reminders, Next Action, Deal Stage / board, quote-expiry
   tracking — built on the Timeline.
+
+---
+
+## 10. Planning Notes / Required Clarifications
+
+These were raised in design review and **must be resolved/detailed during planning** before
+implementation. Direction is unchanged; these are engineering-correctness requirements.
+
+1. **Deterministic IDs must use stable source log/version IDs, not mutable sequence numbers**
+   (§3.5). If a source table lacks a stable per-event id (`OrderLog.id`, logistics log-entry id,
+   RFQ status-log id, quote version id), **adding it is a prerequisite task**.
+2. **Re-link must trigger a full rollup recompute for both the old and new org** — not an
+   incremental delta (§7.3). `recomputeRollupsForOrg(oldOrgId)` + `recomputeRollupsForOrg(newOrgId)`.
+3. **Analytics session close = inactivity timeout (30 min); one rollup per `sessionId`** with id
+   `tev-analytics-session-{sessionId}` (§4.3). Scheduled rollup processes `lastSeenAt < now−30min`.
+4. **`internalOnly` filtering must be enforced server-side, not only in the UI** (§8.1). The API
+   is the security boundary; admins opt in via `includeInternalOnly=true`.
+5. **`email_domain_new` auto-create is disabled for analytics-only events** and gated by a
+   free/hosting/proxy/CDN/known-vendor **denylist** (§4.1) to keep the Review queue clean.
+6. **Backfill is a paginated, job-style mutation — one invocation handles one page only**
+   (§6.1), returning `{ nextCursor, processedCount, hasMore }`; a driver loops it.
+7. **The reconciliation sweep has a hot path + a cold audit path, not a full scan every 15 min**
+   (§7.2). Both guarded with `if (!isSandbox)`.
+8. **Contact email-derived IDs are accepted for P1, but P2 `personId` / merge / multi-identity
+   must be anticipated** (§3.2) — P1 code must not hard-assume `contactId == hash(email)` forever.
