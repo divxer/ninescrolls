@@ -1841,6 +1841,8 @@ git add -A && git commit -m "chore(crm-api): P1 foundation complete — resolver
 **Plan 2 — Channel wiring + backfill + sweep:**
 - Wire `emitTimelineEvent` after each source commit: `order-api` (created/stage via the new `olog-` id / quote-doc), RFQ + Lead submit paths, `logistics-api` (milestone via `mlog-` id), and a scheduled **analytics session rollup** (30-min inactivity close, one `site_visit_session` per `sessionId`, signal threshold).
 - `OrgDomainIndex`/`OrgNameIndex` maintenance on the existing `organizationApi` org create/alias path (so `email_domain_exact`/`organization_name_match` hit for non-auto-created orgs too).
+  - **SEQUENCING DEPENDENCY (from PR #223 review):** these indexes are empty in P1. Plan 2 MUST **backfill `OrgDomainIndex`/`OrgNameIndex` from all existing `ORG#…/META` orgs BEFORE enabling `email_domain_new` auto-create in the wired channels** — otherwise an event for an existing org's domain (whose index row was never written) resolves to `email_domain_new` and `createReviewOrgFromDomain` mints a **duplicate** real org. Gate auto-create behind "indexes backfilled" or run the backfill as the first Plan 2 step.
+  - Note: CRM org rows are keyed `ORG#<id>/SK=META` (shared with `organization-api`); the `ORGDOMAIN#`/`ORGNAME#` index items keep `SK='A'` (CRM-owned partitions).
 - Paginated `runTimelineBackfill` mutation (`{nextCursor,processedCount,hasMore}`) + `scripts/backfill-timeline.ts` driver + dry-run report.
 - Two-tier reconciliation sweep (hot 15-min: recent/`timelineSynced=false`/`rollupApplied=false`; cold daily: existence-based sharded audit), guarded `if (!isSandbox)`.
 
