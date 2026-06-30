@@ -6,9 +6,17 @@ vi.mock('../lib/dynamodb.js', () => ({
   TABLE_NAME: () => 'TestTable',
 }));
 
+const emitTimelineEventToCrm = vi.fn();
+vi.mock('../../../lib/crm/invoke-crm-api', () => ({
+  emitTimelineEventToCrm: (...a: unknown[]) => emitTimelineEventToCrm(...a),
+}));
+
 import { advanceLogisticsStage } from './advanceLogisticsStage.js';
 
-beforeEach(() => send.mockReset());
+beforeEach(() => {
+  send.mockReset();
+  emitTimelineEventToCrm.mockReset();
+});
 
 const baseCase = {
   PK: 'LOGISTICS#lc-1', SK: 'META', GSI1PK: 'LOGISTICS_CASES', GSI1SK: 'x',
@@ -68,5 +76,54 @@ describe('advanceLogisticsStage', () => {
     send.mockResolvedValueOnce({ Item: null });
     await expect(advanceLogisticsStage(evt({ caseId: 'missing', targetStage: 'PRODUCTION' })))
       .rejects.toThrow(/not found/i);
+  });
+
+  it('emits a logistics_milestone, keying off the related order matchedOrgId', async () => {
+    const related = { ...baseCase, relatedOrderId: 'ord-9' };
+    send
+      .mockResolvedValueOnce({ Item: { ...related } })                              // fetchCase
+      .mockResolvedValueOnce({})                                                    // UpdateCommand
+      .mockResolvedValueOnce({ Item: { ...related, currentStage: 'PRODUCTION' } })  // buildCaseResponse
+      .mockResolvedValueOnce({ Item: { matchedOrgId: 'ORG#acme' } });              // GetCommand ORDER META
+    await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION' }));
+
+    expect(emitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+    const emitArgs = emitTimelineEventToCrm.mock.calls[0][0];
+    const appendedEntry = send.mock.calls[1][0].input.ExpressionAttributeValues[':log'][0];
+    expect(emitArgs.kind).toBe('logistics_milestone');
+    expect(emitArgs.idInput.milestoneId).toBe(appendedEntry.id);
+    expect(appendedEntry.id).toMatch(/^mlog-/);
+    expect(emitArgs.idInput.stage).toBe('PRODUCTION');
+    expect(emitArgs.isInternalOnly).toBe(false);
+    expect(emitArgs.resolveInput.matchedOrgId).toBe('ORG#acme');
+
+    // ORDER META lookup keyed off the related order id.
+    const getInput = send.mock.calls[3][0].input;
+    expect(getInput.Key).toEqual({ PK: 'ORDER#ord-9', SK: 'META' });
+  });
+
+  it('emits with undefined matchedOrgId when the case has no relatedOrderId', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { ...baseCase } })                                 // fetchCase
+      .mockResolvedValueOnce({})                                                        // UpdateCommand
+      .mockResolvedValueOnce({ Item: { ...baseCase, currentStage: 'PRODUCTION' } });    // buildCaseResponse
+    await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION' }));
+
+    expect(emitTimelineEventToCrm).toHaveBeenCalledTimes(1);
+    const emitArgs = emitTimelineEventToCrm.mock.calls[0][0];
+    expect(emitArgs.resolveInput.matchedOrgId).toBeUndefined();
+    // No ORDER META GetCommand was issued.
+    expect(send).toHaveBeenCalledTimes(3);
+  });
+
+  it('passes an internalOnly milestone through to isInternalOnly', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { ...baseCase } })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ Item: { ...baseCase, currentStage: 'PRODUCTION' } });
+    await advanceLogisticsStage(evt({ caseId: 'lc-1', targetStage: 'PRODUCTION', internalOnly: true }));
+
+    const emitArgs = emitTimelineEventToCrm.mock.calls[0][0];
+    expect(emitArgs.isInternalOnly).toBe(true);
   });
 });
