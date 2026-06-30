@@ -42,10 +42,10 @@ The sweep is **CRM's own self-healing**, not a new channel — so it lives insid
 
 Re-emit only *missing* events. For each enumerated source record, build the expected `EmitArgs` via the **same 2A builders**, compute its id, `getTimelineEvent(id)`, and `emitTimelineEvent(...)` only if absent. Re-emit is idempotent: it produces the exact id live-emit would have (stable source timestamp), so present events can never duplicate.
 
-**Deterministic channel order (for resumable cursor state):**
-`rfq → lead → order-meta → order-logs → order-docs → logistics`. The cold cursor records which channel + intra-channel `LastEvaluatedKey` it has reached, so progress resumes cleanly across heterogeneous sources without one ambiguous global cursor.
+**Deterministic channel order + cursor (resumable across heterogeneous sources):**
+`rfq → lead → order → logistics` (4 channels). The cursor is `{ channel, lastEvaluatedKey }` — it records which channel + intra-channel scan position the pass has reached, advancing channel-by-channel, so progress resumes cleanly without one ambiguous global table-scan cursor. The **`order` channel yields three event kinds** (`order_created` from META + `order_stage_changed` from `STATUS_CHANGE` `LOG#` children + `quote_sent` from `QUOTATION` `DOC#` children) by querying the order's partition (child query paginated). Each channel is discriminated by **`PK` prefix + `SK='META'`** (source META rows do **not** carry an `entityType` attribute) and uses its **own recency field** for hot (`submittedAt` for rfq/lead; `updatedAt` for order/logistics) — never one global `updatedAt` filter.
 
-**Per-channel enumeration** — use the **cheapest existing access path per source; fall back to `scan` + `FilterExpression` where no suitable GSI exists** (source item shapes are not perfectly uniform):
+**Per-channel enumeration** — use the **cheapest existing access path per source; fall back to `scan` + `FilterExpression` where no suitable GSI exists** (source item shapes are not perfectly uniform). Confirmed source shapes: RFQ `PK:RFQ#…/SK:META` (`submittedAt`, `matchedOrgId`); LEAD `PK:LEAD#…/SK:META` (`submittedAt`, `type`, `matchedOrgId`); ORDER `PK:ORDER#…/SK:META` (`createdAt`/`updatedAt`, `matchedOrgId`) with children `SK:LOG#…` (`id` olog-, `action`, `toStatus`) and `SK:DOC#${stage}#${docId}` (`docId`, `docType`, `fileName`); LOGISTICS `PK:LOGISTICS#…/SK:META` (`updatedAt`, `relatedOrderId`, `milestoneLog[]` with `id` mlog-). **None carry `entityType`.**
 
 | Channel | Source / sub-entry | Expected event(s) | Builder |
 |---|---|---|---|

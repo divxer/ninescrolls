@@ -292,11 +292,12 @@ describe('sourceToEvents (pure, mirrors live-emit)', () => {
     expect(out[0].id).toBe('tev-order-ord-1-stage-olog-a');
     expect(out[0].args).toMatchObject({ kind: 'order_stage_changed' });
   });
-  it('quoteEvents → ONLY QUOTATION docs, keyed by the doc id', () => {
+  it('quoteEvents → ONLY QUOTATION docs, keyed by the stored docId', () => {
     const order = { orderId: 'ord-1', matchedOrgId: 'x.com' };
+    // Stored DOC items use `docId` (SK: DOC#<stage>#<docId>), NOT `id`.
     const docs = [
-      { id: 'doc-1', docType: 'QUOTATION', fileName: 'q.pdf', uploadedAt: '2026-03-05T00:00:00Z' },
-      { id: 'doc-2', docType: 'PURCHASE_ORDER', fileName: 'po.pdf', uploadedAt: '2026-03-06T00:00:00Z' },
+      { docId: 'doc-1', docType: 'QUOTATION', fileName: 'q.pdf', uploadedAt: '2026-03-05T00:00:00Z' },
+      { docId: 'doc-2', docType: 'PURCHASE_ORDER', fileName: 'po.pdf', uploadedAt: '2026-03-06T00:00:00Z' },
     ];
     const out = quoteEvents(order, docs);
     expect(out).toHaveLength(1);
@@ -355,10 +356,12 @@ export function orderStageEvents(order: { orderId: string; matchedOrgId?: string
 }
 
 // MIRROR live-emit: only QUOTATION docs become quote_sent (matches order-api/confirmDocumentUpload).
-export function quoteEvents(order: { orderId: string; matchedOrgId?: string | null }, docs: Array<{ id?: string; docType: string; fileName: string; uploadedAt: string }>): ExpectedEvent[] {
+// Stored DOC items carry `docId` (not `id`); accept `id` too for forward-compat.
+export function quoteEvents(order: { orderId: string; matchedOrgId?: string | null }, docs: Array<{ docId?: string; id?: string; docType: string; fileName: string; uploadedAt: string }>): ExpectedEvent[] {
   return docs
-    .filter((d) => d.docType === 'QUOTATION' && !!d.id)
-    .map((d) => withId(buildQuoteSentEmitArgs(order, { id: d.id!, fileName: d.fileName, uploadedAt: d.uploadedAt })));
+    .map((d) => ({ d, docId: d.docId ?? d.id }))
+    .filter(({ d, docId }) => d.docType === 'QUOTATION' && !!docId)
+    .map(({ d, docId }) => withId(buildQuoteSentEmitArgs(order, { id: docId!, fileName: d.fileName, uploadedAt: d.uploadedAt })));
 }
 
 export function logisticsEvents(c: { caseId: string; caseType?: string | null; milestoneLog?: Array<{ id?: string; action: string; toStage: string; fromStage?: string | null; timestamp: string; internalOnly?: boolean }> }, matchedOrgId: string | null): ExpectedEvent[] {
@@ -397,19 +400,22 @@ The driver enumerates channels in the deterministic order, computes expected eve
 - [ ] **Step 1: Write the failing test**
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { reconcileExpectedEvents } from './existencePass';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+const mockSend = vi.fn();
+vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
+const getTimelineEventMock = vi.fn();
+vi.mock('../timelineStore', () => ({ getTimelineEvent: (id: string) => getTimelineEventMock(id) }));
+const emitMock = vi.fn();
+vi.mock('../emitTimelineEvent', () => ({ emitTimelineEvent: (a: unknown) => emitMock(a) }));
 
-describe('existence pass — reconcileExpectedEvents', () => {
+import { reconcileExpectedEvents, runExistencePage } from './existencePass';
+beforeEach(() => { mockSend.mockReset(); getTimelineEventMock.mockReset(); emitMock.mockReset(); });
+
+describe('existence pass — reconcileExpectedEvents (injected core)', () => {
   it('emits ONLY the missing events and counts them', async () => {
-    const getTimelineEvent = vi.fn()
-      .mockResolvedValueOnce({ id: 'tev-a' })   // present → skip
-      .mockResolvedValueOnce(null);             // missing → emit
+    const getTimelineEvent = vi.fn().mockResolvedValueOnce({ id: 'tev-a' }).mockResolvedValueOnce(null);
     const emit = vi.fn().mockResolvedValue(undefined);
-    const expected = [
-      { id: 'tev-a', args: { kind: 'rfq_submitted' } },
-      { id: 'tev-b', args: { kind: 'lead_captured' } },
-    ] as never[];
+    const expected = [ { id: 'tev-a', args: { kind: 'rfq_submitted' } }, { id: 'tev-b', args: { kind: 'lead_captured' } } ] as never[];
     const counters = { scanned: 0, missingReemitted: 0, errors: 0 };
     await reconcileExpectedEvents(expected, { getTimelineEvent, emit }, counters);
     expect(emit).toHaveBeenCalledTimes(1);
@@ -425,6 +431,40 @@ describe('existence pass — reconcileExpectedEvents', () => {
     await reconcileExpectedEvents(expected, { getTimelineEvent, emit }, counters);
     expect(counters).toMatchObject({ scanned: 2, missingReemitted: 1, errors: 1 });
     errSpy.mockRestore();
+  });
+});
+
+describe('existence pass — runExistencePage (PK-prefix channels + channel cursor)', () => {
+  it('discriminates rfq by PK prefix, emits the missing rfq_submitted, advances the cursor to lead', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [{ PK: 'RFQ#rfq-1', SK: 'META', submittedAt: '2026-06-19T10:00:00Z', email: 'a@x.com', equipmentCategory: 'ICP', matchedOrgId: 'x.com' }] });
+    getTimelineEventMock.mockResolvedValueOnce(null); // missing → emit
+    emitMock.mockResolvedValueOnce(undefined);
+    const out = await runExistencePage({ mode: 'cold', limit: 100 });
+    const scan = mockSend.mock.calls[0][0].input;
+    expect(scan.ExpressionAttributeValues[':pre']).toBe('RFQ#'); // discriminated by PK prefix, NOT entityType
+    expect(emitMock).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rfq_submitted', sourceEntityId: 'rfq-1' }));
+    expect(out.counters).toMatchObject({ scanned: 1, missingReemitted: 1 });
+    expect(out.cursor).toEqual({ channel: 'lead' }); // channel advanced (no LastEvaluatedKey)
+    expect(out.hasMore).toBe(true);
+  });
+  it('hot mode filters each channel by its OWN recency field (rfq → submittedAt)', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [] });
+    await runExistencePage({ mode: 'hot', limit: 100, cutoffIso: '2026-06-29T00:00:00Z' });
+    const scan = mockSend.mock.calls[0][0].input;
+    expect(scan.ExpressionAttributeNames['#r']).toBe('submittedAt');
+    expect(scan.FilterExpression).toContain('#r > :cut');
+  });
+  it('a page with a LastEvaluatedKey keeps the same channel + carries the key', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [], LastEvaluatedKey: { PK: 'RFQ#rfq-9' } });
+    const out = await runExistencePage({ mode: 'cold', limit: 100 });
+    expect(out.cursor).toEqual({ channel: 'rfq', key: { PK: 'RFQ#rfq-9' } });
+    expect(out.hasMore).toBe(true);
+  });
+  it('the LAST channel exhausted (no LastEvaluatedKey) → hasMore false, cursor cleared', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [] });
+    const out = await runExistencePage({ mode: 'cold', limit: 100, cursor: { channel: 'logistics' } });
+    expect(out.hasMore).toBe(false);
+    expect(out.cursor).toBeUndefined();
   });
 });
 ```
@@ -474,66 +514,103 @@ async function relatedOrderOrg(relatedOrderId: string | null | undefined): Promi
   } catch { return null; }
 }
 
-// Map a META item (read defensively) → its expected events, loading sub-entries for orders.
-async function expectedForRecord(item: Record<string, unknown>): Promise<ExpectedEvent[]> {
-  const et = item.entityType as string | undefined;
-  if (et === 'RFQ') return rfqEvents(item as never);
-  if (et === 'LEAD') return leadEvents(item as never);
-  if (et === 'ORGANIZATION' || et === 'CONTACT' || et === 'TIMELINE_EVENT' || et === 'LINK_AUDIT') return [];
-  if (et === 'ORDER') {
-    const order = item as never as { orderId: string; matchedOrgId?: string | null };
-    const part = await docClient.send(new QueryCommand({
+// Load ALL child rows of an order partition, PAGINATED — never silently truncate (this is an audit tool).
+async function loadOrderChildren(orderId: string): Promise<{ logs: Array<Record<string, unknown>>; docs: Array<Record<string, unknown>> }> {
+  const logs: Array<Record<string, unknown>> = [];
+  const docs: Array<Record<string, unknown>> = [];
+  let start: Record<string, unknown> | undefined;
+  do {
+    const res = await docClient.send(new QueryCommand({
       TableName: TABLE_NAME(),
       KeyConditionExpression: 'PK = :pk',
-      ExpressionAttributeValues: { ':pk': `ORDER#${(order as { orderId: string }).orderId}` },
+      ExpressionAttributeValues: { ':pk': `ORDER#${orderId}` },
+      ExclusiveStartKey: start,
     }));
-    const rows = (part.Items ?? []) as Array<Record<string, unknown>>;
-    const logs = rows.filter((r) => typeof r.SK === 'string' && (r.SK as string).startsWith('LOG#')) as never;
-    const docs = rows.filter((r) => typeof r.SK === 'string' && (r.SK as string).startsWith('DOC#')) as never;
-    return [
-      ...orderCreatedEvents(item as never),
-      ...orderStageEvents(order, logs),
-      ...quoteEvents(order, docs),
-    ];
-  }
-  if (et === 'LOGISTICS_CASE' || et === 'LOGISTICS') {
-    const c = item as never as { relatedOrderId?: string | null };
-    const org = await relatedOrderOrg(c.relatedOrderId);
-    return logisticsEvents(item as never, org);
-  }
-  return [];
+    for (const r of (res.Items ?? []) as Array<Record<string, unknown>>) {
+      const sk = r.SK as string | undefined;
+      if (typeof sk === 'string' && sk.startsWith('LOG#')) logs.push(r);
+      else if (typeof sk === 'string' && sk.startsWith('DOC#')) docs.push(r);
+    }
+    start = res.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (start);
+  return { logs, docs };
 }
 
-// Drive one bounded page of source META rows (scan with optional recent filter), reconcile each.
-export async function runExistencePage(opts: {
-  mode: 'hot' | 'cold'; limit: number; cursor?: Record<string, unknown>; cutoffIso?: string;
-}): Promise<{ counters: ExistenceCounters; cursor?: Record<string, unknown>; hasMore: boolean }> {
+const idFromPk = (m: Record<string, unknown>, prefix: string) => (m.PK as string).slice(prefix.length);
+// createOrder writes matchedOrgId:'' for an unmatched order; normalize '' → null.
+const orgOrNull = (v: unknown) => ((v as string) || null);
+
+// Channels in deterministic order, discriminated by PK PREFIX + SK='META' (source rows carry NO
+// `entityType`). Each has its own hot-recency field: rfq/lead → submittedAt; order/logistics → updatedAt.
+// Field mappings below are baked from the confirmed stored shapes (RFQ/LEAD/ORDER/LOGISTICS writes).
+interface Channel { name: string; pkPrefix: string; recencyField: string; expand: (meta: Record<string, unknown>) => Promise<ExpectedEvent[]>; }
+
+const CHANNELS: Channel[] = [
+  { name: 'rfq', pkPrefix: 'RFQ#', recencyField: 'submittedAt', expand: async (m) => rfqEvents({
+      rfqId: idFromPk(m, 'RFQ#'), submittedAt: m.submittedAt as string, email: m.email as string | undefined,
+      equipmentCategory: m.equipmentCategory as string | undefined, specificModel: m.specificModel as string | undefined,
+      matchedOrgId: orgOrNull(m.matchedOrgId),
+    }) },
+  { name: 'lead', pkPrefix: 'LEAD#', recencyField: 'submittedAt', expand: async (m) => leadEvents({
+      leadId: idFromPk(m, 'LEAD#'), submittedAt: m.submittedAt as string, type: m.type as string,
+      email: m.email as string | undefined, productName: m.productName as string | undefined,
+      inquiryType: m.inquiryType as string | undefined, matchedOrgId: orgOrNull(m.matchedOrgId),
+    }) },
+  { name: 'order', pkPrefix: 'ORDER#', recencyField: 'updatedAt', expand: async (m) => {
+      const orderId = idFromPk(m, 'ORDER#');
+      const order = { orderId, matchedOrgId: orgOrNull(m.matchedOrgId) };
+      const { logs, docs } = await loadOrderChildren(orderId);
+      return [
+        ...orderCreatedEvents({ orderId, createdAt: m.createdAt as string, productModel: m.productModel as string | undefined, matchedOrgId: order.matchedOrgId, rfqId: (m.rfqId as string) ?? null }),
+        ...orderStageEvents(order, logs as never),
+        ...quoteEvents(order, docs as never),
+      ];
+    } },
+  { name: 'logistics', pkPrefix: 'LOGISTICS#', recencyField: 'updatedAt', expand: async (m) => {
+      const org = await relatedOrderOrg(m.relatedOrderId as string | undefined);
+      return logisticsEvents({ caseId: idFromPk(m, 'LOGISTICS#'), caseType: m.caseType as string | undefined, milestoneLog: m.milestoneLog as never }, org);
+    } },
+];
+
+const channelIndexByName = (name?: string) => { const i = CHANNELS.findIndex((c) => c.name === name); return i < 0 ? 0 : i; };
+
+function buildChannelScan(channel: Channel, mode: 'hot' | 'cold', cutoffIso: string | undefined, limit: number, key?: Record<string, unknown>) {
+  const values: Record<string, unknown> = { ':pre': channel.pkPrefix, ':meta': 'META' };
+  let filter = 'begins_with(PK, :pre) AND SK = :meta';
+  let names: Record<string, string> | undefined;
+  if (mode === 'hot' && cutoffIso) { names = { '#r': channel.recencyField }; values[':cut'] = cutoffIso; filter += ' AND #r > :cut'; }
+  return new ScanCommand({ TableName: TABLE_NAME(), FilterExpression: filter, ExpressionAttributeNames: names, ExpressionAttributeValues: values, ExclusiveStartKey: key, Limit: limit });
+}
+
+export interface ChannelCursor { channel: string; key?: Record<string, unknown>; }
+
+// One scan page of the CURRENT channel (per cursor). Advances to the next channel when one is exhausted;
+// hasMore=false only after the LAST channel is exhausted. Per-record expand errors are isolated.
+export async function runExistencePage(opts: { mode: 'hot' | 'cold'; limit: number; cursor?: ChannelCursor; cutoffIso?: string }): Promise<{ counters: ExistenceCounters; cursor?: ChannelCursor; hasMore: boolean }> {
   const counters: ExistenceCounters = { scanned: 0, missingReemitted: 0, errors: 0 };
-  // Cheapest broadly-applicable access path: scan META rows; hot also filters on recent updatedAt.
-  const filter = ['SK = :meta'];
-  const values: Record<string, unknown> = { ':meta': 'META' };
-  if (opts.mode === 'hot' && opts.cutoffIso) { filter.push('updatedAt > :cut'); values[':cut'] = opts.cutoffIso; }
-  const res = await docClient.send(new ScanCommand({
-    TableName: TABLE_NAME(),
-    FilterExpression: filter.join(' AND '),
-    ExpressionAttributeValues: values,
-    ExclusiveStartKey: opts.cursor,
-    Limit: opts.limit,
-  }));
+  const idx = channelIndexByName(opts.cursor?.channel);
+  const channel = CHANNELS[idx];
+  const res = await docClient.send(buildChannelScan(channel, opts.mode, opts.cutoffIso, opts.limit, opts.cursor?.key));
   const deps: Deps = { getTimelineEvent, emit: (a) => emitTimelineEvent(a as never) };
   for (const item of (res.Items ?? []) as Array<Record<string, unknown>>) {
-    const expected = await expectedForRecord(item);
-    await reconcileExpectedEvents(expected, deps, counters);
+    try {
+      await reconcileExpectedEvents(await channel.expand(item), deps, counters);
+    } catch (err) {
+      counters.errors += 1;
+      console.error(JSON.stringify({ event: 'crm.sweep.existence.expand_error', pk: item.PK, error: err instanceof Error ? err.message : String(err) }));
+    }
   }
-  return { counters, cursor: res.LastEvaluatedKey as Record<string, unknown> | undefined, hasMore: !!res.LastEvaluatedKey };
+  const key = res.LastEvaluatedKey as Record<string, unknown> | undefined;
+  if (key) return { counters, cursor: { channel: channel.name, key }, hasMore: true };
+  const next = CHANNELS[idx + 1];
+  return next ? { counters, cursor: { channel: next.name }, hasMore: true } : { counters, cursor: undefined, hasMore: false };
 }
 ```
-> NOTE: confirm the actual `entityType` strings + the order LOG/DOC `SK` prefixes + the logistics `relatedOrderId`/`milestoneLog` field names by reading `order-api/lib/types.ts`, `logistics-api/lib/types.ts`, and how P1/2A wrote them. Adjust the `entityType` discriminators + `SK` prefixes to match. `SK = :meta` scan-filter assumes META rows carry `SK: 'META'` (orders/rfqs/leads/logistics) — verify; RFQ/LEAD may use a different SK (e.g. `META`), match reality.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/functions/crm-api/lib/sweep/existencePass.test.ts`
-Expected: PASS (the injected-core tests; `runExistencePage` is exercised by the integration test in Task 6).
+Expected: PASS (injected-core + the `runExistencePage` PK-prefix / channel-cursor / per-channel-hot-recency tests).
 
 - [ ] **Step 5: Commit**
 
@@ -712,21 +789,30 @@ import { runDirtyRollupPage } from './dirtyRollupPass';
 
 const LAMBDA_TIMEOUT_SEC = 120; // keep in sync with crm-api/resource.ts
 const HOT_CUTOFF_MS = 24 * 60 * 60 * 1000;
+const MAX_PAGES_PER_INVOCATION = 50; // safety bound within the 120s timeout
 
 export interface SweepArgs { mode: SweepMode; limit?: number; cursor?: Record<string, unknown>; }
+type PageResult = { counters: Record<string, number>; cursor?: unknown; hasMore: boolean };
 
-// Run one pass under its own lease; honor an admin override cursor; persist after the page; release on completion.
-async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: Record<string, unknown> | undefined, run: (cursor?: Record<string, unknown>) => Promise<{ counters: Record<string, number>; cursor?: Record<string, unknown>; hasMore: boolean }>): Promise<Record<string, number> | { skipped: true }> {
+// Run a pass under its own lease, LOOPING pages and PERSISTING AFTER EACH page (cursor + counters +
+// lease heartbeat); release on completion. A crash mid-pass leaves a durable cursor + an expiring
+// lease, so the next fire resumes from the last persisted page. An admin override cursor is honored.
+async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: unknown, runner: (cursor: unknown) => Promise<PageResult>): Promise<Record<string, number> | { skipped: true }> {
   const nowIso = new Date().toISOString();
   const lease = await acquireLease(mode, pass, LAMBDA_TIMEOUT_SEC, nowIso);
   if (!lease) return { skipped: true };
   const state = await readState(mode, pass);
-  const cursor = overrideCursor ?? state.cursor;
+  let cursor: unknown = overrideCursor ?? state.cursor;
+  const total: Record<string, number> = {};
   const leaseExpiresAt = new Date(Date.parse(nowIso) + Math.max(2 * LAMBDA_TIMEOUT_SEC, 300) * 1000).toISOString();
-  const { counters, cursor: next, hasMore } = await run(cursor);
-  if (hasMore) await persistPage(mode, pass, { cursor: next, hasMore, counters, leaseExpiresAt });
-  else await releaseLease(mode, pass, { lastSummary: counters });
-  return counters;
+  for (let page = 0; page < MAX_PAGES_PER_INVOCATION; page++) {
+    const { counters, cursor: next, hasMore } = await runner(cursor);
+    for (const [k, v] of Object.entries(counters)) total[k] = (total[k] ?? 0) + v;
+    cursor = next;
+    if (!hasMore) { await releaseLease(mode, pass, { lastSummary: total }); return total; }
+    await persistPage(mode, pass, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: total, leaseExpiresAt });
+  }
+  return total; // hit the page budget; cursor is persisted + lease expires → the next fire resumes
 }
 
 export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode; summary: Record<string, unknown> }> {
@@ -734,16 +820,16 @@ export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode
   const cutoffIso = new Date(Date.now() - HOT_CUTOFF_MS).toISOString();
   const summary: Record<string, unknown> = {};
 
-  const existence = await runPass(args.mode, 'existence', args.cursor, (cursor) =>
-    runExistencePage({ mode: args.mode, limit, cursor, cutoffIso: args.mode === 'hot' ? cutoffIso : undefined }));
-  summary.existence = existence;
+  summary.existence = await runPass(args.mode, 'existence', args.cursor, (cursor) =>
+    runExistencePage({ mode: args.mode, limit, cursor: cursor as never, cutoffIso: args.mode === 'hot' ? cutoffIso : undefined }));
 
   if (args.mode === 'cold') {
-    const dirty = await runPass('cold', 'dirty-rollups', undefined, (cursor) => runDirtyRollupPage({ limit, cursor }));
-    summary.dirty = dirty;
+    summary.dirty = await runPass('cold', 'dirty-rollups', undefined, (cursor) =>
+      runDirtyRollupPage({ limit, cursor: cursor as never }));
   }
 
-  console.error(JSON.stringify({ event: 'crm.sweep.summary', mode: args.mode, summary }));
+  // Operational telemetry, not an error — info-level.
+  console.log(JSON.stringify({ event: 'crm.sweep.summary', mode: args.mode, summary }));
   return { mode: args.mode, summary };
 }
 ```
@@ -875,7 +961,11 @@ Expected: exit 0 (no new errors).
 
 ```bash
 git status
-git add -A && git commit -m "chore(crm-api): 2C-sweep complete — reconciliation sweep live" || echo "nothing to commit"
+# Targeted add — each prior task already committed its own files, so this catches only stragglers
+# within the 2C-sweep surface. Do NOT use `git add -A`: an unrelated untracked file
+# (docs/seo/ninescrolls-news-task-prompt.md) is present in the tree and must not be swept in.
+git add amplify/functions/crm-api amplify/backend.ts docs/superpowers/plans/2026-06-30-customer-360-timeline-2c-sweep.md
+git commit -m "chore(crm-api): 2C-sweep complete — reconciliation sweep live" || echo "nothing to commit"
 ```
 
 ---
@@ -893,6 +983,6 @@ git add -A && git commit -m "chore(crm-api): 2C-sweep complete — reconciliatio
 
 **Deferred (per §8, not in this plan):** void reconciliation, analytics rollup (2C-analytics), `rollupApplied` GSI, admin trigger UI (Plan 3), `BatchGetItem`.
 
-**Placeholder scan:** none. The two `> NOTE:` blocks (Task 4 entityType/SK discriminators; Task 8 stack variable) instruct the implementer to confirm real names by reading specific files — binding, not guessing; the surrounding code + tests are complete.
+**Placeholder scan:** none. Source-row shapes are now **baked** (no "confirm later"): the existence pass (Task 4) discriminates source channels by **PK prefix + `SK='META'`** (source rows carry NO `entityType`), with per-channel hot-recency (`submittedAt` for rfq/lead, `updatedAt` for order/logistics) and stored DOC `docId` — all verified against the live RFQ/LEAD/ORDER/LOGISTICS writes. The dirty-rollup pass (Task 5) filters the **materialized** `TLEVENT#` rows on `entityType = 'TIMELINE_EVENT'`, which those rows DO carry (`emitTimelineEvent` sets it). The only remaining `> NOTE:` (Task 8 stack/cron variable) instructs the implementer to confirm the real backend identifier by reading `amplify/backend.ts` — binding, not guessing.
 
 **Type consistency:** `ExpectedEvent { id, args }` (Task 3) consumed by `reconcileExpectedEvents`/`runExistencePage` (Task 4). `SweepMode`/`SweepPass`/state helpers (Task 2) used by `reconcileSweep` (Task 6). `markRollupApplied(id)` (Task 1) used by `dirtyRollupPass` (Task 5) + emit. `runExistencePage`/`runDirtyRollupPage` return `{ counters, cursor?, hasMore }` consumed identically by `runPass` (Task 6).
