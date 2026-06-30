@@ -54,7 +54,7 @@ Re-emit only *missing* events. For each enumerated source record, build the expe
 | order-meta | `ORDER#…/META` | `order_created` (1) | `buildOrderCreatedEmitArgs` |
 | order-logs | `ORDER#…` `LOG#…` with `action='STATUS_CHANGE'` (stable `olog-` id) | `order_stage_changed` (per status log) | `buildOrderStageChangedEmitArgs(order, log)` |
 | order-docs | `ORDER#…` `DOC#…` with `docType='QUOTATION'` (stable `doc-` id) | `quote_sent` (per quote doc) | `buildQuoteSentEmitArgs(order, doc)` |
-| logistics | `LOGISTICS#…/META` each `milestoneLog[]` entry (stable `mlog-` id) | `logistics_milestone` (per entry: CASE_CREATED + STAGE_ADVANCED) | `buildLogisticsMilestoneEmitArgs`; org from related order |
+| logistics | `LOGISTICS#…/META` each **usable** `milestoneLog[]` entry (stable `mlog-` id; skip legacy entries missing `toStage`/`timestamp`) | `logistics_milestone` (per entry: CASE_CREATED + STAGE_ADVANCED) | `buildLogisticsMilestoneEmitArgs`; org from related order |
 
 **Critical maintenance invariant.** The sweep's enumeration must produce **exactly** the set of events live-emit produces — same kinds, same stable-key ids — or it under-emits (misses) or over-emits (orphan ids live-emit never makes). It therefore mirrors each 2A site's emit condition (e.g. `order_stage_changed` only for `STATUS_CHANGE` logs; `quote_sent` only for `QUOTATION` docs). **Adding a future emit site requires updating this enumeration to match.** `occurredAt` is read from the stored record's business timestamp (`submittedAt` / `log.timestamp` / `doc.uploadedAt` / `milestone.timestamp`), guaranteeing the sweep's id equals live-emit's.
 

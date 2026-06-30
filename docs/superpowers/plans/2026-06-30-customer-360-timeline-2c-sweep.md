@@ -134,14 +134,14 @@ describe('sweepState', () => {
   });
   it('acquireLease succeeds when no active lease (conditional update) and returns a token', async () => {
     mockSend.mockResolvedValueOnce({}); // conditional update ok
-    const token = await acquireLease('cold', 'existence', 120, 'now-iso');
+    const token = await acquireLease('cold', 'existence', 120, '2026-06-30T00:00:00.000Z');
     expect(typeof token).toBe('string');
     const upd = mockSend.mock.calls[0][0].input;
     expect(upd.ConditionExpression).toMatch(/attribute_not_exists\(lease\)|leaseExpiresAt < :now/);
   });
   it('acquireLease returns null when an active lease is held (ConditionalCheckFailed)', async () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('held'), { name: 'ConditionalCheckFailedException' }));
-    expect(await acquireLease('cold', 'existence', 120, 'now-iso')).toBeNull();
+    expect(await acquireLease('cold', 'existence', 120, '2026-06-30T00:00:00.000Z')).toBeNull();
   });
   it('persistPage writes cursor + counters + heartbeat, conditioned on the lease token', async () => {
     mockSend.mockResolvedValueOnce({});
@@ -888,7 +888,7 @@ export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/functions/crm-api/lib/sweep/reconcileSweep.test.ts`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
