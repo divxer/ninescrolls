@@ -788,6 +788,49 @@ describe('order-api handler', () => {
             expect(mockUpdate).toHaveBeenCalled();
         });
 
+        it('emits order_stage_changed with the stable LOG id, toStatus, timestamp, and matchedOrgId', async () => {
+            mockGet.mockResolvedValueOnce({ Item: SAMPLE_ORDER });
+            mockUpdate.mockResolvedValue({});
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, status: 'QUOTING' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('updateOrderStatus', {
+                    orderId: 'ord-20260310-abcd',
+                    newStatus: 'QUOTING',
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // Find the LOG PutCommand the resolver wrote (STATUS_CHANGE).
+            const logItem = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string; id?: string; SK?: string } })
+                .find((arg) => arg?.Item?.action === 'STATUS_CHANGE')?.Item as
+                    { id?: string; SK?: string } | undefined;
+            expect(logItem?.id).toMatch(/^olog-/);
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_stage_changed',
+                idInput: expect.objectContaining({
+                    orderLogId: logItem?.id,
+                    toStatus: 'QUOTING',
+                }),
+                occurredAt: expect.any(String),
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+
+            // occurredAt must equal the LOG entry timestamp (the resolver's `now`).
+            const emitArg = mockEmitTimelineEventToCrm.mock.calls.find(
+                (c: unknown[]) => (c[0] as { kind?: string })?.kind === 'order_stage_changed',
+            )?.[0] as { occurredAt?: string; idInput?: { occurredAt?: string } } | undefined;
+            const logTimestamp = mockSend.mock.calls
+                .map((c: unknown[]) => c[0] as { Item?: { action?: string; timestamp?: string } })
+                .find((arg) => arg?.Item?.action === 'STATUS_CHANGE')?.Item?.timestamp;
+            expect(emitArg?.occurredAt).toBe(logTimestamp);
+        });
+
         it('throws on invalid transition', async () => {
             mockGet.mockResolvedValueOnce({ Item: SAMPLE_ORDER });
 
