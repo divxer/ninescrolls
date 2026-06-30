@@ -18,8 +18,16 @@ function AppShell() {
   const isAdmin = location.pathname.startsWith('/admin');
 
   if (isAdmin) {
+    // Fallback shown while the AdminRoutes chunk downloads (the chunk's own
+    // PageLoader isn't available until then). Mirrors the route-level loader.
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-surface-container-lowest">
+            <div className="text-center py-16 px-5 text-lg text-on-surface-variant">Loading...</div>
+          </div>
+        }
+      >
         <AdminRoutes />
       </Suspense>
     );
