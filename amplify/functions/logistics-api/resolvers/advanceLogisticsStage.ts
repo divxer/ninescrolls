@@ -36,8 +36,9 @@ export async function advanceLogisticsStage(event: AppSyncEvent) {
     toStage: stage,
     operator,
     timestamp: now,
-    detail: detail || undefined,
     internalOnly: entryInternalOnly,
+    // Only include detail when present — the DocumentClient rejects undefined values.
+    ...(detail ? { detail } : {}),
   };
 
   try {
