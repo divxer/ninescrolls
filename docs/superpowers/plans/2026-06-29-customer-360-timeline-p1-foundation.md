@@ -26,7 +26,7 @@
 | `LinkAuditLog` | `AUDIT#{id}` | `A` | — | `ORG#{orgId}` / `AUDIT#{ts}#{id}` | — | — |
 
 > **GSI1 is intentionally sparse** (fix from review): only `unresolved` TimelineEvents are indexed, so the Needs-Linking queue is a small partition. Resolved events are never indexed by status (no `TLEVENT_STATUS#resolved` hot partition). Review-org listing uses the `Organization` `ORG_STATUS#review` index, not TimelineEvent status.
-> `OrgDomainIndex` doubles as the **race-safe claim key** for auto-create (Task 10). `OrgNameIndex` is built by Plan 2 backfill; this plan only reads it.
+> `OrgDomainIndex` doubles as the **race-safe claim key** for auto-create (Task 10), which **also writes an `OrgNameIndex` row** for the new review org (so `organization_name_match` works without waiting for Plan 2). Existing (non-auto-created) orgs get their domain/name index rows from the `organizationApi` create/alias path + Plan 2 backfill.
 
 ---
 
@@ -1119,9 +1119,9 @@ git commit -m "feat(crm-api): upsertContact — deterministic id, monotonic seen
 
 ---
 
-## Task 10: Org store — review-org auto-create + rollups (bump + paginated recompute)
+## Task 10: Org store — review-org auto-create (domain+name index) + internalOnly-aware rollups
 
-Implements review fixes #1 (auto-create, race-safe via domain-index claim) and the paginated recompute (#minor), and removes the unused-vars defect (#minor).
+Implements review fixes #1 (auto-create, race-safe via domain-index claim, **+ OrgNameIndex**), the paginated recompute (#minor), the unused-vars removal (#minor), and round-2 fixes (OrgNameIndex on auto-create; `internalOnly` excluded from `lastActivityAt`).
 
 **Files:**
 - Modify: `amplify/functions/crm-api/lib/orgStore.ts`
@@ -1138,9 +1138,10 @@ import { createReviewOrgFromDomain, bumpOrgRollupOnCreate, recomputeRollupsForOr
 beforeEach(() => mockSend.mockReset());
 
 describe('createReviewOrgFromDomain', () => {
-  it('claims the domain index, then writes a review org and returns the new id', async () => {
+  it('claims the domain index, writes the review org + name index, returns the new id', async () => {
     mockSend.mockResolvedValueOnce({}); // claim ORGDOMAIN (conditional put ok)
     mockSend.mockResolvedValueOnce({}); // put ORG review record
+    mockSend.mockResolvedValueOnce({}); // put ORGNAME index
     const id = await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z');
     expect(id).toBe('org-NEW');
     const orgItem = mockSend.mock.calls[1][0].input.Item;
@@ -1148,6 +1149,9 @@ describe('createReviewOrgFromDomain', () => {
     expect(orgItem.createdByResolution).toBe(true);
     expect(orgItem.primaryDomain).toBe('newcorp.com');
     expect(orgItem.GSI1PK).toBe('ORG_STATUS#review');
+    const nameItem = mockSend.mock.calls[2][0].input.Item;
+    expect(nameItem.PK).toBe('ORGNAME#newcorp'); // normalizeOrgName('newcorp')
+    expect(nameItem.orgId).toBe('org-NEW');
   });
   it('on claim race, returns the existing org id without creating', async () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
@@ -1170,18 +1174,28 @@ describe('bumpOrgRollupOnCreate', () => {
     expect(upd.Key).toEqual({ PK: 'ORG#org-1', SK: 'A' });
     expect(upd.UpdateExpression).toMatch(/orderCount/);
   });
+  it('internalOnly note is a no-op (never advances lastActivityAt)', async () => {
+    await bumpOrgRollupOnCreate({ orgId: 'org-1', kind: 'note', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: true });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
 });
 
 describe('recomputeRollupsForOrg', () => {
-  it('paginates GSI2 and re-derives counts + max dates', async () => {
+  it('paginates GSI2, re-derives counts/max dates, and excludes internalOnly from lastActivityAt', async () => {
     mockSend
       .mockResolvedValueOnce({ Items: [{ kind: 'rfq_submitted', occurredAt: '2026-01-01T00:00:00Z' }], LastEvaluatedKey: { k: 1 } })
-      .mockResolvedValueOnce({ Items: [{ kind: 'order_created', occurredAt: '2026-03-01T00:00:00Z' }, { kind: 'order_stage_changed', occurredAt: '2026-04-01T00:00:00Z' }] })
+      .mockResolvedValueOnce({ Items: [
+        { kind: 'order_created', occurredAt: '2026-03-01T00:00:00Z' },
+        { kind: 'order_stage_changed', occurredAt: '2026-04-01T00:00:00Z' },
+        { kind: 'note', occurredAt: '2026-05-01T00:00:00Z', isInternalOnly: true }, // newer but internal
+      ] })
       .mockResolvedValueOnce({}); // final update
     await recomputeRollupsForOrg('org-1');
     expect(mockSend).toHaveBeenCalledTimes(3);
-    const upd = mockSend.mock.calls[2][0].input;
-    expect(JSON.stringify(upd.ExpressionAttributeValues)).toContain('2026-04-01T00:00:00Z');
+    const vals = mockSend.mock.calls[2][0].input.ExpressionAttributeValues;
+    expect(vals[':la']).toBe('2026-04-01T00:00:00Z'); // internal note did NOT advance lastActivityAt
+    expect(vals[':r']).toBe(1); // one rfq
+    expect(vals[':o']).toBe(1); // one order
   });
 });
 ```
@@ -1198,6 +1212,7 @@ Append to `amplify/functions/crm-api/lib/orgStore.ts`:
 ```typescript
 import { PutCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { generateOrgId } from './idGenerators';
+import { normalizeOrgName } from './normalize';
 
 const KIND_TO_COUNT: Record<string, string> = { rfq_submitted: 'rfqCount', order_created: 'orderCount', lead_captured: 'leadCount' };
 const KIND_TO_LATEST: Record<string, string> = { rfq_submitted: 'latestRFQDate', order_created: 'latestOrderDate', lead_captured: 'latestLeadDate' };
@@ -1223,13 +1238,14 @@ export async function createReviewOrgFromDomain(domain: string, occurredAt: stri
     throw err;
   }
   const nowIso = new Date().toISOString();
+  const displayName = domain.split('.')[0];
   await docClient.send(new PutCommand({
     TableName: TABLE_NAME(),
     Item: {
       PK: `ORG#${orgId}`, SK: 'A',
       GSI1PK: 'ORG_STATUS#review', GSI1SK: `${nowIso}#${orgId}`,
       entityType: 'ORGANIZATION',
-      orgId, primaryDomain: domain, displayName: domain.split('.')[0],
+      orgId, primaryDomain: domain, displayName,
       status: 'review', createdByResolution: true, linkLocked: false,
       rfqCount: 0, orderCount: 0, leadCount: 0,
       firstSeenAt: occurredAt, lastActivityAt: occurredAt,
@@ -1237,44 +1253,68 @@ export async function createReviewOrgFromDomain(domain: string, occurredAt: stri
     },
     ConditionExpression: 'attribute_not_exists(PK)',
   }));
+  // Maintain the name index so organization_name_match resolves this org without Plan 2 backfill.
+  // Non-conditional: an auto-created display name is low-confidence; a later rename (Plan 3) overwrites it.
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME(),
+    Item: { PK: `ORGNAME#${normalizeOrgName(displayName)}`, SK: 'A', entityType: 'ORG_NAME_INDEX', normName: normalizeOrgName(displayName), orgId },
+  }));
   return orgId;
 }
 
-export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string; occurredAt: string }): Promise<void> {
+export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string; occurredAt: string; isInternalOnly?: boolean }): Promise<void> {
   if (!isRealOrg(args.orgId)) return;
   const countAttr = KIND_TO_COUNT[args.kind];
   const latestAttr = KIND_TO_LATEST[args.kind];
+  // Rule (review #3): internalOnly events (internal notes/calls) never advance the
+  // customer-facing lastActivityAt. Counts/latest dates are tied to external kinds only.
+  const advanceActivity = !args.isInternalOnly;
 
-  let expr = 'SET lastActivityAt = :occ';
-  if (countAttr) expr += `, ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`;
-  if (latestAttr) expr += `, ${latestAttr} = :occ`;
-
-  try {
-    await docClient.send(new UpdateCommand({
-      TableName: TABLE_NAME(),
-      Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
-      UpdateExpression: expr,
-      ConditionExpression: 'attribute_not_exists(lastActivityAt) OR lastActivityAt < :occ',
-      ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
-    }));
-  } catch (err: unknown) {
-    // Older event than current lastActivityAt: still increment the count without moving dates back.
-    if ((err as { name?: string }).name === 'ConditionalCheckFailedException' && countAttr) {
+  if (advanceActivity) {
+    let expr = 'SET lastActivityAt = :occ';
+    if (countAttr) expr += `, ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`;
+    if (latestAttr) expr += `, ${latestAttr} = :occ`;
+    try {
       await docClient.send(new UpdateCommand({
         TableName: TABLE_NAME(),
         Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
-        UpdateExpression: `SET ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`,
-        ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+        UpdateExpression: expr,
+        ConditionExpression: 'attribute_not_exists(lastActivityAt) OR lastActivityAt < :occ',
+        ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
       }));
-    } else if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') {
-      throw err;
+    } catch (err: unknown) {
+      // Older event than current lastActivityAt: still increment the count without moving dates back.
+      if ((err as { name?: string }).name === 'ConditionalCheckFailedException' && countAttr) {
+        await docClient.send(new UpdateCommand({
+          TableName: TABLE_NAME(),
+          Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
+          UpdateExpression: `SET ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`,
+          ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+        }));
+      } else if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') {
+        throw err;
+      }
     }
+    return;
   }
+
+  // internalOnly: do NOT touch lastActivityAt. Apply count/latest only if the kind has them (rare).
+  const sets = [
+    countAttr ? `${countAttr} = if_not_exists(${countAttr}, :zero) + :one` : null,
+    latestAttr ? `${latestAttr} = :occ` : null,
+  ].filter(Boolean) as string[];
+  if (sets.length === 0) return; // pure internal note → nothing to roll up
+  await docClient.send(new UpdateCommand({
+    TableName: TABLE_NAME(),
+    Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
+    UpdateExpression: 'SET ' + sets.join(', '),
+    ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
+  }));
 }
 
 export async function recomputeRollupsForOrg(orgId: string): Promise<void> {
   if (!isRealOrg(orgId)) return;
-  const events: Array<{ kind: string; occurredAt: string; voided?: boolean }> = [];
+  const events: Array<{ kind: string; occurredAt: string; voided?: boolean; isInternalOnly?: boolean }> = [];
   let start: Record<string, unknown> | undefined;
   do {
     const res = await docClient.send(new QueryCommand({
@@ -1292,7 +1332,8 @@ export async function recomputeRollupsForOrg(orgId: string): Promise<void> {
   const latest: Record<string, string | null> = { latestRFQDate: null, latestOrderDate: null, latestLeadDate: null };
   let lastActivityAt: string | null = null;
   for (const e of live) {
-    if (e.occurredAt && (!lastActivityAt || e.occurredAt > lastActivityAt)) lastActivityAt = e.occurredAt;
+    // lastActivityAt is customer-facing: internalOnly events never advance it (review #3).
+    if (!e.isInternalOnly && e.occurredAt && (!lastActivityAt || e.occurredAt > lastActivityAt)) lastActivityAt = e.occurredAt;
     const c = KIND_TO_COUNT[e.kind]; if (c) (counts as Record<string, number>)[c] += 1;
     const l = KIND_TO_LATEST[e.kind]; if (l && (!latest[l] || e.occurredAt > (latest[l] as string))) latest[l] = e.occurredAt;
   }
@@ -1401,9 +1442,21 @@ describe('emitTimelineEvent', () => {
     expect(overwrite.Item.resolutionReason).toBe('manual');
     expect(overwrite.Item.createdAt).toBe('2026-01-01T00:00:00Z'); // preserved
     expect(overwrite.ConditionExpression).toBeUndefined();
+    expect(overwrite.Item.rollupApplied).toBe(true); // link moved → counted via recompute
     expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-OLD');
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-NEW');
+  });
+  it('re-emit where original rollup never landed (rollupApplied=false), same org: compensates the bump', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce('ct-terry');
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
+    getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', createdAt: '2026-01-01T00:00:00Z', rollupApplied: false });
+    mockSend.mockResolvedValueOnce({}); // overwrite put
+    await emitTimelineEvent(baseEvt);
+    expect(mockSend.mock.calls[1][0].input.Item.rollupApplied).toBe(true);
+    expect(bumpOrgRollupOnCreate).toHaveBeenCalledWith(expect.objectContaining({ orgId: 'org-df', kind: 'rfq_submitted' }));
+    expect(recomputeRollupsForOrg).not.toHaveBeenCalled();
   });
 });
 ```
@@ -1481,18 +1534,25 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
     await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(nowIso, false), ConditionExpression: 'attribute_not_exists(PK)' }));
   } catch (err: unknown) {
     if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
-    // #2 — duplicate: full-projection overwrite, recompute both orgs if the link moved
+    // #2/#3 — duplicate: full-projection overwrite, then reconcile rollups.
     const existing = await getTimelineEvent(id);
     const oldOrgId = existing?.orgId;
-    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(existing?.createdAt ?? nowIso, existing?.rollupApplied ?? true) }));
-    if (oldOrgId && oldOrgId !== orgId) {
-      await recomputeRollupsForOrg(oldOrgId);
+    const linkMoved = !!oldOrgId && oldOrgId !== orgId;
+    // If the original bump never landed (rollupApplied=false), compensate now.
+    const needsCompensation = !linkMoved && existing?.rollupApplied !== true;
+    // After either branch the event's contribution is accounted for → rollupApplied=true.
+    const finalApplied = linkMoved || needsCompensation ? true : (existing?.rollupApplied ?? true);
+    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(existing?.createdAt ?? nowIso, finalApplied) }));
+    if (linkMoved) {
+      await recomputeRollupsForOrg(oldOrgId!);
       await recomputeRollupsForOrg(orgId);
+    } else if (needsCompensation) {
+      await bumpOrgRollupOnCreate({ orgId, kind: args.kind, occurredAt: args.occurredAt, isInternalOnly: args.isInternalOnly ?? false });
     }
     return;
   }
 
-  await bumpOrgRollupOnCreate({ orgId, kind: args.kind, occurredAt: args.occurredAt });
+  await bumpOrgRollupOnCreate({ orgId, kind: args.kind, occurredAt: args.occurredAt, isInternalOnly: args.isInternalOnly ?? false });
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: { PK: `TLEVENT#${id}`, SK: 'A' },
     UpdateExpression: 'SET rollupApplied = :t', ExpressionAttributeValues: { ':t': true },
@@ -1770,7 +1830,9 @@ git add -A && git commit -m "chore(crm-api): P1 foundation complete — resolver
 
 **Type consistency:** `ResolveResult`/`ResolveInput` (Tasks 6/8), `TimelineIdInput` (Tasks 5/11), `EmitArgs` (Task 11), `TimelineEventItem`/`ContactItem`/`LinkAuditLogItem` (Task 6) used consistently. `createReviewOrgFromDomain`/`bumpOrgRollupOnCreate`/`recomputeRollupsForOrg` (Task 10) ← emit (Task 11). `getTimelineEvent` (Task 7) ← emit duplicate path. `auditKeys`/`generateAuditId` (Tasks 6/3) ← `writeLinkAuditLog` (Task 12).
 
-**Review fixes applied:** (1) `email_domain_new` materialized via `createReviewOrgFromDomain` — Tasks 10/11; (2) full re-emit projection + re-link recompute — Task 11; (3) `rollupApplied` guard — Tasks 6/11; (4) sparse GSI1 (unresolved only) — Task 6; (5) reserved comms fields — Tasks 6/13; (6) `LinkAuditLog` storage helper — Task 12; (7) contact derived from `resolveInput.email` — Task 11; minors: top-level `import crypto` (Task 6), distinct createdAt/firstSeenAt (Task 9), paginated recompute (Task 10), no unused vars (Task 10).
+**Review fixes applied (round 1):** (1) `email_domain_new` materialized via `createReviewOrgFromDomain` — Tasks 10/11; (2) full re-emit projection + re-link recompute — Task 11; (3) `rollupApplied` guard — Tasks 6/11; (4) sparse GSI1 (unresolved only) — Task 6; (5) reserved comms fields — Tasks 6/13; (6) `LinkAuditLog` storage helper — Task 12; (7) contact derived from `resolveInput.email` — Task 11; minors: top-level `import crypto` (Task 6), distinct createdAt/firstSeenAt (Task 9), paginated recompute (Task 10), no unused vars (Task 10).
+
+**Review fixes applied (round 2):** (A) auto-create also writes the `OrgNameIndex` so `organization_name_match` works pre-Plan-2 — Task 10; (B) duplicate re-emit with `rollupApplied=false` compensates the missing bump and marks it applied — Task 11; (C) `internalOnly` events never advance `Organization.lastActivityAt` (in both `bumpOrgRollupOnCreate` and `recomputeRollupsForOrg`); counts/latest dates are unaffected since they map to external kinds — Task 10.
 
 ---
 
