@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateCaseId, generateLegId, formatCaseNumber } from './idGenerators.js';
+import { generateCaseId, generateLegId, formatCaseNumber, generateMilestoneId } from './idGenerators.js';
 
 describe('idGenerators', () => {
   it('generateCaseId is prefixed and unique', () => {
@@ -17,5 +17,14 @@ describe('idGenerators', () => {
     expect(formatCaseNumber(2026, 1)).toBe('NS-LOG-2026-0001');
     expect(formatCaseNumber(2026, 42)).toBe('NS-LOG-2026-0042');
     expect(formatCaseNumber(2026, 12345)).toBe('NS-LOG-2026-12345');
+  });
+});
+
+describe('generateMilestoneId', () => {
+  it('produces an mlog- prefixed id', () => {
+    expect(generateMilestoneId()).toMatch(/^mlog-[0-9a-f]{12}$/);
+  });
+  it('is unique across calls', () => {
+    expect(generateMilestoneId()).not.toBe(generateMilestoneId());
   });
 });

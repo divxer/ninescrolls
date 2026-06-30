@@ -1,6 +1,6 @@
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
-import { generateCaseId, formatCaseNumber } from '../lib/idGenerators.js';
+import { generateCaseId, formatCaseNumber, generateMilestoneId } from '../lib/idGenerators.js';
 import { buildCaseResponse } from '../lib/caseHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, LogisticsCaseItem } from '../lib/types.js';
@@ -72,6 +72,7 @@ export async function createLogisticsCase(event: AppSyncEvent) {
     enabledStages: ENABLED_STAGES[caseType],
     legs: [],
     milestoneLog: [{
+      id: generateMilestoneId(),
       action: 'CASE_CREATED',
       fromStage: null,
       toStage: 'DRAFT',
