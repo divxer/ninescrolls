@@ -1,9 +1,13 @@
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateOrderId, generateContactId, generateLogId } from '../lib/idGenerators.js';
 import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
+import { invokeOrganizationApi } from '../../../lib/organization/invoke-org-api.js';
+import { computeOrderScore } from '../../../lib/organization/lead-score.js';
+import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { buildOrderCreatedEmitArgs } from '../../../lib/crm/emit-builders.js';
 
 interface CreateOrderInput {
     quoteNumber?: string;
@@ -135,6 +139,49 @@ export async function createOrder(event: AppSyncEvent) {
     await sendSlackNotification(
         `:new: New Order: [${input.productModel}] ${input.institution} — created by ${operator}`,
     );
+
+    // Upsert customer Organization + backfill matchedOrgId on the order META row.
+    // Non-fatal: the manual order is already committed; org-api failures must not
+    // fail the create. Emit the order_created timeline event afterwards (fire-and-forget).
+    const primaryContactEmail = normalizedEmail || undefined;
+    let matchedOrgId: string | null = null;
+    if (primaryContactEmail) {
+        try {
+            const orgResult = await invokeOrganizationApi({
+                action: 'upsertFromSubmission',
+                source: 'order',
+                email: primaryContactEmail,
+                institution: input.institution,
+                submittedAt: now,
+                scoreDelta: computeOrderScore(input.quoteAmount),
+                orderValueUSD: input.quoteAmount,
+            });
+            matchedOrgId = orgResult?.matchedOrgId ?? null;
+            if (matchedOrgId) {
+                await docClient.send(new UpdateCommand({
+                    TableName: TABLE_NAME(),
+                    Key: { PK: `ORDER#${orderId}`, SK: 'META' },
+                    UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
+                    ExpressionAttributeValues: {
+                        ':id': matchedOrgId,
+                        ':gsi2': `ORG#${matchedOrgId}`,
+                        ':gsi2sk': `ORDER#${now}`,
+                    },
+                }));
+            }
+        } catch (err) {
+            console.error(JSON.stringify({
+                event: 'order.org_upsert_failed',
+                orderId,
+                error: err instanceof Error ? err.message : String(err),
+            }));
+        }
+    }
+
+    await emitTimelineEventToCrm(buildOrderCreatedEmitArgs(
+        { orderId, createdAt: now, productModel: input.productModel },
+        { matchedOrgId, email: primaryContactEmail },
+    ));
 
     return buildFullOrderResponse(orderId);
 }

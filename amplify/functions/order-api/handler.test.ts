@@ -49,6 +49,18 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
     getSignedUrl: vi.fn().mockResolvedValue('https://s3.example.com/presigned'),
 }));
 
+// Org-api + CRM emit mocks (createOrder org upsert + order_created emit — Plan 2A)
+const mockInvokeOrgApi = vi.fn().mockResolvedValue({ matchedOrgId: null });
+vi.mock('../../lib/organization/invoke-org-api', () => ({
+    invokeOrganizationApi: (payload: unknown) => mockInvokeOrgApi(payload),
+}));
+
+// CRM timeline emit (fire-and-forget; helper swallows its own dispatch failures)
+const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/crm/invoke-crm-api', () => ({
+    emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+}));
+
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
 global.fetch = mockFetch;
 
@@ -579,6 +591,116 @@ describe('order-api handler', () => {
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow(/YYYY-MM-DD/);
+        });
+
+        it('upserts org from primary contact email, backfills matchedOrgId, and emits order_created', async () => {
+            mockPut.mockResolvedValue({});
+            mockUpdate.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford' });
+
+            const result = await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result).toBeDefined();
+
+            expect(mockInvokeOrgApi).toHaveBeenCalledWith(expect.objectContaining({
+                action: 'upsertFromSubmission',
+                source: 'order',
+                email: 'jane@stanford.edu',
+            }));
+
+            // matchedOrgId backfilled onto ORDER#<id>/META
+            const orgBackfill = mockUpdate.mock.calls.length > 0
+                ? mockSend.mock.calls.find((c: unknown[]) => {
+                    const arg = c[0] as { Key?: { SK?: string }; ExpressionAttributeValues?: Record<string, unknown> };
+                    return arg.Key?.SK === 'META'
+                        && arg.ExpressionAttributeValues
+                        && Object.values(arg.ExpressionAttributeValues).includes('org-stanford');
+                })
+                : undefined;
+            expect(orgBackfill).toBeTruthy();
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: 'org-stanford' }),
+            }));
+        });
+
+        it('skips org invoke when no primary contact email and emits with null matchedOrgId', async () => {
+            // Force a missing primary email by stubbing validation? createOrder requires contactEmail,
+            // so we simulate the no-email path by ensuring org-api is not called for an empty email.
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: '   ',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockInvokeOrgApi).not.toHaveBeenCalled();
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: undefined }),
+            }));
+        });
+
+        it('still creates order and emits when org-api invoke rejects (non-fatal)', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockRejectedValueOnce(new Error('org-api down'));
+
+            const result = await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            // order still returned despite org-api failure
+            expect(result).toBeDefined();
+            expect(result.orderId).toBeDefined();
+
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledWith(expect.objectContaining({
+                kind: 'order_created',
+                resolveInput: expect.objectContaining({ matchedOrgId: undefined }),
+            }));
         });
     });
 
