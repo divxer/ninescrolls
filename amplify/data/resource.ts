@@ -232,6 +232,7 @@ const schema = a.schema({
   }),
 
   OrderLog: a.customType({
+    id: a.string(),
     action: a.string().required(),
     fromStatus: a.ref('OrderStatus'),
     toStatus: a.ref('OrderStatus'),
@@ -358,6 +359,7 @@ const schema = a.schema({
   }),
 
   LogisticsLogEntry: a.customType({
+    id: a.string(),
     action: a.string().required(),
     fromStage: a.ref('LogisticsStage'),
     toStage: a.ref('LogisticsStage'),

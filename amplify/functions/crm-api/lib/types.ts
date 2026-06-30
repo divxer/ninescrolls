@@ -30,6 +30,10 @@ export interface TimelineEventItem {
   createdBy: string | null;
   payload: Record<string, unknown> | null;
   rollupApplied: boolean;
+  // Durable repair evidence: an org whose rollup still needs recompute (the OLD org after a link
+  // move). Set together with rollupApplied=false; cleared once recompute succeeds. Lets a crashed
+  // re-emit be repaired on retry/sweep without losing the old org's identity. Internal (not GraphQL).
+  rollupPendingOrgId: string | null;
   direction: 'inbound' | 'outbound' | null;
   externalId: string | null;
   threadId: string | null;

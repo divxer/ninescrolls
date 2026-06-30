@@ -23,6 +23,7 @@ export async function writeLinkAuditLog(args: {
     oldContactId: args.oldContactId ?? null, newContactId: args.newContactId ?? null,
     operator: args.operator, reason: args.reason, timestamp: args.timestamp,
   } as LinkAuditLogItem;
-  await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
+  // Audit rows are immutable: never overwrite an existing one (ids are unique per write).
+  await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
   return id;
 }

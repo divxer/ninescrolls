@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSend = vi.fn();
 vi.mock('./dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
-vi.mock('./idGenerators', () => ({ generateAuditId: () => 'audit-x', generateOrgId: () => 'org-x' }));
+vi.mock('./idGenerators', () => ({ generateAuditId: () => 'audit-x' }));
 import { writeLinkAuditLog } from './auditStore';
 beforeEach(() => mockSend.mockReset());
 
@@ -20,5 +20,6 @@ describe('writeLinkAuditLog', () => {
     expect(item.newOrgId).toBe('org-NEW');
     expect(item.operator).toBe('harvey');
     expect(item.GSI2PK).toBe('ORG#org-NEW');
+    expect(mockSend.mock.calls[0][0].input.ConditionExpression).toMatch(/attribute_not_exists/); // immutable
   });
 });
