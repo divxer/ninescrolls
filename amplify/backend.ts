@@ -14,6 +14,7 @@ import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { logisticsApi } from './functions/logistics-api/resource';
+import { crmApi } from './functions/crm-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
@@ -86,6 +87,7 @@ const backend = defineBackend({
     documentUpload,
     orderApi,
     logisticsApi,
+    crmApi,
     optimizeInsightsImage,
     generateSitemaps,
     submitLead,
@@ -524,6 +526,10 @@ backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketN
 // Grant logistics-api Lambda access (Logistics Cases ledger — shared single table)
 intelligenceTable.grantReadWriteData(backend.logisticsApi.resources.lambda);
 backend.logisticsApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Grant crm-api Lambda access (Customer 360 Timeline — shared single table)
+intelligenceTable.grantReadWriteData(backend.crmApi.resources.lambda);
+backend.crmApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
 // Grant submit-lead Lambda access to Intelligence table + Newsletter table
 intelligenceTable.grantReadWriteData(backend.submitLead.resources.lambda);

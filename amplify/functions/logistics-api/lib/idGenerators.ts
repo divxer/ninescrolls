@@ -12,3 +12,7 @@ export function generateLegId(): string {
 export function formatCaseNumber(year: number, seq: number): string {
   return `NS-LOG-${year}-${String(seq).padStart(4, '0')}`;
 }
+
+export function generateMilestoneId(): string {
+  return `mlog-${crypto.randomBytes(6).toString('hex')}`;
+}

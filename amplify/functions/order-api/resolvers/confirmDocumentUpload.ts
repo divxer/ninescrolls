@@ -2,7 +2,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
 import { VALID_STAGES, DOCUMENT_TYPES, MAX_FILE_SIZE, getOperatorInfo } from '../lib/types.js';
-import { generateDocId } from '../lib/idGenerators.js';
+import { generateDocId, generateLogId } from '../lib/idGenerators.js';
 import { buildDocumentResponse } from '../lib/orderHelper.js';
 import type { AppSyncEvent, DocumentItem } from '../lib/types.js';
 
@@ -93,6 +93,7 @@ export async function confirmDocumentUpload(event: AppSyncEvent) {
         Item: {
             PK: `ORDER#${args.orderId}`,
             SK: `LOG#${now}`,
+            id: generateLogId(),
             action: 'DOCUMENT_UPLOADED',
             operator,
             timestamp: now,

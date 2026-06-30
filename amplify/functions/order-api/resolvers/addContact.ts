@@ -1,6 +1,6 @@
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
-import { generateContactId } from '../lib/idGenerators.js';
+import { generateContactId, generateLogId } from '../lib/idGenerators.js';
 import { fetchOrder } from '../lib/orderHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
@@ -65,6 +65,7 @@ export async function addContact(event: AppSyncEvent) {
         Item: {
             PK: `ORDER#${orderId}`,
             SK: `LOG#${now}`,
+            id: generateLogId(),
             action: 'CONTACT_ADDED',
             operator,
             timestamp: now,

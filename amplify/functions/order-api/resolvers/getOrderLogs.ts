@@ -22,6 +22,7 @@ export async function getOrderLogs(event: AppSyncEvent) {
     return (result.Items || []).map((item: Record<string, unknown>) => {
         const log = item as unknown as LogItem;
         return {
+            id: log.id ?? null,
             action: log.action,
             fromStatus: log.fromStatus || null,
             toStatus: log.toStatus || null,

@@ -2,6 +2,7 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { fetchCase, buildCaseResponse } from '../lib/caseHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
+import { generateMilestoneId } from '../lib/idGenerators.js';
 import type { AppSyncEvent, LogisticsLogEntry } from '../lib/types.js';
 import { LOGISTICS_STAGES, UNIVERSAL_STAGES, type LogisticsStage } from '../lib/stages.js';
 
@@ -25,6 +26,7 @@ export async function advanceLogisticsStage(event: AppSyncEvent) {
   const now = new Date().toISOString();
   const { email: operator } = getOperatorInfo(event);
   const entry: LogisticsLogEntry = {
+    id: generateMilestoneId(),
     action: 'STAGE_ADVANCED',
     fromStage: current.currentStage,
     toStage: stage,

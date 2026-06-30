@@ -1,6 +1,7 @@
 import { QueryCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { docClient, s3Client, TABLE_NAME, BUCKET_NAME } from '../lib/dynamodb.js';
+import { generateLogId } from '../lib/idGenerators.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, DocumentItem } from '../lib/types.js';
 
@@ -58,6 +59,7 @@ export async function deleteDocument(event: AppSyncEvent) {
         Item: {
             PK: `ORDER#${orderId}`,
             SK: `LOG#${now}`,
+            id: generateLogId(),
             action: 'DOCUMENT_DELETED',
             operator,
             timestamp: now,

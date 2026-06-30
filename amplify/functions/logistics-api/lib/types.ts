@@ -38,6 +38,7 @@ export interface ShipmentLeg {
 }
 
 export interface LogisticsLogEntry {
+  id?: string; // stable per-entry id (mlog-...). Optional: legacy entries predate this field.
   action: string;
   fromStage?: LogisticsStage | null;
   toStage?: LogisticsStage | null;
