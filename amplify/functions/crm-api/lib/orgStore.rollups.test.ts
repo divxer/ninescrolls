@@ -27,6 +27,15 @@ describe('createReviewOrgFromDomain', () => {
     const id = await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z');
     expect(id).toBe('org-EXISTING');
   });
+  it('does NOT set lastActivityAt when the triggering event is internal-only', async () => {
+    mockSend.mockResolvedValueOnce({}); // claim
+    mockSend.mockResolvedValueOnce({}); // org put
+    mockSend.mockResolvedValueOnce({}); // name index
+    await createReviewOrgFromDomain('newcorp.com', '2026-06-19T10:00:00Z', true);
+    const orgItem = mockSend.mock.calls[1][0].input.Item;
+    expect(orgItem.firstSeenAt).toBe('2026-06-19T10:00:00Z');
+    expect(orgItem.lastActivityAt).toBeUndefined();
+  });
 });
 
 describe('bumpOrgRollupOnCreate', () => {
@@ -45,6 +54,20 @@ describe('bumpOrgRollupOnCreate', () => {
   it('internalOnly note is a no-op (never advances lastActivityAt)', async () => {
     await bumpOrgRollupOnCreate({ orgId: 'org-1', kind: 'note', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: true });
     expect(mockSend).not.toHaveBeenCalled();
+  });
+  it('out-of-order event (conditional check fails) recomputes from the authoritative set, not a partial count bump', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('older'), { name: 'ConditionalCheckFailedException' })); // conditional update fails
+    mockSend.mockResolvedValueOnce({ Items: [
+      { kind: 'order_created', occurredAt: '2026-09-01T00:00:00Z' },
+      { kind: 'order_created', occurredAt: '2026-06-19T10:00:00Z' },
+    ] }); // recompute GSI2 query
+    mockSend.mockResolvedValueOnce({}); // recompute final update
+    await bumpOrgRollupOnCreate({ orgId: 'org-1', kind: 'order_created', occurredAt: '2026-06-19T10:00:00Z' });
+    expect(mockSend).toHaveBeenCalledTimes(3);
+    const upd = mockSend.mock.calls[2][0].input;
+    expect(upd.UpdateExpression).toMatch(/rfqCount = :r/); // recompute-style full SET, not a partial count
+    expect(upd.ExpressionAttributeValues[':o']).toBe(2); // both order_created counted
+    expect(upd.ExpressionAttributeValues[':la']).toBe('2026-09-01T00:00:00Z'); // latest preserved
   });
 });
 

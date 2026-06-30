@@ -7,7 +7,7 @@ const upsertContact = vi.fn();
 vi.mock('./contactStore', () => ({ upsertContact: (a: unknown) => upsertContact(a) }));
 const createReviewOrgFromDomain = vi.fn(); const bumpOrgRollupOnCreate = vi.fn(); const recomputeRollupsForOrg = vi.fn();
 vi.mock('./orgStore', () => ({
-  createReviewOrgFromDomain: (d: string, o: string) => createReviewOrgFromDomain(d, o),
+  createReviewOrgFromDomain: (d: string, o: string, i?: boolean) => createReviewOrgFromDomain(d, o, i),
   bumpOrgRollupOnCreate: (a: unknown) => bumpOrgRollupOnCreate(a),
   recomputeRollupsForOrg: (o: string) => recomputeRollupsForOrg(o),
 }));
@@ -46,7 +46,7 @@ describe('emitTimelineEvent', () => {
     upsertContact.mockResolvedValueOnce('ct-1');
     mockSend.mockResolvedValueOnce({}); mockSend.mockResolvedValueOnce({});
     await emitTimelineEvent({ ...baseEvt, resolveInput: { ...baseEvt.resolveInput, email: 'first@newcorp.com' } });
-    expect(createReviewOrgFromDomain).toHaveBeenCalledWith('newcorp.com', '2026-06-19T10:00:00Z');
+    expect(createReviewOrgFromDomain).toHaveBeenCalledWith('newcorp.com', '2026-06-19T10:00:00Z', false);
     expect(mockSend.mock.calls[0][0].input.Item.orgId).toBe('org-REVIEW');
     expect(upsertContact).toHaveBeenCalledWith(expect.objectContaining({ orgId: 'org-REVIEW' }));
   });
@@ -83,6 +83,17 @@ describe('emitTimelineEvent', () => {
     await emitTimelineEvent(baseEvt);
     expect(mockSend.mock.calls[1][0].input.Item.rollupApplied).toBe(true);
     // recompute is authoritative + idempotent, so it cannot double-count if the first bump landed.
+    expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-df');
+    expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
+  });
+  it('re-emit same org with a rollup-affecting field change (voided) recomputes, even if rollupApplied was true', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce('ct-terry');
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
+    // existing event was NOT voided + rollup already applied; new emit voids it → counters must refresh
+    getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: true });
+    mockSend.mockResolvedValueOnce({}); // overwrite put
+    await emitTimelineEvent({ ...baseEvt, voided: true });
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-df');
     expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
   });

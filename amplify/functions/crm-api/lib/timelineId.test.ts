@@ -16,11 +16,19 @@ describe('timelineId', () => {
   });
   it('other kinds', () => {
     expect(timelineId({ kind: 'rfq_submitted', rfqId: 'rfq-1' })).toBe('tev-rfq-rfq-1-submitted');
-    expect(timelineId({ kind: 'rfq_status_changed', rfqId: 'rfq-1', toStatus: 'converted' })).toBe('tev-rfq-rfq-1-status-converted');
+    expect(timelineId({ kind: 'rfq_status_changed', rfqId: 'rfq-1', toStatus: 'converted', statusLogId: 'rlog-1' })).toBe('tev-rfq-rfq-1-status-rlog-1');
     expect(timelineId({ kind: 'lead_captured', leadId: 'lead-1' })).toBe('tev-lead-lead-1');
     expect(timelineId({ kind: 'logistics_milestone', caseId: 'lc-1', milestoneId: 'mlog-x' })).toBe('tev-logistics-lc-1-log-mlog-x');
     expect(timelineId({ kind: 'quote_sent', quoteDocId: 'doc-1' })).toBe('tev-quote-doc-1');
     expect(timelineId({ kind: 'site_visit_session', sessionId: 'sess-1' })).toBe('tev-analytics-session-sess-1');
     expect(timelineId({ kind: 'manual', manualId: 'm1' })).toBe('tev-manual-m1');
+  });
+  it('rfq_status_changed fallback: same status at different times does NOT collide, same inputs are deterministic', () => {
+    const a = timelineId({ kind: 'rfq_status_changed', rfqId: 'rfq-1', toStatus: 'reopened', occurredAt: '2026-01-01T00:00:00Z' });
+    const b = timelineId({ kind: 'rfq_status_changed', rfqId: 'rfq-1', toStatus: 'reopened', occurredAt: '2026-02-01T00:00:00Z' });
+    const a2 = timelineId({ kind: 'rfq_status_changed', rfqId: 'rfq-1', toStatus: 'reopened', occurredAt: '2026-01-01T00:00:00Z' });
+    expect(a).toMatch(/^tev-rfq-rfq-1-status-h[0-9a-f]{12}$/);
+    expect(a).not.toBe(b);   // different times → different ids (no collision)
+    expect(a).toBe(a2);      // same inputs → deterministic
   });
 });

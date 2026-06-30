@@ -20,7 +20,7 @@ function isRealOrg(orgId: string): boolean {
   return !orgId.startsWith('unresolved-') && !orgId.startsWith('new-org:');
 }
 
-export async function createReviewOrgFromDomain(domain: string, occurredAt: string): Promise<string> {
+export async function createReviewOrgFromDomain(domain: string, occurredAt: string, isInternalOnly = false): Promise<string> {
   const orgId = generateOrgId();
   // Race-safe claim: the domain index is the idempotency anchor.
   try {
@@ -38,18 +38,21 @@ export async function createReviewOrgFromDomain(domain: string, occurredAt: stri
   }
   const nowIso = new Date().toISOString();
   const displayName = domain.split('.')[0];
+  const orgItem: Record<string, unknown> = {
+    PK: `ORG#${orgId}`, SK: 'A',
+    GSI1PK: 'ORG_STATUS#review', GSI1SK: `${nowIso}#${orgId}`,
+    entityType: 'ORGANIZATION',
+    orgId, primaryDomain: domain, displayName,
+    status: 'review', createdByResolution: true, linkLocked: false,
+    rfqCount: 0, orderCount: 0, leadCount: 0,
+    firstSeenAt: occurredAt,
+    createdAt: nowIso, updatedAt: nowIso,
+  };
+  // The triggering event only advances customer-facing lastActivityAt when it is NOT internal-only.
+  if (!isInternalOnly) orgItem.lastActivityAt = occurredAt;
   await docClient.send(new PutCommand({
     TableName: TABLE_NAME(),
-    Item: {
-      PK: `ORG#${orgId}`, SK: 'A',
-      GSI1PK: 'ORG_STATUS#review', GSI1SK: `${nowIso}#${orgId}`,
-      entityType: 'ORGANIZATION',
-      orgId, primaryDomain: domain, displayName,
-      status: 'review', createdByResolution: true, linkLocked: false,
-      rfqCount: 0, orderCount: 0, leadCount: 0,
-      firstSeenAt: occurredAt, lastActivityAt: occurredAt,
-      createdAt: nowIso, updatedAt: nowIso,
-    },
+    Item: orgItem,
     ConditionExpression: 'attribute_not_exists(PK)',
   }));
   // Maintain the name index so organization_name_match resolves this org without Plan 2 backfill.
@@ -80,15 +83,12 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
         ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
       }));
     } catch (err: unknown) {
-      // Older event than current lastActivityAt: still increment the count without moving dates back.
-      if ((err as { name?: string }).name === 'ConditionalCheckFailedException' && countAttr) {
-        await docClient.send(new UpdateCommand({
-          TableName: TABLE_NAME(),
-          Key: { PK: `ORG#${args.orgId}`, SK: 'A' },
-          UpdateExpression: `SET ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`,
-          ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
-        }));
-      } else if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') {
+      // Out-of-order event (older than current lastActivityAt). The single conditional update
+      // also gates the count + latest*Date together, so a count-only partial fix would leave
+      // latest*Date stale. Recompute from the authoritative event set — correct for every field.
+      if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+        await recomputeRollupsForOrg(args.orgId);
+      } else {
         throw err;
       }
     }

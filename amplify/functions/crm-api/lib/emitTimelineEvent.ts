@@ -32,7 +32,7 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
 
   let orgId = resolved.orgId;
   if (resolved.resolutionReason === 'email_domain_new' && orgId.startsWith('new-org:')) {
-    orgId = await createReviewOrgFromDomain(orgId.slice('new-org:'.length), args.occurredAt);
+    orgId = await createReviewOrgFromDomain(orgId.slice('new-org:'.length), args.occurredAt, args.isInternalOnly ?? false);
   }
 
   let contactId = resolved.contactId;
@@ -63,16 +63,24 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
     const existing = await getTimelineEvent(id);
     const oldOrgId = existing?.orgId;
     const linkMoved = !!oldOrgId && oldOrgId !== orgId;
+    // A re-emit can change rollup-affecting fields (voided/kind/occurredAt/isInternalOnly) on the
+    // same org — those must trigger a recompute or the persisted counters/dates go stale.
+    const rollupFieldsChanged = !!existing && (
+      existing.kind !== args.kind ||
+      existing.occurredAt !== args.occurredAt ||
+      existing.voided !== (args.voided ?? false) ||
+      existing.isInternalOnly !== (args.isInternalOnly ?? false)
+    );
+    // The original bump may have landed before the rollupApplied mark crashed; recompute (not an
+    // incremental re-bump) is authoritative and safe whether or not the first bump ran.
     const needsCompensation = !linkMoved && existing?.rollupApplied !== true;
-    const finalApplied = linkMoved || needsCompensation ? true : (existing?.rollupApplied ?? true);
+    const willRecomputeSameOrg = !linkMoved && (rollupFieldsChanged || needsCompensation);
+    const finalApplied = linkMoved || willRecomputeSameOrg ? true : (existing?.rollupApplied ?? true);
     await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(existing?.createdAt ?? nowIso, finalApplied) }));
     if (linkMoved) {
       await recomputeRollupsForOrg(oldOrgId!);
       await recomputeRollupsForOrg(orgId);
-    } else if (needsCompensation) {
-      // The original bump may have landed before the mark crashed; an incremental re-bump
-      // would double-count. Recompute is derived from the authoritative event set, so it is
-      // safe whether or not the first bump ran.
+    } else if (willRecomputeSameOrg) {
       await recomputeRollupsForOrg(orgId);
     }
     return;
