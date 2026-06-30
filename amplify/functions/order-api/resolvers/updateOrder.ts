@@ -1,5 +1,6 @@
 import { UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
+import { generateLogId } from '../lib/idGenerators.js';
 import { fetchOrder, buildFullOrderResponse } from '../lib/orderHelper.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent } from '../lib/types.js';
@@ -87,6 +88,7 @@ export async function updateOrder(event: AppSyncEvent) {
                 Item: {
                     PK: `ORDER#${orderId}`,
                     SK: `LOG#${now}`,
+                    id: generateLogId(),
                     action: 'QUOTE_VALIDITY_UPDATED',
                     operator,
                     timestamp: now,

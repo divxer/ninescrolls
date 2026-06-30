@@ -1,5 +1,6 @@
 import { GetCommand, DeleteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
+import { generateLogId } from '../lib/idGenerators.js';
 import { getOperatorInfo } from '../lib/types.js';
 import type { AppSyncEvent, ContactItem } from '../lib/types.js';
 
@@ -38,6 +39,7 @@ export async function removeContact(event: AppSyncEvent) {
         Item: {
             PK: `ORDER#${orderId}`,
             SK: `LOG#${now}`,
+            id: generateLogId(),
             action: 'CONTACT_REMOVED',
             operator,
             timestamp: now,
