@@ -33,7 +33,7 @@ EmitArgs = {
 ## File Structure
 
 **New — `amplify/lib/crm/`:**
-- `types.ts` — `CrmEmitPayload` wire contract; type-only re-export of `EmitArgs` from crm-api (single source of truth, no runtime coupling).
+- `types.ts` — `CrmEmitPayload` wire contract; type-only re-export of `EmitArgs` from crm-api. This is intentional for 2A: P1's `crm-api/lib/emitTimelineEvent.ts` remains the source of truth for the internal emit shape, while `amplify/lib/crm/types.ts` is the public wire facade business Lambdas import. The type-only import is erased at build time, so there is no runtime coupling.
 - `invoke-crm-api.ts` — `invokeCrmApi(payload, opts?)` + `emitTimelineEventToCrm(args, opts?)`.
 - `emit-builders.ts` — pure `EmitArgs` builders (rfq, lead, orderCreated, orderStageChanged, quoteSent, logisticsMilestone).
 - `*.test.ts` for each.
@@ -194,27 +194,34 @@ git commit -m "feat(crm): async invoke-crm-api helper + wire contract (Plan 2A)"
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `amplify/functions/crm-api/handler.test.ts`:
+Replace `amplify/functions/crm-api/handler.test.ts` with a hoisted mock before importing `handler`:
 ```typescript
-import { vi } from 'vitest';
-const emitTimelineEvent = vi.fn();
-vi.mock('./lib/emitTimelineEvent', () => ({ emitTimelineEvent: (a: unknown) => emitTimelineEvent(a) }));
+import { describe, it, expect, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({ emitTimelineEvent: vi.fn() }));
+vi.mock('./lib/emitTimelineEvent', () => ({
+  emitTimelineEvent: (a: unknown) => mocks.emitTimelineEvent(a),
+}));
+
+import { handler } from './handler';
 
 describe('crm-api direct-invoke dispatch', () => {
   it('routes {action:emitTimelineEvent} to emitTimelineEvent and ignores AppSync markers', async () => {
-    emitTimelineEvent.mockResolvedValueOnce(undefined);
-    const { handler } = await import('./handler');
+    mocks.emitTimelineEvent.mockResolvedValueOnce(undefined);
     const args = { source: 'rfq', kind: 'rfq_submitted' };
     await handler({ action: 'emitTimelineEvent', args } as never);
-    expect(emitTimelineEvent).toHaveBeenCalledWith(args);
+    expect(mocks.emitTimelineEvent).toHaveBeenCalledWith(args);
   });
   it('throws on an unknown action', async () => {
-    const { handler } = await import('./handler');
     await expect(handler({ action: 'nope' } as never)).rejects.toThrow(/unknown action.*nope/i);
+  });
+  it('preserves the AppSync field dispatch error path', async () => {
+    const event = { info: { fieldName: 'nope', parentTypeName: 'Query' }, arguments: {} };
+    await expect(handler(event as never)).rejects.toThrow(/unknown.*nope/i);
   });
 });
 ```
-> Note: if the existing `handler.test.ts` already imports `handler` at top-level, instead add this `vi.mock` at the top of the file (mocks are hoisted) and reuse the existing import. Keep the existing "unknown fieldName" AppSync test intact.
+> Reason: the current test imports `handler` at top-level. `vi.hoisted` avoids Vitest mock-hoisting/TDZ traps and guarantees the mock is registered before `handler` imports `./lib/emitTimelineEvent`.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -468,17 +475,27 @@ git commit -m "feat(crm): pure EmitArgs builders for the 6 channel kinds (Plan 2
 
 In `amplify/backend.ts`, near the existing org-api grant block (~`:1028`, where `submitRfq`/`submitLead`/`convertRfqToOrder` get `ORGANIZATION_API_FUNCTION_NAME`), add a CRM block:
 ```typescript
-// Grant crm-api invoke + env to the 5 source Lambdas covering the 8 Plan-2A emit sites.
-for (const fn of [backend.submitRfq, backend.submitLead, backend.convertRfqToOrder, backend.orderApi, backend.logisticsApi]) {
-  backend.crmApi.resources.lambda.grantInvoke(fn.resources.lambda);
+// Cross-Lambda invoke from the 5 source Lambdas → crm-api (8 Plan-2A emit sites).
+// Match the existing organization-api grant style rather than grantInvoke(), to keep
+// dependencies explicit and avoid surprising synthesized circular references.
+[backend.submitRfq, backend.submitLead, backend.convertRfqToOrder, backend.orderApi, backend.logisticsApi].forEach((fn) => {
+  fn.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['lambda:InvokeFunction'],
+    resources: [backend.crmApi.resources.lambda.functionArn],
+  }));
   fn.addEnvironment('CRM_API_FUNCTION_NAME', backend.crmApi.resources.lambda.functionName);
-}
+});
 
 // Manual createOrder (order-api) needs to upsert/get the canonical Organization → matchedOrgId.
-backend.organizationApi.resources.lambda.grantInvoke(backend.orderApi.resources.lambda);
+backend.orderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+  effect: Effect.ALLOW,
+  actions: ['lambda:InvokeFunction'],
+  resources: [backend.organizationApi.resources.lambda.functionArn],
+}));
 backend.orderApi.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
 ```
-> Verify the exact grant idiom against the existing org-api block — if it uses `grantInvoke(target)` in the other direction or a CDK `Function.grantInvoke`, match it precisely. The semantic required: each listed source Lambda may `lambda:InvokeFunction` on `crm-api`; `order-api` may invoke `organization-api`.
+> `PolicyStatement` / `Effect` are already imported in `backend.ts`; reuse them.
 
 - [ ] **Step 2: Typecheck the backend**
 
@@ -496,13 +513,13 @@ git commit -m "feat(backend): grant crm-api invoke to source Lambdas + order-api
 
 ## Tasks 5–12: Per-channel emit wiring
 
-Each task follows the same shape: after the source write commits, build the `EmitArgs` and fire `emitTimelineEventToCrm(...)`. The integration test mocks `emitTimelineEventToCrm` (and, where relevant, `invokeOrganizationApi`), drives the resolver/handler, and asserts (a) emit is called once with the expected `source`/`kind`/ids/`matchedOrgId`, and (b) the business response is still returned even when emit throws (the helper never throws on the async path, but the call site must not `await`-rethrow). Use `.js`-suffixed imports inside order-api/logistics-api resolvers; no suffix inside submit-* handlers if that's their convention (match the file).
+Each task follows the same shape: after the source write commits, build the `EmitArgs` and fire `emitTimelineEventToCrm(...)`. The integration test mocks `emitTimelineEventToCrm` (and, where relevant, `invokeOrganizationApi`), drives the resolver/handler, and asserts emit is called once with the expected `source`/`kind`/ids/`matchedOrgId`. **Failure ownership is helper-level:** the default async `emitTimelineEventToCrm` wrapper logs/swallows dispatch failure, so channel tests should not mock the wrapper to reject and then expect the business response to succeed. That non-fatal dispatch behavior is covered in Task 1's `invokeCrmApi` tests. Use `.js`-suffixed imports inside order-api/logistics-api resolvers; no suffix inside submit-* handlers if that's their convention (match the file).
 
 ### Task 5: `submit-rfq` (site #1)
 
 **Files:** Modify `amplify/functions/submit-rfq/handler.ts` (after the RFQ `PutCommand`, ~`:597`); Test `amplify/functions/submit-rfq/handler.test.ts`.
 
-- [ ] **Step 1: Failing test** — mock `../../lib/crm/invoke-crm-api` (`emitTimelineEventToCrm`), submit an RFQ with a corporate email, assert `emitTimelineEventToCrm` called once with `{ source:'rfq', kind:'rfq_submitted', sourceEntityId: <rfqId> }` and `resolveInput.matchedOrgId` = the value returned by the org-api upsert. Assert the handler still returns its normal success response when the emit mock rejects.
+- [ ] **Step 1: Failing test** — mock `../../lib/crm/invoke-crm-api` (`emitTimelineEventToCrm`), submit an RFQ with a corporate email, assert `emitTimelineEventToCrm` called once with `{ source:'rfq', kind:'rfq_submitted', sourceEntityId: <rfqId> }` and `resolveInput.matchedOrgId` = the value returned by the org-api upsert.
 - [ ] **Step 2:** Run `npx vitest run amplify/functions/submit-rfq/handler.test.ts` → FAIL.
 - [ ] **Step 3: Implement** — import `{ emitTimelineEventToCrm }` from `../../lib/crm/invoke-crm-api` and `{ buildRfqEmitArgs }` from `../../lib/crm/emit-builders`. After the RFQ `PutCommand` and the existing org-api upsert (which yields `matchedOrgId`), add:
 ```typescript
@@ -519,7 +536,7 @@ await emitTimelineEventToCrm(buildRfqEmitArgs(
 
 **Files:** Modify `amplify/functions/submit-lead/handler.ts` (after the lead `PutCommand` + `matchedOrgId` backfill, ~`:681`); Test `submit-lead/handler.test.ts`.
 
-- [ ] **Step 1: Failing test** — for each lead `type` (`contact`/`download_gate`/`newsletter`), assert `emitTimelineEventToCrm` called with `kind:'lead_captured'`, the type-specific summary, and `resolveInput.matchedOrgId` from the backfill; business response still returned on emit rejection.
+- [ ] **Step 1: Failing test** — for each lead `type` (`contact`/`download_gate`/`newsletter`), assert `emitTimelineEventToCrm` called with `kind:'lead_captured'`, the type-specific summary, and `resolveInput.matchedOrgId` from the backfill.
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3: Implement** — import helper + `buildLeadEmitArgs`. After the lead commit + `matchedOrgId` backfill:
 ```typescript
@@ -579,7 +596,7 @@ await emitTimelineEventToCrm(buildOrderCreatedEmitArgs({ orderId, createdAt, pro
 
 **Files:** Modify `amplify/functions/order-api/resolvers/updateOrderStatus.ts` (after response built, ~`:178`); Test `order-api/handler.test.ts`.
 
-- [ ] **Step 1: Failing test** — change an order's status; assert `emitTimelineEventToCrm` called with `kind:'order_stage_changed'`, `idInput.orderLogId` = the `olog-` id stamped on the new status-log entry, `idInput.toStatus` = the new status, `occurredAt` = the log timestamp, `resolveInput.matchedOrgId` = the order's `matchedOrgId`. Business response still returned on emit rejection.
+- [ ] **Step 1: Failing test** — change an order's status; assert `emitTimelineEventToCrm` called with `kind:'order_stage_changed'`, `idInput.orderLogId` = the `olog-` id stamped on the new status-log entry, `idInput.toStatus` = the new status, `occurredAt` = the log timestamp, `resolveInput.matchedOrgId` = the order's `matchedOrgId`.
 - [ ] **Step 2:** Run → FAIL.
 - [ ] **Step 3: Implement** — import helper + `buildOrderStageChangedEmitArgs`. The resolver already builds the status-log item with a stable `id` (P1) and has the order in scope. After the response is built:
 ```typescript
@@ -665,14 +682,23 @@ Expected: exit 0.
 
 - [ ] **Step 3: Lint the new + touched files**
 
-Run: `npx eslint amplify/lib/crm amplify/functions/crm-api`
-Expected: exit 0 (pre-existing `any` warnings elsewhere are acceptable; no new errors).
+Run: `npx eslint amplify/lib/crm amplify/functions/crm-api amplify/functions/submit-rfq amplify/functions/submit-lead amplify/functions/convert-rfq-to-order amplify/functions/order-api amplify/functions/logistics-api`
+Expected: exit 0 (pre-existing warnings elsewhere are acceptable; no new errors in the Plan 2A touched paths). If repo lint is noisy because of unrelated pre-existing issues, record the exact output and rely on the targeted vitest suites + TypeScript check as the blocking gate.
 
 - [ ] **Step 4: Checkpoint commit (if anything remains)**
 
 ```bash
-git status
-git add -A && git commit -m "chore(crm): Plan 2A channel wiring complete — 8 emit sites live" || echo "nothing to commit"
+git status --short
+git add \
+  amplify/lib/crm \
+  amplify/functions/crm-api/handler.ts amplify/functions/crm-api/handler.test.ts \
+  amplify/backend.ts \
+  amplify/functions/submit-rfq/handler.ts amplify/functions/submit-rfq/handler.test.ts \
+  amplify/functions/submit-lead/handler.ts amplify/functions/submit-lead/handler.test.ts \
+  amplify/functions/convert-rfq-to-order/handler.ts amplify/functions/convert-rfq-to-order/handler.test.ts \
+  amplify/functions/order-api \
+  amplify/functions/logistics-api
+git commit -m "chore(crm): Plan 2A channel wiring complete — 8 emit sites live" || echo "nothing to commit"
 ```
 
 ---
