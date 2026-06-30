@@ -959,7 +959,7 @@ git commit -m "feat(crm-api): reconcileSweep action dispatch + 120s timeout (2C-
 
 In `amplify/backend.ts`:
 - Add `RuleTargetInput` to the `aws-cdk-lib/aws-events` import (line ~68: `import { Rule, Schedule, RuleTargetInput } from 'aws-cdk-lib/aws-events';`).
-- Add the Rules to **`feedbackStack`** — confirmed (`amplify/backend.ts:401`) as the stack that creates the `intelligenceTable` and grants `backend.crmApi` read/write to it (`amplify/backend.ts:531`), so the target Lambda lives in the same stack (no cross-stack target). Guard with `if (!isSandbox)` (the module-level const at `amplify/backend.ts:596`). **Placement:** add the block AFTER line 596 (so `isSandbox` is defined) — e.g. alongside the existing `if (!isSandbox)` cron blocks (~`:980+`); `feedbackStack` and `backend.crmApi` are both in scope there. Add a sibling `if (!isSandbox) { ... }` block:
+- Add the Rules to **`feedbackStack`** — confirmed (`amplify/backend.ts:401`) as the stack that creates the `intelligenceTable` and grants `backend.crmApi` read/write to it (`amplify/backend.ts:531`). The `backend.crmApi` Lambda construct lives in its own Amplify-generated stack, so the Rule→Lambda target is a cross-stack reference; CDK resolves it automatically (exports/imports). Guard with `if (!isSandbox)` (the module-level const at `amplify/backend.ts:596`). **Placement:** add the block AFTER line 596 (so `isSandbox` is defined) — e.g. alongside the existing `if (!isSandbox)` cron blocks (~`:980+`); `feedbackStack` and `backend.crmApi` are both in scope there. Add a sibling `if (!isSandbox) { ... }` block:
 ```typescript
 // CRM timeline reconciliation sweep (durability backstop for the async emit projection).
 new Rule(feedbackStack, 'CrmSweepHotRule', {
@@ -975,7 +975,7 @@ new Rule(feedbackStack, 'CrmSweepColdRule', {
   })],
 });
 ```
-> Stack is **`feedbackStack`** (confirmed above) — the same stack that owns the intelligence table and grants `backend.crmApi`, so the Lambda target is in-stack. `backend.crmApi` is the registered name (from P1). `LambdaFunctionTarget` accepts the `{ event }` options object (`aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`). The `isSandbox` flag already exists in `backend.ts` (Tender crons use it); reuse it — do not redefine.
+> Stack is **`feedbackStack`** (confirmed above) — the same stack that owns the intelligence table and grants `backend.crmApi`. The Rule→Lambda target may be cross-stack (the crm-api Lambda is in its own Amplify-generated stack); CDK resolves that automatically, and the backend typecheck/synth is the backstop. `backend.crmApi` is the registered name (from P1). `LambdaFunctionTarget` accepts the `{ event }` options object (`aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`). The `isSandbox` flag already exists in `backend.ts` (Tender crons use it); reuse it — do not redefine.
 
 - [ ] **Step 2: Typecheck**
 
