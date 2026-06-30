@@ -1,8 +1,33 @@
 # Customer 360 Timeline — Phase 1 Design Spec
 
 **Date:** 2026-06-29
-**Status:** Approved for planning (with required clarifications — see §10)
+**Status:** Implemented (PR #223) — see reconciliation note below
 **Scope:** Phase 1 of a multi-phase Customer Intelligence Platform for NineScrolls
+
+---
+
+## ⚠️ Implementation reconciliation (PR #223) — READ FIRST
+
+During implementation review it was confirmed that **organization-api already owns org identity**:
+the canonical `orgId` is the **eTLD+1 domain** (`ORG#diamondfoundry.com / META`), resolved via
+`GSI2 ORG_DOMAIN#<domain>` + `ORG_DOMAIN_LOOKUP` aliases (shared `amplify/lib/organization/etld.ts`).
+To avoid CRM minting duplicate orgs, P1's scope was narrowed. **What actually shipped in P1 differs
+from the rung-by-rung text below — this banner is authoritative where they conflict:**
+
+- **P1 `resolveLinks` resolves EXISTING orgs only and creates NO orgs.** Ladder as built:
+  `manual → existing_matchedOrgId → contact_email_exact → email_domain_exact (canonical eTLD+1 via
+  ORG_DOMAIN# lookup) → visitor_prior_event (analytics only) → unresolved`.
+- **DEFERRED TO P2:** rung **`email_domain_new`** (auto-create review org) and rung
+  **`organization_name_match`**. A corporate domain with no existing org → **`unresolved`** (→ Needs-Linking).
+- **Not built in P1 (moved to P2):** `createReviewOrgFromDomain`, `generateOrgId`, the bespoke
+  `ORGDOMAIN#`/`ORGNAME#` indexes, `ORG_STATUS#review` writes, the "Review New Orgs" queue. P2 must
+  build auto-create on the **shared/canonical organization-api upsert**, not a CRM re-implementation.
+- **Still valid as written:** TimelineEvent/Contact/LinkAuditLog storage, deterministic ids,
+  idempotent + durable rollups (incl. `rollupPendingOrgId` repair evidence), Needs-Linking,
+  server-side `internalOnly` (Plan 3), the §10 clarifications. CRM rollups write `ORG#<eTLD+1>/META`.
+
+Sections §3.3, §3.5(¶ note), §4.1 (rungs 5–6), §4.3 guard, §6.3, §7.3 (Review New Orgs), and the
+§8.3/§10 auto-create items are superseded for P1 per the above; they describe the eventual P2 behavior.
 
 ---
 
@@ -217,8 +242,8 @@ cause of the "untrustworthy" feeling.
 | 2 | `existing_matchedOrgId` | source carries `matchedOrgId` (e.g. `Order.matchedOrgId`) | 1.0 |
 | 3 | `contact_email_exact` | existing `Contact` with that email already has an `orgId` | 0.9 |
 | 4 | `email_domain_exact` | email domain = Org `primaryDomain`/`aliasDomains`, **excluding free domains** | 0.95 |
-| 5 | `email_domain_new` | corporate domain, no Org yet → **auto-create Org** (`status=review`, `createdByResolution=true`). **Strong-signal channels only — see guard** | 0.8 |
-| 6 | `organization_name_match` | normalized name == Org `displayName`/alias (**exact-normalized, no fuzzy**) | 0.7 |
+| 5 | `email_domain_new` | **[DEFERRED TO P2 — see top banner]** corporate domain, no Org yet → auto-create. In P1 this case → `unresolved` (no org creation). | 0.8 |
+| 6 | `organization_name_match` | **[DEFERRED TO P2 — see top banner]** normalized name == Org `displayName`/alias. Not implemented in P1 (no name index). | 0.7 |
 | 7 | `visitor_prior_event` | `visitorId` resolved to an Org on an earlier event — **analytics/session rollups ONLY**, never RFQ/Lead/Order | 0.5 |
 | — | `unresolved` | none matched → `unresolved-{type}-{id}`, Needs-Linking queue | 0 |
 

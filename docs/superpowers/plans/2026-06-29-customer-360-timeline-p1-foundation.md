@@ -2,6 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ## ⚠️ AS-BUILT NOTE (PR #223) — this plan is a historical record; the code is the truth
+> Two task bodies below (Tasks 8/10/11) describe **review-org auto-create** (`createReviewOrgFromDomain`,
+> `email_domain_new` intent, `ORGDOMAIN#`/`ORGNAME#` indexes, `organization_name_match`) that was
+> **removed during review and deferred to P2**. What shipped: P1 `resolveLinks` resolves **existing
+> orgs only** using the canonical eTLD+1 model owned by organization-api (`findExistingOrgIdByEmail`
+> via `GSI2 ORG_DOMAIN#`); a corporate domain with no existing org → `unresolved`. CRM creates no orgs
+> in P1 and rollups write `ORG#<eTLD+1>/META`. See the spec's top reconciliation banner and the
+> "Scope change during PR #223 review (Option 1)" note above the Plans 2 & 3 outline.
+
 **Goal:** Build the trustworthy data foundation for the Customer 360 Timeline — `TimelineEvent`/`Contact`/`LinkAuditLog` storage, the shared `resolveLinks` resolver (incl. review-org auto-create), the idempotent `emitTimelineEvent` helper, and rollup helpers — fully unit-tested in isolation, with no channel wiring or UI yet.
 
 **Architecture:** A new `crm-api` Amplify Gen 2 Lambda mirrors `order-api`/`logistics-api` (SDK v3 `DocumentClient`, dispatch-on-`fieldName`, `lib/` + `resolvers/`, vitest). All entities live in the existing shared `INTELLIGENCE_TABLE` single-table design, reusing GSI1–GSI4. Source tables stay authoritative; every meaningful interaction is materialized into a `TimelineEvent` carrying a resolved `orgId`/`contactId`. This plan delivers the library + storage; Plans 2 (channel wiring + backfill + sweep) and 3 (admin UI + queues) build on its interfaces.
