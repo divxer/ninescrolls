@@ -1034,6 +1034,26 @@ backend.organizationApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     fn.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
 });
 
+// Cross-Lambda invoke from the 5 source Lambdas → crm-api (8 Plan-2A emit sites).
+// Match the existing organization-api grant style rather than grantInvoke(), to keep
+// dependencies explicit and avoid surprising synthesized circular references.
+[backend.submitRfq, backend.submitLead, backend.convertRfqToOrder, backend.orderApi, backend.logisticsApi].forEach((fn) => {
+  fn.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['lambda:InvokeFunction'],
+    resources: [backend.crmApi.resources.lambda.functionArn],
+  }));
+  fn.addEnvironment('CRM_API_FUNCTION_NAME', backend.crmApi.resources.lambda.functionName);
+});
+
+// Manual createOrder (order-api) needs to upsert/get the canonical Organization → matchedOrgId.
+backend.orderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+  effect: Effect.ALLOW,
+  actions: ['lambda:InvokeFunction'],
+  resources: [backend.organizationApi.resources.lambda.functionArn],
+}));
+backend.orderApi.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
+
 // ---------------------------------------------------------------------------
 // CloudWatch alarms — only in prod / main branch deploys. Sandbox skips to
 // avoid spurious subscription-confirmation emails on every developer's spin-up.
