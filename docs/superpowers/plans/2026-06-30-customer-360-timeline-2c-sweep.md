@@ -855,7 +855,9 @@ async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: unknown
       cursor = next;
       if (!hasMore) { await releaseLease(mode, pass, lease, { lastSummary: total }); return total; }
       const leaseExpiresAt = new Date(Date.now() + LEASE_MS).toISOString(); // per-page heartbeat
-      await persistPage(mode, pass, lease, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: total, leaseExpiresAt });
+      // Persist a SNAPSHOT copy of the running total — `total` keeps mutating on later pages, so
+      // passing it by reference would risk a slow marshal capturing a newer value than this page.
+      await persistPage(mode, pass, lease, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: { ...total }, leaseExpiresAt });
     }
     return total; // hit the page budget; cursor is persisted + lease expires → the next fire resumes
   } catch (err) {
@@ -871,12 +873,19 @@ export async function reconcileSweep(args: SweepArgs): Promise<{ mode: SweepMode
 
   // runPass never throws — it catches its own pass failure — so the cold dirty-rollup pass runs
   // independently of the existence pass's outcome.
-  summary.existence = await runPass(args.mode, 'existence', args.cursor, (cursor) =>
-    runExistencePage({ mode: args.mode, limit, cursor: cursor as never, cutoffIso: args.mode === 'hot' ? cutoffIso : undefined }));
+  // NOTE: the runner returns `{ counters: { ...r.counters }, ... }` — the spread widens the page
+  // runner's CLOSED counter interface (ExistenceCounters/DirtyCounters) to PageResult's open
+  // `Record<string, number>` (a bare assignment is TS2322: closed interface → indexless Record).
+  summary.existence = await runPass(args.mode, 'existence', args.cursor, async (cursor) => {
+    const r = await runExistencePage({ mode: args.mode, limit, cursor: cursor as never, cutoffIso: args.mode === 'hot' ? cutoffIso : undefined });
+    return { counters: { ...r.counters }, cursor: r.cursor, hasMore: r.hasMore };
+  });
 
   if (args.mode === 'cold') {
-    summary.dirty = await runPass('cold', 'dirty-rollups', undefined, (cursor) =>
-      runDirtyRollupPage({ limit, cursor: cursor as never }));
+    summary.dirty = await runPass('cold', 'dirty-rollups', undefined, async (cursor) => {
+      const r = await runDirtyRollupPage({ limit, cursor: cursor as never });
+      return { counters: { ...r.counters }, cursor: r.cursor, hasMore: r.hasMore };
+    });
   }
 
   // Operational telemetry, not an error — info-level.
