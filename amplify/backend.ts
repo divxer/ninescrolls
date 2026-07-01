@@ -65,7 +65,7 @@ import {
 } from 'aws-cdk-lib/aws-stepfunctions';
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
-import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { Rule, Schedule, RuleTargetInput } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction as LambdaFunctionTarget, SfnStateMachine } from 'aws-cdk-lib/aws-events-targets';
 
 /** Single source of truth for the CDN custom domain */
@@ -991,6 +991,22 @@ if (!isSandbox) {
     new Rule(tenderWatchStack, 'ExpireOldTendersRule', {
         schedule: Schedule.cron({ minute: '45', hour: '2', day: '*', month: '*', year: '*' }),
         targets: [new LambdaFunctionTarget(backend.expireOldTenders.resources.lambda)],
+    });
+}
+
+if (!isSandbox) {
+    // CRM timeline reconciliation sweep (durability backstop for the async emit projection).
+    new Rule(feedbackStack, 'CrmSweepHotRule', {
+        schedule: Schedule.cron({ minute: '*/30', hour: '*', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
+            event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'hot' }),
+        })],
+    });
+    new Rule(feedbackStack, 'CrmSweepColdRule', {
+        schedule: Schedule.cron({ minute: '0', hour: '3', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
+            event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'cold' }),
+        })],
     });
 }
 
