@@ -939,9 +939,9 @@ Expected: FAIL — `unknown action "reconcileSweep"`.
 
 - [ ] **Step 3: Implement**
 
-In `amplify/functions/crm-api/handler.ts`: import `import { reconcileSweep } from './lib/sweep/reconcileSweep';`, widen `DirectInvokeEvent` to `{ action: string; args?: unknown; mode?: 'hot'|'cold'; cursor?: Record<string, unknown>; limit?: number }`, and add to the `actions` map:
+In `amplify/functions/crm-api/handler.ts`: import `import { reconcileSweep } from './lib/sweep/reconcileSweep';`, widen `DirectInvokeEvent` to `{ action: string; args?: unknown; mode?: 'hot'|'cold'; cursor?: Record<string, unknown>; limit?: number }`, and add to the `actions` map (the widened type means the fields are read directly off `e` — no inline casts, matching the sibling `emitTimelineEvent` entry):
 ```typescript
-  reconcileSweep: async (e) => reconcileSweep({ mode: (e as { mode?: 'hot'|'cold' }).mode ?? 'hot', limit: (e as { limit?: number }).limit, cursor: (e as { cursor?: Record<string, unknown> }).cursor }),
+  reconcileSweep: async (e) => reconcileSweep({ mode: e.mode ?? 'hot', limit: e.limit, cursor: e.cursor }),
 ```
 In `amplify/functions/crm-api/resource.ts`: change `timeoutSeconds: 30` → `timeoutSeconds: 120`.
 
