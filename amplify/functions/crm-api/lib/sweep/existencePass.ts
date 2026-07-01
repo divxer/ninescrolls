@@ -56,6 +56,21 @@ async function loadOrderChildren(orderId: string): Promise<{ logs: Array<Record<
   return { logs, docs };
 }
 
+// Reconstruct the order's primary contact email so a recovered order_created MIRRORS live emit's
+// resolveInput (matters when matchedOrgId is absent — CRM then resolves by contact/domain, not
+// `unresolved-*`). Manual createOrder stamps GSI4PK = EMAIL#<normalizedEmail> on the order META;
+// RFQ conversion writes no GSI4PK, so fall back to the linked RFQ's email. Null when neither exists.
+async function orderEmail(m: Record<string, unknown>): Promise<string | null> {
+  const gsi4 = m.GSI4PK as string | undefined;
+  if (typeof gsi4 === 'string' && gsi4.startsWith('EMAIL#')) return gsi4.slice('EMAIL#'.length) || null;
+  const rfqId = m.rfqId as string | undefined;
+  if (!rfqId) return null;
+  try {
+    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `RFQ#${rfqId}`, SK: 'META' } }));
+    return (res.Item?.email as string | undefined) ?? null;
+  } catch { return null; }
+}
+
 const idFromPk = (m: Record<string, unknown>, prefix: string) => (m.PK as string).slice(prefix.length);
 // createOrder writes matchedOrgId:'' for an unmatched order; normalize '' → null.
 const orgOrNull = (v: unknown) => ((v as string) || null);
@@ -80,8 +95,9 @@ const CHANNELS: Channel[] = [
       const orderId = idFromPk(m, 'ORDER#');
       const order = { orderId, matchedOrgId: orgOrNull(m.matchedOrgId) };
       const { logs, docs } = await loadOrderChildren(orderId);
+      const email = await orderEmail(m); // order_created mirrors live emit's email; stage/quote don't pass one
       return [
-        ...orderCreatedEvents({ orderId, createdAt: m.createdAt as string, productModel: m.productModel as string | undefined, matchedOrgId: order.matchedOrgId, rfqId: (m.rfqId as string) ?? null }),
+        ...orderCreatedEvents({ orderId, createdAt: m.createdAt as string, productModel: m.productModel as string | undefined, matchedOrgId: order.matchedOrgId, rfqId: (m.rfqId as string) ?? null, email }),
         ...orderStageEvents(order, logs as never),
         ...quoteEvents(order, docs as never),
       ];

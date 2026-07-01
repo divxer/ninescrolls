@@ -16,6 +16,10 @@ describe('sourceToEvents (pure, mirrors live-emit)', () => {
     const out = orderCreatedEvents({ orderId: 'ord-1', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'x.com', rfqId: null });
     expect(out[0].id).toBe('tev-order-ord-1-created');
   });
+  it('orderCreatedEvents → carries email in resolveInput (mirrors live emit; drives resolution when org absent)', () => {
+    const out = orderCreatedEvents({ orderId: 'ord-2', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: null, rfqId: null, email: 'buyer@lab.edu' });
+    expect(out[0].args.resolveInput).toMatchObject({ email: 'buyer@lab.edu' });
+  });
   it('orderStageEvents → ONLY STATUS_CHANGE logs, keyed by the olog id', () => {
     const order = { orderId: 'ord-1', matchedOrgId: 'x.com' };
     const logs = [

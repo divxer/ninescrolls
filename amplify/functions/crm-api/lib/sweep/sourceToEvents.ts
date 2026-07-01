@@ -16,8 +16,12 @@ export function leadEvents(lead: { leadId: string; submittedAt: string; type: st
   return [withId(buildLeadEmitArgs(lead, lead.matchedOrgId ?? null))];
 }
 
-export function orderCreatedEvents(order: { orderId: string; createdAt: string; productModel?: string | null; matchedOrgId?: string | null; rfqId?: string | null }): ExpectedEvent[] {
-  return [withId(buildOrderCreatedEmitArgs(order, { matchedOrgId: order.matchedOrgId ?? null, rfqId: order.rfqId ?? null }))];
+// MIRROR live-emit: order_created carries the primary contact `email` in resolveInput (createOrder passes
+// primaryContactEmail; convert-rfq passes the RFQ email). It matters when matchedOrgId is absent — CRM then
+// resolves by contact/domain, so omitting it would recover an unmatched order as `unresolved-*`. The order
+// channel (existencePass) reconstructs the email from the stored row; pass it through here.
+export function orderCreatedEvents(order: { orderId: string; createdAt: string; productModel?: string | null; matchedOrgId?: string | null; rfqId?: string | null; email?: string | null }): ExpectedEvent[] {
+  return [withId(buildOrderCreatedEmitArgs(order, { matchedOrgId: order.matchedOrgId ?? null, email: order.email ?? null, rfqId: order.rfqId ?? null }))];
 }
 
 // MIRROR live-emit: only STATUS_CHANGE logs become stage events (matches order-api/updateOrderStatus).

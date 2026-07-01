@@ -65,8 +65,9 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     expect(out.cursor).toBeUndefined();
   });
   it('order channel expands created + PAGINATED STATUS_CHANGE log + QUOTATION doc into three events', async () => {
-    // 1) order META scan page (single item, no LEK → channel advances)
-    mockSend.mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'META', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'x.com', rfqId: null }] });
+    // 1) order META scan page (single item, no LEK → channel advances). GSI4PK carries the primary
+    //    contact email (manual createOrder path) — orderEmail reads it inline, no extra send.
+    mockSend.mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'META', GSI4PK: 'EMAIL#buyer@lab.edu', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'x.com', rfqId: null }] });
     // 2) loadOrderChildren query — PAGE 1: a STATUS_CHANGE log + a LastEvaluatedKey (forces a 2nd page)
     mockSend.mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'LOG#olog-a', id: 'olog-a', action: 'STATUS_CHANGE', toStatus: 'SHIPPED', fromStatus: 'IN_PRODUCTION', timestamp: '2026-04-01T00:00:00Z' }], LastEvaluatedKey: { PK: 'ORDER#ord-1', SK: 'LOG#olog-a' } });
     // 3) loadOrderChildren query — PAGE 2: a QUOTATION doc, no LEK → pagination stops
@@ -82,7 +83,26 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     // All three expected events (created + stage + quote) emitted
     const kinds = emitMock.mock.calls.map((c) => c[0].kind).sort();
     expect(kinds).toEqual(['order_created', 'order_stage_changed', 'quote_sent']);
+    // order_created mirrors live emit's resolveInput.email (from GSI4PK EMAIL#…)
+    const created = emitMock.mock.calls.map((c) => c[0]).find((a) => a.kind === 'order_created');
+    expect(created.resolveInput).toMatchObject({ email: 'buyer@lab.edu' });
     expect(out.counters).toMatchObject({ scanned: 3, missingReemitted: 3, errors: 0 });
     expect(out.cursor).toEqual({ channel: 'logistics' }); // order exhausted → advance
+  });
+  it('order channel with NO GSI4PK falls back to the linked RFQ email (RFQ-conversion path)', async () => {
+    // unmatched order (matchedOrgId '') created from an RFQ — email lives on the RFQ, not the order META
+    mockSend.mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-9', SK: 'META', createdAt: '2026-03-02T00:00:00Z', productModel: 'Y', matchedOrgId: '', rfqId: 'rfq-7' }] });
+    mockSend.mockResolvedValueOnce({ Items: [] });                                   // loadOrderChildren: no children
+    mockSend.mockResolvedValueOnce({ Item: { email: 'pi@uni.edu' } });               // orderEmail → RFQ#rfq-7/META
+    getTimelineEventMock.mockResolvedValue(null);
+    emitMock.mockResolvedValue(undefined);
+
+    const out = await runExistencePage({ mode: 'cold', limit: 100, cursor: { channel: 'order' } });
+
+    expect(mockSend.mock.calls[2][0].input.Key).toEqual({ PK: 'RFQ#rfq-7', SK: 'META' }); // fallback read
+    const created = emitMock.mock.calls.map((c) => c[0]).find((a) => a.kind === 'order_created');
+    expect(created.resolveInput).toMatchObject({ email: 'pi@uni.edu' });   // recovered email drives resolution
+    expect(created.resolveInput.matchedOrgId).toBeUndefined();             // unmatched → resolves by email, not org
+    expect(out.counters).toMatchObject({ scanned: 1, missingReemitted: 1, errors: 0 });
   });
 });

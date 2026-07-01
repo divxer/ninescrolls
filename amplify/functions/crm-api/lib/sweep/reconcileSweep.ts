@@ -10,7 +10,10 @@ const LEASE_MS = Math.max(2 * LAMBDA_TIMEOUT_SEC, 300) * 1000; // longer than an
 
 export interface SweepArgs { mode: SweepMode; limit?: number; cursor?: Record<string, unknown>; }
 type PageResult = { counters: Record<string, number>; cursor?: unknown; hasMore: boolean };
-type PassSummary = Record<string, number> | { skipped: true } | { failed: true; error: string };
+// `hasMore` distinguishes a COMPLETED pass (false — released the lease) from one that exited on the
+// page budget (true — cursor persisted, resumes next fire). Surfaced in `crm.sweep.summary` so Plan 3
+// health can alarm on a cold pass that never completes within one fire.
+type PassSummary = { counters: Record<string, number>; hasMore: boolean } | { skipped: true } | { failed: true; error: string };
 
 // Run a pass under its own lease, LOOPING pages and PERSISTING AFTER EACH page (cursor + counters +
 // a freshly-computed lease heartbeat); release on completion. Every state write carries the lease
@@ -30,13 +33,13 @@ async function runPass(mode: SweepMode, pass: SweepPass, overrideCursor: unknown
       const { counters, cursor: next, hasMore } = await runner(cursor);
       for (const [k, v] of Object.entries(counters)) total[k] = (total[k] ?? 0) + v;
       cursor = next;
-      if (!hasMore) { await releaseLease(mode, pass, lease, { lastSummary: total }); return total; }
+      if (!hasMore) { await releaseLease(mode, pass, lease, { lastSummary: total }); return { counters: total, hasMore: false }; }
       const leaseExpiresAt = new Date(Date.now() + LEASE_MS).toISOString(); // per-page heartbeat
       // Persist a SNAPSHOT copy of the running total — `total` keeps mutating on later pages, so
       // passing it by reference would risk a slow marshal capturing a newer value than this page.
       await persistPage(mode, pass, lease, { cursor: next as Record<string, unknown> | undefined, hasMore: true, counters: { ...total }, leaseExpiresAt });
     }
-    return total; // hit the page budget; cursor is persisted + lease expires → the next fire resumes
+    return { counters: total, hasMore: true }; // hit the page budget; cursor persisted + lease expires → next fire resumes
   } catch (err) {
     console.error(JSON.stringify({ event: 'crm.sweep.pass_failed', mode, pass, error: err instanceof Error ? err.message : String(err) }));
     return { failed: true, error: err instanceof Error ? err.message : String(err) };
