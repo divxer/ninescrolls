@@ -4,6 +4,6 @@ export const crmApi = defineFunction({
   name: 'crm-api',
   entry: './handler.ts',
   runtime: 22,
-  timeoutSeconds: 30,
+  timeoutSeconds: 120,
   memoryMB: 512,
 });
