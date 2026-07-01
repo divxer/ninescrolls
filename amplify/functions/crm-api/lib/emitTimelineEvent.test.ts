@@ -11,7 +11,12 @@ vi.mock('./orgStore', () => ({
   recomputeRollupsForOrg: (o: string) => recomputeRollupsForOrg(o),
 }));
 const getTimelineEvent = vi.fn();
-vi.mock('./timelineStore', () => ({ getTimelineEvent: (id: string) => getTimelineEvent(id) }));
+// Keep the real markRollupApplied (it routes through the mocked docClient.send, which the
+// assertions below inspect); only getTimelineEvent is stubbed for branch control.
+vi.mock('./timelineStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./timelineStore')>()),
+  getTimelineEvent: (id: string) => getTimelineEvent(id),
+}));
 
 import { emitTimelineEvent } from './emitTimelineEvent';
 beforeEach(() => { mockSend.mockReset(); resolveLinks.mockReset(); upsertContact.mockReset(); bumpOrgRollupOnCreate.mockReset(); recomputeRollupsForOrg.mockReset(); getTimelineEvent.mockReset(); });
@@ -52,7 +57,7 @@ describe('emitTimelineEvent', () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' })); // conditional put
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-OLD', createdAt: '2026-01-01T00:00:00Z', rollupApplied: true });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite put
-    mockSend.mockResolvedValueOnce({}); // markRollupClean
+    mockSend.mockResolvedValueOnce({}); // markRollupApplied
     await emitTimelineEvent(baseEvt);
     const overwrite = mockSend.mock.calls[1][0].input;
     expect(overwrite.Item.orgId).toBe('org-NEW');
@@ -72,7 +77,7 @@ describe('emitTimelineEvent', () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: false });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite
-    mockSend.mockResolvedValueOnce({}); // markRollupClean
+    mockSend.mockResolvedValueOnce({}); // markRollupApplied
     await emitTimelineEvent(baseEvt);
     expect(mockSend.mock.calls[1][0].input.Item.rollupApplied).toBe(false); // dirty first
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-df');
@@ -85,7 +90,7 @@ describe('emitTimelineEvent', () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: true });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite
-    mockSend.mockResolvedValueOnce({}); // markRollupClean
+    mockSend.mockResolvedValueOnce({}); // markRollupApplied
     await emitTimelineEvent({ ...baseEvt, voided: true });
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-df');
     expect(recomputeRollupsForOrg).toHaveBeenCalledTimes(1);
@@ -98,7 +103,7 @@ describe('emitTimelineEvent', () => {
     // a prior link-move crashed after the dirty write: row already on org-NEW, org-OLD still pending
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-NEW', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: false, rollupPendingOrgId: 'org-OLD' });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite
-    mockSend.mockResolvedValueOnce({}); // markRollupClean
+    mockSend.mockResolvedValueOnce({}); // markRollupApplied
     await emitTimelineEvent(baseEvt);
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-OLD'); // pending recovered durably
     expect(recomputeRollupsForOrg).toHaveBeenCalledWith('org-NEW');

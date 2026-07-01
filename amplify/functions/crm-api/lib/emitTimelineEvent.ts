@@ -1,4 +1,4 @@
-import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from './dynamodb';
 import { timelineId, type TimelineIdInput } from './timelineId';
 import { timelineEventKeys } from './keys';
@@ -6,7 +6,7 @@ import { normalizeEmail } from './normalize';
 import { resolveLinks, type ResolveInput } from './resolveLinks';
 import { upsertContact } from './contactStore';
 import { bumpOrgRollupOnCreate, recomputeRollupsForOrg } from './orgStore';
-import { getTimelineEvent } from './timelineStore';
+import { getTimelineEvent, markRollupApplied } from './timelineStore';
 import type { TimelineEventItem, TimelineSource } from './types';
 
 export type EmitArgs = {
@@ -54,13 +54,6 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
     createdAt, updatedAt: nowIso,
   }) as TimelineEventItem;
 
-  // Mark the event's rollup as fully applied — ONLY after every needed recompute/bump succeeded.
-  const markRollupClean = () => docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(), Key: { PK: `TLEVENT#${id}`, SK: 'A' },
-    UpdateExpression: 'SET rollupApplied = :t REMOVE rollupPendingOrgId',
-    ExpressionAttributeValues: { ':t': true },
-  }));
-
   try {
     // First write: rollupApplied=false is the durable "rollup not yet applied" marker.
     await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(nowIso, false, null), ConditionExpression: 'attribute_not_exists(PK)' }));
@@ -87,16 +80,16 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
 
     // Durable repair ordering: write rollupApplied=false FIRST, recording any org that still needs
     // recompute — the old org on a link move, OR a pending org left by a previously-crashed attempt.
-    // Recompute, THEN mark clean. A crash before markRollupClean leaves a durable false + pending org.
+    // Recompute, THEN mark applied. A crash before markRollupApplied leaves a durable false + pending org.
     const pendingOrgId = linkMoved ? oldOrgId! : pendingFromBefore;
     await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: buildItem(existing?.createdAt ?? nowIso, false, pendingOrgId) }));
     if (pendingOrgId) await recomputeRollupsForOrg(pendingOrgId);
     await recomputeRollupsForOrg(orgId);
-    await markRollupClean();
+    await markRollupApplied(id);
     return;
   }
 
   // New event: apply the rollup, THEN mark clean. A crash in between leaves rollupApplied=false.
   await bumpOrgRollupOnCreate({ orgId, kind: args.kind, occurredAt: args.occurredAt, isInternalOnly: args.isInternalOnly ?? false });
-  await markRollupClean();
+  await markRollupApplied(id);
 }
