@@ -31,7 +31,7 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
     const cutoff = cur.activeRunCutoff ?? computeCutoff(nowIso);
     const watermark = cur.watermark ?? cutoff;         // go-live: forward-only from first cron fire
     let pageCursor = cur.pageCursor ?? undefined;
-    let pending = [...(cur.pendingSessionIds ?? [])];
+    const pending = [...(cur.pendingSessionIds ?? [])];   // mutated in place (shift/push), never reassigned
     const maxSessions = args.maxSessions ?? DEFAULT_MAX_SESSIONS;
     const seen = new Set<string>(pending);
     let processed = 0;
