@@ -33,6 +33,19 @@ describe('getVisitorId', () => {
     expect(second).toBe(first);
   });
 
+  it('returns a stable id across calls when getItem works but setItem throws (e.g. quota exceeded)', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    const getVisitorId = await importGetVisitorId();
+    const first = getVisitorId();
+    const second = getVisitorId();
+
+    expect(first).toBeTruthy();
+    expect(second).toBe(first);
+  });
+
   it('returns the persisted id when localStorage is available', async () => {
     localStorage.setItem('ns_visitor_id', 'existing-visitor-id');
 
