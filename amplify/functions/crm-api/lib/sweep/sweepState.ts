@@ -66,3 +66,14 @@ export async function releaseLease(mode: SweepMode, pass: SweepPass, leaseToken:
     ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString(), ':token': leaseToken },
   }));
 }
+
+// Release ONLY the lease fields, PRESERVING the durable cursor (used by the analytics rollup, whose
+// watermark must survive between runs — unlike sweep passes, which reset their cursor on completion).
+export async function releaseLeaseKeepCursor(mode: SweepMode, pass: SweepPass, leaseToken: string, p: { lastSummary: Record<string, unknown> }): Promise<void> {
+  await docClient.send(new UpdateCommand({
+    TableName: TABLE_NAME(), Key: stateKey(mode, pass),
+    UpdateExpression: 'SET hasMore = :f, lastSummary = :s, lastCompletedAt = :now REMOVE lease, leaseExpiresAt',
+    ConditionExpression: 'lease = :token',
+    ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString(), ':token': leaseToken },
+  }));
+}

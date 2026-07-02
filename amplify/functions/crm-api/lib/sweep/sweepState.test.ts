@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSend = vi.fn();
 vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
-import { readState, acquireLease, persistPage, releaseLease, stateKey } from './sweepState';
+import { readState, acquireLease, persistPage, releaseLease, releaseLeaseKeepCursor, stateKey } from './sweepState';
 beforeEach(() => mockSend.mockReset());
 
 describe('sweepState', () => {
@@ -48,6 +48,17 @@ describe('sweepState', () => {
     const upd = mockSend.mock.calls[0][0].input;
     expect(upd.ConditionExpression).toBe('lease = :token');
     expect(upd.ExpressionAttributeValues[':token']).toBe('tok');
+  });
+  it('releaseLeaseKeepCursor releases the lease but does NOT remove the cursor', async () => {
+    mockSend.mockResolvedValueOnce({});
+    await releaseLeaseKeepCursor('analytics', 'sessions', 'tok', { lastSummary: { emitted: 1 } });
+    const upd = mockSend.mock.calls[0][0].input;
+    expect(upd.ConditionExpression).toBe('lease = :token');
+    expect(upd.ExpressionAttributeValues[':token']).toBe('tok');
+    expect(upd.UpdateExpression).toContain('REMOVE lease, leaseExpiresAt');
+    expect(upd.UpdateExpression).not.toContain('#c');
+    expect(upd.UpdateExpression).not.toContain('cursor');
+    expect(upd.ExpressionAttributeNames).toBeUndefined();
   });
   it('releaseLease rejects when the lease token is stale', async () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('stale'), { name: 'ConditionalCheckFailedException' }));
