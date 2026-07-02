@@ -14,7 +14,12 @@ export interface VisitorBridge {
   firstSeenAt: string; updatedAt: string;
 }
 
-type Send = (cmd: unknown) => Promise<{ Item?: Record<string, unknown> }>;
+export type Send = (cmd: unknown) => Promise<{ Item?: Record<string, unknown> }>;
+
+// Adapter: wrap a DocumentClient-like object as the DI'd Send. Confines the unavoidable
+// command-type cast to one place, next to the type it satisfies.
+export const toSend = (dc: { send: (...a: never[]) => unknown }): Send =>
+  ((c) => dc.send(c as never)) as Send;
 
 export async function readVisitorBridge(send: Send, tableName: string, visitorId: string): Promise<VisitorBridge | null> {
   if (!visitorId) return null;

@@ -3,8 +3,9 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeLeadScore } from '../../lib/organization/lead-score';
-import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
+import { emitTimelineEventToCrm, invokeCrmAction } from '../../lib/crm/invoke-crm-api';
 import { buildLeadEmitArgs } from '../../lib/crm/emit-builders';
+import { toSend, upsertVisitorBridge } from '../../lib/crm/visitor-bridge';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 
@@ -680,6 +681,28 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                     ':gsi2': `ORG#${matchedOrgId}`,
                 },
             }));
+        }
+
+        // 2C-analytics: VISITOR# identity bridge + retro-resolve fire (non-fatal; upgrade-only).
+        if (data.visitorId) {
+            try {
+                const bridge = await upsertVisitorBridge(
+                    toSend(docClient), TABLE_NAME(),
+                    {
+                        visitorId: data.visitorId, matchedOrgId: matchedOrgId ?? null, email: data.email ?? null,
+                        sourceEntityType: 'lead', sourceEntityId: leadId, now: submittedAt,
+                    },
+                );
+                if (bridge.created || bridge.orgUpgraded) {
+                    await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: data.visitorId });
+                }
+            } catch (err) {
+                console.error(JSON.stringify({
+                    event: 'crm.visitor_bridge.write_failed',
+                    visitorId: data.visitorId,
+                    error: err instanceof Error ? err.message : String(err),
+                }));
+            }
         }
 
         // Emit lead_captured timeline event to CRM (async fire-and-forget;

@@ -42,3 +42,23 @@ export async function invokeCrmApi(payload: CrmEmitPayload, opts?: { sync?: bool
 export async function emitTimelineEventToCrm(args: EmitArgs, opts?: { sync?: boolean }): Promise<void> {
   return invokeCrmApi({ action: 'emitTimelineEvent', args }, opts);
 }
+
+/**
+ * Generic async action invoke (fire-and-forget, Event). Same contract as invokeCrmApi: a dispatch
+ * failure is logged and swallowed — the business mutation is never blocked. Used for non-emit
+ * actions (e.g. reResolveVisitorSessions); emit stays on the typed emitTimelineEventToCrm path.
+ */
+export async function invokeCrmAction(payload: { action: string } & Record<string, unknown>): Promise<void> {
+  try {
+    await lambda.send(new InvokeCommand({
+      FunctionName: FUNCTION_NAME(),
+      InvocationType: 'Event',
+      Payload: new TextEncoder().encode(JSON.stringify(payload)),
+    }));
+  } catch (err) {
+    console.error(JSON.stringify({
+      event: 'crm.action.dispatch_failed', action: payload.action,
+      error: err instanceof Error ? err.message : String(err),
+    }));
+  }
+}
