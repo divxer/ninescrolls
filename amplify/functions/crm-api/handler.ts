@@ -1,5 +1,8 @@
 import { emitTimelineEvent } from './lib/emitTimelineEvent';
 import { reconcileSweep } from './lib/sweep/reconcileSweep';
+import { rollupAnalyticsSessions } from './lib/analytics/rollupAnalyticsSessions';
+import { reResolveVisitorSessions } from './lib/analytics/reResolveVisitorSessions';
+import { backfillVisitorBridge } from './lib/analytics/backfillVisitorBridge';
 
 type AppSyncEvent = {
   info?: { fieldName?: string; parentTypeName?: string };
@@ -9,13 +12,16 @@ type AppSyncEvent = {
 };
 
 // Direct Lambda invoke payloads (from amplify/lib/crm/invoke-crm-api) carry an `action`.
-type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number };
+type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; visitorId?: string; startSessionSk?: string };
 
 const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {};
 
 const actions: Record<string, (e: DirectInvokeEvent) => Promise<unknown>> = {
   emitTimelineEvent: async (e) => { await emitTimelineEvent(e.args as Parameters<typeof emitTimelineEvent>[0]); },
   reconcileSweep: async (e) => reconcileSweep({ mode: e.mode ?? 'hot', limit: e.limit, cursor: e.cursor }),
+  rollupAnalyticsSessions: async (e) => rollupAnalyticsSessions({ limit: e.limit, cursor: e.cursor }),
+  reResolveVisitorSessions: async (e) => reResolveVisitorSessions({ visitorId: e.visitorId ?? '', startSessionSk: e.startSessionSk }),
+  backfillVisitorBridge: async (e) => backfillVisitorBridge({ cursor: e.cursor, limit: e.limit }),
 };
 
 export const handler = async (event: AppSyncEvent | DirectInvokeEvent): Promise<unknown> => {
