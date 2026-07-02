@@ -1,6 +1,8 @@
-import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
+
+const RFQ_STATUSES = ['pending', 'declined', 'converted'] as const;
 
 export async function listRfqs(event: AppSyncEvent) {
     const { status, limit = 20, nextToken } = event.arguments as {
@@ -28,27 +30,52 @@ export async function listRfqs(event: AppSyncEvent) {
         items = result.Items || [];
         lastEvaluatedKey = result.LastEvaluatedKey;
     } else {
-        // Scan for all RFQs — paginate because Limit caps scanned rows,
-        // not filtered results, and the single-table has many non-RFQ items.
-        items = [];
-        let scanKey = exclusiveStartKey;
-        const MAX_SCAN_PAGES = 10; // safety cap
-        for (let page = 0; page < MAX_SCAN_PAGES; page++) {
-            const result = await docClient.send(new ScanCommand({
+        // Unfiltered view: every RFQ lives in exactly one of three status
+        // partitions on GSI1 (RFQ_STATUS#<status>), each already ordered by
+        // submittedAt via GSI1SK. Query all three in parallel, then merge/sort/
+        // slice — bounded to 3×limit RFQ rows regardless of table size.
+        // allSettled (not all): a transient failure on one partition degrades to
+        // the others rather than blanking the whole admin list. nextToken /
+        // exclusiveStartKey pagination is intentionally unsupported here — no
+        // single cursor spans three independently-paginated partitions.
+        const settled = await Promise.allSettled(RFQ_STATUSES.map((rfqStatus) => (
+            docClient.send(new QueryCommand({
                 TableName: TABLE_NAME(),
-                FilterExpression: 'begins_with(PK, :pk) AND SK = :sk',
-                ExpressionAttributeValues: {
-                    ':pk': 'RFQ#',
-                    ':sk': 'META',
-                },
-                ExclusiveStartKey: scanKey,
-            }));
-            items.push(...(result.Items || []));
-            scanKey = result.LastEvaluatedKey;
-            if (!scanKey || items.length >= effectiveLimit) break;
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'GSI1PK = :pk',
+                ExpressionAttributeValues: { ':pk': `RFQ_STATUS#${rfqStatus}` },
+                ScanIndexForward: false,
+                Limit: effectiveLimit,
+            }))
+        )));
+
+        const merged: Record<string, unknown>[] = [];
+        let anyFulfilled = false;
+        settled.forEach((result, i) => {
+            if (result.status === 'fulfilled') {
+                anyFulfilled = true;
+                merged.push(...((result.value.Items as Record<string, unknown>[]) ?? []));
+            } else {
+                console.error(JSON.stringify({
+                    event: 'listRfqs.partition-query-failed',
+                    status: RFQ_STATUSES[i],
+                    error: String(result.reason),
+                }));
+            }
+        });
+        // Every partition failed → surface an error instead of a false "no RFQs".
+        if (!anyFulfilled) {
+            throw new Error('listRfqs: all RFQ status partition queries failed');
         }
-        lastEvaluatedKey = scanKey;
-        items.sort((a, b) => ((b.submittedAt as string) || '').localeCompare((a.submittedAt as string) || ''));
+
+        items = merged;
+        items.sort((a, b) => {
+            const byDate = ((b.submittedAt as string) || '').localeCompare((a.submittedAt as string) || '');
+            if (byDate !== 0) return byDate;
+            // Tie-break on rfqId desc so the merged order is total and deterministic,
+            // matching the GSI1SK (submittedAt#rfqId) ordering of the filtered path.
+            return ((b.rfqId as string) || '').localeCompare((a.rfqId as string) || '');
+        });
         items = items.slice(0, effectiveLimit);
     }
 
