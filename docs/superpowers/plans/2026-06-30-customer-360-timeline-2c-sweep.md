@@ -968,23 +968,24 @@ git commit -m "feat(crm-api): reconcileSweep action dispatch + 120s timeout (2C-
 
 In `amplify/backend.ts`:
 - Add `RuleTargetInput` to the `aws-cdk-lib/aws-events` import (line ~68: `import { Rule, Schedule, RuleTargetInput } from 'aws-cdk-lib/aws-events';`).
-- Add the Rules to **`feedbackStack`** — confirmed (`amplify/backend.ts:401`) as the stack that creates the `intelligenceTable` and grants `backend.crmApi` read/write to it (`amplify/backend.ts:531`). The `backend.crmApi` Lambda construct lives in its own Amplify-generated stack, so the Rule→Lambda target is a cross-stack reference; CDK resolves it automatically (exports/imports). Guard with `if (!isSandbox)` (the module-level const at `amplify/backend.ts:596`). **Placement:** add the block AFTER line 596 (so `isSandbox` is defined) — e.g. alongside the existing `if (!isSandbox)` cron blocks (~`:980+`); `feedbackStack` and `backend.crmApi` are both in scope there. Add a sibling `if (!isSandbox) { ... }` block:
+- Add the Rules to **`Stack.of(backend.crmApi.resources.lambda)`** — the SAME nested stack as the target Lambda. ~~feedbackStack~~ **(CORRECTED post-deploy, see Post-implementation fixes #3):** scoping the Rules to `feedbackStack` closed a CloudFormation **circular dependency** — crm-api's function stack already depends on feedbackStack (table grant `:531` + env `:532`), and a Rule in feedbackStack targeting the crm-api Lambda adds the reverse feedback→function edge (target ARN + auto-created Lambda permission). CDK resolves cross-stack *references*, not *cycles*. The Tender-cron precedent works because its target functions share the rules' stack via `resourceGroupName: 'tender-watch-stack'` — intra-stack, no edge. Guard with `if (!isSandbox)` (the module-level const at `amplify/backend.ts:596`). **Placement:** add the block AFTER line 596 — alongside the existing `if (!isSandbox)` cron blocks (~`:980+`):
 ```typescript
 // CRM timeline reconciliation sweep (durability backstop for the async emit projection).
-new Rule(feedbackStack, 'CrmSweepHotRule', {
+const crmApiStack = Stack.of(backend.crmApi.resources.lambda);
+new Rule(crmApiStack, 'CrmSweepHotRule', {
   schedule: Schedule.cron({ minute: '*/30', hour: '*', day: '*', month: '*', year: '*' }),
   targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
     event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'hot' }),
   })],
 });
-new Rule(feedbackStack, 'CrmSweepColdRule', {
+new Rule(crmApiStack, 'CrmSweepColdRule', {
   schedule: Schedule.cron({ minute: '0', hour: '3', day: '*', month: '*', year: '*' }),
   targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
     event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'cold' }),
   })],
 });
 ```
-> Stack is **`feedbackStack`** (confirmed above) — the same stack that owns the intelligence table and grants `backend.crmApi`. The Rule→Lambda target may be cross-stack (the crm-api Lambda is in its own Amplify-generated stack); CDK resolves that automatically, and the backend typecheck/synth is the backstop. `backend.crmApi` is the registered name (from P1). `LambdaFunctionTarget` accepts the `{ event }` options object (`aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`). The `isSandbox` flag already exists in `backend.ts` (Tender crons use it); reuse it — do not redefine.
+> Stack is **`Stack.of(backend.crmApi.resources.lambda)`** — the rule, target reference, and auto-created Lambda permission are all intra-stack, so NO cross-stack edge is added (a rule in feedbackStack targeting this Lambda closes a nested-stack cycle — see Post-implementation fixes #3). `backend.crmApi` is the registered name (from P1). `LambdaFunctionTarget` accepts the `{ event }` options object (`aws-cdk-lib/aws-events-targets` `LambdaFunction(handler, props)`). The `isSandbox` flag already exists in `backend.ts` (Tender crons use it); reuse it — do not redefine. `Stack` is already imported from `aws-cdk-lib`.
 
 - [ ] **Step 2: Typecheck**
 
@@ -1055,5 +1056,7 @@ After the plan executed and the final holistic review passed, a further review f
 
 1. **[Important — order_created email parity]** Live `order_created` emit passes the primary contact `email` into `resolveInput` (`createOrder` → `primaryContactEmail`; `convert-rfq-to-order` → RFQ email), which drives CRM resolution **when `matchedOrgId` is absent** (contact/domain match). The sweep's `orderCreatedEvents` omitted it, so a recovered `order_created` for an *unmatched* order would resolve to `unresolved-*` (and then persist, since the event now exists and future sweeps skip it). Fix: **Task 3** `orderCreatedEvents` gained an `email?` param (passed to `buildOrderCreatedEmitArgs`); **Task 4** order channel reconstructs it via a new `orderEmail(m)` helper — `ORDER#/META.GSI4PK` (`EMAIL#<email>`, the manual-createOrder path) else fall back to `RFQ#<rfqId>/META.email` (the RFQ-conversion path). Stage/quote emits verified to NOT pass email (they rely on `matchedOrgId`), so only `order_created` needed it. Tests: `sourceToEvents` asserts `order_created.resolveInput.email`; `existencePass` covers both the GSI4PK and RFQ-fallback reconstructions.
 2. **[Minor — `hasMore` in summary]** `runPass` returned bare counters for both a completed pass and a page-budget-exhausted (incomplete) one, so `crm.sweep.summary` couldn't distinguish them. Fix: `PassSummary` is now `{ counters: Record<string,number>; hasMore: boolean } | { skipped: true } | { failed: true, error }` — completion returns `hasMore:false`, budget-exhaust returns `hasMore:true`, giving Plan 3 health an alarmable "cold pass didn't finish in one fire" signal. Test added for the incomplete path.
+
+3. **[Deploy failure — nested-stack circular dependency]** The first `main` deploy after merge failed: `CloudformationStackCircularDependencyError` across `[apistack, tenderapistack, organizationapistack, feedbacksystemstack, data, function, tenderwatchstack]`. Root cause: the two cron Rules were scoped to `feedbackStack`, but crm-api's **function stack already depends on feedbackStack** (intelligence-table grant + `INTELLIGENCE_TABLE` env), and a Rule targeting the crm-api Lambda adds the reverse `feedback→function` edge (target ARN reference + the auto-created `AWS::Lambda::Permission`, which is scoped to the rule's stack) — a direct 2-stack cycle. The plan's original claim that "CDK resolves the cross-stack reference automatically" was true of *references* but not *cycles*; the cited Tender-cron precedent was never actually cross-stack (its target functions declare `resourceGroupName: 'tender-watch-stack'`, co-locating them with the rules). Fix: scope the Rules to `Stack.of(backend.crmApi.resources.lambda)` — rule + target + permission all intra-stack, zero new edges. **Lesson: an EventBridge Rule targeting a `defineFunction` Lambda must live in that Lambda's own nested stack (or a stack the function stack doesn't depend on) — never in a table-owner stack the function stack references.** CI (lint/typecheck/test) cannot catch this; only the Amplify Console synth/deploy can.
 
 88 crm-api tests, tsc + eslint clean.
