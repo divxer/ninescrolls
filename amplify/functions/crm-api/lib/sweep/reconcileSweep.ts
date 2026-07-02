@@ -8,7 +8,10 @@ const MAX_PAGES_PER_INVOCATION = 50; // safety bound within the 120s timeout
 
 const LEASE_MS = Math.max(2 * LAMBDA_TIMEOUT_SEC, 300) * 1000; // longer than any single invocation
 
-export interface SweepArgs { mode: SweepMode; limit?: number; cursor?: Record<string, unknown>; }
+// The reconciliation sweep runs only in hot/cold — 'analytics' (added to SweepMode for the
+// 2C-analytics rollup's state row) is a different job with its own driver.
+export type ReconcileMode = Extract<SweepMode, 'hot' | 'cold'>;
+export interface SweepArgs { mode: ReconcileMode; limit?: number; cursor?: Record<string, unknown>; }
 type PageResult = { counters: Record<string, number>; cursor?: unknown; hasMore: boolean };
 // `hasMore` distinguishes a COMPLETED pass (false — released the lease) from one that exited on the
 // page budget (true — cursor persisted, resumes next fire). Surfaced in `crm.sweep.summary` so Plan 3

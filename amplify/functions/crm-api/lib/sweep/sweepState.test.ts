@@ -53,6 +53,9 @@ describe('sweepState', () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('stale'), { name: 'ConditionalCheckFailedException' }));
     await expect(releaseLease('cold', 'existence', 'old', { lastSummary: {} })).rejects.toThrow();
   });
+  it('stateKey supports the analytics rollup namespace', () => {
+    expect(stateKey('analytics', 'sessions')).toEqual({ PK: 'CRM_SWEEP#analytics#sessions', SK: 'STATE' });
+  });
   it('readState returns the stored item or a default', async () => {
     mockSend.mockResolvedValueOnce({ Item: { cursor: { k: 2 }, hasMore: true } });
     expect((await readState('cold', 'existence')).hasMore).toBe(true);

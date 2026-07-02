@@ -2,8 +2,9 @@ import crypto from 'node:crypto';
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 
-export type SweepMode = 'hot' | 'cold';
-export type SweepPass = 'existence' | 'dirty-rollups';
+// 'analytics'/'sessions' = the 2C-analytics session-rollup state (CRM_SWEEP#analytics#sessions).
+export type SweepMode = 'hot' | 'cold' | 'analytics';
+export type SweepPass = 'existence' | 'dirty-rollups' | 'sessions';
 
 export function stateKey(mode: SweepMode, pass: SweepPass) {
   return { PK: `CRM_SWEEP#${mode}#${pass}`, SK: 'STATE' };
