@@ -15,7 +15,7 @@ const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     if (name === 'GetCommand') return mockGet();
     if (name === 'PutCommand') return mockPut();
     if (name === 'UpdateCommand') return mockUpdate();
-    if (name === 'QueryCommand') return mockQuery();
+    if (name === 'QueryCommand') return mockQuery(cmd);
     if (name === 'DeleteCommand') return mockDelete();
     if (name === 'ScanCommand') return mockScan();
     return Promise.resolve({});
@@ -973,6 +973,136 @@ describe('order-api handler', () => {
 
             expect(result.items).toHaveLength(1);
             expect(result.items[0].rfqId).toBe('rfq-20260310-abc123');
+        });
+
+        it('queries RFQ status buckets before sorting unfiltered RFQs by submittedAt', async () => {
+            const pendingRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260309-old001',
+                rfqId: 'rfq-20260309-old001',
+                status: 'pending',
+                submittedAt: '2026-03-09T12:00:00Z',
+            };
+            const declinedRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260308-declined',
+                rfqId: 'rfq-20260308-declined',
+                status: 'declined',
+                submittedAt: '2026-03-08T12:00:00Z',
+            };
+            const convertedRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260311-new001',
+                rfqId: 'rfq-20260311-new001',
+                status: 'converted',
+                submittedAt: '2026-03-11T12:00:00Z',
+            };
+
+            mockQuery
+                .mockResolvedValueOnce({ Items: [pendingRfq] })
+                .mockResolvedValueOnce({ Items: [declinedRfq] })
+                .mockResolvedValueOnce({ Items: [convertedRfq] });
+
+            const result = await handler(
+                makeAppSyncEvent('listRfqs', { limit: 2 }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockScan).not.toHaveBeenCalled();
+            expect(mockQuery).toHaveBeenCalledTimes(3);
+            expect(mockQuery.mock.calls.map(([cmd]) => cmd.ExpressionAttributeValues[':pk'])).toEqual([
+                'RFQ_STATUS#pending',
+                'RFQ_STATUS#declined',
+                'RFQ_STATUS#converted',
+            ]);
+            expect(mockQuery.mock.calls.map(([cmd]) => cmd.Limit)).toEqual([2, 2, 2]);
+            expect(result.items).toHaveLength(2);
+            expect(result.items.map((item: typeof SAMPLE_RFQ) => item.rfqId)).toEqual([
+                'rfq-20260311-new001',
+                'rfq-20260309-old001',
+            ]);
+        });
+
+        it('degrades to the succeeding status buckets when one partition query fails', async () => {
+            const pendingRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260309-pend01',
+                rfqId: 'rfq-20260309-pend01',
+                status: 'pending',
+                submittedAt: '2026-03-09T12:00:00Z',
+            };
+            const convertedRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260311-conv01',
+                rfqId: 'rfq-20260311-conv01',
+                status: 'converted',
+                submittedAt: '2026-03-11T12:00:00Z',
+            };
+
+            mockQuery
+                .mockResolvedValueOnce({ Items: [pendingRfq] })                            // pending
+                .mockRejectedValueOnce(new Error('ProvisionedThroughputExceededException')) // declined
+                .mockResolvedValueOnce({ Items: [convertedRfq] });                         // converted
+
+            const result = await handler(
+                makeAppSyncEvent('listRfqs', {}),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockQuery).toHaveBeenCalledTimes(3);
+            expect(result.items.map((item: typeof SAMPLE_RFQ) => item.rfqId)).toEqual([
+                'rfq-20260311-conv01',
+                'rfq-20260309-pend01',
+            ]);
+        });
+
+        it('throws when every status bucket query fails', async () => {
+            mockQuery
+                .mockRejectedValueOnce(new Error('boom-pending'))
+                .mockRejectedValueOnce(new Error('boom-declined'))
+                .mockRejectedValueOnce(new Error('boom-converted'));
+
+            await expect(handler(
+                makeAppSyncEvent('listRfqs', {}),
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow();
+        });
+
+        it('breaks submittedAt ties by rfqId descending for a deterministic order', async () => {
+            const tsShared = '2026-03-10T00:00:00Z';
+            const lowIdRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260310-aaa111',
+                rfqId: 'rfq-20260310-aaa111',
+                status: 'pending',
+                submittedAt: tsShared,
+            };
+            const highIdRfq = {
+                ...SAMPLE_RFQ,
+                PK: 'RFQ#rfq-20260310-zzz999',
+                rfqId: 'rfq-20260310-zzz999',
+                status: 'converted',
+                submittedAt: tsShared,
+            };
+
+            mockQuery
+                .mockResolvedValueOnce({ Items: [lowIdRfq] }) // pending
+                .mockResolvedValueOnce({ Items: [] })         // declined
+                .mockResolvedValueOnce({ Items: [highIdRfq] }); // converted
+
+            const result = await handler(
+                makeAppSyncEvent('listRfqs', {}),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items.map((item: typeof SAMPLE_RFQ) => item.rfqId)).toEqual([
+                'rfq-20260310-zzz999',
+                'rfq-20260310-aaa111',
+            ]);
         });
     });
 
