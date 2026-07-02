@@ -1016,6 +1016,8 @@ describe('order-api handler', () => {
                 'RFQ_STATUS#declined',
                 'RFQ_STATUS#converted',
             ]);
+            expect(mockQuery.mock.calls.map(([cmd]) => cmd.IndexName)).toEqual(['GSI1', 'GSI1', 'GSI1']);
+            expect(mockQuery.mock.calls.map(([cmd]) => cmd.ScanIndexForward)).toEqual([false, false, false]);
             expect(mockQuery.mock.calls.map(([cmd]) => cmd.Limit)).toEqual([2, 2, 2]);
             expect(result.items).toHaveLength(2);
             expect(result.items.map((item: typeof SAMPLE_RFQ) => item.rfqId)).toEqual([
