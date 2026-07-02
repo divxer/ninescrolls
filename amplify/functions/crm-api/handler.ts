@@ -12,15 +12,15 @@ type AppSyncEvent = {
 };
 
 // Direct Lambda invoke payloads (from amplify/lib/crm/invoke-crm-api) carry an `action`.
-type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; visitorId?: string; startSessionSk?: string };
+type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; maxSessions?: number; visitorId?: string; startSessionSk?: string };
 
 const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {};
 
 const actions: Record<string, (e: DirectInvokeEvent) => Promise<unknown>> = {
   emitTimelineEvent: async (e) => { await emitTimelineEvent(e.args as Parameters<typeof emitTimelineEvent>[0]); },
   reconcileSweep: async (e) => reconcileSweep({ mode: e.mode ?? 'hot', limit: e.limit, cursor: e.cursor }),
-  rollupAnalyticsSessions: async (e) => rollupAnalyticsSessions({ limit: e.limit, cursor: e.cursor }),
-  reResolveVisitorSessions: async (e) => reResolveVisitorSessions({ visitorId: e.visitorId ?? '', startSessionSk: e.startSessionSk }),
+  rollupAnalyticsSessions: async (e) => rollupAnalyticsSessions({ limit: e.limit, cursor: e.cursor, maxSessions: e.maxSessions }),
+  reResolveVisitorSessions: async (e) => reResolveVisitorSessions({ visitorId: e.visitorId ?? '', startSessionSk: e.startSessionSk, maxSessions: e.maxSessions }),
   backfillVisitorBridge: async (e) => backfillVisitorBridge({ cursor: e.cursor, limit: e.limit }),
 };
 

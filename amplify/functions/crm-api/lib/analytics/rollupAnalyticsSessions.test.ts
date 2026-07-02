@@ -103,15 +103,19 @@ describe('rollupAnalyticsSessions', () => {
     const summary = releaseLeaseKeepCursor.mock.calls[0][3].lastSummary as Record<string, unknown>;
     expect(summary).toMatchObject({ discovered: 3 });                                // seen-delta count, no double-count
   });
-  it('isolates a per-session materialize failure and continues', async () => {
+  it('persists failed session ids for retry and does NOT advance watermark', async () => {
     readState.mockResolvedValue({ cursor: { watermark: 'w0' } });
     discover.mockResolvedValueOnce({ sessionIds: ['s-1', 's-2'] });
     closed.mockReturnValue(true);
     materialize.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ outcome: 'emitted' });
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await rollupAnalyticsSessions({});
-    const summary = releaseLeaseKeepCursor.mock.calls[0][3].lastSummary as Record<string, unknown>;
-    expect(summary).toMatchObject({ errors: 1, emitted: 1 });
+    const out = await rollupAnalyticsSessions({});
+    expect(materialize).toHaveBeenCalledTimes(2);                                    // still isolates and continues
+    expect(releaseLeaseKeepCursor).not.toHaveBeenCalled();                           // no completion while failed id needs retry
+    const persisted = persistPage.mock.calls.at(-1)![3].cursor as Record<string, unknown>;
+    expect(persisted.watermark).toBe('w0');                                          // NOT advanced
+    expect(persisted.pendingSessionIds).toEqual(['s-1']);                            // failed session is durable retry backlog
+    expect(out.summary).toMatchObject({ errors: 1, emitted: 1, hasMore: true });
     errSpy.mockRestore();
   });
 });

@@ -68,6 +68,20 @@ describe('materializeSession', () => {
     await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
     expect(emitMock.mock.calls[0][0].resolveInput.priorVisitorOrgId).toBe('lab.edu');
   });
+  it('tier-2 paginates marker lookup until it finds a prior resolved marker', async () => {
+    loadFlushes.mockResolvedValueOnce([FLUSH()]);
+    mockSend.mockResolvedValueOnce(PV());
+    readBridgeMock.mockResolvedValueOnce(null);
+    readMarkerMock.mockResolvedValueOnce(null);
+    listMarkersMock
+      .mockResolvedValueOnce({ markers: [{ sessionId: 's-x', resolutionStatus: 'unresolved', resolvedOrgId: null, emittedAt: '2026-06-29T00:00:00Z' }], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-x' } })
+      .mockResolvedValueOnce({ markers: [{ sessionId: 's-0', resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu', emittedAt: '2026-06-30T00:00:00Z' }] });
+    emitMock.mockResolvedValueOnce(undefined);
+    await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
+    expect(listMarkersMock).toHaveBeenCalledTimes(2);
+    expect(listMarkersMock.mock.calls[1][1]).toMatchObject({ startKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-x' } });
+    expect(emitMock.mock.calls[0][0].resolveInput.priorVisitorOrgId).toBe('lab.edu');
+  });
   it('below threshold (1 non-product page, no downloads) → marker below_threshold, NO emit', async () => {
     loadFlushes.mockResolvedValueOnce([FLUSH({ pathname: '/', pageViewId: 'p-9' })]);
     mockSend.mockResolvedValueOnce({ Item: { id: 'pv-p-9', pathname: '/', productPagesViewed: 0, pdfDownloads: 0, returnVisits: 0 } });
@@ -77,6 +91,14 @@ describe('materializeSession', () => {
     expect(out.outcome).toBe('below_threshold');
     expect(emitMock).not.toHaveBeenCalled();
     expect(writeMarkerMock).toHaveBeenCalledWith('v-1', expect.objectContaining({ resolutionStatus: 'below_threshold' }));
+  });
+  it('throws on transient pv join failure instead of writing below_threshold from incomplete inputs', async () => {
+    loadFlushes.mockResolvedValueOnce([FLUSH({ pathname: '/', pageViewId: 'p-9' })]);
+    mockSend.mockRejectedValueOnce(new Error('ddb throttled'));
+    await expect(materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' }))
+      .rejects.toThrow(/pv.*p-9/i);
+    expect(emitMock).not.toHaveBeenCalled();
+    expect(writeMarkerMock).not.toHaveBeenCalled();
   });
   it('fast-skip: unchanged inputHash + no resolution upgrade + not forceReemit → skipped, no emit, no marker rewrite', async () => {
     const flushes = [FLUSH()];
@@ -123,6 +145,19 @@ describe('materializeSession', () => {
     expect(out.outcome).toBe('emitted');
     expect(emitMock.mock.calls[0][0].occurredAt).toBe('2026-07-01T00:00:00Z');
     expect(writeMarkerMock).toHaveBeenCalledWith('v-1', expect.objectContaining({ lastFlushTs: '2026-07-01T00:05:00Z', resolutionStatus: 'unresolved' }));
+  });
+  it('uses max activeSeconds per pageViewId because page_time_flush values are cumulative snapshots', async () => {
+    loadFlushes.mockResolvedValueOnce([
+      FLUSH({ activeSeconds: 30, flushReason: 'hidden', timestamp: '2026-07-01T00:00:30Z' }),
+      FLUSH({ activeSeconds: 60, flushReason: 'pagehide', timestamp: '2026-07-01T00:01:00Z' }),
+      FLUSH({ pageViewId: 'p-2', activeSeconds: 15, timestamp: '2026-07-01T00:02:00Z' }),
+    ]);
+    mockSend.mockResolvedValue(PV());
+    readBridgeMock.mockResolvedValueOnce(null);
+    readMarkerMock.mockResolvedValueOnce(null);
+    emitMock.mockResolvedValueOnce(undefined);
+    await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
+    expect(emitMock.mock.calls[0][0].payload.activeSeconds).toBe(75);
   });
   it('session with NO visitorId still emits (valid sessionId id) but writes NO marker', async () => {
     loadFlushes.mockResolvedValueOnce([FLUSH({ visitorId: undefined }), FLUSH({ visitorId: undefined, pageViewId: 'p-2' }), FLUSH({ visitorId: undefined, pageViewId: 'p-3' })]);

@@ -44,12 +44,20 @@ describe('crm-api 2C-analytics actions', () => {
   it('routes rollupAnalyticsSessions with limit/cursor', async () => {
     mockAnalytics.rollup.mockResolvedValueOnce({ summary: {} });
     await handler({ action: 'rollupAnalyticsSessions', limit: 50 } as never);
-    expect(mockAnalytics.rollup).toHaveBeenCalledWith({ limit: 50, cursor: undefined });
+    expect(mockAnalytics.rollup).toHaveBeenCalledWith({ limit: 50, cursor: undefined, maxSessions: undefined });
+  });
+  it('routes maxSessions to bounded analytics actions for manual/debug invokes', async () => {
+    mockAnalytics.rollup.mockResolvedValueOnce({ summary: {} });
+    await handler({ action: 'rollupAnalyticsSessions', maxSessions: 3 } as never);
+    expect(mockAnalytics.rollup).toHaveBeenCalledWith({ limit: undefined, cursor: undefined, maxSessions: 3 });
+    mockAnalytics.retro.mockResolvedValueOnce({ summary: {} });
+    await handler({ action: 'reResolveVisitorSessions', visitorId: 'v-1', maxSessions: 4 } as never);
+    expect(mockAnalytics.retro).toHaveBeenCalledWith({ visitorId: 'v-1', startSessionSk: undefined, maxSessions: 4 });
   });
   it('routes reResolveVisitorSessions with visitorId/startSessionSk', async () => {
     mockAnalytics.retro.mockResolvedValueOnce({ summary: {} });
     await handler({ action: 'reResolveVisitorSessions', visitorId: 'v-1' } as never);
-    expect(mockAnalytics.retro).toHaveBeenCalledWith({ visitorId: 'v-1', startSessionSk: undefined });
+    expect(mockAnalytics.retro).toHaveBeenCalledWith({ visitorId: 'v-1', startSessionSk: undefined, maxSessions: undefined });
   });
   it('routes backfillVisitorBridge with cursor/limit', async () => {
     mockAnalytics.backfill.mockResolvedValueOnce({ processed: 0, hasMore: false });

@@ -32,6 +32,7 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
     const watermark = cur.watermark ?? cutoff;         // go-live: forward-only from first cron fire
     let pageCursor = cur.pageCursor ?? undefined;
     const pending = [...(cur.pendingSessionIds ?? [])];   // mutated in place (shift/push), never reassigned
+    const failedSessionIds = new Set<string>();
     const maxSessions = args.maxSessions ?? DEFAULT_MAX_SESSIONS;
     const seen = new Set<string>(pending);
     let processed = 0;
@@ -43,6 +44,11 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
         : { watermark: cutoff, activeRunCutoff: null, pageCursor: null, pendingSessionIds: [] };
       const leaseExpiresAt = new Date(Date.now() + LEASE_MS).toISOString();
       await persistPage('analytics', 'sessions', lease, { cursor: cursor as Record<string, unknown>, hasMore, counters: { ...counters }, leaseExpiresAt });
+    };
+    const queueFailedSessions = () => {
+      const retry = [...failedSessionIds].filter((sid) => !pending.includes(sid));
+      pending.unshift(...retry);
+      failedSessionIds.clear();
     };
 
     const processOne = async (sessionId: string): Promise<void> => {
@@ -61,6 +67,7 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
         }
       } catch (err) {
         counters.errors += 1;
+        failedSessionIds.add(sessionId);
         console.error(JSON.stringify({ event: 'crm.analytics.rollup.session_error', sessionId, error: err instanceof Error ? err.message : String(err) }));
       }
     };
@@ -68,7 +75,7 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
     for (let page = 0; page < MAX_DISCOVERY_PAGES; page++) {
       // Drain the backlog BEFORE reading the next discovery page (spec §3.1).
       while (pending.length > 0) {
-        if (processed >= maxSessions) { await persist(true); return { summary: { ...counters, hasMore: true } }; }
+        if (processed >= maxSessions) { queueFailedSessions(); await persist(true); return { summary: { ...counters, hasMore: true } }; }
         const sid = pending.shift()!;
         processed += 1;
         await processOne(sid);
@@ -85,6 +92,13 @@ export async function rollupAnalyticsSessions(args: RollupArgs): Promise<{ summa
     }
 
     if (pending.length > 0 || !discoveryDone) {                       // page budget exhausted mid-run
+      queueFailedSessions();
+      await persist(true);
+      console.log(JSON.stringify({ event: 'crm.analytics.rollup.summary', resumed, ...counters, hasMore: true }));
+      return { summary: { ...counters, hasMore: true } };
+    }
+    if (failedSessionIds.size > 0) {
+      queueFailedSessions();
       await persist(true);
       console.log(JSON.stringify({ event: 'crm.analytics.rollup.summary', resumed, ...counters, hasMore: true }));
       return { summary: { ...counters, hasMore: true } };

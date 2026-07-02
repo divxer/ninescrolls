@@ -32,6 +32,34 @@ function passesThreshold(flushes: FlushRow[], pages: PvRow[]): boolean {
   return productPage || rfqPage || download || returnVisit || pageCount >= 3;
 }
 
+function sumMaxActiveSecondsByPage(flushes: FlushRow[]): number {
+  const byPage = new Map<string, number>();
+  let anonymous = 0;
+  for (const f of flushes) {
+    const active = typeof f.activeSeconds === 'number' ? f.activeSeconds : 0;
+    if (typeof f.pageViewId === 'string' && f.pageViewId) {
+      byPage.set(f.pageViewId, Math.max(byPage.get(f.pageViewId) ?? 0, active));
+    } else {
+      anonymous += active;
+    }
+  }
+  return [...byPage.values()].reduce((sum, active) => sum + active, anonymous);
+}
+
+async function latestPriorResolvedOrgId(visitorId: string, sessionId: string): Promise<string | undefined> {
+  let startKey: Record<string, unknown> | undefined;
+  let best: SessionMarker | undefined;
+  do {
+    const { markers, lastKey } = await listMarkers(visitorId, { startKey });
+    const pageBest = markers
+      .filter((m) => m.resolutionStatus === 'resolved' && m.resolvedOrgId && m.sessionId !== sessionId)
+      .sort((a, b) => (a.emittedAt < b.emittedAt ? 1 : -1))[0];
+    if (pageBest && (!best || best.emittedAt < pageBest.emittedAt)) best = pageBest;
+    startKey = lastKey;
+  } while (startKey);
+  return best?.resolvedOrgId ?? undefined;
+}
+
 export async function materializeSession(opts: { sessionId: string; nowIso: string; forceReemit?: boolean }): Promise<{ outcome: MaterializeOutcome; resolvedOrgId?: string | null; resolutionSource?: ResolutionSource }> {
   const flushes = (await loadSessionFlushes(opts.sessionId)).filter((f) => f.isBot !== true);
   if (flushes.length === 0) return { outcome: 'no_flushes' };
@@ -43,9 +71,9 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
     try {
       const res = await docClient.send(new GetCommand({ TableName: ANALYTICS_TABLE(), Key: { id: `pv-${pvId}` } }));
       if (res.Item && (res.Item as PvRow).isBot !== true) pages.push(res.Item as PvRow);
-    } catch { /* Swallowing is SAFE because it self-heals: a transiently-failed GetItem also drops out
-                 of the inputHash, so the next run's hash differs → fast-skip can't fire → the session
-                 re-materializes with full data (pv rows feed threshold + hash, not just display). */ }
+    } catch (err) {
+      throw new Error(`pv_join_failed:${pvId}:${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   const visitorId = (flushes.find((f) => typeof f.visitorId === 'string' && f.visitorId)?.visitorId
@@ -57,10 +85,7 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
   // Tier-2 lookup: latest prior RESOLVED marker for this visitor (markers are the prior-event index).
   let priorVisitorOrgId: string | undefined;
   if (visitorId && !(bridge?.matchedOrgId)) {
-    const { markers } = await listMarkers(visitorId, {});
-    const prior = markers.filter((m) => m.resolutionStatus === 'resolved' && m.resolvedOrgId && m.sessionId !== opts.sessionId)
-      .sort((a, b) => (a.emittedAt < b.emittedAt ? 1 : -1))[0];
-    priorVisitorOrgId = prior?.resolvedOrgId ?? undefined;
+    priorVisitorOrgId = await latestPriorResolvedOrgId(visitorId, opts.sessionId);
   }
 
   // Fast-skip (normal mode only): same input AND no resolution upgrade available.
@@ -94,7 +119,7 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
     topPaths, productPagesViewed: Math.max(0, ...pages.map((p) => num(p.productPagesViewed))),
     downloads: Math.max(0, ...pages.map((p) => num(p.pdfDownloads))),
     returnVisit: pages.some((p) => num(p.returnVisits) > 0),
-    activeSeconds: flushes.reduce((s, f) => s + num(f.activeSeconds), 0),
+    activeSeconds: sumMaxActiveSecondsByPage(flushes),
     maxScrollDepth: Math.max(0, ...flushes.map((f) => num(f.maxScrollDepth))),
     orgNameDisplay: (bestPv.orgName as string) ?? null,
     utmSource: (bestPv.utmSource as string) ?? null, utmMedium: (bestPv.utmMedium as string) ?? null,
