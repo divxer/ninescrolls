@@ -996,13 +996,20 @@ if (!isSandbox) {
 
 if (!isSandbox) {
     // CRM timeline reconciliation sweep (durability backstop for the async emit projection).
-    new Rule(feedbackStack, 'CrmSweepHotRule', {
+    // The Rules MUST live in the SAME nested stack as the target Lambda (mirroring the
+    // Tender-Watch crons, whose target functions share the rules' stack via resourceGroupName):
+    // crm-api's function stack already depends on feedbackStack (intelligence-table grant + env),
+    // so scoping these rules to feedbackStack added a reverse feedback→function edge and closed a
+    // CloudFormation circular dependency between the nested stacks (deploy failure 2026-07-01).
+    // Intra-stack rule + target + Lambda permission = no cross-stack edge at all.
+    const crmApiStack = Stack.of(backend.crmApi.resources.lambda);
+    new Rule(crmApiStack, 'CrmSweepHotRule', {
         schedule: Schedule.cron({ minute: '*/30', hour: '*', day: '*', month: '*', year: '*' }),
         targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
             event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'hot' }),
         })],
     });
-    new Rule(feedbackStack, 'CrmSweepColdRule', {
+    new Rule(crmApiStack, 'CrmSweepColdRule', {
         schedule: Schedule.cron({ minute: '0', hour: '3', day: '*', month: '*', year: '*' }),
         targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
             event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'cold' }),

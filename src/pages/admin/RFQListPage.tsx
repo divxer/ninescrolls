@@ -10,9 +10,10 @@ import * as svc from '../../services/orderAdminService';
 import { parseRfqSource } from '../../utils/rfqAttribution';
 
 const STATUS_OPTIONS = ['All', 'pending', 'converted', 'declined'];
+const ALL_RFQ_LIMIT = 100;
+const STATUS_RFQ_LIMIT = 50;
 
 export function RFQListPage() {
-  const { rfqs, loading, error, refresh } = useRfqs();
   const navigate = useNavigate();
   const location = useLocation();
   const [search, setSearch] = useState('');
@@ -21,15 +22,20 @@ export function RFQListPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
+  const selectedStatus = statusFilter === 'All' ? undefined : statusFilter;
+  const allRfqs = useRfqs(undefined, ALL_RFQ_LIMIT);
+  const statusRfqs = useRfqs(selectedStatus, STATUS_RFQ_LIMIT, Boolean(selectedStatus));
+  const activeRfqs = selectedStatus ? statusRfqs : allRfqs;
+  const { rfqs, loading, error, loadingMore, hasMore, loadMore } = activeRfqs;
 
   const stats = useMemo(() => {
-    const pending = rfqs.filter(r => r.status === 'pending').length;
-    const converted = rfqs.filter(r => r.status === 'converted').length;
-    const declined = rfqs.filter(r => r.status === 'declined').length;
+    const pending = allRfqs.rfqs.filter(r => r.status === 'pending').length;
+    const converted = allRfqs.rfqs.filter(r => r.status === 'converted').length;
+    const declined = allRfqs.rfqs.filter(r => r.status === 'declined').length;
     const total = converted + declined;
     const rate = total > 0 ? Math.round((converted / total) * 100) : 0;
     return { pending, converted, declined, rate };
-  }, [rfqs]);
+  }, [allRfqs.rfqs]);
 
   const sourceFilter = new URLSearchParams(location.search).get('source');
 
@@ -87,7 +93,8 @@ export function RFQListPage() {
     if (orderId) {
       navigate(`/admin/orders/${orderId}`);
     } else {
-      refresh();
+      allRfqs.refresh();
+      statusRfqs.refresh();
       closePanel();
       setShowConvert(false);
     }
@@ -95,7 +102,8 @@ export function RFQListPage() {
 
   async function handleDecline(reason: string, note: string) {
     await svc.declineRfq(selectedRfq!.rfqId, reason + (note ? ` - ${note}` : ''));
-    refresh();
+    allRfqs.refresh();
+    statusRfqs.refresh();
     closePanel();
   }
 
@@ -254,6 +262,19 @@ export function RFQListPage() {
           </tbody>
         </table>
       </div>
+
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button
+            type="button"
+            className="px-5 py-2.5 bg-surface-container-low text-on-surface rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={loadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
+      )}
 
       {/* Detail Panel Overlay (Asymmetric Sidebar) */}
       {selectedRfq && (
