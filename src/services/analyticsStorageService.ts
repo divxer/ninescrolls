@@ -11,6 +11,12 @@ function generateUUID(): string {
 // ─── Visitor ID (localStorage – persists across sessions) ───────────────────
 const VISITOR_ID_KEY = 'ns_visitor_id';
 
+// In-memory fallback so one page load stays internally consistent when
+// localStorage is unavailable (e.g. Safari private mode). Without it, every
+// call would mint a fresh UUID and RFQ/Lead submissions wouldn't match the
+// visitorId on the same visitor's analytics beacons.
+let memoVisitorId: string | null = null;
+
 /**
  * Get or create a persistent visitor ID stored in localStorage.
  * This allows us to track individual visitors across sessions,
@@ -22,7 +28,10 @@ export function getVisitorId(): string {
     if (existing) return existing;
   } catch { /* localStorage unavailable */ }
 
+  if (memoVisitorId) return memoVisitorId;
+
   const id = generateUUID();
+  memoVisitorId = id;
 
   try {
     localStorage.setItem(VISITOR_ID_KEY, id);
