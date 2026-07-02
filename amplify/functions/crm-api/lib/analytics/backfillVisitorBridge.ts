@@ -1,6 +1,6 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
-import { upsertVisitorBridge, toSend } from '../../../../lib/crm/visitor-bridge';
+import { upsertVisitorBridge, readVisitorBridge, toSend } from '../../../../lib/crm/visitor-bridge';
 
 // One-time bridge backfill (spec §5): paginated scan of RFQ/LEAD METAs that already carry a
 // visitorId → upgrade-only bridge writes. NO retro fire by default — markers only exist for
@@ -17,6 +17,11 @@ export async function backfillVisitorBridge(args: { cursor?: Record<string, unkn
   for (const row of (res.Items ?? []) as Array<Record<string, unknown>>) {
     const pk = row.PK as string;
     const isRfq = pk.startsWith('RFQ#');
+    // Historical rows must never regress a LIVE bridge: upsert is last-writer-real-wins, so an old
+    // row's org could overwrite a newer live match. Skip rows whose bridge already has a real org
+    // (email-fill on an already-resolved bridge is not worth the regression risk).
+    const existing = await readVisitorBridge(send, TABLE_NAME(), (row.visitorId as string) ?? '');
+    if (existing?.matchedOrgId) { processed += 1; continue; }
     const r = await upsertVisitorBridge(send, TABLE_NAME(), {
       visitorId: (row.visitorId as string) ?? '',
       matchedOrgId: ((row.matchedOrgId as string) || null),

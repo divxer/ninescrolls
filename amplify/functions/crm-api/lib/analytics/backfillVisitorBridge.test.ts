@@ -3,8 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSend = vi.fn();
 vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
 const upsert = vi.fn();
+const readBridge = vi.fn();
 vi.mock('../../../../lib/crm/visitor-bridge', () => ({
   upsertVisitorBridge: (...a: unknown[]) => upsert(...a),
+  readVisitorBridge: (...a: unknown[]) => readBridge(...a),
   toSend: (dc: { send: (c: unknown) => unknown }) => (c: unknown) => dc.send(c), // passthrough adapter
 }));
 
@@ -13,7 +15,9 @@ import { backfillVisitorBridge } from './backfillVisitorBridge';
 beforeEach(() => {
   mockSend.mockReset();
   upsert.mockReset();
+  readBridge.mockReset();
   upsert.mockResolvedValue({ created: true, orgUpgraded: false });
+  readBridge.mockResolvedValue(null); // default: no existing bridge
 });
 
 describe('backfillVisitorBridge', () => {
@@ -55,6 +59,15 @@ describe('backfillVisitorBridge', () => {
     expect(out.nextCursor).toBeUndefined();
   });
 
+  it('never regresses a live bridge: rows whose bridge already has a real org are skipped', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [
+      { PK: 'LEAD#l-9', SK: 'META', visitorId: 'v-9', matchedOrgId: 'old.edu', email: 'z@old.edu', submittedAt: 't0' },
+    ] });
+    readBridge.mockResolvedValueOnce({ matchedOrgId: 'live.edu' }); // live submission already resolved this visitor
+    const out = await backfillVisitorBridge({});
+    expect(upsert).not.toHaveBeenCalled();
+    expect(out).toMatchObject({ processed: 1, upgraded: 0, hasMore: false });
+  });
   it('NO retro fire during backfill (spec §5 default)', async () => {
     // structural: the module imports upsertVisitorBridge only — no invokeCrmAction import exists.
     mockSend.mockResolvedValueOnce({ Items: [] });
