@@ -102,6 +102,8 @@ export const rfqSchema = z.object({
     existingEquipment: z.string().max(2000).optional(),
     additionalComments: z.string().max(3000).optional(),
     turnstileToken: z.string().min(1),
+    // Browser visitor identity for the VISITOR# bridge (2C-analytics)
+    visitorId: z.string().max(100).optional(),
     // S3 keys from presigned URL uploads (temp/ prefix)
     attachmentKeys: z.array(z.string().max(500)).max(3).optional(),
     // Budgetary quote with shipping address for tax calculation
@@ -556,6 +558,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             status: 'pending',
             submittedAt,
             ipHash: ipHashed,
+            visitorId: data.visitorId,
             // All form fields (stored raw; sanitize() is applied inline in email templates)
             name: data.name,
             email: data.email,

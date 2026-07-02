@@ -549,4 +549,36 @@ describe('submit-rfq handler', () => {
             });
         expect(backfillCall).toBeUndefined();
     });
+
+    describe('visitorId capture (2C-analytics)', () => {
+        function findRfqMetaPut() {
+            return (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+                .find((c: unknown[]) => {
+                    const params = c[0] as { Item?: { PK?: string; SK?: string } };
+                    return (params.Item?.PK ?? '').startsWith('RFQ#') && params.Item?.SK === 'META';
+                });
+        }
+
+        it('stores visitorId on the RFQ META when provided', async () => {
+            const event = makeEvent({ ...VALID_RFQ, visitorId: 'v-123' });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            const metaPut = findRfqMetaPut();
+            expect(metaPut).toBeDefined();
+            const putParams = metaPut![0] as { Item: Record<string, unknown> };
+            expect(putParams.Item.visitorId).toBe('v-123');
+        });
+
+        it('accepts a missing visitorId (optional field, old clients)', async () => {
+            const event = makeEvent(VALID_RFQ);
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            const metaPut = findRfqMetaPut();
+            expect(metaPut).toBeDefined();
+            const putParams = metaPut![0] as { Item: Record<string, unknown> };
+            expect(putParams.Item.visitorId).toBeUndefined();
+        });
+    });
 });
