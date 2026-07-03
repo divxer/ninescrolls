@@ -63,7 +63,7 @@ describe('materializeSession', () => {
     mockSend.mockResolvedValueOnce(PV());
     readBridgeMock.mockResolvedValueOnce(null);
     readMarkerMock.mockResolvedValueOnce(null);
-    listMarkersMock.mockResolvedValue({ markers: [{ sessionId: 's-0', resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu', emittedAt: '2026-06-30T00:00:00Z' }] });
+    listMarkersMock.mockResolvedValue({ markers: [{ sessionId: 's-0', resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu', occurredAt: '2026-06-30T00:00:00Z', emittedAt: '2026-06-30T00:00:00Z' }] });
     emitMock.mockResolvedValueOnce(undefined);
     await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
     expect(emitMock.mock.calls[0][0].resolveInput.priorVisitorOrgId).toBe('lab.edu');
@@ -74,13 +74,29 @@ describe('materializeSession', () => {
     readBridgeMock.mockResolvedValueOnce(null);
     readMarkerMock.mockResolvedValueOnce(null);
     listMarkersMock
-      .mockResolvedValueOnce({ markers: [{ sessionId: 's-x', resolutionStatus: 'unresolved', resolvedOrgId: null, emittedAt: '2026-06-29T00:00:00Z' }], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-x' } })
-      .mockResolvedValueOnce({ markers: [{ sessionId: 's-0', resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu', emittedAt: '2026-06-30T00:00:00Z' }] });
+      .mockResolvedValueOnce({ markers: [{ sessionId: 's-x', resolutionStatus: 'unresolved', resolvedOrgId: null, occurredAt: '2026-06-29T00:00:00Z', emittedAt: '2026-06-29T00:00:00Z' }], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-x' } })
+      .mockResolvedValueOnce({ markers: [{ sessionId: 's-0', resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu', occurredAt: '2026-06-30T00:00:00Z', emittedAt: '2026-06-30T00:00:00Z' }] });
     emitMock.mockResolvedValueOnce(undefined);
     await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
     expect(listMarkersMock).toHaveBeenCalledTimes(2);
     expect(listMarkersMock.mock.calls[1][1]).toMatchObject({ startKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-x' } });
     expect(emitMock.mock.calls[0][0].resolveInput.priorVisitorOrgId).toBe('lab.edu');
+  });
+  it('tier-2 only inherits from temporally prior markers with deterministic tie-breaks', async () => {
+    loadFlushes.mockResolvedValueOnce([FLUSH({ timestamp: '2026-07-01T00:00:00Z' })]);
+    mockSend.mockResolvedValueOnce(PV());
+    readBridgeMock.mockResolvedValueOnce(null);
+    readMarkerMock.mockResolvedValueOnce(null);
+    listMarkersMock.mockResolvedValueOnce({
+      markers: [
+        { sessionId: 'future', resolutionStatus: 'resolved', resolvedOrgId: 'future.edu', occurredAt: '2026-07-01T00:05:00Z', emittedAt: '2026-07-01T02:00:00Z' },
+        { sessionId: 'prior-a', resolutionStatus: 'resolved', resolvedOrgId: 'a.edu', occurredAt: '2026-06-30T23:59:00Z', emittedAt: '2026-07-01T01:00:00Z' },
+        { sessionId: 'prior-b', resolutionStatus: 'resolved', resolvedOrgId: 'b.edu', occurredAt: '2026-06-30T23:59:00Z', emittedAt: '2026-07-01T01:00:00Z' },
+      ],
+    });
+    emitMock.mockResolvedValueOnce(undefined);
+    await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
+    expect(emitMock.mock.calls[0][0].resolveInput.priorVisitorOrgId).toBe('b.edu');
   });
   it('below threshold (1 non-product page, no downloads) → marker below_threshold, NO emit', async () => {
     loadFlushes.mockResolvedValueOnce([FLUSH({ pathname: '/', pageViewId: 'p-9' })]);
@@ -111,6 +127,13 @@ describe('materializeSession', () => {
     expect(out.outcome).toBe('skipped');
     expect(emitMock).not.toHaveBeenCalled();
     expect(writeMarkerMock).not.toHaveBeenCalled();
+  });
+  it('inputHash changes when product/enrichment fields used by threshold and payload change', () => {
+    const flushes = [FLUSH({ pathname: '/' })];
+    const base = computeInputHash(flushes as never, [PV({ pathname: '/', productId: undefined, orgName: 'Old ISP', utmSource: 'old', country: 'US' }).Item as never]);
+    expect(computeInputHash(flushes as never, [PV({ pathname: '/', productId: 'sku-1', orgName: 'Old ISP', utmSource: 'old', country: 'US' }).Item as never])).not.toBe(base);
+    expect(computeInputHash(flushes as never, [PV({ pathname: '/', productId: undefined, orgName: 'New ISP', utmSource: 'new', country: 'CA' }).Item as never])).not.toBe(base);
+    expect(computeInputHash([FLUSH({ pathname: '/products/icp-etcher' })] as never, [PV({ pathname: '/', productId: undefined, orgName: 'Old ISP', utmSource: 'old', country: 'US' }).Item as never])).not.toBe(base);
   });
   it('unchanged hash BUT bridge now offers an upgrade → re-emits (resolution upgrade beats fast-skip)', async () => {
     const flushes = [FLUSH()];
@@ -158,6 +181,19 @@ describe('materializeSession', () => {
     emitMock.mockResolvedValueOnce(undefined);
     await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
     expect(emitMock.mock.calls[0][0].payload.activeSeconds).toBe(75);
+  });
+  it('rechecks bridge after writing an unresolved marker to close the rollup/retro race', async () => {
+    loadFlushes.mockResolvedValueOnce([FLUSH()]);
+    mockSend.mockResolvedValueOnce(PV());
+    readBridgeMock.mockResolvedValueOnce(null).mockResolvedValueOnce({ matchedOrgId: 'lab.edu', email: 'a@lab.edu' });
+    readMarkerMock.mockResolvedValueOnce(null);
+    emitMock.mockResolvedValue(undefined);
+    const out = await materializeSession({ sessionId: 's-1', nowIso: '2026-07-01T01:00:00.000Z' });
+    expect(out).toMatchObject({ outcome: 'emitted', resolvedOrgId: 'lab.edu', resolutionSource: 'bridge' });
+    expect(emitMock).toHaveBeenCalledTimes(2);
+    expect(emitMock.mock.calls[0][0].resolveInput.matchedOrgId).toBeUndefined();
+    expect(emitMock.mock.calls[1][0].resolveInput).toMatchObject({ matchedOrgId: 'lab.edu', email: 'a@lab.edu' });
+    expect(writeMarkerMock).toHaveBeenLastCalledWith('v-1', expect.objectContaining({ resolutionStatus: 'resolved', resolvedOrgId: 'lab.edu' }));
   });
   it('session with NO visitorId still emits (valid sessionId id) but writes NO marker', async () => {
     loadFlushes.mockResolvedValueOnce([FLUSH({ visitorId: undefined }), FLUSH({ visitorId: undefined, pageViewId: 'p-2' }), FLUSH({ visitorId: undefined, pageViewId: 'p-3' })]);

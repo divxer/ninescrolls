@@ -14,8 +14,28 @@ type PvRow = Record<string, unknown>;
 // per-page fields the threshold/payload read. Same inputs ⇒ same hash ⇒ fast-skip (unless a
 // resolution upgrade is available or forceReemit).
 export function computeInputHash(flushes: FlushRow[], pages: PvRow[]): string {
-  const f = flushes.map((x) => `${x.pageViewId}#${x.timestamp}#${x.activeSeconds ?? 0}#${x.maxScrollDepth ?? 0}`).sort();
-  const p = pages.map((x) => `${x.id ?? ''}#${x.pathname ?? ''}#${x.productPagesViewed ?? 0}#${x.pdfDownloads ?? 0}#${x.returnVisits ?? 0}`).sort();
+  const f = flushes.map((x) => ({
+    pageViewId: x.pageViewId ?? '',
+    timestamp: x.timestamp ?? '',
+    pathname: x.pathname ?? '',
+    activeSeconds: x.activeSeconds ?? 0,
+    maxScrollDepth: x.maxScrollDepth ?? 0,
+  })).sort((a, b) => `${a.pageViewId}#${a.timestamp}`.localeCompare(`${b.pageViewId}#${b.timestamp}`));
+  const p = pages.map((x) => ({
+    id: x.id ?? '',
+    pathname: x.pathname ?? '',
+    productId: x.productId ?? '',
+    productPagesViewed: x.productPagesViewed ?? 0,
+    pdfDownloads: x.pdfDownloads ?? 0,
+    returnVisits: x.returnVisits ?? 0,
+    orgName: x.orgName ?? '',
+    utmSource: x.utmSource ?? '',
+    utmMedium: x.utmMedium ?? '',
+    utmCampaign: x.utmCampaign ?? '',
+    trafficChannel: x.trafficChannel ?? '',
+    country: x.country ?? '',
+    region: x.region ?? '',
+  })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return crypto.createHash('sha256').update(JSON.stringify([f, p])).digest('hex').slice(0, 32);
 }
 
@@ -46,15 +66,21 @@ function sumMaxActiveSecondsByPage(flushes: FlushRow[]): number {
   return [...byPage.values()].reduce((sum, active) => sum + active, anonymous);
 }
 
-async function latestPriorResolvedOrgId(visitorId: string, sessionId: string): Promise<string | undefined> {
+function comparePriorMarkersDesc(a: SessionMarker, b: SessionMarker): number {
+  return b.occurredAt.localeCompare(a.occurredAt)
+    || b.emittedAt.localeCompare(a.emittedAt)
+    || b.sessionId.localeCompare(a.sessionId);
+}
+
+async function latestPriorResolvedOrgId(visitorId: string, sessionId: string, occurredAt: string): Promise<string | undefined> {
   let startKey: Record<string, unknown> | undefined;
   let best: SessionMarker | undefined;
   do {
     const { markers, lastKey } = await listMarkers(visitorId, { startKey });
     const pageBest = markers
-      .filter((m) => m.resolutionStatus === 'resolved' && m.resolvedOrgId && m.sessionId !== sessionId)
-      .sort((a, b) => (a.emittedAt < b.emittedAt ? 1 : -1))[0];
-    if (pageBest && (!best || best.emittedAt < pageBest.emittedAt)) best = pageBest;
+      .filter((m) => m.resolutionStatus === 'resolved' && m.resolvedOrgId && m.sessionId !== sessionId && m.occurredAt < occurredAt)
+      .sort(comparePriorMarkersDesc)[0];
+    if (pageBest && (!best || comparePriorMarkersDesc(pageBest, best) < 0)) best = pageBest;
     startKey = lastKey;
   } while (startKey);
   return best?.resolvedOrgId ?? undefined;
@@ -81,11 +107,14 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
   const inputHash = computeInputHash(flushes, pages);
   const existingMarker = visitorId ? await readMarker(visitorId, opts.sessionId) : null;
   const bridge = visitorId ? await readVisitorBridge(toSend(docClient), TABLE_NAME(), visitorId) : null;
+  const sorted = flushes.map((f) => f.timestamp as string).filter(Boolean).sort();
+  const occurredAt = sorted[0] ?? opts.nowIso;
+  const lastFlushTs = sorted[sorted.length - 1] ?? occurredAt;
 
   // Tier-2 lookup: latest prior RESOLVED marker for this visitor (markers are the prior-event index).
   let priorVisitorOrgId: string | undefined;
   if (visitorId && !(bridge?.matchedOrgId)) {
-    priorVisitorOrgId = await latestPriorResolvedOrgId(visitorId, opts.sessionId);
+    priorVisitorOrgId = await latestPriorResolvedOrgId(visitorId, opts.sessionId, occurredAt);
   }
 
   // Fast-skip (normal mode only): same input AND no resolution upgrade available.
@@ -93,10 +122,6 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
   if (!opts.forceReemit && existingMarker && existingMarker.inputHash === inputHash && !upgradeAvailable) {
     return { outcome: 'skipped', resolvedOrgId: existingMarker.resolvedOrgId };
   }
-
-  const sorted = flushes.map((f) => f.timestamp as string).filter(Boolean).sort();
-  const occurredAt = sorted[0];
-  const lastFlushTs = sorted[sorted.length - 1];
 
   if (!passesThreshold(flushes, pages)) {
     if (visitorId) await writeMarker(visitorId, {
@@ -154,5 +179,24 @@ export async function materializeSession(opts: { sessionId: string; nowIso: stri
     lastFlushTs, flushCount: flushes.length, inputHash, emittedAt: opts.nowIso,
   };
   if (visitorId) await writeMarker(visitorId, marker);
+  if (visitorId && resolutionSource !== 'bridge') {
+    const freshBridge = await readVisitorBridge(toSend(docClient), TABLE_NAME(), visitorId);
+    if (freshBridge?.matchedOrgId) {
+      const resolvedResolveInput = {
+        sourceEntityType: 'analytics', sourceEntityId: opts.sessionId, channel: 'analytics' as const,
+        matchedOrgId: freshBridge.matchedOrgId,
+        ...(freshBridge.email ? { email: freshBridge.email } : {}),
+      };
+      await emitTimelineEvent({
+        source: 'analytics', kind: 'site_visit_session',
+        sourceEntityType: 'analytics', sourceEntityId: opts.sessionId,
+        occurredAt, summary: `Site visit — ${payload.pageCount} page${payload.pageCount === 1 ? '' : 's'}${payload.orgNameDisplay ? ` (${payload.orgNameDisplay})` : ''}`,
+        idInput: { kind: 'site_visit_session', sessionId: opts.sessionId },
+        resolveInput: resolvedResolveInput, isInternalOnly: false, payload,
+      });
+      await writeMarker(visitorId, { ...marker, resolutionStatus: 'resolved', resolvedOrgId: freshBridge.matchedOrgId, emittedAt: opts.nowIso });
+      return { outcome: 'emitted', resolvedOrgId: freshBridge.matchedOrgId, resolutionSource: 'bridge' };
+    }
+  }
   return { outcome: 'emitted', resolvedOrgId, resolutionSource };
 }

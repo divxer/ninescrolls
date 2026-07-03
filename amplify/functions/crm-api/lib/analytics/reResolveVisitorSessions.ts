@@ -27,23 +27,48 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
     ?? (args.startSessionSk ? { PK: `VISITOR#${args.visitorId}`, SK: args.startSessionSk } : undefined);
 
   let processed = 0;
+  const failedSessionIds = new Set<string>();
+  const runMaterialize = async (sessionId: string): Promise<void> => {
+    try {
+      const r = await materializeSession({ sessionId, nowIso, forceReemit: true });
+      if (r.outcome === 'emitted') {
+        counters.reemitted += 1;
+        if (!r.resolvedOrgId) counters.stillUnresolved += 1;
+      }
+    } catch (err) {
+      counters.errors += 1;
+      failedSessionIds.add(sessionId);
+      console.error(JSON.stringify({ event: 'crm.analytics.retro.session_error', sessionId, error: err instanceof Error ? err.message : String(err) }));
+    }
+  };
+  for (const sessionId of resume?.retrySessionIds ?? []) {
+    if (processed >= max) break;
+    processed += 1;
+    await runMaterialize(sessionId);
+  }
+  if (failedSessionIds.size > 0 || (resume?.retrySessionIds && processed < resume.retrySessionIds.length)) {
+    await writeRetroState(args.visitorId, {
+      ...(startKey ? { cursor: startKey } : {}),
+      retrySessionIds: [...failedSessionIds, ...(resume?.retrySessionIds ?? []).slice(processed)],
+    });
+    return { summary: { ...counters, hasMore: true } };
+  }
   do {
     const remaining = max - processed;
+    if (remaining <= 0) {
+      await writeRetroState(args.visitorId, { ...(startKey ? { cursor: startKey } : {}) });
+      return { summary: { ...counters, hasMore: true } };
+    }
     const { markers, lastKey } = await listMarkers(args.visitorId, { limit: Math.min(PAGE_LIMIT, remaining), startKey });
     for (const m of markers) {
       counters.examined += 1;
       if (m.resolutionStatus !== 'unresolved') continue;   // skip resolved + below_threshold (spec §4)
       processed += 1;
-      try {
-        const r = await materializeSession({ sessionId: m.sessionId, nowIso, forceReemit: true });
-        if (r.outcome === 'emitted') {
-          counters.reemitted += 1;
-          if (!r.resolvedOrgId) counters.stillUnresolved += 1;
-        }
-      } catch (err) {
-        counters.errors += 1;
-        console.error(JSON.stringify({ event: 'crm.analytics.retro.session_error', sessionId: m.sessionId, error: err instanceof Error ? err.message : String(err) }));
-      }
+      await runMaterialize(m.sessionId);
+    }
+    if (failedSessionIds.size > 0) {
+      await writeRetroState(args.visitorId, { ...(lastKey ? { cursor: lastKey } : {}), retrySessionIds: [...failedSessionIds] });
+      return { summary: { ...counters, hasMore: true } };
     }
     if (lastKey && processed >= max) {
       await writeRetroState(args.visitorId, { cursor: lastKey });

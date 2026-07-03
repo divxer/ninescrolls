@@ -59,12 +59,35 @@ describe('reResolveVisitorSessions', () => {
     expect(out.summary).toMatchObject({ examined: 3, reemitted: 2, hasMore: false });
     expect(clearRetro).toHaveBeenCalledWith('v-1');
   });
-  it('isolates a per-session failure and continues', async () => {
+  it('persists failed retro sessions for a later retry instead of clearing RETRO#STATE', async () => {
     listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')] });
     materialize.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ outcome: 'emitted' });
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
-    expect(out.summary).toMatchObject({ errors: 1, reemitted: 1 });
+    expect(out.summary).toMatchObject({ errors: 1, reemitted: 1, hasMore: true });
+    expect(writeRetro).toHaveBeenCalledWith('v-1', { retrySessionIds: ['s-1'] });
+    expect(clearRetro).not.toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+  it('retries persisted failed retro sessions before scanning marker pages', async () => {
+    readRetro.mockResolvedValueOnce({ retrySessionIds: ['s-1'] });
+    listMarkersMock.mockResolvedValueOnce({ markers: [] });
+    materialize.mockResolvedValueOnce({ outcome: 'emitted', resolvedOrgId: 'lab.edu' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(materialize).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 's-1', forceReemit: true }));
+    expect(listMarkersMock).toHaveBeenCalledWith('v-1', expect.objectContaining({ startKey: undefined }));
+    expect(out.summary).toMatchObject({ reemitted: 1, hasMore: false });
+    expect(clearRetro).toHaveBeenCalledWith('v-1');
+  });
+  it('keeps failed retrySessionIds durable if a retry fails again', async () => {
+    readRetro.mockResolvedValueOnce({ retrySessionIds: ['s-1'], cursor: { PK: 'VISITOR#v-1', SK: 'SESSION#s-9' } });
+    materialize.mockRejectedValueOnce(new Error('boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(out.summary).toMatchObject({ errors: 1, hasMore: true });
+    expect(writeRetro).toHaveBeenCalledWith('v-1', { cursor: { PK: 'VISITOR#v-1', SK: 'SESSION#s-9' }, retrySessionIds: ['s-1'] });
+    expect(listMarkersMock).not.toHaveBeenCalled();
+    expect(clearRetro).not.toHaveBeenCalled();
     errSpy.mockRestore();
   });
 });

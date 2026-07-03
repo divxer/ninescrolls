@@ -35,11 +35,13 @@ export async function listMarkers(visitorId: string, opts: { limit?: number; sta
 }
 
 // RETRO#STATE (spec §4): resume cursor for an interrupted retro-resolve of one visitor.
-export async function readRetroState(visitorId: string): Promise<{ cursor: Record<string, unknown> } | null> {
+export type RetroState = { cursor?: Record<string, unknown>; retrySessionIds?: string[] };
+
+export async function readRetroState(visitorId: string): Promise<RetroState | null> {
   const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `VISITOR#${visitorId}`, SK: 'RETRO#STATE' } }));
-  return (res.Item as { cursor: Record<string, unknown> } | undefined) ?? null;
+  return (res.Item as RetroState | undefined) ?? null;
 }
-export async function writeRetroState(visitorId: string, state: { cursor: Record<string, unknown> }): Promise<void> {
+export async function writeRetroState(visitorId: string, state: RetroState): Promise<void> {
   await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: { PK: `VISITOR#${visitorId}`, SK: 'RETRO#STATE', ...state } }));
 }
 export async function clearRetroState(visitorId: string): Promise<void> {
