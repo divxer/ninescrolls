@@ -49,8 +49,16 @@ vi.mock('../../lib/organization/invoke-org-api', () => ({
 }));
 
 const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+const mockInvokeCrmAction = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../lib/crm/invoke-crm-api', () => ({
     emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+    invokeCrmAction: (...args: unknown[]) => mockInvokeCrmAction(...args),
+}));
+
+const mockUpsertVisitorBridge = vi.fn().mockResolvedValue({ created: false, orgUpgraded: false });
+vi.mock('../../lib/crm/visitor-bridge', () => ({
+    upsertVisitorBridge: (...args: unknown[]) => mockUpsertVisitorBridge(...args),
+    toSend: (dc: unknown) => dc,
 }));
 
 // Mock global fetch (Turnstile, SendGrid, HubSpot)
@@ -234,5 +242,65 @@ describe('submit-lead handler', () => {
                 return (params.UpdateExpression ?? '').includes('matchedOrgId');
             });
         expect(backfillCall).toBeUndefined();
+    });
+
+    describe('visitor bridge + retro fire (2C-analytics)', () => {
+        it('writes the VISITOR# bridge after org match when visitorId present', async () => {
+            mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
+            const event = makeEvent({ ...VALID_CONTACT, visitorId: 'v-123' });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(mockUpsertVisitorBridge).toHaveBeenCalledTimes(1);
+            // upsertVisitorBridge(send, tableName, input)
+            const [, tableName, input] = mockUpsertVisitorBridge.mock.calls[0] as
+                [unknown, string, Record<string, unknown>];
+            expect(tableName).toBe('NineScrolls-Intelligence');
+            expect(input).toEqual(expect.objectContaining({
+                visitorId: 'v-123',
+                matchedOrgId: 'stanford.edu',
+                email: VALID_CONTACT.email,
+                sourceEntityType: 'lead',
+            }));
+            const responseBody = JSON.parse((result as { body: string }).body);
+            expect(input.sourceEntityId).toBe(responseBody.leadId);
+        });
+
+        it('fires reResolveVisitorSessions ONLY on identity upgrade', async () => {
+            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: true });
+            await handler(makeEvent({ ...VALID_CONTACT, visitorId: 'v-up' }), {} as never, (() => {}) as never);
+            expect(mockInvokeCrmAction).toHaveBeenCalledWith({ action: 'reResolveVisitorSessions', visitorId: 'v-up' });
+
+            mockInvokeCrmAction.mockClear();
+            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: false, orgUpgraded: false });
+            await handler(makeEvent({ ...VALID_CONTACT, visitorId: 'v-noop' }), {} as never, (() => {}) as never);
+            expect(mockInvokeCrmAction).not.toHaveBeenCalled();
+        });
+
+        it('fires on a brand-new org-less bridge (created alone is an identity upgrade)', async () => {
+            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: false });
+            await handler(makeEvent({ ...VALID_CONTACT, visitorId: 'v-new' }), {} as never, (() => {}) as never);
+            expect(mockInvokeCrmAction).toHaveBeenCalledWith({ action: 'reResolveVisitorSessions', visitorId: 'v-new' });
+        });
+
+        it('skips the bridge entirely when visitorId is absent (no VISITOR#undefined)', async () => {
+            const result = await handler(makeEvent(VALID_CONTACT), {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(mockUpsertVisitorBridge).not.toHaveBeenCalled();
+            expect(mockInvokeCrmAction).not.toHaveBeenCalled();
+        });
+
+        it('bridge failure is non-fatal to the submission', async () => {
+            mockUpsertVisitorBridge.mockRejectedValueOnce(new Error('ddb down'));
+            const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const result = await handler(makeEvent({ ...VALID_CONTACT, visitorId: 'v-err' }), {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('crm.visitor_bridge.write_failed'));
+            expect(mockInvokeCrmAction).not.toHaveBeenCalled();
+            errSpy.mockRestore();
+        });
     });
 });

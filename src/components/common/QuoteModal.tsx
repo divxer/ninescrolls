@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
+import { getVisitorId } from '../../services/analyticsStorageService';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -104,6 +105,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
           ? rest.message
           : `${rest.message} — Quick inquiry via product page (${productLabel})`.padEnd(10, '.'),
         turnstileToken: token,
+        visitorId: getVisitorId(),
         additionalComments: [
           `Source: Quote Modal`,
           `Product: ${productLabel}`,

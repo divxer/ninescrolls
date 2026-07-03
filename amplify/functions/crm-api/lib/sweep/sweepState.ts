@@ -2,8 +2,9 @@ import crypto from 'node:crypto';
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 
-export type SweepMode = 'hot' | 'cold';
-export type SweepPass = 'existence' | 'dirty-rollups';
+// 'analytics'/'sessions' = the 2C-analytics session-rollup state (CRM_SWEEP#analytics#sessions).
+export type SweepMode = 'hot' | 'cold' | 'analytics';
+export type SweepPass = 'existence' | 'dirty-rollups' | 'sessions';
 
 export function stateKey(mode: SweepMode, pass: SweepPass) {
   return { PK: `CRM_SWEEP#${mode}#${pass}`, SK: 'STATE' };
@@ -62,6 +63,17 @@ export async function releaseLease(mode: SweepMode, pass: SweepPass, leaseToken:
     UpdateExpression: 'SET hasMore = :f, lastSummary = :s, lastCompletedAt = :now REMOVE #c, lease, leaseExpiresAt',
     ConditionExpression: 'lease = :token',
     ExpressionAttributeNames: { '#c': 'cursor' },
+    ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString(), ':token': leaseToken },
+  }));
+}
+
+// Release ONLY the lease fields, PRESERVING the durable cursor (used by the analytics rollup, whose
+// watermark must survive between runs — unlike sweep passes, which reset their cursor on completion).
+export async function releaseLeaseKeepCursor(mode: SweepMode, pass: SweepPass, leaseToken: string, p: { lastSummary: Record<string, unknown> }): Promise<void> {
+  await docClient.send(new UpdateCommand({
+    TableName: TABLE_NAME(), Key: stateKey(mode, pass),
+    UpdateExpression: 'SET hasMore = :f, lastSummary = :s, lastCompletedAt = :now REMOVE lease, leaseExpiresAt',
+    ConditionExpression: 'lease = :token',
     ExpressionAttributeValues: { ':f': false, ':s': p.lastSummary, ':now': new Date().toISOString(), ':token': leaseToken },
   }));
 }
