@@ -6,8 +6,9 @@ import { z } from 'zod';
 import crypto from 'node:crypto';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeRfqScore } from '../../lib/organization/lead-score';
-import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
+import { emitTimelineEventToCrm, invokeCrmAction } from '../../lib/crm/invoke-crm-api';
 import { buildRfqEmitArgs } from '../../lib/crm/emit-builders';
+import { toSend, upsertVisitorBridge } from '../../lib/crm/visitor-bridge';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -102,6 +103,8 @@ export const rfqSchema = z.object({
     existingEquipment: z.string().max(2000).optional(),
     additionalComments: z.string().max(3000).optional(),
     turnstileToken: z.string().min(1),
+    // Browser visitor identity for the VISITOR# bridge (2C-analytics)
+    visitorId: z.string().max(100).optional(),
     // S3 keys from presigned URL uploads (temp/ prefix)
     attachmentKeys: z.array(z.string().max(500)).max(3).optional(),
     // Budgetary quote with shipping address for tax calculation
@@ -556,6 +559,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             status: 'pending',
             submittedAt,
             ipHash: ipHashed,
+            visitorId: data.visitorId,
             // All form fields (stored raw; sanitize() is applied inline in email templates)
             name: data.name,
             email: data.email,
@@ -631,6 +635,28 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                     ':gsi2': `ORG#${matchedOrgId}`,
                 },
             }));
+        }
+
+        // 2C-analytics: VISITOR# identity bridge + retro-resolve fire (non-fatal; upgrade-only).
+        if (data.visitorId) {
+            try {
+                const bridge = await upsertVisitorBridge(
+                    toSend(docClient), TABLE_NAME(),
+                    {
+                        visitorId: data.visitorId, matchedOrgId: matchedOrgId ?? null, email: data.email ?? null,
+                        sourceEntityType: 'rfq', sourceEntityId: rfqId, now: submittedAt,
+                    },
+                );
+                if (bridge.created || bridge.orgUpgraded) {
+                    await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: data.visitorId });
+                }
+            } catch (err) {
+                console.error(JSON.stringify({
+                    event: 'crm.visitor_bridge.write_failed',
+                    visitorId: data.visitorId,
+                    error: err instanceof Error ? err.message : String(err),
+                }));
+            }
         }
 
         // Emit rfq_submitted timeline event to CRM (async fire-and-forget;

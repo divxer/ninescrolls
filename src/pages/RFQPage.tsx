@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
+import { getVisitorId } from '../services/analyticsStorageService';
 import { parseRfqUrlParams } from './rfqUrlParams';
 
 // ---------------------------------------------------------------------------
@@ -515,6 +516,7 @@ export function RFQPage() {
         equipmentCategory: formData.equipmentCategory,
         applicationDescription: formData.applicationDescription.trim(),
         quantity: formData.quantity,
+        visitorId: getVisitorId(),
       };
       // Optional fields
       if (formData.phone.trim()) payload.phone = formData.phone.trim();

@@ -4,7 +4,7 @@ vi.mock('@aws-sdk/client-lambda', () => ({
   LambdaClient: class { send = (...a: unknown[]) => send(...a); },
   InvokeCommand: class { constructor(public input: Record<string, unknown>) {} },
 }));
-import { emitTimelineEventToCrm } from './invoke-crm-api';
+import { emitTimelineEventToCrm, invokeCrmAction } from './invoke-crm-api';
 
 const args = {
   source: 'rfq', kind: 'rfq_submitted', sourceEntityType: 'rfq', sourceEntityId: 'rfq-1',
@@ -41,5 +41,24 @@ describe('invokeCrmApi', () => {
   it('sync mode throws on a FunctionError result', async () => {
     send.mockResolvedValueOnce({ FunctionError: 'Unhandled', Payload: new TextEncoder().encode('{"errorMessage":"bad"}') });
     await expect(emitTimelineEventToCrm(args, { sync: true })).rejects.toThrow(/bad/);
+  });
+});
+
+describe('invokeCrmAction (generic direct-invoke)', () => {
+  it('fires an async Event invoke with the raw action payload', async () => {
+    send.mockResolvedValueOnce({ StatusCode: 202 });
+    await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: 'v-1' });
+    const input = send.mock.calls[0][0].input;
+    expect(input.FunctionName).toBe('crm-fn');
+    expect(input.InvocationType).toBe('Event');
+    const payload = JSON.parse(new TextDecoder().decode(input.Payload));
+    expect(payload).toEqual({ action: 'reResolveVisitorSessions', visitorId: 'v-1' });
+  });
+  it('swallows + logs dispatch failure (business path never blocked)', async () => {
+    send.mockRejectedValueOnce(new Error('throttled'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: 'v-1' })).resolves.toBeUndefined();
+    expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('crm.action.dispatch_failed'));
+    errSpy.mockRestore();
   });
 });

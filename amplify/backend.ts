@@ -204,6 +204,9 @@ backend.serverTrack.addEnvironment('SEGMENT_WRITE_KEY', 'WMoEScvR6dgChGx0LQUz0wQ
 const analyticsEventTable = backend.data.resources.tables['AnalyticsEvent'];
 analyticsEventTable.grantReadWriteData(backend.serverTrack.resources.lambda);
 backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
+// 2C-analytics: crm-api reads raw analytics (page_time_flush / pv- rows) for the session rollup.
+analyticsEventTable.grantReadData(backend.crmApi.resources.lambda);
+backend.crmApi.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
 // Feature flag: set to 'false' to disable ALL DDB writes (page_view, page_time_flush, ai_enrichment)
 backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
 
@@ -1013,6 +1016,14 @@ if (!isSandbox) {
         schedule: Schedule.cron({ minute: '0', hour: '3', day: '*', month: '*', year: '*' }),
         targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
             event: RuleTargetInput.fromObject({ action: 'reconcileSweep', mode: 'cold' }),
+        })],
+    });
+    // 2C-analytics: session rollup every 30 min (offset from the sweep's */30 by :15 to avoid
+    // co-scheduling two 120s-capped invocations of the same Lambda).
+    new Rule(crmApiStack, 'CrmAnalyticsRollupRule', {
+        schedule: Schedule.cron({ minute: '15/30', hour: '*', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
+            event: RuleTargetInput.fromObject({ action: 'rollupAnalyticsSessions' }),
         })],
     });
 }
