@@ -3,12 +3,14 @@ import { defineFunction } from '@aws-amplify/backend';
 export const logisticsApi = defineFunction({
   name: 'logistics-api',
   // Pinned to the data stack for the same reason as order-api: this Lambda
-  // is both an AppSync GraphQL data resolver (amplify/data/resource.ts:
-  // a.handler.function(logisticsApi)) AND a data-stack table consumer
-  // (intelligenceTable grant). Left in the generic function stack it forms
-  // the same data<->function cycle that broke deploys after 2C-analytics
-  // added crm-api's grant. Moving it into the data stack collapses both
-  // edges into intra-stack refs.
+  // is an AppSync GraphQL data resolver (amplify/data/resource.ts:
+  // a.handler.function(logisticsApi)). Left in the generic function stack
+  // that resolver reference is a data->function edge which — together with
+  // the crm-api grants PR #230 added — closed a CloudFormation cycle across
+  // the api, data, and function stacks. Moving logistics-api into the data
+  // stack collapses the resolver edge into an intra-data reference. Its
+  // intelligenceTable grant lives in feedback-system-stack, which is a
+  // one-way data -> feedback-system-stack ref (no cycle).
   resourceGroupName: 'data',
   entry: './handler.ts',
   runtime: 22,
