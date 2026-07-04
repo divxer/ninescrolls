@@ -101,10 +101,11 @@ export function Layout({ children }: LayoutProps) {
 
   const navLinks = [
     { to: '/products', label: 'Products', hasDropdown: true },
+    { to: '/#applications', label: 'Applications' },
+    { to: '/#processes', label: 'Processes' },
+    { to: '/#resources', label: 'Resources' },
+    { to: '/service-support', label: 'Support' },
     { to: '/about', label: 'About' },
-    { to: '/service-support', label: 'Service & Support' },
-    { to: '/insights', label: 'Insights' },
-    { to: '/contact', label: 'Contact' },
   ];
 
   const productCategories = [
@@ -245,7 +246,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-4">
             <CartIcon />
             <Link to="/request-quote" className="hidden lg:inline-flex bg-primary hover:bg-primary-container text-on-primary px-5 py-2 rounded-sm text-sm font-medium transition-all active:opacity-80 active:scale-[0.99]">
-              Request a Quote
+              Request Quote
             </Link>
             {/* Mobile Hamburger */}
             <button
