@@ -208,6 +208,15 @@ analyticsEventTable.grantReadWriteData(backend.serverTrack.resources.lambda);
 backend.serverTrack.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
 // 2C-analytics: crm-api reads raw analytics (page_time_flush / pv- rows) for the session rollup.
 analyticsEventTable.grantReadData(backend.crmApi.resources.lambda);
+// grantReadData on an Amplify-managed table grants ONLY the base table ARN — NOT the GSIs (unlike a
+// raw CDK Table). The rollup Queries the analyticsEventsByEventTypeAndTimestamp / ...BySessionIdAndTimestamp
+// indexes, so grant Query on the index ARNs explicitly, or every cron fire fails with AccessDenied on
+// the GSI. (server-track shares grantReadData but only PutItems, so it never hit this.)
+backend.crmApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['dynamodb:Query'],
+    resources: [`${analyticsEventTable.tableArn}/index/*`],
+}));
 backend.crmApi.addEnvironment('ANALYTICS_EVENT_TABLE', analyticsEventTable.tableName);
 // Feature flag: set to 'false' to disable ALL DDB writes (page_view, page_time_flush, ai_enrichment)
 backend.serverTrack.addEnvironment('ENABLE_DDB_WRITE', 'true');
