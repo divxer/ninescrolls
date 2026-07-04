@@ -261,10 +261,14 @@ export async function handler(event: FetchNyscrEvent): Promise<FetchOutput> {
     try {
         const seen = new Set<string>();
         const allRows: NyscrRow[] = [];
+        let fulfilledCount = 0;
+        let rejectedCount = 0;
+        let lastRejectReason: unknown = null;
 
         for (const kw of NYSCR_KEYWORDS) {
             try {
                 const rows = await searchNyscr(kw);
+                fulfilledCount++;
                 for (const r of rows) {
                     if (!r.cr || seen.has(r.cr)) continue;
                     seen.add(r.cr);
@@ -277,12 +281,25 @@ export async function handler(event: FetchNyscrEvent): Promise<FetchOutput> {
                     uniqueSoFar: seen.size,
                 }));
             } catch (kwErr) {
+                rejectedCount++;
+                lastRejectReason = kwErr;
                 console.warn(JSON.stringify({
                     event: 'fetch-nyscr.keyword-failed',
                     keyword: kw,
                     error: kwErr instanceof Error ? kwErr.message : String(kwErr),
                 }));
             }
+        }
+
+        // A total upstream outage — every keyword search rejected — would
+        // otherwise stage `[]` and return `{ fetched: 0 }` with no error,
+        // masking a real incident from record-pipeline-run /
+        // notify-pipeline-health. Rethrow so the Step Function catch flags
+        // this source as FAILED.
+        if (fulfilledCount === 0 && rejectedCount === NYSCR_KEYWORDS.length) {
+            throw lastRejectReason instanceof Error
+                ? lastRejectReason
+                : new Error(`fetch-nyscr: all ${rejectedCount} keyword searches failed`);
         }
 
         const out: NormalizedTender[] = [];

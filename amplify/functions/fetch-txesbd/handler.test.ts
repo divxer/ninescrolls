@@ -223,4 +223,19 @@ describe('fetch-txesbd handler', () => {
         expect(result.error).toMatch(/upstream down/);
         expect(s3Send).not.toHaveBeenCalled();
     });
+
+    it('reports source failure when every post-cookies keyword search rejects (no silent zero-fetch)', async () => {
+        mockGetWithCookies();
+        // Cookies harvest fine, but every keyword POST rejects even after retries.
+        axiosPost.mockRejectedValue(new Error('post-hijacked'));
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-tx-outage' });
+        // Must surface an error path so record-pipeline-run flags the source
+        // as FAILED rather than a benign zero-fetch SUCCESS.
+        expect(result.source).toBe('txesbd');
+        expect(result.fetched).toBe(0);
+        expect(result.stagedKey).toBe('');
+        expect(result.error).toMatch(/post-hijacked|all .*keyword searches failed/i);
+        expect(s3Send).not.toHaveBeenCalled();
+    });
 });

@@ -180,4 +180,16 @@ describe('fetch-nyscr handler', () => {
         expect(result.source).toBe('nyscr');
         expect(result.fetched).toBe(2);
     });
+
+    it('reports source failure when EVERY keyword outage rejects (no silent zero-fetch)', async () => {
+        axiosGet.mockRejectedValue(new Error('upstream down'));
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-nys-outage' });
+        // Handler must surface an error path so record-pipeline-run flags
+        // this source as FAILED rather than a benign zero-fetch SUCCESS.
+        expect(result.source).toBe('nyscr');
+        expect(result.fetched).toBe(0);
+        expect(result.stagedKey).toBe('');
+        expect(result.error).toMatch(/upstream down|all .*keyword searches failed/i);
+    });
 });

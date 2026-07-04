@@ -283,14 +283,19 @@ export async function handler(event: FetchTxesbdEvent): Promise<FetchOutput> {
         // plus GET cookies + S3 staging, and one slow keyword no longer
         // blocks the rest. NetSuite SCA tolerates concurrent POSTs with the
         // same JSESSIONID — verified manually 2026-05-31.
+        const keywordsToRun = ESBD_KEYWORDS.slice(0, MAX_KEYWORDS_PER_RUN);
         const settled = await Promise.allSettled(
-            ESBD_KEYWORDS.slice(0, MAX_KEYWORDS_PER_RUN).map(async (kw) => {
+            keywordsToRun.map(async (kw) => {
                 const lines = await searchEsbd(kw, cookie);
                 return { kw, lines };
             }),
         );
+        let fulfilledCount = 0;
+        let rejectedCount = 0;
+        let lastRejectReason: unknown = null;
         for (const r of settled) {
             if (r.status === 'fulfilled') {
+                fulfilledCount++;
                 const { kw, lines } = r.value;
                 let added = 0;
                 for (const ln of lines) {
@@ -308,11 +313,24 @@ export async function handler(event: FetchTxesbdEvent): Promise<FetchOutput> {
                 }));
             } else {
                 // Per-keyword failure does not fail the run — log and continue.
+                rejectedCount++;
+                lastRejectReason = r.reason;
                 console.warn(JSON.stringify({
                     event: 'fetch-txesbd.keyword-failed',
                     error: r.reason instanceof Error ? r.reason.message : String(r.reason),
                 }));
             }
+        }
+
+        // A total upstream outage — every keyword search rejected — would
+        // otherwise stage `[]` and return `{ fetched: 0 }` with no error,
+        // masking a real incident from record-pipeline-run /
+        // notify-pipeline-health. Rethrow so the Step Function catch flags
+        // this source as FAILED.
+        if (fulfilledCount === 0 && rejectedCount === keywordsToRun.length) {
+            throw lastRejectReason instanceof Error
+                ? lastRejectReason
+                : new Error(`fetch-txesbd: all ${rejectedCount} keyword searches failed`);
         }
 
         const out: NormalizedTender[] = [];
