@@ -75,11 +75,13 @@ describe('uwiscDeepLink', () => {
 });
 
 describe('parseUwiscHtml', () => {
-    it('extracts the ICP-OES row + several spectrometer siblings from the real fixture', async () => {
+    it('extracts every card from the fixture (exact count) with full field coverage', async () => {
         const { parseUwiscHtml } = await import('./handler');
         const rows = parseUwiscHtml(fixtureHtml);
 
-        expect(rows.length).toBeGreaterThanOrEqual(3);
+        // Fixture is the live spectrometer sweep as of 2026-06 — five rows.
+        // A parser regression that quietly loses cards must fail here.
+        expect(rows.length).toBe(5);
 
         const icp = rows.find(r => r.title.includes('INDUCTIVELY COUPLED PLASMA'));
         expect(icp).toBeDefined();
@@ -87,8 +89,25 @@ describe('parseUwiscHtml', () => {
         expect(icp!.type).toBe('RFB');
         expect(icp!.openDate).toContain('3/5/2026');
         expect(icp!.closeDate).toContain('3/20/2026');
+        // Full multi-word name (previous regex dropped everything before the
+        // last whitespace, turning "Teri Drake" into "Drake").
+        expect(icp!.contactName).toBe('Teri Drake');
         expect(icp!.contactEmail).toBe('DrakeT11@uww.edu');
         expect(icp!.status).toMatch(/awarded/i);
+    });
+
+    it('populates contact fields for suffixed CONTACT rows too (LABEL_CONTACT_2/_3/...)', async () => {
+        const { parseUwiscHtml } = await import('./handler');
+        const rows = parseUwiscHtml(fixtureHtml);
+        // Every non-header card in the fixture has a mailto contact; a regex
+        // that only matched the un-suffixed id would leave later rows null.
+        const withContact = rows.filter(r => r.contactEmail);
+        expect(withContact.length).toBe(rows.length);
+        // Sanity-check a specific later row so the assertion above isn't
+        // trivially satisfied by any string.
+        const secondary = rows.find(r => r.number !== '2026-UWWTW-01281-RFB' && r.contactEmail);
+        expect(secondary).toBeDefined();
+        expect(secondary!.contactEmail).toMatch(/@/);
     });
 
     it('returns an empty array when the HTML has no result cards', async () => {
@@ -100,11 +119,16 @@ describe('parseUwiscHtml', () => {
 });
 
 describe('toNormalizedTender', () => {
-    it('maps a real ICP-OES row into a valid NormalizedTender', async () => {
+    it('maps an actionable ICP-OES row (Open status, future deadline) into a valid NormalizedTender', async () => {
         const { parseUwiscHtml, toNormalizedTender } = await import('./handler');
         const rows = parseUwiscHtml(fixtureHtml);
+        // The live fixture rows are all Awarded/past-deadline (the gate below
+        // is what prevents them from being staged). We synthesize an actionable
+        // variant by overriding status + deadline so the OTHER assertions
+        // (field mapping, agency, URL) still exercise the real row shape.
         const icp = rows.find(r => r.title.includes('INDUCTIVELY COUPLED PLASMA'))!;
-        const t = toNormalizedTender(icp);
+        const actionable = { ...icp, status: 'Open', closeDate: '12/31/2099' };
+        const t = toNormalizedTender(actionable, new Date('2026-06-01'));
 
         expect(t).not.toBeNull();
         expect(t!.source).toBe('uwisc');
@@ -113,11 +137,48 @@ describe('toNormalizedTender', () => {
         expect(t!.country).toBe('US');
         expect(t!.language).toBe('en');
         expect(t!.postedDate).toBe('2026-03-05');
-        expect(t!.deadline).toBe('2026-03-20');
+        expect(t!.deadline).toBe('2099-12-31');
         expect(t!.naicsCodes).toEqual([]);
         expect(t!.cpvCodes).toEqual([]);
         expect(t!.url).toContain('SimpleSearch_Keyword=2026-UWWTW-01281-RFB');
         expect(t!.description).toContain('INDUCTIVELY');
+    });
+
+    it('drops rows with a terminal status (Awarded / Closed / Cancelled / No Award)', async () => {
+        const { toNormalizedTender } = await import('./handler');
+        const base = {
+            title: 'Example',
+            description: null,
+            number: '2026-UWMSN-01001-RFB',
+            type: 'RFB',
+            openDate: '3/1/2026',
+            closeDate: '12/31/2099',
+            contactName: null,
+            contactEmail: null,
+        };
+        for (const status of ['Awarded', 'Closed', 'Canceled', 'Cancelled', 'Posting Cancelled', 'No Award']) {
+            expect(toNormalizedTender({ ...base, status }, new Date('2026-06-01'))).toBeNull();
+        }
+    });
+
+    it('drops rows whose deadline is already in the past even without a terminal status', async () => {
+        const { toNormalizedTender } = await import('./handler');
+        expect(
+            toNormalizedTender(
+                {
+                    title: 'Old RFP',
+                    description: null,
+                    number: '2024-UWMSN-00001-RFB',
+                    type: 'RFB',
+                    openDate: '1/1/2024',
+                    closeDate: '2/1/2024',
+                    status: null,
+                    contactName: null,
+                    contactEmail: null,
+                },
+                new Date('2026-06-01'),
+            ),
+        ).toBeNull();
     });
 
     it('returns null when the openDate is unparseable', async () => {
@@ -149,7 +210,7 @@ describe('toNormalizedTender', () => {
             status: 'Open',
             contactName: 'Test',
             contactEmail: 'test@wisc.edu',
-        });
+        }, new Date('2027-04-01'));
         expect(t).not.toBeNull();
         expect(t!.agency).toContain('UW System (ZZZBU)');
     });
@@ -187,21 +248,51 @@ describe('searchUwisc', () => {
     });
 });
 
+/**
+ * Synthetic single-row SciQuest HTML with a future close date and Open status,
+ * so the handler happy-path actually surfaces a NormalizedTender through the
+ * inactive-status / expired-deadline gate. The real fixture is a snapshot of
+ * historical Awarded rows — perfect for parser tests, useless for happy-path
+ * handler tests.
+ */
+const ACTIVE_ROW_HTML = `
+<html><body>
+<span class="mosaic status-badge status-badge-green">Open</span>
+<a class="btn btn-link btn-large btn-link-header" href="https://x/y" name="Live PECVD RFB">Live PECVD RFB</a>
+<div class="phx table-cell-layout"><div class="phx data-row-name"><div id="SourcingPublicSite_LABEL_OPEN">Open</div></div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-content">5/1/2099 9:00 AM CST</div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-name"><div id="SourcingPublicSite_LABEL_CLOSE">Close</div></div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-content">12/31/2099 3:00 PM CST</div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-name"><div id="SourcingPublicSite_LABEL_TYPE">Type</div></div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-content">RFB</div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-name"><div id="SourcingPublicSite_LABEL_NUMBER">Number</div></div></div>
+<div class="phx table-cell-layout"><div class="phx data-row-content">2099-UWMSN-99999-RFB</div></div>
+</body></html>
+`;
+
 describe('fetch-uwisc handler', () => {
-    it('runs all keywords in parallel, dedups, and stages to S3', async () => {
-        axiosGet.mockResolvedValue({ data: fixtureHtml });
+    it('runs all keywords in parallel, dedups, filters expired/awarded, and stages to S3', async () => {
+        axiosGet.mockResolvedValue({ data: ACTIVE_ROW_HTML });
         const { handler, UWISC_KEYWORDS } = await import('./handler');
 
         const result = await handler({ executionId: 'exec-uwisc-1' });
 
         expect(result.source).toBe('uwisc');
         expect(result.stagedKey).toMatch(/tender-watch\/exec-uwisc-1\/fetch-uwisc\/output\.json/);
-        // Each keyword returns the same fixture (>=3 unique rows) — dedup by number
-        // means final count equals the fixture's unique row count, not
-        // (rowsPerKeyword × keywordCount).
-        expect(result.fetched).toBeGreaterThanOrEqual(3);
+        // Each keyword returns the same active row; dedup by number means the
+        // final fetched count is 1 regardless of keyword count.
+        expect(result.fetched).toBe(1);
         expect(axiosGet).toHaveBeenCalledTimes(UWISC_KEYWORDS.length);
         expect(s3Send).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops every historical Awarded row from the live fixture — stages an empty array', async () => {
+        axiosGet.mockResolvedValue({ data: fixtureHtml });
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-uwisc-past' });
+        expect(result.source).toBe('uwisc');
+        expect(result.fetched).toBe(0);
+        expect(result.error).toBeUndefined();
     });
 
     it('tolerates per-keyword failures — one bad keyword does not fail the run', async () => {
@@ -209,11 +300,23 @@ describe('fetch-uwisc handler', () => {
             .mockRejectedValueOnce(new Error('boom'))
             .mockRejectedValueOnce(new Error('boom'))
             .mockRejectedValueOnce(new Error('boom'))
-            .mockResolvedValue({ data: fixtureHtml });
+            .mockResolvedValue({ data: ACTIVE_ROW_HTML });
         const { handler } = await import('./handler');
         const result = await handler({ executionId: 'exec-uwisc-2' });
         expect(result.source).toBe('uwisc');
-        expect(result.fetched).toBeGreaterThanOrEqual(3);
+        expect(result.fetched).toBe(1);
         expect(result.error).toBeUndefined();
+    });
+
+    it('reports source failure when EVERY keyword outage rejects (no silent zero-fetch)', async () => {
+        axiosGet.mockRejectedValue(new Error('upstream down'));
+        const { handler } = await import('./handler');
+        const result = await handler({ executionId: 'exec-uwisc-outage' });
+        // The handler must surface an error path so record-pipeline-run flags
+        // this as FAILED rather than a benign zero-fetch success.
+        expect(result.source).toBe('uwisc');
+        expect(result.fetched).toBe(0);
+        expect(result.stagedKey).toBe('');
+        expect(result.error).toMatch(/upstream down|all .*keyword searches failed/i);
     });
 });

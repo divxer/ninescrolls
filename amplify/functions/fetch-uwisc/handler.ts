@@ -101,12 +101,29 @@ export const UWISC_KEYWORDS = [
     'plasma',
     'evaporator',
     'sputter',
+    'etcher',
     'wafer',
     'lithography',
     'profilometer',
     'ellipsometer',
     'furnace',
 ] as const;
+
+/**
+ * Row-status values SciQuest uses for terminal / non-actionable events. We
+ * short-circuit these in `toNormalizedTender` because otherwise the "All"
+ * tab surfaces years of Awarded and Canceled RFPs, which would light up
+ * classify + notify on the very first deploy for events that are no longer
+ * biddable.
+ */
+const UWISC_INACTIVE_STATUSES = new Set([
+    'awarded',
+    'closed',
+    'canceled',
+    'cancelled',
+    'posting cancelled',
+    'no award',
+]);
 
 /**
  * UW business unit codes seen in bid numbers, mapped to human-readable
@@ -264,18 +281,25 @@ export function parseUwiscHtml(html: string): UwiscRow[] {
         while ((sm = spanRe.exec(before)) !== null) lastSpan = normWhitespace(sm[1]);
         status = lastSpan;
 
-        // Contact: first mailto anchor after the CONTACT label.
+        // Contact: SciQuest suffixes duplicate labels in the same page as
+        // `LABEL_CONTACT_2`, `LABEL_CONTACT_3`, ..., so the id anchor must be
+        // suffix-tolerant like the other extractors. The value cell contains
+        // free-form name text followed by a mailto anchor (occasionally a tel
+        // link), so we capture EVERYTHING before the first mailto <a> as the
+        // name — the earlier `[^<>\s]+` pattern truncated multi-word names
+        // like "Teri Drake" to just "Drake".
         let contactName: string | null = null;
         let contactEmail: string | null = null;
         const contactRe =
-            /id="SourcingPublicSite_LABEL_CONTACT"[\s\S]*?<div class="phx data-row-content"[^>]*>([\s\S]*?)<\/div>/;
+            /id="SourcingPublicSite_LABEL_CONTACT(?:_\d+)?"[\s\S]*?<div class="phx data-row-content"[^>]*>([\s\S]*?)<\/div>/;
         const contactMatch = contactRe.exec(cardHtml);
         if (contactMatch) {
             const inner = contactMatch[1];
-            const mailtoRe = /([^<>\s]+)\s*<a[^>]*href="mailto:([^"?]+)/;
+            const mailtoRe = /([\s\S]*?)<a[^>]*href="mailto:([^"?]+)/;
             const mm = mailtoRe.exec(inner);
             if (mm) {
-                contactName = normWhitespace(mm[1]);
+                const nameRaw = mm[1].replace(/<[^>]+>/g, '');
+                contactName = normWhitespace(nameRaw) || null;
                 contactEmail = decodeHtmlEntities(mm[2]);
             }
         }
@@ -296,14 +320,27 @@ export function parseUwiscHtml(html: string): UwiscRow[] {
 }
 
 /**
- * Convert a parsed row to NormalizedTender. Returns null if the row lacks
- * a parseable posted date (openDate) — SciQuest occasionally shows an
- * "Open" row with only a status blurb for archived events.
+ * Convert a parsed row to NormalizedTender. Returns null when the row is
+ * not actionable — either an archived status (Awarded / Closed / Cancelled
+ * / No Award), a deadline that has already passed, or missing a parseable
+ * posted date.
+ *
+ * We MUST drop these here rather than downstream because our normalize +
+ * prefilter + LLM + notify chain treats every distinct tender ID as new
+ * on first sight. Without the gate, the very first UWisc run would surface
+ * years of Awarded RFPs into email alerts.
  */
-export function toNormalizedTender(row: UwiscRow): NormalizedTender | null {
+export function toNormalizedTender(row: UwiscRow, now: Date = new Date()): NormalizedTender | null {
     const postedDate = parseUwiscDate(row.openDate);
     const deadline = parseUwiscDate(row.closeDate);
     if (!postedDate) return null;
+
+    // Terminal statuses aren't biddable anymore.
+    if (row.status && UWISC_INACTIVE_STATUSES.has(row.status.toLowerCase())) return null;
+
+    // Missing status but the deadline is already in the past → same outcome.
+    const today = now.toISOString().slice(0, 10);
+    if (deadline && deadline < today) return null;
 
     const buCode = extractBusinessUnit(row.number);
     const campus = buCode ? UWISC_BU_MAP[buCode] ?? `UW System (${buCode})` : 'UW System';
@@ -387,8 +424,12 @@ export async function handler(event: FetchUwiscEvent): Promise<FetchOutput> {
                 searchUwisc(kw).then((rows) => ({ kw, rows })),
             ),
         );
+        let fulfilledCount = 0;
+        let rejectedCount = 0;
+        let lastRejectReason: unknown = null;
         for (const r of settled) {
             if (r.status === 'fulfilled') {
+                fulfilledCount++;
                 const { kw, rows } = r.value;
                 let added = 0;
                 for (const row of rows) {
@@ -405,11 +446,24 @@ export async function handler(event: FetchUwiscEvent): Promise<FetchOutput> {
                     uniqueSoFar: seen.size,
                 }));
             } else {
+                rejectedCount++;
+                lastRejectReason = r.reason;
                 console.warn(JSON.stringify({
                     event: 'fetch-uwisc.keyword-failed',
                     error: r.reason instanceof Error ? r.reason.message : String(r.reason),
                 }));
             }
+        }
+
+        // A total outage — every single keyword search rejected — means the
+        // upstream is unreachable, and we would otherwise report SUCCESS with
+        // fetched=0. That masks a real incident from record-pipeline-run /
+        // notify-pipeline-health. Rethrow so the Step Function catch surfaces
+        // an actionable FAILED source.
+        if (fulfilledCount === 0 && rejectedCount === UWISC_KEYWORDS.length) {
+            throw lastRejectReason instanceof Error
+                ? lastRejectReason
+                : new Error(`fetch-uwisc: all ${rejectedCount} keyword searches failed`);
         }
 
         const out: NormalizedTender[] = [];
