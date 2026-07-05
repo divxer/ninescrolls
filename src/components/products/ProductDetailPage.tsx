@@ -18,13 +18,16 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
 
   const productUrl = `https://ninescrolls.com/products/${config.slug}`;
   const heroBackgroundImage = config.hero.backgroundImage ?? '/assets/images/redesign/hero-home-plasma-process.webp';
+  const productImageUrl = config.hero.image.src.startsWith('http')
+    ? config.hero.image.src
+    : `https://ninescrolls.com${config.hero.image.src}`;
   const structuredData = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     '@id': `${productUrl}#product`,
     name: config.schema.name,
     description: config.schema.description,
-    image: [`https://ninescrolls.com${config.hero.image.src}`],
+    image: [productImageUrl],
     sku: config.schema.sku,
     brand: { '@type': 'Brand', name: 'NineScrolls LLC' },
     category: config.schema.category,
