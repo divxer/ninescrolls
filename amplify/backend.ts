@@ -760,7 +760,18 @@ backend.notifyPipelineHealth.resources.lambda.addToRolePolicy(new PolicyStatemen
 }));
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_TO', 'info@ninescrolls.com');
 backend.notifyPipelineHealth.addEnvironment('ALERT_EMAIL_FROM', 'info@ninescrolls.com');
-backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa,nyscr,uwisc');
+// uwisc is deliberately excluded from rule-5 (zero-fetch CRITICAL alert). The
+// fetch-uwisc scraper queries the UW SciQuest "All" tab across a curated
+// keyword list — the tab returns Awarded / Closed / Canceled events too, and
+// toNormalizedTender drops any row whose status is terminal or whose deadline
+// has already passed. On days when UW-Madison has no currently-open sci
+// equipment RFP matching those keywords (which is common — historical rate is
+// only ~7/year), the handler correctly emits 0 tenders even though the raw
+// keyword sweep returned dozens of matches. Firing rule-5 for that would be a
+// false alarm every quiet day. A real UW SciQuest outage still surfaces
+// because the handler throws when ALL keyword queries reject (PR #234), which
+// marks the SOURCE row FAILED and trips rule-4 (2 consecutive failures).
+backend.notifyPipelineHealth.addEnvironment('ZERO_FETCH_ALERT_SOURCES', 'sam,ted,calusource,uofa,nyscr');
 
 // --- Step Functions state machine.
 const passInjectExecutionId = new Pass(tenderWatchStack, 'InjectExecutionId', {

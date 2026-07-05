@@ -10,7 +10,8 @@ const TABLE = () => process.env.INTELLIGENCE_TABLE!;
 const ALERT_EMAIL_TO = () => process.env.ALERT_EMAIL_TO ?? 'info@ninescrolls.com';
 const ALERT_EMAIL_FROM = () => process.env.ALERT_EMAIL_FROM ?? 'info@ninescrolls.com';
 const ZERO_FETCH_ALERT_SOURCES = () =>
-    (process.env.ZERO_FETCH_ALERT_SOURCES ?? 'sam,ted,calusource,uofa,nyscr,uwisc').split(',').map(s => s.trim()).filter(Boolean);
+    // uwisc excluded — see comment in amplify/backend.ts where this env is set.
+    (process.env.ZERO_FETCH_ALERT_SOURCES ?? 'sam,ted,calusource,uofa,nyscr').split(',').map(s => s.trim()).filter(Boolean);
 
 interface Alert {
     level: 'CRITICAL' | 'WARNING';
