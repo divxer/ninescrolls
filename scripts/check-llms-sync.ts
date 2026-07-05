@@ -8,6 +8,10 @@
  * Usage: ADMIN_EMAIL=... ADMIN_PASSWORD=... npx tsx scripts/check-llms-sync.ts
  * Exits 1 if any published insight is missing from either file (run before
  * publishing a new article, and after, to confirm the llms sync step landed).
+ *
+ * Limitation: any ninescrolls.com/insights/<slug> occurrence counts as
+ * "present", including prose mentions outside the catalog sections (e.g. the
+ * llms-full.txt FAQ), so a partially deleted catalog entry can go undetected.
  */
 import { readFileSync } from 'node:fs';
 import { Amplify } from 'aws-amplify';
@@ -45,6 +49,10 @@ async function main() {
     nextToken = nt;
   } while (nextToken);
 
+  // isDraft !== true also includes records missing the attribute, unlike the
+  // sitemap Lambda's `isDraft <> :true` FilterExpression (which drops them).
+  // The schema defaults isDraft to false so both agree; if they ever diverge
+  // this over-reports (flags an article the sitemap hides) rather than misses.
   const published = all.filter((p) => p.isDraft !== true && p.contentType !== 'news');
   const files = ['public/llms.txt', 'public/llms-full.txt'];
 
