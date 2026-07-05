@@ -78,4 +78,26 @@ describe('RIEEtcher redesigned product page', () => {
       expect(document.title).toBe('RIE Plasma Etching Platform | NineScrolls LLC');
     });
   });
+
+  it('derives canonical and product schema URLs from the RIE slug', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        'https://ninescrolls.com/products/rie-etcher'
+      );
+    });
+
+    const productSchema = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+      .map(script => JSON.parse(script.textContent ?? '{}') as { '@type'?: string; '@id'?: string; offers?: { url?: string } })
+      .find(schema => schema['@type'] === 'Product');
+
+    expect(productSchema).toMatchObject({
+      '@id': 'https://ninescrolls.com/products/rie-etcher#product',
+      offers: {
+        url: 'https://ninescrolls.com/products/rie-etcher',
+      },
+    });
+  });
 });
