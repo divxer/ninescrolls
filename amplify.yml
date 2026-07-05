@@ -3,21 +3,22 @@ backend:
   phases:
     build:
       commands:
-        # Keep the committed lockfile (do NOT `rm` it): with it present `npm install`
-        # skips the expensive full-tree dependency RE-RESOLUTION (the bulk of the old
-        # ~8 min), while still re-resolving platform optionals for linux so native
-        # binaries install correctly (e.g. @parcel/watcher-linux-x64-glibc, whose
-        # lockfile package node is missing under the macOS-generated lock — so plain
-        # `npm ci` cannot install it and the build fails). node_modules is wiped for a
-        # clean install.
-        - rm -rf node_modules
+        # Deleting package-lock.json is REQUIRED, not wasteful: the committed
+        # macOS-generated lockfile is platform-incomplete (no package node for
+        # @parcel/watcher-linux-x64-glibc), so ANY lockfile-respecting install
+        # (`npm ci`, or `npm install` with the lock present) fails to install the
+        # linux native binary and ampx crashes at startup. Removing the lockfile
+        # forces `npm install` to do a fresh, platform-correct re-resolution on the
+        # linux builder. Do NOT "optimize" this by keeping the lockfile (broke deploys
+        # in PR #238 `npm ci` and PR #239 `npm install`+lock). See amplify-envs memory.
+        - rm -rf node_modules package-lock.json
         - npm install --no-ignore-optional
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - rm -rf node_modules
+        - rm -rf node_modules package-lock.json
         - npm install --no-ignore-optional
     build:
       commands:
