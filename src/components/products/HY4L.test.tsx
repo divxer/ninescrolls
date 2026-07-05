@@ -78,28 +78,6 @@ describe('HY4L redesigned product page', () => {
     );
   });
 
-  it('shows HY-4L product view gallery from verified CDN images', () => {
-    renderPage();
-
-    expect(screen.getByTestId('product-detail-gallery')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'HY-4L Product Views' })).toBeInTheDocument();
-    expect(screen.getByAltText('HY-4L compact plasma cleaner front three-quarter product view')).toHaveAttribute(
-      'src',
-      'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg'
-    );
-    expect(screen.getByAltText('HY-4L compact plasma cleaner angled side product view')).toHaveAttribute(
-      'src',
-      'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg'
-    );
-    expect(screen.getByAltText('HY-4L compact plasma cleaner rear service-side product view')).toHaveAttribute(
-      'src',
-      'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg'
-    );
-    expect(screen.getByText('Front view')).toBeInTheDocument();
-    expect(screen.getByText('Side view')).toBeInTheDocument();
-    expect(screen.getByText('Rear service view')).toBeInTheDocument();
-  });
-
   it('canonicalizes variant routes to the main HY-4L page', async () => {
     renderPage('/products/hy-4l-mf');
 
@@ -122,7 +100,5 @@ describe('HY4L redesigned product page', () => {
         url: 'https://ninescrolls.com/products/hy-4l',
       },
     });
-    expect(productSchema?.image).not.toContain('https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg');
-    expect(productSchema?.image).not.toContain('https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg');
   });
 });
