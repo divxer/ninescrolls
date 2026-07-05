@@ -86,6 +86,10 @@
     "vitest": "^3.2.4",
     "zod": "^3.25.17"
   },
+  "optionalDependencies": {
+    "@parcel/watcher-linux-x64-glibc": "2.5.1",
+    "@rollup/rollup-linux-x64-gnu": "4.24.0"
+  },
   "overrides": {
     "@remix-run/router": "^1.23.3",
     "axios": "^1.18.1",
