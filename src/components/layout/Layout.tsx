@@ -115,7 +115,7 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/icp-etcher', label: 'ICP‑RIE' },
         { to: '/products/rie-etcher', label: 'RIE' },
         { to: '/products/compact-rie', label: 'Compact RIE' },
-        { to: '/products/rie-etcher#drie', label: 'DRIE (Bosch)' },
+        { to: '/insights/deep-reactive-ion-etching-bosch-process', label: 'DRIE (Bosch)' },
       ]
     },
     {

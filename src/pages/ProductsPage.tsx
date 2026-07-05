@@ -560,7 +560,7 @@ export function ProductsPage() {
                   <li><strong className="text-on-surface">Optimized scalloping</strong> and sidewall quality</li>
                   <li><strong className="text-on-surface">Stable long cycles</strong> for extended processes</li>
                 </ul>
-                <Link className="inline-block bg-primary text-on-primary px-5 py-2.5 rounded-sm font-bold text-sm hover:opacity-90 transition-opacity" to="/products/rie-etcher#drie">See DRIE Configurations</Link>
+                <Link className="inline-block bg-primary text-on-primary px-5 py-2.5 rounded-sm font-bold text-sm hover:opacity-90 transition-opacity" to="/products/icp-etcher">See DRIE Configurations</Link>
                 <div className="mt-4">
                   <Link className="text-sm text-primary font-body hover:underline" to="/insights/deep-reactive-ion-etching-bosch-process">Read: DRIE -- Bosch Process</Link>
                 </div>
