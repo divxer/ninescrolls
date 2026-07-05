@@ -1,6 +1,6 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const productImage = 'https://cdn.ninescrolls.com/products/hdp-cvd/main.jpg';
+const productImage = '/assets/images/redesign/products/hdp-cvd-standardized.webp';
 
 export const hdpCvdSystemConfig: ProductDetailConfig = {
   slug: 'hdp-cvd',
@@ -49,8 +49,8 @@ export const hdpCvdSystemConfig: ProductDetailConfig = {
     image: {
       src: productImage,
       alt: 'NineScrolls HDP-CVD high-density plasma CVD platform',
-      width: 1200,
-      height: 800,
+      width: 1400,
+      height: 1120,
     },
     stats: [
       { label: 'Wafer Size', value: '4-12 in' },

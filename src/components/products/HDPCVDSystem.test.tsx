@@ -25,7 +25,7 @@ describe('HDPCVDSystem redesigned product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'HDP-CVD Gap-Fill Deposition Platform' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls HDP-CVD high-density plasma CVD platform')).toHaveAttribute(
       'src',
-      'https://cdn.ninescrolls.com/products/hdp-cvd/main.jpg'
+      '/assets/images/redesign/products/hdp-cvd-standardized.webp'
     );
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
@@ -96,7 +96,7 @@ describe('HDPCVDSystem redesigned product page', () => {
 
     expect(productSchema).toMatchObject({
       '@id': 'https://ninescrolls.com/products/hdp-cvd#product',
-      image: ['https://cdn.ninescrolls.com/products/hdp-cvd/main.jpg'],
+      image: ['https://ninescrolls.com/assets/images/redesign/products/hdp-cvd-standardized.webp'],
       offers: {
         url: 'https://ninescrolls.com/products/hdp-cvd',
       },
