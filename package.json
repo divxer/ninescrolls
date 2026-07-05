@@ -20,6 +20,7 @@
     "upload-product-images": "npx tsx --env-file=.env scripts/upload-product-images.ts",
     "upload-hero-cleanroom": "npx tsx --env-file=.env scripts/upload-hero-cleanroom.ts",
     "ping-search-engines": "npx tsx scripts/ping-search-engines.ts",
+    "check-llms-sync": "npx tsx scripts/check-llms-sync.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

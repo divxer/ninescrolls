@@ -221,6 +221,10 @@ Summary: Comprehensive engineering guide to subtractive metal patterning across 
 URL: https://ninescrolls.com/insights/pecvd-vs-ald-vs-sputtering-comparison
 Summary: Decision guide comparing three major thin-film deposition technologies. PECVD delivers high-rate dielectric and semiconductor films with tunable stress; ALD provides atomic-level thickness control and perfect conformality on 3D structures; sputtering offers broad material versatility for metals and dielectrics. Covers performance metrics (deposition rate, uniformity, conformality, stress control), material applicability, process trade-offs (temperature, throughput, cost), and application-specific recommendations with decision frameworks for equipment selection.
 
+**E-Beam vs Thermal vs Sputter: Choosing a PVD System for Your Lab**
+URL: https://ninescrolls.com/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection
+Summary: Equipment-selection guide for physical vapor deposition. Compares thermal evaporation (resistive boat, low-melting metals Au/Al/Ag and organic small molecules, lowest cost, limited above ~1500 °C), e-beam evaporation (focused electron beam heats only the source pocket — high-melting metals W/Mo/Ti, oxides, nitrides, and fluorides at high purity, multi-pocket crucibles for multilayer stacks without breaking vacuum), and magnetron sputtering (argon-ion bombardment — compound, magnetic, and alloy films with excellent stoichiometry transfer and large-area uniformity, but conformal coverage that complicates lift-off). Covers core trade-offs at a glance, per-technique deep dives, a decision matrix by application, hybrid systems (why most research labs pick two complementary tools), and cost of ownership beyond the sticker price.
+
 **Atomic Layer Deposition (ALD) – Principles, Process Windows, Materials, and Equipment Guide**
 URL: https://ninescrolls.com/insights/atomic-layer-deposition-ald-comprehensive-guide
 Summary: Comprehensive guide to ALD — self-limiting surface chemistry with sequential precursor A pulse → purge → precursor B pulse → purge cycles depositing exactly one monolayer per cycle (~0.5–1.5 Å). Covers thermal ALD vs plasma-enhanced ALD (PEALD), the ALD temperature window (condensation/incomplete reaction/self-limiting/decomposition regions), precursor selection (TMA/H₂O for Al₂O₃, TDMAH/H₂O for HfO₂, TDMAT for TiN), growth rates and uniformity data. Detailed comparison of ALD vs CVD vs PVD across conformality (>99% vs 70-90% vs line-of-sight), thickness control, deposition rate, and temperature requirements. Applications in gate dielectrics, MEMS passivation, energy storage, and optics. Equipment selection framework with FAQs. Includes three technical diagrams: ALD cycle, temperature window, and ALD/CVD/PVD comparison.
@@ -373,6 +377,11 @@ Summary: PECVD-150LL and ICP-100 enable a CMOS-compatible PtSe₂/Si photodetect
 URL: https://ninescrolls.com/insights/rie150a-metasurface-color-router
 Published: Light: Science & Applications (Nature), 2026
 Summary: RIE-150A precision etching enables an on-chip q-BIC metasurface color router with near-unity energy utilization efficiency and ~20 nm narrowband extraction.
+
+**RIE-100 Self-Organizes Composite Nanotube Arrays for SERS**
+URL: https://ninescrolls.com/insights/rie100-composite-nanotube-formation-sers
+Published: ACS Applied Nano Materials, 2025
+Summary: Under SF₆ plasma, an RIE-100 reactive ion etcher self-organizes ordered ~330 nm composite nanotube arrays through an unusual reaction among the SiO₂ layer, fluoride ions, and the aluminum sample stage (XPS-confirmed Al–F–O–C walls). The arrays act as a SERS substrate with a 1.8 × 10⁶ enhancement factor — demonstrating an etcher as a constructive nanostructure-synthesis tool, not just a subtractive one.
 
 **ICP-200 Powers Metasurface Flow Visualization**
 URL: https://ninescrolls.com/insights/icp200-metasurface-flow-visualization
