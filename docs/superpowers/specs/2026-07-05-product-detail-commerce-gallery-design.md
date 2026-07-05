@@ -38,7 +38,6 @@ interface ProductDetailCommerceVariant {
   sku: string;
   label: string;
   price: number;
-  image?: ProductDetailImage;
 }
 
 interface ProductDetailCommerce {
@@ -52,6 +51,8 @@ interface ProductDetailConfig {
   commerce?: ProductDetailCommerce;
 }
 ```
+
+If `defaultSku` is omitted, the first variant is selected.
 
 HY-4L will use:
 
@@ -69,6 +70,8 @@ When `commerce` exists, the hero CTA area becomes purchase-first:
 When `commerce` is absent, the existing primary/secondary RFQ actions remain
 unchanged.
 
+Prices render as USD with thousands separators, such as `$7,999`.
+
 ## Cart and Analytics
 
 The template must not call cart hooks for RFQ-only pages. Directly calling a cart
@@ -85,7 +88,10 @@ present. The existing add-to-cart behavior must be preserved:
   and quantity `1`.
 - Fire GA4 `add_to_cart`.
 - Fire `analytics.trackAddToCart(sku, name, price)`.
-- Navigate to `/cart`.
+- Preserve the actual post-add behavior implemented by
+  `useProductPage().addToCart`. As of this design, that behavior includes
+  navigating to `/cart`; the first red test should pin the behavior from the
+  existing hook before the template child component is implemented.
 
 ## Offer Schema
 
@@ -162,8 +168,10 @@ The page should keep direct-purchase behavior and institutional RFQ behavior:
 - Secondary RFQ route remains visible.
 - AggregateOffer schema reflects both variants.
 - Gallery renders the real system views.
-- Existing ecommerce route compatibility for `/products/hy-4l?config=rf` and
-  `/products/hy-4l-rf` should be preserved if the route layer still supports it.
+- Existing ecommerce route compatibility is required. The router has
+  `/products/hy-4l-rf` and `/products/hy-4l-mf`, and the legacy page reads
+  `/products/hy-4l?config=rf|mf`. Dedicated routes and query parameters must
+  preselect the matching variant on load.
 
 ## Non-Goals
 
@@ -192,6 +200,8 @@ Commerce tests for HY-4L:
 - Switching variants updates the displayed price.
 - Add to Cart sends the selected SKU and price through the existing
   `useProductPage().addToCart` behavior.
+- Add to Cart fires GA4 `add_to_cart` and
+  `analytics.trackAddToCart(sku, name, price)` with the selected variant data.
 - Secondary RFQ action remains present.
 - Product JSON-LD uses AggregateOffer with `lowPrice`, `highPrice`,
   `offerCount`, `availability`, and `priceValidUntil`.
