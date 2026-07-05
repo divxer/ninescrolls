@@ -1,6 +1,6 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const productImage = 'https://cdn.ninescrolls.com/products/compact-rie/main.jpg';
+const productImage = '/assets/images/redesign/products/compact-rie-standardized.webp';
 
 export const compactRieConfig: ProductDetailConfig = {
   slug: 'compact-rie',
@@ -49,8 +49,8 @@ export const compactRieConfig: ProductDetailConfig = {
     image: {
       src: productImage,
       alt: 'NineScrolls Compact RIE SV-RIE platform',
-      width: 1024,
-      height: 1024,
+      width: 1400,
+      height: 1400,
     },
     stats: [
       { label: 'Models', value: '300 / 500 / 1000 W' },

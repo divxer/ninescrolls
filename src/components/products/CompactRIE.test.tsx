@@ -25,7 +25,7 @@ describe('CompactRIE redesigned product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Compact Benchtop RIE Etcher (SV-RIE)' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls Compact RIE SV-RIE platform')).toHaveAttribute(
       'src',
-      'https://cdn.ninescrolls.com/products/compact-rie/main.jpg'
+      '/assets/images/redesign/products/compact-rie-standardized.webp'
     );
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
@@ -92,7 +92,7 @@ describe('CompactRIE redesigned product page', () => {
 
     expect(productSchema).toMatchObject({
       '@id': 'https://ninescrolls.com/products/compact-rie#product',
-      image: ['https://cdn.ninescrolls.com/products/compact-rie/main.jpg'],
+      image: ['https://ninescrolls.com/assets/images/redesign/products/compact-rie-standardized.webp'],
       offers: {
         url: 'https://ninescrolls.com/products/compact-rie',
       },
