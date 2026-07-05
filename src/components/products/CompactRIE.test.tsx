@@ -23,6 +23,10 @@ describe('CompactRIE redesigned product page', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Compact Benchtop RIE Etcher (SV-RIE)' })).toBeInTheDocument();
+    expect(screen.getByTestId('product-detail-hero-background')).toHaveStyle({
+      backgroundImage:
+        "linear-gradient(90deg,rgba(7,10,15,1) 0%,rgba(7,10,15,0.94) 42%,rgba(7,10,15,0.55) 100%),url('/assets/images/redesign/products/compact-rie-scene-lab.webp')",
+    });
     expect(screen.getByAltText('NineScrolls Compact RIE SV-RIE platform')).toHaveAttribute(
       'src',
       '/assets/images/redesign/products/compact-rie-standardized.webp'

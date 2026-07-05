@@ -45,7 +45,7 @@ export const compactRieConfig: ProductDetailConfig = {
     title: 'Compact Benchtop RIE Etcher (SV-RIE)',
     description:
       'A space-efficient SV-RIE platform for labs that need true anisotropic plasma etching capability without the footprint of a full-size RIE system.',
-    backgroundImage: '/assets/images/redesign/hero-home-plasma-process.webp',
+    backgroundImage: '/assets/images/redesign/products/compact-rie-scene-lab.webp',
     image: {
       src: productImage,
       alt: 'NineScrolls Compact RIE SV-RIE platform',
