@@ -113,44 +113,81 @@ export function Layout({ children }: LayoutProps) {
       key: 'etching',
       label: 'Etching',
       items: [
-        { to: '/products/icp-etcher', label: 'ICP‑RIE' },
-        { to: '/products/rie-etcher', label: 'RIE' },
-        { to: '/products/compact-rie', label: 'Compact RIE' },
-        { to: '/products/rie-etcher#drie', label: 'DRIE (Bosch)' },
+        { to: '/products/icp-etcher', label: 'ICP‑RIE', desc: 'High-density plasma etching' },
+        { to: '/products/rie-etcher', label: 'RIE', desc: 'Reactive ion etching' },
+        { to: '/products/compact-rie', label: 'Compact RIE', desc: 'Compact benchtop etcher' },
+        { to: '/products/rie-etcher#drie', label: 'DRIE (Bosch)', desc: 'Deep silicon etching' },
       ]
     },
     {
       key: 'deposition',
       label: 'Deposition',
       items: [
-        { to: '/products/pecvd', label: 'PECVD' },
-        { to: '/products/ald', label: 'ALD' },
-        { to: '/products/hdp-cvd', label: 'HDP‑CVD' },
-        { to: '/products/e-beam-evaporator', label: 'E-Beam Evaporator' },
+        { to: '/products/pecvd', label: 'PECVD', desc: 'Plasma-enhanced thin films' },
+        { to: '/products/ald', label: 'ALD', desc: 'Atomic layer deposition' },
+        { to: '/products/hdp-cvd', label: 'HDP‑CVD', desc: 'High-density plasma CVD' },
+        { to: '/products/e-beam-evaporator', label: 'E-Beam Evaporator', desc: 'Electron-beam evaporation' },
       ]
     },
     {
       key: 'coating',
       label: 'Coating / Developing',
       items: [
-        { to: '/products/coater-developer', label: 'Coater / Developer' },
+        { to: '/products/coater-developer', label: 'Coater / Developer', desc: 'Photoresist coat & develop' },
       ]
     },
     {
       key: 'cleaning',
       label: 'Cleaning / Stripping',
       items: [
-        { to: '/products/striper', label: 'Stripping System' },
-        { to: '/products/plasma-cleaner', label: 'Plasma Cleaners', children: [
-          { to: '/products/hy-4l', label: 'HY-4L' },
-          { to: '/products/hy-20l', label: 'HY-20L' },
-          { to: '/products/hy-20lrf', label: 'HY-20LRF' },
-          { to: '/products/pluto-t', label: 'PLUTO-T' },
-          { to: '/products/pluto-m', label: 'PLUTO-M' },
-          { to: '/products/pluto-f', label: 'PLUTO-F' },
-        ]},
+        { to: '/products/striper', label: 'Stripping System', desc: 'Photoresist stripping' },
+        { to: '/products/plasma-cleaner', label: 'Plasma Cleaners', desc: 'Surface clean & activation' },
       ]
     },
+  ];
+
+  // Plasma-cleaner model variants live in the footer (sitewide internal links
+  // for long-tail SEO) rather than the mega menu; the /products/plasma-cleaner
+  // overview page carries the full model cards and detail links.
+  const plasmaCleanerModels = [
+    { to: '/products/hy-4l', label: 'HY-4L' },
+    { to: '/products/hy-20l', label: 'HY-20L' },
+    { to: '/products/hy-20lrf', label: 'HY-20LRF' },
+    { to: '/products/pluto-t', label: 'PLUTO-T' },
+    { to: '/products/pluto-m', label: 'PLUTO-M' },
+    { to: '/products/pluto-f', label: 'PLUTO-F' },
+  ];
+
+  // Solutions / Resources column — routes buyers by intent, not just by product.
+  const productResources = [
+    {
+      key: 'explore',
+      label: 'Explore',
+      items: [
+        { to: '/#applications', label: 'By Application' },
+        { to: '/#processes', label: 'By Process' },
+        { to: '/#research', label: 'Research & Citations' },
+      ],
+    },
+    {
+      key: 'resources',
+      label: 'Resources',
+      items: [
+        { to: '/insights', label: 'Knowledge Center' },
+        { to: '/startup-package', label: 'Startup Package' },
+        { to: '/service-support', label: 'Service & Support' },
+      ],
+    },
+  ];
+
+  // Desktop mega-menu column layout: stack the short single-item Coating
+  // category with Deposition so no column is left mostly empty. Order follows
+  // productCategories (etching, deposition, coating, cleaning).
+  const [etchingCat, depositionCat, coatingCat, cleaningCat] = productCategories;
+  const productColumns = [
+    [etchingCat],
+    [depositionCat, coatingCat],
+    [cleaningCat],
   ];
 
   return (
@@ -188,42 +225,54 @@ export function Layout({ children }: LayoutProps) {
 
                   {/* Desktop Dropdown */}
                   {isProductsOpen && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white rounded-xl shadow-2xl border border-outline-variant/10 p-8 min-w-[640px]">
-                      <div className="grid grid-cols-3 gap-8">
-                        {productCategories.map(cat => (
-                          <div key={cat.key}>
-                            <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-4">{cat.label}</h4>
-                            <div className="space-y-2">
-                              {cat.items.map(item => (
-                                <div key={item.to}>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white rounded-xl shadow-2xl border border-outline-variant/10 px-7 py-6 min-w-[820px]">
+                      <div className="grid grid-cols-4 gap-x-6 gap-y-5">
+                        {productColumns.map((column, colIndex) => (
+                          <div key={colIndex} className="space-y-6">
+                            {column.map(cat => (
+                              <div key={cat.key}>
+                                <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-3">{cat.label}</h4>
+                                <div className="space-y-2">
+                                  {cat.items.map(item => (
+                                    <div key={item.to}>
+                                      <Link
+                                        to={item.to}
+                                        className="group block"
+                                        onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, cat.label); }}
+                                      >
+                                        <span className="block text-sm text-slate-700 group-hover:text-primary transition-colors">{item.label}</span>
+                                        {item.desc && <span className="block text-xs leading-snug text-slate-400">{item.desc}</span>}
+                                      </Link>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+
+                        {/* Solutions / Resources column */}
+                        <div className="border-l border-slate-100 pl-6 space-y-5">
+                          {productResources.map(group => (
+                            <div key={group.key}>
+                              <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-3">{group.label}</h4>
+                              <div className="space-y-2">
+                                {group.items.map(item => (
                                   <Link
+                                    key={item.to}
                                     to={item.to}
                                     className="block text-sm text-slate-600 hover:text-primary transition-colors"
-                                    onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, cat.label); }}
+                                    onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, group.label); }}
                                   >
                                     {item.label}
                                   </Link>
-                                  {item.children && (
-                                    <div className="pl-3 mt-1 space-y-1 border-l border-slate-200">
-                                      {item.children.map(child => (
-                                        <Link
-                                          key={child.to}
-                                          to={child.to}
-                                          className="block text-sm text-slate-400 hover:text-primary transition-colors"
-                                          onClick={() => { setIsProductsOpen(false); trackProductMenuClick(child.label, cat.label); }}
-                                        >
-                                          {child.label}
-                                        </Link>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                      <div className="mt-6 pt-6 border-t border-outline-variant/20 flex gap-4">
+                      <div className="mt-5 pt-5 border-t border-outline-variant/20 flex gap-4">
                         <Link to="/products" className="flex-1 text-center py-2 text-sm font-bold bg-primary text-white rounded-sm hover:bg-primary-container transition-colors" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products', 'CTA'); }}>All Products</Link>
                         <Link to="/request-quote" className="flex-1 text-center py-2 text-sm font-bold border border-outline-variant text-on-surface-variant rounded-sm hover:bg-on-surface hover:text-white transition-colors" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote', 'CTA'); }}>Request a Quote</Link>
                       </div>
@@ -292,31 +341,37 @@ export function Layout({ children }: LayoutProps) {
                                   <div key={item.to}>
                                     <Link
                                       to={item.to}
-                                      className="block py-1.5 text-sm text-slate-600 hover:text-primary"
+                                      className="group block py-1.5"
                                       onClick={() => { setIsMenuOpen(false); trackProductMenuClick(item.label, cat.label); }}
                                     >
-                                      {item.label}
+                                      <span className="block text-sm text-slate-700 group-hover:text-primary">{item.label}</span>
+                                      {item.desc && <span className="block text-xs leading-snug text-slate-400">{item.desc}</span>}
                                     </Link>
-                                    {item.children && (
-                                      <div className="pl-3 space-y-0.5 border-l border-slate-200 ml-1">
-                                        {item.children.map(child => (
-                                          <Link
-                                            key={child.to}
-                                            to={child.to}
-                                            className="block py-1 text-sm text-slate-400 hover:text-primary"
-                                            onClick={() => { setIsMenuOpen(false); trackProductMenuClick(child.label, cat.label); }}
-                                          >
-                                            {child.label}
-                                          </Link>
-                                        ))}
-                                      </div>
-                                    )}
                                   </div>
                                 ))}
                               </div>
                             )}
                           </div>
                         ))}
+
+                        {productResources.map(group => (
+                          <div key={group.key}>
+                            <p className="py-2 text-xs font-bold uppercase tracking-widest text-slate-500">{group.label}</p>
+                            <div className="pl-4 space-y-1">
+                              {group.items.map(item => (
+                                <Link
+                                  key={item.to}
+                                  to={item.to}
+                                  className="block py-1.5 text-sm text-slate-600 hover:text-primary"
+                                  onClick={() => { setIsMenuOpen(false); trackProductMenuClick(item.label, group.label); }}
+                                >
+                                  {item.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
                         <div className="pt-3 space-y-2">
                           <Link to="/products" className="block text-center py-2 text-sm font-bold bg-primary text-white rounded-sm" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('All Products', 'CTA'); }}>All Products</Link>
                           <Link to="/request-quote" className="block text-center py-2 text-sm font-bold border border-outline-variant text-on-surface-variant rounded-sm" onClick={() => { setIsMenuOpen(false); trackProductMenuClick('Request a Quote', 'CTA'); }}>Request a Quote</Link>
@@ -432,8 +487,22 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
+        {/* Plasma Cleaner models — sitewide internal links (long-tail SEO) */}
+        <div className="max-w-screen-2xl mx-auto mt-12 px-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-5">
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold shrink-0">Plasma Cleaners</span>
+            <ul className="flex flex-wrap gap-x-5 gap-y-2">
+              {plasmaCleanerModels.map(model => (
+                <li key={model.to}>
+                  <Link to={model.to} className="text-xs text-slate-500 hover:text-primary transition-colors">{model.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
         {/* Footer Bottom */}
-        <div className="max-w-screen-2xl mx-auto mt-16 px-8 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="max-w-screen-2xl mx-auto mt-12 px-8 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs leading-relaxed text-slate-500 uppercase tracking-widest">&copy; {new Date().getFullYear()} NineScrolls LLC. All rights reserved.</p>
           <div className="flex items-center gap-2 text-slate-600">
             <span className="text-[10px] uppercase tracking-widest">Powered by Precision</span>
