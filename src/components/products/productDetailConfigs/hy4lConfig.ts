@@ -134,6 +134,35 @@ export const hy4lConfig: ProductDetailConfig = {
       { label: 'Series Role', value: 'Compact HY entry platform' },
     ],
   },
+  gallery: {
+    eyebrow: 'Product Views',
+    heading: 'HY-4L Product Views',
+    copy:
+      'Use these supplier-provided views to review the compact enclosure, service-side access, chamber placement, and bench integration before configuration review.',
+    images: [
+      {
+        src: productImage,
+        alt: 'HY-4L compact plasma cleaner front three-quarter product view',
+        label: 'Front view',
+        width: 1024,
+        height: 666,
+      },
+      {
+        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg',
+        alt: 'HY-4L compact plasma cleaner angled side product view',
+        label: 'Side view',
+        width: 1024,
+        height: 741,
+      },
+      {
+        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg',
+        alt: 'HY-4L compact plasma cleaner rear service-side product view',
+        label: 'Rear service view',
+        width: 1024,
+        height: 796,
+      },
+    ],
+  },
   applications: {
     eyebrow: 'Applications',
     title: 'Compact plasma cleaning and activation workflows.',
