@@ -3,15 +3,17 @@ backend:
   phases:
     build:
       commands:
-        - rm -rf node_modules package-lock.json
-        - npm install --no-ignore-optional
+        # npm ci installs strictly from the committed lockfile (v3, all-platform
+        # optional deps incl. sharp-linux-x64) — no dependency re-resolution, so it is
+        # far faster than the old `rm -rf lockfile && npm install`, which re-resolved the
+        # full tree from scratch every deploy (~8 min) and discarded Amplify's cache.
+        - npm ci
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - rm -rf node_modules package-lock.json
-        - npm install --no-ignore-optional
+        - npm ci
     build:
       commands:
         - npm run build
