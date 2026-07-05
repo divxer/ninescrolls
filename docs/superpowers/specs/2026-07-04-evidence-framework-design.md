@@ -92,6 +92,22 @@ String constants, defined once in a shared frontend module:
 
 - `publication` is the Oxford-Citation analogue. It links out via `sourceUrl` + `meta{journal, year, doi, authors}`; no detail page needed.
 
+**Fixed public labels** (defined alongside the enum, never hard-coded ad hoc):
+
+| `type` | public label |
+| --- | --- |
+| `application_note` | Application Note |
+| `process_note` | Process Note |
+| `technical_note` | Technical Note |
+| `publication` | Published Research |
+| `case_study` | Case Study |
+| `validation` | **Process Validation** (never just "Validation" — too generic) |
+
+**Admin help text** to keep the two "note" types from blurring:
+
+- `process_note` — process recipe / process-specific explanation
+- `technical_note` — equipment / design / operation explanation
+
 ### `status` semantics
 
 - `draft` — admin only, never public.
@@ -109,6 +125,30 @@ String constants, defined once in a shared frontend module:
 > Phase 1 intentionally uses client-side aggregation over published Evidence records because evidence volume is expected to remain small. If evidence grows beyond roughly 100–200 records, introduce a product-evidence lookup model or indexed relation.
 
 `products` is an array, which DynamoDB cannot directly index with a GSI. In Phase 1/2 the product module fetches all `status='published'` Evidence and filters/aggregates client-side by `product.slug` membership.
+
+## Implementation Constraints (normative)
+
+Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation:
+
+1. **`slug` is globally unique.** `Evidence.slug` must be globally unique; admin save must reject a duplicate slug. Prevents ambiguity for future detail pages, anchors, and external links.
+
+2. **`status` values come from a shared constant, never inline strings:**
+
+   ```ts
+   export const EVIDENCE_STATUS = {
+     DRAFT: 'draft',
+     PUBLISHED: 'published',
+     ARCHIVED: 'archived',
+   } as const;
+   ```
+
+   All public queries must reference `EVIDENCE_STATUS.PUBLISHED`, not a literal `'published'`.
+
+3. **Public queries fetch only `published` records — never filter status client-side.** The public service must query/list only `status = 'published'` records *before* returning data to React components. Do **not** fetch all Evidence and filter status in the browser: `draft`/`archived` records must never reach the client, even if hidden from view.
+
+4. **Link display priority (defined now, used Phase 2):** when an evidence item is eventually made clickable, the display target resolves in order **`articleSlug` → `pdfUrl` → `sourceUrl`** (prefer the internal article, then the PDF, then the neutral/external source). `sourceUrl` is the guaranteed fallback; `articleSlug`/`pdfUrl` are optional typed conveniences. Phase 1 stores these fields but renders none of them as links.
+
+5. **`products` multi-select is sourced from canonical `Product.slug` values.** `EvidenceForm`'s products field is a controlled multi-select populated from the Product model / canonical product list — never a free-text slug entry. A typo'd slug would silently make the product module never aggregate the record.
 
 ## Product-Page Evidence Module
 
