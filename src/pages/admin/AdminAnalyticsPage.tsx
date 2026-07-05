@@ -19,6 +19,41 @@ import { aggregateByOrg } from './analytics/orgAggregation';
 
 const client = getAmplifyDataClient;
 
+// The generated client types don't expose the AnalyticsEvent secondary-index
+// queries, so narrow the untyped model surface to just the operations we use.
+interface AnalyticsEventListResult {
+  data: AnalyticsEvent[] | null;
+  nextToken?: string | null;
+}
+
+interface AnalyticsEventModelOps {
+  listAnalyticsEventByEventTypeAndTimestamp(
+    input: { eventType: string; timestamp: { between: [string, string] } },
+    options: { authMode: 'userPool'; limit: number; nextToken?: string },
+  ): Promise<AnalyticsEventListResult>;
+  listAnalyticsEventBySessionIdAndTimestamp(
+    input: { sessionId: string },
+    options: { authMode: 'userPool'; limit: number },
+  ): Promise<AnalyticsEventListResult>;
+  get(
+    input: { id: string },
+    options: { authMode: 'userPool' },
+  ): Promise<{ data: AnalyticsEvent | null }>;
+}
+
+const analyticsEventModel = (): AnalyticsEventModelOps =>
+  client().models.AnalyticsEvent as unknown as AnalyticsEventModelOps;
+
+// Shape of the AppSync subscription surface if/when the client exposes it
+// (accessed defensively — may be absent, in which case polling covers us).
+interface AnalyticsSubscriptions {
+  onAnalyticsEvent?: (opts: { authMode: string }) => {
+    subscribe: (handlers: {
+      next: (event: { data: { id: string; eventType: string; timestamp: string } }) => void;
+      error: (err: unknown) => void;
+    }) => { unsubscribe: () => void };
+  };
+}
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
@@ -143,7 +178,7 @@ export function AdminAnalyticsPage() {
         do {
           if (cancelled) return results;
 
-          const result = await (client().models.AnalyticsEvent as any)
+          const result = await analyticsEventModel()
             .listAnalyticsEventByEventTypeAndTimestamp(
               { eventType, timestamp: { between: [startISO, endISO] } },
               { authMode: 'userPool', limit: 500, nextToken },
@@ -189,7 +224,7 @@ export function AdminAnalyticsPage() {
         if (orphanSessionIds.size > 0 && !cancelled) {
           const lookups = Array.from(orphanSessionIds).map(async (sid) => {
             try {
-              const res = await (client().models.AnalyticsEvent as any)
+              const res = await analyticsEventModel()
                 .listAnalyticsEventBySessionIdAndTimestamp(
                   { sessionId: sid },
                   { authMode: 'userPool', limit: 20 },
@@ -321,7 +356,7 @@ export function AdminAnalyticsPage() {
         lastSeenISO = notification.timestamp;
       }
 
-      (client().models.AnalyticsEvent as any).get(
+      analyticsEventModel().get(
         { id: notification.id },
         { authMode: 'userPool' },
       ).then((result: { data: AnalyticsEvent | null }) => {
@@ -358,7 +393,7 @@ export function AdminAnalyticsPage() {
         let nextToken: string | undefined;
         do {
           if (cancelled) return results;
-          const result = await (client().models.AnalyticsEvent as any)
+          const result = await analyticsEventModel()
             .listAnalyticsEventByEventTypeAndTimestamp(
               { eventType, timestamp: { between: [sinceISO, nowISO] } },
               { authMode: 'userPool', limit: 500, nextToken },
@@ -406,7 +441,7 @@ export function AdminAnalyticsPage() {
       subscription?.unsubscribe();
       subscription = null;
       try {
-        const subscriptions = (client as any).subscriptions;
+        const subscriptions = (client as unknown as { subscriptions?: AnalyticsSubscriptions }).subscriptions;
         if (!subscriptions?.onAnalyticsEvent) {
           console.info('[Live] Subscription not available yet — polling fallback will catch events');
           scheduleReconnect();

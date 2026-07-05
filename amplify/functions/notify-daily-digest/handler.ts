@@ -20,14 +20,24 @@ function escapeHtml(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-async function loadTenders(ids: string[]): Promise<any[]> {
-    const out: any[] = [];
+// Fields of a stored tender item that the digest email renders
+interface DigestTender {
+    country?: string;
+    overallScore: number;
+    sourceUrl: string;
+    title: string;
+    agency: string;
+    deadline?: string;
+}
+
+async function loadTenders(ids: string[]): Promise<DigestTender[]> {
+    const out: DigestTender[] = [];
     for (let i = 0; i < ids.length; i += 100) {
         const batch = ids.slice(i, i + 100);
         const res = await ddb.send(new BatchGetCommand({
             RequestItems: { [TABLE()]: { Keys: batch.map((id) => tenderItemKey(id)) } },
         }));
-        for (const it of (res.Responses?.[TABLE()] ?? [])) out.push(it);
+        for (const it of (res.Responses?.[TABLE()] ?? [])) out.push(it as DigestTender);
     }
     return out;
 }
@@ -41,7 +51,7 @@ export async function handler(event: DigestEvent): Promise<DigestOutcome> {
     const tenders = await loadTenders(event.digestTenderIds);
     if (tenders.length === 0) return { status: 'skipped', count: 0 };
 
-    const byCountry = new Map<string, any[]>();
+    const byCountry = new Map<string, DigestTender[]>();
     for (const t of tenders) {
         const c = t.country ?? 'XX';
         if (!byCountry.has(c)) byCountry.set(c, []);

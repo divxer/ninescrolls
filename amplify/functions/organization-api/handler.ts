@@ -35,6 +35,13 @@ interface DirectInvokePayload {
     [key: string]: unknown;
 }
 
+type OrgApiEvent = AppSyncResolverEvent<Record<string, unknown>>;
+
+interface CognitoIdentityShape {
+    groups?: string[] | null;
+    username?: string;
+}
+
 interface UpsertPayload {
     action: 'upsertFromSubmission';
     source: 'rfq' | 'lead' | 'order';
@@ -70,7 +77,7 @@ function invertedScoreToken(score: number): string {
 }
 
 export async function handler(
-    event: AppSyncResolverEvent<any> | DirectInvokePayload,
+    event: OrgApiEvent | DirectInvokePayload,
 ): Promise<unknown> {
     // Path 1: direct Lambda invoke (action-based dispatch). Bypasses requireAdmin
     // because the only callers are other Lambdas in this account that we trust
@@ -88,9 +95,10 @@ export async function handler(
         return dispatchAction(event as DirectInvokePayload);
     }
     // Path 2: AppSync resolver — admin-only.
-    requireAdmin(event as AppSyncResolverEvent<any>);
-    const fieldName = ((event as any).info?.fieldName) ?? (event as any).fieldName;
-    return dispatchFieldName(fieldName, event as AppSyncResolverEvent<any>);
+    const appSyncEvent = event as OrgApiEvent & { fieldName?: string };
+    requireAdmin(appSyncEvent);
+    const fieldName = appSyncEvent.info?.fieldName ?? appSyncEvent.fieldName;
+    return dispatchFieldName(fieldName as string, appSyncEvent);
 }
 
 /**
@@ -99,8 +107,8 @@ export async function handler(
  * undefined and are rejected here — intentional, since admin operations should never
  * be reachable via IAM passthrough or API-key clients.
  */
-function requireAdmin(event: AppSyncResolverEvent<any>): void {
-    const groups = (event.identity as any)?.groups ?? [];
+function requireAdmin(event: OrgApiEvent): void {
+    const groups = (event.identity as CognitoIdentityShape | undefined)?.groups ?? [];
     if (!groups.includes(ADMIN_GROUP)) {
         throw new Error('Unauthorized: admin group required');
     }
@@ -119,22 +127,22 @@ async function dispatchAction(event: DirectInvokePayload): Promise<unknown> {
 
 async function dispatchFieldName(
     fieldName: string,
-    event: AppSyncResolverEvent<any>,
+    event: OrgApiEvent,
 ): Promise<unknown> {
-    const identity = (event.identity as any)?.username ?? 'unknown';
+    const identity = (event.identity as CognitoIdentityShape | undefined)?.username ?? 'unknown';
     switch (fieldName) {
         case 'listOrganizations':
-            return listOrganizations(event.arguments);
+            return listOrganizations(event.arguments as ListOrgArgs);
         case 'getOrganization':
-            return getOrganization(event.arguments);
+            return getOrganization(event.arguments as { orgId: string });
         case 'updateOrganizationStatus':
-            return updateOrganizationStatus(event.arguments, identity);
+            return updateOrganizationStatus(event.arguments as { orgId: string; status: string; adminNotes?: string; tags?: string[] }, identity);
         case 'updateOrganizationOwner':
-            return updateOrganizationOwner(event.arguments, identity);
+            return updateOrganizationOwner(event.arguments as { orgId: string; ownerSalesRep?: string | null }, identity);
         case 'reclassifyOrganization':
-            return reclassifyOrganization(event.arguments);
+            return reclassifyOrganization(event.arguments as { orgId: string; force?: boolean });
         case 'mergeOrganization':
-            return mergeOrganization(event.arguments, identity);
+            return mergeOrganization(event.arguments as { sourceOrgId: string; targetOrgId: string }, identity);
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -233,8 +241,8 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
                     GSI2SK: 'ORG',
                 },
                 ConditionExpression: 'attribute_not_exists(PK)',
-            })).catch((err: any) => {
-                if (err?.name !== 'ConditionalCheckFailedException') throw err;
+            })).catch((err: unknown) => {
+                if ((err as { name?: string } | undefined)?.name !== 'ConditionalCheckFailedException') throw err;
             });
         }
 
@@ -247,8 +255,8 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
             source: payload.source,
         }));
         return { matchedOrgId: canonicalOrgId };
-    } catch (err: any) {
-        if (err?.name !== 'ConditionalCheckFailedException') throw err;
+    } catch (err) {
+        if ((err as { name?: string } | undefined)?.name !== 'ConditionalCheckFailedException') throw err;
         // Existing Org — proceed to UpdateItem path
     }
 
@@ -283,7 +291,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
         ReturnValues: 'UPDATED_NEW',
     }));
 
-    const newLeadScore = (updateRes.Attributes as any)?.leadScore as number | undefined;
+    const newLeadScore = updateRes.Attributes?.leadScore as number | undefined;
     if (typeof newLeadScore === 'number') {
         const previousLeadScore = newLeadScore - payload.scoreDelta;
         if (newLeadScore >= LEAD_SCORE_THRESHOLD && previousLeadScore < LEAD_SCORE_THRESHOLD) {
@@ -327,7 +335,7 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
                 Key: { PK: `ORG#${canonicalOrgId}`, SK: 'META' },
                 ProjectionExpression: 'aliasDomains',
             }));
-            const currentAliases = ((meta.Item as any)?.aliasDomains ?? []) as string[];
+            const currentAliases = (meta.Item?.aliasDomains ?? []) as string[];
             if (currentAliases.length < ALIAS_DOMAINS_CAP) {
                 await ddb.send(new UpdateCommand({
                     TableName: TABLE(),
@@ -343,8 +351,8 @@ async function upsertFromSubmission(payload: UpsertPayload): Promise<UpsertResul
                     cap: ALIAS_DOMAINS_CAP,
                 }));
             }
-        } catch (err: any) {
-            if (err?.name !== 'ConditionalCheckFailedException') throw err;
+        } catch (err) {
+            if ((err as { name?: string } | undefined)?.name !== 'ConditionalCheckFailedException') throw err;
             // Alias already exists — no append needed.
         }
     }
@@ -429,7 +437,7 @@ async function callBedrock(prompt: string): Promise<LlmClassifyOutput> {
                 messages: [{ role: 'user', content: prompt }],
             }),
         }), { abortSignal: ctrl.signal });
-        const text = await (res.body as any).transformToString('utf-8');
+        const text = await res.body.transformToString('utf-8');
         const wrap = JSON.parse(text);
         const inner: string = wrap.content?.[0]?.text ?? '{}';
         return parseLlmJson(inner) as LlmClassifyOutput;
@@ -448,7 +456,7 @@ async function callAnthropic(prompt: string): Promise<LlmClassifyOutput> {
         max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
     });
-    const block = res.content[0] as any;
+    const block = res.content[0] as { text?: string } | undefined;
     const text: string = block?.text ?? '{}';
     return parseLlmJson(text) as LlmClassifyOutput;
 }
@@ -508,7 +516,7 @@ async function classifyOrg(payload: ClassifyOrgPayload): Promise<Record<string, 
     }
     const safeDisplayName = result.displayName?.trim() || payload.orgId;
     const nowIso = new Date().toISOString();
-    const oldType = (existing.Item as any).type ?? 'unknown';
+    const oldType = (existing.Item as { type?: string }).type ?? 'unknown';
 
     await ddb.send(new UpdateCommand({
         TableName: TABLE(),
@@ -561,12 +569,24 @@ interface ListOrgArgs {
     nextToken?: string;
 }
 
+// Minimal view of an ORGANIZATION item — only the fields this handler reads.
+type OrgListItem = {
+    lastActivityAt?: string;
+    firstSeenAt?: string;
+    status?: string;
+    country?: string;
+    ownerSalesRep?: string;
+    leadScore?: number;
+    displayName?: string;
+    primaryDomain?: string;
+};
+
 async function listOrganizations(args: ListOrgArgs) {
     const sortBy = args.sortBy ?? 'activity';
     const limit = args.limit ?? 25;
     const types = args.types ?? ORG_TYPES.filter((t) => t !== 'unknown');
 
-    let items: any[] = [];
+    let items: OrgListItem[] = [];
 
     if (sortBy === 'activity') {
         const queries = await Promise.all(
@@ -580,7 +600,7 @@ async function listOrganizations(args: ListOrgArgs) {
                 })),
             ),
         );
-        items = queries.flatMap((q) => q.Items ?? []);
+        items = queries.flatMap((q) => q.Items ?? []) as OrgListItem[];
         // Cross-type merge needs explicit sort: per-type slices are sorted DESC by GSI1SK
         // but flatMap concatenates them in types[] order, leaving cross-type items in
         // the wrong order until we re-sort by lastActivityAt.
@@ -593,7 +613,7 @@ async function listOrganizations(args: ListOrgArgs) {
             ExpressionAttributeValues: { ':pk': 'ORG_LEAD_SCORE' },
             Limit: limit * 2,
         }));
-        items = r.Items ?? [];
+        items = (r.Items ?? []) as OrgListItem[];
     } else {
         // firstSeen — Scan with filter
         const r = await ddb.send(new ScanCommand({
@@ -601,7 +621,7 @@ async function listOrganizations(args: ListOrgArgs) {
             FilterExpression: 'entityType = :et',
             ExpressionAttributeValues: { ':et': 'ORGANIZATION' },
         }));
-        items = r.Items ?? [];
+        items = (r.Items ?? []) as OrgListItem[];
         items.sort((a, b) => (b.firstSeenAt ?? '').localeCompare(a.firstSeenAt ?? ''));
     }
 
@@ -612,7 +632,7 @@ async function listOrganizations(args: ListOrgArgs) {
         items = items.filter((i) => (i.status ?? 'active') === 'active');
     }
     if (args.countries?.length) {
-        items = items.filter((i) => args.countries!.includes(i.country));
+        items = items.filter((i) => args.countries!.includes(i.country as string));
     }
     if (args.ownerSalesRep) {
         items = items.filter((i) => i.ownerSalesRep === args.ownerSalesRep);
@@ -641,6 +661,20 @@ async function listOrganizations(args: ListOrgArgs) {
     };
 }
 
+// Minimal view of a GSI2-linked RFQ / ORDER / LEAD item — only the fields read here.
+type LinkedActivityItem = {
+    PK?: string;
+    SK?: string;
+    submittedAt?: string;
+    quoteDate?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    feedbackCount?: number;
+    daysSinceLastUpdate?: number;
+    feedbackScheduleCreated?: boolean;
+    source?: string;
+};
+
 async function getOrganization(args: { orgId: string }) {
     const meta = await ddb.send(new GetCommand({
         TableName: TABLE(),
@@ -658,14 +692,14 @@ async function getOrganization(args: { orgId: string }) {
         Limit: 80,
     }));
 
-    const recentRfqs: any[] = [];
-    const recentOrders: any[] = [];
-    const recentLeads: any[] = [];
+    const recentRfqs: LinkedActivityItem[] = [];
+    const recentOrders: LinkedActivityItem[] = [];
+    const recentLeads: LinkedActivityItem[] = [];
     // PK prefix is the canonical entity discriminator — submit-rfq /
     // submit-lead / convert-rfq-to-order don't write `entityType`, and
     // historical pre-Phase-C items don't have it either. Filtering by
     // entityType (the original code) silently rejected every linked item.
-    for (const item of (linked.Items ?? [])) {
+    for (const item of ((linked.Items ?? []) as LinkedActivityItem[])) {
         const pk = (item.PK as string) ?? '';
         if (pk.startsWith('RFQ#') && recentRfqs.length < 20) recentRfqs.push(item);
         else if (pk.startsWith('ORDER#') && recentOrders.length < 20) recentOrders.push(item);
@@ -808,6 +842,27 @@ async function reclassifyOrganization(args: { orgId: string; force?: boolean }) 
  * Idempotency: if source is already merged into the SAME target, return target unchanged.
  * Throws if source is already merged into a DIFFERENT target.
  */
+// Minimal view of an Org META item as read during a merge — only the fields read here.
+type OrgMetaItem = {
+    status?: string;
+    mergedInto?: string;
+    aliasDomains?: string[];
+    primaryDomain?: string;
+    rfqCount?: number;
+    orderCount?: number;
+    leadCount?: number;
+    totalOrderValueUSD?: number;
+    contactCount?: number;
+    leadScore?: number;
+    firstSeenAt?: string;
+    lastActivityAt?: string;
+    latestRFQDate?: string;
+    latestOrderDate?: string;
+    latestLeadDate?: string;
+    hasActiveInquiry?: boolean;
+    GSI3PK?: string;
+};
+
 async function mergeOrganization(
     args: { sourceOrgId: string; targetOrgId: string },
     identity: string,
@@ -827,8 +882,8 @@ async function mergeOrganization(
             Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
         })),
     ]);
-    const source = sourceRes.Item as Record<string, any> | undefined;
-    const target = targetRes.Item as Record<string, any> | undefined;
+    const source = sourceRes.Item as OrgMetaItem | undefined;
+    const target = targetRes.Item as OrgMetaItem | undefined;
     if (!source) throw new Error(`Organization not found: ${sourceOrgId}`);
     if (!target) throw new Error(`Organization not found: ${targetOrgId}`);
 
@@ -855,7 +910,7 @@ async function mergeOrganization(
         KeyConditionExpression: 'GSI2PK = :pk',
         ExpressionAttributeValues: { ':pk': `ORG#${sourceOrgId}` },
     }));
-    const linkedItems = (linked.Items ?? []) as Record<string, any>[];
+    const linkedItems = (linked.Items ?? []) as LinkedActivityItem[];
 
     let itemsMoved = 0;
     for (const item of linkedItems) {
@@ -910,7 +965,7 @@ async function mergeOrganization(
             ':src': sourceOrgId,
         },
     }));
-    for (const lookup of (lookupRes.Items ?? []) as Record<string, any>[]) {
+    for (const lookup of (lookupRes.Items ?? []) as { PK?: string; SK?: string }[]) {
         await ddb.send(new UpdateCommand({
             TableName: TABLE(),
             Key: { PK: lookup.PK, SK: lookup.SK },
@@ -1025,7 +1080,7 @@ async function mergeOrganization(
     exprValues[':srcSet'] = new Set([sourceOrgId]);
     const updateExpr = `SET ${setExprs.join(', ')} ADD mergedSources :srcSet${removeGsi3 ? ' REMOVE GSI3PK, GSI3SK' : ''}`;
 
-    let targetAttrs: Record<string, any> | undefined;
+    let targetAttrs: Record<string, unknown> | undefined;
     try {
         const targetUpdate = await ddb.send(new UpdateCommand({
             TableName: TABLE(),
@@ -1036,9 +1091,9 @@ async function mergeOrganization(
                 'attribute_exists(PK) AND (attribute_not_exists(mergedSources) OR NOT contains(mergedSources, :srcId))',
             ReturnValues: 'ALL_NEW',
         }));
-        targetAttrs = targetUpdate.Attributes as Record<string, any> | undefined;
-    } catch (err: any) {
-        if (err?.name !== 'ConditionalCheckFailedException') throw err;
+        targetAttrs = targetUpdate.Attributes;
+    } catch (err) {
+        if ((err as { name?: string } | undefined)?.name !== 'ConditionalCheckFailedException') throw err;
         // Target already aggregated this source on a previous (interrupted) run.
         // Re-fetch target to return its current state and continue to archive source.
         console.warn(JSON.stringify({
@@ -1051,7 +1106,7 @@ async function mergeOrganization(
             TableName: TABLE(),
             Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
         }));
-        targetAttrs = fresh.Item as Record<string, any> | undefined;
+        targetAttrs = fresh.Item;
     }
 
     // Step 5: archive source META. REMOVE GSI1/GSI3 so it disappears from admin lists.

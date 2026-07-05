@@ -26,4 +26,15 @@ module.exports = {
       ignoreRestSiblings: true,
     }],
   },
+  overrides: [
+    {
+      // Test mocks and one-off admin scripts legitimately reach for `any`
+      // (mocked AWS SDK commands, untyped Amplify client calls); the strict
+      // typing effort belongs in production code.
+      files: ['**/*.test.ts', '**/*.test.tsx', 'scripts/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
 }

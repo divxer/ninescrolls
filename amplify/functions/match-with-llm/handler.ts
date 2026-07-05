@@ -92,7 +92,7 @@ async function callBedrock(prompt: string): Promise<LlmMatch[]> {
                 messages: [{ role: 'user', content: prompt }],
             }),
         }), { abortSignal: ctrl.signal });
-        const text = await (res.body as any).transformToString('utf-8');
+        const text = await res.body.transformToString('utf-8');
         const wrap = JSON.parse(text);
         const inner: string = wrap.content?.[0]?.text ?? '[]';
         return parseLlmJson(inner) as LlmMatch[];
@@ -106,18 +106,18 @@ async function callAnthropic(prompt: string): Promise<LlmMatch[]> {
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
     });
-    const block = (res.content[0] as any);
-    const text: string = block?.text ?? '[]';
+    const block = res.content[0];
+    const text: string = block?.type === 'text' ? block.text : '[]';
     return parseLlmJson(text) as LlmMatch[];
 }
 
 export async function handler(event: MatchEvent): Promise<MatchResult> {
-    let tender: any;
+    let tender: { title: string; description: string; source?: string } | undefined;
     let configs: TenderKeywordConfigItem[] = [];
 
     try {
         const t = await ddb.send(new GetCommand({ TableName: TABLE(), Key: tenderItemKey(event.tenderId) }));
-        tender = t.Item;
+        tender = t.Item as { title: string; description: string; source?: string } | undefined;
         if (!tender) {
             return {
                 tenderId: event.tenderId,

@@ -6,7 +6,19 @@ import { updateLogisticsCase } from './resolvers/updateLogisticsCase.js';
 import { addLeg, updateLeg, removeLeg } from './resolvers/legMutations.js';
 import { logisticsStats } from './resolvers/logisticsStats.js';
 
-const resolvers: Record<string, (event: any) => Promise<any>> = {
+// AppSync invocation shape: `info` is present on direct resolver events;
+// Amplify Gen 2 a.handler.function() sends fieldName/typeName at the top level.
+interface LogisticsApiEvent {
+  info?: { fieldName?: string; parentTypeName?: string };
+  fieldName?: string;
+  typeName?: string;
+  arguments?: unknown;
+  [key: string]: unknown;
+}
+
+// Each resolver declares its own concrete event type; `never` keeps the map
+// assignable from all of them (function params are contravariant).
+const resolvers: Record<string, (event: never) => Promise<unknown>> = {
   listLogisticsCases,
   getLogisticsCase,
   logisticsStats,
@@ -18,7 +30,7 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
   removeLeg,
 };
 
-export const handler = async (event: any) => {
+export const handler = async (event: LogisticsApiEvent) => {
   const fieldName = event.info?.fieldName ?? event.fieldName;
   if (!fieldName) {
     console.error('logistics-api: full event:', JSON.stringify(event));
@@ -32,5 +44,5 @@ export const handler = async (event: any) => {
     ? event
     : { ...event, info: { fieldName, parentTypeName: event.typeName }, arguments: event.arguments };
 
-  return resolver(normalizedEvent);
+  return resolver(normalizedEvent as never);
 };

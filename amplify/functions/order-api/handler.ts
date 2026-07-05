@@ -26,7 +26,20 @@ import { declineRfq } from './resolvers/declineRfq.js';
 import { convertRfqToOrder } from './resolvers/convertRfqToOrder.js';
 import { revertRfqToPending } from './resolvers/revertRfqToPending.js';
 
-const resolvers: Record<string, (event: any) => Promise<any>> = {
+// AppSync invocation shape: `info` is present on direct resolver events;
+// Amplify Gen 2 a.handler.function() sends fieldName/typeName at the top level.
+interface OrderApiEvent {
+    info?: { fieldName?: string; parentTypeName?: string };
+    fieldName?: string;
+    typeName?: string;
+    arguments?: unknown;
+    identity?: unknown;
+    [key: string]: unknown;
+}
+
+// Each resolver declares its own concrete event type; `never` keeps the map
+// assignable from all of them (function params are contravariant).
+const resolvers: Record<string, (event: never) => Promise<unknown>> = {
     // Queries
     listOrders,
     getOrder,
@@ -55,7 +68,7 @@ const resolvers: Record<string, (event: any) => Promise<any>> = {
     revertRfqToPending,
 };
 
-export const handler = async (event: any) => {
+export const handler = async (event: OrderApiEvent) => {
     console.log('order-api event keys:', Object.keys(event));
     console.log('order-api identity:', JSON.stringify(event.identity));
 
@@ -80,5 +93,5 @@ export const handler = async (event: any) => {
         ? event  // Standard AppSync format
         : { ...event, info: { fieldName, parentTypeName: event.typeName }, arguments: event.arguments };
 
-    return resolver(normalizedEvent);
+    return resolver(normalizedEvent as never);
 };
