@@ -1,6 +1,6 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const productImage = 'https://cdn.ninescrolls.com/products/striper/main.jpg';
+const productImage = '/assets/images/redesign/products/striper-standardized.webp';
 
 export const striperSystemConfig: ProductDetailConfig = {
   slug: 'striper',
@@ -49,8 +49,8 @@ export const striperSystemConfig: ProductDetailConfig = {
     image: {
       src: productImage,
       alt: 'NineScrolls plasma photoresist stripping system',
-      width: 1200,
-      height: 1200,
+      width: 1400,
+      height: 1400,
     },
     stats: [
       { label: 'Wafer Size', value: '4-12 in' },

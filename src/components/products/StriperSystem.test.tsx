@@ -25,7 +25,7 @@ describe('StriperSystem redesigned product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Plasma Photoresist Stripping Platform' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls plasma photoresist stripping system')).toHaveAttribute(
       'src',
-      'https://cdn.ninescrolls.com/products/striper/main.jpg'
+      '/assets/images/redesign/products/striper-standardized.webp'
     );
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
@@ -94,7 +94,7 @@ describe('StriperSystem redesigned product page', () => {
 
     expect(productSchema).toMatchObject({
       '@id': 'https://ninescrolls.com/products/striper#product',
-      image: ['https://cdn.ninescrolls.com/products/striper/main.jpg'],
+      image: ['https://ninescrolls.com/assets/images/redesign/products/striper-standardized.webp'],
       offers: {
         url: 'https://ninescrolls.com/products/striper',
       },
