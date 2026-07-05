@@ -1,6 +1,6 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const productImage = '/assets/images/products/e-beam/main.webp';
+const productImage = '/assets/images/redesign/products/e-beam-standardized.webp';
 
 export const eBeamEvaporatorConfig: ProductDetailConfig = {
   slug: 'e-beam-evaporator',
@@ -49,8 +49,8 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
     image: {
       src: productImage,
       alt: 'NineScrolls MEB-600 e-beam evaporation platform',
-      width: 1200,
-      height: 1106,
+      width: 1400,
+      height: 1295,
     },
     stats: [
       { label: 'Substrate', value: '1x8 in / 5x4 in' },

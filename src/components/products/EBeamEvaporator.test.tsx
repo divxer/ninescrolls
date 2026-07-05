@@ -25,7 +25,7 @@ describe('EBeamEvaporator redesigned product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'MEB-600 E-Beam Evaporation Platform' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls MEB-600 e-beam evaporation platform')).toHaveAttribute(
       'src',
-      '/assets/images/products/e-beam/main.webp'
+      '/assets/images/redesign/products/e-beam-standardized.webp'
     );
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
