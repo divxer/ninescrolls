@@ -63,14 +63,13 @@ describe('SputterSystem redesigned product page', () => {
       'href',
       '/insights/magnetron-sputtering-guide'
     );
-    expect(screen.getByRole('link', { name: /E-Beam vs Thermal vs Sputter/i })).toHaveAttribute(
-      'href',
-      '/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection'
-    );
     expect(screen.getByRole('link', { name: /PECVD vs ALD vs Sputtering/i })).toHaveAttribute(
       'href',
       '/insights/pecvd-vs-ald-vs-sputtering-comparison'
     );
+    expect(
+      screen.queryByRole('link', { name: /E-Beam vs Thermal vs Sputter/i })
+    ).not.toBeInTheDocument();
   });
 
   it('derives title, canonical, and product schema URLs from the Sputter slug', async () => {

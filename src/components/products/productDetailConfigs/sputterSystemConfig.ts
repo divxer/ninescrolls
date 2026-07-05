@@ -157,11 +157,6 @@ export const sputterSystemConfig: ProductDetailConfig = {
         meta: 'DC/RF modes, reactive sputtering, and film growth',
       },
       {
-        title: 'E-Beam vs Thermal vs Sputter',
-        href: '/insights/e-beam-vs-thermal-vs-sputter-pvd-system-selection',
-        meta: 'PVD technique selection for lab workflows',
-      },
-      {
         title: 'PECVD vs ALD vs Sputtering',
         href: '/insights/pecvd-vs-ald-vs-sputtering-comparison',
         meta: 'Deposition technology comparison',
