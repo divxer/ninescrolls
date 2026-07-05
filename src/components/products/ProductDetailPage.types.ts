@@ -33,6 +33,21 @@ export interface ProductDetailResource {
   meta: string;
 }
 
+export interface ProductDetailGalleryImage {
+  src: string;
+  alt: string;
+  label?: string;
+  width: number;
+  height: number;
+}
+
+export interface ProductDetailGallerySection {
+  eyebrow?: string;
+  heading: string;
+  copy?: string;
+  images: ProductDetailGalleryImage[];
+}
+
 export interface ProductDetailAction {
   label: string;
   href: string;
@@ -112,6 +127,7 @@ export interface ProductDetailConfig {
     title: string;
     items: ProductDetailResource[];
   };
+  gallery?: ProductDetailGallerySection;
   finalCta: {
     eyebrow: string;
     title: string;

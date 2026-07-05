@@ -206,6 +206,42 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
           </div>
         </section>
 
+        {config.gallery && (
+          <section data-testid="product-detail-gallery" className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="max-w-3xl">
+                {config.gallery.eyebrow && (
+                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">{config.gallery.eyebrow}</p>
+                )}
+                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+                  {config.gallery.heading}
+                </h2>
+                {config.gallery.copy && <p className="mt-5 text-base leading-8 text-slate-600">{config.gallery.copy}</p>}
+              </div>
+              <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {config.gallery.images.map(image => (
+                  <figure key={image.src} className="overflow-hidden rounded-2xl border border-slate-200 bg-[#F8FAFC]">
+                    <div className="flex aspect-[4/3] items-center justify-center p-4">
+                      <OptimizedImage
+                        src={image.src}
+                        alt={image.alt}
+                        width={image.width}
+                        height={image.height}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    {image.label && (
+                      <figcaption className="border-t border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-700">
+                        {image.label}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
           <div className="mx-auto max-w-screen-2xl">
             <div className="max-w-3xl">
