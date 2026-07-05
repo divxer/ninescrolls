@@ -118,7 +118,7 @@ const products: Product[] = [
   {
     name: 'ICP-RIE',
     href: '/products/icp-etcher',
-    image: '/assets/images/redesign/products/icp-etcher-technical-render.jpg',
+    image: '/assets/images/redesign/products/icp-rie-standardized.webp',
     alt: 'NineScrolls ICP-RIE plasma etching platform',
     position: 'High-density plasma etching for demanding research processes.',
     uses: ['Deep silicon etching', 'MEMS fabrication', 'Diamond processing'],
@@ -133,7 +133,7 @@ const products: Product[] = [
   {
     name: 'RIE',
     href: '/products/rie-etcher',
-    image: '/assets/images/redesign/products/rie-etcher-technical-render.jpg',
+    image: '/assets/images/redesign/products/rie-standardized.webp',
     alt: 'NineScrolls RIE etcher platform',
     position: 'Reliable anisotropic etching for universities and R&D labs.',
     uses: ['Semiconductor R&D', 'Surface activation', 'Device prototyping'],
@@ -141,7 +141,7 @@ const products: Product[] = [
   {
     name: 'PECVD',
     href: '/products/pecvd',
-    image: '/assets/images/redesign/products/pecvd-technical-render.jpg',
+    image: '/assets/images/redesign/products/pecvd-standardized.webp',
     alt: 'NineScrolls PECVD thin film deposition system',
     position: 'Plasma-enhanced thin-film deposition for research stacks.',
     uses: ['Dielectric films', 'Passivation', 'Low-temperature deposition'],
@@ -149,7 +149,7 @@ const products: Product[] = [
   {
     name: 'ALD',
     href: '/products/ald',
-    image: '/assets/images/redesign/products/ald-technical-render.jpg',
+    image: '/assets/images/redesign/products/ald-standardized.webp',
     alt: 'NineScrolls ALD system',
     position: 'Conformal atomic-layer films for precise device structures.',
     uses: ['Barrier layers', '3D structures', 'Angstrom-scale films'],
@@ -157,7 +157,7 @@ const products: Product[] = [
   {
     name: 'Sputter',
     href: '/products/sputter',
-    image: '/assets/images/redesign/products/sputter-technical-render.jpg',
+    image: '/assets/images/redesign/products/sputter-standardized.webp',
     alt: 'NineScrolls sputtering system',
     position: 'Physical vapor deposition for metals and functional films.',
     uses: ['Metallization', 'Electrodes', 'Thin-film stacks'],
@@ -165,7 +165,7 @@ const products: Product[] = [
   {
     name: 'IBE/RIBE',
     href: '/products/ibe-ribe',
-    image: '/assets/images/redesign/products/ibe-ribe-technical-render.jpg',
+    image: '/assets/images/redesign/products/ibe-ribe-standardized.webp',
     alt: 'NineScrolls ion beam etching system',
     position: 'Directional ion beam processing for precise material removal.',
     uses: ['Failure analysis', 'Device trimming', 'Low-damage etching'],
@@ -469,14 +469,14 @@ export function HomePage() {
                     }`}
                   >
                     <div className={product.featured ? 'grid gap-0 md:min-h-[520px] md:grid-cols-[1.08fr_0.92fr]' : ''}>
-                      <div className={product.featured ? 'flex h-96 items-center justify-center overflow-hidden bg-slate-50 p-6 md:h-full md:min-h-[520px] md:p-10' : 'h-64 overflow-hidden bg-slate-50'}>
+                      <div className={product.featured ? 'flex h-96 items-center justify-center overflow-hidden bg-[#F4F5F7] md:h-full md:min-h-[520px]' : 'h-64 overflow-hidden bg-[#F4F5F7]'}>
                         <OptimizedImage
                           src={product.image}
                           alt={product.alt}
                         width={product.featured ? 860 : 420}
                         height={product.featured ? 620 : 300}
                         className={`h-full w-full transition duration-500 motion-reduce:transform-none ${
-                          product.featured ? 'scale-[1.18] object-contain group-hover:scale-[1.22]' : 'object-cover group-hover:scale-[1.03]'
+                          product.featured ? 'scale-[1.32] object-contain group-hover:scale-[1.36]' : 'scale-[1.12] object-contain group-hover:scale-[1.16]'
                         }`}
                         />
                       </div>

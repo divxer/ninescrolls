@@ -68,14 +68,18 @@ describe('HomePage redesign', () => {
         'image-set(url("/assets/images/redesign/hero-home-plasma-process.webp") type("image/webp"), url("/assets/images/redesign/hero-home-plasma-process.jpg") type("image/jpeg"))',
     });
 
-    expect(screen.getByAltText('NineScrolls ICP-RIE plasma etching platform')).toHaveAttribute(
-      'src',
-      '/assets/images/redesign/products/icp-etcher-technical-render.jpg'
-    );
-    expect(screen.getByAltText('NineScrolls RIE etcher platform')).toHaveAttribute(
-      'src',
-      '/assets/images/redesign/products/rie-etcher-technical-render.jpg'
-    );
+    const expectedProductAssets = [
+      ['NineScrolls ICP-RIE plasma etching platform', '/assets/images/redesign/products/icp-rie-standardized.webp'],
+      ['NineScrolls RIE etcher platform', '/assets/images/redesign/products/rie-standardized.webp'],
+      ['NineScrolls PECVD thin film deposition system', '/assets/images/redesign/products/pecvd-standardized.webp'],
+      ['NineScrolls ALD system', '/assets/images/redesign/products/ald-standardized.webp'],
+      ['NineScrolls sputtering system', '/assets/images/redesign/products/sputter-standardized.webp'],
+      ['NineScrolls ion beam etching system', '/assets/images/redesign/products/ibe-ribe-standardized.webp'],
+    ];
+
+    expectedProductAssets.forEach(([alt, src]) => {
+      expect(screen.getByAltText(alt)).toHaveAttribute('src', src);
+    });
   });
 
   it('keeps the featured product card from creating an empty two-row void', () => {
@@ -83,9 +87,12 @@ describe('HomePage redesign', () => {
 
     const featuredImage = screen.getByAltText('NineScrolls ICP-RIE plasma etching platform');
     const featuredCard = featuredImage.closest('a');
+    const featuredImageWell = featuredImage.closest('div');
 
     expect(featuredCard).toHaveClass('lg:col-span-2');
     expect(featuredCard).not.toHaveClass('lg:row-span-2');
+    expect(featuredImageWell).toHaveClass('bg-[#F4F5F7]');
+    expect(featuredImage).toHaveClass('scale-[1.32]');
     expect(within(featuredCard as HTMLElement).getByText('Wafer Size')).toBeInTheDocument();
     expect(within(featuredCard as HTMLElement).getByText('4-12 in')).toBeInTheDocument();
     expect(within(featuredCard as HTMLElement).getByText('Gas System')).toBeInTheDocument();
@@ -104,6 +111,9 @@ describe('HomePage redesign', () => {
     const rieCard = rieImage.closest('a');
 
     expect(rieCard).toHaveClass('self-start');
+    expect(rieImage).toHaveClass('object-contain');
+    expect(rieImage).toHaveClass('scale-[1.12]');
+    expect(rieImage).not.toHaveClass('p-4');
     expect(within(rieCard as HTMLElement).getByText('View Platform')).toBeInTheDocument();
     expect(within(rieCard as HTMLElement).queryByText('Key Specifications')).not.toBeInTheDocument();
   });
