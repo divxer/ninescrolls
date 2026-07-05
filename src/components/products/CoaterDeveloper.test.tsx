@@ -25,7 +25,7 @@ describe('CoaterDeveloper redesigned product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Coater/Developer Photolithography Track Platform' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls coater developer photolithography track system')).toHaveAttribute(
       'src',
-      'https://cdn.ninescrolls.com/products/coater-developer/main.jpg'
+      '/assets/images/redesign/products/coater-developer-standardized.webp'
     );
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
@@ -94,7 +94,7 @@ describe('CoaterDeveloper redesigned product page', () => {
 
     expect(productSchema).toMatchObject({
       '@id': 'https://ninescrolls.com/products/coater-developer#product',
-      image: ['https://cdn.ninescrolls.com/products/coater-developer/main.jpg'],
+      image: ['https://ninescrolls.com/assets/images/redesign/products/coater-developer-standardized.webp'],
       offers: {
         url: 'https://ninescrolls.com/products/coater-developer',
       },

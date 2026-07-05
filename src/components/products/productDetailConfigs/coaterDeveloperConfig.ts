@@ -1,6 +1,6 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const productImage = 'https://cdn.ninescrolls.com/products/coater-developer/main.jpg';
+const productImage = '/assets/images/redesign/products/coater-developer-standardized.webp';
 
 export const coaterDeveloperConfig: ProductDetailConfig = {
   slug: 'coater-developer',
@@ -49,8 +49,8 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
     image: {
       src: productImage,
       alt: 'NineScrolls coater developer photolithography track system',
-      width: 1624,
-      height: 1078,
+      width: 1400,
+      height: 1400,
     },
     stats: [
       { label: 'Wafer Size', value: 'Pieces to 12 in' },
