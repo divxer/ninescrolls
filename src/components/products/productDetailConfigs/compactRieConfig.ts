@@ -5,14 +5,14 @@ const productImage = 'https://cdn.ninescrolls.com/products/compact-rie/main.jpg'
 export const compactRieConfig: ProductDetailConfig = {
   slug: 'compact-rie',
   seo: {
-    title: 'Compact RIE Etching Platform',
+    title: 'Compact Benchtop RIE Etcher (SV-RIE)',
     description:
       'Space-efficient SV-RIE reactive ion etching platform for research labs, failure analysis, photoresist removal, polymer etching, and rapid prototyping. Supports 4-12 inch wafers, 300-1000 W RF power, and a 630mm x 600mm footprint.',
     keywords:
       'Compact RIE, SV-RIE, compact reactive ion etching, small footprint RIE, research RIE system, failure analysis etcher, photoresist removal',
   },
   schema: {
-    name: 'Compact RIE Etching Platform',
+    name: 'Compact Benchtop RIE Etcher (SV-RIE)',
     description:
       'Space-efficient SV-RIE reactive ion etching platform for research labs, failure analysis, photoresist removal, polymer etching, and rapid R&D prototyping.',
     sku: 'compact-rie',
@@ -42,7 +42,7 @@ export const compactRieConfig: ProductDetailConfig = {
   },
   hero: {
     eyebrow: 'Equipment Platform',
-    title: 'Compact RIE Etching Platform',
+    title: 'Compact Benchtop RIE Etcher (SV-RIE)',
     description:
       'A space-efficient SV-RIE platform for labs that need true anisotropic plasma etching capability without the footprint of a full-size RIE system.',
     backgroundImage: '/assets/images/redesign/hero-home-plasma-process.webp',

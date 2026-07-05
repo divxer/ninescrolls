@@ -22,7 +22,7 @@ describe('CompactRIE redesigned product page', () => {
   it('renders Compact RIE through the shared product detail template', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Compact RIE Etching Platform' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Compact Benchtop RIE Etcher (SV-RIE)' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls Compact RIE SV-RIE platform')).toHaveAttribute(
       'src',
       'https://cdn.ninescrolls.com/products/compact-rie/main.jpg'
@@ -79,7 +79,7 @@ describe('CompactRIE redesigned product page', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(document.title).toBe('Compact RIE Etching Platform | NineScrolls LLC');
+      expect(document.title).toBe('Compact Benchtop RIE Etcher (SV-RIE) | NineScrolls LLC');
       expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
         'href',
         'https://ninescrolls.com/products/compact-rie'
