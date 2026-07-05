@@ -3,23 +3,21 @@ backend:
   phases:
     build:
       commands:
-        # Deleting package-lock.json is REQUIRED, not wasteful: the committed
-        # macOS-generated lockfile is platform-incomplete (no package node for
-        # @parcel/watcher-linux-x64-glibc), so ANY lockfile-respecting install
-        # (`npm ci`, or `npm install` with the lock present) fails to install the
-        # linux native binary and ampx crashes at startup. Removing the lockfile
-        # forces `npm install` to do a fresh, platform-correct re-resolution on the
-        # linux builder. Do NOT "optimize" this by keeping the lockfile (broke deploys
-        # in PR #238 `npm ci` and PR #239 `npm install`+lock). See amplify-envs memory.
-        - rm -rf node_modules package-lock.json
-        - npm install --no-ignore-optional
+        # `npm ci` is safe now that the lockfile is platform-complete: the linux-x64
+        # native binaries that were missing package nodes under the macOS-generated
+        # lock (@parcel/watcher-linux-x64-glibc, @rollup/rollup-linux-x64-gnu) are now
+        # pinned as explicit optionalDependencies in package.json, so npm records their
+        # nodes and `npm ci` installs them on the linux builder. Verified in a
+        # linux/amd64 container: `npm ci` succeeds and both native modules load.
+        # Do NOT revert to `rm -rf package-lock.json && npm install` — that full
+        # re-resolution is what made deploys ~8 min. See amplify-envs memory.
+        - npm ci
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
       commands:
-        - rm -rf node_modules package-lock.json
-        - npm install --no-ignore-optional
+        - npm ci
     build:
       commands:
         - npm run build
