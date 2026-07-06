@@ -114,6 +114,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
                   {config.datasheet.buttonLabel}
                 </button>
               </div>
+              {config.commerce && <div data-testid="product-commerce-panel" />}
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur">
@@ -223,6 +224,36 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
             </div>
           </div>
         </section>
+
+        {config.gallery && (
+          <section className="px-6 py-20 md:px-10 lg:px-16">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="max-w-3xl">
+                {config.gallery.eyebrow && (
+                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">{config.gallery.eyebrow}</p>
+                )}
+                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+                  {config.gallery.heading}
+                </h2>
+                {config.gallery.copy && <p className="mt-5 text-base leading-8 text-slate-600">{config.gallery.copy}</p>}
+              </div>
+              <div className="mt-10 grid gap-4 md:grid-cols-3">
+                {config.gallery.images.map(image => (
+                  <figure key={`${image.src}-${image.alt}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <OptimizedImage
+                      src={image.src}
+                      alt={image.alt}
+                      className="h-full w-full object-cover"
+                      width={image.width}
+                      height={image.height}
+                    />
+                    {image.label && <figcaption className="px-5 py-4 text-sm font-semibold text-slate-700">{image.label}</figcaption>}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* The redesigned detail template uses editorial evidence cards here; legacy AcademicCitations remain on older product pages. */}
         {config.research && (

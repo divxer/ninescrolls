@@ -78,9 +78,54 @@ describe('ProductDetailPage template', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Minimal Platform' })).toBeInTheDocument();
     expect(screen.queryByText('Research Validation')).not.toBeInTheDocument();
     expect(screen.queryByText('Related Resources')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('product-commerce-panel')).not.toBeInTheDocument();
+    expect(screen.queryByText('Product Views')).not.toBeInTheDocument();
     expect(container.querySelector('[data-testid="product-detail-hero-background"]')).toHaveStyle({
       backgroundImage:
         "linear-gradient(90deg,rgba(7,10,15,1) 0%,rgba(7,10,15,0.94) 42%,rgba(7,10,15,0.55) 100%),url('/assets/images/redesign/products/rie-standardized.webp')",
     });
+  });
+
+  it('renders commerce controls and gallery only when configured', () => {
+    const commerceConfig: ProductDetailConfig = {
+      ...icpEtcherConfig,
+      slug: 'commerce-prototype',
+      commerce: {
+        variants: [
+          { sku: 'commerce-rf', label: 'RF (13.56 MHz)', price: 7999 },
+          { sku: 'commerce-mf', label: 'Mid-Frequency (40 kHz)', price: 6499 },
+        ],
+        quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=commerce-prototype' },
+      },
+      gallery: {
+        eyebrow: 'System Views',
+        heading: 'Product Views',
+        copy: 'Use these actual system photos to review the compact enclosure.',
+        images: [
+          {
+            src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg',
+            alt: 'Commerce prototype front view',
+            label: 'Front view',
+            width: 1024,
+            height: 666,
+          },
+        ],
+      },
+    };
+
+    render(
+      <HelmetProvider>
+        <MemoryRouter>
+          <ProductDetailPage config={commerceConfig} />
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    expect(screen.getByTestId('product-commerce-panel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Product Views' })).toBeInTheDocument();
+    expect(screen.getByAltText('Commerce prototype front view')).toHaveAttribute(
+      'src',
+      'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg'
+    );
   });
 });
