@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -28,8 +28,14 @@ function renderTemplate() {
   );
 }
 
+function getProductJsonLd() {
+  return Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+    .map(script => JSON.parse(script.textContent ?? '{}'))
+    .find(data => data['@type'] === 'Product');
+}
+
 describe('ProductDetailPage template', () => {
-  it('renders ICP-RIE from a product detail config', () => {
+  it('renders ICP-RIE from a product detail config', async () => {
     renderTemplate();
 
     expect(screen.getByRole('heading', { level: 1, name: 'ICP-RIE Plasma Etching Platform' })).toBeInTheDocument();
@@ -38,6 +44,14 @@ describe('ProductDetailPage template', () => {
       '/assets/images/redesign/products/icp-rie-standardized.webp'
     );
     expect(screen.getByRole('link', { name: 'Request Quote' })).toHaveAttribute('href', '/request-quote?products=icp-etcher');
+    await waitFor(() => {
+      expect(getProductJsonLd().offers).toMatchObject({
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        url: 'https://ninescrolls.com/products/icp-etcher',
+      });
+    });
   });
 
   it('keeps the template landmark and specification semantics safe for product clones', () => {
@@ -135,5 +149,45 @@ describe('ProductDetailPage template', () => {
       'src',
       'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg'
     );
+  });
+
+  it('uses AggregateOffer for multi-variant commerce products', async () => {
+    const commerceConfig: ProductDetailConfig = {
+      ...icpEtcherConfig,
+      slug: 'hy-4l',
+      schema: {
+        ...icpEtcherConfig.schema,
+        name: 'HY-4L Plasma Cleaner',
+        sku: 'hy-4l',
+      },
+      commerce: {
+        variants: [
+          { sku: 'hy-4l-rf', label: 'RF (13.56 MHz)', price: 7999 },
+          { sku: 'hy-4l-mf', label: 'Mid-Frequency (40 kHz)', price: 6499 },
+        ],
+        quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
+      },
+    };
+
+    render(
+      <HelmetProvider>
+        <MemoryRouter>
+          <ProductDetailPage config={commerceConfig} />
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    await waitFor(() => {
+      expect(getProductJsonLd().offers).toMatchObject({
+        '@type': 'AggregateOffer',
+        lowPrice: '6499',
+        highPrice: '7999',
+        offerCount: 2,
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: 'https://ninescrolls.com/products/hy-4l',
+      });
+    });
+    expect(getProductJsonLd().offers.priceValidUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

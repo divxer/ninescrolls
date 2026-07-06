@@ -22,6 +22,30 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
   const productImageUrl = config.hero.image.src.startsWith('http')
     ? config.hero.image.src
     : `https://ninescrolls.com${config.hero.image.src}`;
+  const seller = { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' };
+  const priceValidUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const offerData = config.commerce
+    ? {
+        '@type': 'AggregateOffer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        lowPrice: String(Math.min(...config.commerce.variants.map(variant => variant.price))),
+        highPrice: String(Math.max(...config.commerce.variants.map(variant => variant.price))),
+        offerCount: config.commerce.variants.length,
+        priceValidUntil,
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      }
+    : {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        price: '0',
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      };
   const structuredData = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
@@ -32,15 +56,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
     sku: config.schema.sku,
     brand: { '@type': 'Brand', name: 'NineScrolls LLC' },
     category: config.schema.category,
-    offers: {
-      '@type': 'Offer',
-      availability: 'https://schema.org/InStock',
-      priceCurrency: 'USD',
-      price: '0',
-      url: productUrl,
-      itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' },
-    },
+    offers: offerData,
   };
 
   const faqData = {
