@@ -1,7 +1,10 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const hy20lImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r/main.jpg';
-const hy20lFrontViewImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r/front-view.jpg';
+const hy20lImage = '/assets/images/redesign/products/hy-20l-standardized.webp';
+const hy20lChamberViewImage = '/assets/images/redesign/products/hy-20l-chamber-view.webp';
+const hy20lDimensionsImage = '/assets/images/redesign/products/hy-20l-dimensions.webp';
+const hy20lLabSceneImage = '/assets/images/redesign/products/hy-20l-lab-scene.webp';
+const hy20lPlasmaDetailImage = '/assets/images/redesign/products/hy-20l-plasma-detail.webp';
 
 // Price edits must stay aligned with:
 // - amplify/functions/create-checkout-session/productCatalog.ts
@@ -40,9 +43,9 @@ export const hy20lConfig: ProductDetailConfig = {
     description: 'A 20L RF/MF plasma cleaner for batch sample preparation, surface activation, and research-scale process development.',
     image: {
       src: hy20lImage,
-      alt: 'HY-20L batch plasma processing system',
-      width: 1536,
-      height: 1024,
+      alt: 'HY-20L batch plasma processing system standardized product view',
+      width: 1400,
+      height: 1120,
     },
     stats: [
       { label: 'Chamber', value: '20 L' },
@@ -126,18 +129,32 @@ export const hy20lConfig: ProductDetailConfig = {
     copy: 'Use these actual system photos to review the 20L enclosure, chamber access, front controls, and bench integration before configuration review.',
     images: [
       {
-        src: hy20lImage,
-        alt: 'HY-20L plasma cleaner main system view',
-        label: 'Main view',
-        width: 1536,
-        height: 1024,
+        src: hy20lChamberViewImage,
+        alt: 'HY-20L open chamber with multi-level sample trays',
+        label: 'Chamber view',
+        width: 1400,
+        height: 930,
       },
       {
-        src: hy20lFrontViewImage,
-        alt: 'HY-20L plasma cleaner front chamber view',
-        label: 'Front view',
-        width: 1536,
-        height: 1024,
+        src: hy20lDimensionsImage,
+        alt: 'HY-20L system dimensions and footprint',
+        label: 'Dimensions',
+        width: 1600,
+        height: 1067,
+      },
+      {
+        src: hy20lLabSceneImage,
+        alt: 'HY-20L plasma cleaner integrated in a laboratory workflow',
+        label: 'Lab integration',
+        width: 1600,
+        height: 1067,
+      },
+      {
+        src: hy20lPlasmaDetailImage,
+        alt: 'HY-20L plasma glow inside the chamber viewport',
+        label: 'Plasma detail',
+        width: 1400,
+        height: 766,
       },
     ],
   },
@@ -156,6 +173,6 @@ export const hy20lConfig: ProductDetailConfig = {
     copy: 'Order directly or request a budgetary quote for institutional purchasing.',
     primaryAction: { label: 'View Cart', href: '/cart' },
     secondaryAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-20l' },
-    backgroundImage: hy20lFrontViewImage,
+    backgroundImage: hy20lLabSceneImage,
   },
 };

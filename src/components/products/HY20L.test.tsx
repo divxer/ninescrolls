@@ -6,6 +6,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { HY20L } from './HY20L';
 
 const addToCart = vi.fn();
+const standardizedImage = '/assets/images/redesign/products/hy-20l-standardized.webp';
+const chamberImage = '/assets/images/redesign/products/hy-20l-chamber-view.webp';
+const dimensionsImage = '/assets/images/redesign/products/hy-20l-dimensions.webp';
+const labSceneImage = '/assets/images/redesign/products/hy-20l-lab-scene.webp';
+const plasmaDetailImage = '/assets/images/redesign/products/hy-20l-plasma-detail.webp';
 
 vi.mock('../../hooks/useProductPage', () => ({
   useProductPage: () => ({ addToCart }),
@@ -37,6 +42,7 @@ describe('HY20L commerce product page', () => {
     renderHy20l();
 
     expect(screen.getByRole('heading', { level: 1, name: 'HY-20L Batch Plasma Processing System' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'HY-20L batch plasma processing system standardized product view' })).toHaveAttribute('src', standardizedImage);
     expect(screen.getByText('$14,999')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Mid-Frequency/i }));
@@ -73,6 +79,10 @@ describe('HY20L commerce product page', () => {
     const quoteLinks = screen.getAllByRole('link', { name: 'Request a Budgetary Quote' });
     expect(quoteLinks.some(link => link.getAttribute('href') === '/request-quote?products=hy-20l')).toBe(true);
     expect(screen.getByRole('heading', { level: 2, name: 'System Views' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'HY-20L open chamber with multi-level sample trays' })).toHaveAttribute('src', chamberImage);
+    expect(screen.getByRole('img', { name: 'HY-20L system dimensions and footprint' })).toHaveAttribute('src', dimensionsImage);
+    expect(screen.getByRole('img', { name: 'HY-20L plasma cleaner integrated in a laboratory workflow' })).toHaveAttribute('src', labSceneImage);
+    expect(screen.getByRole('img', { name: 'HY-20L plasma glow inside the chamber viewport' })).toHaveAttribute('src', plasmaDetailImage);
     expect(screen.queryByText(/Distributor Notice/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Shenzhen Huiyi/i)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Plasma Cleaner Buying Guide/i })).toHaveAttribute(
@@ -88,5 +98,13 @@ describe('HY20L commerce product page', () => {
     cleanup();
     renderHy20l('/products/hy-20l?config=mf');
     expect(screen.getByText('$11,999')).toBeInTheDocument();
+  });
+
+  it('uses the standardized HY-20L image in product schema', async () => {
+    renderHy20l();
+
+    await waitFor(() => {
+      expect(getProductJsonLd().image).toEqual(['https://ninescrolls.com/assets/images/redesign/products/hy-20l-standardized.webp']);
+    });
   });
 });
