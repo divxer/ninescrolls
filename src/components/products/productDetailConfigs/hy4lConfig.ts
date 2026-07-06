@@ -1,6 +1,9 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const hy4lImage = 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg';
+const hy4lImage = '/assets/images/redesign/products/hy-4l-standardized.webp';
+const hy4lFrontViewImage = '/assets/images/redesign/products/hy-4l-front-view.webp';
+const hy4lRearConnectionsImage = '/assets/images/redesign/products/hy-4l-rear-connections.webp';
+const hy4lLabSceneImage = '/assets/images/redesign/products/hy-4l-lab-scene.webp';
 
 // Price edits must stay aligned with:
 // - amplify/functions/create-checkout-session/productCatalog.ts
@@ -39,9 +42,9 @@ export const hy4lConfig: ProductDetailConfig = {
     description: 'A compact 4L plasma cleaner for research labs, teaching labs, and low-volume sample preparation.',
     image: {
       src: hy4lImage,
-      alt: 'HY-4L compact plasma cleaner',
-      width: 1024,
-      height: 666,
+      alt: 'HY-4L compact plasma cleaner standardized product view',
+      width: 1400,
+      height: 1120,
     },
     stats: [
       { label: 'Chamber', value: '4 L' },
@@ -113,25 +116,25 @@ export const hy4lConfig: ProductDetailConfig = {
     copy: 'Use these actual system photos to review the compact enclosure, service-side access, chamber placement, and bench integration before configuration review.',
     images: [
       {
-        src: hy4lImage,
-        alt: 'HY-4L plasma cleaner front view',
+        src: hy4lFrontViewImage,
+        alt: 'HY-4L plasma cleaner front control view',
         label: 'Front view',
-        width: 1024,
-        height: 666,
+        width: 1400,
+        height: 1050,
       },
       {
-        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg',
-        alt: 'HY-4L plasma cleaner alternate system view',
-        label: 'System view',
-        width: 1024,
-        height: 741,
+        src: hy4lRearConnectionsImage,
+        alt: 'HY-4L plasma cleaner rear service connections',
+        label: 'Rear connections',
+        width: 1400,
+        height: 1050,
       },
       {
-        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg',
-        alt: 'HY-4L plasma cleaner rear and side view',
-        label: 'Service-side view',
-        width: 1024,
-        height: 796,
+        src: hy4lLabSceneImage,
+        alt: 'HY-4L plasma cleaner on a laboratory bench',
+        label: 'Lab integration',
+        width: 1600,
+        height: 1100,
       },
     ],
   },
@@ -150,6 +153,6 @@ export const hy4lConfig: ProductDetailConfig = {
     copy: 'Order directly or request a budgetary quote for institutional purchasing.',
     primaryAction: { label: 'View Cart', href: '/cart' },
     secondaryAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
-    backgroundImage: hy4lImage,
+    backgroundImage: hy4lLabSceneImage,
   },
 };
