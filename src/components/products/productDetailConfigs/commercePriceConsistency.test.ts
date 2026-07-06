@@ -7,10 +7,11 @@ import { hy20lConfig } from './hy20lConfig';
 import { hy20lrfConfig } from './hy20lrfConfig';
 import { plutoTConfig } from './plutoTConfig';
 import { plutoMConfig } from './plutoMConfig';
+import { plutoFConfig } from './plutoFConfig';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const commerceConfigs: ProductDetailConfig[] = [hy4lConfig, hy20lConfig, hy20lrfConfig, plutoTConfig, plutoMConfig];
+const commerceConfigs: ProductDetailConfig[] = [hy4lConfig, hy20lConfig, hy20lrfConfig, plutoTConfig, plutoMConfig, plutoFConfig];
 
 describe('commerce product prices', () => {
   it('keeps product detail config prices aligned with Stripe checkout and tax catalogs', () => {

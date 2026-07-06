@@ -40,4 +40,9 @@ export const taxProductCatalog: Record<string, TaxProductCatalogItem> = {
     price: 12999,
     taxCode: 'txcd_99999999',
   },
+  'pluto-f': {
+    name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
+    price: 15999,
+    taxCode: 'txcd_99999999',
+  },
 };

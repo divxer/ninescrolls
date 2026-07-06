@@ -49,4 +49,10 @@ export const checkoutProductCatalog: Record<string, CheckoutProductCatalogItem> 
     imagePath: '/assets/images/redesign/products/pluto-m-standardized.webp',
     taxCode: 'txcd_99999999',
   },
+  'pluto-f': {
+    name: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
+    price: 15999,
+    imagePath: '/assets/images/redesign/products/pluto-f-standardized.webp',
+    taxCode: 'txcd_99999999',
+  },
 };
