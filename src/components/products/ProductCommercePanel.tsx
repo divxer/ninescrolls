@@ -39,6 +39,7 @@ export function ProductCommercePanel({ commerce, productName, productImage }: Pr
           <button
             key={variant.sku}
             type="button"
+            aria-pressed={selectedVariant.sku === variant.sku}
             onClick={() => setSelectedSku(variant.sku)}
             className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
               selectedVariant.sku === variant.sku

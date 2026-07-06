@@ -24,7 +24,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
     : `https://ninescrolls.com${config.hero.image.src}`;
   const seller = { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' };
   const priceValidUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const offerData = config.commerce
+  const offerData = config.commerce && config.commerce.variants.length > 1
     ? {
         '@type': 'AggregateOffer',
         availability: 'https://schema.org/InStock',
@@ -32,6 +32,17 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
         lowPrice: String(Math.min(...config.commerce.variants.map(variant => variant.price))),
         highPrice: String(Math.max(...config.commerce.variants.map(variant => variant.price))),
         offerCount: config.commerce.variants.length,
+        priceValidUntil,
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      }
+    : config.commerce
+    ? {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        price: String(config.commerce.variants[0].price),
         priceValidUntil,
         url: productUrl,
         itemCondition: 'https://schema.org/NewCondition',

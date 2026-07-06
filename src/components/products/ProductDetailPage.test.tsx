@@ -190,4 +190,38 @@ describe('ProductDetailPage template', () => {
     });
     expect(getProductJsonLd().offers.priceValidUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it('uses a real-price Offer for single-variant commerce products', async () => {
+    const commerceConfig: ProductDetailConfig = {
+      ...icpEtcherConfig,
+      slug: 'single-commerce',
+      commerce: {
+        variants: [
+          { sku: 'single-commerce-rf', label: 'RF (13.56 MHz)', price: 14999 },
+        ],
+        quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=single-commerce' },
+      },
+    };
+
+    render(
+      <HelmetProvider>
+        <MemoryRouter>
+          <ProductDetailPage config={commerceConfig} />
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    await waitFor(() => {
+      expect(getProductJsonLd().offers).toMatchObject({
+        '@type': 'Offer',
+        price: '14999',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: 'https://ninescrolls.com/products/single-commerce',
+      });
+    });
+    expect(getProductJsonLd().offers.priceValidUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(getProductJsonLd().offers).not.toHaveProperty('lowPrice');
+    expect(getProductJsonLd().offers).not.toHaveProperty('offerCount');
+  });
 });

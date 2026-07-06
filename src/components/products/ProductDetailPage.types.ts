@@ -45,7 +45,7 @@ export interface ProductDetailCommerceVariant {
 }
 
 export interface ProductDetailCommerce {
-  variants: ProductDetailCommerceVariant[];
+  variants: [ProductDetailCommerceVariant, ...ProductDetailCommerceVariant[]];
   defaultSku?: string;
   addToCartLabel?: string;
   quoteAction: ProductDetailAction;
