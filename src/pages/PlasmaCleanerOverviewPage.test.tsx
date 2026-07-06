@@ -15,6 +15,21 @@ function renderPlasmaCleanerOverviewPage() {
 }
 
 describe('PlasmaCleanerOverviewPage', () => {
+  it('frames the cleaner overview as a buy-online family selector without supplier disclosure', () => {
+    renderPlasmaCleanerOverviewPage();
+
+    expect(screen.getByRole('heading', { level: 1, name: /Plasma cleaners for surface activation and lab-scale cleaning/i })).toBeInTheDocument();
+    expect(screen.getByText(/Buy online or request an institutional quote/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Choose by chamber size and workflow' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Quick comparison' })).toBeInTheDocument();
+
+    expect(screen.getAllByText('Buy Online')).toHaveLength(6);
+    expect(screen.getAllByText('From $6,499').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('$15,999').length).toBeGreaterThanOrEqual(1);
+
+    expect(screen.queryByText(/慧仪智控|沛沅仪器|supplier|OEM|distributor/i)).not.toBeInTheDocument();
+  });
+
   it('uses standardized redesign thumbnails for the cleaner family cards', () => {
     renderPlasmaCleanerOverviewPage();
 

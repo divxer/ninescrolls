@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -15,6 +16,44 @@ function renderProductsPage() {
 }
 
 describe('ProductsPage', () => {
+  it('presents the product catalog as a process-led platform selector without supplier disclosure', () => {
+    renderProductsPage();
+
+    expect(screen.getByRole('heading', { level: 1, name: /Choose the platform that matches your process window/i })).toBeInTheDocument();
+    expect(screen.getByText(/Process-led equipment selection/i)).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Etching Platforms' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Deposition Platforms' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Lithography & Resist Processing' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Plasma Cleaning Systems' })).toBeInTheDocument();
+
+    expect(screen.queryByText(/Trusted Manufacturer Partner/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Beijing Tailong/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/supplier-provided/i)).not.toBeInTheDocument();
+  });
+
+  it('distinguishes RFQ platforms from buy-online plasma cleaners', () => {
+    renderProductsPage();
+
+    expect(screen.getAllByText('RFQ Platform').length).toBeGreaterThanOrEqual(10);
+    expect(screen.getAllByText('Buy Online').length).toBeGreaterThanOrEqual(6);
+    expect(screen.getByText('From $6,499')).toBeInTheDocument();
+    expect(screen.getByText('$14,499')).toBeInTheDocument();
+    expect(screen.getByText('$15,999')).toBeInTheDocument();
+  });
+
+  it('filters the catalog by process family', async () => {
+    const user = userEvent.setup();
+    renderProductsPage();
+
+    await user.click(screen.getByRole('button', { name: 'Deposition' }));
+
+    expect(screen.getByRole('heading', { level: 3, name: 'PECVD' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'ALD' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3, name: 'ICP-RIE' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3, name: 'HY-4L' })).not.toBeInTheDocument();
+  });
+
   it('uses standardized redesign thumbnails for every product card', () => {
     renderProductsPage();
 
