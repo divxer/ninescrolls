@@ -15,4 +15,14 @@ export const taxProductCatalog: Record<string, TaxProductCatalogItem> = {
     price: 6499,
     taxCode: 'txcd_99999999',
   },
+  'hy-20l-rf': {
+    name: 'HY-20L - RF (13.56 MHz) Plasma Processing System',
+    price: 14999,
+    taxCode: 'txcd_99999999',
+  },
+  'hy-20l-mf': {
+    name: 'HY-20L - Mid-Frequency (40 kHz) Plasma Processing System',
+    price: 11999,
+    taxCode: 'txcd_99999999',
+  },
 };

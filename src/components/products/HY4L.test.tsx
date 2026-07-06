@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
@@ -52,8 +52,19 @@ describe('HY4L commerce product page', () => {
     }));
   });
 
-  it('preselects variants from dedicated routes and query params', () => {
+  it('preselects variants from dedicated routes and query params', async () => {
     renderHy4l('/products/hy-4l-mf');
+    expect(screen.getByText('$6,499')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getProductJsonLd()['@id']).toBe('https://ninescrolls.com/products/hy-4l#product');
+    });
+
+    cleanup();
+    renderHy4l('/products/hy-4l-rf');
+    expect(screen.getByText('$7,999')).toBeInTheDocument();
+
+    cleanup();
+    renderHy4l('/products/hy-4l?config=mf');
     expect(screen.getByText('$6,499')).toBeInTheDocument();
   });
 

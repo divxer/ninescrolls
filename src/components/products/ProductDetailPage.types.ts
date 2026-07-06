@@ -42,6 +42,7 @@ export interface ProductDetailCommerceVariant {
   sku: string;
   label: string;
   price: number;
+  cartName?: string;
 }
 
 export interface ProductDetailCommerce {

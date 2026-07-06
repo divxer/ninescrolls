@@ -14,7 +14,12 @@ vi.mock('../../hooks/useProductPage', () => ({
 const commerce: ProductDetailCommerce = {
   variants: [
     { sku: 'hy-4l-rf', label: 'RF (13.56 MHz)', price: 7999 },
-    { sku: 'hy-4l-mf', label: 'Mid-Frequency (40 kHz)', price: 6499 },
+    {
+      sku: 'hy-4l-mf',
+      label: 'Mid-Frequency (40 kHz)',
+      price: 6499,
+      cartName: 'HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner',
+    },
   ],
   quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
 };
@@ -57,7 +62,7 @@ describe('ProductCommercePanel', () => {
     expect(addToCart).toHaveBeenCalledWith({
       id: 'hy-4l-mf',
       sku: 'hy-4l-mf',
-      name: 'HY-4L Plasma Cleaner - Mid-Frequency (40 kHz)',
+      name: 'HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner',
       price: 6499,
       image: '/assets/images/products/ns-plasma-4r/main.jpg',
     });

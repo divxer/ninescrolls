@@ -25,7 +25,7 @@ export function ProductCommercePanel({ commerce, productName, productImage }: Pr
     addToCart({
       id: selectedVariant.sku,
       sku: selectedVariant.sku,
-      name: `${productName} - ${selectedVariant.label}`,
+      name: selectedVariant.cartName ?? `${productName} - ${selectedVariant.label}`,
       price: selectedVariant.price,
       image: productImage,
     });

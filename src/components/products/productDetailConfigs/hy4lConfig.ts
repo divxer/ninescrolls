@@ -59,8 +59,8 @@ export const hy4lConfig: ProductDetailConfig = {
   },
   commerce: {
     variants: [
-      { sku: 'hy-4l-rf', label: 'RF (13.56 MHz)', price: 7999 },
-      { sku: 'hy-4l-mf', label: 'Mid-Frequency (40 kHz)', price: 6499 },
+      { sku: 'hy-4l-rf', label: 'RF (13.56 MHz)', price: 7999, cartName: 'HY-4L - RF (13.56 MHz) Plasma Cleaner' },
+      { sku: 'hy-4l-mf', label: 'Mid-Frequency (40 kHz)', price: 6499, cartName: 'HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner' },
     ],
     defaultSku: 'hy-4l-rf',
     quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
