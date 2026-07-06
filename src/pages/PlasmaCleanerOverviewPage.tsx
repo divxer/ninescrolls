@@ -4,7 +4,6 @@ import { SEO } from '../components/common/SEO';
 import { Helmet } from 'react-helmet-async';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
-import { cdnUrl } from '../config/imageConfig';
 
 export function PlasmaCleanerOverviewPage() {
   useScrollToTop();
@@ -94,7 +93,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-primary">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
+                  src="/assets/images/redesign/products/hy-4l-standardized.webp"
                   alt="HY-4L - Compact RF/MF Plasma Cleaner"
                   width={600}
                   height={400}
@@ -139,7 +138,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-primary">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-t/main.jpg')}
+                  src="/assets/images/redesign/products/pluto-t-standardized.webp"
                   alt="PLUTO-T - 200W RF Plasma Cleaner"
                   width={600}
                   height={400}
@@ -184,7 +183,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')}
+                  src="/assets/images/redesign/products/hy-20l-standardized.webp"
                   alt="HY-20L - Research-Grade Batch Plasma Processing System"
                   width={600}
                   height={400}
@@ -229,7 +228,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-m/main.jpg')}
+                  src="/assets/images/redesign/products/pluto-m-standardized.webp"
                   alt="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber"
                   width={600}
                   height={400}
@@ -274,7 +273,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')}
+                  src="/assets/images/redesign/products/hy-20lrf-standardized.webp"
                   alt="HY-20LRF - Integrated RF Vacuum Plasma Cleaner"
                   width={600}
                   height={400}
@@ -319,7 +318,7 @@ export function PlasmaCleanerOverviewPage() {
             <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
               <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
                 <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-f/main.jpg')}
+                  src="/assets/images/redesign/products/pluto-f-standardized.webp"
                   alt="PLUTO-F - 500W RF Flagship Plasma Cleaner"
                   width={600}
                   height={400}
