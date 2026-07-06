@@ -8,6 +8,8 @@ import { PlutoT } from './PlutoT';
 const addToCart = vi.fn();
 const heroImage = '/assets/images/redesign/products/pluto-t-standardized.webp';
 const chamberImage = '/assets/images/redesign/products/pluto-t-chamber.webp';
+const samplesImage = '/assets/images/redesign/products/pluto-t-samples.webp';
+const withPumpImage = '/assets/images/redesign/products/pluto-t-with-pump.webp';
 
 vi.mock('../../hooks/useProductPage', () => ({
   useProductPage: () => ({ addToCart }),
@@ -86,6 +88,8 @@ describe('PlutoT commerce product page', () => {
     const quoteLinks = screen.getAllByRole('link', { name: 'Request a Budgetary Quote' });
     expect(quoteLinks.some(link => link.getAttribute('href') === '/request-quote?products=pluto-t')).toBe(true);
     expect(screen.getByRole('img', { name: 'PLUTO-T chamber interior with flat plate electrode' })).toHaveAttribute('src', chamberImage);
+    expect(screen.getByRole('img', { name: 'PLUTO-T sample tray with wafer during plasma processing' })).toHaveAttribute('src', samplesImage);
+    expect(screen.getByRole('img', { name: 'PLUTO-T complete system with vacuum pump' })).toHaveAttribute('src', withPumpImage);
     expect(screen.queryByText(/Distributor Notice/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Shanghai Peiyuan/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/20\+ peer-reviewed/i)).not.toBeInTheDocument();

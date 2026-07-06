@@ -2,6 +2,8 @@ import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
 const plutoTImage = '/assets/images/redesign/products/pluto-t-standardized.webp';
 const plutoTChamberImage = '/assets/images/redesign/products/pluto-t-chamber.webp';
+const plutoTSamplesImage = '/assets/images/redesign/products/pluto-t-samples.webp';
+const plutoTWithPumpImage = '/assets/images/redesign/products/pluto-t-with-pump.webp';
 
 // Price edits must stay aligned with:
 // - amplify/functions/create-checkout-session/productCatalog.ts
@@ -118,7 +120,7 @@ export const plutoTConfig: ProductDetailConfig = {
   gallery: {
     eyebrow: 'System Views',
     heading: 'System Views',
-    copy: 'Use these actual system photos to review the chamber interior, electrode format, and benchtop footprint before configuration review.',
+    copy: 'Use these actual system photos to review the chamber interior, electrode format, sample handling, and benchtop footprint before configuration review.',
     images: [
       {
         src: plutoTChamberImage,
@@ -126,6 +128,20 @@ export const plutoTConfig: ProductDetailConfig = {
         label: 'Chamber interior',
         width: 1024,
         height: 962,
+      },
+      {
+        src: plutoTSamplesImage,
+        alt: 'PLUTO-T sample tray with wafer during plasma processing',
+        label: 'Sample processing',
+        width: 1024,
+        height: 848,
+      },
+      {
+        src: plutoTWithPumpImage,
+        alt: 'PLUTO-T complete system with vacuum pump',
+        label: 'Complete system',
+        width: 1024,
+        height: 1024,
       },
     ],
   },
