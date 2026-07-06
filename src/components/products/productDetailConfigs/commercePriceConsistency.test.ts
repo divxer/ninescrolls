@@ -4,8 +4,11 @@ import { taxProductCatalog } from '../../../../amplify/functions/calculate-tax/p
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 import { hy4lConfig } from './hy4lConfig';
 import { hy20lConfig } from './hy20lConfig';
+import { hy20lrfConfig } from './hy20lrfConfig';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
-const commerceConfigs: ProductDetailConfig[] = [hy4lConfig, hy20lConfig];
+const commerceConfigs: ProductDetailConfig[] = [hy4lConfig, hy20lConfig, hy20lrfConfig];
 
 describe('commerce product prices', () => {
   it('keeps product detail config prices aligned with Stripe checkout and tax catalogs', () => {
@@ -16,6 +19,17 @@ describe('commerce product prices', () => {
         expect(taxProductCatalog[variant.sku]?.price).toBe(variant.price);
         expect(taxProductCatalog[variant.sku]?.name).toBe(variant.cartName);
       }
+    }
+  });
+
+  it('keeps checkout catalog image paths pointed at tracked public assets', () => {
+    for (const item of Object.values(checkoutProductCatalog)) {
+      if (!item.imagePath) {
+        continue;
+      }
+
+      expect(item.imagePath).toMatch(/^\/assets\/images\/redesign\/products\//);
+      expect(existsSync(join(process.cwd(), 'public', item.imagePath))).toBe(true);
     }
   });
 });

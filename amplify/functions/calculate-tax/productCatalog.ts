@@ -25,4 +25,9 @@ export const taxProductCatalog: Record<string, TaxProductCatalogItem> = {
     price: 11999,
     taxCode: 'txcd_99999999',
   },
+  'hy-20lrf': {
+    name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
+    price: 14499,
+    taxCode: 'txcd_99999999',
+  },
 };
