@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { HY20LRF } from './HY20LRF';
 
 const addToCart = vi.fn();
-const heroImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r-i/main.jpg';
-const frontImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r-i/front-view.jpg';
+const heroImage = '/assets/images/redesign/products/hy-20lrf-standardized.webp';
+const rearImage = '/assets/images/redesign/products/hy-20lrf-rear-connections.webp';
 
 vi.mock('../../hooks/useProductPage', () => ({
   useProductPage: () => ({ addToCart }),
@@ -58,7 +58,7 @@ describe('HY20LRF commerce product page', () => {
 
     await waitFor(() => {
       expect(getProductJsonLd()['@id']).toBe('https://ninescrolls.com/products/hy-20lrf#product');
-      expect(getProductJsonLd().image).toEqual([heroImage]);
+      expect(getProductJsonLd().image).toEqual(['https://ninescrolls.com/assets/images/redesign/products/hy-20lrf-standardized.webp']);
       expect(getProductJsonLd().offers).toMatchObject({
         '@type': 'Offer',
         price: '14499',
@@ -76,7 +76,7 @@ describe('HY20LRF commerce product page', () => {
 
     const quoteLinks = screen.getAllByRole('link', { name: 'Request a Budgetary Quote' });
     expect(quoteLinks.some(link => link.getAttribute('href') === '/request-quote?products=hy-20lrf')).toBe(true);
-    expect(screen.getByRole('img', { name: 'HY-20LRF front chamber and control view' })).toHaveAttribute('src', frontImage);
+    expect(screen.getByRole('img', { name: 'HY-20LRF rear service connections and vacuum ports' })).toHaveAttribute('src', rearImage);
     expect(screen.queryByText(/Distributor Notice/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Shenzhen Huiyi/i)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Plasma Cleaner Buying Guide/i })).toHaveAttribute(

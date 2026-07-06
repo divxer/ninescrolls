@@ -34,6 +34,7 @@ export const checkoutProductCatalog: Record<string, CheckoutProductCatalogItem> 
   'hy-20lrf': {
     name: 'HY-20LRF - RF (13.56 MHz) Batch Plasma Cleaner',
     price: 14499,
+    imagePath: '/assets/images/redesign/products/hy-20lrf-standardized.webp',
     taxCode: 'txcd_99999999',
   },
 };

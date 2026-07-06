@@ -1,7 +1,7 @@
 import type { ProductDetailConfig } from '../ProductDetailPage.types';
 
-const hy20lrfImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r-i/main.jpg';
-const hy20lrfFrontViewImage = 'https://cdn.ninescrolls.com/products/ns-plasma-20r-i/front-view.jpg';
+const hy20lrfImage = '/assets/images/redesign/products/hy-20lrf-standardized.webp';
+const hy20lrfRearConnectionsImage = '/assets/images/redesign/products/hy-20lrf-rear-connections.webp';
 
 // Price edits must stay aligned with:
 // - amplify/functions/create-checkout-session/productCatalog.ts
@@ -38,12 +38,12 @@ export const hy20lrfConfig: ProductDetailConfig = {
     eyebrow: 'Research Batch Plasma Cleaner',
     title: 'HY-20LRF Research-Grade Batch Plasma Cleaner',
     description: 'A 20L RF plasma cleaner for academic research teams that need documented, repeatable batch surface processing.',
-    backgroundImage: hy20lrfFrontViewImage,
+    backgroundImage: hy20lrfRearConnectionsImage,
     image: {
       src: hy20lrfImage,
       alt: 'HY-20LRF research-grade batch plasma cleaner',
-      width: 962,
-      height: 1024,
+      width: 1400,
+      height: 1400,
     },
     stats: [
       { label: 'Chamber', value: '20 L' },
@@ -121,11 +121,11 @@ export const hy20lrfConfig: ProductDetailConfig = {
     copy: 'Use these actual system photos to review the 20L enclosure, front controls, service-side access, and bench integration before configuration review.',
     images: [
       {
-        src: hy20lrfFrontViewImage,
-        alt: 'HY-20LRF front chamber and control view',
-        label: 'Service-side view',
-        width: 1024,
-        height: 796,
+        src: hy20lrfRearConnectionsImage,
+        alt: 'HY-20LRF rear service connections and vacuum ports',
+        label: 'Rear connections',
+        width: 1400,
+        height: 1094,
       },
     ],
   },
@@ -144,6 +144,6 @@ export const hy20lrfConfig: ProductDetailConfig = {
     copy: 'Order directly or request a budgetary quote for institutional purchasing.',
     primaryAction: { label: 'View Cart', href: '/cart' },
     secondaryAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-20lrf' },
-    backgroundImage: hy20lrfFrontViewImage,
+    backgroundImage: hy20lrfRearConnectionsImage,
   },
 };
