@@ -24,6 +24,11 @@
 - Gallery images do not enter JSON-LD image, Open Graph image, or Twitter image.
 - HY-4L must preserve `/products/hy-4l-rf`, `/products/hy-4l-mf`, and `/products/hy-4l?config=rf|mf` variant preselection.
 - Do not migrate HY-20L, HY-20LRF, Pluto-F, Pluto-M, or Pluto-T in this first implementation.
+- HY-4L product images must use verified CDN URLs, not bare `/assets/images/products/...` paths. Verified assets:
+  `https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg` (`1024x666`),
+  `https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg` (`1024x741`),
+  `https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg` (`1024x796`).
+- Before Task 4, rebase this branch after PR #246 if it has merged or still touches the same Lambda files. As of the planning check, PR #246 is open but does not list the two Stripe handler files; verify again immediately before editing them.
 
 ---
 
@@ -66,7 +71,7 @@ it('renders commerce controls and gallery only when configured', () => {
       copy: 'Use these actual system photos to review the compact enclosure.',
       images: [
         {
-          src: '/assets/images/products/ns-plasma-4r/main.jpg',
+          src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg',
           alt: 'Commerce prototype front view',
           label: 'Front view',
           width: 800,
@@ -88,7 +93,7 @@ it('renders commerce controls and gallery only when configured', () => {
   expect(screen.getByRole('heading', { level: 2, name: 'Product Views' })).toBeInTheDocument();
   expect(screen.getByAltText('Commerce prototype front view')).toHaveAttribute(
     'src',
-    '/assets/images/products/ns-plasma-4r/main.jpg'
+    'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg'
   );
 });
 ```
@@ -393,6 +398,16 @@ In `ProductDetailPage.tsx`, import the panel:
 import { ProductCommercePanel } from './ProductCommercePanel';
 ```
 
+In `ProductDetailPage.test.tsx`, add a `useProductPage` mock near the existing `DownloadGateModal` mock. This file renders commerce configs after Task 2, so it must not call the real hook or require `CartProvider`:
+
+```ts
+const addToCart = vi.fn();
+
+vi.mock('../../hooks/useProductPage', () => ({
+  useProductPage: () => ({ addToCart }),
+}));
+```
+
 Replace the minimal empty commerce panel and branch the hero CTA area. Keep the existing RFQ link/button markup unchanged inside the non-commerce branch:
 
 ```tsx
@@ -604,6 +619,24 @@ git commit -m "feat: emit commerce product offer schema"
 - Produces: `checkoutProductCatalog`
 - Produces: `taxProductCatalog`
 - Produces: a Vitest test that compares commerce config prices against both catalogs
+
+- [ ] **Step 0: Recheck PR #246 and rebase if needed**
+
+Run:
+
+```bash
+gh pr view 246 --json state,files --jq '{state, files:[.files[].path]}'
+git fetch origin
+git status --short
+```
+
+If PR #246 is merged or its current file list includes either `amplify/functions/create-checkout-session/handler.ts` or `amplify/functions/calculate-tax/handler.ts`, rebase this branch onto the updated base before editing these handlers:
+
+```bash
+git rebase origin/feature/homepage-redesign
+```
+
+Resolve conflicts before continuing. Do not start Task 4 with unresolved PR #246 overlap.
 
 - [ ] **Step 1: Write failing consistency test**
 
@@ -883,18 +916,20 @@ export const hy4lConfig: ProductDetailConfig = {
     title: 'HY-4L Plasma Cleaner',
     description: 'A compact 4L plasma cleaner for research labs, teaching labs, and low-volume sample preparation.',
     image: {
-      src: '/assets/images/products/ns-plasma-4r/main.jpg',
+      src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg',
       alt: 'HY-4L compact plasma cleaner',
-      width: 800,
-      height: 600,
+      width: 1024,
+      height: 666,
     },
     stats: [
       { label: 'Chamber', value: '4 L' },
-      { label: 'RF Power', value: '150 W' },
+      { label: 'Power', value: '150 / 300 W' },
       { label: 'Options', value: 'RF / MF' },
       { label: 'Lead Time', value: '3-4 weeks' },
     ],
-    primaryAction: { label: 'Add to Cart', href: '/cart' },
+    // Commerce pages render ProductCommercePanel instead of hero.primaryAction;
+    // keep route-safe fallback values for type parity.
+    primaryAction: { label: 'View Cart', href: '/cart' },
     secondaryAction: { label: 'Request Quote', href: '/request-quote?products=hy-4l' },
   },
   commerce: {
@@ -906,10 +941,10 @@ export const hy4lConfig: ProductDetailConfig = {
     quoteAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
   },
   datasheet: {
-    fileUrl: '/assets/pdfs/hy-4l-datasheet.pdf',
-    fileName: 'hy-4l-datasheet.pdf',
-    title: 'Download HY-4L Datasheet',
-    buttonLabel: 'Download Datasheet',
+    fileUrl: '/NineScrolls-Equipment-Guide.pdf',
+    fileName: 'NineScrolls-Equipment-Guide.pdf',
+    title: 'Download Equipment Guide',
+    buttonLabel: 'Download Guide',
   },
   processIntro: {
     eyebrow: 'Surface Preparation',
@@ -940,7 +975,9 @@ export const hy4lConfig: ProductDetailConfig = {
       { label: 'Chamber Volume', value: '4 L' },
       { label: 'RF Frequency', value: '13.56 MHz' },
       { label: 'MF Frequency', value: '40 kHz' },
-      { label: 'RF Power', value: '150 W' },
+      { label: 'Power', value: '150 W RF / 300 W MF' },
+      { label: 'Gas Channels', value: '2' },
+      { label: 'Control', value: 'PLC + touchscreen' },
     ],
   },
   applications: {
@@ -954,11 +991,25 @@ export const hy4lConfig: ProductDetailConfig = {
     copy: 'Use these actual system photos to review the compact enclosure, service-side access, chamber placement, and bench integration before configuration review.',
     images: [
       {
-        src: '/assets/images/products/ns-plasma-4r/main.jpg',
+        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg',
         alt: 'HY-4L plasma cleaner front view',
         label: 'Front view',
-        width: 800,
-        height: 600,
+        width: 1024,
+        height: 666,
+      },
+      {
+        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-1.jpg',
+        alt: 'HY-4L plasma cleaner alternate system view',
+        label: 'System view',
+        width: 1024,
+        height: 741,
+      },
+      {
+        src: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/image-2.jpg',
+        alt: 'HY-4L plasma cleaner rear and side view',
+        label: 'Service-side view',
+        width: 1024,
+        height: 796,
       },
     ],
   },
@@ -966,21 +1017,23 @@ export const hy4lConfig: ProductDetailConfig = {
     eyebrow: 'Resources',
     title: 'Related Resources',
     items: [
-      { title: 'Plasma Cleaning Basics', href: '/insights/plasma-cleaning-basics', meta: 'Surface preparation guide' },
+      { title: 'What Is a Plasma Cleaner?', href: '/insights/what-is-plasma-cleaner-principles-types', meta: 'Principles, types, and how plasma cleaning works' },
+      { title: 'Plasma Cleaner Applications', href: '/insights/plasma-cleaner-applications-guide', meta: 'Research and production use cases' },
+      { title: 'Plasma Cleaner Buying Guide', href: '/insights/plasma-cleaner-buying-guide', meta: 'Selection guide for chamber size, vacuum systems, and TCO' },
     ],
   },
   finalCta: {
     eyebrow: 'Ready to Configure',
     title: 'Choose the HY-4L configuration for your lab.',
     copy: 'Order directly or request a budgetary quote for institutional purchasing.',
-    primaryAction: { label: 'Add to Cart', href: '/cart' },
+    primaryAction: { label: 'View Cart', href: '/cart' },
     secondaryAction: { label: 'Request a Budgetary Quote', href: '/request-quote?products=hy-4l' },
-    backgroundImage: '/assets/images/products/ns-plasma-4r/main.jpg',
+    backgroundImage: 'https://cdn.ninescrolls.com/products/ns-plasma-4r/main.jpg',
   },
 };
 ```
 
-Before keeping the `resources` section, verify each resource slug against the live sitemap or DynamoDB-backed catalog. If `plasma-cleaning-basics` is not verified, omit `resources` from HY-4L in this first migration.
+The three resource slugs above are present in `public/llms.txt`. If the live sitemap or DynamoDB-backed catalog disagrees during implementation, omit the stale resource rather than linking an unpublished article.
 
 - [ ] **Step 4: Replace HY4L wrapper**
 
@@ -1096,7 +1149,7 @@ Run:
 
 ```bash
 rg -n 'supplier-provided|vendor-provided|manufacturer-provided' src/components/products
-rg -n 'price: "0"|price: \\'0\\'' src/components/products/productDetailConfigs src/components/products/ProductDetailPage.tsx
+rg -n "price: ['\\\"]0['\\\"]" src/components/products/productDetailConfigs src/components/products/ProductDetailPage.tsx
 ```
 
 Expected: first command has no customer-facing hits. Second command shows only RFQ schema path, not HY-4L commerce config.
