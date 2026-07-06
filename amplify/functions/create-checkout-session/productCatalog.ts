@@ -37,4 +37,10 @@ export const checkoutProductCatalog: Record<string, CheckoutProductCatalogItem> 
     imagePath: '/assets/images/redesign/products/hy-20lrf-standardized.webp',
     taxCode: 'txcd_99999999',
   },
+  'pluto-t': {
+    name: 'PLUTO-T - 200W RF Plasma Cleaner',
+    price: 9999,
+    imagePath: '/assets/images/redesign/products/pluto-t-standardized.webp',
+    taxCode: 'txcd_99999999',
+  },
 };
