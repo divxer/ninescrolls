@@ -43,4 +43,10 @@ export const checkoutProductCatalog: Record<string, CheckoutProductCatalogItem> 
     imagePath: '/assets/images/redesign/products/pluto-t-standardized.webp',
     taxCode: 'txcd_99999999',
   },
+  'pluto-m': {
+    name: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
+    price: 12999,
+    imagePath: '/assets/images/redesign/products/pluto-m-standardized.webp',
+    taxCode: 'txcd_99999999',
+  },
 };
