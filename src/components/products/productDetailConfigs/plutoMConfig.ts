@@ -80,7 +80,7 @@ export const plutoMConfig: ProductDetailConfig = {
     title: 'Multi-sample RF cleaning with recipe repeatability.',
     copy: 'PLUTO-M pairs a 200 W RF source with an ~8L chamber and perforated gas-shower electrode, so batches see uniform plasma while stored recipes keep every run consistent.',
     windows: [
-      { title: 'Batch Cleaning', copy: 'Process multi-sample batches in a ~8L stainless steel chamber.', details: ['2x PLUTO-T capacity', '2 gas lines standard'] },
+      { title: 'Batch Cleaning', copy: 'Process multi-sample batches in a ~8L stainless steel chamber.', details: ['~2x PLUTO-T capacity', '2 gas lines standard'] },
       { title: 'Uniform Activation', copy: 'The gas-shower electrode distributes process gas evenly across samples.', details: ['O2 / N2 / Ar', '1 W power precision'] },
       { title: 'Recipe Storage', copy: 'Store validated recipes on the touchscreen for repeatable shared-lab use.', details: ['Fully automated runs', 'Multi-user workflows'] },
     ],
