@@ -6,8 +6,16 @@ import { ProductDetailPage } from './ProductDetailPage';
 import type { ProductDetailConfig } from './ProductDetailPage.types';
 import { icpEtcherConfig } from './productDetailConfigs/icpEtcherConfig';
 
+const { addToCart } = vi.hoisted(() => ({
+  addToCart: vi.fn(),
+}));
+
 vi.mock('../common/DownloadGateModal', () => ({
   DownloadGateModal: () => null,
+}));
+
+vi.mock('../../hooks/useProductPage', () => ({
+  useProductPage: () => ({ addToCart }),
 }));
 
 function renderTemplate() {

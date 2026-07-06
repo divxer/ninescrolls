@@ -5,6 +5,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { SEO } from '../common/SEO';
+import { ProductCommercePanel } from './ProductCommercePanel';
 import type { ProductDetailConfig } from './ProductDetailPage.types';
 
 interface ProductDetailPageProps {
@@ -93,28 +94,46 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
                 {config.hero.title}
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">{config.hero.description}</p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  to={config.hero.primaryAction.href}
-                  className="inline-flex min-h-12 items-center rounded-xl bg-sky-500 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-sky-400 motion-reduce:transform-none"
-                >
-                  {config.hero.primaryAction.label}
-                </Link>
-                <Link
-                  to={config.hero.secondaryAction.href}
-                  className="inline-flex min-h-12 items-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/12 motion-reduce:transform-none"
-                >
-                  {config.hero.secondaryAction.label}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setGateOpen(true)}
-                  className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
-                >
-                  {config.datasheet.buttonLabel}
-                </button>
-              </div>
-              {config.commerce && <div data-testid="product-commerce-panel" />}
+              {config.commerce ? (
+                <>
+                  <ProductCommercePanel
+                    commerce={config.commerce}
+                    productName={config.schema.name}
+                    productImage={config.hero.image.src}
+                  />
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setGateOpen(true)}
+                      className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
+                    >
+                      {config.datasheet.buttonLabel}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <Link
+                    to={config.hero.primaryAction.href}
+                    className="inline-flex min-h-12 items-center rounded-xl bg-sky-500 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-sky-400 motion-reduce:transform-none"
+                  >
+                    {config.hero.primaryAction.label}
+                  </Link>
+                  <Link
+                    to={config.hero.secondaryAction.href}
+                    className="inline-flex min-h-12 items-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/12 motion-reduce:transform-none"
+                  >
+                    {config.hero.secondaryAction.label}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setGateOpen(true)}
+                    className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
+                  >
+                    {config.datasheet.buttonLabel}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur">
