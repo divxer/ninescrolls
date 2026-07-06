@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/calculate-tax';
+import { taxProductCatalog } from './productCatalog';
 
 type LineItemInput = {
   id?: string;
@@ -77,18 +78,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     'https://www.ninescrolls.us',
   ];
 
-  const productCatalog: Record<string, { name: string; price: number; taxCode?: string }> = {
-    'hy-4l-rf': {
-      name: 'HY-4L - RF (13.56 MHz) Plasma Cleaner',
-      price: 7999,
-      taxCode: 'txcd_99999999',
-    },
-    'hy-4l-mf': {
-      name: 'HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner',
-      price: 6499,
-      taxCode: 'txcd_99999999',
-    },
-  };
+  const productCatalog = taxProductCatalog;
 
   const getCorsHeaders = (origin: string): Record<string, string> => {
     const isAllowedOrigin = allowedOrigins.includes(origin);
