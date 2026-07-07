@@ -1,407 +1,367 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
-import { Helmet } from 'react-helmet-async';
-import { OptimizedImage } from '../components/common/OptimizedImage';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
-import { cdnUrl } from '../config/imageConfig';
+
+interface CleanerCard {
+  name: string;
+  route: string;
+  label: string;
+  image: string;
+  alt: string;
+  price: string;
+  chamber: string;
+  power: string;
+  workflow: string;
+  description: string;
+  chips: string[];
+  featured?: boolean;
+}
+
+const cleaners: CleanerCard[] = [
+  {
+    name: 'HY-4L',
+    route: '/products/hy-4l',
+    label: 'Compact Entry',
+    image: '/assets/images/redesign/products/hy-4l-standardized.webp',
+    alt: 'HY-4L - Compact RF/MF Plasma Cleaner',
+    price: 'From $6,499',
+    chamber: '~4 L',
+    power: 'RF or MF',
+    workflow: 'Teaching, validation, small samples',
+    description: 'Compact plasma cleaner for sample preparation, teaching labs, bonding prep, and low-volume research.',
+    chips: ['Benchtop', 'RF/MF variants', 'Entry workflow'],
+  },
+  {
+    name: 'PLUTO-T',
+    route: '/products/pluto-t',
+    label: 'Touchscreen Compact',
+    image: '/assets/images/redesign/products/pluto-t-standardized.webp',
+    alt: 'PLUTO-T - 200W RF Plasma Cleaner',
+    price: '$9,999',
+    chamber: '~4.3 L',
+    power: '200 W RF',
+    workflow: 'Compact touchscreen RF cleaning',
+    description: 'Touchscreen RF plasma cleaner for routine activation, cleaning, and surface preparation in small labs.',
+    chips: ['Touchscreen', '200 W RF', 'Compact chamber'],
+  },
+  {
+    name: 'HY-20L',
+    route: '/products/hy-20l',
+    label: 'Batch Processing',
+    image: '/assets/images/redesign/products/hy-20l-standardized.webp',
+    alt: 'HY-20L - Research-Grade Batch Plasma Processing System',
+    price: 'From $11,999',
+    chamber: '20 L',
+    power: 'RF or MF',
+    workflow: 'Batch activation and repeatable cleaning',
+    description: '20-liter batch plasma processing for surface activation, bonding prep, and repeatable lab cleaning.',
+    chips: ['20 L chamber', 'RF/MF variants', 'Batch workflow'],
+    featured: true,
+  },
+  {
+    name: 'PLUTO-M',
+    route: '/products/pluto-m',
+    label: 'Mid-Size RF',
+    image: '/assets/images/redesign/products/pluto-m-standardized.webp',
+    alt: 'PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber',
+    price: '$12,999',
+    chamber: '~8 L',
+    power: '200 W RF',
+    workflow: 'Larger fixtures and small batches',
+    description: 'Mid-size RF plasma cleaner for larger fixtures, small batch work, and routine lab preparation.',
+    chips: ['Mid-size chamber', 'Recipe storage', 'Batch capable'],
+  },
+  {
+    name: 'HY-20LRF',
+    route: '/products/hy-20lrf',
+    label: 'Research Batch RF',
+    image: '/assets/images/redesign/products/hy-20lrf-standardized.webp',
+    alt: 'HY-20LRF - Integrated RF Vacuum Plasma Cleaner',
+    price: '$14,499',
+    chamber: '20 L',
+    power: '300 W RF',
+    workflow: 'Tray-based repeatable processing',
+    description: 'Research-grade 20 L RF plasma cleaner with tray-based processing and documented repeatability.',
+    chips: ['300 W RF', '4-layer tray', 'Repeatable recipes'],
+  },
+  {
+    name: 'PLUTO-F',
+    route: '/products/pluto-f',
+    label: 'Flagship RF',
+    image: '/assets/images/redesign/products/pluto-f-standardized.webp',
+    alt: 'PLUTO-F - 500W RF Flagship Plasma Cleaner',
+    price: '$15,999',
+    chamber: '~14.5 L',
+    power: '500 W RF',
+    workflow: 'Higher power and advanced recipes',
+    description: 'Flagship RF plasma cleaner with expanded chamber volume and recipe management for advanced labs.',
+    chips: ['500 W RF', 'Large chamber', 'Recipe management'],
+    featured: true,
+  },
+];
+
+const pricingFaqs = [
+  {
+    question: 'How much does a plasma cleaner cost?',
+    answer:
+      'NineScrolls plasma cleaner systems start at $6,499 for compact HY configurations, with larger RF systems ranging up to $15,999 depending on chamber size, generator power, controls, and selected configuration.',
+  },
+  {
+    question: 'What affects plasma cleaner pricing?',
+    answer:
+      'Pricing depends on chamber volume, RF or mid-frequency power configuration, gas-line requirements, fixture needs, pump configuration, controls, and whether the system is purchased online or through an institutional quotation.',
+  },
+  {
+    question: 'What is included with a plasma cleaner system?',
+    answer:
+      'Typical systems include the plasma chamber, power supply configuration, vacuum and gas handling interface, controller, and model-specific accessories. Final scope is confirmed on the product page or quotation.',
+  },
+  {
+    question: 'Can universities and labs request a formal quotation?',
+    answer:
+      'Yes. Research groups, universities, and institutional buyers can request a formal quotation for purchase-order workflows, configuration review, shipping details, and documentation requirements.',
+  },
+  {
+    question: 'How do I choose the right benchtop plasma cleaner?',
+    answer:
+      'Start with chamber size, sample geometry, required RF power, gas chemistry, throughput, and whether the workflow is teaching, bonding preparation, surface activation, or repeatable batch cleaning.',
+  },
+];
+
+function CleanerCardView({ cleaner }: { cleaner: CleanerCard }) {
+  return (
+    <article className={`group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-[0_20px_60px_rgba(15,23,42,0.10)] ${cleaner.featured ? 'lg:col-span-2' : ''}`}>
+      <Link to={cleaner.route} className="flex h-full flex-col">
+        <div className={`bg-slate-50 ${cleaner.featured ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
+          <img
+            src={cleaner.image}
+            alt={cleaner.alt}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-contain p-6 transition-transform duration-700 group-hover:scale-[1.04]"
+          />
+        </div>
+        <div className="flex flex-1 flex-col p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-600">{cleaner.label}</span>
+              <h2 className="mt-2 text-2xl font-headline font-bold tracking-tight text-slate-950">{cleaner.name}</h2>
+            </div>
+            <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Buy Online</span>
+          </div>
+          <p className="text-sm leading-6 text-slate-600">{cleaner.description}</p>
+          <div className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Chamber</span>
+              <span className="mt-1 block text-sm font-bold text-slate-950">{cleaner.chamber}</span>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Power</span>
+              <span className="mt-1 block text-sm font-bold text-slate-950">{cleaner.power}</span>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Price</span>
+              <span className="mt-1 block text-sm font-bold text-slate-950">{cleaner.price}</span>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {cleaner.chips.map((chip) => (
+              <span key={chip} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                {chip}
+              </span>
+            ))}
+          </div>
+          <div className="mt-auto flex items-center justify-between pt-6">
+            <span className="text-sm font-semibold text-slate-600">{cleaner.workflow}</span>
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-sky-700">
+              View Details
+              <span aria-hidden="true">→</span>
+            </span>
+          </div>
+        </div>
+      </Link>
+    </article>
+  );
+}
 
 export function PlasmaCleanerOverviewPage() {
   useScrollToTop();
 
   const structuredData = {
-    "@context": "https://schema.org/",
-    "@type": "ItemList",
-    "name": "Plasma Cleaners - HY & PLUTO Series",
-    "description": "RF plasma cleaners for research laboratories. HY Series (慧仪智控) and PLUTO Series (沛沅仪器) available through NineScrolls LLC.",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "HY-4L",
-        "url": "https://ninescrolls.com/products/hy-4l"
+    '@context': 'https://schema.org/',
+    '@type': 'ItemList',
+    name: 'NineScrolls plasma cleaner systems',
+    description: 'RF and mid-frequency plasma cleaners for research laboratories, surface activation, bonding preparation, and precision sample cleaning.',
+    itemListElement: cleaners.map((cleaner, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: cleaner.name,
+      url: `https://ninescrolls.com${cleaner.route}`,
+    })),
+  };
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: pricingFaqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
       },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "PLUTO-T",
-        "url": "https://ninescrolls.com/products/pluto-t"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": "HY-20L",
-        "url": "https://ninescrolls.com/products/hy-20l"
-      },
-      {
-        "@type": "ListItem",
-        "position": 4,
-        "name": "PLUTO-M",
-        "url": "https://ninescrolls.com/products/pluto-m"
-      },
-      {
-        "@type": "ListItem",
-        "position": 5,
-        "name": "HY-20LRF",
-        "url": "https://ninescrolls.com/products/hy-20lrf"
-      },
-      {
-        "@type": "ListItem",
-        "position": 6,
-        "name": "PLUTO-F",
-        "url": "https://ninescrolls.com/products/pluto-f"
-      }
-    ]
+    })),
   };
 
   return (
     <>
       <SEO
-        title="Plasma Cleaners - HY & PLUTO Series"
-        description="RF plasma cleaners for research laboratories. HY Series and PLUTO Series — from compact teaching systems to 500W flagship cleaners. US-based sales, support, and warranty."
-        keywords="plasma cleaner, RF plasma, research plasma system, HY-4L, HY-20L, PLUTO-T, PLUTO-M, PLUTO-F, batch plasma processing, surface activation"
+        title="Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing"
+        description="Compare NineScrolls HY and PLUTO benchtop plasma cleaner systems for research laboratories. Explore RF and MF models, chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
+        keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F"
         url="/products/plasma-cleaner"
         type="website"
       />
       <Helmet>
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqStructuredData)}</script>
       </Helmet>
 
-      <section className="hero-gradient relative min-h-[400px] flex items-center py-20 text-white">
-        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
-          <Breadcrumbs variant="dark" items={[
+      <section className="border-b border-slate-200 bg-[#FAFAFA]">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8 lg:px-10">
+          <Breadcrumbs items={[
             { name: 'Products', path: '/products' },
-            { name: 'Plasma Cleaners', path: '/products/plasma-cleaner' }
+            { name: 'Plasma Cleaners', path: '/products/plasma-cleaner' },
           ]} />
-          <div className="text-center mt-6">
-          <h1 className="text-5xl md:text-5xl font-bold mb-6">Plasma Cleaners</h1>
-          <p className="text-2xl md:text-2xl mb-4 opacity-95">
-            HY Series & PLUTO Series — RF Plasma Systems for Research Labs
-          </p>
-          <p className="text-lg max-w-[700px] mx-auto opacity-90 leading-relaxed">
-            From compact teaching systems to 500W flagship cleaners. Six models covering every research plasma cleaning need, from $6,499 to $15,999.
-          </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-surface-container-lowest py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* HY-4L */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-primary">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-4r/main.jpg')}
-                  alt="HY-4L - Compact RF/MF Plasma Cleaner"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-primary/10 text-primary">Entry Level</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">HY-4L</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">Compact / Teaching / Validation</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  Practical entry point for laboratories requiring RF or Mid-Frequency plasma capability.
-                  Designed for exploratory plasma processing, small-volume sample preparation, and teaching.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>~4 L Chamber</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>RF or Mid-Frequency</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">science</span>
-                    <span>Simple Operation</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">Starting at</span>
-                  <span className="text-3xl font-bold text-primary">$6,499</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/hy-4l" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
+          <div className="grid gap-12 py-14 lg:grid-cols-[1fr_0.9fr] lg:items-end">
+            <div>
+              <span className="mb-5 block text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Plasma Cleaning Systems</span>
+              <h1 className="max-w-4xl text-5xl font-headline font-bold leading-[0.98] tracking-tight text-slate-950 md:text-7xl">
+                Plasma cleaners for surface activation and lab-scale cleaning.
+              </h1>
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
+                Buy online or request an institutional quote for compact RF and mid-frequency plasma cleaners used in bonding prep, surface activation, organic residue removal, and sample preparation.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/products/plasma-cleaner/compare" className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700">
+                  Compare Models
+                </Link>
+                <Link to="/products/hy-4l" className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-950 transition-colors hover:border-slate-400 hover:bg-slate-50">
+                  Start at HY-4L
+                </Link>
               </div>
             </div>
-
-            {/* PLUTO-T */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-primary">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-t/main.jpg')}
-                  alt="PLUTO-T - 200W RF Plasma Cleaner"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-primary/10 text-primary">RF Compact</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">PLUTO-T</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">200W RF / Touchscreen / Under $10K</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  High-performance 200W RF plasma cleaner with touchscreen control at an accessible price point.
-                  33% more RF power than comparable entry-level systems.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>~4.3 L Chamber</span>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.08)]">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  ['6', 'Buy-online models'],
+                  ['$6,499', 'Entry price'],
+                  ['20 L', 'Largest HY chamber'],
+                  ['500 W', 'Highest RF power'],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                    <span className="block text-3xl font-headline font-bold tracking-tight text-slate-950">{value}</span>
+                    <span className="mt-2 block text-sm font-semibold text-slate-600">{label}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>200W RF (13.56 MHz)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">desktop_windows</span>
-                    <span>Touchscreen</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">US Price</span>
-                  <span className="text-3xl font-bold text-primary">$9,999</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/pluto-t" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* HY-20L */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-20r/main.jpg')}
-                  alt="HY-20L - Research-Grade Batch Plasma Processing System"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-[#8b5cf6]/10 text-[#8b5cf6]">Batch Processing</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">HY-20L</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">Core Research / 20L Batch Chamber</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  Research-grade batch plasma processing with 20-liter chamber and full PLC control.
-                  Available in RF (13.56 MHz) or Mid-Frequency (40 kHz) configurations.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>20 L Batch Chamber</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>Up to 300W</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">desktop_windows</span>
-                    <span>Full PLC Control</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">Starting at</span>
-                  <span className="text-3xl font-bold text-primary">$11,999</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/hy-20l" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* PLUTO-M */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-m/main.jpg')}
-                  alt="PLUTO-M - 200W RF Plasma Cleaner with 8L Chamber"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-[#8b5cf6]/10 text-[#8b5cf6]">RF Mid-Size</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">PLUTO-M</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">200W RF / 8L Chamber / Batch Capable</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  Optimal balance of RF precision and batch capability. 8-liter chamber with 200W RF power
-                  for efficient multi-sample processing without sacrificing performance.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>~8 L Chamber</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>200W RF (13.56 MHz)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">desktop_windows</span>
-                    <span>Recipe Storage</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">US Price</span>
-                  <span className="text-3xl font-bold text-primary">$12,999</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/pluto-m" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* HY-20LRF */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/ns-plasma-20r-i/main.jpg')}
-                  alt="HY-20LRF - Integrated RF Vacuum Plasma Cleaner"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-[#8b5cf6]/10 text-[#8b5cf6]">Integrated RF</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">HY-20LRF</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">20L Integrated / 300W RF / PLC + Touchscreen</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  Integrated RF vacuum plasma cleaner with 20-liter batch chamber and 300W RF power.
-                  Higher throughput for labs needing repeatable plasma surface treatment.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>20 L Batch Chamber</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>300W RF (13.56 MHz)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">desktop_windows</span>
-                    <span>PLC + Touchscreen</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">US Price</span>
-                  <span className="text-3xl font-bold text-primary">$14,499</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/hy-20lrf" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* PLUTO-F */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col border-t-4 border-[#8b5cf6]">
-              <div className="w-full h-[300px] overflow-hidden bg-gray-100 flex items-center justify-center min-w-0 [&_.lazy-load-image-background]:!w-full [&_.lazy-load-image-background]:!h-full">
-                <OptimizedImage
-                  src={cdnUrl('/assets/images/products/pluto-f/main.jpg')}
-                  alt="PLUTO-F - 500W RF Flagship Plasma Cleaner"
-                  width={600}
-                  height={400}
-                  className="w-full h-full object-contain p-4"
-                />
-              </div>
-              <div className="p-10 flex flex-col grow">
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 w-fit bg-[#8b5cf6]/10 text-[#8b5cf6]">RF Flagship</div>
-                <h2 className="text-3xl font-bold mb-2 text-on-surface">PLUTO-F</h2>
-                <p className="text-lg text-on-surface-variant mb-6 font-medium">500W RF / 14.5L Chamber / Advanced Recipes</p>
-                <p className="text-base text-on-surface-variant leading-relaxed mb-6 grow">
-                  NineScrolls' most powerful RF plasma cleaner. 500W RF with 14.5-liter chamber and advanced recipe management.
-                  11x the RF power of comparable desktop systems at a fraction of the price.
-                </p>
-                <div className="flex gap-6 mb-6 flex-wrap">
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">inventory_2</span>
-                    <span>~14.5 L Chamber</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                    <span>500W RF (13.56 MHz)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[0.95rem] text-on-surface-variant">
-                    <span className="material-symbols-outlined text-xl">desktop_windows</span>
-                    <span>Advanced Recipes</span>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mb-6 p-4 bg-surface-container-lowest rounded-lg">
-                  <span className="text-sm text-on-surface-variant font-medium">US Price</span>
-                  <span className="text-3xl font-bold text-primary">$15,999</span>
-                </div>
-                <div className="mt-auto">
-                  <Link to="/products/pluto-f" className="inline-flex items-center justify-center bg-primary text-on-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors no-underline">
-                    View Details
-                  </Link>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-20 text-center">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl md:text-4xl font-bold mb-4 text-on-surface">Which system is right for you?</h2>
-          <p className="text-xl text-on-surface-variant mb-8 max-w-[600px] mx-auto">Compare features, specifications, and use cases to find the best fit for your laboratory.</p>
-          <Link to="/products/plasma-cleaner/compare" className="inline-flex items-center border-2 border-primary text-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary hover:text-on-primary transition-colors no-underline">
-            Compare Models
-          </Link>
+      <section className="bg-white py-14">
+        <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
+          <div className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-8">
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Cleaner Family</span>
+            <h2 className="text-4xl font-headline font-bold tracking-tight text-slate-950">Choose by chamber size and workflow</h2>
+            <p className="max-w-3xl text-base leading-7 text-slate-600">
+              HY systems emphasize flexible RF/MF and batch workflows; PLUTO systems emphasize touchscreen RF operation and clear chamber-size progression.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {cleaners.map((cleaner) => (
+              <CleanerCardView key={cleaner.route} cleaner={cleaner} />
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="bg-surface-container-low py-16">
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-3 text-on-surface text-center">Two Workflows on One Tool</h2>
-          <p className="text-lg text-on-surface-variant text-center mb-10 max-w-[720px] mx-auto">
-            The same low-pressure RF plasma chamber serves both <strong>cleaning</strong> (removing organic
-            and particulate contamination) and <strong>surface modification</strong> (deliberately changing
-            surface chemistry, energy, and functional groups). What differs is the gas, the time, and the post-process handling.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link
-              to="/insights/plasma-cleaner-applications-guide"
-              className="block bg-white rounded-xl p-6 border border-outline-variant hover:border-primary hover:shadow-lg transition-all no-underline"
-            >
-              <h3 className="text-xl font-bold text-on-surface mb-2">Plasma Cleaning Applications</h3>
-              <p className="text-on-surface-variant">
-                Industry-by-industry survey of cleaning use cases — semiconductor wire-bond prep, biomedical PDMS bonding, optics, automotive paint adhesion, and TEM sample preparation.
-              </p>
-              <span className="text-primary font-semibold mt-3 inline-block">Read the guide →</span>
+      <section className="border-y border-slate-200 bg-slate-50 py-16">
+        <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
+          <div className="mb-8">
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Model Matrix</span>
+            <h2 className="mt-3 text-4xl font-headline font-bold tracking-tight text-slate-950">Quick comparison</h2>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+              Use the matrix for first-pass selection. Open each model page for variants, gallery views, cart configuration, and quote options.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="grid grid-cols-[1.1fr_0.8fr_0.9fr_1.4fr_0.7fr] border-b border-slate-200 bg-slate-100 px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+              <span>Model</span>
+              <span>Chamber</span>
+              <span>Power</span>
+              <span>Best fit</span>
+              <span>Price</span>
+            </div>
+            {cleaners.map((cleaner) => (
+              <Link
+                key={cleaner.route}
+                to={cleaner.route}
+                className="grid grid-cols-[1.1fr_0.8fr_0.9fr_1.4fr_0.7fr] border-b border-slate-100 px-5 py-4 text-sm text-slate-700 transition-colors hover:bg-sky-50 last:border-b-0"
+              >
+                <span className="font-bold text-slate-950">{cleaner.name}</span>
+                <span>{cleaner.chamber}</span>
+                <span>{cleaner.power}</span>
+                <span>{cleaner.workflow}</span>
+                <span className="font-bold text-slate-950">{cleaner.price}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16">
+        <div className="mx-auto grid max-w-screen-2xl gap-8 px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-10">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Process Context</span>
+            <h2 className="mt-3 text-4xl font-headline font-bold tracking-tight text-slate-950">Cleaning and activation are related, but not identical.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Low-pressure plasma can remove organic contamination, increase surface energy, functionalize polymers, and prepare surfaces for bonding. Gas choice, power, time, and post-process handling determine the result.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Link to="/insights/plasma-cleaner-applications-guide" className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-sky-200 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+              <h3 className="text-lg font-headline font-bold text-slate-950">Plasma Cleaning Applications</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Semiconductor wire-bond prep, PDMS bonding, optics, automotive paint adhesion, and TEM sample preparation.</p>
+              <span className="mt-4 inline-block text-sm font-bold text-sky-700">Read Guide →</span>
             </Link>
-            <Link
-              to="/insights/plasma-surface-modification-a-practical-guide-to-activation-functionalization"
-              className="block bg-white rounded-xl p-6 border border-outline-variant hover:border-primary hover:shadow-lg transition-all no-underline"
-            >
-              <h3 className="text-xl font-bold text-on-surface mb-2">Plasma Surface Modification</h3>
-              <p className="text-on-surface-variant">
-                Activation, functionalization (–NH₂ / –CF₃ / –COOH grafting), CASING crosslinking, and hydrophobic-recovery countermeasures — with quantitative case data and process windows.
-              </p>
-              <span className="text-primary font-semibold mt-3 inline-block">Read the guide →</span>
+            <Link to="/insights/plasma-surface-modification-a-practical-guide-to-activation-functionalization" className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-sky-200 hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+              <h3 className="text-lg font-headline font-bold text-slate-950">Plasma Surface Modification</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Activation, functionalization, crosslinking, hydrophobic recovery, and process-window considerations.</p>
+              <span className="mt-4 inline-block text-sm font-bold text-sky-700">Read Guide →</span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-slate-50 py-16">
+        <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
+          <div className="mb-8 max-w-3xl">
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Pricing FAQ</span>
+            <h2 className="mt-3 text-4xl font-headline font-bold tracking-tight text-slate-950">Plasma cleaner pricing and selection questions</h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              Use these answers to estimate the right starting point before requesting pricing or opening a model page.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pricingFaqs.map((faq) => (
+              <article key={faq.question} className="rounded-xl border border-slate-200 bg-white p-6">
+                <h3 className="text-lg font-headline font-bold text-slate-950">{faq.question}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{faq.answer}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>

@@ -5,11 +5,11 @@ const productImage = '/assets/images/redesign/products/icp-rie-standardized.webp
 export const icpEtcherConfig: ProductDetailConfig = {
   slug: 'icp-etcher',
   seo: {
-    title: 'ICP-RIE Plasma Etching Platform',
+    title: 'ICP-RIE Etching System for Research Labs',
     description:
-      'ICP-RIE plasma etching platform for research and advanced manufacturing. Supports 4-12 inch wafers, 1000-3000 W ICP power, 5 gas lines standard, and -70 to 200 C stage temperature options.',
+      'Select a NineScrolls ICP-RIE etching system for silicon, MEMS, diamond, and compound semiconductor etching. Review specs, applications, and request a quote.',
     keywords:
-      'ICP-RIE, ICP etcher, plasma etching platform, silicon etching, diamond processing, MEMS fabrication, semiconductor etching equipment',
+      'ICP-RIE etching system, ICP etcher, ICP-RIE equipment, research plasma etcher, silicon etching, diamond processing, MEMS fabrication',
   },
   schema: {
     name: 'ICP-RIE Plasma Etching Platform',
@@ -33,6 +33,11 @@ export const icpEtcherConfig: ProductDetailConfig = {
       question: 'What wafer sizes does the ICP-RIE platform support?',
       answer:
         'The ICP-RIE platform supports 4 inch to 12 inch wafers, with configurable loading, gas, RF, and temperature options depending on process needs.',
+    },
+    {
+      question: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
+      answer:
+        'Use this product page when you are selecting an ICP-RIE etching system, checking wafer size, ICP power, bias control, gas lines, temperature range, applications, or quote requirements. Use the ICP-RIE Technology guide when you want to learn the principles of inductively coupled plasma generation, source power, bias power, and high-density plasma etching.',
     },
   ],
   breadcrumb: {
@@ -176,19 +181,24 @@ export const icpEtcherConfig: ProductDetailConfig = {
     title: 'Help engineers choose the right process path.',
     items: [
       {
-        title: 'ICP vs RIE',
+        title: 'Learn ICP-RIE Technology',
+        href: '/insights/icp-rie-technology-advanced-etching',
+        meta: 'Technology guide for ICP-RIE principles',
+      },
+      {
+        title: 'Compare ICP-RIE vs RIE',
         href: '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching',
-        meta: 'Process selection note',
+        meta: 'Process selection comparison',
       },
       {
-        title: 'Bosch Process',
+        title: 'Deep Silicon Bosch Process',
         href: '/insights/deep-reactive-ion-etching-bosch-process',
-        meta: 'Deep silicon etch primer',
+        meta: 'DRIE and deep silicon etch primer',
       },
       {
-        title: 'Diamond Processing',
+        title: 'Diamond Semiconductor Processing',
         href: '/insights/diamond-semiconductor-processing-icp-etching-deposition',
-        meta: 'Wide-bandgap etch guide',
+        meta: 'Wide-bandgap diamond etch guide',
       },
     ],
   },

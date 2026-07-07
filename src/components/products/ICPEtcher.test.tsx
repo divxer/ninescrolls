@@ -30,6 +30,7 @@ describe('ICPEtcher redesigned product page', () => {
       'Applications',
       'Research Validation',
       'Related Resources',
+      'Frequently Asked Questions',
       'Build an ICP-RIE process window with NineScrolls',
     ];
 
@@ -42,6 +43,7 @@ describe('ICPEtcher redesigned product page', () => {
       expect(currentIndex, `${copy} should appear after the prior section`).toBeGreaterThan(previousIndex);
       previousIndex = currentIndex;
     });
+    expect(screen.getByRole('heading', { level: 3, name: 'What applications is the ICP-RIE platform best suited for?' })).toBeInTheDocument();
   });
 
   it('uses the standardized real product asset and PDF-corrected specifications', () => {
@@ -72,12 +74,29 @@ describe('ICPEtcher redesigned product page', () => {
     expect(screen.getByRole('link', { name: 'Compare RIE' })).toHaveAttribute('href', '/products/rie-etcher');
   });
 
-  it('does not duplicate the brand in the SEO title', async () => {
+  it('positions the ICP-RIE product page for equipment-selection intent', async () => {
     renderPage();
 
     await waitFor(() => {
-      expect(document.title).toBe('ICP-RIE Plasma Etching Platform | NineScrolls LLC');
+      expect(document.title).toBe('ICP-RIE Etching System for Research Labs | NineScrolls LLC');
     });
+
+    const metaDescription = document.head.querySelector('meta[name="description"]');
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('ICP-RIE etching system'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('request a quote'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('silicon'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('diamond'));
+  });
+
+  it('routes learn-intent readers to the ICP-RIE technology guide from the FAQ', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
+      })
+    ).toBeInTheDocument();
   });
 
   it('does not render a nested main landmark inside the layout main', () => {
@@ -93,18 +112,22 @@ describe('ICPEtcher redesigned product page', () => {
     expect(screen.queryByText(/internal/i)).not.toBeInTheDocument();
   });
 
-  it('uses distinct resource destinations for related resource cards', () => {
+  it('uses intent-specific resource anchors without dropping the diamond deep link', () => {
     renderPage();
 
-    expect(screen.getByRole('link', { name: /ICP vs RIE/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Learn ICP-RIE Technology/i })).toHaveAttribute(
+      'href',
+      '/insights/icp-rie-technology-advanced-etching'
+    );
+    expect(screen.getByRole('link', { name: /Compare ICP-RIE vs RIE/i })).toHaveAttribute(
       'href',
       '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching'
     );
-    expect(screen.getByRole('link', { name: /Bosch Process/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Deep Silicon Bosch Process/i })).toHaveAttribute(
       'href',
       '/insights/deep-reactive-ion-etching-bosch-process'
     );
-    expect(screen.getByRole('link', { name: /Diamond Processing/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Diamond Semiconductor Processing/i })).toHaveAttribute(
       'href',
       '/insights/diamond-semiconductor-processing-icp-etching-deposition'
     );

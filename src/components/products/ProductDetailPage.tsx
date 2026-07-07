@@ -5,6 +5,7 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { DownloadGateModal } from '../common/DownloadGateModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { SEO } from '../common/SEO';
+import { ProductCommercePanel } from './ProductCommercePanel';
 import type { ProductDetailConfig } from './ProductDetailPage.types';
 
 interface ProductDetailPageProps {
@@ -18,39 +19,71 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
 
   const productUrl = `https://ninescrolls.com/products/${config.slug}`;
   const heroBackgroundImage = config.hero.backgroundImage ?? '/assets/images/redesign/hero-home-plasma-process.webp';
+  const productImageUrl = config.hero.image.src.startsWith('http')
+    ? config.hero.image.src
+    : `https://ninescrolls.com${config.hero.image.src}`;
+  const seller = { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' };
+  const priceValidUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const offerData = config.commerce && config.commerce.variants.length > 1
+    ? {
+        '@type': 'AggregateOffer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        lowPrice: String(Math.min(...config.commerce.variants.map(variant => variant.price))),
+        highPrice: String(Math.max(...config.commerce.variants.map(variant => variant.price))),
+        offerCount: config.commerce.variants.length,
+        priceValidUntil,
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      }
+    : config.commerce
+    ? {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        price: String(config.commerce.variants[0].price),
+        priceValidUntil,
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      }
+    : {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        price: '0',
+        url: productUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller,
+      };
   const structuredData = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     '@id': `${productUrl}#product`,
     name: config.schema.name,
     description: config.schema.description,
-    image: [`https://ninescrolls.com${config.hero.image.src}`],
+    image: [productImageUrl],
     sku: config.schema.sku,
     brand: { '@type': 'Brand', name: 'NineScrolls LLC' },
     category: config.schema.category,
-    offers: {
-      '@type': 'Offer',
-      availability: 'https://schema.org/InStock',
-      priceCurrency: 'USD',
-      price: '0',
-      url: productUrl,
-      itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' },
-    },
+    offers: offerData,
   };
 
-  const faqData = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: config.faq.map(item => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.answer,
-      },
-    })),
-  };
+  const faqData = config.faq.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: config.faq.map(item => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        })),
+      }
+    : null;
 
   return (
     <>
@@ -64,7 +97,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-        <script type="application/ld+json">{JSON.stringify(faqData)}</script>
+        {faqData && <script type="application/ld+json">{JSON.stringify(faqData)}</script>}
       </Helmet>
 
       <div className="bg-[#FAFAFA] text-slate-950">
@@ -90,27 +123,46 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
                 {config.hero.title}
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">{config.hero.description}</p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  to={config.hero.primaryAction.href}
-                  className="inline-flex min-h-12 items-center rounded-xl bg-sky-500 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-sky-400 motion-reduce:transform-none"
-                >
-                  {config.hero.primaryAction.label}
-                </Link>
-                <Link
-                  to={config.hero.secondaryAction.href}
-                  className="inline-flex min-h-12 items-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/12 motion-reduce:transform-none"
-                >
-                  {config.hero.secondaryAction.label}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setGateOpen(true)}
-                  className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
-                >
-                  {config.datasheet.buttonLabel}
-                </button>
-              </div>
+              {config.commerce ? (
+                <>
+                  <ProductCommercePanel
+                    commerce={config.commerce}
+                    productName={config.schema.name}
+                    productImage={config.hero.image.src}
+                  />
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setGateOpen(true)}
+                      className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
+                    >
+                      {config.datasheet.buttonLabel}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <Link
+                    to={config.hero.primaryAction.href}
+                    className="inline-flex min-h-12 items-center rounded-xl bg-sky-500 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-sky-400 motion-reduce:transform-none"
+                  >
+                    {config.hero.primaryAction.label}
+                  </Link>
+                  <Link
+                    to={config.hero.secondaryAction.href}
+                    className="inline-flex min-h-12 items-center rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/12 motion-reduce:transform-none"
+                  >
+                    {config.hero.secondaryAction.label}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setGateOpen(true)}
+                    className="inline-flex min-h-12 items-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10 motion-reduce:transform-none"
+                  >
+                    {config.datasheet.buttonLabel}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur">
@@ -221,6 +273,36 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
           </div>
         </section>
 
+        {config.gallery && (
+          <section className="px-6 py-20 md:px-10 lg:px-16">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="max-w-3xl">
+                {config.gallery.eyebrow && (
+                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">{config.gallery.eyebrow}</p>
+                )}
+                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+                  {config.gallery.heading}
+                </h2>
+                {config.gallery.copy && <p className="mt-5 text-base leading-8 text-slate-600">{config.gallery.copy}</p>}
+              </div>
+              <div className="mt-10 grid gap-4 md:grid-cols-3">
+                {config.gallery.images.map(image => (
+                  <figure key={`${image.src}-${image.alt}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <OptimizedImage
+                      src={image.src}
+                      alt={image.alt}
+                      className="h-full w-full object-cover"
+                      width={image.width}
+                      height={image.height}
+                    />
+                    {image.label && <figcaption className="px-5 py-4 text-sm font-semibold text-slate-700">{image.label}</figcaption>}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* The redesigned detail template uses editorial evidence cards here; legacy AcademicCitations remain on older product pages. */}
         {config.research && (
           <section className="px-6 py-20 md:px-10 lg:px-16">
@@ -267,6 +349,27 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
                     </div>
                     <span className="text-sm font-bold text-sky-700">Read note</span>
                   </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {config.faq.length > 0 && (
+          <section className="border-t border-slate-200 bg-[#FAFAFA] px-6 py-20 md:px-10 lg:px-16">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="max-w-3xl">
+                <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">FAQ</p>
+                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+                  Frequently Asked Questions
+                </h2>
+              </div>
+              <div className="mt-10 grid gap-4 lg:grid-cols-2">
+                {config.faq.map(item => (
+                  <article key={item.question} className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <h3 className="text-xl font-semibold tracking-normal text-slate-950">{item.question}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.answer}</p>
+                  </article>
                 ))}
               </div>
             </div>

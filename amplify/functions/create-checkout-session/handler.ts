@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/create-checkout-session';
+import { checkoutProductCatalog } from './productCatalog';
 
 type CheckoutItemInput = {
   id?: string;
@@ -110,20 +111,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     'https://www.ninescrolls.us', // Legacy domain
   ];
 
-  const productCatalog: Record<string, { name: string; price: number; imagePath?: string; taxCode?: string; priceId?: string }> = {
-    'hy-4l-rf': {
-      name: 'HY-4L - RF (13.56 MHz) Plasma Cleaner',
-      price: 7999,
-      imagePath: '/assets/images/products/ns-plasma-4r/main.jpg',
-      taxCode: 'txcd_99999999',
-    },
-    'hy-4l-mf': {
-      name: 'HY-4L - Mid-Frequency (40 kHz) Plasma Cleaner',
-      price: 6499,
-      imagePath: '/assets/images/products/ns-plasma-4r/main.jpg',
-      taxCode: 'txcd_99999999',
-    },
-  };
+  const productCatalog = checkoutProductCatalog;
 
   // Helper function to get CORS headers
   const getCorsHeaders = (origin: string): Record<string, string> => {

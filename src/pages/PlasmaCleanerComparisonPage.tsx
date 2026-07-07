@@ -336,7 +336,7 @@ export function PlasmaCleanerComparisonPage() {
                   Contact Sales
                 </Link>
                 <Link 
-                  to="/products/plasma-systems" 
+                  to="/products/plasma-cleaner"
                   style={{ 
                     padding: '0.75rem 1.5rem', 
                     backgroundColor: '#fff', 
@@ -363,7 +363,7 @@ export function PlasmaCleanerComparisonPage() {
             <ul style={{ listStyle: 'none', padding: 0, lineHeight: '2' }}>
               <li>
                 <Link 
-                  to="/products/plasma-systems" 
+                  to="/products/plasma-cleaner"
                   style={{ color: '#2563eb', textDecoration: 'none' }}
                   onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                   onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}

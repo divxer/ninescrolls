@@ -28,3 +28,24 @@ Remains the canonical RIE owner; the only page permitted a generic-RIE definitio
 ---
 
 **Governance:** 8 anti-cannibalization rules (R1–R7 + R8 advisory). See spec. Re-pull GSC ~3–4 weeks out to score Success Metrics #1–#4 (pillar off page 5; ICP overtakes comparison for icp-rie terms; ion-milling impressions down + CTR up; pillar "reactive ion etching" impression share 61% → >90%).
+
+---
+
+# ICP-RIE Product Downlink Pass (2026-07-06 20:05 PDT)
+
+Select-intent backlinks applied to **DynamoDB (live source of truth)** after the product-page boundary sprint and visible-FAQ rollout. One-shot script was created under `tmp/`, run with `--dry-run`, applied, verified, then deleted. Live snapshots were kept under `tmp/icp-ddb-backlink-snapshots/` as scratchpad only.
+
+## icp-rie-technology-advanced-etching (ICP-RIE technology guide)
+- **Title/H2:** unchanged; verified title `"ICP-RIE Technology: Principles, Equipment & Applications"` and 9 H2s byte-identical before/after.
+- **Before:** exact `href="/products/icp-etcher"` count = 0.
+- **After:** exact `href="/products/icp-etcher"` count = 1.
+- **Find:** `<p>For a full side-by-side selection guide covering plasma etching, RIE, and ICP-RIE reactor types and how to choose between them, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">comparison of PE, RIE, and ICP-RIE plasma etching</a>.</p>`
+- **Add:** `<p>If you are selecting an ICP-RIE etching system and need wafer-size, ICP power, bias-control, gas-line, temperature-range, or quote details, see the <a href="/products/icp-etcher">NineScrolls ICP-RIE etching system specifications</a>.</p>`
+
+## understanding-differences-pe-rie-icp-rie-plasma-etching (PE/RIE/ICP-RIE comparison)
+- **Title/H2:** unchanged; verified title `"PE vs RIE vs ICP-RIE: Which Plasma Etching Process Should You Choose?"` and 15 H2s byte-identical before/after.
+- **Before:** exact `href="/products/icp-etcher"` count = 2.
+- **After:** exact `href="/products/icp-etcher"` count = 2.
+- **Find:** `<h3><a href="/products/icp-etcher">ICP Etcher Series</a></h3>`
+- **Replace:** `<h3><a href="/products/icp-etcher">ICP-RIE Etching System Specifications</a></h3>`
+- **Rationale:** upgraded the existing product anchor instead of adding a third product link, preserving link density while giving the comparison page a stronger Select-intent anchor for the product entity.

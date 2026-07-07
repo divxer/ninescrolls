@@ -38,11 +38,36 @@ export interface ProductDetailAction {
   href: string;
 }
 
+export interface ProductDetailCommerceVariant {
+  sku: string;
+  label: string;
+  price: number;
+  cartName?: string;
+}
+
+export interface ProductDetailCommerce {
+  variants: [ProductDetailCommerceVariant, ...ProductDetailCommerceVariant[]];
+  defaultSku?: string;
+  addToCartLabel?: string;
+  quoteAction: ProductDetailAction;
+}
+
 export interface ProductDetailDatasheet {
   fileUrl: string;
   fileName: string;
   title: string;
   buttonLabel: string;
+}
+
+export interface ProductDetailGalleryImage extends ProductDetailImage {
+  label?: string;
+}
+
+export interface ProductDetailGallerySection {
+  eyebrow?: string;
+  heading: string;
+  copy?: string;
+  images: ProductDetailGalleryImage[];
 }
 
 export interface ProductDetailConfig {
@@ -77,6 +102,7 @@ export interface ProductDetailConfig {
     primaryAction: ProductDetailAction;
     secondaryAction: ProductDetailAction;
   };
+  commerce?: ProductDetailCommerce;
   datasheet: ProductDetailDatasheet;
   processIntro: {
     eyebrow: string;
@@ -102,6 +128,7 @@ export interface ProductDetailConfig {
     title: string;
     items: string[];
   };
+  gallery?: ProductDetailGallerySection;
   research?: {
     eyebrow: string;
     title: string;

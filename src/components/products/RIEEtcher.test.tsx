@@ -27,6 +27,7 @@ describe('RIEEtcher redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/rie-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What materials can the RIE platform process?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 
@@ -76,6 +77,16 @@ describe('RIEEtcher redesigned product page', () => {
 
     await waitFor(() => {
       expect(document.title).toBe('RIE Plasma Etching Platform | NineScrolls LLC');
+    });
+  });
+
+  it('keeps the RIE meta description scoped to RIE selection intent', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      const metaDescription = document.head.querySelector('meta[name="description"]');
+      expect(metaDescription).toHaveAttribute('content', expect.stringContaining('Reactive ion etching platform'));
+      expect(metaDescription?.getAttribute('content')).not.toContain('ICP-RIE etching system');
     });
   });
 
