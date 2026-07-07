@@ -34,6 +34,11 @@ export const icpEtcherConfig: ProductDetailConfig = {
       answer:
         'The ICP-RIE platform supports 4 inch to 12 inch wafers, with configurable loading, gas, RF, and temperature options depending on process needs.',
     },
+    {
+      question: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
+      answer:
+        'Use this product page when you are selecting an ICP-RIE etching system, checking wafer size, ICP power, bias control, gas lines, temperature range, applications, or quote requirements. Use the ICP-RIE Technology guide when you want to learn the principles of inductively coupled plasma generation, source power, bias power, and high-density plasma etching.',
+    },
   ],
   breadcrumb: {
     parentLabel: 'Products',

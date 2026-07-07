@@ -88,6 +88,17 @@ describe('ICPEtcher redesigned product page', () => {
     expect(metaDescription).toHaveAttribute('content', expect.stringContaining('diamond'));
   });
 
+  it('routes learn-intent readers to the ICP-RIE technology guide from the FAQ', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
+      })
+    ).toBeInTheDocument();
+  });
+
   it('does not render a nested main landmark inside the layout main', () => {
     renderPage();
 
