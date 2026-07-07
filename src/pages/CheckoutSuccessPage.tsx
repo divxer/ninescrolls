@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { useCart } from '../contexts/useCart';
@@ -17,30 +17,37 @@ export function CheckoutSuccessPage() {
                     'N/A';
   const { clearCart, items, getTotalPrice } = useCart();
 
-  // Clear cart and track purchase on successful payment
+  // Track purchase + clear cart exactly once per valid session id.
+  // The cart context functions/items are intentionally read at fire time, not
+  // depended upon: clearCart() mutates cart state, so listing items/getTotalPrice/
+  // clearCart in the dep array re-triggers this effect after the clear and loops
+  // (CartContext does not memoize these). The ref guard fires the side effect once.
+  const trackedSessionRef = useRef<string | null>(null);
   useEffect(() => {
-    if (sessionId && sessionId !== 'N/A') {
-      const total = getTotalPrice();
+    if (!sessionId || sessionId === 'N/A') return;
+    if (trackedSessionRef.current === sessionId) return;
+    trackedSessionRef.current = sessionId;
 
-      // Track purchase event
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'purchase', {
-          transaction_id: sessionId,
-          value: total,
-          currency: 'USD',
-          items: items.map((item) => ({
-            item_id: item.id,
-            item_name: item.name,
-            item_category: 'Plasma Systems',
-            price: item.price,
-            quantity: item.quantity,
-          })),
-        });
-      }
+    const total = getTotalPrice();
 
-      // Clear cart after successful payment
-      clearCart();
+    // Track purchase event
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'purchase', {
+        transaction_id: sessionId,
+        value: total,
+        currency: 'USD',
+        items: items.map((item) => ({
+          item_id: item.id,
+          item_name: item.name,
+          item_category: 'Plasma Systems',
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      });
     }
+
+    // Clear cart after successful payment
+    clearCart();
   }, [sessionId, clearCart, items, getTotalPrice]);
 
   return (

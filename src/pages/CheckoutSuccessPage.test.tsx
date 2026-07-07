@@ -74,6 +74,30 @@ describe('CheckoutSuccessPage', () => {
     });
   });
 
+  it('fires purchase + clearCart exactly once even when re-rendered (no effect loop)', async () => {
+    const view = renderSuccess();
+
+    await waitFor(() => expect(clearCart).toHaveBeenCalledTimes(1));
+
+    // Simulate the cart-context churn that a real clearCart() setState causes:
+    // a new items array reference on re-render. Without the once-per-session ref
+    // guard this re-triggers the effect and loops (Maximum update depth in the
+    // browser); the side effect must still have fired only once.
+    cartState.items = [];
+    view.rerender(
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/checkout/success?session_id=cs_test_123']}>
+          <Routes>
+            <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    expect(clearCart).toHaveBeenCalledTimes(1);
+    expect(window.gtag).toHaveBeenCalledTimes(1);
+  });
+
   it('uses noindex robots without changing success behavior', async () => {
     renderSuccess();
 
