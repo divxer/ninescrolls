@@ -77,7 +77,11 @@ describe('CheckoutSuccessPage', () => {
   it('uses noindex robots without changing success behavior', async () => {
     renderSuccess();
 
-    expect(screen.getByRole('heading', { name: /Transmission Received/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Order confirmed/i })).toBeInTheDocument();
+    expect(screen.getByText(/follow up with confirmation, documentation, and shipping coordination/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Contact Support/i })).toHaveAttribute('href', '/contact?topic=support');
+    expect(document.body).not.toHaveTextContent(/Transmission Received/i);
+    expect(document.body).not.toHaveTextContent(/3-4 weeks/i);
     await waitFor(() => {
       expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
     });

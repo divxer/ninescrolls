@@ -1,8 +1,9 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { useCart } from '../contexts/useCart';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 export function CheckoutSuccessPage() {
   useScrollToTop();
@@ -50,54 +51,46 @@ export function CheckoutSuccessPage() {
         url="/checkout/success"
         robots="noindex, nofollow"
       />
-      <main className="min-h-[819px] flex flex-col items-center justify-center text-center px-8">
-        <span
-          className="material-symbols-outlined text-8xl text-green-500 mb-8"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          check_circle
-        </span>
-        <h1 className="text-5xl font-headline font-bold mb-4">Transmission Received</h1>
-        <p className="text-xl text-on-surface-variant max-w-xl mb-10">
-          Thank you for your order. We have received your order and will process it shortly.
-        </p>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Checkout Complete"
+          title="Order confirmed"
+          copy="Thank you for your order. Our team will review your order details and follow up with confirmation, documentation, and shipping coordination."
+          primaryAction={{ label: 'Continue Shopping', href: '/products' }}
+          secondaryAction={{ label: 'Contact Support', href: '/contact?topic=support' }}
+          trustItems={['Payment received', 'Order review next', 'Formal invoice available']}
+        />
 
-        <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 p-8 max-w-lg w-full mb-10">
-          {sessionId !== 'N/A' ? (
-            <p className="text-sm text-on-surface-variant">
-              <span className="font-bold text-on-surface">Payment Session ID:</span> {sessionId}
+        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-8 py-12 lg:grid-cols-[1fr_0.8fr]">
+          <ConversionCard>
+            <h2 className="font-headline text-2xl font-bold text-slate-950">Payment details</h2>
+            {sessionId !== 'N/A' ? (
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                <span className="font-bold text-slate-950">Payment Session ID:</span> {sessionId}
+              </p>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                <span className="font-bold text-slate-950">Note:</span> Session ID not available. If you completed payment, you will receive an email confirmation shortly.
+              </p>
+            )}
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              You will receive an email confirmation shortly with order details. NineScrolls will coordinate documentation, order review, and shipping information after payment confirmation.
             </p>
-          ) : (
-            <p className="text-sm text-on-surface-variant">
-              <span className="font-bold">Note:</span> Session ID not available. If you completed payment, you will receive an email confirmation shortly.
-            </p>
-          )}
-          <p className="text-sm text-on-surface-variant mt-4">
-            Your payment was successful! You will receive an email confirmation shortly with order details and shipping information.
-          </p>
-          <p className="text-sm text-on-surface-variant mt-4">
-            <span className="font-bold">Note:</span> Formal invoice available upon request. Standard delivery: 3-4 weeks after order confirmation.
-          </p>
-        </div>
+          </ConversionCard>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Link
-            to="/products"
-            className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors"
-          >
-            Continue Shopping
-          </Link>
-          <Link
-            to="/contact"
-            className="border border-outline-variant py-4 px-8 rounded-sm font-bold uppercase text-on-surface hover:bg-surface-container-low transition-colors"
-          >
-            Contact Us
-          </Link>
-        </div>
-
-        <Link to="/" className="mt-12 text-primary font-bold hover:underline">
-          Return to Main Repository
-        </Link>
+          <ConversionCard>
+            <h2 className="font-headline text-2xl font-bold text-slate-950">Next steps</h2>
+            <div className="mt-6">
+              <TrustSignalList
+                items={[
+                  { title: 'Order review', copy: 'We verify order details and contact information.' },
+                  { title: 'Documentation', copy: 'Formal invoice and shipping information are coordinated after review.' },
+                  { title: 'Support', copy: 'Contact us if your procurement process needs additional documentation.' },
+                ]}
+              />
+            </div>
+          </ConversionCard>
+        </section>
       </main>
     </>
   );

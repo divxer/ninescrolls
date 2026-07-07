@@ -18,9 +18,14 @@ describe('CheckoutCancelPage', () => {
   it('shows recovery actions and noindex robots meta', async () => {
     renderCancel();
 
-    expect(screen.getByRole('heading', { name: /Payment Cancelled/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Return to Cart/i })).toHaveAttribute('href', '/cart');
-    expect(screen.getByRole('link', { name: /Contact Sales/i })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('heading', { name: /Checkout cancelled/i })).toBeInTheDocument();
+    screen.getAllByRole('link', { name: /Return to Cart/i }).forEach((link) => {
+      expect(link).toHaveAttribute('href', '/cart');
+    });
+    screen.getAllByRole('link', { name: /Request Quote/i }).forEach((link) => {
+      expect(link).toHaveAttribute('href', '/request-quote');
+    });
+    expect(document.body).not.toHaveTextContent(/Contact Sales/i);
     await waitFor(() => {
       expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
     });

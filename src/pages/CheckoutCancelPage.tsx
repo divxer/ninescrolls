@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 export function CheckoutCancelPage() {
   useScrollToTop();
@@ -13,39 +14,41 @@ export function CheckoutCancelPage() {
         url="/checkout/cancel"
         robots="noindex, nofollow"
       />
-      <main className="min-h-[819px] flex flex-col items-center justify-center text-center px-8">
-        <span
-          className="material-symbols-outlined text-8xl text-amber-500 mb-8"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          cancel
-        </span>
-        <h1 className="text-5xl font-headline font-bold mb-4">Payment Cancelled</h1>
-        <p className="text-xl text-on-surface-variant max-w-xl mb-4">
-          Your payment was cancelled. No charges were made.
-        </p>
-        <p className="text-base text-on-surface-variant max-w-md mb-10">
-          If you have any questions or need assistance, please contact our sales team.
-        </p>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Checkout Cancelled"
+          title="Checkout cancelled"
+          copy="No charges were made. You can return to the cart to retry checkout, or request a quote if your institution needs a formal purchasing path."
+          primaryAction={{ label: 'Return to Cart', href: '/cart' }}
+          secondaryAction={{ label: 'Request Quote', href: '/request-quote' }}
+          trustItems={['No charge captured', 'Cart can be reviewed', 'Quote path available']}
+        />
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Link
-            to="/cart"
-            className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors"
-          >
-            Return to Cart
-          </Link>
-          <Link
-            to="/contact"
-            className="border border-outline-variant py-4 px-8 rounded-sm font-bold uppercase text-on-surface hover:bg-surface-container-low transition-colors"
-          >
-            Contact Sales
-          </Link>
-        </div>
-
-        <Link to="/" className="mt-12 text-primary font-bold hover:underline">
-          Return to Main Repository
-        </Link>
+        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-8 py-12 md:grid-cols-2">
+          <ConversionCard>
+            <h2 className="font-headline text-2xl font-bold text-slate-950">Continue checkout</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Return to your cart to review quantities, confirm the order summary, and restart secure checkout.
+            </p>
+            <Link to="/cart" className="mt-6 inline-flex rounded-md bg-sky-600 px-5 py-3 text-sm font-bold text-white hover:bg-sky-700">
+              Return to Cart
+            </Link>
+          </ConversionCard>
+          <ConversionCard>
+            <h2 className="font-headline text-2xl font-bold text-slate-950">Use procurement instead</h2>
+            <div className="mt-4">
+              <TrustSignalList
+                items={[
+                  { title: 'Formal quote', copy: 'Use RFQ for purchase orders, institutional review, or custom requirements.' },
+                  { title: 'Engineering support', copy: 'Share configuration questions before completing an order.' },
+                ]}
+              />
+            </div>
+            <Link to="/request-quote" className="mt-6 inline-flex rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-slate-50">
+              Request Quote
+            </Link>
+          </ConversionCard>
+        </section>
       </main>
     </>
   );
