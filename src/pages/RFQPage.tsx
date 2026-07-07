@@ -5,6 +5,7 @@ import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
 import { parseRfqUrlParams } from './rfqUrlParams';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -364,6 +365,14 @@ export function RFQPage() {
     }
   }, [fieldErrors]);
 
+  // Programmatically associate a field with its visible error message for
+  // assistive tech. Spread onto an input whose error span carries id
+  // `rfq-error-<field>`. Returns nothing extra when the field has no error.
+  const fieldErrorAria = (field: string) =>
+    fieldErrors[field]
+      ? ({ 'aria-invalid': true, 'aria-describedby': `rfq-error-${field}` } as const)
+      : {};
+
   const validateField = useCallback((name: string, value: string | number | boolean): string => {
     switch (name) {
       case 'name':
@@ -677,59 +686,26 @@ export function RFQPage() {
         url="/request-quote"
       />
 
-      {/* Hero */}
-      <section className="bg-primary py-20 px-8">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-primary mb-4">
-            Request a Technical Proposal or Budgetary Quote
-          </h1>
-          <p className="text-lg text-on-primary/80 max-w-3xl mx-auto mb-8">
-            Share your process requirements, application goals, and technical constraints.
-            Our engineering team will review your inquiry and recommend a suitable equipment configuration
-            or preliminary quotation.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Custom Configurations</span>
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Engineering Review</span>
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Response Within 1 Business Day</span>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center items-center">
-            <span className="text-on-primary/60 text-sm">Typical applications:</span>
-            {['Plasma Cleaning', 'Surface Activation', 'RIE Etching', 'Thin Film Deposition', 'Materials Research'].map(app => (
-              <span key={app} className="text-on-primary/80 text-xs bg-on-primary/5 px-3 py-1 rounded-full">{app}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Equipment RFQ"
+          title="Request a process equipment quote"
+          copy="Share your process requirements, application goals, and technical constraints. Our engineering team will review your inquiry and recommend a suitable configuration or preliminary quotation."
+          trustItems={['Custom configurations', 'Engineering review', 'Response within 1 business day']}
+        />
 
       {/* Trust Bar */}
-      <section className="bg-surface-container-low py-12 px-8 border-b border-outline-variant/10">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">groups</span>
-            <div>
-              <p className="font-bold text-sm mb-1">Who We Serve</p>
-              <p className="text-xs text-on-surface-variant">Universities, national labs, R&amp;D centers, and semiconductor pilot-line programs</p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">description</span>
-            <div>
-              <p className="font-bold text-sm mb-1">What You Can Request</p>
-              <p className="text-xs text-on-surface-variant">Budgetary quote, technical consultation, custom configuration, or platform comparison</p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">trending_up</span>
-            <div>
-              <p className="font-bold text-sm mb-1">What Happens Next</p>
-              <ol className="text-xs text-on-surface-variant list-decimal list-inside space-y-0.5">
-                <li>Submit your requirements</li>
-                <li>Engineering review by our team</li>
-                <li>Proposal or technical consultation</li>
-              </ol>
-            </div>
-          </div>
+      <section className="px-8 py-12">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'Who we serve', copy: 'Universities, national labs, R&D centers, and semiconductor pilot-line programs.' }]} />
+          </ConversionCard>
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'What you can request', copy: 'Budgetary quote, technical consultation, custom configuration, or platform comparison.' }]} />
+          </ConversionCard>
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'What happens next', copy: 'Submit your requirements, receive engineering review, then a proposal or technical consultation.' }]} />
+          </ConversionCard>
         </div>
       </section>
 
@@ -763,6 +739,12 @@ export function RFQPage() {
             {/* ============================================================ */}
             {currentStep === 1 && (
               <>
+                {Object.keys(fieldErrors).length > 0 && (
+                  <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    Please complete the required fields before continuing.
+                  </div>
+                )}
+
                 {/* Contact Information */}
                 <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
                   <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">Contact Information</h2>
@@ -770,20 +752,20 @@ export function RFQPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-name" className={labelClasses}>Full Name <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required className={inputClasses} />
-                        {fieldErrors.name && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.name}</span>}
+                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required className={inputClasses} {...fieldErrorAria('name')} />
+                        {fieldErrors.name && <span id="rfq-error-name" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.name}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-email" className={labelClasses}>Email <span className="text-red-500">*</span></label>
-                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required className={inputClasses} />
-                        {fieldErrors.email && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.email}</span>}
+                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required className={inputClasses} {...fieldErrorAria('email')} />
+                        {fieldErrors.email && <span id="rfq-error-email" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.email}</span>}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-phone" className={labelClasses}>Phone <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
-                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" className={inputClasses} />
-                        {fieldErrors.phone && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.phone}</span>}
+                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" className={inputClasses} {...fieldErrorAria('phone')} />
+                        {fieldErrors.phone && <span id="rfq-error-phone" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.phone}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-role" className={labelClasses}>Role <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
@@ -796,8 +778,8 @@ export function RFQPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-institution" className={labelClasses}>Institution / Organization <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required className={inputClasses} />
-                        {fieldErrors.institution && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.institution}</span>}
+                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required className={inputClasses} {...fieldErrorAria('institution')} />
+                        {fieldErrors.institution && <span id="rfq-error-institution" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.institution}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-department" className={labelClasses}>Department <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
@@ -813,11 +795,11 @@ export function RFQPage() {
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="rfq-equipmentCategory" className={labelClasses}>Equipment Category <span className="text-red-500">*</span></label>
-                      <select id="rfq-equipmentCategory" name="equipmentCategory" value={formData.equipmentCategory} onChange={handleChange} onBlur={handleBlur} required className={selectClasses}>
+                      <select id="rfq-equipmentCategory" name="equipmentCategory" value={formData.equipmentCategory} onChange={handleChange} onBlur={handleBlur} required className={selectClasses} {...fieldErrorAria('equipmentCategory')}>
                         <option value="">Select equipment type...</option>
                         {EQUIPMENT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
-                      {fieldErrors.equipmentCategory && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.equipmentCategory}</span>}
+                      {fieldErrors.equipmentCategory && <span id="rfq-error-equipmentCategory" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.equipmentCategory}</span>}
                     </div>
                     <div>
                       <label htmlFor="rfq-applicationDescription" className={labelClasses}>
@@ -833,11 +815,12 @@ export function RFQPage() {
                         rows={5}
                         required
                         className={textareaClasses}
+                        {...fieldErrorAria('applicationDescription')}
                       />
                       <span className="text-xs text-on-surface-variant/60 mt-1 block">
                         {formData.applicationDescription.length}/3000 &mdash; Examples: plasma cleaning before bonding, SiO&#x2082; etching at &lt;100nm features, low-temperature PECVD for a-Si:H, RF sputtering of metal films, surface activation for polymers
                       </span>
-                      {fieldErrors.applicationDescription && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.applicationDescription}</span>}
+                      {fieldErrors.applicationDescription && <span id="rfq-error-applicationDescription" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.applicationDescription}</span>}
                     </div>
                   </div>
                 </div>
@@ -885,8 +868,8 @@ export function RFQPage() {
                       </div>
                       <div>
                         <label htmlFor="rfq-quantity" className={labelClasses}>Quantity</label>
-                        <input type="number" id="rfq-quantity" name="quantity" value={formData.quantity} onChange={handleChange} onBlur={handleBlur} min={1} step={1} className={inputClasses} />
-                        {fieldErrors.quantity && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.quantity}</span>}
+                        <input type="number" id="rfq-quantity" name="quantity" value={formData.quantity} onChange={handleChange} onBlur={handleBlur} min={1} step={1} className={inputClasses} {...fieldErrorAria('quantity')} />
+                        {fieldErrors.quantity && <span id="rfq-error-quantity" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.quantity}</span>}
                       </div>
                     </div>
                   </div>
@@ -943,26 +926,26 @@ export function RFQPage() {
                       <p className="text-xs text-on-surface-variant">Shipping address is required to calculate applicable taxes for your budgetary quote.</p>
                       <div>
                         <label htmlFor="rfq-shippingAddress" className={labelClasses}>Street Address <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required className={inputClasses} />
-                        {fieldErrors.shippingAddress && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingAddress}</span>}
+                        <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required className={inputClasses} {...fieldErrorAria('shippingAddress')} />
+                        {fieldErrors.shippingAddress && <span id="rfq-error-shippingAddress" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingAddress}</span>}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="rfq-shippingCity" className={labelClasses}>City <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required className={inputClasses} />
-                          {fieldErrors.shippingCity && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingCity}</span>}
+                          <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required className={inputClasses} {...fieldErrorAria('shippingCity')} />
+                          {fieldErrors.shippingCity && <span id="rfq-error-shippingCity" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingCity}</span>}
                         </div>
                         <div>
                           <label htmlFor="rfq-shippingState" className={labelClasses}>State / Province <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required className={inputClasses} />
-                          {fieldErrors.shippingState && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingState}</span>}
+                          <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required className={inputClasses} {...fieldErrorAria('shippingState')} />
+                          {fieldErrors.shippingState && <span id="rfq-error-shippingState" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingState}</span>}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="rfq-shippingZipCode" className={labelClasses}>ZIP / Postal Code <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required className={inputClasses} />
-                          {fieldErrors.shippingZipCode && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingZipCode}</span>}
+                          <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required className={inputClasses} {...fieldErrorAria('shippingZipCode')} />
+                          {fieldErrors.shippingZipCode && <span id="rfq-error-shippingZipCode" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingZipCode}</span>}
                         </div>
                         <div>
                           <label htmlFor="rfq-shippingCountry" className={labelClasses}>Country <span className="text-red-500">*</span></label>
@@ -998,7 +981,7 @@ export function RFQPage() {
                     <div>
                       <label className={labelClasses}>Upload Specifications, Drawings, Process Notes, or RFQ Documents <span className="text-on-surface-variant/50 text-[10px]">(max 3 files, 10MB each)</span></label>
                       <div className="mt-2">
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" multiple className="hidden" id="rfq-file-upload" />
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" multiple className="hidden" id="rfq-file-upload" {...fieldErrorAria('files')} />
                         <label
                           htmlFor="rfq-file-upload"
                           className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant/30 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
@@ -1028,7 +1011,7 @@ export function RFQPage() {
                           ))}
                         </ul>
                       )}
-                      {fieldErrors.files && <span data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.files}</span>}
+                      {fieldErrors.files && <span id="rfq-error-files" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.files}</span>}
                     </div>
 
                     <div>
@@ -1060,7 +1043,7 @@ export function RFQPage() {
                 </div>
 
                 {submitError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
+                  <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
                     {submitError}
                   </div>
                 )}
@@ -1111,6 +1094,7 @@ export function RFQPage() {
           </div>
         </div>
       </section>
+      </main>
     </>
   );
 }

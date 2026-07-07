@@ -3,6 +3,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/useCart';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 export function CartPage() {
   useScrollToTop();
@@ -28,19 +29,34 @@ export function CartPage() {
           title="Shopping Cart"
           description="Your shopping cart is empty."
           url="/cart"
+          robots="noindex, follow"
         />
-        <main className="py-24 px-8 max-w-7xl mx-auto">
-          <h1 className="text-5xl font-headline font-bold mb-16">Review Your Order</h1>
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <span className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-6">shopping_cart</span>
-            <p className="text-xl text-on-surface-variant mb-8">Your cart is empty.</p>
-            <Link
-              to="/products"
-              className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors"
-            >
-              Continue Shopping
-            </Link>
-          </div>
+        <main className="bg-[#FAFAFA]">
+          <ConversionHero
+            eyebrow="Equipment Cart"
+            title="Review your equipment order"
+            copy="Your cart is empty. Browse configured plasma cleaner systems, compare options, or request a quote for equipment that requires engineering review."
+            primaryAction={{ label: 'Continue Shopping', href: '/products' }}
+            secondaryAction={{ label: 'Request Quote', href: '/request-quote' }}
+            trustItems={['Secure checkout', 'Formal invoice available', 'Engineering support']}
+          />
+          <section className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-8 py-12 md:grid-cols-3">
+            <ConversionCard>
+              <h2 className="font-headline text-xl font-bold text-slate-950">Browse products</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Review plasma cleaners and process equipment families.</p>
+              <Link to="/products" className="mt-5 inline-flex text-sm font-bold text-sky-600 hover:text-sky-700">View Products</Link>
+            </ConversionCard>
+            <ConversionCard>
+              <h2 className="font-headline text-xl font-bold text-slate-950">Request a quote</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">For configured systems, custom requirements, or institutional purchasing.</p>
+              <Link to="/request-quote" className="mt-5 inline-flex text-sm font-bold text-sky-600 hover:text-sky-700">Request Quote</Link>
+            </ConversionCard>
+            <ConversionCard>
+              <h2 className="font-headline text-xl font-bold text-slate-950">Compare cleaners</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Match chamber size, RF/MF power, and use case before ordering.</p>
+              <Link to="/products/plasma-cleaner/compare" className="mt-5 inline-flex text-sm font-bold text-sky-600 hover:text-sky-700">Compare Models</Link>
+            </ConversionCard>
+          </section>
         </main>
       </>
     );
@@ -54,13 +70,20 @@ export function CartPage() {
         title="Shopping Cart"
         description="Review your order and proceed to checkout."
         url="/cart"
+        robots="noindex, follow"
       />
-      <main className="py-24 px-8 max-w-7xl mx-auto">
-        <h1 className="text-5xl font-headline font-bold mb-16">Review Your Order</h1>
-        <div className="flex flex-col lg:flex-row gap-12">
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Equipment Cart"
+          title="Review your equipment order"
+          copy="Confirm quantities, review pricing, and proceed to secure checkout. For institutional purchasing or custom configurations, request a quote instead."
+          secondaryAction={{ label: 'Request Quote', href: '/request-quote' }}
+          trustItems={['Secure Stripe checkout', 'Formal invoice available', 'Configuration support']}
+        />
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-8 py-12 lg:flex-row">
           <div className="flex-grow space-y-4">
             {items.map((item) => (
-              <div key={item.id} className="bg-white p-8 rounded-xl flex flex-col sm:flex-row gap-8 items-center border border-outline-variant/10">
+              <ConversionCard key={item.id} className="flex flex-col items-center gap-8 sm:flex-row">
                 {item.image && (
                   <div className="w-24 h-24 bg-slate-200 rounded-lg shrink-0 overflow-hidden">
                     <OptimizedImage
@@ -83,15 +106,15 @@ export function CartPage() {
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                       className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
-                      aria-label="Decrease quantity"
+                      aria-label={`Decrease quantity of ${item.name}`}
                     >
                       <span className="material-symbols-outlined text-lg">remove</span>
                     </button>
-                    <span className="w-10 h-10 flex items-center justify-center font-bold text-sm">{item.quantity}</span>
+                    <span className="w-10 h-10 flex items-center justify-center font-bold text-sm" aria-live="polite" aria-atomic="true">{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                       className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
-                      aria-label="Increase quantity"
+                      aria-label={`Increase quantity of ${item.name}`}
                     >
                       <span className="material-symbols-outlined text-lg">add</span>
                     </button>
@@ -102,16 +125,16 @@ export function CartPage() {
                   <button
                     onClick={() => removeItem(item.id)}
                     className="text-xs text-on-surface-variant hover:text-red-500 mt-2 transition-colors"
-                    aria-label="Remove item"
+                    aria-label={`Remove ${item.name}`}
                   >
                     Remove
                   </button>
                 </div>
-              </div>
+              </ConversionCard>
             ))}
           </div>
           <aside className="w-full lg:w-96">
-            <div className="bg-surface-container-low p-8 rounded-xl border border-outline-variant/10">
+            <ConversionCard>
               <h2 className="text-2xl font-headline font-bold mb-8">Summary</h2>
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
@@ -129,7 +152,7 @@ export function CartPage() {
               </div>
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary text-white py-4 rounded-sm font-bold uppercase mt-8 hover:bg-primary-container transition-colors"
+                className="w-full bg-sky-600 text-white py-4 rounded-md font-bold mt-8 hover:bg-sky-700 transition-colors"
               >
                 Proceed to Checkout
               </button>
@@ -139,7 +162,15 @@ export function CartPage() {
               >
                 Continue Shopping
               </Link>
-            </div>
+              <div className="mt-8 border-t border-slate-200 pt-6">
+                <TrustSignalList
+                  items={[
+                    { title: 'Secure payment', copy: 'Checkout is handled through Stripe.' },
+                    { title: 'Procurement friendly', copy: 'Formal invoice available upon request.' },
+                  ]}
+                />
+              </div>
+            </ConversionCard>
           </aside>
         </div>
       </main>

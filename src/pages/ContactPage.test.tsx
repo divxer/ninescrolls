@@ -8,7 +8,9 @@ import { ContactPage } from './ContactPage';
 // ContactFormInline drags in analytics + amplify; stub it so these tests
 // stay focused on ContactPage's routing / hook-order behavior.
 vi.mock('../components/common/ContactFormInline', () => ({
-  ContactFormInline: () => <div data-testid="contact-form" />,
+  ContactFormInline: ({ inquiryType, prefillEmail }: { inquiryType?: string; prefillEmail?: string }) => (
+    <div data-testid="contact-form" data-inquiry-type={inquiryType || ''} data-prefill-email={prefillEmail || ''} />
+  ),
 }));
 
 function renderAt(initialEntry: string, extra?: React.ReactNode) {
@@ -36,6 +38,31 @@ describe('ContactPage', () => {
     renderAt('/contact?topic=quote');
     expect(screen.getByText('RFQ PAGE')).toBeInTheDocument();
     expect(screen.queryByTestId('contact-form')).not.toBeInTheDocument();
+  });
+
+  it('selects engineer consultation for topic=expert', () => {
+    renderAt('/contact?topic=expert');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-inquiry-type', 'engineer');
+  });
+
+  it('selects feasibility for topic=application', () => {
+    renderAt('/contact?topic=application');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-inquiry-type', 'feasibility');
+  });
+
+  it('passes email query prefill to the inline form', () => {
+    renderAt('/contact?topic=expert&email=buyer%40lab.edu');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-prefill-email', 'buyer@lab.edu');
+  });
+
+  it('presents the redesigned engineering contact entry points without breaking the form contract', () => {
+    renderAt('/contact?topic=expert&email=buyer%40lab.edu');
+
+    expect(screen.getByRole('heading', { name: /Talk to a NineScrolls engineer/i })).toBeInTheDocument();
+    expect(screen.getByText('San Diego based')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Request Quote/i })).toHaveAttribute('href', '/request-quote');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-inquiry-type', 'engineer');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-prefill-email', 'buyer@lab.edu');
   });
 
   // Regression for the hooks-order bug: the conditional `return <Navigate>`

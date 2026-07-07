@@ -10,6 +10,7 @@ interface SEOProps {
   imageHeight?: number;
   url?: string;
   type?: string;
+  robots?: string;
 }
 
 export function SEO({ 
@@ -20,7 +21,8 @@ export function SEO({
   imageWidth = 1200,
   imageHeight = 630,
   url = '/',
-  type = 'website'
+  type = 'website',
+  robots = 'index, follow',
 }: SEOProps) {
   const siteTitle = 'NineScrolls LLC';
   const fullTitle = `${title} | ${siteTitle}`;
@@ -51,8 +53,8 @@ export function SEO({
       <meta name="twitter:image" content={fullImage} />
 
       {/* Additional SEO meta tags */}
-      <meta name="robots" content="index, follow" />
-      <meta name="googlebot" content="index, follow" />
+      <meta name="robots" content={robots} />
+      <meta name="googlebot" content={robots} />
       <link rel="canonical" href={fullUrl} />
     </Helmet>
   );

@@ -1,5 +1,64 @@
-import { describe, it, expect } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { HelmetProvider } from 'react-helmet-async';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RFQPage } from './RFQPage';
 import { parseRfqUrlParams } from './rfqUrlParams';
+
+const { trackCustomEvent, trackRFQSubmission, trackRFQSubmissionWithAnalysis } = vi.hoisted(() => ({
+  trackCustomEvent: vi.fn(),
+  trackRFQSubmission: vi.fn(),
+  trackRFQSubmissionWithAnalysis: vi.fn(),
+}));
+
+vi.mock('../hooks/useCombinedAnalytics', () => ({
+  useCombinedAnalytics: () => ({
+    trackCustomEvent,
+    trackRFQSubmission,
+    segment: {
+      trackRFQSubmissionWithAnalysis,
+    },
+  }),
+}));
+
+vi.mock('../services/behaviorAnalytics', () => ({
+  behaviorAnalytics: {
+    trackFormStarted: vi.fn(),
+    trackFormInteraction: vi.fn(),
+    trackFormAbandoned: vi.fn(),
+    trackFormCompleted: vi.fn(),
+  },
+}));
+
+vi.mock('../services/analyticsStorageService', () => ({
+  getVisitorId: () => 'visitor-test',
+}));
+
+function renderRfq(initialEntry: string) {
+  return render(
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <RFQPage />
+      </MemoryRouter>
+    </HelmetProvider>
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    callback(0);
+    return 0;
+  });
+  vi.stubGlobal('fetch', vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ referenceNumber: 'RFQ-123456-TEST', rfqId: 'rfq-test' }),
+  })));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('parseRfqUrlParams', () => {
   it('parses single product from ?products=', () => {
@@ -66,5 +125,118 @@ describe('parseRfqUrlParams', () => {
   it('trims and filters empty product slugs', () => {
     const r = parseRfqUrlParams('?products= a , ,b ,');
     expect(r.productsList).toEqual(['a', 'b']);
+  });
+});
+
+describe('RFQPage URL attribution contract', () => {
+  it('renders the redesigned RFQ header while preserving URL prefill', async () => {
+    renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
+
+    expect(screen.getByRole('heading', { name: /Request a process equipment quote/i })).toBeInTheDocument();
+    expect(screen.getByText('Engineering review')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Preferred Model/i)).toHaveValue('icp-etcher');
+    });
+  });
+
+  it('announces validation errors accessibly', async () => {
+    renderRfq('/request-quote');
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/complete the required fields/i);
+  });
+
+  it('associates invalid fields with their error messages for assistive tech', async () => {
+    renderRfq('/request-quote');
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    await screen.findByRole('alert');
+
+    const nameInput = screen.getByLabelText(/Full Name/i);
+    expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+    const describedBy = nameInput.getAttribute('aria-describedby');
+    expect(describedBy).toBe('rfq-error-name');
+    // the referenced error node must exist and carry the visible message
+    expect(document.getElementById(describedBy!)).toHaveTextContent(/./);
+  });
+
+  it('prefills product, category, source, via, and multi-product comments from URL params', () => {
+    renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
+
+    expect(screen.getByLabelText(/Equipment Category/i)).toHaveValue('ICP');
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    expect(screen.getByLabelText(/Preferred Model/i)).toHaveValue('icp-etcher');
+    const comments = screen.getByLabelText(/Special Requirements/i) as HTMLTextAreaElement;
+    expect(comments.value).toContain('- icp-etcher');
+    expect(comments.value).toContain('- rie-etcher');
+  });
+
+  it('keeps required labels associated with visible controls', () => {
+    renderRfq('/request-quote?product=pecvd');
+
+    expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Institution/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Application \/ Research Goal/i)).toBeInTheDocument();
+  });
+
+  it('submits rendered URL attribution fields in the RFQ payload and analytics event', async () => {
+    renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Preferred Model/i)).toHaveValue('icp-etcher');
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Request Proposal/i }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('https://api.ninescrolls.com/api/rfq', expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    });
+    const fetchMock = fetch as unknown as { mock: { calls: Array<[string, RequestInit]> } };
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body).toMatchObject({
+      name: 'Ada Lovelace',
+      email: 'ada@example.edu',
+      institution: 'Example Lab',
+      equipmentCategory: 'ICP',
+      specificModel: 'icp-etcher',
+      referrerSource: 'insights/test',
+      visitorId: 'visitor-test',
+    });
+    expect(body.additionalComments).toContain('- icp-etcher');
+    expect(body.additionalComments).toContain('- rie-etcher');
+    expect(trackCustomEvent).toHaveBeenCalledWith('rfq_submit_attribution', {
+      referrerSource: 'insights/test',
+      productCount: 2,
+      viaAskCheckbox: true,
+    });
   });
 });
