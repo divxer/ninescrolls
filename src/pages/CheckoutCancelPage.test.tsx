@@ -25,7 +25,8 @@ describe('CheckoutCancelPage', () => {
     screen.getAllByRole('link', { name: /Request Quote/i }).forEach((link) => {
       expect(link).toHaveAttribute('href', '/request-quote');
     });
-    expect(document.body).not.toHaveTextContent(/Contact Sales/i);
+    // Cancelling buyers often need a PO/procurement path — keep a direct sales contact route.
+    expect(screen.getByRole('link', { name: /Talk to Sales/i })).toHaveAttribute('href', '/contact?topic=support');
     await waitFor(() => {
       expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
     });

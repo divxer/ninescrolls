@@ -44,9 +44,14 @@ export function CheckoutCancelPage() {
                 ]}
               />
             </div>
-            <Link to="/request-quote" className="mt-6 inline-flex rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-slate-50">
-              Request Quote
-            </Link>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/request-quote" className="inline-flex rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-slate-50">
+                Request Quote
+              </Link>
+              <Link to="/contact?topic=support" className="inline-flex rounded-md px-5 py-3 text-sm font-bold text-sky-700 hover:text-sky-800 hover:underline">
+                Talk to Sales
+              </Link>
+            </div>
           </ConversionCard>
         </section>
       </main>
