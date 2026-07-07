@@ -129,6 +129,33 @@ describe('parseRfqUrlParams', () => {
 });
 
 describe('RFQPage URL attribution contract', () => {
+  it('renders the redesigned RFQ header while preserving URL prefill', async () => {
+    renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
+
+    expect(screen.getByRole('heading', { name: /Request a process equipment quote/i })).toBeInTheDocument();
+    expect(screen.getByText('Engineering review')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Preferred Model/i)).toHaveValue('icp-etcher');
+    });
+  });
+
+  it('announces validation errors accessibly', async () => {
+    renderRfq('/request-quote');
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/complete the required fields/i);
+  });
+
   it('prefills product, category, source, via, and multi-product comments from URL params', () => {
     renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
 

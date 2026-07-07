@@ -5,6 +5,7 @@ import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
 import { parseRfqUrlParams } from './rfqUrlParams';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -677,59 +678,26 @@ export function RFQPage() {
         url="/request-quote"
       />
 
-      {/* Hero */}
-      <section className="bg-primary py-20 px-8">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-primary mb-4">
-            Request a Technical Proposal or Budgetary Quote
-          </h1>
-          <p className="text-lg text-on-primary/80 max-w-3xl mx-auto mb-8">
-            Share your process requirements, application goals, and technical constraints.
-            Our engineering team will review your inquiry and recommend a suitable equipment configuration
-            or preliminary quotation.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Custom Configurations</span>
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Engineering Review</span>
-            <span className="bg-on-primary/10 text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full">Response Within 1 Business Day</span>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center items-center">
-            <span className="text-on-primary/60 text-sm">Typical applications:</span>
-            {['Plasma Cleaning', 'Surface Activation', 'RIE Etching', 'Thin Film Deposition', 'Materials Research'].map(app => (
-              <span key={app} className="text-on-primary/80 text-xs bg-on-primary/5 px-3 py-1 rounded-full">{app}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Equipment RFQ"
+          title="Request a process equipment quote"
+          copy="Share your process requirements, application goals, and technical constraints. Our engineering team will review your inquiry and recommend a suitable configuration or preliminary quotation."
+          trustItems={['Custom configurations', 'Engineering review', 'Response within 1 business day']}
+        />
 
       {/* Trust Bar */}
-      <section className="bg-surface-container-low py-12 px-8 border-b border-outline-variant/10">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">groups</span>
-            <div>
-              <p className="font-bold text-sm mb-1">Who We Serve</p>
-              <p className="text-xs text-on-surface-variant">Universities, national labs, R&amp;D centers, and semiconductor pilot-line programs</p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">description</span>
-            <div>
-              <p className="font-bold text-sm mb-1">What You Can Request</p>
-              <p className="text-xs text-on-surface-variant">Budgetary quote, technical consultation, custom configuration, or platform comparison</p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <span className="material-symbols-outlined text-3xl text-primary shrink-0">trending_up</span>
-            <div>
-              <p className="font-bold text-sm mb-1">What Happens Next</p>
-              <ol className="text-xs text-on-surface-variant list-decimal list-inside space-y-0.5">
-                <li>Submit your requirements</li>
-                <li>Engineering review by our team</li>
-                <li>Proposal or technical consultation</li>
-              </ol>
-            </div>
-          </div>
+      <section className="px-8 py-12">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'Who we serve', copy: 'Universities, national labs, R&D centers, and semiconductor pilot-line programs.' }]} />
+          </ConversionCard>
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'What you can request', copy: 'Budgetary quote, technical consultation, custom configuration, or platform comparison.' }]} />
+          </ConversionCard>
+          <ConversionCard>
+            <TrustSignalList items={[{ title: 'What happens next', copy: 'Submit your requirements, receive engineering review, then a proposal or technical consultation.' }]} />
+          </ConversionCard>
         </div>
       </section>
 
@@ -763,6 +731,12 @@ export function RFQPage() {
             {/* ============================================================ */}
             {currentStep === 1 && (
               <>
+                {Object.keys(fieldErrors).length > 0 && (
+                  <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    Please complete the required fields before continuing.
+                  </div>
+                )}
+
                 {/* Contact Information */}
                 <div className="bg-white rounded-xl border border-outline-variant/10 shadow-sm p-8 mb-6">
                   <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">Contact Information</h2>
@@ -1060,7 +1034,7 @@ export function RFQPage() {
                 </div>
 
                 {submitError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
+                  <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
                     {submitError}
                   </div>
                 )}
@@ -1111,6 +1085,7 @@ export function RFQPage() {
           </div>
         </div>
       </section>
+      </main>
     </>
   );
 }

@@ -55,6 +55,16 @@ describe('ContactPage', () => {
     expect(screen.getByTestId('contact-form')).toHaveAttribute('data-prefill-email', 'buyer@lab.edu');
   });
 
+  it('presents the redesigned engineering contact entry points without breaking the form contract', () => {
+    renderAt('/contact?topic=expert&email=buyer%40lab.edu');
+
+    expect(screen.getByRole('heading', { name: /Talk to a NineScrolls engineer/i })).toBeInTheDocument();
+    expect(screen.getByText('San Diego based')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Request Quote/i })).toHaveAttribute('href', '/request-quote');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-inquiry-type', 'engineer');
+    expect(screen.getByTestId('contact-form')).toHaveAttribute('data-prefill-email', 'buyer@lab.edu');
+  });
+
   // Regression for the hooks-order bug: the conditional `return <Navigate>`
   // used to sit before two useEffect calls, so switching topic from a
   // non-quote value to "quote" on the same component instance changed the

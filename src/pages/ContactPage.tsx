@@ -1,8 +1,9 @@
 import { Helmet } from 'react-helmet-async';
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, Navigate, Link } from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 import { ContactFormInline } from '../components/common/ContactFormInline';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
 type InquiryType = 'feasibility' | 'engineer' | null;
 
@@ -134,25 +135,21 @@ export function ContactPage() {
         </script>
       </Helmet>
 
-      <main className="py-24 px-8">
-        {/* Hero + Contact Info */}
-        <div className="max-w-7xl mx-auto mb-24">
-          <h1 className="text-6xl font-headline font-bold mb-4">Technical Support & Expert Consultation</h1>
-          <p className="text-xl text-on-surface-variant mb-2">Talk with our engineers about technical feasibility, application fit, or service support</p>
-          <p className="text-sm text-on-surface-variant mb-8">1-2 business day response -- NDA available upon request</p>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Engineering Contact"
+          title="Talk to a NineScrolls engineer"
+          copy="Get help with process fit, equipment configuration, service support, or procurement next steps."
+          primaryAction={{ label: 'Request Quote', href: '/request-quote' }}
+          secondaryAction={{ label: 'Service Support', href: '/service-support' }}
+          trustItems={['San Diego based', '1-2 business day response', 'NDA available upon request']}
+        />
 
-          {/* Cross-link to RFQ page */}
-          <div className="bg-primary-container rounded-lg px-6 py-4 inline-block mb-16">
-            <p className="text-on-primary-container">
-              Looking for a budgetary quote?{' '}
-              <Link to="/request-quote" className="text-on-primary-container font-bold underline hover:no-underline">Use our Request for Quote form</Link>
-            </p>
-          </div>
-
-          {/* Contact Info Grid */}
+        {/* Contact Info Grid */}
+        <section className="mx-auto max-w-7xl px-8 py-16">
           <h2 className="sr-only">Contact Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <ConversionCard>
               <div className="flex items-start gap-4 mb-6">
                 <span className="material-symbols-outlined text-primary text-3xl">location_on</span>
                 <h3 className="text-xl font-headline font-bold">Office Location</h3>
@@ -167,9 +164,9 @@ export function ContactPage() {
                 <h4 className="font-bold text-sm mb-1">Business Hours</h4>
                 <p className="text-on-surface-variant text-sm">Monday - Friday: 9:00 AM - 5:00 PM PST</p>
               </div>
-            </div>
+            </ConversionCard>
 
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+            <ConversionCard>
               <div className="flex items-start gap-4 mb-6">
                 <span className="material-symbols-outlined text-primary text-3xl">mail</span>
                 <h3 className="text-xl font-headline font-bold">Contact Information</h3>
@@ -192,9 +189,9 @@ export function ContactPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </ConversionCard>
 
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant">
+            <ConversionCard>
               <div className="flex items-start gap-4 mb-6">
                 <span className="material-symbols-outlined text-primary text-3xl">support_agent</span>
                 <h3 className="text-xl font-headline font-bold">Technical Support</h3>
@@ -206,12 +203,12 @@ export function ContactPage() {
                 <p className="text-on-surface-variant text-sm">Monday - Friday: 9:00 AM - 6:00 PM PST</p>
                 <p className="text-xs text-on-surface-variant mt-1">Voicemail available 24/7 for critical issues</p>
               </div>
-            </div>
+            </ConversionCard>
           </div>
-        </div>
+        </section>
 
         {/* Form Section */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24" ref={formSectionRef}>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 px-8 pb-24" ref={formSectionRef}>
           {/* Left Column: Inquiry Type Selection + Trust Block */}
           <div>
             {topic === 'newsletter' ? (
@@ -277,27 +274,17 @@ export function ContactPage() {
             )}
 
             {/* What Happens After You Submit - Trust Block */}
-            <div className="bg-surface-container-low rounded-xl p-8">
+            <ConversionCard>
               <h3 className="text-xl font-headline font-bold mb-6">What Happens After You Submit</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">check_circle</span>
-                  <span className="text-on-surface-variant">Your message is reviewed by a technical team member</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">check_circle</span>
-                  <span className="text-on-surface-variant">We typically respond within 1-2 business days</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">check_circle</span>
-                  <span className="text-on-surface-variant">No automated sales sequences or mailing lists</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">check_circle</span>
-                  <span className="text-on-surface-variant">NDA available upon request</span>
-                </li>
-              </ul>
-            </div>
+              <TrustSignalList
+                items={[
+                  { title: 'Technical review', copy: 'Your message is reviewed by a technical team member.' },
+                  { title: '1-2 business day response', copy: 'We route requests by application, equipment family, and urgency.' },
+                  { title: 'No automated sales sequence', copy: 'No spam. No mailing lists. Technical discussions only.' },
+                  { title: 'NDA available', copy: 'We can support confidential process or application discussions.' },
+                ]}
+              />
+            </ConversionCard>
 
             {/* Safety Commitment */}
             <div className="mt-8 border-t border-outline-variant pt-8">
@@ -309,7 +296,7 @@ export function ContactPage() {
           </div>
 
           {/* Right Column: Form */}
-          <div className="bg-surface-container-low p-10 rounded-xl">
+          <div className="rounded-xl border border-slate-200 bg-white p-8 lg:p-10">
             <h2 className="text-2xl font-headline font-bold mb-2">
               {topic === 'newsletter' && 'Newsletter Subscription Form'}
               {topic !== 'newsletter' && selectedInquiryType === 'feasibility' && 'Technical Feasibility Check'}
