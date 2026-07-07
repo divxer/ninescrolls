@@ -72,8 +72,11 @@ describe('StartupPackagePage redesign', () => {
 
     const body = document.body;
     expect(body).not.toHaveTextContent(/2–3 years warranty/i);
+    expect(body).not.toHaveTextContent(/2-3 years warranty/i);
+    expect(body).not.toHaveTextContent(/extended warranty/i);
     expect(body).not.toHaveTextContent(/free installation and training/i);
     expect(body).not.toHaveTextContent(/300 research institutions/i);
+    expect(body).not.toHaveTextContent(/Over 300/i);
     expect(body).not.toHaveTextContent(/STARTUP PACKAGE 2025/i);
 
     expect(screen.getByRole('link', { name: /ICP-RIE \/ RIE/i })).toHaveAttribute('href', '/products/icp-etcher');
