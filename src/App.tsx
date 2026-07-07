@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/layout/Layout';
@@ -7,11 +7,13 @@ import { GoogleAnalytics } from './components/analytics/GoogleAnalytics';
 import { PageTimeTracker } from './components/analytics/PageTimeTracker';
 import { HubSpotPageViewSync } from './components/analytics/HubSpotPageViewSync';
 import { RedirectHandler } from './components/common/RedirectHandler';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CartProvider } from './contexts/CartContext';
+import { lazyWithReload } from './utils/lazyWithReload';
 
 // Admin routes load lazily (only under /admin) so the public bundle never ships
 // the admin auth UI (@aws-amplify/ui-react Authenticator + its CSS theme).
-const AdminRoutes = lazy(() => import('./routes/AdminRoutes'));
+const AdminRoutes = lazyWithReload(() => import('./routes/AdminRoutes'));
 
 function AppShell() {
   const location = useLocation();
@@ -50,7 +52,9 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
-        <AppShell />
+        <ErrorBoundary>
+          <AppShell />
+        </ErrorBoundary>
       </Router>
     </HelmetProvider>
   );

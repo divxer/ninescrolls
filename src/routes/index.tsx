@@ -1,49 +1,50 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { lazyWithReload } from '../utils/lazyWithReload';
 
 // ─── Lazy-loaded pages ──────────────────────────────────────────────────────
 // Critical path (HomePage) is eagerly loaded; everything else is code-split.
 
-const AboutPage = lazy(() => import('../pages/AboutPage').then(m => ({ default: m.AboutPage })));
-const ProductsPage = lazy(() => import('../pages/ProductsPage').then(m => ({ default: m.ProductsPage })));
-const CareersPage = lazy(() => import('../pages/CareersPage').then(m => ({ default: m.CareersPage })));
-const ContactPage = lazy(() => import('../pages/ContactPage').then(m => ({ default: m.ContactPage })));
-const ServiceSupportPage = lazy(() => import('../pages/ServiceSupportPage').then(m => ({ default: m.ServiceSupportPage })));
-const InsightsPage = lazy(() => import('../pages/InsightsPage').then(m => ({ default: m.InsightsPage })));
-const InsightsPostPage = lazy(() => import('../pages/InsightsPostPage').then(m => ({ default: m.InsightsPostPage })));
-const NewsPage = lazy(() => import('../pages/NewsPage').then(m => ({ default: m.NewsPage })));
-const NewsPostPage = lazy(() => import('../pages/NewsPostPage').then(m => ({ default: m.NewsPostPage })));
-const PrivacyPage = lazy(() => import('../pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
-const ReturnPolicyPage = lazy(() => import('../pages/ReturnPolicyPage').then(m => ({ default: m.ReturnPolicyPage })));
-const StartupPackagePage = lazy(() => import('../pages/StartupPackagePage').then(m => ({ default: m.StartupPackagePage })));
-const PlasmaCleanerOverviewPage = lazy(() => import('../pages/PlasmaCleanerOverviewPage').then(m => ({ default: m.PlasmaCleanerOverviewPage })));
-const PlasmaSystemsComparePage = lazy(() => import('../pages/PlasmaSystemsComparePage').then(m => ({ default: m.PlasmaSystemsComparePage })));
-const CartPage = lazy(() => import('../pages/CartPage').then(m => ({ default: m.CartPage })));
-const CheckoutPage = lazy(() => import('../pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
-const CheckoutSuccessPage = lazy(() => import('../pages/CheckoutSuccessPage').then(m => ({ default: m.CheckoutSuccessPage })));
-const CheckoutCancelPage = lazy(() => import('../pages/CheckoutCancelPage').then(m => ({ default: m.CheckoutCancelPage })));
-const RFQPage = lazy(() => import('../pages/RFQPage').then(m => ({ default: m.RFQPage })));
+const AboutPage = lazyWithReload(() => import('../pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const ProductsPage = lazyWithReload(() => import('../pages/ProductsPage').then(m => ({ default: m.ProductsPage })));
+const CareersPage = lazyWithReload(() => import('../pages/CareersPage').then(m => ({ default: m.CareersPage })));
+const ContactPage = lazyWithReload(() => import('../pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const ServiceSupportPage = lazyWithReload(() => import('../pages/ServiceSupportPage').then(m => ({ default: m.ServiceSupportPage })));
+const InsightsPage = lazyWithReload(() => import('../pages/InsightsPage').then(m => ({ default: m.InsightsPage })));
+const InsightsPostPage = lazyWithReload(() => import('../pages/InsightsPostPage').then(m => ({ default: m.InsightsPostPage })));
+const NewsPage = lazyWithReload(() => import('../pages/NewsPage').then(m => ({ default: m.NewsPage })));
+const NewsPostPage = lazyWithReload(() => import('../pages/NewsPostPage').then(m => ({ default: m.NewsPostPage })));
+const PrivacyPage = lazyWithReload(() => import('../pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+const ReturnPolicyPage = lazyWithReload(() => import('../pages/ReturnPolicyPage').then(m => ({ default: m.ReturnPolicyPage })));
+const StartupPackagePage = lazyWithReload(() => import('../pages/StartupPackagePage').then(m => ({ default: m.StartupPackagePage })));
+const PlasmaCleanerOverviewPage = lazyWithReload(() => import('../pages/PlasmaCleanerOverviewPage').then(m => ({ default: m.PlasmaCleanerOverviewPage })));
+const PlasmaSystemsComparePage = lazyWithReload(() => import('../pages/PlasmaSystemsComparePage').then(m => ({ default: m.PlasmaSystemsComparePage })));
+const CartPage = lazyWithReload(() => import('../pages/CartPage').then(m => ({ default: m.CartPage })));
+const CheckoutPage = lazyWithReload(() => import('../pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
+const CheckoutSuccessPage = lazyWithReload(() => import('../pages/CheckoutSuccessPage').then(m => ({ default: m.CheckoutSuccessPage })));
+const CheckoutCancelPage = lazyWithReload(() => import('../pages/CheckoutCancelPage').then(m => ({ default: m.CheckoutCancelPage })));
+const RFQPage = lazyWithReload(() => import('../pages/RFQPage').then(m => ({ default: m.RFQPage })));
 
 // Product pages
-const ICPEtcher = lazy(() => import('../components/products').then(m => ({ default: m.ICPEtcher })));
-const RIEEtcher = lazy(() => import('../components/products').then(m => ({ default: m.RIEEtcher })));
-const CompactRIE = lazy(() => import('../components/products').then(m => ({ default: m.CompactRIE })));
-const IBERIBESystem = lazy(() => import('../components/products').then(m => ({ default: m.IBERIBESystem })));
-const ALDSystem = lazy(() => import('../components/products').then(m => ({ default: m.ALDSystem })));
-const StriperSystem = lazy(() => import('../components/products').then(m => ({ default: m.StriperSystem })));
-const HDPCVDSystem = lazy(() => import('../components/products').then(m => ({ default: m.HDPCVDSystem })));
-const SputterSystem = lazy(() => import('../components/products').then(m => ({ default: m.SputterSystem })));
-const EBeamEvaporator = lazy(() => import('../components/products').then(m => ({ default: m.EBeamEvaporator })));
-const CoaterDeveloper = lazy(() => import('../components/products').then(m => ({ default: m.CoaterDeveloper })));
-const PECVDSystem = lazy(() => import('../components/products').then(m => ({ default: m.PECVDSystem })));
-const HY4L = lazy(() => import('../components/products').then(m => ({ default: m.HY4L })));
-const HY20L = lazy(() => import('../components/products').then(m => ({ default: m.HY20L })));
-const HY20LRF = lazy(() => import('../components/products').then(m => ({ default: m.HY20LRF })));
-const PlutoT = lazy(() => import('../components/products').then(m => ({ default: m.PlutoT })));
-const PlutoM = lazy(() => import('../components/products').then(m => ({ default: m.PlutoM })));
-const PlutoF = lazy(() => import('../components/products').then(m => ({ default: m.PlutoF })));
+const ICPEtcher = lazyWithReload(() => import('../components/products').then(m => ({ default: m.ICPEtcher })));
+const RIEEtcher = lazyWithReload(() => import('../components/products').then(m => ({ default: m.RIEEtcher })));
+const CompactRIE = lazyWithReload(() => import('../components/products').then(m => ({ default: m.CompactRIE })));
+const IBERIBESystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.IBERIBESystem })));
+const ALDSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.ALDSystem })));
+const StriperSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.StriperSystem })));
+const HDPCVDSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HDPCVDSystem })));
+const SputterSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.SputterSystem })));
+const EBeamEvaporator = lazyWithReload(() => import('../components/products').then(m => ({ default: m.EBeamEvaporator })));
+const CoaterDeveloper = lazyWithReload(() => import('../components/products').then(m => ({ default: m.CoaterDeveloper })));
+const PECVDSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PECVDSystem })));
+const HY4L = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY4L })));
+const HY20L = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY20L })));
+const HY20LRF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY20LRF })));
+const PlutoT = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoT })));
+const PlutoM = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoM })));
+const PlutoF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoF })));
 
 // ─── Loading fallback ───────────────────────────────────────────────────────
 function PageLoader() {
