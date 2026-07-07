@@ -79,6 +79,16 @@ describe('RIEEtcher redesigned product page', () => {
     });
   });
 
+  it('keeps the RIE meta description scoped to RIE selection intent', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      const metaDescription = document.head.querySelector('meta[name="description"]');
+      expect(metaDescription).toHaveAttribute('content', expect.stringContaining('Reactive ion etching platform'));
+      expect(metaDescription?.getAttribute('content')).not.toContain('ICP-RIE etching system');
+    });
+  });
+
   it('derives canonical and product schema URLs from the RIE slug', async () => {
     renderPage();
 

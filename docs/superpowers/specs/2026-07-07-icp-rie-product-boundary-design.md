@@ -53,14 +53,13 @@ Success is a cleaner entity graph, not an immediate ranking promise.
 ## In Scope
 
 1. Update the ICP-RIE product page's SEO title and meta description to signal equipment-selection intent.
-2. Add or adjust one FAQ entry on the ICP-RIE product page that sends Learn-intent users to the ICP-RIE technology guide and Select-intent users through the product page.
-3. Retitle ICP product-page resource links so their anchors communicate role:
+2. Retitle ICP product-page resource links so their anchors communicate role:
    - `Learn ICP-RIE Technology`
    - `Compare ICP-RIE vs RIE`
    - `Deep Silicon Bosch Process`
    - `Diamond Semiconductor Processing`
-4. Expand ICP product resources from 3 to 4 items to preserve the diamond deep link.
-5. Verify RIE and Compact RIE title locks still pass, and add narrow meta-description regression tests for both sibling pages.
+3. Expand ICP product resources from 3 to 4 items to preserve the diamond deep link.
+4. Verify RIE and Compact RIE title locks still pass, and add narrow meta-description regression tests for both sibling pages.
 
 ---
 
@@ -71,7 +70,7 @@ Success is a cleaner entity graph, not an immediate ranking promise.
 - Do not rewrite the RIE pillar, ICP-RIE technology article, PE/RIE/ICP-RIE comparison article, DRIE article, or ion-milling article.
 - Do not add redirects or URL changes.
 - Do not remove the diamond article deep link unless a separate DDB content task adds a better internal-link host first.
-- Do not change product specs, images, Product/Offer schema, CTAs, or quote flow. FAQPage schema content will change as a direct consequence of the visible FAQ addition; this is intentional and must stay visible-content-matched.
+- Do not change product specs, images, Product/Offer schema, FAQPage schema, CTAs, or quote flow.
 
 ---
 
@@ -108,16 +107,6 @@ Reasoning:
 - Keeps the meta description at 158 characters so the CTA phrase survives likely search-result truncation.
 - Contains `ICP-RIE etching system`, `silicon`, `MEMS`, `diamond`, and `compound semiconductor etching`.
 - Keeps quote intent visible without changing visible layout.
-
-### ICP FAQ
-
-Add one FAQ item:
-
-**Question:** `Should I use this ICP-RIE system page or the ICP-RIE technology guide?`
-
-**Answer:** `Use this product page when you are selecting an ICP-RIE etching system, checking wafer size, ICP power, bias control, gas lines, temperature range, applications, or quote requirements. Use the ICP-RIE Technology guide when you want to learn the principles of inductively coupled plasma generation, source power, bias power, and high-density plasma etching.`
-
-This explicitly divides Select/Buy from Learn intent in visible copy and FAQ schema.
 
 ### ICP Resources
 
@@ -163,14 +152,13 @@ Add failing tests that assert:
    - `request a quote`
    - `silicon`
    - `diamond`
-3. ICP visible FAQ contains the new system-vs-technology question.
-4. ICP resources contain four links, including:
+3. ICP resources contain four links, including:
    - `Learn ICP-RIE Technology`
    - `Compare ICP-RIE vs RIE`
    - `Deep Silicon Bosch Process`
    - `Diamond Semiconductor Processing`
-5. The diamond resource still links to `/insights/diamond-semiconductor-processing-icp-etching-deposition`.
-6. RIE and Compact RIE title locks still pass.
+4. The diamond resource still links to `/insights/diamond-semiconductor-processing-icp-etching-deposition`.
+5. RIE and Compact RIE title locks still pass.
 
 Add narrow RIE and Compact RIE assertions that their meta descriptions keep their distinct intent:
 
@@ -205,15 +193,16 @@ Run:
 These are intentionally excluded from this sprint:
 
 1. DDB article update: add Select-intent links from the ICP-RIE technology article and PE/RIE/ICP-RIE comparison article down to `/products/icp-etcher`.
-2. GSC validation after deployment: compare page/query ownership for `icp rie`, `icp rie etching`, `icp etcher`, `icp-rie system`, and `icp-rie equipment` after 14-28 days.
-3. SERP re-sampling after deployment to see whether Google continues to treat naked `icp rie` as Mixed/Learn and whether product modifiers move toward product pages.
-4. Broader Compare template standardization for `ICP vs RIE`, `DRIE vs RIE`, `PECVD vs HDP-CVD`, and related comparison pages.
+2. Product-detail FAQ compliance decision: either render visible FAQ sections for all product detail pages or remove FAQPage schema until visible FAQs exist. This is a separate SEO mechanism and should not be mixed into this sprint's GSC observation window.
+3. GSC validation after deployment: compare page/query ownership for `icp rie`, `icp rie etching`, `icp etcher`, `icp-rie system`, and `icp-rie equipment` after 14-28 days.
+4. SERP re-sampling after deployment to see whether Google continues to treat naked `icp rie` as Mixed/Learn and whether product modifiers move toward product pages.
+5. Broader Compare template standardization for `ICP vs RIE`, `DRIE vs RIE`, `PECVD vs HDP-CVD`, and related comparison pages.
 
 ---
 
 ## Risks
 
-- Title changes can temporarily shift query matching. This is why the sprint only changes title/meta/FAQ/resource anchors and not H1 or layout.
+- Title changes can temporarily shift query matching. This is why the sprint only changes title/meta/resource anchors and not H1 or layout.
 - Adding a fourth resource slightly increases visual density, but it preserves an important diamond deep link and avoids creating an orphan.
 - The naked `icp rie` query may still show the product page in GSC because SERP intent is mixed. That is acceptable as long as the technology article remains the intended Learn owner and the product page strengthens product-modifier queries.
 

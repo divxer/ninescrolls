@@ -72,12 +72,18 @@ describe('ICPEtcher redesigned product page', () => {
     expect(screen.getByRole('link', { name: 'Compare RIE' })).toHaveAttribute('href', '/products/rie-etcher');
   });
 
-  it('does not duplicate the brand in the SEO title', async () => {
+  it('positions the ICP-RIE product page for equipment-selection intent', async () => {
     renderPage();
 
     await waitFor(() => {
-      expect(document.title).toBe('ICP-RIE Plasma Etching Platform | NineScrolls LLC');
+      expect(document.title).toBe('ICP-RIE Etching System for Research Labs | NineScrolls LLC');
     });
+
+    const metaDescription = document.head.querySelector('meta[name="description"]');
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('ICP-RIE etching system'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('request a quote'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('silicon'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('diamond'));
   });
 
   it('does not render a nested main landmark inside the layout main', () => {
@@ -93,18 +99,22 @@ describe('ICPEtcher redesigned product page', () => {
     expect(screen.queryByText(/internal/i)).not.toBeInTheDocument();
   });
 
-  it('uses distinct resource destinations for related resource cards', () => {
+  it('uses intent-specific resource anchors without dropping the diamond deep link', () => {
     renderPage();
 
-    expect(screen.getByRole('link', { name: /ICP vs RIE/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Learn ICP-RIE Technology/i })).toHaveAttribute(
+      'href',
+      '/insights/icp-rie-technology-advanced-etching'
+    );
+    expect(screen.getByRole('link', { name: /Compare ICP-RIE vs RIE/i })).toHaveAttribute(
       'href',
       '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching'
     );
-    expect(screen.getByRole('link', { name: /Bosch Process/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Deep Silicon Bosch Process/i })).toHaveAttribute(
       'href',
       '/insights/deep-reactive-ion-etching-bosch-process'
     );
-    expect(screen.getByRole('link', { name: /Diamond Processing/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Diamond Semiconductor Processing/i })).toHaveAttribute(
       'href',
       '/insights/diamond-semiconductor-processing-icp-etching-deposition'
     );

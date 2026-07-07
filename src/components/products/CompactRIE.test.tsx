@@ -102,4 +102,15 @@ describe('CompactRIE redesigned product page', () => {
       },
     });
   });
+
+  it('keeps the Compact RIE meta description scoped to space-efficient SV-RIE intent', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      const metaDescription = document.head.querySelector('meta[name="description"]');
+      expect(metaDescription).toHaveAttribute('content', expect.stringContaining('Space-efficient SV-RIE'));
+      expect(metaDescription).toHaveAttribute('content', expect.stringContaining('footprint'));
+      expect(metaDescription?.getAttribute('content')).not.toContain('ICP-RIE etching system');
+    });
+  });
 });

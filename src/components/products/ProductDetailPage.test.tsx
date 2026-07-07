@@ -67,7 +67,19 @@ describe('ProductDetailPage template', () => {
   it('uses product-specific resource destinations from config', () => {
     renderTemplate();
 
-    expect(screen.getByRole('link', { name: /Diamond Processing/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Learn ICP-RIE Technology/i })).toHaveAttribute(
+      'href',
+      '/insights/icp-rie-technology-advanced-etching'
+    );
+    expect(screen.getByRole('link', { name: /Compare ICP-RIE vs RIE/i })).toHaveAttribute(
+      'href',
+      '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching'
+    );
+    expect(screen.getByRole('link', { name: /Deep Silicon Bosch Process/i })).toHaveAttribute(
+      'href',
+      '/insights/deep-reactive-ion-etching-bosch-process'
+    );
+    expect(screen.getByRole('link', { name: /Diamond Semiconductor Processing/i })).toHaveAttribute(
       'href',
       '/insights/diamond-semiconductor-processing-icp-etching-deposition'
     );

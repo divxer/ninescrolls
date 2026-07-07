@@ -4,16 +4,16 @@
 
 **Goal:** Reposition the ICP-RIE product page toward equipment-selection intent while preserving Learn/Compare ownership for ICP-RIE insight pages and keeping RIE/Compact RIE sibling intent locked.
 
-**Architecture:** This is a config-and-test-only SEO polish. The shared `ProductDetailPage` template does not change; `icpEtcherConfig` remains the only production file edited. Tests lock rendered title, meta, visible FAQ, resource anchors, diamond deep link, and sibling meta boundaries.
+**Architecture:** This is a config-and-test-only SEO polish. The shared `ProductDetailPage` template does not change; `icpEtcherConfig` remains the only production file edited. Tests lock rendered title, meta, resource anchors, diamond deep link, and sibling meta boundaries.
 
 **Tech Stack:** React, TypeScript, Vitest, React Testing Library, `react-helmet-async`, existing `ProductDetailPage` config contract.
 
 ## Global Constraints
 
-- Do not change H1 or visible page structure beyond adding the one ICP FAQ item already supported by the template.
+- Do not change H1 or visible page structure.
 - Do not edit DDB insight articles.
 - Do not change Product/Offer schema, product specs, images, CTAs, or quote flow.
-- FAQPage schema content may change only as the direct result of the visible ICP FAQ addition.
+- Do not change FAQPage schema content in this sprint. Product-detail FAQ visibility/schema compliance is a separate follow-up.
 - Preserve the diamond deep link: `/insights/diamond-semiconductor-processing-icp-etching-deposition`.
 - Product page Select/Buy owner: `/products/icp-etcher` owns `icp etcher`, `icp-rie system`, `icp-rie equipment`, `icp-rie etching system`, and `research plasma etcher`.
 - Learn owner: `/insights/icp-rie-technology-advanced-etching` owns naked `icp rie` and `icp rie etching`.
@@ -25,10 +25,10 @@
 
 ## File Structure
 
-- Modify `src/components/products/ICPEtcher.test.tsx`: add red tests for ICP title/meta/FAQ/resources.
+- Modify `src/components/products/ICPEtcher.test.tsx`: add red tests for ICP title/meta/resources.
 - Modify `src/components/products/RIEEtcher.test.tsx`: add a meta regression lock using current RIE config copy.
 - Modify `src/components/products/CompactRIE.test.tsx`: add a meta regression lock using current Compact RIE config copy.
-- Modify `src/components/products/productDetailConfigs/icpEtcherConfig.ts`: update ICP SEO title/meta, add FAQ item, and change resources to four role-specific anchors.
+- Modify `src/components/products/productDetailConfigs/icpEtcherConfig.ts`: update ICP SEO title/meta and change resources to four role-specific anchors.
 
 ---
 
@@ -75,26 +75,7 @@ with:
   });
 ```
 
-- [ ] **Step 2: Add ICP failing test for system-vs-technology FAQ**
-
-In `src/components/products/ICPEtcher.test.tsx`, add this test after the SEO intent test:
-
-```ts
-  it('separates ICP-RIE system selection from ICP-RIE technology learning intent', () => {
-    renderPage();
-
-    expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
-      })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Use this product page when you are selecting an ICP-RIE etching system/i)).toBeInTheDocument();
-    expect(screen.getByText(/Use the ICP-RIE Technology guide when you want to learn the principles/i)).toBeInTheDocument();
-  });
-```
-
-- [ ] **Step 3: Replace ICP resource test with four role-specific anchors**
+- [ ] **Step 2: Replace ICP resource test with four role-specific anchors**
 
 In `src/components/products/ICPEtcher.test.tsx`, replace:
 
@@ -142,7 +123,7 @@ with:
   });
 ```
 
-- [ ] **Step 4: Add RIE sibling meta lock**
+- [ ] **Step 3: Add RIE sibling meta lock**
 
 In `src/components/products/RIEEtcher.test.tsx`, add this test after the title test:
 
@@ -158,7 +139,7 @@ In `src/components/products/RIEEtcher.test.tsx`, add this test after the title t
   });
 ```
 
-- [ ] **Step 5: Add Compact RIE sibling meta lock**
+- [ ] **Step 4: Add Compact RIE sibling meta lock**
 
 In `src/components/products/CompactRIE.test.tsx`, add this test after the title/canonical/schema test or after the first render test:
 
@@ -175,7 +156,7 @@ In `src/components/products/CompactRIE.test.tsx`, add this test after the title/
   });
 ```
 
-- [ ] **Step 6: Run tests to verify the ICP tests fail for the intended reason**
+- [ ] **Step 5: Run tests to verify the ICP tests fail for the intended reason**
 
 Run:
 
@@ -186,11 +167,10 @@ npm test -- src/components/products/ICPEtcher.test.tsx src/components/products/R
 Expected:
 
 - FAIL in `ICPEtcher.test.tsx` for the old title `ICP-RIE Plasma Etching Platform | NineScrolls LLC`.
-- FAIL in `ICPEtcher.test.tsx` because the new FAQ question is absent.
 - FAIL in `ICPEtcher.test.tsx` because `Learn ICP-RIE Technology` and `Compare ICP-RIE vs RIE` anchors are absent.
 - PASS sibling RIE and Compact RIE meta tests.
 
-- [ ] **Step 7: Commit red tests**
+- [ ] **Step 6: Commit red tests**
 
 Do not commit failing tests alone. Keep these changes staged only after Task 2 makes them green.
 
@@ -206,7 +186,7 @@ Do not commit failing tests alone. Keep these changes staged only after Task 2 m
 
 **Interfaces:**
 - Consumes: tests from Task 1.
-- Produces: ICP product page with equipment-selection title/meta, visible FAQ boundary copy, four resources, and preserved diamond deep link.
+- Produces: ICP product page with equipment-selection title/meta, four resources, and preserved diamond deep link.
 
 - [ ] **Step 1: Update ICP SEO title and meta**
 
@@ -234,19 +214,7 @@ to:
   },
 ```
 
-- [ ] **Step 2: Add the system-vs-technology FAQ**
-
-In the `faq` array of `src/components/products/productDetailConfigs/icpEtcherConfig.ts`, insert this object after the existing "What is the difference between ICP-RIE and RIE?" item:
-
-```ts
-    {
-      question: 'Should I use this ICP-RIE system page or the ICP-RIE technology guide?',
-      answer:
-        'Use this product page when you are selecting an ICP-RIE etching system, checking wafer size, ICP power, bias control, gas lines, temperature range, applications, or quote requirements. Use the ICP-RIE Technology guide when you want to learn the principles of inductively coupled plasma generation, source power, bias power, and high-density plasma etching.',
-    },
-```
-
-- [ ] **Step 3: Replace ICP resources with four role-specific links**
+- [ ] **Step 2: Replace ICP resources with four role-specific links**
 
 In the `resources.items` array of `src/components/products/productDetailConfigs/icpEtcherConfig.ts`, replace the three current items:
 
@@ -293,7 +261,7 @@ with:
       },
 ```
 
-- [ ] **Step 4: Run targeted tests and verify green**
+- [ ] **Step 3: Run targeted tests and verify green**
 
 Run:
 
@@ -303,7 +271,7 @@ npm test -- src/components/products/ICPEtcher.test.tsx src/components/products/R
 
 Expected: PASS for all three files.
 
-- [ ] **Step 5: Run typecheck and build**
+- [ ] **Step 4: Run typecheck and build**
 
 Run:
 
@@ -317,7 +285,7 @@ Expected:
 - `tsc` exits 0.
 - `npm run build` exits 0. Existing lint warnings and chunk-size warnings are acceptable if there are no errors.
 
-- [ ] **Step 6: Inspect diff**
+- [ ] **Step 5: Inspect diff**
 
 Run:
 
@@ -332,7 +300,7 @@ Expected:
 - No RIE or Compact RIE config changes.
 - Diamond link remains present.
 
-- [ ] **Step 7: Commit implementation**
+- [ ] **Step 6: Commit implementation**
 
 Run:
 
@@ -367,6 +335,6 @@ Expected: existing PR branch updates.
 
 ## Self-Review
 
-- Spec coverage: Task 1 covers tests for title, meta, FAQ, resources, diamond, and sibling locks. Task 2 covers the only production config change.
+- Spec coverage: Task 1 covers tests for title, meta, resources, diamond, and sibling locks. Task 2 covers the only production config change.
 - Placeholder scan: no implementation placeholders; every code block contains exact copy.
 - Type consistency: no new types or interfaces; all changes use existing `ProductDetailConfig` fields.
