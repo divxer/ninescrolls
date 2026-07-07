@@ -447,8 +447,7 @@ export function CheckoutPage() {
                   You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
                 </p>
                 <p>
-                  <span className="font-bold text-on-surface">Distributor:</span> HY Series plasma systems are manufactured by Shenzhen Huiyi Zhikong Technology Co., Ltd. NineScrolls LLC is the authorized US distributor.
-                  Configuration details and support are managed directly by us.
+                  <span className="font-bold text-on-surface">Support:</span> Configuration review, order coordination, documentation, and post-sale support are managed directly by NineScrolls LLC.
                 </p>
                 <p>
                   Formal invoice available upon request. All sales final. No returns for capital equipment.
