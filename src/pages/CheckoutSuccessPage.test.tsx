@@ -59,6 +59,21 @@ describe('CheckoutSuccessPage', () => {
     });
   });
 
+  it.each([
+    ['/checkout/success?sessionId=cs_camel_456', 'cs_camel_456'],
+    ['/checkout/success?session%20id=cs_space_789', 'cs_space_789'],
+  ])('accepts alternate Stripe session id query parameter shape %s', async (entry, expectedSessionId) => {
+    renderSuccess(entry);
+
+    expect(screen.getByText(expectedSessionId)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.gtag).toHaveBeenCalledWith('event', 'purchase', expect.objectContaining({
+        transaction_id: expectedSessionId,
+      }));
+      expect(clearCart).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('uses noindex robots without changing success behavior', async () => {
     renderSuccess();
 
