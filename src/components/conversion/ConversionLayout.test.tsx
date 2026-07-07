@@ -45,4 +45,16 @@ describe('conversion layout primitives', () => {
     expect(screen.getByText('Secure payment')).toBeInTheDocument();
     expect(screen.getByText('Formal invoice available')).toBeInTheDocument();
   });
+
+  it('renders trust signal lists with readable dark-surface text', () => {
+    render(
+      <TrustSignalList
+        variant="dark"
+        items={[{ title: 'Process-first guidance', copy: 'Start with materials and process windows.' }]}
+      />,
+    );
+
+    expect(screen.getByText('Process-first guidance')).toHaveClass('text-white');
+    expect(screen.getByText('Start with materials and process windows.')).toHaveClass('text-slate-300');
+  });
 });

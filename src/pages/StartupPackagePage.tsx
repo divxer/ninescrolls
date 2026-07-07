@@ -143,6 +143,7 @@ export function StartupPackagePage() {
               <h2 className="text-2xl font-headline font-bold tracking-tight">Designed for first-tool decisions</h2>
               <div className="mt-6">
                 <TrustSignalList
+                  variant="dark"
                   items={[
                     { title: 'Budgetary quote support', copy: 'Useful for grant, proposal, and departmental planning.' },
                     { title: '2-year standard warranty', copy: 'A verified support baseline across the equipment line.' },

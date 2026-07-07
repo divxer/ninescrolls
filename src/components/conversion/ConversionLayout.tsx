@@ -73,15 +73,24 @@ export function ConversionCard({ className = '', children }: PropsWithChildren<C
   return <div className={`rounded-xl border border-slate-200 bg-white p-6 ${className}`}>{children}</div>;
 }
 
-export function TrustSignalList({ items }: { items: Array<{ title: string; copy?: string }> }) {
+export function TrustSignalList({
+  items,
+  variant = 'light',
+}: {
+  items: Array<{ title: string; copy?: string }>;
+  variant?: 'light' | 'dark';
+}) {
+  const titleClass = variant === 'dark' ? 'text-white' : 'text-slate-950';
+  const copyClass = variant === 'dark' ? 'text-slate-300' : 'text-slate-600';
+
   return (
     <ul className="space-y-4">
       {items.map((item) => (
         <li key={item.title} className="flex gap-3">
           <span aria-hidden="true" className="mt-1 h-2 w-2 rounded-full bg-sky-600" />
           <div>
-            <p className="font-bold text-slate-950">{item.title}</p>
-            {item.copy && <p className="mt-1 text-sm leading-6 text-slate-600">{item.copy}</p>}
+            <p className={`font-bold ${titleClass}`}>{item.title}</p>
+            {item.copy && <p className={`mt-1 text-sm leading-6 ${copyClass}`}>{item.copy}</p>}
           </div>
         </li>
       ))}
