@@ -81,10 +81,10 @@ Design direction:
 
 Role: trust page for warranty, support, maintenance, and post-sale confidence.
 
-Open policy input:
+Resolved policy input:
 
-- The current page contains multiple "2-year standard warranty" statements. This redesign must not amplify or create new year-specific warranty claims until the user confirms the exact warranty policy and whether it applies across all product lines.
-- If not confirmed before implementation, replace year-specific marketing phrasing with "standard warranty terms", "warranty coverage", or "confirmed during quote/order review", while preserving any backend/service data contracts.
+- User confirmed that the 2-year standard warranty applies across all product lines, including plasma cleaners. The redesign may state this fact.
+- Unsupported competitor-comparison warranty claims must be removed regardless of the warranty policy. Banned phrasing includes "double the industry norm", "Most major manufacturers only provide 1-year coverage", and equivalent unsourced claims about unnamed competitors.
 
 Design direction:
 
@@ -96,7 +96,8 @@ Design direction:
   - service coordination
   - preventive maintenance
   - annual maintenance contracts where verified
-- Avoid unsupported competitive claims such as "double the industry norm" unless separately sourced and approved.
+- Keep "2-year standard warranty" as a factual NineScrolls policy.
+- Avoid unsupported competitive claims such as "double the industry norm" or "major manufacturers only provide 1-year coverage".
 
 ### Cart
 
@@ -140,12 +141,13 @@ Contract constraints:
 - Preserve GA4 `begin_checkout` payload.
 - Preserve `createCheckoutSession` payload.
 - Preserve `/checkout/success?session_id={CHECKOUT_SESSION_ID}` and `/checkout/cancel`.
+- The frontend constructs these two redirect URLs before passing them to `createCheckoutSession`; tests should lock the frontend values. The Lambda has fallback values too, but the active contract starts in `CheckoutPage`.
 - Do not change Lambda success/cancel URLs unless the Lambda is changed in the same task and covered by consistency tests.
 
 Required technical cleanup:
 
 - Fix the existing image URL composition bug:
-  - Current code sends `image: item.image ? `${window.location.origin}${item.image}` : undefined`.
+  - Current code sends `image: item.image ? `${window.location.origin}${item.image}` : undefined` in both tax calculation and checkout session creation.
   - This is wrong for absolute CDN URLs.
   - Implement a helper that returns absolute URLs unchanged and prefixes only relative URLs.
   - Cover this helper with tests.
@@ -186,7 +188,7 @@ Design direction:
   - order review
   - support contact
   - formal invoice availability
-- Do not invent delivery times unless verified. Current page says "3-4 weeks"; implementation must verify this against product/order policy or remove it.
+- Do not invent delivery times unless verified. Current page says "3-4 weeks"; implementation must remove or generalize this unless the user confirms the exact delivery policy before implementation.
 
 SEO/robots:
 
@@ -295,7 +297,7 @@ Current `SEO` defaults all pages to `index, follow`, except special cases such a
 Recommended:
 
 - `/contact`: `index, follow`
-- `/request-quote`: `index, follow` unless marketing decides it should be hidden from organic search
+- `/request-quote`: `index, follow`
 - `/service-support`: `index, follow`
 - `/cart`: `noindex, follow`
 - `/checkout`: `noindex, nofollow`
@@ -356,8 +358,8 @@ Required tests:
 
 ### Service Support
 
-- No unsupported warranty-duration claim is added.
-- If warranty duration remains visible, test name/documentation must point to the user-confirmed policy source.
+- Keeps "2-year standard warranty" visible as a user-confirmed all-product-line policy.
+- Removes unsupported competitor-comparison claims, including "double the industry norm" and "Most major manufacturers only provide 1-year coverage".
 
 ## Verification
 
@@ -387,21 +389,15 @@ Post-deploy smoke:
 
 - Attribution regression is the highest risk. Keep contracts test-locked before visual changes.
 - Stripe redirect route drift would break paid checkout. Keep routes unchanged.
-- Service/warranty copy may currently contain unsupported numeric claims. Treat those as policy inputs, not design copy.
+- Service/warranty copy currently contains unsupported competitor-comparison claims. Remove those while keeping the user-confirmed 2-year warranty fact.
 - Adding noindex support to `SEO` changes a shared component. Keep the default output byte-equivalent for pages that do not pass `robots`.
 - This phase overlaps with live conversion infrastructure; avoid broad rewrites of form state and submit logic.
 
-## Open Inputs For User
+## Open Inputs For User — RESOLVED 2026-07-07
 
-1. Confirm warranty policy:
-   - Is "2-year standard warranty" true for all product lines?
-   - Does it apply to plasma cleaners as well as large semiconductor equipment?
-   - Should the site state a fixed year count, or only "standard warranty terms"?
-2. Confirm indexing preference for `/request-quote`:
-   - Keep indexed as a commercial conversion page?
-   - Or mark noindex because it is a form utility page?
-
-If these are not answered before implementation, default to conservative copy:
-
-- Use "standard warranty terms" rather than a year count.
-- Keep `/request-quote` indexed unless explicitly told otherwise.
+1. **Warranty policy — RESOLVED:** 2-year standard warranty applies to **ALL product lines**, including plasma cleaners. The site MAY state the 2-year figure. **However, the unverifiable competitive claims must be REMOVED** regardless of the year count — they match the site-wide banned-claim pattern (cf. the product-page "highest in its class / under $20K" removals):
+   - `ServiceSupportPage.tsx:66` "double the industry norm"
+   - `ServiceSupportPage.tsx:109` "double the industry norm"
+   - `ServiceSupportPage.tsx:127` "Most major manufacturers only provide 1-year coverage"
+   Keep "2-year standard warranty" as a factual statement; drop all comparisons to unnamed competitors. A copy-review assertion must lock the absence of "double the industry norm" / "most manufacturers" phrasing.
+2. **`/request-quote` indexing — RESOLVED:** keep `index, follow` (commercial conversion page).
