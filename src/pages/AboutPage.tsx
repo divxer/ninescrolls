@@ -85,7 +85,7 @@ export function AboutPage() {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="About NineScrolls"
           title="U.S.-based support for advanced semiconductor process equipment"
@@ -202,7 +202,7 @@ export function AboutPage() {
             </ConversionCard>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }

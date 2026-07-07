@@ -7,6 +7,11 @@ import { CartProvider } from '../contexts/CartContext';
 import { CartPage } from './CartPage';
 import { CheckoutCancelPage } from './CheckoutCancelPage';
 import { NotFoundPage } from './NotFoundPage';
+import { AboutPage } from './AboutPage';
+import { StartupPackagePage } from './StartupPackagePage';
+import { CareersPage } from './CareersPage';
+import { PrivacyPage } from './PrivacyPage';
+import { ReturnPolicyPage } from './ReturnPolicyPage';
 
 // Landmark-navigation regression guard: Layout owns the single <main>. Page
 // components must NOT render their own <main> (they use <div>/fragments), so a
@@ -63,5 +68,19 @@ describe('single <main> landmark', () => {
   it('renders exactly one <main> for NotFoundPage inside Layout', () => {
     renderInLayout(<NotFoundPage />, '/does-not-exist');
     expect(document.body.querySelectorAll('main').length).toBe(1);
+  });
+
+  // Company/support/policy pages (Phase 3) must also defer the <main> to Layout.
+  it.each([
+    ['AboutPage', <AboutPage />, '/about'],
+    ['StartupPackagePage', <StartupPackagePage />, '/startup-package'],
+    ['CareersPage', <CareersPage />, '/careers'],
+    ['PrivacyPage', <PrivacyPage />, '/privacy'],
+    ['ReturnPolicyPage', <ReturnPolicyPage />, '/return-policy'],
+  ])('renders exactly one <main> for %s inside Layout', (_name, page, path) => {
+    renderInLayout(page, path);
+    const mains = document.body.querySelectorAll('main');
+    expect(mains.length).toBe(1);
+    expect(mains[0]).toHaveClass('flex-grow');
   });
 });
