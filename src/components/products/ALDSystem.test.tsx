@@ -27,6 +27,7 @@ describe('ALDSystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/ald-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What is atomic layer deposition and how does it work?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

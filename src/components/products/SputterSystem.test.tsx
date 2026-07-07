@@ -27,6 +27,7 @@ describe('SputterSystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/sputter-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What materials can the Sputter platform deposit?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

@@ -27,6 +27,7 @@ describe('EBeamEvaporator redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/e-beam-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'When should I choose e-beam evaporation instead of sputtering?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

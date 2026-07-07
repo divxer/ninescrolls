@@ -27,6 +27,7 @@ describe('PECVDSystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/pecvd-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What films can the PECVD platform deposit?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

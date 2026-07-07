@@ -27,6 +27,7 @@ describe('IBERIBESystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/ibe-ribe-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'When should I choose IBE/RIBE instead of RIE?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

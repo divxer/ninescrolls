@@ -32,7 +32,7 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the Coater/Developer platform?',
       answer:
-        'The equipment summary lists pieces to 12 inch wafers, coater speed up to 8000 rpm +/-1 rpm, developer speed up to 5000 rpm +/-1 rpm, RT to 200 C hotplate operation, 2 resist lines, 2 developer lines plus DI, <0.5% film uniformity, and an approx. 1.0m x 0.8m footprint.',
+        'Core specifications include pieces to 12 inch wafers, coater speed up to 8000 rpm +/-1 rpm, developer speed up to 5000 rpm +/-1 rpm, RT to 200 C hotplate operation, 2 resist lines, 2 developer lines plus DI, <0.5% film uniformity, and an approx. 1.0m x 0.8m footprint.',
     },
   ],
   breadcrumb: {

@@ -27,6 +27,7 @@ describe('CoaterDeveloper redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/coater-developer-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'When should I choose a coater/developer track instead of a manual spin coater?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

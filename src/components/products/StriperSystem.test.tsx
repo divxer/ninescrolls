@@ -27,6 +27,7 @@ describe('StriperSystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/striper-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'When should I choose a dedicated plasma striper instead of a plasma cleaner?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

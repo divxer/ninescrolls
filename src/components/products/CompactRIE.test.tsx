@@ -31,6 +31,7 @@ describe('CompactRIE redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/compact-rie-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What makes the Compact RIE different from a standard RIE system?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

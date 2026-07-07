@@ -30,6 +30,7 @@ describe('ICPEtcher redesigned product page', () => {
       'Applications',
       'Research Validation',
       'Related Resources',
+      'Frequently Asked Questions',
       'Build an ICP-RIE process window with NineScrolls',
     ];
 
@@ -42,6 +43,7 @@ describe('ICPEtcher redesigned product page', () => {
       expect(currentIndex, `${copy} should appear after the prior section`).toBeGreaterThan(previousIndex);
       previousIndex = currentIndex;
     });
+    expect(screen.getByRole('heading', { level: 3, name: 'What applications is the ICP-RIE platform best suited for?' })).toBeInTheDocument();
   });
 
   it('uses the standardized real product asset and PDF-corrected specifications', () => {

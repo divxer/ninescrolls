@@ -27,6 +27,7 @@ describe('HDPCVDSystem redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/hdp-cvd-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What is HDP-CVD used for?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 

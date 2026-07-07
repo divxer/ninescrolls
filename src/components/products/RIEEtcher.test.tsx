@@ -27,6 +27,7 @@ describe('RIEEtcher redesigned product page', () => {
       'src',
       '/assets/images/redesign/products/rie-standardized.webp'
     );
+    expect(screen.getByRole('heading', { level: 3, name: 'What materials can the RIE platform process?' })).toBeInTheDocument();
     expect(document.body.querySelector('main')).not.toBeInTheDocument();
   });
 
