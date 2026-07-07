@@ -102,6 +102,34 @@ const cleaners: CleanerCard[] = [
   },
 ];
 
+const pricingFaqs = [
+  {
+    question: 'How much does a plasma cleaner cost?',
+    answer:
+      'NineScrolls plasma cleaner systems start at $6,499 for compact HY configurations, with larger RF systems ranging up to $15,999 depending on chamber size, generator power, controls, and selected configuration.',
+  },
+  {
+    question: 'What affects plasma cleaner pricing?',
+    answer:
+      'Pricing depends on chamber volume, RF or mid-frequency power configuration, gas-line requirements, fixture needs, pump configuration, controls, and whether the system is purchased online or through an institutional quotation.',
+  },
+  {
+    question: 'What is included with a plasma cleaner system?',
+    answer:
+      'Typical systems include the plasma chamber, power supply configuration, vacuum and gas handling interface, controller, and model-specific accessories. Final scope is confirmed on the product page or quotation.',
+  },
+  {
+    question: 'Can universities and labs request a formal quotation?',
+    answer:
+      'Yes. Research groups, universities, and institutional buyers can request a formal quotation for purchase-order workflows, configuration review, shipping details, and documentation requirements.',
+  },
+  {
+    question: 'How do I choose the right benchtop plasma cleaner?',
+    answer:
+      'Start with chamber size, sample geometry, required RF power, gas chemistry, throughput, and whether the workflow is teaching, bonding preparation, surface activation, or repeatable batch cleaning.',
+  },
+];
+
 function CleanerCardView({ cleaner }: { cleaner: CleanerCard }) {
   return (
     <article className={`group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-[0_20px_60px_rgba(15,23,42,0.10)] ${cleaner.featured ? 'lg:col-span-2' : ''}`}>
@@ -173,18 +201,31 @@ export function PlasmaCleanerOverviewPage() {
       url: `https://ninescrolls.com${cleaner.route}`,
     })),
   };
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: pricingFaqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
 
   return (
     <>
       <SEO
-        title="Plasma Cleaners | HY & PLUTO Surface Activation Systems"
-        description="Buy online or request institutional quotes for NineScrolls HY and PLUTO plasma cleaners. Compare 4 L to 20 L chambers, 200 W to 500 W RF power, and lab-scale cleaning workflows."
+        title="Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing"
+        description="Compare NineScrolls HY and PLUTO benchtop plasma cleaner systems for research laboratories. Explore RF and MF models, chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
         keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F"
         url="/products/plasma-cleaner"
         type="website"
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqStructuredData)}</script>
       </Helmet>
 
       <section className="border-b border-slate-200 bg-[#FAFAFA]">
@@ -301,6 +342,26 @@ export function PlasmaCleanerOverviewPage() {
               <p className="mt-2 text-sm leading-6 text-slate-600">Activation, functionalization, crosslinking, hydrophobic recovery, and process-window considerations.</p>
               <span className="mt-4 inline-block text-sm font-bold text-sky-700">Read Guide →</span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-slate-50 py-16">
+        <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
+          <div className="mb-8 max-w-3xl">
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Pricing FAQ</span>
+            <h2 className="mt-3 text-4xl font-headline font-bold tracking-tight text-slate-950">Plasma cleaner pricing and selection questions</h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              Use these answers to estimate the right starting point before requesting pricing or opening a model page.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pricingFaqs.map((faq) => (
+              <article key={faq.question} className="rounded-xl border border-slate-200 bg-white p-6">
+                <h3 className="text-lg font-headline font-bold text-slate-950">{faq.question}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{faq.answer}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -15,6 +15,35 @@ function renderPlasmaCleanerOverviewPage() {
 }
 
 describe('PlasmaCleanerOverviewPage', () => {
+  it('sets the Sprint 1A CTR title, meta description, visible FAQ, and FAQ schema without dropping ItemList schema', async () => {
+    renderPlasmaCleanerOverviewPage();
+
+    await waitFor(() => {
+      expect(document.title).toBe('Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing | NineScrolls LLC');
+    });
+
+    const metaDescription = document.head.querySelector('meta[name="description"]');
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('benchtop plasma cleaner systems'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('request pricing'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('surface activation'));
+    expect(metaDescription?.getAttribute('content')).not.toMatch(/online pricing/i);
+
+    const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((heading) => heading.textContent?.endsWith('?'));
+    expect(faqHeadings).toHaveLength(5);
+    expect(screen.getByRole('heading', { level: 3, name: 'How much does a plasma cleaner cost?' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'How do I choose the right benchtop plasma cleaner?' })).toBeInTheDocument();
+
+    const jsonLd = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent || '{}'));
+
+    expect(jsonLd.some((schema) => schema['@type'] === 'ItemList')).toBe(true);
+    const faqSchema = jsonLd.find((schema) => schema['@type'] === 'FAQPage');
+    expect(faqSchema).toBeTruthy();
+    expect(faqSchema.mainEntity).toHaveLength(5);
+    expect(faqSchema.mainEntity.map((entry: { name: string }) => entry.name)).toContain('How much does a plasma cleaner cost?');
+    expect(faqSchema.mainEntity.map((entry: { name: string }) => entry.name)).toContain('How do I choose the right benchtop plasma cleaner?');
+  });
+
   it('frames the cleaner overview as a buy-online family selector without supplier disclosure', () => {
     renderPlasmaCleanerOverviewPage();
 
