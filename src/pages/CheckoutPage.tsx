@@ -5,6 +5,7 @@ import { useCart } from '../contexts/useCart';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
 import { createCheckoutSession, calculateTax } from '../services/stripeService';
+import { toCheckoutImageUrl } from './checkoutImageUrl';
 
 /**
  * Convert country name to ISO 3166-1 alpha-2 country code
@@ -107,7 +108,7 @@ export function CheckoutPage() {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          image: item.image ? `${window.location.origin}${item.image}` : undefined,
+          image: toCheckoutImageUrl(item.image, window.location.origin),
         }));
 
         const taxResult = await calculateTax(stripeItems, shippingAddress);
@@ -175,7 +176,7 @@ export function CheckoutPage() {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        image: item.image ? `${window.location.origin}${item.image}` : undefined,
+        image: toCheckoutImageUrl(item.image, window.location.origin),
       }));
 
       // Create Stripe Checkout Session
@@ -231,12 +232,13 @@ export function CheckoutPage() {
         title="Checkout"
         description="Complete your order for HY Series plasma systems."
         url="/checkout"
+        robots="noindex, nofollow"
       />
       <main className="py-24 px-8 max-w-5xl mx-auto">
         <h1 className="text-5xl font-headline font-bold mb-12">Secure Checkout</h1>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           <div className="lg:col-span-7 space-y-12">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               {/* Contact Information */}
               <section className="mb-12">
                 <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">1. Contact &amp; Shipping</h2>
@@ -432,7 +434,7 @@ export function CheckoutPage() {
               </section>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
+                <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
                   {error}
                 </div>
               )}

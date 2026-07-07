@@ -11,6 +11,7 @@ export function CheckoutCancelPage() {
         title="Payment Cancelled"
         description="Your payment was cancelled."
         url="/checkout/cancel"
+        robots="noindex, nofollow"
       />
       <main className="min-h-[819px] flex flex-col items-center justify-center text-center px-8">
         <span

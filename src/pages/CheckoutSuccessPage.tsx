@@ -48,6 +48,7 @@ export function CheckoutSuccessPage() {
         title="Order Confirmed"
         description="Your order has been successfully placed."
         url="/checkout/success"
+        robots="noindex, nofollow"
       />
       <main className="min-h-[819px] flex flex-col items-center justify-center text-center px-8">
         <span

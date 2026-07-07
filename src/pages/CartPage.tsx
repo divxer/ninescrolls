@@ -28,6 +28,7 @@ export function CartPage() {
           title="Shopping Cart"
           description="Your shopping cart is empty."
           url="/cart"
+          robots="noindex, follow"
         />
         <main className="py-24 px-8 max-w-7xl mx-auto">
           <h1 className="text-5xl font-headline font-bold mb-16">Review Your Order</h1>
@@ -54,6 +55,7 @@ export function CartPage() {
         title="Shopping Cart"
         description="Review your order and proceed to checkout."
         url="/cart"
+        robots="noindex, follow"
       />
       <main className="py-24 px-8 max-w-7xl mx-auto">
         <h1 className="text-5xl font-headline font-bold mb-16">Review Your Order</h1>
