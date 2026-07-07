@@ -235,6 +235,7 @@ export function ContactPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
                 <button
                   type="button"
+                  aria-pressed={selectedInquiryType === 'feasibility'}
                   onClick={() => handleInquiryTypeClick('feasibility')}
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'feasibility'
@@ -254,6 +255,7 @@ export function ContactPage() {
 
                 <button
                   type="button"
+                  aria-pressed={selectedInquiryType === 'engineer'}
                   onClick={() => handleInquiryTypeClick('engineer')}
                   className={`text-left p-6 rounded-xl border-2 transition-all ${
                     selectedInquiryType === 'engineer'

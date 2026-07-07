@@ -80,7 +80,7 @@ describe('CartPage', () => {
     await user.click(screen.getByRole('button', { name: /Decrease quantity/i }));
     expect(updateQuantity).toHaveBeenCalledWith('hy-4l-rf', 1);
 
-    await user.click(screen.getByRole('button', { name: /Remove item/i }));
+    await user.click(screen.getByRole('button', { name: /Remove HY-4L - RF Plasma Cleaner/i }));
     expect(removeItem).toHaveBeenCalledWith('hy-4l-rf');
   });
 });

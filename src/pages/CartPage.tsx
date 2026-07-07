@@ -106,15 +106,15 @@ export function CartPage() {
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                       className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
-                      aria-label="Decrease quantity"
+                      aria-label={`Decrease quantity of ${item.name}`}
                     >
                       <span className="material-symbols-outlined text-lg">remove</span>
                     </button>
-                    <span className="w-10 h-10 flex items-center justify-center font-bold text-sm">{item.quantity}</span>
+                    <span className="w-10 h-10 flex items-center justify-center font-bold text-sm" aria-live="polite" aria-atomic="true">{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                       className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
-                      aria-label="Increase quantity"
+                      aria-label={`Increase quantity of ${item.name}`}
                     >
                       <span className="material-symbols-outlined text-lg">add</span>
                     </button>
@@ -125,7 +125,7 @@ export function CartPage() {
                   <button
                     onClick={() => removeItem(item.id)}
                     className="text-xs text-on-surface-variant hover:text-red-500 mt-2 transition-colors"
-                    aria-label="Remove item"
+                    aria-label={`Remove ${item.name}`}
                   >
                     Remove
                   </button>
