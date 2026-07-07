@@ -14,7 +14,7 @@ export function CheckoutCancelPage() {
         url="/checkout/cancel"
         robots="noindex, nofollow"
       />
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Checkout Cancelled"
           title="Checkout cancelled"
@@ -54,7 +54,7 @@ export function CheckoutCancelPage() {
             </div>
           </ConversionCard>
         </section>
-      </main>
+      </div>
     </>
   );
 }

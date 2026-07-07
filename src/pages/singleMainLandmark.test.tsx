@@ -1,0 +1,67 @@
+import { describe, it, expect, afterEach } from 'vitest';
+import { render } from '@testing-library/react';
+import { HelmetProvider } from 'react-helmet-async';
+import { MemoryRouter } from 'react-router-dom';
+import { Layout } from '../components/layout/Layout';
+import { CartProvider } from '../contexts/CartContext';
+import { CartPage } from './CartPage';
+import { CheckoutCancelPage } from './CheckoutCancelPage';
+import { NotFoundPage } from './NotFoundPage';
+
+// Landmark-navigation regression guard: Layout owns the single <main>. Page
+// components must NOT render their own <main> (they use <div>/fragments), so a
+// routed page wrapped in Layout must expose exactly one <main> landmark.
+// A second <main> is invalid HTML and creates ambiguous main content for
+// screen readers (WCAG 1.3.1 / landmark navigation).
+function renderInLayout(page: React.ReactNode, initialEntry: string) {
+  return render(
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <CartProvider>
+          <Layout>{page}</Layout>
+        </CartProvider>
+      </MemoryRouter>
+    </HelmetProvider>
+  );
+}
+
+describe('single <main> landmark', () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('renders exactly one <main> for CartPage (empty) inside Layout', () => {
+    renderInLayout(<CartPage />, '/cart');
+    const mains = document.body.querySelectorAll('main');
+    expect(mains.length).toBe(1);
+    expect(mains[0]).toHaveClass('flex-grow');
+  });
+
+  it('renders exactly one <main> for CartPage (populated) inside Layout', () => {
+    // CartProvider seeds items from localStorage on mount, so a seeded cart
+    // exercises CartPage's populated branch — a second, independently-edited
+    // wrapper that must also be a <div>, not a <main>.
+    localStorage.setItem(
+      'cart',
+      JSON.stringify([{ id: 'hy-4l', name: 'HY-4L', price: 1000, quantity: 1, sku: 'HY-4L' }])
+    );
+    renderInLayout(<CartPage />, '/cart');
+    // Guard against silently testing the empty branch: confirm the seeded
+    // item actually rendered (populated branch), then assert the landmark.
+    expect(document.body.textContent).toContain('HY-4L');
+    expect(document.body.querySelectorAll('main').length).toBe(1);
+  });
+
+  it('renders exactly one <main> for CheckoutCancelPage inside Layout', () => {
+    renderInLayout(<CheckoutCancelPage />, '/checkout/cancel');
+    const mains = document.body.querySelectorAll('main');
+    expect(mains.length).toBe(1);
+    // The one main is Layout's, not a page-level main.
+    expect(mains[0]).toHaveClass('flex-grow');
+  });
+
+  it('renders exactly one <main> for NotFoundPage inside Layout', () => {
+    renderInLayout(<NotFoundPage />, '/does-not-exist');
+    expect(document.body.querySelectorAll('main').length).toBe(1);
+  });
+});

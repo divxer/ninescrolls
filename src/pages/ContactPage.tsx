@@ -135,7 +135,7 @@ export function ContactPage() {
         </script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Engineering Contact"
           title="Talk to a NineScrolls engineer"
@@ -317,7 +317,7 @@ export function ContactPage() {
             } : undefined} prefillEmail={prefillEmail} onSuccess={handleFormSuccess} />
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

@@ -135,7 +135,7 @@ export function ServiceSupportPage() {
         </script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Service Support"
           title="Service support for process equipment"
@@ -231,7 +231,7 @@ export function ServiceSupportPage() {
             </Link>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }

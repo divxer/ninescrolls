@@ -169,7 +169,7 @@ export const InsightsPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-      <main className="py-24 px-8">
+      <div className="py-24 px-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-5xl font-headline font-bold mb-4">Latest Insights</h1>
           <p className="text-on-surface-variant text-lg mb-16">Expert analysis and breakthrough technologies in advanced manufacturing and materials science</p>
@@ -235,7 +235,7 @@ export const InsightsPage: React.FC = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </>
   );
 };

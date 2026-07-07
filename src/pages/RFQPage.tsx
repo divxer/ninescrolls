@@ -686,7 +686,7 @@ export function RFQPage() {
         url="/request-quote"
       />
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Equipment RFQ"
           title="Request a process equipment quote"
@@ -1094,7 +1094,7 @@ export function RFQPage() {
           </div>
         </div>
       </section>
-      </main>
+      </div>
     </>
   );
 }
