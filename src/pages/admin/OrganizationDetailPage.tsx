@@ -54,7 +54,7 @@ export function OrganizationDetailPage() {
                 <div className="lg:col-span-4">
                     <OrganizationHeaderPanel org={data.organization} onUpdate={refresh} />
                 </div>
-                <main className="lg:col-span-8 space-y-6">
+                <div className="lg:col-span-8 space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <AggregateCard
                             label="RFQs"
@@ -82,7 +82,7 @@ export function OrganizationDetailPage() {
                         recentOrders={(data.recentOrders ?? []) as OrderEntry[]}
                         recentLeads={(data.recentLeads ?? []) as LeadEntry[]}
                     />
-                </main>
+                </div>
             </div>
         </div>
     );
