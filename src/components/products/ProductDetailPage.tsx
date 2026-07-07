@@ -70,18 +70,20 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
     offers: offerData,
   };
 
-  const faqData = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: config.faq.map(item => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.answer,
-      },
-    })),
-  };
+  const faqData = config.faq.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: config.faq.map(item => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer,
+          },
+        })),
+      }
+    : null;
 
   return (
     <>
@@ -95,7 +97,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-        <script type="application/ld+json">{JSON.stringify(faqData)}</script>
+        {faqData && <script type="application/ld+json">{JSON.stringify(faqData)}</script>}
       </Helmet>
 
       <div className="bg-[#FAFAFA] text-slate-950">
@@ -347,6 +349,27 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
                     </div>
                     <span className="text-sm font-bold text-sky-700">Read note</span>
                   </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {config.faq.length > 0 && (
+          <section className="border-t border-slate-200 bg-[#FAFAFA] px-6 py-20 md:px-10 lg:px-16">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="max-w-3xl">
+                <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">FAQ</p>
+                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+                  Frequently Asked Questions
+                </h2>
+              </div>
+              <div className="mt-10 grid gap-4 lg:grid-cols-2">
+                {config.faq.map(item => (
+                  <article key={item.question} className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <h3 className="text-xl font-semibold tracking-normal text-slate-950">{item.question}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.answer}</p>
+                  </article>
                 ))}
               </div>
             </div>

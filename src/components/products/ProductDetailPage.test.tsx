@@ -34,6 +34,12 @@ function getProductJsonLd() {
     .find(data => data['@type'] === 'Product');
 }
 
+function getFaqJsonLd() {
+  return Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+    .map(script => JSON.parse(script.textContent ?? '{}'))
+    .find(data => data['@type'] === 'FAQPage');
+}
+
 describe('ProductDetailPage template', () => {
   it('renders ICP-RIE from a product detail config', async () => {
     renderTemplate();
@@ -85,6 +91,30 @@ describe('ProductDetailPage template', () => {
     );
   });
 
+  it('renders visible FAQ content from the same source as FAQPage schema', async () => {
+    renderTemplate();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Frequently Asked Questions' })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(getFaqJsonLd()).toBeTruthy();
+    });
+    const faqSchema = getFaqJsonLd();
+    expect(faqSchema.mainEntity).toHaveLength(icpEtcherConfig.faq.length);
+
+    for (const item of icpEtcherConfig.faq) {
+      expect(screen.getByRole('heading', { level: 3, name: item.question })).toBeInTheDocument();
+      expect(screen.getByText(item.answer)).toBeInTheDocument();
+    }
+
+    expect(faqSchema.mainEntity.map((entry: { name: string }) => entry.name)).toEqual(
+      icpEtcherConfig.faq.map(item => item.question)
+    );
+    expect(
+      faqSchema.mainEntity.map((entry: { acceptedAnswer: { text: string } }) => entry.acceptedAnswer.text)
+    ).toEqual(icpEtcherConfig.faq.map(item => item.answer));
+  });
+
   it('allows product configs to omit research and resource sections', () => {
     const { research: _research, resources: _resources, ...baseConfig } = icpEtcherConfig;
     const configWithoutOptionalSections: ProductDetailConfig = {
@@ -118,6 +148,33 @@ describe('ProductDetailPage template', () => {
       backgroundImage:
         "linear-gradient(90deg,rgba(7,10,15,1) 0%,rgba(7,10,15,0.94) 42%,rgba(7,10,15,0.55) 100%),url('/assets/images/redesign/products/rie-standardized.webp')",
     });
+  });
+
+  it('omits visible FAQ and FAQPage schema when a future config has no FAQ items', async () => {
+    const configWithoutFaq: ProductDetailConfig = {
+      ...icpEtcherConfig,
+      slug: 'no-faq-platform',
+      faq: [],
+      hero: {
+        ...icpEtcherConfig.hero,
+        title: 'No FAQ Platform',
+      },
+    };
+
+    render(
+      <HelmetProvider>
+        <MemoryRouter>
+          <ProductDetailPage config={configWithoutFaq} />
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: 'No FAQ Platform' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Frequently Asked Questions' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(getProductJsonLd()).toBeTruthy();
+    });
+    expect(getFaqJsonLd()).toBeUndefined();
   });
 
   it('renders commerce controls and gallery only when configured', () => {
