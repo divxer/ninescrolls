@@ -40,8 +40,8 @@ export interface UpsertFromSubmissionResult {
 export async function invokeOrganizationApi(
     payload: UpsertFromSubmissionPayload,
 ): Promise<UpsertFromSubmissionResult>;
-export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<any>;
-export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<any> {
+export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<unknown>;
+export async function invokeOrganizationApi(payload: OrgApiPayload): Promise<unknown> {
     const res = await lambda.send(new InvokeCommand({
         FunctionName: FUNCTION_NAME(),
         InvocationType: 'RequestResponse',

@@ -26,12 +26,20 @@ const ANTHROPIC_TIMEOUT_MS = 20000;
 
 const ADMIN_GROUP = 'admin';
 
-export async function handler(event: AppSyncResolverEvent<any> & { fieldName?: string }): Promise<unknown> {
+type TenderApiEvent = AppSyncResolverEvent<Record<string, unknown>>;
+
+/** Minimal slice of the Cognito identity we read; other auth modes leave these undefined. */
+interface CognitoIdentitySlice {
+    groups?: string[];
+    username?: string;
+}
+
+export async function handler(event: TenderApiEvent & { fieldName?: string }): Promise<unknown> {
     requireAdmin(event);
-    const identity = (event.identity as any)?.username ?? 'unknown';
+    const identity = (event.identity as CognitoIdentitySlice | undefined)?.username ?? 'unknown';
     // Amplify Gen 2's `a.handler.function()` path sends fieldName at the event root.
     // Standard AppSync wraps it under event.info. Support both.
-    const fieldName = ((event.info as any)?.fieldName) ?? (event as any).fieldName;
+    const fieldName = ((event.info as { fieldName?: string } | undefined)?.fieldName) ?? event.fieldName;
     return dispatchFieldName(fieldName, event, identity);
 }
 
@@ -40,39 +48,39 @@ export async function handler(event: AppSyncResolverEvent<any> & { fieldName?: s
  * containing 'admin'. Other auth modes (IAM, API key) leave `event.identity.groups`
  * undefined and are rejected here.
  */
-function requireAdmin(event: AppSyncResolverEvent<any>): void {
-    const groups = (event.identity as any)?.groups ?? [];
+function requireAdmin(event: TenderApiEvent): void {
+    const groups = (event.identity as CognitoIdentitySlice | undefined)?.groups ?? [];
     if (!groups.includes(ADMIN_GROUP)) {
         throw new Error('Unauthorized: admin group required');
     }
 }
 
 async function dispatchFieldName(
-    fieldName: string,
-    event: AppSyncResolverEvent<any>,
+    fieldName: string | undefined,
+    event: TenderApiEvent,
     identity: string,
 ): Promise<unknown> {
     switch (fieldName) {
         case 'listTenders':
-            return listTenders(event.arguments);
+            return listTenders(event.arguments as ListTendersArgs);
         case 'getTender':
-            return getTender(event.arguments);
+            return getTender(event.arguments as { tenderId: string });
         case 'listTenderKeywordConfigs':
-            return listKeywordConfigs(event.arguments);
+            return listKeywordConfigs(event.arguments as { includeInactive?: boolean });
         case 'listPipelineRuns':
-            return listPipelineRuns(event.arguments);
+            return listPipelineRuns(event.arguments as { limit?: number });
         case 'getPipelineRun':
-            return getPipelineRun(event.arguments);
+            return getPipelineRun(event.arguments as { executionId: string });
         case 'updateTenderStatus':
-            return updateTenderStatus(event.arguments, identity);
+            return updateTenderStatus(event.arguments as UpdateTenderStatusArgs, identity);
         case 'bulkUpdateTenderStatus':
-            return bulkUpdateTenderStatus(event.arguments, identity);
+            return bulkUpdateTenderStatus(event.arguments as { tenderIds: string[]; toStatus: string }, identity);
         case 'upsertTenderKeywordConfig':
-            return upsertKeywordConfig(event.arguments, identity);
+            return upsertKeywordConfig(event.arguments as UpsertKeywordConfigArgs, identity);
         case 'runPrefilterPreview':
-            return runPrefilterPreview(event.arguments);
+            return runPrefilterPreview(event.arguments as RunPrefilterPreviewArgs);
         case 'translateTenderDescription':
-            return translateDescription(event.arguments);
+            return translateDescription(event.arguments as { tenderId: string; force?: boolean });
         default:
             throw new Error(`Unknown fieldName: ${fieldName}`);
     }
@@ -91,6 +99,18 @@ interface ListTendersArgs {
     sortDir?: 'asc' | 'desc';
     limit?: number;
     nextToken?: string;
+}
+
+/** Fields of the Tender DDB item that listTenders filters/sorts on. */
+interface TenderListItem {
+    isExpired?: boolean;
+    country?: string;
+    overallScore?: number;
+    postedDate?: string;
+    deadline?: string;
+    title?: string;
+    agency?: string;
+    matchedProductCategories?: string[];
 }
 
 async function listTenders(args: ListTendersArgs) {
@@ -123,14 +143,14 @@ async function listTenders(args: ListTendersArgs) {
             })),
         ),
     );
-    let items: any[] = queries.flatMap((q) => q.Items ?? []);
+    let items = queries.flatMap((q) => (q.Items ?? []) as TenderListItem[]);
 
     // In-memory filters
     if (!args.includeExpired) {
         items = items.filter((i) => !i.isExpired);
     }
     if (args.countries?.length) {
-        items = items.filter((i) => args.countries!.includes(i.country));
+        items = items.filter((i) => args.countries!.includes(i.country as string));
     }
     if (typeof args.minScore === 'number') {
         items = items.filter((i) => (i.overallScore ?? 0) >= args.minScore!);
@@ -157,8 +177,8 @@ async function listTenders(args: ListTendersArgs) {
     }
 
     // Sort
-    const cmp = (a: any, b: any) => {
-        let av: any; let bv: any;
+    const cmp = (a: TenderListItem, b: TenderListItem) => {
+        let av: string | number; let bv: string | number;
         if (sortBy === 'score') { av = a.overallScore ?? 0; bv = b.overallScore ?? 0; }
         else if (sortBy === 'postedDate') { av = a.postedDate ?? ''; bv = b.postedDate ?? ''; }
         else if (sortBy === 'deadline') { av = a.deadline ?? '9999-99-99'; bv = b.deadline ?? '9999-99-99'; }
@@ -180,7 +200,7 @@ async function listTenders(args: ListTendersArgs) {
             })),
         ),
     );
-    const totalActiveUnfiltered = countQueries.reduce((sum, q) => sum + ((q as any).Count ?? 0), 0);
+    const totalActiveUnfiltered = countQueries.reduce((sum, q) => sum + (q.Count ?? 0), 0);
 
     return {
         items: items.slice(0, limit),
@@ -211,7 +231,7 @@ async function getTender(args: { tenderId: string }) {
     if (!metaRes.Item) throw new Error(`Tender not found: ${args.tenderId}`);
     return {
         tender: metaRes.Item,
-        matches: (matchesRes.Items ?? []).sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0)),
+        matches: (matchesRes.Items ?? []).sort((a: { score?: number }, b: { score?: number }) => (b.score ?? 0) - (a.score ?? 0)),
         log: logRes.Items ?? [],
     };
 }
@@ -254,13 +274,20 @@ async function getPipelineRun(args: { executionId: string }) {
     }));
     const items = r.Items ?? [];
     return {
-        summary: items.find((i: any) => i.SK === 'SUMMARY') ?? null,
-        sources: items.filter((i: any) => typeof i.SK === 'string' && i.SK.startsWith('SOURCE#')),
+        summary: items.find((i: Record<string, unknown>) => i.SK === 'SUMMARY') ?? null,
+        sources: items.filter((i: Record<string, unknown>) => typeof i.SK === 'string' && i.SK.startsWith('SOURCE#')),
     };
 }
 
+type UpdateTenderStatusArgs = {
+    tenderId: string;
+    toStatus: string;
+    note?: string;
+    assignedTo?: string;
+};
+
 async function updateTenderStatus(
-    args: { tenderId: string; toStatus: string; note?: string; assignedTo?: string },
+    args: UpdateTenderStatusArgs,
     identity: string,
 ) {
     if (!(TENDER_STATUSES as readonly string[]).includes(args.toStatus)) {
@@ -310,8 +337,8 @@ async function updateTenderStatus(
             ExpressionAttributeValues: exprValues,
             ReturnValues: 'ALL_NEW',
         }));
-    } catch (err: any) {
-        if (err?.name === 'ConditionalCheckFailedException') {
+    } catch (err) {
+        if ((err as { name?: string } | undefined)?.name === 'ConditionalCheckFailedException') {
             throw new Error('Conflict: tender was modified by another user');
         }
         throw err;
@@ -372,17 +399,19 @@ async function bulkUpdateTenderStatus(
     return success;
 }
 
+type UpsertKeywordConfigArgs = {
+    productCategory: string;
+    productSlugs: string[];
+    keywords: string[];
+    synonyms: string[];
+    blacklist: string[];
+    naicsCodes: string[];
+    cpvCodes: string[];
+    isActive: boolean;
+};
+
 async function upsertKeywordConfig(
-    args: {
-        productCategory: string;
-        productSlugs: string[];
-        keywords: string[];
-        synonyms: string[];
-        blacklist: string[];
-        naicsCodes: string[];
-        cpvCodes: string[];
-        isActive: boolean;
-    },
+    args: UpsertKeywordConfigArgs,
     identity: string,
 ) {
     const nowIso = new Date().toISOString();
@@ -404,13 +433,15 @@ async function upsertKeywordConfig(
     return item;
 }
 
-async function runPrefilterPreview(args: {
+type RunPrefilterPreviewArgs = {
     title: string;
     description: string;
     naicsCodes?: string[];
     cpvCodes?: string[];
-    configOverride?: any;
-}) {
+    configOverride?: unknown;
+};
+
+async function runPrefilterPreview(args: RunPrefilterPreviewArgs) {
     const tender = {
         title: args.title,
         description: args.description,
@@ -523,7 +554,7 @@ async function callBedrock(prompt: string): Promise<string> {
                 messages: [{ role: 'user', content: prompt }],
             }),
         }), { abortSignal: ctrl.signal });
-        const text = await (res.body as any).transformToString('utf-8');
+        const text = await (res.body as { transformToString(encoding?: string): string }).transformToString('utf-8');
         const wrap = JSON.parse(text);
         return ((wrap.content?.[0]?.text as string) ?? '').trim();
     } finally {
@@ -541,8 +572,8 @@ async function callAnthropic(prompt: string): Promise<string> {
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
     });
-    const block = res.content[0] as any;
-    return ((block?.text as string) ?? '').trim();
+    const block = res.content[0] as { text?: string } | undefined;
+    return (block?.text ?? '').trim();
 }
 
 // Export internals for unit tests

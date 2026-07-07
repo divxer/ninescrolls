@@ -675,7 +675,8 @@ const sharpLayer = new LayerVersion(insightsAssetsStack, 'SharpLayer', {
 // Override the placeholder layer ARN from defineFunction with the real layer
 const cfnFunction = backend.optimizeInsightsImage.resources.lambda.node.defaultChild;
 if (cfnFunction && 'addPropertyOverride' in cfnFunction) {
-    (cfnFunction as any).addPropertyOverride('Layers', [sharpLayer.layerVersionArn]);
+    (cfnFunction as { addPropertyOverride(path: string, value: unknown): void })
+        .addPropertyOverride('Layers', [sharpLayer.layerVersionArn]);
 }
 
 // =============================================================================

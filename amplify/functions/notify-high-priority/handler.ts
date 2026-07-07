@@ -69,7 +69,7 @@ export async function handler(event: NotifyHighPriorityEvent): Promise<NotifyOut
             ExpressionAttributeValues: { ':pk': `TENDER#${tenderId}`, ':sk': 'MATCH#' },
         }));
 
-        const matchesHtml = (matches.Items ?? []).map((m: Record<string, any>) =>
+        const matchesHtml = ((matches.Items ?? []) as Array<{ productSlug: string; score: number; reasoning?: string }>).map((m) =>
             `<li><strong>${escapeHtml(m.productSlug)}</strong> - ${m.score}/100<br><em>${escapeHtml(m.reasoning ?? '')}</em></li>`
         ).join('');
 

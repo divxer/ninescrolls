@@ -18,6 +18,10 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
+// Local alias for a DynamoDB pagination key (the SDK's own types are masked by
+// the shorthand ambient declaration in stripe-webhook/ambient.d.ts).
+type DdbKey = Record<string, unknown>;
+
 const TABLE_NAME = process.env.INSIGHTS_POST_TABLE!;
 const BASE_URL = 'https://ninescrolls.com';
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY ?? '';
@@ -100,7 +104,7 @@ interface ArticleData {
 
 async function fetchPublishedPosts(): Promise<ArticleData[]> {
   const all: ArticleData[] = [];
-  let lastKey: Record<string, any> | undefined;
+  let lastKey: DdbKey | undefined;
 
   do {
     const result = await ddbClient.send(new ScanCommand({
@@ -211,9 +215,27 @@ interface FullArticle {
   faqs: Array<{ question: string; answer: string }> | null;
 }
 
+// Raw DynamoDB item shape for a post — fields as stored, before defaults are applied
+interface RawPostItem {
+  slug: string;
+  title: string;
+  content?: string | null;
+  excerpt?: string | null;
+  imageUrl?: string | null;
+  author?: string;
+  readTime?: number;
+  category?: string;
+  publishDate: string;
+  contentType?: string;
+  updatedAt?: string;
+  articleType?: string | null;
+  isDraft?: boolean;
+  faqs?: unknown;
+}
+
 async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
   // Try GSI query first (fast O(1) lookup), fall back to Scan if GSI fails
-  let item: Record<string, any> | undefined;
+  let item: RawPostItem | undefined;
   try {
     const result = await ddbClient.send(new QueryCommand({
       TableName: TABLE_NAME,
@@ -222,10 +244,10 @@ async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
       ExpressionAttributeValues: { ':slug': slug },
       Limit: 1,
     }));
-    item = result.Items?.[0];
+    item = result.Items?.[0] as RawPostItem | undefined;
   } catch (gsiErr) {
     console.warn('[Prerender] GSI query failed, falling back to Scan:', gsiErr);
-    let lastKey: Record<string, any> | undefined;
+    let lastKey: DdbKey | undefined;
     do {
       const result = await ddbClient.send(new ScanCommand({
         TableName: TABLE_NAME,
@@ -233,7 +255,7 @@ async function fetchPostBySlug(slug: string): Promise<FullArticle | null> {
         ExpressionAttributeValues: { ':slug': slug },
         ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
       }));
-      if (result.Items && result.Items.length > 0) { item = result.Items[0]; break; }
+      if (result.Items && result.Items.length > 0) { item = result.Items[0] as RawPostItem; break; }
       lastKey = result.LastEvaluatedKey;
     } while (lastKey);
   }
@@ -431,7 +453,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       const post = await fetchPostBySlug(slug);
       if (!post) return response(404, 'Article not found', 'text/plain', 60);
       return response(200, generatePrerenderHTML(post), 'text/html', 3600);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Prerender failed:', err);
       return response(500, 'Internal error');
     }
@@ -466,7 +488,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     return response(200, body, contentType);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Sitemap generation failed:', err);
     return response(500, 'Internal error');
   }

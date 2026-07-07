@@ -297,7 +297,7 @@ export const processInsightsImage: Schema['processInsightsImage']['functionHandl
 export const deleteInsightsImages: Schema['deleteInsightsImages']['functionHandler'] =
     async (event) => {
         const { slug } = event.arguments;
-        const dryRun = (event.arguments as any).dryRun ?? false;
+        const dryRun = (event.arguments as { dryRun?: boolean }).dryRun ?? false;
 
         if (!slug) {
             throw new Error('slug is required');
