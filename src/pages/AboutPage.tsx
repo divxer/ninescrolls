@@ -192,6 +192,7 @@ export function AboutPage() {
             </div>
             <ConversionCard className="border-white/10 bg-white/5 text-white">
               <TrustSignalList
+                variant="dark"
                 items={[
                   { title: 'Process-first guidance', copy: 'Start with materials, process windows, and application needs.' },
                   { title: 'Procurement-ready documentation', copy: 'Support for quotes, identifiers, and institutional review.' },
