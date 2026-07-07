@@ -41,7 +41,7 @@ const processCapabilities: ProcessCapability[] = [
     summary: 'High-aspect-ratio etch workflows for MEMS, TSV, and advanced device prototyping.',
     equipment: ['ICP-RIE', 'RIE', 'DRIE'],
     applications: ['MEMS', 'Advanced Packaging', 'Failure Analysis'],
-    resources: ['Bosch Process', 'ICP vs RIE', 'TSV'],
+    resources: ['Deep Silicon Bosch Process', 'Compare ICP-RIE vs RIE', 'TSV'],
   },
   {
     id: 'thin-film-deposition',
@@ -54,7 +54,7 @@ const processCapabilities: ProcessCapability[] = [
   },
   {
     id: 'diamond-processing',
-    name: 'Diamond Processing',
+    name: 'Diamond Semiconductor Processing',
     tier: 'secondary',
     summary: 'Plasma process control for diamond, SiC, GaN, and other hard-to-process materials.',
     equipment: ['ICP-RIE', 'RIE', 'PECVD'],
@@ -196,11 +196,31 @@ const researchCards = [
 ];
 
 const knowledgeCards = [
-  { title: 'Hybrid Bonding', href: '/insights', meta: 'Advanced packaging guide' },
-  { title: 'TSV', href: '/insights', meta: 'Etch and deposition workflow' },
-  { title: 'ICP vs RIE', href: '/insights', meta: 'Process selection note' },
-  { title: 'Bosch Process', href: '/insights', meta: 'Deep silicon etch primer' },
-  { title: 'ALD Basics', href: '/insights', meta: 'Thin-film fundamentals' },
+  {
+    title: 'Wafer Bonding for 3D Integration',
+    href: '/insights/wafer-bonding-technologies-for-3d-integration',
+    meta: 'Advanced packaging guide',
+  },
+  {
+    title: 'Through-Silicon Vias (TSV)',
+    href: '/insights/through-silicon-vias-tsv-guide',
+    meta: 'Integration flows and design rules',
+  },
+  {
+    title: 'Compare ICP-RIE vs RIE',
+    href: '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching',
+    meta: 'Process selection comparison',
+  },
+  {
+    title: 'Deep Silicon Bosch Process',
+    href: '/insights/deep-reactive-ion-etching-bosch-process',
+    meta: 'DRIE and deep silicon etch primer',
+  },
+  {
+    title: 'ALD Basics',
+    href: '/insights/atomic-layer-deposition-ald-comprehensive-guide',
+    meta: 'Thin-film fundamentals',
+  },
 ];
 
 const brandProof = [

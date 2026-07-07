@@ -157,9 +157,34 @@ describe('HomePage redesign', () => {
     expect(within(capabilityPanel).getByText('ALD')).toBeInTheDocument();
     expect(within(capabilityPanel).getByText('Advanced Packaging')).toBeInTheDocument();
     expect(within(capabilityPanel).getByText('ALD Basics')).toBeInTheDocument();
-    expect(within(capabilityPanel).queryByText('Bosch Process')).not.toBeInTheDocument();
+    expect(within(capabilityPanel).queryByText('Deep Silicon Bosch Process')).not.toBeInTheDocument();
     expect(siliconButton).toHaveAttribute('aria-pressed', 'false');
     expect(thinFilmButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('deep-links knowledge center cards with intent-specific resource anchors', () => {
+    renderHomePage();
+
+    expect(screen.getByRole('link', { name: /Compare ICP-RIE vs RIE/i })).toHaveAttribute(
+      'href',
+      '/insights/understanding-differences-pe-rie-icp-rie-plasma-etching'
+    );
+    expect(screen.getByRole('link', { name: /Deep Silicon Bosch Process/i })).toHaveAttribute(
+      'href',
+      '/insights/deep-reactive-ion-etching-bosch-process'
+    );
+    expect(screen.getByRole('link', { name: /Wafer Bonding for 3D Integration/i })).toHaveAttribute(
+      'href',
+      '/insights/wafer-bonding-technologies-for-3d-integration'
+    );
+    expect(screen.getByRole('link', { name: /Through-Silicon Vias \(TSV\)/i })).toHaveAttribute(
+      'href',
+      '/insights/through-silicon-vias-tsv-guide'
+    );
+    expect(screen.getByRole('link', { name: /ALD Basics/i })).toHaveAttribute(
+      'href',
+      '/insights/atomic-layer-deposition-ald-comprehensive-guide'
+    );
   });
 
   it('does not declare unsupported bilingual availability in homepage structured data', async () => {
