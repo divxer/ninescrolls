@@ -41,7 +41,7 @@ export function TenderDetailPage() {
             <Link to="/admin/tenders" className="text-xs text-primary hover:underline">← Back to tenders</Link>
             <div className="mt-4 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
                 <TenderHeaderPanel tender={t} onUpdated={refresh} />
-                <main className="space-y-4">
+                <div className="space-y-4">
                     <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4">
                         <h3 className="font-headline text-base font-bold text-on-surface mb-2">Description{langTag}</h3>
                         <p className="text-sm text-on-surface whitespace-pre-wrap">
@@ -78,7 +78,7 @@ export function TenderDetailPage() {
                         <h3 className="font-headline text-base font-bold text-on-surface mb-2">Audit log</h3>
                         <TenderAuditLog log={(data.log ?? []) as TenderAuditEntry[]} />
                     </section>
-                </main>
+                </div>
             </div>
         </div>
     );
