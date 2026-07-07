@@ -42,9 +42,14 @@ describe('CartPage', () => {
   it('marks the cart page noindex without changing empty-cart behavior', async () => {
     renderCart();
 
-    expect(screen.getByRole('heading', { name: /Review Your Order/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Review your equipment order/i })).toBeInTheDocument();
     expect(screen.getByText(/Your cart is empty/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Continue Shopping/i })).toHaveAttribute('href', '/products');
+    const quoteLinks = screen.getAllByRole('link', { name: /Request Quote/i });
+    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    quoteLinks.forEach((link) => {
+      expect(link).toHaveAttribute('href', '/request-quote');
+    });
     await waitFor(() => {
       expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, follow');
     });

@@ -4,6 +4,7 @@ import { useScrollToTop } from '../hooks/useScrollToTop';
 import { useCart } from '../contexts/useCart';
 import { OptimizedImage } from '../components/common/OptimizedImage';
 import { SEO } from '../components/common/SEO';
+import { ConversionCard, ConversionHero, FormSection, TrustSignalList } from '../components/conversion';
 import { createCheckoutSession, calculateTax } from '../services/stripeService';
 import { toCheckoutImageUrl } from './checkoutImageUrl';
 
@@ -222,9 +223,9 @@ export function CheckoutPage() {
 
   const total = getTotalPrice();
 
-  const inputClasses = "w-full border-0 border-b border-outline-variant focus:ring-0 focus:border-primary p-3 bg-transparent font-body text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-colors";
-  const selectClasses = "w-full border-0 border-b border-outline-variant focus:ring-0 focus:border-primary p-3 bg-transparent font-body text-on-surface outline-none transition-colors";
-  const labelClasses = "block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1";
+  const inputClasses = "w-full rounded-md border border-slate-300 bg-white px-4 py-3 font-body text-slate-950 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-100";
+  const selectClasses = "w-full rounded-md border border-slate-300 bg-white px-4 py-3 font-body text-slate-950 outline-none transition-colors focus:border-sky-600 focus:ring-2 focus:ring-sky-100";
+  const labelClasses = "block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2";
 
   return (
     <>
@@ -234,14 +235,22 @@ export function CheckoutPage() {
         url="/checkout"
         robots="noindex, nofollow"
       />
-      <main className="py-24 px-8 max-w-5xl mx-auto">
-        <h1 className="text-5xl font-headline font-bold mb-12">Secure Checkout</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          <div className="lg:col-span-7 space-y-12">
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="Secure Checkout"
+          title="Secure equipment checkout"
+          copy="Confirm shipping details before continuing to Stripe checkout. Taxes are calculated from the delivery address, and formal invoice support remains available for institutional purchasing."
+          trustItems={['Stripe checkout', 'Tax calculated before payment', 'Order support by NineScrolls']}
+        />
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-8 py-12 lg:grid-cols-12">
+          <div className="lg:col-span-7">
             <form onSubmit={handleSubmit} noValidate>
               {/* Contact Information */}
-              <section className="mb-12">
-                <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">1. Contact &amp; Shipping</h2>
+              <FormSection
+                title="1. Contact & shipping"
+                description="Use the purchasing contact who should receive order and shipping coordination."
+                className="mb-6"
+              >
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -312,11 +321,14 @@ export function CheckoutPage() {
                     />
                   </div>
                 </div>
-              </section>
+              </FormSection>
 
               {/* Shipping Address */}
-              <section className="mb-12">
-                <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">2. Shipping Address</h2>
+              <FormSection
+                title="2. Shipping address"
+                description="This address is used for tax calculation and shipping coordination."
+                className="mb-6"
+              >
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="address" className={labelClasses}>Address *</label>
@@ -414,11 +426,14 @@ export function CheckoutPage() {
                     </select>
                   </div>
                 </div>
-              </section>
+              </FormSection>
 
               {/* Order Notes */}
-              <section className="mb-12">
-                <h2 className="text-xl font-headline font-bold border-b pb-2 mb-6">3. Order Notes</h2>
+              <FormSection
+                title="3. Order notes"
+                description="Add PO references, delivery constraints, or documentation requests."
+                className="mb-6"
+              >
                 <div>
                   <label htmlFor="notes" className={labelClasses}>Additional Notes</label>
                   <textarea
@@ -428,10 +443,10 @@ export function CheckoutPage() {
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="Any special instructions or requirements..."
-                    className="w-full border border-outline-variant/20 focus:ring-0 focus:border-primary p-3 bg-transparent rounded-lg font-body text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-colors resize-y"
+                    className="w-full resize-y rounded-md border border-slate-300 bg-white px-4 py-3 font-body text-slate-950 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
-              </section>
+              </FormSection>
 
               {error && (
                 <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
@@ -440,25 +455,25 @@ export function CheckoutPage() {
               )}
 
               {/* Checkout notes */}
-              <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 mb-8 space-y-3 text-sm text-on-surface-variant">
+              <ConversionCard className="mb-8 space-y-3 text-sm leading-6 text-slate-600">
                 <p>
-                  <span className="font-bold text-on-surface">Payment:</span> You will be redirected to Stripe Checkout to complete your payment securely.
+                  <span className="font-bold text-slate-950">Payment:</span> You will be redirected to Stripe Checkout to complete your payment securely.
                 </p>
                 <p>
                   Your address has been saved and will be used for automatic tax calculation.
                   You may be asked to confirm your billing address in Stripe Checkout if it differs from your shipping address.
                 </p>
                 <p>
-                  <span className="font-bold text-on-surface">Support:</span> Configuration review, order coordination, documentation, and post-sale support are managed directly by NineScrolls LLC.
+                  <span className="font-bold text-slate-950">Support:</span> Configuration review, order coordination, documentation, and post-sale support are managed directly by NineScrolls LLC.
                 </p>
                 <p>
                   Formal invoice available upon request. All sales final. No returns for capital equipment.
                 </p>
-              </div>
+              </ConversionCard>
 
               <button
                 type="submit"
-                className="w-full bg-primary text-white py-5 rounded-sm font-bold uppercase tracking-widest shadow-lg hover:bg-primary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-md bg-sky-600 py-5 font-bold uppercase tracking-widest text-white shadow-lg transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Processing...' : 'Place Secure Order'}
@@ -468,8 +483,8 @@ export function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <aside className="lg:col-span-5">
-            <div className="bg-white p-8 rounded-xl border border-outline-variant/10 shadow-sm sticky top-8">
-              <h3 className="text-xl font-bold mb-6">Order Manifest</h3>
+            <ConversionCard className="sticky top-8">
+              <h2 className="text-xl font-bold mb-6">Order Manifest</h2>
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-4 items-start">
@@ -485,7 +500,7 @@ export function CheckoutPage() {
                     )}
                     <div className="flex-grow min-w-0">
                       <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                      <p className="text-xs text-on-surface-variant">Qty: {item.quantity} x ${item.price.toLocaleString()}</p>
+                      <p className="text-xs text-slate-600">Qty: {item.quantity} x ${item.price.toLocaleString()}</p>
                     </div>
                     <p className="font-headline font-bold text-sm shrink-0">
                       ${(item.price * item.quantity).toLocaleString()}
@@ -493,9 +508,9 @@ export function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-outline-variant/20 pt-4 space-y-3 text-sm">
+              <div className="border-t border-slate-200 pt-4 space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-on-surface-variant">Subtotal</span>
+                  <span className="text-slate-600">Subtotal</span>
                   <span className="font-bold">
                     {taxInfo && !isCalculatingTax
                       ? `$${taxInfo.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
@@ -503,13 +518,13 @@ export function CheckoutPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-on-surface-variant">Shipping</span>
+                  <span className="text-slate-600">Shipping</span>
                   <span className="font-bold">Free</span>
                 </div>
                 {isCalculatingTax && (
                   <div className="flex justify-between">
-                    <span className="text-on-surface-variant">Tax</span>
-                    <span className="text-on-surface-variant animate-pulse">Calculating...</span>
+                    <span className="text-slate-600">Tax</span>
+                    <span className="text-slate-600 animate-pulse">Calculating...</span>
                   </div>
                 )}
                 {taxInfo && !isCalculatingTax && taxInfo.taxAmount > 0 && (
@@ -521,7 +536,7 @@ export function CheckoutPage() {
                     {taxInfo.taxBreakdown && taxInfo.taxBreakdown.length > 0 && (
                       <div className="pl-4 space-y-1">
                         {taxInfo.taxBreakdown.map((breakdown, index) => (
-                          <div key={index} className="flex justify-between text-xs text-on-surface-variant">
+                          <div key={index} className="flex justify-between text-xs text-slate-600">
                             <span>{breakdown.jurisdiction || 'Tax'}</span>
                             <span>${breakdown.amount.toFixed(2)}</span>
                           </div>
@@ -532,11 +547,11 @@ export function CheckoutPage() {
                 )}
                 {taxInfo && !isCalculatingTax && taxInfo.taxAmount === 0 && (
                   <div className="flex justify-between">
-                    <span className="text-on-surface-variant">Tax</span>
-                    <span className="text-on-surface-variant">No tax applicable</span>
+                    <span className="text-slate-600">Tax</span>
+                    <span className="text-slate-600">No tax applicable</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-outline-variant/20 pt-3 text-lg">
+                <div className="flex justify-between border-t border-slate-200 pt-3 text-lg">
                   <span className="font-headline font-bold">Total</span>
                   <span className="font-headline font-bold">
                     {taxInfo && !isCalculatingTax
@@ -545,7 +560,15 @@ export function CheckoutPage() {
                   </span>
                 </div>
               </div>
-            </div>
+              <div className="mt-8 border-t border-slate-200 pt-6">
+                <TrustSignalList
+                  items={[
+                    { title: 'Secure Stripe checkout', copy: 'Payment details are completed on Stripe.' },
+                    { title: 'Order review', copy: 'NineScrolls reviews order details before fulfillment coordination.' },
+                  ]}
+                />
+              </div>
+            </ConversionCard>
           </aside>
         </div>
       </main>

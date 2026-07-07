@@ -76,6 +76,17 @@ describe('CheckoutPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Please fill in all required fields.');
   });
 
+  it('presents checkout as a secure equipment checkout without changing the form contract', () => {
+    renderCheckout();
+
+    expect(screen.getByRole('heading', { name: /Secure equipment checkout/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Stripe checkout/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText(/First Name/i)).toHaveAttribute('name', 'firstName');
+    expect(screen.getByLabelText(/^Email/i)).toHaveAttribute('name', 'email');
+    expect(screen.getByLabelText(/^Address/i)).toHaveAttribute('name', 'address');
+    expect(screen.getByRole('button', { name: /Place Secure Order/i })).toBeInTheDocument();
+  });
+
   it('sends unchanged success and cancel URLs to createCheckoutSession', async () => {
     vi.stubGlobal('gtag', vi.fn());
     renderCheckout();
