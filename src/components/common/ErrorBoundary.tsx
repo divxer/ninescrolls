@@ -17,7 +17,7 @@ interface ErrorBoundaryState {
  * stale-chunk failures — so anything reaching this boundary is either a genuine
  * render error or a chunk that stayed broken across a reload.
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundaryRoot extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): ErrorBoundaryState {
@@ -34,6 +34,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
     return this.props.children;
   }
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <ErrorBoundaryRoot {...props} />;
 }
 
 function DefaultErrorFallback() {
