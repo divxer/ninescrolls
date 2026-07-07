@@ -317,7 +317,7 @@ export function HomePage() {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA] text-slate-900">
+      <div className="bg-[#FAFAFA] text-slate-900">
         <section className="relative isolate min-h-[760px] overflow-hidden bg-[#070A0F] text-white">
           <div className="absolute inset-0 z-0">
             <div
@@ -677,7 +677,7 @@ export function HomePage() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }

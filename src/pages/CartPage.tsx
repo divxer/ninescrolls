@@ -31,7 +31,7 @@ export function CartPage() {
           url="/cart"
           robots="noindex, follow"
         />
-        <main className="bg-[#FAFAFA]">
+        <div className="bg-[#FAFAFA]">
           <ConversionHero
             eyebrow="Equipment Cart"
             title="Review your equipment order"
@@ -57,7 +57,7 @@ export function CartPage() {
               <Link to="/products/plasma-cleaner/compare" className="mt-5 inline-flex text-sm font-bold text-sky-600 hover:text-sky-700">Compare Models</Link>
             </ConversionCard>
           </section>
-        </main>
+        </div>
       </>
     );
   }
@@ -72,7 +72,7 @@ export function CartPage() {
         url="/cart"
         robots="noindex, follow"
       />
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Equipment Cart"
           title="Review your equipment order"
@@ -173,7 +173,7 @@ export function CartPage() {
             </ConversionCard>
           </aside>
         </div>
-      </main>
+      </div>
     </>
   );
 }

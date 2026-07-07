@@ -73,7 +73,7 @@ export const NotFoundPage: React.FC = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      <main className="min-h-[819px] flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[819px] flex flex-col items-center justify-center px-8 text-center">
         <h1 className="text-[12rem] font-headline font-black text-on-surface/5 leading-none select-none">404</h1>
         <div className="-mt-20">
           <h2 className="text-4xl font-headline font-bold mb-4">Precision Segment Missing</h2>
@@ -136,7 +136,7 @@ export const NotFoundPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 };

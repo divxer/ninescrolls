@@ -58,7 +58,7 @@ export function CheckoutSuccessPage() {
         url="/checkout/success"
         robots="noindex, nofollow"
       />
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Checkout Complete"
           title="Order confirmed"
@@ -98,7 +98,7 @@ export function CheckoutSuccessPage() {
             </div>
           </ConversionCard>
         </section>
-      </main>
+      </div>
     </>
   );
 }

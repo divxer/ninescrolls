@@ -61,7 +61,7 @@ export const NewsPage: React.FC = () => {
         url="/news"
         type="website"
       />
-      <main className="py-24 px-8 max-w-7xl mx-auto">
+      <div className="py-24 px-8 max-w-7xl mx-auto">
         <h1 className="text-5xl font-headline font-bold mb-4">Newsroom</h1>
         <p className="text-on-surface-variant text-lg mb-16">Latest updates in semiconductor manufacturing and plasma processing</p>
 
@@ -157,7 +157,7 @@ export const NewsPage: React.FC = () => {
             )}
           </>
         )}
-      </main>
+      </div>
     </>
   );
 };

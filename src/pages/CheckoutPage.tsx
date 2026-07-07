@@ -235,7 +235,7 @@ export function CheckoutPage() {
         url="/checkout"
         robots="noindex, nofollow"
       />
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Secure Checkout"
           title="Secure equipment checkout"
@@ -571,7 +571,7 @@ export function CheckoutPage() {
             </ConversionCard>
           </aside>
         </div>
-      </main>
+      </div>
     </>
   );
 }
