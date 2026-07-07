@@ -156,6 +156,20 @@ describe('RFQPage URL attribution contract', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/complete the required fields/i);
   });
 
+  it('associates invalid fields with their error messages for assistive tech', async () => {
+    renderRfq('/request-quote');
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    await screen.findByRole('alert');
+
+    const nameInput = screen.getByLabelText(/Full Name/i);
+    expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+    const describedBy = nameInput.getAttribute('aria-describedby');
+    expect(describedBy).toBe('rfq-error-name');
+    // the referenced error node must exist and carry the visible message
+    expect(document.getElementById(describedBy!)).toHaveTextContent(/./);
+  });
+
   it('prefills product, category, source, via, and multi-product comments from URL params', () => {
     renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
 
