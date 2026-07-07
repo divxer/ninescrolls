@@ -69,6 +69,8 @@ describe('StartupPackagePage redesign', () => {
       screen.getByRole('heading', { name: /Startup lab equipment packages for new research programs/i })
     ).toBeInTheDocument();
     expect(screen.getAllByText(/2-year standard warranty/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Budgetary quote support')[0]).toHaveClass('text-white');
+    expect(screen.getByText('Useful for grant, proposal, and departmental planning.')).toHaveClass('text-slate-300');
 
     const body = document.body;
     expect(body).not.toHaveTextContent(/2–3 years warranty/i);
