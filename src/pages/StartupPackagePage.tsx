@@ -5,18 +5,43 @@ import { SEO } from '../components/common/SEO';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { QuoteModal } from '../components/common/QuoteModal';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
+import { ConversionCard, TrustSignalList } from '../components/conversion';
 
 const benefitCards = [
-  { icon: 'savings', title: 'Discounted Pricing', items: ['Special rates for new PIs within the first 2 years of appointment'] },
-  { icon: 'build', title: 'Extended Warranty & Training', items: ['2–3 years warranty plus free installation and training'] },
-  { icon: 'redeem', title: 'Complimentary Accessories', items: ['Bundle options like a Spin Coater or UV-Ozone Cleaner'] },
-  { icon: 'bolt', title: 'Fast Delivery & Setup', items: ['Prioritized scheduling for startup labs to get you running quickly'] },
+  {
+    title: 'Startup-aware configuration',
+    copy: 'Match the first equipment purchase to the process capabilities, facility constraints, and funding timeline of a new research group.',
+  },
+  {
+    title: 'Budgetary quote support',
+    copy: 'Prepare procurement-ready estimates and configuration notes for proposal planning, departmental review, or institutional purchasing.',
+  },
+  {
+    title: '2-year standard warranty',
+    copy: 'Build the first toolset around NineScrolls equipment with a standard warranty path and technical support after delivery.',
+  },
+  {
+    title: 'Workflow-based bundles',
+    copy: 'Discuss etching, deposition, coating, and surface-preparation combinations that fit the lab’s first process roadmap.',
+  },
 ];
 
 const productCards = [
-  { icon: 'precision_manufacturing', title: 'ICP-RIE / RIE', desc: 'High-uniformity plasma etching systems for advanced microfabrication.', link: '/products/icp-etcher' },
-  { icon: 'layers', title: 'Low-Temperature PECVD / ALD', desc: 'Conformal thin film deposition for sensitive substrates and research.', link: '/products/pecvd' },
-  { icon: 'rotate_right', title: 'Spin Coater', desc: 'Reliable resist coating with developer modules and accessories.', link: '/products/coater-developer' },
+  {
+    title: 'ICP-RIE / RIE',
+    desc: 'High-density plasma etching and anisotropic RIE systems for microfabrication workflows.',
+    link: '/products/icp-etcher',
+  },
+  {
+    title: 'PECVD / ALD',
+    desc: 'Thin-film deposition platforms for dielectric films, passivation, and conformal research stacks.',
+    link: '/products/pecvd',
+  },
+  {
+    title: 'Coater / Developer',
+    desc: 'Photolithography track support for coating, developing, baking, HMDS, and EBR workflows.',
+    link: '/products/coater-developer',
+  },
 ];
 
 export function StartupPackagePage() {
@@ -28,114 +53,156 @@ export function StartupPackagePage() {
   return (
     <>
       <SEO
-        title="NineScrolls Startup Package – Supporting New Labs from Day One"
-        description="Special discounts, standard warranty included, and complimentary accessories for new faculty establishing their labs. ICP-RIE/RIE, PECVD/ALD."
-        keywords="startup lab package, startup package etching, startup package PECVD, startup package ALD, startup package ICP-RIE, startup package RIE, new faculty startup package, new PI equipment package, university lab startup package, semiconductor lab startup, cleanroom equipment startup, plasma etching startup, MEMS lab startup, photonics lab startup"
+        title="Startup Lab Equipment Packages"
+        description="Startup lab equipment packages for new research programs. Request budgetary quote support for ICP-RIE/RIE, PECVD/ALD, coating, development, and process equipment bundles."
+        keywords="startup lab equipment package, new PI equipment package, university lab startup package, semiconductor lab startup, cleanroom equipment startup, ICP-RIE startup package, PECVD startup package, ALD startup package, photolithography track startup"
         url="/startup-package"
       />
       <Helmet>
         <script type="application/ld+json">
           {JSON.stringify({
-            "@context": "https://schema.org",
-            "@graph": [
+            '@context': 'https://schema.org',
+            '@graph': [
               {
-                "@type": "WebPage",
-                "@id": "https://ninescrolls.com/startup-package",
-                "url": "https://ninescrolls.com/startup-package",
-                "name": "NineScrolls Startup Package – Supporting New Labs from Day One",
-                "description": "Special discounts, extended warranty, and complimentary accessories for new faculty establishing their labs. ICP-RIE/RIE, PECVD/ALD.",
-                "isPartOf": { "@type": "WebSite", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" }
+                '@type': 'WebPage',
+                '@id': 'https://ninescrolls.com/startup-package',
+                url: 'https://ninescrolls.com/startup-package',
+                name: 'NineScrolls Startup Package',
+                description:
+                  'Startup lab equipment packages and budgetary quote support for new research programs evaluating plasma processing, thin-film deposition, coating, and development equipment.',
+                isPartOf: { '@type': 'WebSite', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' },
               },
               {
-                "@type": "Service",
-                "name": "Startup Package for New Faculty Labs",
-                "serviceType": "Laboratory equipment discount and onboarding program",
-                "provider": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" },
-                "areaServed": ["US", "EU", "APAC"],
-                "audience": {
-                  "@type": "Audience",
-                  "audienceType": ["New Faculty (PI)", "Academic Research Labs", "University Cleanroom Facilities"]
+                '@type': 'Service',
+                name: 'Startup Package for New Research Labs',
+                serviceType: 'Laboratory equipment configuration and budgetary quote support',
+                provider: { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' },
+                areaServed: ['US', 'EU', 'APAC'],
+                audience: {
+                  '@type': 'Audience',
+                  audienceType: ['New Faculty', 'Academic Research Labs', 'University Cleanroom Facilities'],
                 },
-                "offers": {
-                  "@type": "Offer",
-                  "availability": "https://schema.org/InStock",
-                  "eligibleCustomerType": "New customers (new faculty)"
+                offers: {
+                  '@type': 'Offer',
+                  availability: 'https://schema.org/InStock',
+                  eligibleCustomerType: 'New research laboratories',
                 },
-                "description": "Special discounts, standard warranty, and complimentary accessories on ICP-RIE/RIE etching systems, low-temperature PECVD/ALD systems, and spin coaters for new faculty labs."
+                description:
+                  'Configuration review, budgetary quote support, 2-year standard warranty, and workflow-based equipment bundle discussion for new research programs.',
               },
-              ...productCards.map(p => ({
-                "@type": "Product",
-                "name": p.title,
-                "description": p.desc,
-                "url": `https://ninescrolls.com${p.link}`,
-                "brand": { "@type": "Brand", "name": "NineScrolls" },
-                "manufacturer": { "@type": "Organization", "name": "NineScrolls LLC", "url": "https://ninescrolls.com" },
-                "category": "Laboratory Equipment",
-                "offers": {
-                  "@type": "Offer",
-                  "url": `https://ninescrolls.com${p.link}`,
-                  "availability": "https://schema.org/InStock",
-                  "seller": { "@type": "Organization", "name": "NineScrolls LLC" }
-                }
-              }))
-            ]
+              ...productCards.map((p) => ({
+                '@type': 'Product',
+                name: p.title,
+                description: p.desc,
+                url: `https://ninescrolls.com${p.link}`,
+                brand: { '@type': 'Brand', name: 'NineScrolls' },
+                manufacturer: { '@type': 'Organization', name: 'NineScrolls LLC', url: 'https://ninescrolls.com' },
+                category: 'Laboratory Equipment',
+                offers: {
+                  '@type': 'Offer',
+                  url: `https://ninescrolls.com${p.link}`,
+                  availability: 'https://schema.org/InStock',
+                  seller: { '@type': 'Organization', name: 'NineScrolls LLC' },
+                },
+              })),
+            ],
           })}
         </script>
       </Helmet>
 
-      <main>
-        {/* Hero */}
-        <section className="relative min-h-[600px] flex items-center bg-surface-container-low">
-          <div className="container mx-auto px-8 py-20">
-            <div className="max-w-3xl">
-              <span className="inline-block px-4 py-1 bg-tertiary text-white rounded-full text-xs font-bold mb-6">STARTUP PACKAGE 2025</span>
-              <h1 className="text-6xl font-headline font-bold mb-8">Supporting New Labs from Day One</h1>
-              <p className="text-xl text-on-surface-variant leading-relaxed mb-10">Special discounts, standard warranty included, and complimentary accessories for new faculty establishing their labs.</p>
-              <div className="flex flex-wrap gap-4">
-                <button className="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:opacity-90 transition-opacity" onClick={() => setQuoteOpen(true)}>Request Your Startup Package Quote</button>
-                <button className="px-8 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors" onClick={() => setGateOpen(true)}>Download Equipment Guide (PDF)</button>
+      <main className="bg-[#FAFAFA]">
+        <section className="border-b border-slate-200 bg-slate-950 text-white">
+          <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-16 lg:grid-cols-[1fr_0.8fr] lg:px-10 lg:py-20">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-300">Startup package</span>
+              <h1 className="mt-5 max-w-4xl text-5xl font-headline font-bold leading-[0.98] tracking-tight md:text-6xl">
+                Startup lab equipment packages for new research programs
+              </h1>
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+                Build the first process toolset around the equipment families, facility constraints, and
+                budgetary quote needs of a new research group.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700"
+                  onClick={() => setQuoteOpen(true)}
+                >
+                  Request Startup Package Quote
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                  onClick={() => setGateOpen(true)}
+                >
+                  Download Equipment Guide
+                </button>
               </div>
             </div>
+            <ConversionCard className="border-white/10 bg-white/5 text-white">
+              <h2 className="text-2xl font-headline font-bold tracking-tight">Designed for first-tool decisions</h2>
+              <div className="mt-6">
+                <TrustSignalList
+                  items={[
+                    { title: 'Budgetary quote support', copy: 'Useful for grant, proposal, and departmental planning.' },
+                    { title: '2-year standard warranty', copy: 'A verified support baseline across the equipment line.' },
+                    { title: 'Workflow-based bundles', copy: 'Etching, deposition, coating, development, and surface preparation.' },
+                  ]}
+                />
+              </div>
+            </ConversionCard>
           </div>
         </section>
 
-        {/* Why Choose */}
-        <section className="py-24 px-8">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-headline font-bold mb-2">Why Choose the Startup Package</h2>
-            <p className="text-on-surface-variant text-lg mb-12">Designed for new PIs to launch fast and confidently</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-              {benefitCards.map(c => (
-                <div key={c.title} className="bg-surface-container p-8 rounded-xl border border-outline-variant/10">
-                  <span className="material-symbols-outlined text-4xl text-primary mb-6 block">{c.icon}</span>
-                  <h3 className="text-2xl font-headline font-bold mb-4">{c.title}</h3>
-                  <ul className="space-y-3">
-                    {c.items.map(item => (
-                      <li key={item} className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 shrink-0"></span>
-                        <span className="text-on-surface-variant">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+        <section className="mx-auto max-w-screen-2xl px-6 py-16 lg:px-10">
+          <div className="max-w-3xl">
+            <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">What the package supports</span>
+            <h2 className="mt-4 text-4xl font-headline font-bold tracking-tight text-slate-950">
+              A focused path from process plan to budgetary quote.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-slate-600">
+              Startup labs often need credible equipment scope before the facility is fully ready. The package
+              conversation helps align the first toolset with process priorities and procurement timing.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {benefitCards.map((card) => (
+              <ConversionCard key={card.title} className="h-full">
+                <h3 className="text-xl font-headline font-bold tracking-tight text-slate-950">{card.title}</h3>
+                <p className="mt-4 text-sm leading-6 text-slate-600">{card.copy}</p>
+              </ConversionCard>
+            ))}
+          </div>
+        </section>
+
+        <section className="border-y border-slate-200 bg-white">
+          <div className="mx-auto max-w-screen-2xl px-6 py-16 lg:px-10">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Applicable products</span>
+                <h2 className="mt-4 text-4xl font-headline font-bold tracking-tight text-slate-950">
+                  Equipment families commonly scoped for new labs.
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="inline-flex w-fit items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-50"
+                onClick={() => setQuoteOpen(true)}
+              >
+                Talk Through Your Tool List
+              </button>
             </div>
-          </div>
-        </section>
-
-        {/* Applicable Products */}
-        <section className="py-24 px-8 bg-surface-container-low">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-headline font-bold mb-12">Applicable Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              {productCards.map(c => (
-                <Link key={c.title} to={c.link} className="group bg-white p-8 rounded-xl border border-outline-variant/10 hover:border-primary transition-colors">
-                  <span className="material-symbols-outlined text-4xl text-primary mb-6 block">{c.icon}</span>
-                  <h3 className="text-2xl font-headline font-bold mb-4">{c.title}</h3>
-                  <p className="text-on-surface-variant mb-6">{c.desc}</p>
-                  <span className="inline-flex items-center gap-1 text-primary font-bold group-hover:gap-2 transition-all">
-                    Explore
-                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {productCards.map((card) => (
+                <Link
+                  key={card.title}
+                  to={card.link}
+                  className="group rounded-xl border border-slate-200 bg-[#FAFAFA] p-6 transition-colors hover:border-sky-300 hover:bg-white"
+                >
+                  <h3 className="text-xl font-headline font-bold tracking-tight text-slate-950">{card.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{card.desc}</p>
+                  <span className="mt-6 inline-flex text-sm font-bold text-sky-700 transition-colors group-hover:text-sky-800">
+                    View platform
                   </span>
                 </Link>
               ))}
@@ -143,12 +210,36 @@ export function StartupPackagePage() {
           </div>
         </section>
 
-        {/* Trusted */}
-        <section className="py-24 px-8 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl font-headline font-bold mb-6">Trusted by New Faculty Labs</h2>
-            <p className="text-on-surface-variant text-lg mb-10">Over 300 research institutions worldwide trust NineScrolls systems, including numerous new faculty labs.</p>
-            <button className="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:opacity-90 transition-opacity" onClick={() => setQuoteOpen(true)}>Request Your Startup Package Quote</button>
+        <section className="mx-auto max-w-screen-2xl px-6 py-16 lg:px-10">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 md:p-10">
+            <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Ready for review</span>
+                <h2 className="mt-4 text-4xl font-headline font-bold tracking-tight text-slate-950">
+                  Bring us the process roadmap. We will help shape the first quote.
+                </h2>
+                <p className="mt-5 text-base leading-7 text-slate-600">
+                  Share your target materials, expected process sequence, facility constraints, and funding timeline.
+                  NineScrolls can help translate that into a practical equipment discussion.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700"
+                  onClick={() => setQuoteOpen(true)}
+                >
+                  Talk Through a Startup Package
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-50"
+                  onClick={() => setGateOpen(true)}
+                >
+                  Download Guide
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -156,9 +247,9 @@ export function StartupPackagePage() {
       <DownloadGateModal
         isOpen={gateOpen}
         onClose={() => setGateOpen(false)}
-        fileUrl={'/NineScrolls-Equipment-Guide.pdf'}
-        fileName={'NineScrolls-Equipment-Guide.pdf'}
-        title={'Download Equipment Guide'}
+        fileUrl="/NineScrolls-Equipment-Guide.pdf"
+        fileName="NineScrolls-Equipment-Guide.pdf"
+        title="Download Equipment Guide"
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
 
