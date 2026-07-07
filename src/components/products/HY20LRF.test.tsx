@@ -41,6 +41,7 @@ describe('HY20LRF commerce product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'HY-20LRF Research-Grade Batch Plasma Cleaner' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'HY-20LRF research-grade batch plasma cleaner' })).toHaveAttribute('src', heroImage);
     expect(screen.getByRole('button', { name: 'RF (13.56 MHz)' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { level: 3, name: 'How is HY-20LRF different from HY-20L?' })).toBeInTheDocument();
     expect(screen.getByText('$14,499')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Add to Cart' }));

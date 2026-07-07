@@ -42,6 +42,7 @@ describe('PlutoM commerce product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'PLUTO-M Mid-Capacity RF Plasma Cleaner' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PLUTO-M mid-capacity RF plasma cleaner' })).toHaveAttribute('src', heroImage);
     expect(screen.getByRole('button', { name: 'RF (13.56 MHz)' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { level: 3, name: 'How is PLUTO-M different from PLUTO-T?' })).toBeInTheDocument();
     expect(screen.getByText('$12,999')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Add to Cart' }));

@@ -38,7 +38,7 @@ export const plutoMConfig: ProductDetailConfig = {
   hero: {
     eyebrow: 'Mid-Capacity RF Plasma Cleaner',
     title: 'PLUTO-M Mid-Capacity RF Plasma Cleaner',
-    description: 'An ~8L RF plasma cleaner with gas-shower electrode and recipe storage for multi-sample batches, polymer treatment, and photoresist ashing.',
+    description: 'An ~8L RF plasma cleaner with gas-shower electrode and recipe storage for multi-sample batches, polymer treatment, and surface activation.',
     backgroundImage: plutoMChamberImage,
     image: {
       src: plutoMImage,
@@ -115,7 +115,7 @@ export const plutoMConfig: ProductDetailConfig = {
   applications: {
     eyebrow: 'Applications',
     title: 'Where PLUTO-M fits',
-    items: ['Multi-sample batch cleaning', 'Surface activation', 'Polymer and plastics treatment', 'Photoresist ashing', 'SEM sample preparation', 'Core facility workflows'],
+    items: ['Multi-sample batch cleaning', 'Surface activation', 'Polymer and plastics treatment', 'Surface preparation', 'SEM sample preparation', 'Core facility workflows'],
   },
   gallery: {
     eyebrow: 'System Views',

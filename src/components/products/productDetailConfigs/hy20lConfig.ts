@@ -13,7 +13,7 @@ export const hy20lConfig: ProductDetailConfig = {
   slug: 'hy-20l',
   seo: {
     title: 'HY-20L Batch Plasma Processing System',
-    description: 'Research-grade 20L RF/MF batch plasma cleaner for multi-sample preparation, surface activation, and photoresist ashing.',
+    description: 'Research-grade 20L RF/MF batch plasma cleaner for multi-sample preparation, surface activation, and batch surface treatment.',
     keywords: 'HY-20L plasma cleaner, 20L plasma cleaner, batch plasma cleaning, RF plasma cleaner, mid-frequency plasma cleaner',
   },
   schema: {
@@ -121,7 +121,7 @@ export const hy20lConfig: ProductDetailConfig = {
   applications: {
     eyebrow: 'Applications',
     title: 'Where HY-20L fits',
-    items: ['Batch plasma cleaning', 'Photoresist ashing', 'Surface activation', 'Bonding preparation', 'Multi-sample preparation', 'Shared research labs'],
+    items: ['Batch plasma cleaning', 'Batch surface treatment', 'Surface activation', 'Bonding preparation', 'Multi-sample preparation', 'Shared research labs'],
   },
   gallery: {
     eyebrow: 'System Views',

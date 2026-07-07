@@ -40,6 +40,7 @@ describe('HY4L commerce product page', () => {
     const user = userEvent.setup();
     renderHy4l();
 
+    expect(screen.getByRole('heading', { level: 3, name: 'Which HY-4L frequency should I choose?' })).toBeInTheDocument();
     expect(screen.getByText('$7,999')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Mid-Frequency/i }));
     expect(screen.getByText('$6,499')).toBeInTheDocument();

@@ -116,7 +116,7 @@ export const plutoFConfig: ProductDetailConfig = {
   applications: {
     eyebrow: 'Applications',
     title: 'Where PLUTO-F fits',
-    items: ['High-power plasma cleaning', 'Large-batch surface activation', 'Wafer and device preparation', 'Photoresist ashing', 'Multi-user core facilities', 'Semiconductor process development'],
+    items: ['High-power plasma cleaning', 'Large-batch surface activation', 'Wafer and device preparation', 'High-power surface treatment', 'Multi-user core facilities', 'Semiconductor process development'],
   },
   gallery: {
     eyebrow: 'System Views',

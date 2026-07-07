@@ -43,6 +43,7 @@ describe('PlutoT commerce product page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'PLUTO-T Compact RF Plasma Cleaner' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PLUTO-T compact RF plasma cleaner' })).toHaveAttribute('src', heroImage);
     expect(screen.getByRole('button', { name: 'RF (13.56 MHz)' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { level: 3, name: 'How is PLUTO-T different from HY-4L?' })).toBeInTheDocument();
     expect(screen.getByText('$9,999')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Add to Cart' }));

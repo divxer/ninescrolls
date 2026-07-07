@@ -43,6 +43,7 @@ describe('HY20L commerce product page', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'HY-20L Batch Plasma Processing System' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'HY-20L batch plasma processing system standardized product view' })).toHaveAttribute('src', standardizedImage);
+    expect(screen.getByRole('heading', { level: 3, name: 'Which HY-20L frequency should I choose?' })).toBeInTheDocument();
     expect(screen.getByText('$14,999')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Mid-Frequency/i }));
