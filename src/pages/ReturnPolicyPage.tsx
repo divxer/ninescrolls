@@ -11,7 +11,7 @@ export function ReturnPolicyPage() {
         description="NineScrolls Return Policy for scientific research and semiconductor processing equipment. Learn about our return conditions, process, and resolution options."
         url="/return-policy"
       />
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <section className="border-b border-slate-200 bg-white px-6 py-16 lg:px-10">
           <div className="mx-auto max-w-4xl">
             <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Policy</span>
@@ -124,7 +124,7 @@ export function ReturnPolicyPage() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }

@@ -77,7 +77,7 @@ export function CareersPage() {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <ConversionHero
           eyebrow="Careers"
           title="Build the next generation of scientific equipment support"
@@ -180,7 +180,7 @@ export function CareersPage() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }

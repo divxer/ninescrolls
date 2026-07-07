@@ -110,7 +110,7 @@ export function StartupPackagePage() {
         </script>
       </Helmet>
 
-      <main className="bg-[#FAFAFA]">
+      <div className="bg-[#FAFAFA]">
         <section className="border-b border-slate-200 bg-slate-950 text-white">
           <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-16 lg:grid-cols-[1fr_0.8fr] lg:px-10 lg:py-20">
             <div>
@@ -243,7 +243,7 @@ export function StartupPackagePage() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
 
       <DownloadGateModal
         isOpen={gateOpen}
