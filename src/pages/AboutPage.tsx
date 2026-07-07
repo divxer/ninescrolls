@@ -1,278 +1,204 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
+import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
+import { useScrollToTop } from '../hooks/useScrollToTop';
+
+const supportResponsibilities = [
+  {
+    title: 'Application-first equipment selection',
+    copy: 'We help research teams map materials, process goals, wafer formats, and facility constraints to the right equipment platform before quotation.',
+  },
+  {
+    title: 'Configuration and quotation support',
+    copy: 'NineScrolls prepares configuration guidance, budgetary quotes, and procurement-ready documentation for universities, national laboratories, and R&D teams.',
+  },
+  {
+    title: 'Delivery and installation coordination',
+    copy: 'We coordinate shipment, startup planning, documentation, and handoff details so equipment projects fit the realities of research facilities.',
+  },
+  {
+    title: 'Post-sale service and warranty support',
+    copy: 'Our team supports technical questions, service coordination, spare-parts planning, and warranty workflows after installation.',
+  },
+];
+
+const procurementSignals = [
+  { title: 'U.S.-based operations', copy: 'San Diego, California' },
+  { title: 'D-U-N-S Number', copy: '13-477-6662' },
+  { title: 'UEI Number', copy: 'C4BFCTH5L5D1' },
+  { title: 'Government ready', copy: 'Registered for federal and institutional procurement workflows.' },
+];
+
+const focusAreas = [
+  { title: 'Plasma etching', copy: 'ICP-RIE, RIE, ion beam etching, and related process windows.' },
+  { title: 'Thin-film deposition', copy: 'PECVD, ALD, sputtering, and process equipment selection for research stacks.' },
+  { title: 'Surface preparation', copy: 'Plasma cleaning, activation, coating, developing, and sample-preparation workflows.' },
+];
 
 export function AboutPage() {
-  // Scroll to top when component mounts
   useScrollToTop();
 
   const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "AboutPage",
-    "name": "About NineScrolls LLC",
-    "description": "NineScrolls LLC is a U.S.-based scientific equipment platform serving universities and research institutions with advanced plasma processing and thin film deposition systems.",
-    "mainEntity": {
-      "@type": "Organization",
-      "name": "NineScrolls LLC",
-      "description": "NineScrolls LLC is a U.S.-based scientific equipment supplier dedicated to advancing innovation in plasma processing and thin film deposition for research institutions.",
-      "foundingDate": "2023",
-      "url": "https://ninescrolls.com",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "San Diego",
-        "addressRegion": "CA",
-        "addressCountry": "US"
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: 'About NineScrolls LLC',
+    description:
+      'NineScrolls LLC is a U.S.-based scientific equipment company supporting universities, national laboratories, and semiconductor innovators with plasma processing and thin-film equipment selection.',
+    mainEntity: {
+      '@type': 'Organization',
+      name: 'NineScrolls LLC',
+      description:
+        'NineScrolls LLC provides equipment selection, configuration support, quotation support, and post-sale coordination for advanced semiconductor process equipment.',
+      foundingDate: '2023',
+      url: 'https://ninescrolls.com',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'San Diego',
+        addressRegion: 'CA',
+        addressCountry: 'US',
       },
-      "areaServed": {
-        "@type": "Country",
-        "name": "United States"
+      areaServed: {
+        '@type': 'Country',
+        name: 'United States',
       },
-      "knowsAbout": [
-        "Semiconductor Manufacturing Equipment",
-        "Thin Film Deposition",
-        "Plasma Etching",
-        "ALD Systems",
-        "PECVD Systems",
-        "Scientific Research Equipment"
-      ]
-    }
+      knowsAbout: [
+        'Semiconductor Manufacturing Equipment',
+        'Thin Film Deposition',
+        'Plasma Etching',
+        'ALD Systems',
+        'PECVD Systems',
+        'Scientific Research Equipment',
+      ],
+    },
   };
 
   return (
     <>
       <SEO
         title="About Us"
-        description="NineScrolls LLC is a U.S.-based scientific equipment platform serving universities and research institutions with advanced plasma processing and thin film deposition systems."
-        keywords="scientific equipment supplier, plasma processing, thin film deposition, research equipment, US-based semiconductor equipment, NineScrolls LLC, university lab equipment"
+        description="NineScrolls LLC is a U.S.-based scientific equipment company supporting universities, national laboratories, and semiconductor innovators with plasma processing and thin-film equipment selection."
+        keywords="scientific equipment company, plasma processing, thin film deposition, research equipment, US-based semiconductor equipment, NineScrolls LLC, university lab equipment"
         url="/about"
       />
       <Helmet>
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative h-[600px] flex items-center hero-gradient text-white">
-          <div className="container mx-auto px-8 relative z-10">
-            <h1 className="text-7xl font-headline font-bold mb-6">U.S.-Based Scientific Equipment Platform</h1>
-            <p className="text-2xl max-w-2xl font-light opacity-80">
-              Serving universities, research institutions, and advanced semiconductor laboratories with precision plasma processing and thin film deposition systems.
-            </p>
-          </div>
-        </section>
+      <main className="bg-[#FAFAFA]">
+        <ConversionHero
+          eyebrow="About NineScrolls"
+          title="U.S.-based support for advanced semiconductor process equipment"
+          copy="NineScrolls helps research groups, cleanroom facilities, and semiconductor innovators select, configure, and support plasma processing and thin-film equipment for demanding process work."
+          primaryAction={{ label: 'Explore Equipment', href: '/products' }}
+          secondaryAction={{ label: 'Talk to an Engineer', href: '/contact?topic=expert' }}
+          trustItems={['San Diego, CA', 'Procurement-ready support', 'Application-led configuration']}
+        />
 
-        {/* What We Do — Service Responsibilities */}
-        <section className="py-24 px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-headline font-bold mb-4">How We Support You</h2>
-            <p className="text-lg text-on-surface-variant">End-to-end support from consultation through installation and beyond</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-on-primary-container text-3xl">forum</span>
-              </div>
-              <h3 className="text-xl font-headline font-bold mb-3">Pre-Sales Technical Consultation</h3>
-              <p className="text-on-surface-variant leading-relaxed">We handle all technical discussions, feasibility assessments, and system configuration consultations directly from the U.S., ensuring you get expert guidance from day one.</p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-on-primary-container text-3xl">description</span>
-              </div>
-              <h3 className="text-xl font-headline font-bold mb-3">System Configuration & Quotation</h3>
-              <p className="text-on-surface-variant leading-relaxed">All quotations, pricing, and configuration details are provided by NineScrolls LLC, ensuring consistency, transparency, and full accountability throughout the process.</p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-on-primary-container text-3xl">local_shipping</span>
-              </div>
-              <h3 className="text-xl font-headline font-bold mb-3">Project Coordination & Delivery</h3>
-              <p className="text-on-surface-variant leading-relaxed">We manage project timelines, shipping coordination, and delivery logistics to ensure smooth handover and seamless integration into your facility.</p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-on-primary-container text-3xl">build</span>
-              </div>
-              <h3 className="text-xl font-headline font-bold mb-3">Post-Installation Support</h3>
-              <p className="text-on-surface-variant leading-relaxed">Technical support, maintenance coordination, and service requests are handled through our U.S.-based support team with dedicated response channels.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Manufacturing Partner Section */}
-        <section className="py-24 px-8 bg-surface-container-low" id="manufacturer">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-headline font-bold text-center mb-16">Engineering & Manufacturing Partner</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
-              <div className="space-y-6">
-                <p className="text-lg text-on-surface-variant leading-relaxed">
-                  NineScrolls LLC partners with Tyloong Semiconductor Equipment, a manufacturer with over three decades
-                  of expertise in plasma processing and thin film deposition systems. This partnership enables us to offer
-                  proven, production-grade platforms backed by deep engineering knowledge and continuous R&D investment.
-                </p>
-                <p className="text-lg text-on-surface-variant leading-relaxed">
-                  As the exclusive U.S. representative, NineScrolls manages all customer-facing operations — from
-                  pre-sales consultation through installation and ongoing support — while leveraging Tyloong's
-                  manufacturing excellence and technical depth.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-surface-container-lowest p-8 rounded-xl text-center border border-outline-variant">
-                  <span className="text-4xl font-headline font-bold text-primary block mb-2">30+</span>
-                  <span className="text-sm text-on-surface-variant">Years of Semiconductor Equipment Experience</span>
-                </div>
-                <div className="bg-surface-container-lowest p-8 rounded-xl text-center border border-outline-variant">
-                  <span className="text-4xl font-headline font-bold text-primary block mb-2">1,000+</span>
-                  <span className="text-sm text-on-surface-variant">Systems Installed Globally</span>
-                </div>
-                <div className="bg-surface-container-lowest p-8 rounded-xl text-center border border-outline-variant">
-                  <span className="text-4xl font-headline font-bold text-primary block mb-2">R&D</span>
-                  <span className="text-sm text-on-surface-variant">Continuous Platform Innovation</span>
-                </div>
-                <div className="bg-surface-container-lowest p-8 rounded-xl text-center border border-outline-variant">
-                  <span className="text-4xl font-headline font-bold text-primary block mb-2">6+</span>
-                  <span className="text-sm text-on-surface-variant">Equipment Platform Categories</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Brand Philosophy */}
-        <section className="py-24 px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-headline font-bold mb-4">Our Story</h2>
-            <p className="text-lg text-on-surface-variant">Order in the Universe. Precision in Engineering.</p>
-          </div>
-          <div className="space-y-16">
-            <p className="text-xl text-on-surface-variant leading-relaxed max-w-3xl mx-auto text-center">
-              At NineScrolls, we believe that science and engineering are expressions of a deeper order
-              that governs both the universe and human innovation. Our visual symbol and name reflect two
-              complementary traditions of understanding order.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="bg-surface-container-lowest p-10 rounded-xl border border-outline-variant">
-                <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-on-primary-container text-3xl">public</span>
-                </div>
-                <h3 className="text-2xl font-headline font-bold mb-4">The Dragon: Cosmic Order</h3>
-                <p className="text-on-surface-variant leading-relaxed">
-                  Our circular dragon motif represents an ancient understanding of the universe — celestial
-                  motion, the continuous flow of energy, and harmony between opposing forces. In early Chinese
-                  philosophy, the universe is structured and dynamic, governed by balance, motion, and
-                  transformation. <strong>Nature operates through order.</strong>
-                </p>
-              </div>
-              <div className="bg-surface-container-lowest p-10 rounded-xl border border-outline-variant">
-                <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-on-primary-container text-3xl">menu_book</span>
-                </div>
-                <h3 className="text-2xl font-headline font-bold mb-4">The Nine Chapters: Mathematical Order</h3>
-                <p className="text-on-surface-variant leading-relaxed">
-                  Our name draws inspiration from <em>The Nine Chapters on the Mathematical Art</em>, an ancient
-                  text that systematized practical problem-solving — from land measurement and engineering
-                  calculations to solving simultaneous equations. Its essence was simple and
-                  powerful: <strong>Mathematics creates order in the human world.</strong>
-                </p>
-              </div>
-            </div>
-            <div className="bg-primary-container rounded-xl p-10 text-center max-w-3xl mx-auto">
-              <p className="text-lg font-medium text-on-primary-container">
-                NineScrolls exists to translate scientific order into engineering precision. From cosmic order
-                to engineered precision — this is the spirit of NineScrolls.
+        <section className="mx-auto max-w-screen-2xl px-6 py-16 lg:px-10">
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Operating model</span>
+              <h2 className="mt-4 max-w-2xl text-4xl font-headline font-bold tracking-tight text-slate-950">
+                Built around the way research equipment is actually selected.
+              </h2>
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
+                Equipment decisions usually start with a process window, facility constraint, or grant timeline.
+                NineScrolls organizes the conversation around those realities before narrowing the platform.
               </p>
             </div>
-          </div>
-        </section>
-
-        {/* Core Values */}
-        <section className="py-24 px-8 bg-surface-container-low">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-headline font-bold mb-4">Our Core Values</h2>
-              <p className="text-lg text-on-surface-variant">The principles that guide every decision we make</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
-                <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-on-primary-container">language</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-headline font-bold mb-2">Integration</h3>
-                  <p className="text-on-surface-variant leading-relaxed">We create seamless connections between manufacturers, researchers, and industry professionals to accelerate scientific discovery and simplify procurement.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
-                <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-on-primary-container">star</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-headline font-bold mb-2">Innovation</h3>
-                  <p className="text-on-surface-variant leading-relaxed">We drive advancement in the scientific equipment industry through innovative solutions, platform integration, and continuous technology evaluation.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
-                <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-on-primary-container">group</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-headline font-bold mb-2">Collaboration</h3>
-                  <p className="text-on-surface-variant leading-relaxed">We foster partnerships and facilitate connections across the scientific community, bringing together research institutions, manufacturers, and domain experts.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-6 bg-surface-container-lowest p-8 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors">
-                <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-on-primary-container">verified</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-headline font-bold mb-2">Expertise</h3>
-                  <p className="text-on-surface-variant leading-relaxed">We leverage deep industry knowledge and hands-on experience to deliver tailored solutions that create lasting value for our partners and research clients.</p>
-                </div>
-              </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {supportResponsibilities.map((item) => (
+                <ConversionCard key={item.title} className="min-h-[190px]">
+                  <h3 className="text-xl font-headline font-bold tracking-tight text-slate-950">{item.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{item.copy}</p>
+                </ConversionCard>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Trust & Credentials */}
-        <section className="py-24 px-8 max-w-7xl mx-auto">
-          <h2 className="text-4xl font-headline font-bold text-center mb-16">Trust & Credentials</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant text-center">
-              <span className="material-symbols-outlined text-primary text-4xl mb-4 block">location_on</span>
-              <h4 className="font-headline font-bold mb-2">U.S.-Based Operations</h4>
-              <p className="text-on-surface-variant text-sm">San Diego, California</p>
-              <p className="text-on-surface-variant text-sm">Direct technical support team</p>
+        <section className="border-y border-slate-200 bg-white">
+          <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-16 lg:grid-cols-[1fr_1.25fr] lg:px-10">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Engineering focus</span>
+              <h2 className="mt-4 text-4xl font-headline font-bold tracking-tight text-slate-950">
+                Industrial precision. Scientific confidence.
+              </h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">
+                Our name reflects the idea that scientific progress depends on order: clear requirements,
+                precise process windows, and equipment choices that can be defended in a technical review.
+              </p>
             </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant text-center">
-              <span className="material-symbols-outlined text-primary text-4xl mb-4 block">badge</span>
-              <h4 className="font-headline font-bold mb-2">D-U-N-S Number</h4>
-              <p className="text-primary font-bold text-lg">13-477-6662</p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant text-center">
-              <span className="material-symbols-outlined text-primary text-4xl mb-4 block">verified</span>
-              <h4 className="font-headline font-bold mb-2">UEI Number</h4>
-              <p className="text-primary font-bold text-lg">C4BFCTH5L5D1</p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant text-center">
-              <span className="material-symbols-outlined text-primary text-4xl mb-4 block">account_balance</span>
-              <h4 className="font-headline font-bold mb-2">Government Ready</h4>
-              <p className="text-on-surface-variant text-sm">Registered for federal and institutional procurement</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {focusAreas.map((area) => (
+                <ConversionCard key={area.title}>
+                  <h3 className="text-lg font-headline font-bold tracking-tight text-slate-950">{area.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{area.copy}</p>
+                </ConversionCard>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-24 px-8 hero-gradient text-white text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl font-headline font-bold mb-6">Ready to Discuss Your Research Needs?</h2>
-            <p className="text-xl opacity-80 mb-10">Our team is here to help you find the right equipment platform for your laboratory.</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/products" className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary font-bold rounded-lg hover:bg-white/90 transition-colors text-lg">Explore Equipment</Link>
-              <Link to="/contact" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white/10 transition-colors text-lg">Contact Our Team</Link>
+        <section className="mx-auto max-w-screen-2xl px-6 py-16 lg:px-10">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-600">Procurement readiness</span>
+              <h2 className="mt-4 text-4xl font-headline font-bold tracking-tight text-slate-950">
+                Practical details for institutional buyers.
+              </h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">
+                University and government purchasing teams need clear documentation, company identifiers, and
+                accountable support paths. These details stay visible because they matter during procurement.
+              </p>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {procurementSignals.map((signal) => (
+                <ConversionCard key={signal.title} className="h-full">
+                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-600">{signal.title}</p>
+                  <p className="mt-4 text-lg font-headline font-bold tracking-tight text-slate-950">{signal.copy}</p>
+                </ConversionCard>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-950 px-6 py-16 text-white lg:px-10">
+          <div className="mx-auto grid max-w-screen-2xl gap-10 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.28em] text-sky-300">Next step</span>
+              <h2 className="mt-4 max-w-3xl text-4xl font-headline font-bold tracking-tight">
+                Ready to discuss your research equipment path?
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300">
+                Start with the process goal, facility context, or equipment family. We will help route the
+                conversation to the right platform and quotation path.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700"
+                >
+                  View Product Platforms
+                </Link>
+                <Link
+                  to="/contact?topic=expert"
+                  className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                >
+                  Request Engineering Consultation
+                </Link>
+              </div>
+            </div>
+            <ConversionCard className="border-white/10 bg-white/5 text-white">
+              <TrustSignalList
+                items={[
+                  { title: 'Process-first guidance', copy: 'Start with materials, process windows, and application needs.' },
+                  { title: 'Procurement-ready documentation', copy: 'Support for quotes, identifiers, and institutional review.' },
+                  { title: 'Post-sale coordination', copy: 'Service, warranty, and support paths remain part of the conversation.' },
+                ]}
+              />
+            </ConversionCard>
           </div>
         </section>
       </main>
