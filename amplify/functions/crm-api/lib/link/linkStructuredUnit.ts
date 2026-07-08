@@ -13,22 +13,35 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
   const syntheticOrgId = `unresolved-${args.sourceType}-${args.sourceEntityId}`;
   const nowIso = new Date().toISOString();
 
-  const q = await docClient.send(new QueryCommand({
-    TableName: TABLE_NAME(), IndexName: 'GSI2',
-    KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :tl)',
-    FilterExpression: 'resolutionStatus = :unres',
-    ExpressionAttributeValues: { ':pk': `ORG#${syntheticOrgId}`, ':tl': 'TLEVENT#', ':unres': 'unresolved' },
-  }));
-  const events = (q.Items ?? []) as TimelineEventItem[];
+  const events: TimelineEventItem[] = [];
+  let startKey: Record<string, unknown> | undefined;
+  do {
+    const q = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME(), IndexName: 'GSI2',
+      KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :tl)',
+      FilterExpression: 'resolutionStatus = :unres',
+      ExpressionAttributeValues: { ':pk': `ORG#${syntheticOrgId}`, ':tl': 'TLEVENT#', ':unres': 'unresolved' },
+      ExclusiveStartKey: startKey,
+    }));
+    events.push(...((q.Items ?? []) as TimelineEventItem[]));
+    startKey = q.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (startKey);
   if (events.length === 0) return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0 };
 
-  const sourceEmail = await readSourceEmailForUnit(args.sourceType, args.sourceEntityId, events);
+  let sourceEmail: string | null = null;
+  let enrichmentError = false;
+  try {
+    sourceEmail = await readSourceEmailForUnit(args.sourceType, args.sourceEntityId, events);
+  } catch {
+    enrichmentError = true;
+  }
 
-  let moved = 0, skipped = 0, errors = 0; let contactStatus: ContactStatus = 'missing_email';
+  let moved = 0, skipped = 0, errors = 0;
+  let contactStatus: ContactStatus = enrichmentError ? 'enrichment_error' : 'missing_email';
   const affectedEventIds: string[] = [];
   for (const ev of events) {
     try {
-      const r = await manualMoveTimelineEvent({ event: ev, targetOrgId: args.targetOrgId, email: sourceEmail, operator: args.operator, nowIso });
+      const r = await manualMoveTimelineEvent({ event: ev, targetOrgId: args.targetOrgId, email: sourceEmail, operator: args.operator, nowIso, enrichmentError });
       if (r.moved) { moved += 1; affectedEventIds.push(ev.id); contactStatus = r.contactStatus; }
       else if (r.skipped) skipped += 1;
     } catch { errors += 1; }
@@ -36,14 +49,21 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
 
   if (moved === 0) return { affected: events.length, moved: 0, skipped, errors };
 
-  const sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
+  let sourceBackfillStatus: BackfillStatus | 'not_attempted' = 'not_attempted';
+  let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
+  try {
+    sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
 
-  await writeLinkAuditLog({
-    operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
-    details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
-  });
+    await writeLinkAuditLog({
+      operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
+      details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
+    });
+  } catch (err) {
+    postCommitStatus = 'post_commit_failed';
+    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, error: err instanceof Error ? err.message : String(err) }));
+  }
 
-  return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus };
+  return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus, postCommitStatus };
 }
 
 async function backfillSource(sourceType: string, sourceEntityId: string, targetOrgId: string, events: TimelineEventItem[]): Promise<BackfillStatus> {

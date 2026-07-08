@@ -92,4 +92,49 @@ describe('linkStructuredUnit', () => {
     expect(audit.details.affectedEventIds).toEqual(['tev-b']);   // only the moved event
     expect(audit.details.affectedCount).toBe(1);
   });
+
+  it('F2: paginates the GSI2 query and moves events from BOTH pages', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    const evA = { ...unresolvedEvent, id: 'tev-a' }; const evB = { ...unresolvedEvent, id: 'tev-b' };
+    mockSend
+      .mockResolvedValueOnce({ Items: [evA], LastEvaluatedKey: { k: 1 } })            // page 1
+      .mockResolvedValueOnce({ Items: [evB] })                                        // page 2 (no LEK)
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }) // readSourceEmail
+      .mockResolvedValueOnce({});                                                     // backfill Update
+    moveMock.mockResolvedValue({ moved: true, skipped: false, contactStatus: 'linked' });
+    auditMock.mockResolvedValueOnce('aud-1');
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(moveMock).toHaveBeenCalledTimes(2);      // both pages moved
+    expect(r).toMatchObject({ affected: 2, moved: 2 });
+    // the second call had ExclusiveStartKey from page 1's LastEvaluatedKey
+    const q2 = mockSend.mock.calls[1][0].input;
+    expect(q2.ExclusiveStartKey).toEqual({ k: 1 });
+  });
+
+  it('F3: a source-enrichment failure is isolated — events still move with enrichmentError', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    mockSend
+      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                            // query
+      .mockRejectedValueOnce(new Error('source read boom'))                           // readSourceEmail GET throws
+      .mockResolvedValueOnce({});                                                     // backfill Update
+    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'enrichment_error' });
+    auditMock.mockResolvedValueOnce('aud-1');
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(moveMock).toHaveBeenCalledWith(expect.objectContaining({ email: null, enrichmentError: true }));
+    expect(r).toMatchObject({ moved: 1 });
+  });
+
+  it('F1: a post-commit backfill/audit failure does NOT fail the mutation (moves already durable)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    mockSend
+      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                            // query
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }) // readSourceEmail
+      .mockRejectedValueOnce(new Error('backfill boom'));                             // backfill Update throws
+    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' }); // must NOT throw
+    expect(r).toMatchObject({ moved: 1, postCommitStatus: 'post_commit_failed' });
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
 });
