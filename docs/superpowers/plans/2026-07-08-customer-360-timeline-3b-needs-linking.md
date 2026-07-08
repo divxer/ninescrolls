@@ -299,6 +299,7 @@ describe('manualMoveTimelineEvent', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const r = await manualMoveTimelineEvent({ event: ev(), targetOrgId: 'acme.com', email: null, operator: 'op', nowIso: 'n' });
     expect(r).toMatchObject({ moved: true, skipped: false });            // NOT reported as an error — the move happened
+    expect(errSpy).toHaveBeenCalled();                                   // post-move failure is logged (crm.link.post_move_error)
     errSpy.mockRestore();
   });
 });
