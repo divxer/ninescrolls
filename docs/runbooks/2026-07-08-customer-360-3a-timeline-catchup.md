@@ -21,4 +21,4 @@
 4. Spot-check a couple of known historical customers in the admin UI: their RFQ/Order/Quote events now appear in the unified timeline.
 
 ## Rollback
-None required — the sweep is idempotent (deterministic ids; re-runs only hit `existing`). If `errors > 0`, inspect the `crm.sweep.existence.error` / `expand_error` logs and re-run.
+None required — the sweep is idempotent (deterministic ids; re-runs only hit `existing`). If `errors > 0 || sourceErrors > 0`, inspect the `crm.sweep.existence.error` (event-level) / `expand_error` (source-level) logs and re-run.
