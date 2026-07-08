@@ -17,7 +17,7 @@
      python3 -c "import json,sys; s=json.load(open('/tmp/out.json')).get('summary',{}).get('existence',{}); sys.exit(0 if s.get('hasMore') else 1)" || break
    done
    ```
-3. Confirm coverage from the last `crm.sweep.summary` log: the existence counters must satisfy `expected = existing + missingReemitted + errors`, with `errors == 0`. `sourceScanned` shows how many source records were expanded.
+3. Confirm coverage from the last `crm.sweep.summary` log: the existence counters must satisfy `expected = existing + missingReemitted + errors` (event-level), with `errors == 0` AND `sourceErrors == 0` (a source record whose expansion threw). `sourceScanned` shows how many source records were expanded.
 4. Spot-check a couple of known historical customers in the admin UI: their RFQ/Order/Quote events now appear in the unified timeline.
 
 ## Rollback

@@ -119,4 +119,17 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     expect(out.counters.missingReemitted).toBe(1);
     expect(out.counters.existing).toBe(1);
   });
+  it('an expand failure increments sourceErrors (not event errors) and preserves the event invariant', async () => {
+    // one order META record whose child-load (loadOrderChildren) throws → channel.expand rejects
+    mockSend
+      .mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'META', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'acme.com' }] }) // channel scan
+      .mockRejectedValueOnce(new Error('child load boom')); // loadOrderChildren query throws inside expand
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await runExistencePage({ mode: 'cold', limit: 100, cursor: { channel: 'order' } });
+    expect(out.counters.sourceScanned).toBe(1);
+    expect(out.counters.sourceErrors).toBe(1);
+    expect(out.counters.errors).toBe(0);           // event-level errors untouched
+    expect(out.counters.expected).toBe(out.counters.existing + out.counters.missingReemitted + out.counters.errors); // invariant holds
+    errSpy.mockRestore();
+  });
 });
