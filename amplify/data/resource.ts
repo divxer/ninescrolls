@@ -4,6 +4,7 @@ import { logisticsApi } from '../functions/logistics-api/resource';
 import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 import { tenderApi } from '../functions/tender-api/resource';
+import { crmApi } from '../functions/crm-api/resource';
 
 // =============================================================================
 // Schema: Existing models + Order Tracker / RFQ GraphQL API
@@ -297,6 +298,40 @@ const schema = a.schema({
 
   OrderConnection: a.customType({
     items: a.ref('Order').array().required(),
+    nextToken: a.string(),
+  }),
+
+  OrganizationTimelineItem: a.customType({
+    id: a.string().required(),
+    occurredAt: a.string().required(),
+    source: a.string().required(),
+    kind: a.string().required(),
+    sourceFilterGroup: a.string().required(),
+    icon: a.string().required(),
+    tone: a.string().required(),
+    primaryLabel: a.string().required(),
+    resolutionStatus: a.string().required(),
+    resolutionReason: a.string().required(),
+    confidence: a.float(),
+    isInternalOnly: a.boolean().required(),
+    productModel: a.string(),
+    specificModel: a.string(),
+    equipmentCategory: a.string(),
+    leadType: a.string(),
+    productName: a.string(),
+    stageFrom: a.string(),
+    stageTo: a.string(),
+    fileName: a.string(),
+    pageCount: a.integer(),
+    activeSeconds: a.integer(),
+    topPaths: a.string().array(),
+    sourceEntityType: a.string().required(),
+    sourceEntityId: a.string().required(),
+    payload: a.json(),
+  }),
+
+  OrganizationTimelineConnection: a.customType({
+    items: a.ref('OrganizationTimelineItem').array().required(),
     nextToken: a.string(),
   }),
 
@@ -856,6 +891,18 @@ const schema = a.schema({
     .arguments({ orgId: a.id().required() })
     .returns(a.ref('OrganizationDetailBundle'))
     .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  timelineByOrg: a
+    .query()
+    .arguments({
+      orgId: a.string().required(),
+      limit: a.integer(),
+      nextToken: a.string(),
+      includeInternalOnly: a.boolean(),
+    })
+    .returns(a.ref('OrganizationTimelineConnection').required())
+    .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 
   listTenders: a
