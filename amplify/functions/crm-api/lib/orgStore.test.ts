@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSend = vi.fn();
 vi.mock('./dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
 
-import { findExistingOrgIdByEmail } from './orgStore';
+import { findExistingOrgIdByEmail, orgExists } from './orgStore';
 import { getContactByEmail } from './contactStore';
 import { getTimelineEvent } from './timelineStore';
 
@@ -43,5 +43,15 @@ describe('store reads', () => {
   it('getTimelineEvent returns item or null by id', async () => {
     mockSend.mockResolvedValueOnce({ Item: { id: 'tev-x', orgId: 'org-1' } });
     expect((await getTimelineEvent('tev-x'))?.orgId).toBe('org-1');
+  });
+});
+
+describe('orgExists', () => {
+  it('true for an existing ORG#/META, false for missing or unresolved-*', async () => {
+    mockSend.mockResolvedValueOnce({ Item: { PK: 'ORG#acme.com', SK: 'META' } });
+    expect(await orgExists('acme.com')).toBe(true);
+    mockSend.mockClear(); mockSend.mockResolvedValueOnce({});
+    expect(await orgExists('nope.com')).toBe(false);
+    expect(await orgExists('unresolved-rfq-r1')).toBe(false); // rejected WITHOUT a read
   });
 });
