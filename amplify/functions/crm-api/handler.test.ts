@@ -91,3 +91,31 @@ describe('handler — timelineByOrg AppSync resolver', () => {
     await expect(handler({ info: { fieldName: 'nope' } } as never)).rejects.toThrow(/unknown fieldName/);
   });
 });
+
+const linkStructuredMock = vi.fn(); const linkVisitorMock = vi.fn(); const queueMock = vi.fn();
+vi.mock('./lib/link/linkStructuredUnit', () => ({ linkStructuredUnit: (a: unknown) => linkStructuredMock(a) }));
+vi.mock('./lib/link/linkVisitor', () => ({ linkVisitor: (a: unknown) => linkVisitorMock(a) }));
+vi.mock('./lib/read/needsLinkingQueue', () => ({ needsLinkingQueue: (a: unknown) => queueMock(a) }));
+
+describe('handler — 3B resolvers', () => {
+  beforeEach(() => { linkStructuredMock.mockReset(); linkVisitorMock.mockReset(); queueMock.mockReset(); });
+
+  it('derives operator server-side from identity, ignores any client operator arg', async () => {
+    linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
+    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com' } } } as never);
+    expect(linkStructuredMock).toHaveBeenCalledWith({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
+  });
+
+  it('falls back to identity.sub then unknown', async () => {
+    linkVisitorMock.mockResolvedValueOnce({ sessionsResolved: 2 });
+    await handler({ info: { fieldName: 'linkVisitor' }, arguments: { visitorId: 'v1', targetOrgId: 'acme.com' }, identity: { sub: 'sub-1' } } as never);
+    expect(linkVisitorMock).toHaveBeenCalledWith({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'sub-1' });
+  });
+
+  it('routes needsLinkingQueue', async () => {
+    queueMock.mockResolvedValueOnce({ items: [], nextToken: null });
+    const r = await handler({ info: { fieldName: 'needsLinkingQueue' }, arguments: { limit: 25 } } as never);
+    expect(queueMock).toHaveBeenCalledWith({ limit: 25, nextToken: undefined });
+    expect(r).toEqual({ items: [], nextToken: null });
+  });
+});
