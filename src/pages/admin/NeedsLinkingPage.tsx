@@ -22,23 +22,33 @@ export function NeedsLinkingPage() {
   // unambiguous either way, and successful links still auto-advance below.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const selected = items.find((u) => u.unitKey === selectedKey) ?? null;
 
   async function handleLink(unit: NeedsLinkingItem, targetOrgId: string) {
     setLinkError(null);
+    setWarning(null);
     try {
+      let result: { postCommitStatus?: string | null } | null | undefined;
       if (unit.linkUnitType === 'structured') {
-        await svc.linkStructuredUnit({
+        result = await svc.linkStructuredUnit({
           sourceType: unit.source,
           sourceEntityId: unit.sourceEntityId as string,
           targetOrgId,
         });
       } else {
-        await svc.linkVisitor({
+        result = await svc.linkVisitor({
           visitorId: unit.visitorId as string,
           targetOrgId,
         });
+      }
+      // The durable link (move/bridge) already succeeded at this point, so we
+      // still evict + auto-advance even when a post-commit follow-up
+      // (source update / audit log) failed — that failure is surfaced as a
+      // non-blocking warning instead of aborting the operator's flow.
+      if (result?.postCommitStatus === 'post_commit_failed') {
+        setWarning('Linked, but some follow-up (source update / audit) did not complete — check logs.');
       }
       const currentIndex = items.findIndex((i) => i.unitKey === unit.unitKey);
       const next = items[currentIndex + 1];
@@ -69,6 +79,11 @@ export function NeedsLinkingPage() {
       {linkError && (
         <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body mb-6">
           Error: {linkError}
+        </div>
+      )}
+      {warning && (
+        <div className="bg-tertiary-container text-on-tertiary-container p-4 rounded-lg font-body mb-6">
+          Warning: {warning}
         </div>
       )}
 

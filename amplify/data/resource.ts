@@ -351,9 +351,11 @@ const schema = a.schema({
   LinkStructuredResult: a.customType({
     affected: a.integer(), moved: a.integer(), skipped: a.integer(), errors: a.integer(),
     sourceBackfillStatus: a.string(), contactStatus: a.string(), alreadyLinked: a.boolean(), existingOrgId: a.string(),
+    postCommitStatus: a.string(),
   }),
   LinkVisitorResult: a.customType({
     sessionsResolved: a.integer(), pending: a.boolean(), alreadyLinked: a.boolean(), alreadyResolved: a.boolean(), existingOrgId: a.string(),
+    postCommitStatus: a.string(),
   }),
 
   OrderStats: a.customType({

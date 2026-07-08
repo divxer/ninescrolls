@@ -34,4 +34,18 @@ describe('NeedsLinkingPage', () => {
     await waitFor(() => expect(svc.linkStructuredUnit).toHaveBeenCalledWith({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'nanofabsolutions.com' }));
     await waitFor(() => expect(evictUnit).toHaveBeenCalledWith('unresolved-rfq-r1'));
   });
+
+  it('a post_commit_failed link still evicts the unit but shows a warning', async () => {
+    const evictUnit = vi.fn();
+    vi.mocked(useNeedsLinkingQueue).mockReturnValue({ items: [structuredUnit, analyticsUnit], loading: false, error: null, hasMore: false, loadMore: vi.fn(), evictUnit } as never);
+    vi.mocked(svc.listOrganizations).mockResolvedValue({ items: [{ orgId: 'nanofabsolutions.com', displayName: 'NanoFab Solutions Inc' }] } as never);
+    vi.mocked(svc.linkStructuredUnit).mockResolvedValue({ moved: 1, postCommitStatus: 'post_commit_failed' } as never);
+    render(<NeedsLinkingPage />);
+    fireEvent.click(screen.getByText(/RFQ|rfq|nanofab/i));
+    fireEvent.change(screen.getByRole('textbox', { name: /search organizations/i }), { target: { value: 'nanofab' } });
+    fireEvent.click(await screen.findByText('NanoFab Solutions Inc'));
+    fireEvent.click(screen.getByRole('button', { name: /link/i }));
+    await waitFor(() => expect(evictUnit).toHaveBeenCalledWith('unresolved-rfq-r1'));   // still evicted (link succeeded)
+    expect(screen.getByText(/did not complete|follow-up|warning/i)).toBeTruthy();        // warning surfaced
+  });
 });
