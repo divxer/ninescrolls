@@ -39,5 +39,5 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
     postCommitStatus = 'post_commit_failed';
     console.error(JSON.stringify({ event: 'crm.link.post_commit_error', visitorId: args.visitorId, error: err instanceof Error ? err.message : String(err) }));
   }
-  return { visitorId: args.visitorId, sessionsResolved, pending, existingOrgId: args.targetOrgId, postCommitStatus };
+  return { sessionsResolved, pending, existingOrgId: args.targetOrgId, postCommitStatus };
 }

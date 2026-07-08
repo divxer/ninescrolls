@@ -90,9 +90,9 @@ function UnitSection({
         {title}
         <span className="text-on-surface-variant/70">({units.length})</span>
       </div>
-      {units.map((unit) => (
+      {units.map((unit, index) => (
         <UnitRow
-          key={unit.unitKey}
+          key={`${unit.unitKey}-${index}`}
           unit={unit}
           selected={unit.unitKey === selectedKey}
           onSelect={() => onSelect(unit.unitKey)}
