@@ -70,4 +70,26 @@ describe('linkStructuredUnit', () => {
     const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
     expect(updates.length).toBe(0);
   });
+
+  it('per-event isolation: one move throws → errors+1, loop continues, the other event still moves', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    const evA = { ...unresolvedEvent, id: 'tev-a' };
+    const evB = { ...unresolvedEvent, id: 'tev-b' };
+    mockSend
+      .mockResolvedValueOnce({ Items: [evA, evB] })                                 // synthetic partition query (2 events)
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }) // readSourceEmail GET
+      .mockResolvedValueOnce({});                                                    // conditional backfill Update
+    moveMock
+      .mockRejectedValueOnce(new Error('move boom'))                                // evA throws
+      .mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' }); // evB moves
+    auditMock.mockResolvedValueOnce('aud-1');
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(moveMock).toHaveBeenCalledTimes(2);            // loop did NOT abort after the throw
+    expect(r).toMatchObject({ affected: 2, moved: 1, errors: 1 });
+    // moved>0 so backfill + audit DID run
+    expect(auditMock).toHaveBeenCalled();
+    const audit = auditMock.mock.calls[0][0];
+    expect(audit.details.affectedEventIds).toEqual(['tev-b']);   // only the moved event
+    expect(audit.details.affectedCount).toBe(1);
+  });
 });
