@@ -1,4 +1,4 @@
-import { UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from './dynamodb';
 import { classifyEmailDomain } from '../../../lib/organization/etld';
 
@@ -42,6 +42,12 @@ export async function findExistingOrgIdByEmail(email: string): Promise<string | 
     if (aliasOrgId) return aliasOrgId;
   }
   return lookupOrgIdByDomainKey(canonical);
+}
+
+export async function orgExists(orgId: string): Promise<boolean> {
+  if (!orgId || orgId.startsWith('unresolved-')) return false;
+  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `ORG#${orgId}`, SK: ORG_META_SK } }));
+  return !!res.Item;
 }
 
 export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string; occurredAt: string; isInternalOnly?: boolean }): Promise<void> {

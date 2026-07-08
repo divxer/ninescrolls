@@ -5,6 +5,9 @@ import { reResolveVisitorSessions } from './lib/analytics/reResolveVisitorSessio
 import { backfillVisitorBridge } from './lib/analytics/backfillVisitorBridge';
 import { timelineByOrg } from './lib/read/timelineByOrg';
 import { toOrganizationTimelineItem } from './lib/read/organizationTimelineItem';
+import { needsLinkingQueue } from './lib/read/needsLinkingQueue';
+import { linkStructuredUnit } from './lib/link/linkStructuredUnit';
+import { linkVisitor } from './lib/link/linkVisitor';
 
 type AppSyncEvent = {
   info?: { fieldName?: string; parentTypeName?: string };
@@ -12,6 +15,10 @@ type AppSyncEvent = {
   arguments?: Record<string, unknown>;
   identity?: { sub?: string; claims?: { email?: string } };
 };
+
+// HARD invariant: operator is ALWAYS derived server-side from the caller's identity, never from
+// client-supplied arguments — a client cannot spoof who performed a manual-link/audit action.
+const operatorOf = (e: AppSyncEvent): string => e.identity?.claims?.email ?? e.identity?.sub ?? 'unknown';
 
 // Direct Lambda invoke payloads (from amplify/lib/crm/invoke-crm-api) carry an `action`.
 type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; maxSessions?: number; visitorId?: string; startSessionSk?: string };
@@ -23,6 +30,18 @@ const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
       orgId: a.orgId ?? '', limit: a.limit, nextToken: a.nextToken, includeInternalOnly: a.includeInternalOnly ?? false,
     });
     return { items: items.map(toOrganizationTimelineItem), nextToken: nextToken ?? null };
+  },
+  needsLinkingQueue: async (e) => {
+    const a = (e.arguments ?? {}) as { limit?: number; nextToken?: string };
+    return needsLinkingQueue({ limit: a.limit, nextToken: a.nextToken });
+  },
+  linkStructuredUnit: async (e) => {
+    const a = (e.arguments ?? {}) as { sourceType?: string; sourceEntityId?: string; targetOrgId?: string };
+    return linkStructuredUnit({ sourceType: a.sourceType ?? '', sourceEntityId: a.sourceEntityId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
+  },
+  linkVisitor: async (e) => {
+    const a = (e.arguments ?? {}) as { visitorId?: string; targetOrgId?: string };
+    return linkVisitor({ visitorId: a.visitorId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
 };
 

@@ -23,3 +23,15 @@ describe('writeLinkAuditLog', () => {
     expect(mockSend.mock.calls[0][0].input.ConditionExpression).toMatch(/attribute_not_exists/); // immutable
   });
 });
+
+describe('writeLinkAuditLog details payload', () => {
+  it('persists an arbitrary details object on the audit item', async () => {
+    mockSend.mockResolvedValueOnce({});
+    await writeLinkAuditLog({ operator: 'a@x.com', reason: 'manual_link_unit', timestamp: '2026-07-08T00:00:00Z',
+      newOrgId: 'acme.com', details: { unitType: 'structured', unitKey: 'unresolved-rfq-r1', affectedCount: 2, affectedEventIds: ['tev-a', 'tev-b'] } });
+    const item = mockSend.mock.calls[0][0].input.Item;
+    expect(item.details).toEqual({ unitType: 'structured', unitKey: 'unresolved-rfq-r1', affectedCount: 2, affectedEventIds: ['tev-a', 'tev-b'] });
+    expect(item.entityType).toBe('LINK_AUDIT');
+    expect(mockSend.mock.calls[0][0].input.ConditionExpression).toContain('attribute_not_exists');
+  });
+});

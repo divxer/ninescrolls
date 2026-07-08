@@ -9,6 +9,7 @@ export async function writeLinkAuditLog(args: {
   oldOrgId?: string | null; newOrgId?: string | null;
   oldContactId?: string | null; newContactId?: string | null;
   operator: string; reason: string; timestamp: string;
+  details?: Record<string, unknown> | null;
 }): Promise<string> {
   const id = generateAuditId();
   const orgForIndex = args.newOrgId ?? args.oldOrgId ?? null;
@@ -22,6 +23,7 @@ export async function writeLinkAuditLog(args: {
     oldOrgId: args.oldOrgId ?? null, newOrgId: args.newOrgId ?? null,
     oldContactId: args.oldContactId ?? null, newContactId: args.newContactId ?? null,
     operator: args.operator, reason: args.reason, timestamp: args.timestamp,
+    details: args.details ?? null,
   } as LinkAuditLogItem;
   // Audit rows are immutable: never overwrite an existing one (ids are unique per write).
   await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
