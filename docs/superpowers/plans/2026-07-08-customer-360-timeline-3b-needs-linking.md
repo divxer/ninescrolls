@@ -95,7 +95,15 @@ describe('manual visitor bridge provenance', () => {
     const putCmd = calls.find((c) => (c as { input: { Item?: unknown } }).input.Item) as { input: { Item: Record<string, unknown>; ConditionExpression: string } };
     expect(putCmd.input.Item.orgSource).toBe('manual');
     expect(putCmd.input.Item.matchedOrgId).toBe('acme.com');
-    expect(putCmd.input.ConditionExpression).toContain('attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty');
+    expect(putCmd.input.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)');
+    expect(r).toEqual({ written: true, existingOrgId: 'acme.com' });
+  });
+
+  it('writes over an existing bridge whose matchedOrgId is NULL (round-2 P1 — attribute_type NULL allowed)', async () => {
+    const { send, calls } = sendWith({ PK: 'VISITOR#v1', SK: 'STATE', matchedOrgId: null, orgSource: null });
+    const r = await upsertManualVisitorBridge(send, 'T', { visitorId: 'v1', matchedOrgId: 'acme.com', now: 'n' });
+    const putCmd = calls.find((c) => (c as { input: { Item?: unknown } }).input.Item) as { input: { ExpressionAttributeValues: Record<string, unknown> } };
+    expect(putCmd.input.ExpressionAttributeValues[':nullType']).toBe('NULL');
     expect(r).toEqual({ written: true, existingOrgId: 'acme.com' });
   });
 
@@ -140,9 +148,11 @@ export async function upsertManualVisitorBridge(send: Send, tableName: string, i
   try {
     await send(new PutCommand({
       TableName: tableName, Item: item,
-      // Write manual ONLY if the bridge has no real org yet (missing, or matchedOrgId null/empty).
-      ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty',
-      ExpressionAttributeValues: { ':empty': '' },
+      // Write manual ONLY if the bridge has no real org yet. NOTE: an existing bridge can store
+      // matchedOrgId as DynamoDB NULL (null is written as a NULL attribute, not omitted) — attribute_type
+      // covers that case, else a null-org bridge would be mis-classified as already-resolved (round-2 P1).
+      ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty',
+      ExpressionAttributeValues: { ':empty': '', ':nullType': 'NULL' },
     }));
     return { written: true, existingOrgId: input.matchedOrgId };
   } catch (err) {
@@ -282,6 +292,15 @@ describe('manualMoveTimelineEvent', () => {
     expect(r).toMatchObject({ moved: true, contactStatus: 'missing_email' });
     expect(mockSend.mock.calls[0][0].input.Item.contactId).toBeNull();
   });
+
+  it('a POST-move failure (recompute throws) still returns moved:true (row already committed; sweep repairs)', async () => {
+    mockSend.mockResolvedValueOnce({});                                  // conditional Put SUCCEEDS (durable commit)
+    recomputeMock.mockRejectedValueOnce(new Error('recompute boom'));    // post-move step fails
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await manualMoveTimelineEvent({ event: ev(), targetOrgId: 'acme.com', email: null, operator: 'op', nowIso: 'n' });
+    expect(r).toMatchObject({ moved: true, skipped: false });            // NOT reported as an error — the move happened
+    errSpy.mockRestore();
+  });
 });
 ```
 
@@ -344,21 +363,28 @@ export async function manualMoveTimelineEvent(args: {
     throw err;
   }
 
-  // Move succeeded → NOW create/refresh the Contact row (idempotent, same deterministic id).
+  // The conditional Put is the DURABLE COMMIT POINT (row now moved, written dirty with rollupApplied=false).
+  // Post-move side effects are BEST-EFFORT: a failure here leaves the row moved-but-dirty, which the
+  // dirty-rollup sweep repairs. It must NOT propagate as a move failure (review round 2 extra risk) —
+  // else the orchestrator would count a genuinely-moved event as `errors` and could wrongly skip source
+  // backfill/audit. Catch-and-log; still return moved:true.
   let contactStatus: ContactStatus = args.enrichmentError ? 'enrichment_error' : 'missing_email';
-  if (normEmail) {
-    await upsertContact({ email: normEmail, orgId: targetOrgId, source: event.source, occurredAt: event.occurredAt });
-    contactStatus = 'linked';
+  try {
+    if (normEmail) {
+      await upsertContact({ email: normEmail, orgId: targetOrgId, source: event.source, occurredAt: event.occurredAt });
+      contactStatus = 'linked';
+    }
+    // Durable rollup ordering: item already dirty; recompute target, THEN mark clean.
+    await recomputeRollupsForOrg(targetOrgId);
+    await markRollupApplied(event.id);
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'crm.link.post_move_error', id: event.id, error: err instanceof Error ? err.message : String(err) }));
   }
-
-  // Durable rollup ordering: item written dirty (rollupApplied=false); recompute target, THEN mark clean.
-  await recomputeRollupsForOrg(targetOrgId);
-  await markRollupApplied(event.id);
   return { moved: true, skipped: false, contactStatus };
 }
 ```
 
-- [ ] **Step 4: Run** → PASS (3 tests).
+- [ ] **Step 4: Run** → PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -419,7 +445,8 @@ describe('linkStructuredUnit', () => {
     expect(moveMock).toHaveBeenCalledTimes(1);
     expect(r).toMatchObject({ affected: 1, moved: 1, skipped: 0, errors: 0, sourceBackfillStatus: 'written' });
     const upd = (mockSend.mock.calls.find((c) => c[0].constructor?.name === 'UpdateCommand') as [{ input: { ConditionExpression: string } }])[0].input;
-    expect(upd.ConditionExpression).toContain('begins_with(matchedOrgId, :unres)');   // conditional, not blind (finding 3)
+    expect(upd.ConditionExpression).toContain('begins_with(matchedOrgId, :unres)');       // conditional, not blind (finding 3)
+    expect(upd.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)'); // NULL matchedOrgId is writable (round-2 P1)
     const audit = auditMock.mock.calls[0][0];
     expect(audit.reason).toBe('manual_link_unit'); expect(audit.operator).toBe('op@x.com');
     expect(audit.details).toMatchObject({ unitType: 'structured', unitKey: 'unresolved-rfq-r1', targetOrgId: 'acme.com', affectedCount: 1, affectedEventIds: ['tev-a'] });
@@ -557,10 +584,12 @@ async function backfillSource(sourceType: string, sourceEntityId: string, target
     await docClient.send(new UpdateCommand({
       TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
       UpdateExpression: 'SET matchedOrgId = :o',
-      // Write ONLY if matchedOrgId is missing/empty/unresolved-* — never clobber a real org written by a
-      // concurrent admin or the live matcher (the write itself is the guard; no TOCTOU).
-      ConditionExpression: 'attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',
-      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-' },
+      // Write ONLY if matchedOrgId is missing / DynamoDB-NULL / empty / unresolved-* — never clobber a real
+      // org written by a concurrent admin or the live matcher. attribute_type NULL is required because a
+      // source row can store matchedOrgId as a NULL attribute (round-2 P1); it is checked BEFORE begins_with
+      // so a NULL value never reaches begins_with (OR short-circuits).
+      ConditionExpression: 'attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',
+      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL' },
     }));
     return 'written';
   } catch (err) {
@@ -697,7 +726,26 @@ git commit -m "feat(crm-api): linkVisitor orchestrator (manual bridge + retro, n
 
 Open item resolved: the source helpers written inline in Task 5 (`readSourceEmail` with the order→RFQ fallback + quote/logistics→underlying-order, and `backfillTargetPk`) are the single source of truth. Representative kind = the event with the newest `occurredAt` in the unit.
 
-- [ ] **Step 0: Extract** `readSourceEmail` (export as `readSourceEmailForUnit`) + `backfillTargetPk` from `linkStructuredUnit.ts` into `amplify/functions/crm-api/lib/link/sourceEmail.ts`, and add `sourceDomain(email)` (eTLD+1 via the existing `amplify/lib/organization/etld.ts` `classifyEmailDomain`, or a simple `email.split('@')[1]` if that helper is not importable from crm-api). Update `linkStructuredUnit.ts` to import both from `sourceEmail.ts` (delete the inline copies). Re-run Task 5 tests — they must stay green (the mock sequence is unchanged; the functions moved, not their behaviour). This keeps the order→RFQ-fallback and logistics→`relatedOrderId` completeness (finding 5) in ONE place used by both the queue enrichment and the link mutation.
+- [ ] **Step 0a: Extract** `readSourceEmail` (export as `readSourceEmailForUnit`) + `backfillTargetPk` from `linkStructuredUnit.ts` into `amplify/functions/crm-api/lib/link/sourceEmail.ts`, and add `sourceDomain(email)` (eTLD+1 via the existing `amplify/lib/organization/etld.ts` `classifyEmailDomain`, or a simple `email.split('@')[1]` if that helper is not importable from crm-api). Update `linkStructuredUnit.ts` to import both from `sourceEmail.ts` (delete the inline copies). Re-run Task 5 tests — they must stay green (mock sequence unchanged; functions moved, not their behaviour).
+
+- [ ] **Step 0b: DIRECT tests for `sourceEmail.ts`** (round-2 P2 finding 3 — the order/logistics branches are currently only exercised through mocks). Create `amplify/functions/crm-api/lib/link/sourceEmail.test.ts` with `vi.mock('../dynamodb', …)` and assert:
+```ts
+// order: GSI4 EMAIL# is preferred
+mockSend.mockResolvedValueOnce({ Item: { PK: 'ORDER#o1', SK: 'META', GSI4PK: 'EMAIL#a@acme.com' } });
+expect(await readSourceEmailForUnit('order', 'o1', [])).toBe('a@acme.com');
+// order: falls back to the linked RFQ's email when no GSI4 EMAIL#
+mockSend.mockReset();
+mockSend.mockResolvedValueOnce({ Item: { PK: 'ORDER#o1', SK: 'META', rfqId: 'r9' } })   // order META, no GSI4
+        .mockResolvedValueOnce({ Item: { PK: 'RFQ#r9', SK: 'META', email: 'b@acme.com' } }); // linked RFQ
+expect(await readSourceEmailForUnit('order', 'o1', [])).toBe('b@acme.com');
+// logistics: backfillTargetPk reads LOGISTICS#/META.relatedOrderId → ORDER#<rel>
+mockSend.mockReset();
+mockSend.mockResolvedValueOnce({ Item: { PK: 'LOGISTICS#lc1', SK: 'META', relatedOrderId: 'o7' } });
+expect(await backfillTargetPk('logistics', 'lc1', [])).toBe('ORDER#o7');
+// quote: backfillTargetPk uses payload.orderId of a representative event
+expect(await backfillTargetPk('quote', 'doc1', [{ payload: { orderId: 'o3' } }] as never)).toBe('ORDER#o3');
+```
+These lock the finding-5 completeness against regression, independent of the `needsLinkingQueue` mock.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -932,3 +980,10 @@ Principle: **no external side effect before a conditional write succeeds; every 
 4. **P1 (finding 4)** — `upsertManualVisitorBridge` is a **conditional** Put (writes manual only when no real org exists), returns `{ written, existingOrgId }`; `linkVisitor` returns `alreadyResolved` without retro/audit when `written===false`. Race test added (Tasks 2, 6).
 5. **P2 (finding 5)** — `readSourceEmail`/`backfillTargetPk` cover order→RFQ-email fallback and logistics→`LOGISTICS#/META.relatedOrderId`→order; centralized in `sourceEmail.ts` (Tasks 5, 7).
 6. **P2 (finding 6)** — old `GSI1PK/GSI1SK` are **destructured out** of the moved item, never written as `undefined` (docClient has no `removeUndefinedValues`). Test asserts `'GSI1PK' in Item === false` (Task 4).
+
+## Review round 2 — NULL-condition + post-move-durability fixes
+
+1. **P1 (finding 1)** — manual visitor-bridge condition now includes `attribute_type(matchedOrgId, :nullType)` so an existing bridge row storing `matchedOrgId` as DynamoDB NULL is treated as unresolved (writable), not mis-classified as already-resolved. Test: existing `{matchedOrgId:null}` → `written:true` (Task 2).
+2. **P1 (finding 2)** — source backfill condition adds the same `attribute_type NULL` clause (checked BEFORE `begins_with`, so a NULL never reaches `begins_with`). Assertion added to the Task 5 backfill test.
+3. **P2 (finding 3)** — `sourceEmail.ts` gets DIRECT tests (Task 7 step 0b): order→GSI4-EMAIL#, order→RFQ-email fallback, logistics→`relatedOrderId`→order, quote→`payload.orderId`. The finding-5 order/logistics completeness is now regression-locked, not only mocked.
+4. **Extra risk** — `manualMoveTimelineEvent` wraps the POST-move side effects (contact/recompute/mark) in try/catch: the conditional Put is the durable commit point, so a later failure logs `crm.link.post_move_error` and still returns `moved:true` (the row moved; the dirty-rollup sweep repairs the rollup). This prevents a genuinely-moved event being counted as `errors` and wrongly skipping source backfill/audit. Test: post-move recompute throws → `moved:true` (Task 4).
