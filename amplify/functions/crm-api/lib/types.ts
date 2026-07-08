@@ -69,6 +69,7 @@ export interface LinkAuditLogItem {
   oldOrgId: string | null; newOrgId: string | null;
   oldContactId: string | null; newContactId: string | null;
   operator: string; reason: string; timestamp: string;
+  details: Record<string, unknown> | null;
 }
 
 export interface ResolveResult {
