@@ -1,131 +1,87 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-
-// Timeline entries come from Amplify with no shared domain type; describe just
-// the fields this component reads from each entity.
-export interface RfqEntry {
-    rfqId: string;
-    submittedAt?: string | null;
-    equipmentCategory?: string | null;
-    institution?: string | null;
-}
-
-export interface OrderEntry {
-    orderId: string;
-    quoteDate?: string | null;
-    productModel?: string | null;
-    quoteAmount?: number | null;
-}
-
-export interface LeadEntry {
-    leadId: string;
-    submittedAt?: string | null;
-    type?: string | null;
-    topic?: string | null;
-    productName?: string | null;
-}
+import { useMemo, useState } from 'react';
+import type { OrganizationTimelineItem } from '../../hooks/useOrganizationTimeline';
+import { CHIP_LABELS, ICON_GLYPH, TONE_LABEL, toneBadge, composeTimelineText } from './timelineItemTemplates';
 
 interface Props {
-    recentRfqs: RfqEntry[];
-    recentOrders: OrderEntry[];
-    recentLeads: LeadEntry[];
+  items: OrganizationTimelineItem[];
+  loading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  loadMore: () => void;
+  includeInternal: boolean;
+  setIncludeInternal: (v: boolean) => void;
 }
 
-type Tab = 'rfqs' | 'orders' | 'leads' | 'tenders';
+const CHIPS = ['all', 'rfq', 'lead', 'order', 'quote', 'logistics', 'site_visits'] as const;
 
-function TabButton({ active, onClick, label, count }: { active: boolean; onClick: () => void; label: string; count: number }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`px-4 py-2 rounded-full text-xs border-none cursor-pointer transition-colors whitespace-nowrap ${
-                active
-                    ? 'bg-primary text-on-primary font-semibold'
-                    : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container'
-            }`}
-        >
-            {label} <span className={active ? 'opacity-80' : 'opacity-60'}>({count})</span>
+export function OrganizationTimeline({ items, loading, error, hasMore, loadMore, includeInternal, setIncludeInternal }: Props) {
+  const [chip, setChip] = useState<string>('all');
+  const filtered = useMemo(
+    () => (chip === 'all' ? items : items.filter((i) => i.sourceFilterGroup === chip)),
+    [items, chip],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {CHIPS.map((c) => (
+            <button
+              key={c}
+              onClick={() => setChip(c)}
+              className={`px-3 py-1 rounded-full text-xs border ${chip === c ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'}`}
+            >
+              {CHIP_LABELS[c]}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-xs text-slate-500">
+          <input type="checkbox" checked={includeInternal} onChange={(e) => setIncludeInternal(e.target.checked)} />
+          Show internal
+        </label>
+      </div>
+
+      {loading && items.length === 0 ? (
+        <div data-testid="timeline-skeleton" className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => <div key={i} className="h-16 rounded-lg bg-slate-100 animate-pulse" />)}
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Couldn’t load timeline. <button className="underline" onClick={loadMore}>Retry</button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-lg border border-slate-200 p-6 text-center text-sm text-slate-500">
+          {items.length === 0 ? 'No recorded interactions yet.' : 'No results in the loaded range — Load more.'}
+        </div>
+      ) : (
+        <ol className="flex flex-col gap-3">
+          {filtered.map((item) => {
+            const { title, snippet } = composeTimelineText(item);
+            return (
+              <li key={item.id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
+                <div className="text-lg leading-none">{ICON_GLYPH[item.icon] ?? ICON_GLYPH.event}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm text-slate-800">{title}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${toneBadge(item.tone)}`}>
+                      {TONE_LABEL[item.tone] ?? item.tone}{item.confidence != null ? ` · ${Math.round(item.confidence * 100)}%` : ''}
+                    </span>
+                    {item.isInternalOnly && <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-500">internal</span>}
+                  </div>
+                  {snippet && <div className="text-xs text-slate-500 truncate">{snippet}</div>}
+                </div>
+                <time className="text-[11px] text-slate-400 whitespace-nowrap">{new Date(item.occurredAt).toLocaleDateString()}</time>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {hasMore && !loading && (
+        <button onClick={loadMore} className="self-center px-4 py-2 text-xs rounded-full border border-slate-300 text-slate-600">
+          Load more
         </button>
-    );
-}
-
-function TimelineEmpty({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="py-10 text-center text-sm text-on-surface-variant italic">
-            {children}
-        </div>
-    );
-}
-
-function TimelineRow({ date, children }: { date: string | undefined; children: React.ReactNode }) {
-    return (
-        <div className="flex items-start gap-4 py-3 border-b border-outline-variant/5 last:border-b-0">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest shrink-0 w-24 pt-0.5">
-                {date ?? '—'}
-            </span>
-            <div className="flex-1 min-w-0 text-sm text-on-surface">
-                {children}
-            </div>
-        </div>
-    );
-}
-
-export function OrganizationTimeline({ recentRfqs, recentOrders, recentLeads }: Props) {
-    const [tab, setTab] = useState<Tab>('rfqs');
-
-    return (
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/5 shadow-[0px_10px_30px_rgba(2,36,72,0.04)] p-5 md:p-6">
-            <div className="flex flex-wrap items-center gap-2 mb-5 md:mb-6">
-                <TabButton active={tab === 'rfqs'} onClick={() => setTab('rfqs')} label="RFQs" count={recentRfqs.length} />
-                <TabButton active={tab === 'orders'} onClick={() => setTab('orders')} label="Orders" count={recentOrders.length} />
-                <TabButton active={tab === 'leads'} onClick={() => setTab('leads')} label="Leads" count={recentLeads.length} />
-                <TabButton active={tab === 'tenders'} onClick={() => setTab('tenders')} label="Tenders" count={0} />
-            </div>
-
-            <div>
-                {tab === 'rfqs' && (
-                    recentRfqs.length === 0
-                        ? <TimelineEmpty>No recent RFQs.</TimelineEmpty>
-                        : recentRfqs.map((r) => (
-                            <TimelineRow key={r.rfqId} date={r.submittedAt?.slice(0, 10)}>
-                                <Link to={`/admin/rfqs/${r.rfqId}`} className="font-medium text-primary hover:underline">
-                                    {r.equipmentCategory} — {r.institution}
-                                </Link>
-                            </TimelineRow>
-                        ))
-                )}
-                {tab === 'orders' && (
-                    recentOrders.length === 0
-                        ? <TimelineEmpty>No recent orders.</TimelineEmpty>
-                        : recentOrders.map((o) => (
-                            <TimelineRow key={o.orderId} date={o.quoteDate?.slice(0, 10)}>
-                                <Link to={`/admin/orders/${o.orderId}`} className="font-medium text-primary hover:underline">
-                                    {o.productModel}
-                                    {o.quoteAmount != null && (
-                                        <span className="ml-2 font-headline font-semibold text-on-surface">
-                                            ${o.quoteAmount.toLocaleString()}
-                                        </span>
-                                    )}
-                                </Link>
-                            </TimelineRow>
-                        ))
-                )}
-                {tab === 'leads' && (
-                    recentLeads.length === 0
-                        ? <TimelineEmpty>No recent leads.</TimelineEmpty>
-                        : recentLeads.map((l) => (
-                            <TimelineRow key={l.leadId} date={l.submittedAt?.slice(0, 10)}>
-                                <Link to={`/admin/leads/${l.leadId}`} className="font-medium text-primary hover:underline">
-                                    {l.type} — {l.topic ?? l.productName ?? ''}
-                                </Link>
-                            </TimelineRow>
-                        ))
-                )}
-                {tab === 'tenders' && (
-                    <TimelineEmpty>
-                        Tender → Organization matching arrives in Phase D.
-                    </TimelineEmpty>
-                )}
-            </div>
-        </div>
-    );
+      )}
+    </div>
+  );
 }
