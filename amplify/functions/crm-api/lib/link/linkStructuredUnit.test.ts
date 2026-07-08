@@ -17,27 +17,14 @@ describe('linkStructuredUnit', () => {
     expect(mockSend).not.toHaveBeenCalled();
   });
 
-  it('empty synthetic partition → alreadyLinked no-op, repairs backfill only (no move/audit)', async () => {
+  it('alreadyLinked (empty partition) does NOT backfill the source from the request target (stale-client safe)', async () => {
     orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [] })   // synthetic partition query → empty
-      .mockResolvedValueOnce({});             // repair backfill Update
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(r).toMatchObject({ alreadyLinked: true, affected: 0 });
-    expect(moveMock).not.toHaveBeenCalled();
-    expect(auditMock).not.toHaveBeenCalled();
-  });
-
-  it('alreadyLinked repair path re-runs the idempotent backfill', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [] })   // no unresolved events → alreadyLinked
-      .mockResolvedValueOnce({});             // repair backfill Update
+    mockSend.mockResolvedValueOnce({ Items: [] });   // no unresolved events → alreadyLinked
     const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
     expect(r).toMatchObject({ alreadyLinked: true });
     const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
-    expect(updates.length).toBe(1);           // repair backfill attempted
-    expect(auditMock).not.toHaveBeenCalled(); // no audit on repair path
+    expect(updates.length).toBe(0);                  // NO backfill from a possibly-stale request target
+    expect(auditMock).not.toHaveBeenCalled();
   });
 
   it('moves each unresolved event, backfills source CONDITIONALLY, writes one per-unit audit', async () => {

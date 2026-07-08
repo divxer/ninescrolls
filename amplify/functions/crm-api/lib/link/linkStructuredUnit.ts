@@ -27,16 +27,15 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
     startKey = q.LastEvaluatedKey as Record<string, unknown> | undefined;
   } while (startKey);
   if (events.length === 0) {
-    let sourceBackfillStatus: BackfillStatus | 'not_attempted' = 'not_attempted';
-    let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
-    try {
-      // repair: heal a source matchedOrgId a prior attempt failed to backfill (idempotent)
-      sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, []);
-    } catch (err) {
-      postCommitStatus = 'post_commit_failed';
-      console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'repair_backfill', error: err instanceof Error ? err.message : String(err) }));
-    }
-    return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0, sourceBackfillStatus, postCommitStatus };
+    // Do NOT backfill the source here. An empty synthetic partition only tells us the events
+    // were already moved by *some* prior request — it carries no proof that THIS request's
+    // targetOrgId is the org they actually moved to. A stale admin resubmitting the same unit
+    // with a different (now-outdated) target could otherwise clobber a correct matchedOrgId,
+    // or, when the source is still unresolved (the exact case a "repair" would want to fix),
+    // write the wrong org because the stale target is indistinguishable from a fresh one.
+    // Recovering a missing structured backfill is deferred to a later sweep/health job (3C);
+    // it also self-heals whenever a new event re-queues the unit through the moved>0 path below.
+    return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0 };
   }
 
   let sourceEmail: string | null = null;
