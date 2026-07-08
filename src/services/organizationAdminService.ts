@@ -28,6 +28,19 @@ export async function getOrganization(orgId: string) {
   return data;
 }
 
+export interface TimelineQueryArgs {
+  orgId: string;
+  limit?: number;
+  nextToken?: string;
+  includeInternalOnly?: boolean;
+}
+
+export async function getOrganizationTimeline(args: TimelineQueryArgs) {
+  const { data, errors } = await client().queries.timelineByOrg(args, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
+
 export async function updateOrganizationStatus(args: {
   orgId: string;
   status: string;
