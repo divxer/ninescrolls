@@ -4,9 +4,25 @@ export const CHIP_LABELS: Record<string, string> = {
   all: 'All', rfq: 'RFQ', lead: 'Lead', order: 'Order', quote: 'Quote', logistics: 'Logistics', site_visits: 'Site visits',
 };
 
-export const ICON_GLYPH: Record<string, string> = {
-  rfq: '📄', lead: '✉️', order: '📦', quote: '💬', logistics: '🚚', site_visit: '🌐', event: '•',
+export const ICON_SYMBOL: Record<string, string> = {
+  rfq: 'description', lead: 'mail', order: 'inventory_2', quote: 'request_quote',
+  logistics: 'local_shipping', site_visit: 'language', event: 'bolt',
 };
+
+export function buildSourceLink(item: Pick<OrganizationTimelineItem, 'source' | 'sourceEntityId' | 'payload'>): string | null {
+  switch (item.source) {
+    case 'rfq': return `/admin/rfqs/${item.sourceEntityId}`;
+    case 'lead': return `/admin/leads/${item.sourceEntityId}`;
+    case 'order': return `/admin/orders/${item.sourceEntityId}`;
+    case 'logistics': return `/admin/logistics/${item.sourceEntityId}`;
+    case 'quote': {
+      const p = item.payload as Record<string, unknown> | null;
+      const orderId = p && typeof p.orderId === 'string' ? p.orderId : null;
+      return orderId ? `/admin/orders/${orderId}` : null;
+    }
+    default: return null;
+  }
+}
 
 export function toneBadge(tone: string): string {
   switch (tone) {

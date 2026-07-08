@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { OrganizationTimelineItem } from '../../hooks/useOrganizationTimeline';
-import { CHIP_LABELS, ICON_GLYPH, TONE_LABEL, toneBadge, composeTimelineText } from './timelineItemTemplates';
+import { CHIP_LABELS, ICON_SYMBOL, TONE_LABEL, toneBadge, composeTimelineText, buildSourceLink } from './timelineItemTemplates';
 
 interface Props {
   items: OrganizationTimelineItem[];
@@ -64,12 +65,17 @@ export function OrganizationTimeline({ items, loading, error, hasMore, loadMore,
             <ol className="flex flex-col gap-3">
               {filtered.map((item) => {
                 const { title, snippet } = composeTimelineText(item);
+                const link = buildSourceLink(item);
                 return (
                   <li key={item.id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
-                    <div className="text-lg leading-none">{ICON_GLYPH[item.icon] ?? ICON_GLYPH.event}</div>
+                    <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 20 }}>{ICON_SYMBOL[item.icon] ?? ICON_SYMBOL.event}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm text-slate-800">{title}</span>
+                        {link ? (
+                          <Link to={link} className="font-medium text-sm text-primary hover:underline">{title}</Link>
+                        ) : (
+                          <span className="font-medium text-sm text-slate-800">{title}</span>
+                        )}
                         <span className={`px-2 py-0.5 rounded-full text-[10px] ${toneBadge(item.tone)}`}>
                           {TONE_LABEL[item.tone] ?? item.tone}{item.confidence != null ? ` · ${Math.round(item.confidence * 100)}%` : ''}
                         </span>

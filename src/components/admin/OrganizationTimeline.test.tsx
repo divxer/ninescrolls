@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { OrganizationTimeline } from './OrganizationTimeline';
 
 const items = [
@@ -9,15 +10,17 @@ const items = [
 
 const baseProps = { items, loading: false, error: null as Error | null, hasMore: false, loadMore: vi.fn(), reload: vi.fn(), includeInternal: false, setIncludeInternal: vi.fn() };
 
+const renderTL = (props: typeof baseProps) => render(<MemoryRouter><OrganizationTimeline {...props} /></MemoryRouter>);
+
 describe('OrganizationTimeline', () => {
   it('renders mixed kinds as cards', () => {
-    render(<OrganizationTimeline {...baseProps} />);
+    renderTL(baseProps);
     expect(screen.getByText('Order created')).toBeTruthy();
     expect(screen.getByText('Site visit')).toBeTruthy();
   });
 
   it('source chips filter ONLY the loaded items (client-side)', () => {
-    render(<OrganizationTimeline {...baseProps} />);
+    renderTL(baseProps);
     fireEvent.click(screen.getByRole('button', { name: 'Site visits' }));
     expect(screen.queryByText('Order created')).toBeNull();
     expect(screen.getByText('Site visit')).toBeTruthy();
@@ -25,33 +28,39 @@ describe('OrganizationTimeline', () => {
 
   it('"Load more" calls loadMore only when hasMore', () => {
     const loadMore = vi.fn();
-    const { rerender } = render(<OrganizationTimeline {...baseProps} hasMore={false} loadMore={loadMore} />);
+    const { rerender } = render(<MemoryRouter><OrganizationTimeline {...baseProps} hasMore={false} loadMore={loadMore} /></MemoryRouter>);
     expect(screen.queryByRole('button', { name: /load more/i })).toBeNull();
-    rerender(<OrganizationTimeline {...baseProps} hasMore loadMore={loadMore} />);
+    rerender(<MemoryRouter><OrganizationTimeline {...baseProps} hasMore loadMore={loadMore} /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: /load more/i }));
     expect(loadMore).toHaveBeenCalled();
   });
 
   it('"Show internal" toggle calls setIncludeInternal(true) (drives a refetch upstream, not a client reveal)', () => {
     const setIncludeInternal = vi.fn();
-    render(<OrganizationTimeline {...baseProps} setIncludeInternal={setIncludeInternal} />);
+    renderTL({ ...baseProps, setIncludeInternal });
     fireEvent.click(screen.getByRole('checkbox', { name: /show internal/i }));
     expect(setIncludeInternal).toHaveBeenCalledWith(true);
   });
 
   it('shows skeleton on initial load, inline retry on error, and empty state', () => {
-    const { rerender } = render(<OrganizationTimeline {...baseProps} items={[]} loading />);
+    const { rerender } = render(<MemoryRouter><OrganizationTimeline {...baseProps} items={[]} loading /></MemoryRouter>);
     expect(screen.getByTestId('timeline-skeleton')).toBeTruthy();
-    rerender(<OrganizationTimeline {...baseProps} items={[]} loading={false} error={new Error('x')} />);
+    rerender(<MemoryRouter><OrganizationTimeline {...baseProps} items={[]} loading={false} error={new Error('x')} /></MemoryRouter>);
     expect(screen.getByText(/couldn.t load timeline/i)).toBeTruthy();
-    rerender(<OrganizationTimeline {...baseProps} items={[]} loading={false} error={null} />);
+    rerender(<MemoryRouter><OrganizationTimeline {...baseProps} items={[]} loading={false} error={null} /></MemoryRouter>);
     expect(screen.getByText(/no recorded interactions/i)).toBeTruthy();
   });
 
   it('a mid-list error keeps already-rendered cards (does not wipe them) and offers inline retry', () => {
-    render(<OrganizationTimeline {...baseProps} error={new Error('load more failed')} />);
+    renderTL({ ...baseProps, error: new Error('load more failed') });
     expect(screen.getByText('Order created')).toBeTruthy();
     expect(screen.getByText('Site visit')).toBeTruthy();
     expect(screen.getByRole('button', { name: /retry/i })).toBeTruthy();
+  });
+
+  it('links a card to its source-record detail page (order → /admin/orders/{id}); analytics has no link', () => {
+    renderTL(baseProps);
+    expect(screen.getByText('Order created').closest('a')?.getAttribute('href')).toBe('/admin/orders/ord-1');
+    expect(screen.getByText('Site visit').closest('a')).toBeNull();
   });
 });
