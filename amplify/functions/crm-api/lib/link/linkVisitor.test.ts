@@ -1,0 +1,51 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+const mockSend = vi.fn();
+vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
+const orgExistsMock = vi.fn(); const readBridgeMock = vi.fn(); const upsertManualMock = vi.fn(); const retroMock = vi.fn(); const auditMock = vi.fn();
+vi.mock('../orgStore', () => ({ orgExists: (o: string) => orgExistsMock(o) }));
+vi.mock('../../../../lib/crm/visitor-bridge', () => ({ readVisitorBridge: (...a: unknown[]) => readBridgeMock(...a), upsertManualVisitorBridge: (...a: unknown[]) => upsertManualMock(...a), toSend: () => 'send' }));
+vi.mock('../analytics/reResolveVisitorSessions', () => ({ reResolveVisitorSessions: (a: unknown) => retroMock(a) }));
+vi.mock('../auditStore', () => ({ writeLinkAuditLog: (a: unknown) => auditMock(a) }));
+import { linkVisitor } from './linkVisitor';
+
+beforeEach(() => { mockSend.mockReset(); orgExistsMock.mockReset(); readBridgeMock.mockReset(); upsertManualMock.mockReset(); retroMock.mockReset(); auditMock.mockReset(); });
+
+describe('linkVisitor', () => {
+  it('no bridge → conditional manual write succeeds, triggers retro, audits', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
+    upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
+    retroMock.mockResolvedValueOnce({ summary: { resolved: 3, hasMore: false } }); auditMock.mockResolvedValueOnce('a');
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(upsertManualMock).toHaveBeenCalled();
+    expect(retroMock).toHaveBeenCalledWith({ visitorId: 'v1' });
+    expect(r).toMatchObject({ sessionsResolved: 3, pending: false });
+  });
+
+  it('conditional manual write loses the race (written:false) → alreadyResolved, NO retro, NO audit (finding 4)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
+    upsertManualMock.mockResolvedValueOnce({ written: false, existingOrgId: 'winner.com' });
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyResolved: true, existingOrgId: 'winner.com' });
+    expect(retroMock).not.toHaveBeenCalled();
+    expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it('already manual → alreadyLinked no-op (no upsert, no retro)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce({ matchedOrgId: 'acme.com', orgSource: 'manual' });
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'other.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyLinked: true, existingOrgId: 'acme.com' });
+    expect(upsertManualMock).not.toHaveBeenCalled();
+  });
+
+  it('already real non-manual → alreadyResolved no-op (no manual overwrite)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce({ matchedOrgId: 'acme.com', orgSource: 'rfq_match' });
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'other.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyResolved: true, existingOrgId: 'acme.com' });
+    expect(upsertManualMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid target', async () => {
+    orgExistsMock.mockResolvedValueOnce(false);
+    await expect(linkVisitor({ visitorId: 'v1', targetOrgId: 'nope', operator: 'op' })).rejects.toThrow(/target/i);
+  });
+});
