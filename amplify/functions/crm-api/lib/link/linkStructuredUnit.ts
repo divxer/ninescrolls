@@ -1,0 +1,97 @@
+import { QueryCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { docClient, TABLE_NAME } from '../dynamodb';
+import { orgExists } from '../orgStore';
+import { manualMoveTimelineEvent, type ContactStatus } from './manualMoveTimelineEvent';
+import { writeLinkAuditLog } from '../auditStore';
+import type { TimelineEventItem } from '../types';
+
+type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source' | 'not_applicable';
+const SOURCE_PK: Record<string, (id: string) => string> = { rfq: (id) => `RFQ#${id}`, lead: (id) => `LEAD#${id}`, order: (id) => `ORDER#${id}` };
+
+export async function linkStructuredUnit(args: { sourceType: string; sourceEntityId: string; targetOrgId: string; operator: string }): Promise<Record<string, unknown>> {
+  if (!(await orgExists(args.targetOrgId))) throw new Error(`invalid target org: ${args.targetOrgId}`);
+  const syntheticOrgId = `unresolved-${args.sourceType}-${args.sourceEntityId}`;
+  const nowIso = new Date().toISOString();
+
+  const q = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME(), IndexName: 'GSI2',
+    KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :tl)',
+    FilterExpression: 'resolutionStatus = :unres',
+    ExpressionAttributeValues: { ':pk': `ORG#${syntheticOrgId}`, ':tl': 'TLEVENT#', ':unres': 'unresolved' },
+  }));
+  const events = (q.Items ?? []) as TimelineEventItem[];
+  if (events.length === 0) return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0 };
+
+  const sourceEmail = await readSourceEmail(args.sourceType, args.sourceEntityId, events);
+
+  let moved = 0, skipped = 0, errors = 0; let contactStatus: ContactStatus = 'missing_email';
+  const affectedEventIds: string[] = [];
+  for (const ev of events) {
+    try {
+      const r = await manualMoveTimelineEvent({ event: ev, targetOrgId: args.targetOrgId, email: sourceEmail, operator: args.operator, nowIso });
+      if (r.moved) { moved += 1; affectedEventIds.push(ev.id); contactStatus = r.contactStatus; }
+      else if (r.skipped) skipped += 1;
+    } catch { errors += 1; }
+  }
+
+  if (moved === 0) return { affected: events.length, moved: 0, skipped, errors };
+
+  const sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
+
+  await writeLinkAuditLog({
+    operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
+    details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
+  });
+
+  return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus };
+}
+
+async function backfillTargetPk(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
+  if (SOURCE_PK[sourceType]) return SOURCE_PK[sourceType](sourceEntityId);
+  if (sourceType === 'quote') {
+    const orderId = (events[0]?.payload as Record<string, unknown> | undefined)?.orderId as string | undefined;
+    return orderId ? `ORDER#${orderId}` : null;
+  }
+  if (sourceType === 'logistics') {
+    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `LOGISTICS#${sourceEntityId}`, SK: 'META' } }));
+    const rel = (res.Item as Record<string, unknown> | undefined)?.relatedOrderId as string | undefined;
+    return rel ? `ORDER#${rel}` : null;
+  }
+  return null;
+}
+
+async function readSourceEmail(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
+  if (sourceType === 'rfq' || sourceType === 'lead') {
+    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `${sourceType.toUpperCase()}#${sourceEntityId}`, SK: 'META' } }));
+    return ((res.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
+  }
+  const orderPk = await backfillTargetPk(sourceType, sourceEntityId, events);
+  if (!orderPk) return null;
+  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: orderPk, SK: 'META' } }));
+  const m = res.Item as Record<string, unknown> | undefined;
+  if (!m) return null;
+  const gsi4 = m.GSI4PK as string | undefined;
+  if (typeof gsi4 === 'string' && gsi4.startsWith('EMAIL#')) return gsi4.slice('EMAIL#'.length) || null;
+  const rfqId = m.rfqId as string | undefined;
+  if (!rfqId) return null;
+  const rfq = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `RFQ#${rfqId}`, SK: 'META' } }));
+  return ((rfq.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
+}
+
+async function backfillSource(sourceType: string, sourceEntityId: string, targetOrgId: string, events: TimelineEventItem[]): Promise<BackfillStatus> {
+  const pk = await backfillTargetPk(sourceType, sourceEntityId, events);
+  if (!pk) return 'no_source';
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
+      UpdateExpression: 'SET matchedOrgId = :o',
+      ConditionExpression: 'attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',
+      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL' },
+    }));
+    return 'written';
+  } catch (err) {
+    if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
+    const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
+    return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
+  }
+}
