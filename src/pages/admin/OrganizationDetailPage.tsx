@@ -1,12 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useOrganization } from '../../hooks/useOrganization';
+import { useOrganizationTimeline } from '../../hooks/useOrganizationTimeline';
 import { OrganizationHeaderPanel } from '../../components/admin/OrganizationHeaderPanel';
-import {
-    OrganizationTimeline,
-    type RfqEntry,
-    type OrderEntry,
-    type LeadEntry,
-} from '../../components/admin/OrganizationTimeline';
+import { OrganizationTimeline } from '../../components/admin/OrganizationTimeline';
 
 interface AggregateCardProps {
     label: string;
@@ -29,6 +25,7 @@ function AggregateCard({ label, value, icon }: AggregateCardProps) {
 export function OrganizationDetailPage() {
     const { orgId } = useParams<{ orgId: string }>();
     const { data, loading, error, refresh } = useOrganization(orgId);
+    const timeline = useOrganizationTimeline(orgId);
 
     if (loading) {
         return <div className="flex items-center justify-center py-20 text-on-surface-variant font-body">Loading organization...</div>;
@@ -78,9 +75,13 @@ export function OrganizationDetailPage() {
                         />
                     </div>
                     <OrganizationTimeline
-                        recentRfqs={(data.recentRfqs ?? []) as RfqEntry[]}
-                        recentOrders={(data.recentOrders ?? []) as OrderEntry[]}
-                        recentLeads={(data.recentLeads ?? []) as LeadEntry[]}
+                        items={timeline.items}
+                        loading={timeline.loading}
+                        error={timeline.error}
+                        hasMore={timeline.hasMore}
+                        loadMore={timeline.loadMore}
+                        includeInternal={timeline.includeInternal}
+                        setIncludeInternal={timeline.setIncludeInternal}
                     />
                 </div>
             </div>
