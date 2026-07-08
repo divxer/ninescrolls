@@ -3,10 +3,10 @@ import { docClient, TABLE_NAME } from '../dynamodb';
 import { orgExists } from '../orgStore';
 import { manualMoveTimelineEvent, type ContactStatus } from './manualMoveTimelineEvent';
 import { writeLinkAuditLog } from '../auditStore';
+import { readSourceEmailForUnit, backfillTargetPk } from './sourceEmail';
 import type { TimelineEventItem } from '../types';
 
 type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source' | 'not_applicable';
-const SOURCE_PK: Record<string, (id: string) => string> = { rfq: (id) => `RFQ#${id}`, lead: (id) => `LEAD#${id}`, order: (id) => `ORDER#${id}` };
 
 export async function linkStructuredUnit(args: { sourceType: string; sourceEntityId: string; targetOrgId: string; operator: string }): Promise<Record<string, unknown>> {
   if (!(await orgExists(args.targetOrgId))) throw new Error(`invalid target org: ${args.targetOrgId}`);
@@ -22,7 +22,7 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
   const events = (q.Items ?? []) as TimelineEventItem[];
   if (events.length === 0) return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0 };
 
-  const sourceEmail = await readSourceEmail(args.sourceType, args.sourceEntityId, events);
+  const sourceEmail = await readSourceEmailForUnit(args.sourceType, args.sourceEntityId, events);
 
   let moved = 0, skipped = 0, errors = 0; let contactStatus: ContactStatus = 'missing_email';
   const affectedEventIds: string[] = [];
@@ -44,38 +44,6 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
   });
 
   return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus };
-}
-
-async function backfillTargetPk(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
-  if (SOURCE_PK[sourceType]) return SOURCE_PK[sourceType](sourceEntityId);
-  if (sourceType === 'quote') {
-    const orderId = (events[0]?.payload as Record<string, unknown> | undefined)?.orderId as string | undefined;
-    return orderId ? `ORDER#${orderId}` : null;
-  }
-  if (sourceType === 'logistics') {
-    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `LOGISTICS#${sourceEntityId}`, SK: 'META' } }));
-    const rel = (res.Item as Record<string, unknown> | undefined)?.relatedOrderId as string | undefined;
-    return rel ? `ORDER#${rel}` : null;
-  }
-  return null;
-}
-
-async function readSourceEmail(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
-  if (sourceType === 'rfq' || sourceType === 'lead') {
-    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `${sourceType.toUpperCase()}#${sourceEntityId}`, SK: 'META' } }));
-    return ((res.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
-  }
-  const orderPk = await backfillTargetPk(sourceType, sourceEntityId, events);
-  if (!orderPk) return null;
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: orderPk, SK: 'META' } }));
-  const m = res.Item as Record<string, unknown> | undefined;
-  if (!m) return null;
-  const gsi4 = m.GSI4PK as string | undefined;
-  if (typeof gsi4 === 'string' && gsi4.startsWith('EMAIL#')) return gsi4.slice('EMAIL#'.length) || null;
-  const rfqId = m.rfqId as string | undefined;
-  if (!rfqId) return null;
-  const rfq = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `RFQ#${rfqId}`, SK: 'META' } }));
-  return ((rfq.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
 }
 
 async function backfillSource(sourceType: string, sourceEntityId: string, targetOrgId: string, events: TimelineEventItem[]): Promise<BackfillStatus> {
