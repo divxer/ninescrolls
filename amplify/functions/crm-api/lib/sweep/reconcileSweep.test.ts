@@ -15,7 +15,7 @@ beforeEach(() => { acquireLease.mockReset(); persistPage.mockReset(); releaseLea
 
 describe('reconcileSweep', () => {
   it('hot mode runs ONLY the existence pass', async () => {
-    runExistencePage.mockResolvedValueOnce({ counters: { scanned: 3, missingReemitted: 1, errors: 0 }, hasMore: false });
+    runExistencePage.mockResolvedValueOnce({ counters: { expected: 3, missingReemitted: 1, errors: 0 }, hasMore: false });
     const out = await reconcileSweep({ mode: 'hot', limit: 100 });
     expect(runExistencePage).toHaveBeenCalledWith(expect.objectContaining({ mode: 'hot' }));
     expect(runDirtyRollupPage).not.toHaveBeenCalled();
@@ -23,7 +23,7 @@ describe('reconcileSweep', () => {
     expect(out.summary.existence).toMatchObject({ counters: { missingReemitted: 1 }, hasMore: false });
   });
   it('cold mode runs existence AND dirty-rollup passes', async () => {
-    runExistencePage.mockResolvedValueOnce({ counters: { scanned: 5, missingReemitted: 0, errors: 0 }, hasMore: false });
+    runExistencePage.mockResolvedValueOnce({ counters: { expected: 5, missingReemitted: 0, errors: 0 }, hasMore: false });
     runDirtyRollupPage.mockResolvedValueOnce({ counters: { dirtyFound: 2, repaired: 2, errors: 0 }, hasMore: false });
     const out = await reconcileSweep({ mode: 'cold', limit: 100 });
     expect(runExistencePage).toHaveBeenCalled();
@@ -48,23 +48,23 @@ describe('reconcileSweep', () => {
   });
   it('loops multiple pages: accumulates counters, persists each non-final page, releases once at the end', async () => {
     runExistencePage
-      .mockResolvedValueOnce({ counters: { scanned: 2, missingReemitted: 1, errors: 0 }, cursor: { channel: 'lead' }, hasMore: true })
-      .mockResolvedValueOnce({ counters: { scanned: 3, missingReemitted: 0, errors: 0 }, cursor: { channel: 'order' }, hasMore: true })
-      .mockResolvedValueOnce({ counters: { scanned: 1, missingReemitted: 1, errors: 0 }, hasMore: false });
+      .mockResolvedValueOnce({ counters: { expected: 2, missingReemitted: 1, errors: 0 }, cursor: { channel: 'lead' }, hasMore: true })
+      .mockResolvedValueOnce({ counters: { expected: 3, missingReemitted: 0, errors: 0 }, cursor: { channel: 'order' }, hasMore: true })
+      .mockResolvedValueOnce({ counters: { expected: 1, missingReemitted: 1, errors: 0 }, hasMore: false });
     const out = await reconcileSweep({ mode: 'hot', limit: 100 });
     expect(runExistencePage).toHaveBeenCalledTimes(3);
     expect(persistPage).toHaveBeenCalledTimes(2);            // the two non-final pages persist mid-pass
     expect(releaseLease).toHaveBeenCalledTimes(1);           // released once, on the final page
     // counters accumulate across all three pages; completed → hasMore false
-    expect(out.summary.existence).toMatchObject({ counters: { scanned: 6, missingReemitted: 2, errors: 0 }, hasMore: false });
+    expect(out.summary.existence).toMatchObject({ counters: { expected: 6, missingReemitted: 2, errors: 0 }, hasMore: false });
     // each persistPage carries the lease token (3rd arg) + the CUMULATIVE counters so far
     expect(persistPage.mock.calls[0][2]).toBe('tok');
-    expect(persistPage.mock.calls[0][3]).toMatchObject({ hasMore: true, counters: { scanned: 2 } });
-    expect(persistPage.mock.calls[1][3]).toMatchObject({ counters: { scanned: 5 } }); // 2 + 3
+    expect(persistPage.mock.calls[0][3]).toMatchObject({ hasMore: true, counters: { expected: 2 } });
+    expect(persistPage.mock.calls[1][3]).toMatchObject({ counters: { expected: 5 } }); // 2 + 3
   });
   it('a pass that never completes within the page budget returns hasMore:true (incomplete health signal)', async () => {
     // runner always reports more work → runPass exhausts MAX_PAGES_PER_INVOCATION without completing
-    runExistencePage.mockResolvedValue({ counters: { scanned: 1, missingReemitted: 0, errors: 0 }, cursor: { channel: 'rfq' }, hasMore: true });
+    runExistencePage.mockResolvedValue({ counters: { expected: 1, missingReemitted: 0, errors: 0 }, cursor: { channel: 'rfq' }, hasMore: true });
     const out = await reconcileSweep({ mode: 'hot', limit: 100 });
     expect(out.summary.existence).toMatchObject({ hasMore: true }); // surfaced in crm.sweep.summary
     expect(releaseLease).not.toHaveBeenCalled();                    // never completed → lease left to expire, cursor persisted
