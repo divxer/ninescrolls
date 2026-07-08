@@ -26,7 +26,18 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
     events.push(...((q.Items ?? []) as TimelineEventItem[]));
     startKey = q.LastEvaluatedKey as Record<string, unknown> | undefined;
   } while (startKey);
-  if (events.length === 0) return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0 };
+  if (events.length === 0) {
+    let sourceBackfillStatus: BackfillStatus | 'not_attempted' = 'not_attempted';
+    let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
+    try {
+      // repair: heal a source matchedOrgId a prior attempt failed to backfill (idempotent)
+      sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, []);
+    } catch (err) {
+      postCommitStatus = 'post_commit_failed';
+      console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'repair_backfill', error: err instanceof Error ? err.message : String(err) }));
+    }
+    return { alreadyLinked: true, affected: 0, moved: 0, skipped: 0, errors: 0, sourceBackfillStatus, postCommitStatus };
+  }
 
   let sourceEmail: string | null = null;
   let enrichmentError = false;
@@ -51,16 +62,23 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
 
   let sourceBackfillStatus: BackfillStatus | 'not_attempted' = 'not_attempted';
   let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
+
+  // split so a backfill failure does NOT suppress the audit attempt (and vice versa)
   try {
     sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
+  } catch (err) {
+    postCommitStatus = 'post_commit_failed';
+    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'backfill', error: err instanceof Error ? err.message : String(err) }));
+  }
 
+  try {
     await writeLinkAuditLog({
       operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
       details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
     });
   } catch (err) {
     postCommitStatus = 'post_commit_failed';
-    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, error: err instanceof Error ? err.message : String(err) }));
+    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'audit', error: err instanceof Error ? err.message : String(err) }));
   }
 
   return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus, postCommitStatus };

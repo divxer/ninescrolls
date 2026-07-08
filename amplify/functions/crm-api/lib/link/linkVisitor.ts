@@ -8,7 +8,17 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   if (!(await orgExists(args.targetOrgId))) throw new Error(`invalid target org: ${args.targetOrgId}`);
   const send = toSend(docClient);
   const bridge = await readVisitorBridge(send, TABLE_NAME(), args.visitorId);
-  if (bridge?.orgSource === 'manual') return { alreadyLinked: true, existingOrgId: bridge.matchedOrgId };
+  if (bridge?.orgSource === 'manual') {
+    let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
+    try {
+      // repair: heal sessions a prior attempt's retro failed to resolve (idempotent)
+      await reResolveVisitorSessions({ visitorId: args.visitorId });
+    } catch (err) {
+      postCommitStatus = 'post_commit_failed';
+      console.error(JSON.stringify({ event: 'crm.link.post_commit_error', visitorId: args.visitorId, phase: 'repair_retro', error: err instanceof Error ? err.message : String(err) }));
+    }
+    return { alreadyLinked: true, existingOrgId: bridge.matchedOrgId, postCommitStatus };
+  }
   if (bridge?.matchedOrgId) return { alreadyResolved: true, existingOrgId: bridge.matchedOrgId };
 
   const nowIso = new Date().toISOString();

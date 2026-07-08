@@ -30,11 +30,13 @@ describe('linkVisitor', () => {
     expect(auditMock).not.toHaveBeenCalled();
   });
 
-  it('already manual → alreadyLinked no-op (no upsert, no retro)', async () => {
+  it('already manual → alreadyLinked no-op, repairs retro (no upsert, no bridge re-write)', async () => {
     orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce({ matchedOrgId: 'acme.com', orgSource: 'manual' });
+    retroMock.mockResolvedValueOnce({ summary: { resolved: 0, hasMore: false } });
     const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'other.com', operator: 'op' });
     expect(r).toMatchObject({ alreadyLinked: true, existingOrgId: 'acme.com' });
     expect(upsertManualMock).not.toHaveBeenCalled();
+    expect(retroMock).toHaveBeenCalledWith({ visitorId: 'v1' }); // repair retro ran
   });
 
   it('already real non-manual → alreadyResolved no-op (no manual overwrite)', async () => {
@@ -69,5 +71,15 @@ describe('linkVisitor', () => {
     const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
     expect(r).toMatchObject({ sessionsResolved: 2, postCommitStatus: 'post_commit_failed' });
     errSpy.mockRestore();
+  });
+
+  it('already-manual repair path re-runs idempotent retro', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    readBridgeMock.mockResolvedValueOnce({ matchedOrgId: 'acme.com', orgSource: 'manual' });
+    retroMock.mockResolvedValueOnce({ summary: { resolved: 0, hasMore: false } });
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'other.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyLinked: true, existingOrgId: 'acme.com', postCommitStatus: 'ok' });
+    expect(retroMock).toHaveBeenCalledWith({ visitorId: 'v1' });   // repair retro ran
+    expect(upsertManualMock).not.toHaveBeenCalled();               // did NOT re-write the bridge
   });
 });

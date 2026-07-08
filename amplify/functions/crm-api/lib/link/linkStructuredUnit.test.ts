@@ -17,13 +17,27 @@ describe('linkStructuredUnit', () => {
     expect(mockSend).not.toHaveBeenCalled();
   });
 
-  it('empty synthetic partition → alreadyLinked no-op, writes nothing', async () => {
+  it('empty synthetic partition → alreadyLinked no-op, repairs backfill only (no move/audit)', async () => {
     orgExistsMock.mockResolvedValueOnce(true);
-    mockSend.mockResolvedValueOnce({ Items: [] });
+    mockSend
+      .mockResolvedValueOnce({ Items: [] })   // synthetic partition query → empty
+      .mockResolvedValueOnce({});             // repair backfill Update
     const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
     expect(r).toMatchObject({ alreadyLinked: true, affected: 0 });
     expect(moveMock).not.toHaveBeenCalled();
     expect(auditMock).not.toHaveBeenCalled();
+  });
+
+  it('alreadyLinked repair path re-runs the idempotent backfill', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    mockSend
+      .mockResolvedValueOnce({ Items: [] })   // no unresolved events → alreadyLinked
+      .mockResolvedValueOnce({});             // repair backfill Update
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyLinked: true });
+    const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
+    expect(updates.length).toBe(1);           // repair backfill attempted
+    expect(auditMock).not.toHaveBeenCalled(); // no audit on repair path
   });
 
   it('moves each unresolved event, backfills source CONDITIONALLY, writes one per-unit audit', async () => {
@@ -135,6 +149,21 @@ describe('linkStructuredUnit', () => {
     const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' }); // must NOT throw
     expect(r).toMatchObject({ moved: 1, postCommitStatus: 'post_commit_failed' });
     expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it('splits backfill/audit: a backfill failure still ATTEMPTS the audit (not suppressed)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    mockSend
+      .mockResolvedValueOnce({ Items: [unresolvedEvent] })
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } })
+      .mockRejectedValueOnce(new Error('backfill boom'));   // backfill Update throws
+    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
+    auditMock.mockResolvedValueOnce('aud-1');
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(auditMock).toHaveBeenCalled();                    // audit still attempted despite backfill failure
+    expect(r).toMatchObject({ moved: 1, postCommitStatus: 'post_commit_failed' });
     errSpy.mockRestore();
   });
 });
