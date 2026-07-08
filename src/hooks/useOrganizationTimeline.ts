@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as svc from '../services/organizationAdminService';
 
 type TimelineData = Awaited<ReturnType<typeof svc.getOrganizationTimeline>>;
@@ -11,20 +11,25 @@ export function useOrganizationTimeline(orgId: string | undefined) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [includeInternal, setIncludeInternalState] = useState(false);
+  const reqRef = useRef(0);
 
   const load = useCallback(async (token: string | undefined, append: boolean, includeInternalOnly: boolean) => {
     if (!orgId) return;
+    const myId = ++reqRef.current;
     setLoading(true);
     setError(null);
+    if (!append) setItems([]);
     try {
       const res = await svc.getOrganizationTimeline({ orgId, nextToken: token, includeInternalOnly });
+      if (myId !== reqRef.current) return;
       const page = (res?.items ?? []) as Item[];
       setItems((prev) => (append ? [...prev, ...page] : page));
       setNextToken((res?.nextToken as string | null) ?? null);
     } catch (err) {
+      if (myId !== reqRef.current) return;
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (myId === reqRef.current) setLoading(false);
     }
   }, [orgId]);
 
