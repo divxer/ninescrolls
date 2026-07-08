@@ -63,27 +63,32 @@ Auth `allow.authenticated()`. Handler: crm-api resolver. Reads GSI1 `TLEVENT_STA
 
 ## Section 2 — Link mutation contracts
 
-Both mutations are `allow.authenticated()` (admin). Both perform **server-side target validation** (§4) and are **idempotent / first-writer-wins** (§4).
+Both mutations are `allow.authenticated()` (admin route surface). **They do not accept a trusted `operator` argument**: the resolver derives `operator` from `event.identity.claims.email ?? event.identity.sub ?? 'unknown'` and records that value in the audit row. If the deployment has Cognito admin groups/claims available, the resolver also enforces the admin claim server-side; otherwise it relies on the existing admin-only authenticated surface used by the surrounding admin GraphQL APIs. Both mutations perform **server-side target validation** (§4) and are **idempotent / first-writer-wins** (§4).
 
-### 2.1 `linkStructuredUnit({ sourceType, sourceEntityId, targetOrgId, operator })`
+### 2.1 `linkStructuredUnit({ sourceType, sourceEntityId, targetOrgId })`
 1. **Validate** `targetOrgId` is a real existing org (§4); reject `unresolved-*`.
 2. Query the synthetic partition `ORG#unresolved-<sourceType>-<sourceEntityId>` for events still `resolutionStatus = 'unresolved'`. **If none → return `{ alreadyLinked: true, existingOrgId? }` and write nothing** (best-effort `existingOrgId` — do not run an expensive scan just to fill it).
-3. For each unresolved event, **move to `targetOrgId` as `manually_linked`** (reason `manual`), via the existing emit link-move path (`resolveLinks` already returns `manually_linked` for a `lockedOrgId`): re-point `GSI2PK → ORG#<targetOrgId>`, **drop `GSI1PK/GSI1SK`** (leave unresolved index), recompute rollups. Per-event conditional (move only if still unresolved) isolates races; a bad event is skipped, not fatal.
-4. **Backfill source `matchedOrgId = targetOrgId` — first-writer-wins:** write only if the source `matchedOrgId` is empty/null/missing/`unresolved-*`. **If it already holds a real, different org, do NOT overwrite** — return `sourceBackfillStatus = 'conflict'` (warning/partial), the event move still stands. (Prevents clobbering a fact set by a concurrent admin or the live matcher.) Success → future events on that source auto-resolve via `existing_matchedOrgId`.
-5. `recomputeRollupsForOrg(targetOrgId)`.
-6. `writeLinkAuditLog` — one per-unit entry (§2.3).
-7. Return `{ affected, moved, skipped, errors, sourceBackfillStatus }`.
+3. For each unresolved event, **move to `targetOrgId` as `manually_linked`** (reason `manual`) using a dedicated **conditional manual-move helper**, not a plain duplicate `emitTimelineEvent(lockedOrgId)` call. The helper rewrites the existing `TLEVENT#<id>` item with new `orgId`, GSI2 keys, `resolutionStatus='manually_linked'`, `resolutionReason='manual'`, `confidence=1`, and **removes `GSI1PK/GSI1SK`**, guarded by a condition equivalent to `resolutionStatus = 'unresolved' AND orgId = <syntheticOrgId>`. The rewrite follows P1's durable rollup ordering: write the moved row with `rollupApplied=false` first, recompute the target org, then `markRollupApplied(id)`. If another admin already moved the row, the condition fails and the event is counted as `skipped`.
+4. **Contact graph completion:** unresolved structured emits did not create contacts because sentinel orgs are excluded. When the enriched source supplies an email, the move path upserts a Contact for `targetOrgId`, writes the event `contactId`, and adds/refreshes the event's `GSI4PK/GSI4SK` contact index. If no email is available or enrichment failed, the event still moves with `contactId=null` and the result records `contactStatus='missing_email'|'enrichment_error'`.
+5. **Backfill source `matchedOrgId = targetOrgId` — first-writer-wins:** write only if the source `matchedOrgId` is empty/null/missing/`unresolved-*`. **If it already holds a real, different org, do NOT overwrite** — return `sourceBackfillStatus = 'conflict'` (warning/partial), the event move still stands. (Prevents clobbering a fact set by a concurrent admin or the live matcher.) Success → future events on that source auto-resolve via `existing_matchedOrgId`.
+   - RFQ/Lead/Order backfill their own `RFQ#/LEAD#/ORDER#.../META.matchedOrgId`.
+   - Quote and logistics have no independent org field: quote backfills the underlying order from `payload.orderId`; logistics backfills the related order. If that order cannot be found or already has a conflicting real org, return the appropriate `sourceBackfillStatus`; the event move still applies.
+6. `recomputeRollupsForOrg(targetOrgId)` is called by/after the move helper for moved rows. The old org is a sentinel unresolved partition, so recomputing it is a no-op; if future sentinels become real rollup targets, the helper must also recompute the old org before marking clean.
+7. `writeLinkAuditLog` — one per-unit entry (§2.3).
+8. Return `{ affected, moved, skipped, errors, sourceBackfillStatus, contactStatus }`.
 
-### 2.2 `linkVisitor({ visitorId, targetOrgId, operator })`
+### 2.2 `linkVisitor({ visitorId, targetOrgId })`
 1. **Validate** `targetOrgId` (§4).
-2. Read `VISITOR#<visitorId>/STATE`. **If bridge is already `manual` → return `{ alreadyLinked: true, existingOrgId }`, write nothing** (do not overwrite a manual link, even with a different org — that is the future edit-link feature).
-3. Upsert the bridge: `matchedOrgId = targetOrgId`, **`orgSource = 'manual'`** — a NEW highest-authority provenance that RFQ/Lead matching must never downgrade or overwrite.
+2. Read `VISITOR#<visitorId>/STATE`.
+   - If the bridge is already `manual` → return `{ alreadyLinked: true, existingOrgId }`, write nothing (do not overwrite a manual link, even with a different org — that is the future edit-link feature).
+   - If the bridge already has a real non-manual `matchedOrgId` (`rfq_match`/`lead_match`) → **do not overwrite it in 3B**. Return `{ alreadyResolved: true, existingOrgId }` and optionally fire `reResolveVisitorSessions({ visitorId })` to clean up stale unresolved markers for that same existing bridge. Overriding an automatic visitor bridge to a different org is a future edit-link feature because existing resolved sessions would need an explicit re-point/recompute pass.
+3. If the bridge has no real org (missing bridge or `matchedOrgId=null`), upsert the bridge: `matchedOrgId = targetOrgId`, **`orgSource = 'manual'`** — a NEW highest-authority provenance that RFQ/Lead matching must never downgrade or overwrite. This uses a dedicated manual bridge helper or a widened `upsertVisitorBridge` contract; the existing RFQ/Lead-only helper must not infer `rfq_match`/`lead_match` for this path.
 4. `reResolveVisitorSessions({ visitorId })` — retro-resolves the visitor's unresolved sessions to the bridge org (existing machinery; bounded by `maxSessions` with `RETRO#STATE` resume). Invoke with a generous budget; report resolved count and whether more are pending (resume + retry finishes them). Sessions become `resolved` via the bridge — the lock lives at the bridge (`manual`), not on each event.
 5. `writeLinkAuditLog` — one per-unit entry (§2.3).
 6. Return `{ visitorId, sessionsResolved, pending, existingOrgId? }`.
 
 ### 2.3 Audit payload (fixed)
-Per-unit `LinkAuditLog` carries: `unitType`, `unitKey`, `targetOrgId`, `affectedEventIds`, `affectedCount`, `operator`, and one of `sourceBackfillStatus` (structured) / `retroSummary` (analytics). Admin actions are traceable from the audit log alone — not reconstructed from CloudWatch.
+Per-unit `LinkAuditLog` carries: `unitType`, `unitKey`, `targetOrgId`, `affectedEventIds`, `affectedCount`, `operator`, and one of `sourceBackfillStatus`/`contactStatus` (structured) or `retroSummary` (analytics). Admin actions are traceable from the audit log alone — not reconstructed from CloudWatch. **This requires extending the existing audit model**: add a `details: AWSJSON`/`Record<string, unknown>` field to `LinkAuditLogItem`, `LinkAuditLog` GraphQL custom type, and `writeLinkAuditLog` (or add a sibling `writeUnitLinkAuditLog` wrapper) so the per-unit payload is stored durably.
 
 ---
 
@@ -96,10 +101,10 @@ Per-unit `LinkAuditLog` carries: `unitType`, `unitKey`, `targetOrgId`, `affected
   - **Org search** reusing `listOrganizations({search})` → **name/fuzzy candidates** (exact-domain already failed at resolve time, so this is a "find the existing org" helper, not a domain-exact match). Selecting a candidate fills the target.
   - **"No existing org" dead-end copy:** "No exact domain match. Create the org first — 3B links to existing orgs only." No auto-create.
   - **Impact preview (required, doubles as confirmation copy — no extra modal):**
-    - structured: "Links N events to <org>, sets matchedOrgId on <sourceEntityId>, recomputes rollups, writes 1 audit entry."
-    - analytics: "Sets the visitor bridge to <org> (manual) and re-resolves N sessions, writes 1 audit entry."
+    - structured: "Links the currently loaded events for this unit to <org>, updates the source matchedOrgId when safe, recomputes rollups, writes 1 audit entry. The mutation will re-query and process all still-unresolved events for this unit."
+    - analytics: "Sets the visitor bridge to <org> (manual) and re-resolves this visitor's unresolved sessions, writes 1 audit entry. The mutation result shows the authoritative count."
   - **Link button disabled until a target org is selected.**
-- **No persistent skip.** On success the UI auto-advances to the next unit. An optional pure-client `Next` (no persistence, no audit) is allowed.
+- **No persistent skip.** On success the UI removes/evicts every loaded item with the same `unitKey`, then auto-advances to the next unit (or refetches the current page if the list is empty). An optional pure-client `Next` (no persistence, no audit) is allowed.
 - **Known limitation (documented, not a bug):** a unit whose domain has no existing org (and the admin won't create one now) recurs at the top of the queue each session — it belongs to the deferred create-org fast-follow.
 - Loading/error/empty states follow 3A conventions (skeleton, inline retry, "No units to link" empty state).
 
@@ -109,31 +114,30 @@ Per-unit `LinkAuditLog` carries: `unitType`, `unitKey`, `targetOrgId`, `affected
 
 ### 4.1 Idempotency / concurrency contract
 The authority of each mutation is **the set still-unresolved at execution time**:
-- Structured: unresolved events under the synthetic partition. Empty → `alreadyLinked` no-op (no writes, no backfill). Already-`manually_linked` events left the synthetic partition, so they are never re-moved or silently re-pointed. Per-event conditional writes isolate races.
-- Analytics: bridge not already `manual`. Already-`manual` → `alreadyLinked` no-op (no re-upsert, no re-retro).
+- Structured: unresolved events under the synthetic partition. Empty → `alreadyLinked` no-op (no writes, no backfill). Already-`manually_linked` events left the synthetic partition, so they are never re-moved or silently re-pointed. Per-event conditional rewrites isolate races; a stale writer cannot move a row whose `resolutionStatus/orgId` no longer match the unresolved synthetic unit.
+- Analytics: bridge has no real org. Already-`manual` → `alreadyLinked` no-op (no re-upsert, no re-retro). Already real non-manual → `alreadyResolved` no-op (optionally retrigger retro for stale unresolved markers under the same bridge).
 - **First-writer-wins; the second admin sees "already linked."** Source backfill is also first-writer-wins (§2.1.4): never overwrite a real, different `matchedOrgId`.
 
 ### 4.2 Target org validation (server-side, both mutations)
 `GetItem ORG#<targetOrgId>/META`; reject if absent or if `targetOrgId` matches `unresolved-*`. The frontend picker is convenience only; the backend is the gate.
 
 ### 4.3 `manual` provenance (visitor bridge)
-`amplify/lib/crm/visitor-bridge.ts` gains `orgSource: 'manual'` as the **highest** tier: `manual` is never downgraded/overwritten by `rfq_match`/`lead_match`, and a second `manual` to a different org is rejected (§2.2.2), not clobbered.
+`amplify/lib/crm/visitor-bridge.ts` gains `orgSource: 'manual'` as the **highest** tier: `manual` is never downgraded/overwritten by `rfq_match`/`lead_match`, and a second `manual` to a different org is rejected (§2.2.2), not clobbered. The type must widen from RFQ/Lead-only provenance to include manual source metadata without letting IP-derived org names write the bridge.
 
 ### 4.4 Change surface
-- **Backend (crm-api):** `lib/read/needsLinkingQueue.ts`; `lib/link/linkStructuredUnit.ts`; `lib/link/linkVisitor.ts`; `handler.ts` (+1 query resolver, +2 mutation resolvers); `amplify/lib/crm/visitor-bridge.ts` (+`manual` tier); a small `orgExists(orgId)` check (reuse `orgStore`).
-- **Schema (`amplify/data/resource.ts`):** `needsLinkingQueue` query + `NeedsLinkingItem`/`NeedsLinkingConnection`; `linkStructuredUnit` + `linkVisitor` mutations + result types; all `allow.authenticated()`.
+- **Backend (crm-api):** `lib/read/needsLinkingQueue.ts`; `lib/link/linkStructuredUnit.ts`; `lib/link/linkVisitor.ts`; `lib/link/manualMoveTimelineEvent.ts` (conditional event move + contact completion + rollup dirty/clean ordering); `handler.ts` (+1 query resolver, +2 mutation resolvers); `amplify/lib/crm/visitor-bridge.ts` (+`manual` tier/helper); `auditStore`/`types` (+details payload); a small `orgExists(orgId)` check (reuse `orgStore`).
+- **Schema (`amplify/data/resource.ts`):** `needsLinkingQueue` query + `NeedsLinkingItem`/`NeedsLinkingConnection`; `linkStructuredUnit` + `linkVisitor` mutations + result types; `LinkAuditLog.details` (or equivalent unit-audit payload); all `allow.authenticated()`, with resolver-side admin guard if group claims exist.
 - **Frontend:** `useNeedsLinkingQueue` hook; `NeedsLinkingPage` (two-pane) + `UnitList` + type-adaptive `UnitDetail` + org-search (reuse `organizationAdminService.listOrganizations`); `needsLinkingQueue`/`linkStructuredUnit`/`linkVisitor` service calls; a new admin route + nav entry.
 
 ### 4.5 Testing surface (vitest)
 - **Backend:**
-  - `linkStructuredUnit`: moves unresolved events to target (manually_linked, GSI1 dropped, GSI2 re-pointed); backfills source `matchedOrgId` only when empty; **does not overwrite a real different `matchedOrgId`** (→ `conflict`); writes one per-unit audit with fixed payload; **idempotent already-linked no-op writes nothing**; **rejects a non-existent / `unresolved-*` target**; per-event error isolated into `errors`.
-  - `linkVisitor`: upserts bridge `manual`; triggers `reResolveVisitorSessions`; **already-`manual` → no-op** (no re-upsert); rejects invalid target; audit fixed payload.
-  - `visitor-bridge`: `manual` is not downgraded by a subsequent `rfq_match`/`lead_match` upsert.
+  - `linkStructuredUnit`: conditionally moves unresolved events to target (manually_linked, GSI1 dropped, GSI2 re-pointed); a stale move after another admin linked the event is skipped; moved rows are written dirty (`rollupApplied=false`), target rollup is recomputed, then `markRollupApplied`; enriched email creates/updates contact + event contact index; backfills source/underlying-order `matchedOrgId` only when empty; **does not overwrite a real different `matchedOrgId`** (→ `conflict`); writes one per-unit audit with fixed details payload; **idempotent already-linked no-op writes nothing**; **rejects a non-existent / `unresolved-*` target**; per-event error isolated into `errors`.
+  - `linkVisitor`: writes bridge `manual` only when no real bridge exists; triggers `reResolveVisitorSessions`; **already-`manual` → no-op**; existing non-manual real bridge → `alreadyResolved` no-op (+ optional stale-marker retro); rejects invalid target; audit fixed payload.
+  - `visitor-bridge`: `manual` is not downgraded by a subsequent `rfq_match`/`lead_match` upsert, and RFQ/Lead upserts cannot overwrite an existing manual bridge.
+  - `auditStore`/schema: per-unit details are stored in the audit item and exposed through `LinkAuditLog.details`.
   - `needsLinkingQueue`: collapses events to units (structured by synthetic key, analytics by visitorId); enriches structured from source; **enrichment failure isolated** (`enrichmentStatus`); excludes voided + internal.
-- **Frontend:** queue groups by unit type; detail adapts structured vs analytics; **link disabled until org selected**; impact-preview text renders per type; link action calls the correct mutation; auto-advance on success.
+- **Frontend:** queue groups by unit type; detail adapts structured vs analytics; **link disabled until org selected**; impact-preview text renders per type without overstating page-local counts; link action calls the correct mutation; success evicts all loaded rows with the same `unitKey` and auto-advances/refetches.
 
 ## Open items for the plan
 - Exact per-source enrichment reuse (extract shared `sourceEmail`/`sourceDomain` helper from `existencePass`, or import).
-- Whether the structured move re-emits via `emitTimelineEvent(lockedOrgId)` or a direct conditional GSI move — pick the one with the smaller blast radius at plan time; both must drop GSI1 + recompute.
 - `NeedsLinkingItem.kind` "representative" pick when a unit has multiple event kinds (e.g. order_created + stage changes) — newest, or a fixed priority.
-- **Structured backfill target per source type:** rfq/lead/order write their own `RFQ#/LEAD#/ORDER# META.matchedOrgId`. quote/logistics have no own org field — their backfill target is the **underlying order** (quote → its `payload.orderId` order; logistics → the related order). In practice these are rare (an unresolved quote/logistics usually means its order was unresolved — linking the order resolves them); plan decides whether 3B backfills the underlying order or defers quote/logistics backfill (event move still applies regardless).
