@@ -89,12 +89,26 @@ const sendWith = (existing: unknown) => {
 };
 
 describe('manual visitor bridge provenance', () => {
-  it('upsertManualVisitorBridge writes orgSource=manual', async () => {
+  it('upsertManualVisitorBridge writes orgSource=manual CONDITIONALLY (only when no real org)', async () => {
     const { send, calls } = sendWith(null);
-    await upsertManualVisitorBridge(send, 'T', { visitorId: 'v1', matchedOrgId: 'acme.com', now: '2026-07-08T00:00:00Z' });
-    const put = (calls.find((c) => (c as { input: { Item?: unknown } }).input.Item) as { input: { Item: Record<string, unknown> } }).input.Item;
-    expect(put.orgSource).toBe('manual');
-    expect(put.matchedOrgId).toBe('acme.com');
+    const r = await upsertManualVisitorBridge(send, 'T', { visitorId: 'v1', matchedOrgId: 'acme.com', now: '2026-07-08T00:00:00Z' });
+    const putCmd = calls.find((c) => (c as { input: { Item?: unknown } }).input.Item) as { input: { Item: Record<string, unknown>; ConditionExpression: string } };
+    expect(putCmd.input.Item.orgSource).toBe('manual');
+    expect(putCmd.input.Item.matchedOrgId).toBe('acme.com');
+    expect(putCmd.input.ConditionExpression).toContain('attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty');
+    expect(r).toEqual({ written: true, existingOrgId: 'acme.com' });
+  });
+
+  it('concurrent manual link loses the race → written:false, returns the winner org (no clobber)', async () => {
+    const winner = { PK: 'VISITOR#v1', SK: 'STATE', matchedOrgId: 'winner.com', orgSource: 'manual' };
+    let putN = 0;
+    const send: Send = async (cmd: unknown) => {
+      const c = cmd as { input: { Key?: unknown; Item?: unknown } };
+      if (c.input.Item) { putN += 1; throw Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }); }
+      return { Item: (putN === 0 ? null : winner) as Record<string, unknown> }; // first read null, re-read after fail sees winner
+    };
+    const r = await upsertManualVisitorBridge(send, 'T', { visitorId: 'v1', matchedOrgId: 'loser.com', now: 'n' });
+    expect(r).toEqual({ written: false, existingOrgId: 'winner.com' });
   });
 
   it('a later rfq_match upsert does NOT overwrite a manual bridge org', async () => {
@@ -112,9 +126,9 @@ describe('manual visitor bridge provenance', () => {
 
 - [ ] **Step 3: Implement.** In `visitor-bridge.ts`:
 - Widen the type: `orgSource: 'rfq_match' | 'lead_match' | 'manual' | null;`
-- Add the manual helper:
+- Add the manual helper — **CONDITIONAL write (finding 4): only writes when no real org exists on the bridge**, so two admins racing the same visitor cannot last-writer-win. Returns whether it wrote + the current org on conflict:
 ```ts
-export async function upsertManualVisitorBridge(send: Send, tableName: string, input: { visitorId: string; matchedOrgId: string; now: string }): Promise<void> {
+export async function upsertManualVisitorBridge(send: Send, tableName: string, input: { visitorId: string; matchedOrgId: string; now: string }): Promise<{ written: boolean; existingOrgId: string | null }> {
   const existing = await readVisitorBridge(send, tableName, input.visitorId);
   const item = {
     PK: `VISITOR#${input.visitorId}`, SK: 'STATE' as const,
@@ -123,7 +137,21 @@ export async function upsertManualVisitorBridge(send: Send, tableName: string, i
     sourceEntityType: existing?.sourceEntityType ?? 'rfq', sourceEntityId: existing?.sourceEntityId ?? 'manual',
     firstSeenAt: existing?.firstSeenAt ?? input.now, updatedAt: input.now,
   };
-  await send(new PutCommand({ TableName: tableName, Item: item }));
+  try {
+    await send(new PutCommand({
+      TableName: tableName, Item: item,
+      // Write manual ONLY if the bridge has no real org yet (missing, or matchedOrgId null/empty).
+      ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty',
+      ExpressionAttributeValues: { ':empty': '' },
+    }));
+    return { written: true, existingOrgId: input.matchedOrgId };
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+      const now = await readVisitorBridge(send, tableName, input.visitorId);   // a real org appeared between our read and write
+      return { written: false, existingOrgId: now?.matchedOrgId ?? null };
+    }
+    throw err;
+  }
 }
 ```
 - Guard the merge path in `upsertVisitorBridge`: after computing `existing`, if `existing.orgSource === 'manual'`, force `nextOrg = existing.matchedOrgId` and `nextOrgSource = 'manual'` (manual is never overwritten by rfq/lead):
@@ -211,33 +239,38 @@ const ev = (o = {}) => ({ id: 'tev-a', orgId: 'unresolved-rfq-r1', kind: 'rfq_su
 beforeEach(() => { mockSend.mockReset(); recomputeMock.mockReset(); markMock.mockReset(); upsertContactMock.mockReset(); });
 
 describe('manualMoveTimelineEvent', () => {
-  it('conditionally rewrites the row to manually_linked, drops GSI1, orders dirty→recompute→mark', async () => {
+  it('conditionally rewrites the row to manually_linked, drops GSI1, and does NO side effect before the move; orders move→contact→recompute→mark', async () => {
     mockSend.mockResolvedValueOnce({}); // conditional Put
-    upsertContactMock.mockResolvedValueOnce('ct-1');
+    upsertContactMock.mockResolvedValueOnce('ct-x');
     const r = await manualMoveTimelineEvent({ event: ev(), targetOrgId: 'acme.com', email: 'a@acme.com', operator: 'op', nowIso: '2026-07-08T00:00:00Z' });
     const put = mockSend.mock.calls[0][0].input;
     expect(put.ConditionExpression).toBe('resolutionStatus = :unres AND orgId = :syn');
-    expect(put.ExpressionAttributeValues[':unres']).toBe('unresolved');
     expect(put.ExpressionAttributeValues[':syn']).toBe('unresolved-rfq-r1');
     expect(put.Item.resolutionStatus).toBe('manually_linked');
     expect(put.Item.resolutionReason).toBe('manual');
     expect(put.Item.orgId).toBe('acme.com');
     expect(put.Item.GSI2PK).toBe('ORG#acme.com');
-    expect(put.Item.GSI1PK).toBeUndefined(); // dropped
-    expect(put.Item.rollupApplied).toBe(false); // dirty first
-    // ordering: recompute(target) BEFORE markRollupApplied
-    expect(recomputeMock).toHaveBeenCalledWith('acme.com');
+    expect(put.Item.GSI1PK).toBeUndefined();            // destructured out, not written as undefined
+    expect('GSI1PK' in put.Item).toBe(false);           // key genuinely absent (finding 6)
+    expect(put.Item.rollupApplied).toBe(false);         // dirty first
+    expect(put.Item.contactId).toBeTruthy();            // deterministic id in the moved row
+    // finding 1: contact upsert happens AFTER the move Put (no side effect before the conditional write)
+    const putOrder = mockSend.mock.invocationCallOrder[0];
+    const contactOrder = upsertContactMock.mock.invocationCallOrder[0];
     const recomputeOrder = recomputeMock.mock.invocationCallOrder[0];
     const markOrder = markMock.mock.invocationCallOrder[0];
+    expect(putOrder).toBeLessThan(contactOrder);
+    expect(contactOrder).toBeLessThan(recomputeOrder);
     expect(recomputeOrder).toBeLessThan(markOrder);
+    expect(recomputeMock).toHaveBeenCalledWith('acme.com');
     expect(r).toMatchObject({ moved: true, skipped: false, contactStatus: 'linked' });
-    expect(put.Item.contactId).toBe('ct-1');
   });
 
-  it('condition failure → skipped, no recompute/mark (never re-points a linked event)', async () => {
+  it('condition failure → skipped, NO contact/recompute/mark side effects (finding 1)', async () => {
     mockSend.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }));
     const r = await manualMoveTimelineEvent({ event: ev(), targetOrgId: 'acme.com', email: 'a@acme.com', operator: 'op', nowIso: 'n' });
     expect(r).toMatchObject({ moved: false, skipped: true });
+    expect(upsertContactMock).not.toHaveBeenCalled();   // stale writer created NO contact
     expect(recomputeMock).not.toHaveBeenCalled();
     expect(markMock).not.toHaveBeenCalled();
   });
@@ -259,7 +292,8 @@ describe('manualMoveTimelineEvent', () => {
 ```ts
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
-import { timelineEventKeys } from '../keys';
+import { timelineEventKeys, contactIdForEmail } from '../keys';
+import { normalizeEmail } from '../normalize';
 import { recomputeRollupsForOrg } from '../orgStore';
 import { markRollupApplied } from '../timelineStore';
 import { upsertContact } from '../contactStore';
@@ -274,25 +308,28 @@ export async function manualMoveTimelineEvent(args: {
   const { event, targetOrgId, email } = args;
   const syntheticOrgId = event.orgId;
 
-  let contactId: string | null = event.contactId ?? null;
-  let contactStatus: ContactStatus = args.enrichmentError ? 'enrichment_error' : 'missing_email';
-  if (email) {
-    contactId = await upsertContact({ email, orgId: targetOrgId, source: event.source, occurredAt: event.occurredAt });
-    contactStatus = 'linked';
-  }
+  // Deterministic contact id — computed WITHOUT writing the Contact row. The Contact ROW is created
+  // only AFTER the conditional move succeeds (finding 1: a stale/condition-failed move must create NO
+  // side effect). The event item still carries the correct contactId + GSI4 because the id is derived.
+  const normEmail = email ? normalizeEmail(email) : null;
+  const contactId = normEmail ? contactIdForEmail(normEmail) : (event.contactId ?? null);
 
   const keys = timelineEventKeys({
     id: event.id, orgId: targetOrgId, contactId, occurredAt: event.occurredAt,
     resolutionStatus: 'manually_linked', sourceEntityType: event.sourceEntityType, sourceEntityId: event.sourceEntityId,
   });
-  const movedItem: TimelineEventItem = {
-    ...event, ...keys,
+  // Drop the old unresolved GSI1 keys by DESTRUCTURING them out (finding 6: docClient is not configured
+  // with removeUndefinedValues, so never write `GSI1PK: undefined`). A full-item Put replaces the row,
+  // and timelineEventKeys omits GSI1 for manually_linked, so the moved row simply has no GSI1 attrs.
+  const { GSI1PK: _g1p, GSI1SK: _g1s, ...rest } = event as TimelineEventItem & { GSI1PK?: string; GSI1SK?: string };
+  void _g1p; void _g1s;
+  const movedItem = {
+    ...rest, ...keys,
     orgId: targetOrgId, resolutionStatus: 'manually_linked', resolutionReason: 'manual', confidence: 1,
     contactId, rollupApplied: false, rollupPendingOrgId: null, updatedAt: args.nowIso,
-    // GSI1 keys are intentionally absent (timelineEventKeys omits them for non-unresolved status).
-    GSI1PK: undefined, GSI1SK: undefined,
   } as TimelineEventItem;
 
+  // Conditional move: FIRST write, no side effects before it. Guard = still-unresolved under the synthetic org.
   try {
     await docClient.send(new PutCommand({
       TableName: TABLE_NAME(), Item: movedItem,
@@ -301,18 +338,25 @@ export async function manualMoveTimelineEvent(args: {
     }));
   } catch (err) {
     if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
-      return { moved: false, skipped: true, contactStatus };
+      // Stale writer: another admin already moved this event. NO contact, NO recompute, NO mark.
+      return { moved: false, skipped: true, contactStatus: 'missing_email' };
     }
     throw err;
   }
 
-  // Durable rollup ordering: item already written dirty (rollupApplied=false); recompute target, THEN mark clean.
+  // Move succeeded → NOW create/refresh the Contact row (idempotent, same deterministic id).
+  let contactStatus: ContactStatus = args.enrichmentError ? 'enrichment_error' : 'missing_email';
+  if (normEmail) {
+    await upsertContact({ email: normEmail, orgId: targetOrgId, source: event.source, occurredAt: event.occurredAt });
+    contactStatus = 'linked';
+  }
+
+  // Durable rollup ordering: item written dirty (rollupApplied=false); recompute target, THEN mark clean.
   await recomputeRollupsForOrg(targetOrgId);
   await markRollupApplied(event.id);
   return { moved: true, skipped: false, contactStatus };
 }
 ```
-Note: strip `GSI1PK/GSI1SK` explicitly (spread of `event` carries the old ones; setting them `undefined` drops them from the DynamoDB item — the DocumentClient omits `undefined`).
 
 - [ ] **Step 4: Run** → PASS (3 tests).
 
@@ -363,35 +407,48 @@ describe('linkStructuredUnit', () => {
     expect(auditMock).not.toHaveBeenCalled();
   });
 
-  it('moves each unresolved event, backfills source when empty, writes one per-unit audit', async () => {
+  it('moves each unresolved event, backfills source CONDITIONALLY, writes one per-unit audit', async () => {
     orgExistsMock.mockResolvedValueOnce(true);
     mockSend
       .mockResolvedValueOnce({ Items: [unresolvedEvent] })                         // synthetic partition query
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com', matchedOrgId: '' } }) // source META for backfill+email
-      .mockResolvedValueOnce({});                                                   // backfill update
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }) // readSourceEmail GET
+      .mockResolvedValueOnce({});                                                   // conditional backfill Update (success)
     moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
     auditMock.mockResolvedValueOnce('aud-1');
     const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op@x.com' });
     expect(moveMock).toHaveBeenCalledTimes(1);
     expect(r).toMatchObject({ affected: 1, moved: 1, skipped: 0, errors: 0, sourceBackfillStatus: 'written' });
+    const upd = (mockSend.mock.calls.find((c) => c[0].constructor?.name === 'UpdateCommand') as [{ input: { ConditionExpression: string } }])[0].input;
+    expect(upd.ConditionExpression).toContain('begins_with(matchedOrgId, :unres)');   // conditional, not blind (finding 3)
     const audit = auditMock.mock.calls[0][0];
-    expect(audit.reason).toBe('manual_link_unit');
-    expect(audit.operator).toBe('op@x.com');
+    expect(audit.reason).toBe('manual_link_unit'); expect(audit.operator).toBe('op@x.com');
     expect(audit.details).toMatchObject({ unitType: 'structured', unitKey: 'unresolved-rfq-r1', targetOrgId: 'acme.com', affectedCount: 1, affectedEventIds: ['tev-a'] });
   });
 
-  it('does NOT overwrite a real different source matchedOrgId (→ conflict)', async () => {
+  it('conditional backfill that hits a real different matchedOrgId → conflict, no clobber (finding 3)', async () => {
     orgExistsMock.mockResolvedValueOnce(true);
     mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com', matchedOrgId: 'other.com' } });
+      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                         // query
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }) // email GET
+      .mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' })) // conditional Update FAILS
+      .mockResolvedValueOnce({ Item: { matchedOrgId: 'other.com' } });             // re-read classifies as conflict
     moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
     auditMock.mockResolvedValueOnce('aud-1');
     const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
     expect(r.sourceBackfillStatus).toBe('conflict');
-    // no backfill Update issued (only the partition query + source GET)
+  });
+
+  it('all events condition-fail (raced) → moved:0, NO source backfill, NO audit (finding 2)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true);
+    mockSend
+      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                         // query
+      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }); // email GET (read only, no side effect)
+    moveMock.mockResolvedValueOnce({ moved: false, skipped: true, contactStatus: 'missing_email' });
+    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(r).toMatchObject({ moved: 0, skipped: 1 });
+    expect(auditMock).not.toHaveBeenCalled();
     const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
-    expect(updates.length).toBe(0);
+    expect(updates.length).toBe(0);   // losing admin wrote nothing to the source
   });
 });
 ```
@@ -440,10 +497,14 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
     } catch { errors += 1; }
   }
 
-  // 4. Source backfill — first-writer-wins.
+  // 4. Only if at least one event actually MOVED do we touch the source record + write an audit
+  //    (finding 2: a losing admin whose events all condition-fail must NOT backfill source or audit).
+  if (moved === 0) return { affected: events.length, moved: 0, skipped, errors };
+
+  // 5. Source backfill — first-writer-wins, CONDITIONAL (finding 3: no read-then-unconditional-write).
   const sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
 
-  // 5. Per-unit audit.
+  // 6. Per-unit audit (only reached when moved > 0).
   await writeLinkAuditLog({
     operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
     details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
@@ -452,39 +513,64 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
   return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus };
 }
 
+// Resolve the META PK whose matchedOrgId we backfill. rfq/lead/order own it; quote → its order via
+// payload.orderId; logistics → its related order via LOGISTICS#caseId/META.relatedOrderId (finding 5:
+// logistics events carry NO orderId in payload).
+async function backfillTargetPk(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
+  if (SOURCE_PK[sourceType]) return SOURCE_PK[sourceType](sourceEntityId);
+  if (sourceType === 'quote') {
+    const orderId = (events[0]?.payload as Record<string, unknown> | undefined)?.orderId as string | undefined;
+    return orderId ? `ORDER#${orderId}` : null;
+  }
+  if (sourceType === 'logistics') {
+    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `LOGISTICS#${sourceEntityId}`, SK: 'META' } }));
+    const rel = (res.Item as Record<string, unknown> | undefined)?.relatedOrderId as string | undefined;
+    return rel ? `ORDER#${rel}` : null;
+  }
+  return null;
+}
+
+// Email for contact completion. rfq/lead: META.email. order/quote/logistics: the underlying order's
+// GSI4 EMAIL# else the linked RFQ's email (finding 5: order must fall back to its RFQ).
 async function readSourceEmail(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
-  const orderId = sourceType === 'quote' ? (events[0]?.payload?.orderId as string | undefined) : sourceEntityId;
-  const pk = SOURCE_PK[sourceType]?.(sourceEntityId) ?? (orderId ? `ORDER#${orderId}` : null);
-  if (!pk) return null;
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }));
+  if (sourceType === 'rfq' || sourceType === 'lead') {
+    const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `${sourceType.toUpperCase()}#${sourceEntityId}`, SK: 'META' } }));
+    return ((res.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
+  }
+  const orderPk = await backfillTargetPk(sourceType, sourceEntityId, events);
+  if (!orderPk) return null;
+  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: orderPk, SK: 'META' } }));
   const m = res.Item as Record<string, unknown> | undefined;
   if (!m) return null;
   const gsi4 = m.GSI4PK as string | undefined;
   if (typeof gsi4 === 'string' && gsi4.startsWith('EMAIL#')) return gsi4.slice('EMAIL#'.length) || null;
-  return (m.email as string | undefined) ?? null;
+  const rfqId = m.rfqId as string | undefined;
+  if (!rfqId) return null;
+  const rfq = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `RFQ#${rfqId}`, SK: 'META' } }));
+  return ((rfq.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;
 }
 
 async function backfillSource(sourceType: string, sourceEntityId: string, targetOrgId: string, events: TimelineEventItem[]): Promise<BackfillStatus> {
-  // quote/logistics have no own org field → backfill the underlying order.
-  let pk: string | null = SOURCE_PK[sourceType]?.(sourceEntityId) ?? null;
-  if (!pk) {
-    const orderId = (events[0]?.payload?.orderId as string | undefined) ?? undefined;
-    pk = orderId ? `ORDER#${orderId}` : null;
-  }
+  const pk = await backfillTargetPk(sourceType, sourceEntityId, events);
   if (!pk) return 'no_source';
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }));
-  const m = res.Item as Record<string, unknown> | undefined;
-  if (!m) return 'no_source';
-  const cur = (m.matchedOrgId as string | undefined) ?? '';
-  if (cur && !cur.startsWith('unresolved-') && cur !== targetOrgId) return 'conflict';
-  if (cur === targetOrgId) return 'already_set';
-  await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
-    UpdateExpression: 'SET matchedOrgId = :o', ExpressionAttributeValues: { ':o': targetOrgId },
-  }));
-  return 'written';
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
+      UpdateExpression: 'SET matchedOrgId = :o',
+      // Write ONLY if matchedOrgId is missing/empty/unresolved-* — never clobber a real org written by a
+      // concurrent admin or the live matcher (the write itself is the guard; no TOCTOU).
+      ConditionExpression: 'attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',
+      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-' },
+    }));
+    return 'written';
+  } catch (err) {
+    if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
+    const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
+    return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
+  }
 }
 ```
+Note: `readSourceEmail` + `backfillTargetPk` are the shared source helpers Task 7 imports (see Task 7 step 0 — they live here in `linkStructuredUnit.ts`; Task 7 either imports them or moves them to `sourceEmail.ts` and both import).
 
 - [ ] **Step 4: Run** → PASS (4 tests).
 
@@ -518,13 +604,23 @@ import { linkVisitor } from './linkVisitor';
 beforeEach(() => { mockSend.mockReset(); orgExistsMock.mockReset(); readBridgeMock.mockReset(); upsertManualMock.mockReset(); retroMock.mockReset(); auditMock.mockReset(); });
 
 describe('linkVisitor', () => {
-  it('no bridge → writes manual, triggers retro, audits', async () => {
+  it('no bridge → conditional manual write succeeds, triggers retro, audits', async () => {
     orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
-    upsertManualMock.mockResolvedValueOnce(undefined); retroMock.mockResolvedValueOnce({ summary: { resolved: 3, hasMore: false } }); auditMock.mockResolvedValueOnce('a');
+    upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
+    retroMock.mockResolvedValueOnce({ summary: { resolved: 3, hasMore: false } }); auditMock.mockResolvedValueOnce('a');
     const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
     expect(upsertManualMock).toHaveBeenCalled();
     expect(retroMock).toHaveBeenCalledWith({ visitorId: 'v1' });
     expect(r).toMatchObject({ sessionsResolved: 3, pending: false });
+  });
+
+  it('conditional manual write loses the race (written:false) → alreadyResolved, NO retro, NO audit (finding 4)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
+    upsertManualMock.mockResolvedValueOnce({ written: false, existingOrgId: 'winner.com' });
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(r).toMatchObject({ alreadyResolved: true, existingOrgId: 'winner.com' });
+    expect(retroMock).not.toHaveBeenCalled();
+    expect(auditMock).not.toHaveBeenCalled();
   });
 
   it('already manual → alreadyLinked no-op (no upsert, no retro)', async () => {
@@ -567,7 +663,10 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   if (bridge?.matchedOrgId) return { alreadyResolved: true, existingOrgId: bridge.matchedOrgId };
 
   const nowIso = new Date().toISOString();
-  await upsertManualVisitorBridge(send, TABLE_NAME(), { visitorId: args.visitorId, matchedOrgId: args.targetOrgId, now: nowIso });
+  // Conditional manual write closes the read→write race (finding 4). If a real org appeared between our
+  // read above and this write, `written` is false — treat as alreadyResolved; do NOT retro or audit.
+  const up = await upsertManualVisitorBridge(send, TABLE_NAME(), { visitorId: args.visitorId, matchedOrgId: args.targetOrgId, now: nowIso });
+  if (!up.written) return { alreadyResolved: true, existingOrgId: up.existingOrgId };
   const retro = await reResolveVisitorSessions({ visitorId: args.visitorId });
   const summary = (retro?.summary ?? {}) as Record<string, unknown>;
   const sessionsResolved = Number(summary.resolved ?? summary.emitted ?? 0);
@@ -596,9 +695,9 @@ git commit -m "feat(crm-api): linkVisitor orchestrator (manual bridge + retro, n
 - Create: `amplify/functions/crm-api/lib/read/needsLinkingQueue.ts`
 - Test: `amplify/functions/crm-api/lib/read/needsLinkingQueue.test.ts`
 
-Open item resolved: **import** the source-email helper by extracting `readSourceEmail` (Task 5) into `lib/link/sourceEmail.ts` and importing it here — do that refactor as Step 0 of this task (move the function, update Task 5's import). Representative kind = the event with the newest `occurredAt` in the unit.
+Open item resolved: the source helpers written inline in Task 5 (`readSourceEmail` with the order→RFQ fallback + quote/logistics→underlying-order, and `backfillTargetPk`) are the single source of truth. Representative kind = the event with the newest `occurredAt` in the unit.
 
-- [ ] **Step 0: Extract** `readSourceEmail` + `sourceDomain(email)` into `amplify/functions/crm-api/lib/link/sourceEmail.ts` (pure-ish: takes the source PK resolution + a `docClient` get). Update `linkStructuredUnit.ts` to import it. Keep Task 5 tests green.
+- [ ] **Step 0: Extract** `readSourceEmail` (export as `readSourceEmailForUnit`) + `backfillTargetPk` from `linkStructuredUnit.ts` into `amplify/functions/crm-api/lib/link/sourceEmail.ts`, and add `sourceDomain(email)` (eTLD+1 via the existing `amplify/lib/organization/etld.ts` `classifyEmailDomain`, or a simple `email.split('@')[1]` if that helper is not importable from crm-api). Update `linkStructuredUnit.ts` to import both from `sourceEmail.ts` (delete the inline copies). Re-run Task 5 tests — they must stay green (the mock sequence is unchanged; the functions moved, not their behaviour). This keeps the order→RFQ-fallback and logistics→`relatedOrderId` completeness (finding 5) in ONE place used by both the queue enrichment and the link mutation.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -822,3 +921,14 @@ it('evictUnit removes every loaded row with the same unitKey', async () => {
 ## Open items resolved
 - Enrichment helper: **extracted** to `lib/link/sourceEmail.ts` and imported (Task 7 step 0).
 - Representative kind: **newest `occurredAt`** in the unit (Task 7).
+
+## Review round 1 — concurrency/side-effect fixes applied
+
+Principle: **no external side effect before a conditional write succeeds; every source/visitor write is conditional.**
+
+1. **P1 (finding 1)** — `manualMoveTimelineEvent` now upserts the Contact ONLY after the conditional move Put succeeds; the event row carries a *deterministic* `contactId` (via `contactIdForEmail`) so no Contact ROW is created when the move condition fails. Skipped test asserts `upsertContact` NOT called (Task 4).
+2. **P1 (finding 2)** — `linkStructuredUnit` skips source backfill AND audit entirely when `moved === 0` (all events raced away). Test asserts no `UpdateCommand`, no audit (Task 5).
+3. **P1 (finding 3)** — source backfill is a single **conditional** `UpdateCommand` (`attribute_not_exists(matchedOrgId) OR = '' OR begins_with(…, 'unresolved-')`); on `ConditionalCheckFailedException` it re-reads to classify `already_set` vs `conflict`. No read-then-unconditional-write TOCTOU (Task 5).
+4. **P1 (finding 4)** — `upsertManualVisitorBridge` is a **conditional** Put (writes manual only when no real org exists), returns `{ written, existingOrgId }`; `linkVisitor` returns `alreadyResolved` without retro/audit when `written===false`. Race test added (Tasks 2, 6).
+5. **P2 (finding 5)** — `readSourceEmail`/`backfillTargetPk` cover order→RFQ-email fallback and logistics→`LOGISTICS#/META.relatedOrderId`→order; centralized in `sourceEmail.ts` (Tasks 5, 7).
+6. **P2 (finding 6)** — old `GSI1PK/GSI1SK` are **destructured out** of the moved item, never written as `undefined` (docClient has no `removeUndefinedValues`). Test asserts `'GSI1PK' in Item === false` (Task 4).
