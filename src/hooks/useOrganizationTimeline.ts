@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import * as svc from '../services/organizationAdminService';
 
 type TimelineData = Awaited<ReturnType<typeof svc.getOrganizationTimeline>>;
-type Item = NonNullable<TimelineData>['items'][number];
+type Item = NonNullable<NonNullable<TimelineData>['items'][number]>;
 export type OrganizationTimelineItem = Item;
 
 export function useOrganizationTimeline(orgId: string | undefined) {

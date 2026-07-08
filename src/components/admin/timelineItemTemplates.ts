@@ -26,7 +26,7 @@ const fmtDuration = (s: number): string => {
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 };
 
-type Item = Pick<NonNullable<OrganizationTimelineItem>, 'kind' | 'primaryLabel' | 'stageFrom' | 'stageTo' | 'fileName' | 'pageCount' | 'activeSeconds' | 'productModel' | 'equipmentCategory' | 'leadType' | 'productName'>;
+type Item = Pick<OrganizationTimelineItem, 'kind' | 'primaryLabel' | 'stageFrom' | 'stageTo' | 'fileName' | 'pageCount' | 'activeSeconds' | 'productModel' | 'equipmentCategory' | 'leadType' | 'productName'>;
 
 export function composeTimelineText(item: Item): { title: string; snippet: string | null } {
   switch (item.kind) {
