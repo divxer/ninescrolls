@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
   { path: '/admin/organizations', label: 'Organizations', icon: 'business' },
+  { path: '/admin/needs-linking', label: 'Needs Linking', icon: 'link' },
   { path: '/admin/insights', label: 'Insights', icon: 'insights' },
   { path: '/admin/questions', label: 'Q&A', icon: 'forum' },
   { path: '/admin/analytics', label: 'Analytics', icon: 'analytics' },
