@@ -6,7 +6,7 @@ import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 export interface VisitorBridge {
   PK: string; SK: 'STATE';
   matchedOrgId: string | null;
-  orgSource: 'rfq_match' | 'lead_match' | null;
+  orgSource: 'rfq_match' | 'lead_match' | 'manual' | null;
   email: string | null;
   // Record the source of the last MATERIAL change — the no-op short-circuit intentionally skips last-touch updates.
   sourceEntityType: 'rfq' | 'lead';
@@ -66,8 +66,9 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
     return { created: true, orgUpgraded: !!incomingOrg };
   }
 
-  const nextOrg = incomingOrg ?? existing.matchedOrgId;                 // never downgrade real→null
-  const nextOrgSource = incomingOrg ? orgSource : existing.orgSource;   // provenance follows the org
+  const manualLocked = existing.orgSource === 'manual';                 // manual links are never overwritten by rfq/lead upserts
+  const nextOrg = manualLocked ? existing.matchedOrgId : (incomingOrg ?? existing.matchedOrgId); // never downgrade real→null
+  const nextOrgSource = manualLocked ? 'manual' : (incomingOrg ? orgSource : existing.orgSource); // provenance follows the org
   const nextEmail = (existing.email || null) ?? incomingEmail;          // fill-when-null only ('' counts as fillable)
   const orgUpgraded = !existing.matchedOrgId && !!incomingOrg;          // unresolved→resolved transition
   const changed = nextOrg !== existing.matchedOrgId || nextEmail !== existing.email || nextOrgSource !== existing.orgSource;
@@ -95,4 +96,38 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
     throw err;
   }
   return { created: false, orgUpgraded };
+}
+
+export interface UpsertManualBridgeInput {
+  visitorId: string; matchedOrgId: string; now: string;
+}
+
+// Admin-initiated manual link (spec §2.1 round 2). CONDITIONAL: only writes orgSource='manual' when the
+// bridge has no real org yet, so two admins racing the same visitor cannot last-writer-win. A bridge row
+// can store matchedOrgId as a DynamoDB NULL (null is written as a NULL attribute, not omitted), so the
+// condition must also allow attribute_type(matchedOrgId, 'NULL') — otherwise a null-org bridge is
+// mis-classified as already-resolved and the manual write is rejected.
+export async function upsertManualVisitorBridge(send: Send, tableName: string, input: UpsertManualBridgeInput): Promise<{ written: boolean; existingOrgId: string | null }> {
+  const existing = await readVisitorBridge(send, tableName, input.visitorId);
+  const item = {
+    PK: `VISITOR#${input.visitorId}`, SK: 'STATE' as const,
+    matchedOrgId: input.matchedOrgId, orgSource: 'manual' as const,
+    email: existing?.email ?? null,
+    sourceEntityType: existing?.sourceEntityType ?? 'rfq', sourceEntityId: existing?.sourceEntityId ?? 'manual',
+    firstSeenAt: existing?.firstSeenAt ?? input.now, updatedAt: input.now,
+  };
+  try {
+    await send(new PutCommand({
+      TableName: tableName, Item: item,
+      ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty',
+      ExpressionAttributeValues: { ':empty': '', ':nullType': 'NULL' },
+    }));
+    return { written: true, existingOrgId: input.matchedOrgId };
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+      const now = await readVisitorBridge(send, tableName, input.visitorId);
+      return { written: false, existingOrgId: now?.matchedOrgId ?? null };
+    }
+    throw err;
+  }
 }
