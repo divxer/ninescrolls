@@ -3,6 +3,8 @@ import { reconcileSweep } from './lib/sweep/reconcileSweep';
 import { rollupAnalyticsSessions } from './lib/analytics/rollupAnalyticsSessions';
 import { reResolveVisitorSessions } from './lib/analytics/reResolveVisitorSessions';
 import { backfillVisitorBridge } from './lib/analytics/backfillVisitorBridge';
+import { timelineByOrg } from './lib/read/timelineByOrg';
+import { toOrganizationTimelineItem } from './lib/read/organizationTimelineItem';
 
 type AppSyncEvent = {
   info?: { fieldName?: string; parentTypeName?: string };
@@ -14,7 +16,15 @@ type AppSyncEvent = {
 // Direct Lambda invoke payloads (from amplify/lib/crm/invoke-crm-api) carry an `action`.
 type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; maxSessions?: number; visitorId?: string; startSessionSk?: string };
 
-const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {};
+const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
+  timelineByOrg: async (e) => {
+    const a = (e.arguments ?? {}) as { orgId?: string; limit?: number; nextToken?: string; includeInternalOnly?: boolean };
+    const { items, nextToken } = await timelineByOrg({
+      orgId: a.orgId ?? '', limit: a.limit, nextToken: a.nextToken, includeInternalOnly: a.includeInternalOnly ?? false,
+    });
+    return { items: items.map(toOrganizationTimelineItem), nextToken: nextToken ?? null };
+  },
+};
 
 const actions: Record<string, (e: DirectInvokeEvent) => Promise<unknown>> = {
   emitTimelineEvent: async (e) => { await emitTimelineEvent(e.args as Parameters<typeof emitTimelineEvent>[0]); },

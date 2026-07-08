@@ -14,20 +14,22 @@ describe('existence pass — reconcileExpectedEvents (injected core)', () => {
     const getTimelineEvent = vi.fn().mockResolvedValueOnce({ id: 'tev-a' }).mockResolvedValueOnce(null);
     const emit = vi.fn().mockResolvedValue(undefined);
     const expected = [ { id: 'tev-a', args: { kind: 'rfq_submitted' } }, { id: 'tev-b', args: { kind: 'lead_captured' } } ] as never[];
-    const counters = { scanned: 0, missingReemitted: 0, errors: 0 };
+    const counters = { sourceScanned: 0, expected: 0, existing: 0, missingReemitted: 0, errors: 0 };
     await reconcileExpectedEvents(expected, { getTimelineEvent, emit }, counters);
     expect(emit).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith({ kind: 'lead_captured' });
-    expect(counters).toMatchObject({ scanned: 2, missingReemitted: 1, errors: 0 });
+    expect(counters).toMatchObject({ expected: 2, existing: 1, missingReemitted: 1, errors: 0 });
+    expect(counters.expected).toBe(counters.existing + counters.missingReemitted + counters.errors);
   });
   it('isolates a per-event error and continues the batch', async () => {
     const getTimelineEvent = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     const emit = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(undefined);
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const expected = [{ id: 'tev-a', args: {} }, { id: 'tev-b', args: {} }] as never[];
-    const counters = { scanned: 0, missingReemitted: 0, errors: 0 };
+    const counters = { sourceScanned: 0, expected: 0, existing: 0, missingReemitted: 0, errors: 0 };
     await reconcileExpectedEvents(expected, { getTimelineEvent, emit }, counters);
-    expect(counters).toMatchObject({ scanned: 2, missingReemitted: 1, errors: 1 });
+    expect(counters).toMatchObject({ expected: 2, existing: 0, missingReemitted: 1, errors: 1 });
+    expect(counters.expected).toBe(counters.existing + counters.missingReemitted + counters.errors);
     errSpy.mockRestore();
   });
 });
@@ -41,7 +43,7 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     const scan = mockSend.mock.calls[0][0].input;
     expect(scan.ExpressionAttributeValues[':pre']).toBe('RFQ#'); // discriminated by PK prefix, NOT entityType
     expect(emitMock).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rfq_submitted', sourceEntityId: 'rfq-1' }));
-    expect(out.counters).toMatchObject({ scanned: 1, missingReemitted: 1 });
+    expect(out.counters).toMatchObject({ sourceScanned: 1, expected: 1, existing: 0, missingReemitted: 1 });
     expect(out.cursor).toEqual({ channel: 'lead' }); // channel advanced (no LastEvaluatedKey)
     expect(out.hasMore).toBe(true);
   });
@@ -86,7 +88,7 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     // order_created mirrors live emit's resolveInput.email (from GSI4PK EMAIL#…)
     const created = emitMock.mock.calls.map((c) => c[0]).find((a) => a.kind === 'order_created');
     expect(created.resolveInput).toMatchObject({ email: 'buyer@lab.edu' });
-    expect(out.counters).toMatchObject({ scanned: 3, missingReemitted: 3, errors: 0 });
+    expect(out.counters).toMatchObject({ sourceScanned: 1, expected: 3, existing: 0, missingReemitted: 3, errors: 0 });
     expect(out.cursor).toEqual({ channel: 'logistics' }); // order exhausted → advance
   });
   it('order channel with NO GSI4PK falls back to the linked RFQ email (RFQ-conversion path)', async () => {
@@ -103,6 +105,31 @@ describe('existence pass — runExistencePage (PK-prefix channels + channel curs
     const created = emitMock.mock.calls.map((c) => c[0]).find((a) => a.kind === 'order_created');
     expect(created.resolveInput).toMatchObject({ email: 'pi@uni.edu' });   // recovered email drives resolution
     expect(created.resolveInput.matchedOrgId).toBeUndefined();             // unmatched → resolves by email, not org
-    expect(out.counters).toMatchObject({ scanned: 1, missingReemitted: 1, errors: 0 });
+    expect(out.counters).toMatchObject({ sourceScanned: 1, expected: 1, existing: 0, missingReemitted: 1, errors: 0 });
+  });
+  it('counts sourceScanned per source record and expected per expanded event', async () => {
+    mockSend
+      .mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'META', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'acme.com' }] })
+      .mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'LOG#olog-1', id: 'olog-1', action: 'STATUS_CHANGE', toStatus: 'SHIPPED', fromStatus: 'IN_PRODUCTION', timestamp: '2026-04-01T00:00:00Z' }] });
+    getTimelineEventMock.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'exists' });
+    emitMock.mockResolvedValue(undefined);
+    const out = await runExistencePage({ mode: 'cold', limit: 100, cursor: { channel: 'order' } });
+    expect(out.counters.sourceScanned).toBe(1);
+    expect(out.counters.expected).toBe(out.counters.existing + out.counters.missingReemitted + out.counters.errors);
+    expect(out.counters.missingReemitted).toBe(1);
+    expect(out.counters.existing).toBe(1);
+  });
+  it('an expand failure increments sourceErrors (not event errors) and preserves the event invariant', async () => {
+    // one order META record whose child-load (loadOrderChildren) throws → channel.expand rejects
+    mockSend
+      .mockResolvedValueOnce({ Items: [{ PK: 'ORDER#ord-1', SK: 'META', createdAt: '2026-03-01T00:00:00Z', productModel: 'X', matchedOrgId: 'acme.com' }] }) // channel scan
+      .mockRejectedValueOnce(new Error('child load boom')); // loadOrderChildren query throws inside expand
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await runExistencePage({ mode: 'cold', limit: 100, cursor: { channel: 'order' } });
+    expect(out.counters.sourceScanned).toBe(1);
+    expect(out.counters.sourceErrors).toBe(1);
+    expect(out.counters.errors).toBe(0);           // event-level errors untouched
+    expect(out.counters.expected).toBe(out.counters.existing + out.counters.missingReemitted + out.counters.errors); // invariant holds
+    errSpy.mockRestore();
   });
 });

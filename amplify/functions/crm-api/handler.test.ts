@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ emitTimelineEvent: vi.fn() }));
 vi.mock('./lib/emitTimelineEvent', () => ({
@@ -63,5 +63,31 @@ describe('crm-api 2C-analytics actions', () => {
     mockAnalytics.backfill.mockResolvedValueOnce({ processed: 0, hasMore: false });
     await handler({ action: 'backfillVisitorBridge' } as never);
     expect(mockAnalytics.backfill).toHaveBeenCalledWith({ cursor: undefined, limit: undefined });
+  });
+});
+
+const timelineByOrgMock = vi.fn();
+vi.mock('./lib/read/timelineByOrg', () => ({ timelineByOrg: (a: unknown) => timelineByOrgMock(a) }));
+
+describe('handler — timelineByOrg AppSync resolver', () => {
+  beforeEach(() => timelineByOrgMock.mockReset());
+
+  it('routes an AppSync fieldName to the resolver, maps items, returns connection', async () => {
+    timelineByOrgMock.mockResolvedValueOnce({
+      items: [{ id: 'tev-1', occurredAt: '2026-03-01T00:00:00Z', source: 'order', kind: 'order_created', summary: 'Order created — X', resolutionStatus: 'resolved', resolutionReason: 'existing_matchedOrgId', confidence: 1, isInternalOnly: false, sourceEntityType: 'order', sourceEntityId: 'ord-1', payload: { productModel: 'X' } }],
+      nextToken: 'TOK',
+    });
+    const res = await handler({ info: { fieldName: 'timelineByOrg' }, arguments: { orgId: 'acme.com', limit: 10, includeInternalOnly: true } } as never) as { items: unknown[]; nextToken?: string };
+    expect(timelineByOrgMock).toHaveBeenCalledWith({ orgId: 'acme.com', limit: 10, nextToken: undefined, includeInternalOnly: true });
+    expect(res.nextToken).toBe('TOK');
+    expect(res.items[0]).toMatchObject({ id: 'tev-1', sourceFilterGroup: 'order', tone: 'confirmed', primaryLabel: 'Order created — X', productModel: 'X' });
+  });
+
+  it('still dispatches a direct-invoke action (does not break the action path)', async () => {
+    await expect(handler({ action: 'definitely_not_a_real_action' } as never)).rejects.toThrow(/unknown action/);
+  });
+
+  it('unknown fieldName throws via the resolver path', async () => {
+    await expect(handler({ info: { fieldName: 'nope' } } as never)).rejects.toThrow(/unknown fieldName/);
   });
 });

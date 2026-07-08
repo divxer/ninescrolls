@@ -5,19 +5,21 @@ import { getTimelineEvent } from '../timelineStore';
 import type { ExpectedEvent } from './sourceToEvents';
 import { rfqEvents, leadEvents, orderCreatedEvents, orderStageEvents, quoteEvents, logisticsEvents } from './sourceToEvents';
 
-export interface ExistenceCounters { scanned: number; missingReemitted: number; errors: number; }
+export interface ExistenceCounters { sourceScanned: number; expected: number; existing: number; missingReemitted: number; errors: number; sourceErrors: number; }
 interface Deps {
   getTimelineEvent: (id: string) => Promise<unknown | null>;
   emit: (args: unknown) => Promise<void>;
 }
 
 // Core, dependency-injected for testability: emit only the missing expected events; isolate errors.
+// INVARIANT: expected === existing + missingReemitted + errors.
 export async function reconcileExpectedEvents(expected: ExpectedEvent[], deps: Deps, counters: ExistenceCounters): Promise<void> {
   for (const ev of expected) {
-    counters.scanned += 1;
+    counters.expected += 1;
     try {
       const existing = await deps.getTimelineEvent(ev.id);
-      if (!existing) { await deps.emit(ev.args); counters.missingReemitted += 1; }
+      if (existing) { counters.existing += 1; }
+      else { await deps.emit(ev.args); counters.missingReemitted += 1; }
     } catch (err) {
       counters.errors += 1;
       console.error(JSON.stringify({ event: 'crm.sweep.existence.error', id: ev.id, error: err instanceof Error ? err.message : String(err) }));
@@ -123,16 +125,17 @@ export interface ChannelCursor { channel: string; key?: Record<string, unknown>;
 // One scan page of the CURRENT channel (per cursor). Advances to the next channel when one is exhausted;
 // hasMore=false only after the LAST channel is exhausted. Per-record expand errors are isolated.
 export async function runExistencePage(opts: { mode: 'hot' | 'cold'; limit: number; cursor?: ChannelCursor; cutoffIso?: string }): Promise<{ counters: ExistenceCounters; cursor?: ChannelCursor; hasMore: boolean }> {
-  const counters: ExistenceCounters = { scanned: 0, missingReemitted: 0, errors: 0 };
+  const counters: ExistenceCounters = { sourceScanned: 0, expected: 0, existing: 0, missingReemitted: 0, errors: 0, sourceErrors: 0 };
   const idx = channelIndexByName(opts.cursor?.channel);
   const channel = CHANNELS[idx];
   const res = await docClient.send(buildChannelScan(channel, opts.mode, opts.cutoffIso, opts.limit, opts.cursor?.key));
   const deps: Deps = { getTimelineEvent, emit: (a) => emitTimelineEvent(a as never) };
   for (const item of (res.Items ?? []) as Array<Record<string, unknown>>) {
+    counters.sourceScanned += 1;
     try {
       await reconcileExpectedEvents(await channel.expand(item), deps, counters);
     } catch (err) {
-      counters.errors += 1;
+      counters.sourceErrors += 1;
       console.error(JSON.stringify({ event: 'crm.sweep.existence.expand_error', pk: item.PK, error: err instanceof Error ? err.message : String(err) }));
     }
   }
