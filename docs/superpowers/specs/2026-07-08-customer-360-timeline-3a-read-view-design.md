@@ -127,10 +127,11 @@ To make coverage legible before flipping the default view, refine the existence-
 | `expected` | **renamed from `scanned`** — per expected timeline event examined |
 | `existing` | **new** — expected events where `getTimelineEvent(id)` already hit |
 | `missingReemitted` | (kept) — expected events that were missing and re-emitted |
-| `errors` | (kept) — per-record/per-event isolated errors |
+| `errors` | (kept) — per-**event** isolated errors (get/emit failure inside reconcileExpectedEvents) |
+| `sourceErrors` | **new** — a source META record whose expansion (`channel.expand`) threw; NOT counted in `expected` (that record produced zero expected events) |
 | `hasMore` | (kept) — pass completion signal |
 
-**Invariant (documented + tested):** `expected = existing + missingReemitted + errors`. `sourceScanned` explains "one source record → many events."
+**Invariant (documented + tested):** `expected = existing + missingReemitted + errors` (event granularity). Expansion failures are tracked separately in `sourceErrors` so they do not break this equality. `sourceScanned` explains "one source record → many events."
 
 Ripple: `ExistenceCounters` interface + the increment sites + existing tests; the memory-planned CloudWatch metric filter targets `missingReemitted`, which is unchanged.
 
@@ -224,14 +225,14 @@ In the byOrg view, every event is already linked to this org (unresolved events 
 
 ### 4.4 Catch-up
 
-10. Runbook doc (§1b): loop `reconcileSweep({ mode:'cold' })` to `hasMore=false`; confirm coverage via the new counters (`expected = existing + missingReemitted + errors`). Optional `scripts/catch-up-timeline.ts`.
+10. Runbook doc (§1b): loop `reconcileSweep({ mode:'cold' })` to `hasMore=false`; confirm coverage via the new counters (`expected = existing + missingReemitted + errors` at event granularity); operators verify both `errors == 0` AND `sourceErrors == 0`. Optional `scripts/catch-up-timeline.ts`.
 
 ### 4.5 Testing surface (vitest, existing patterns)
 
 - **Backend:**
   - `toOrganizationTimelineItem`: each kind → correct `sourceFilterGroup`/icon/tone/structured fields/resolution tier; unknown reason → `Unknown link`; `manually_linked` marker; `confidence` shown only for Inferred/Unknown.
   - `timelineByOrg`: KeyCondition uses `begins_with(GSI2SK,'TLEVENT#')`; **CONTACT/AUDIT items in the same `ORG#<orgId>` partition are never returned**; `ScanIndexForward=false`; `voided`/`isInternalOnly` filter expressions; `includeInternalOnly` path drops the internal filter; nextToken encode/decode round-trip; empty result.
-  - `existencePass` counters: on a source record expanding to N expected events, `sourceScanned`/`expected`/`existing`/`missingReemitted` obey `expected = existing + missingReemitted + errors`.
+  - `existencePass` counters: on a source record expanding to N expected events, at event granularity `expected = existing + missingReemitted + errors`; source-level expansion failures increment `sourceErrors` separately (not part of `expected` count).
 - **Frontend:**
   - `OrganizationTimeline`: mixed kinds render; chips filter the loaded set; "Load more" appends; "Show internal" triggers a refetch with the param (not a client filter); skeleton/empty/error states; unknown-kind fallback to `primaryLabel`.
 
