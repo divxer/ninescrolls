@@ -69,3 +69,25 @@ export async function mergeOrganization(args: { sourceOrgId: string; targetOrgId
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }
+
+export async function getNeedsLinkingQueue(args: { limit?: number; nextToken?: string }) {
+  const { data, errors } = await client().queries.needsLinkingQueue(args, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
+
+export async function linkStructuredUnit(args: {
+  sourceType: string;
+  sourceEntityId: string;
+  targetOrgId: string;
+}) {
+  const { data, errors } = await client().mutations.linkStructuredUnit(args, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
+
+export async function linkVisitor(args: { visitorId: string; targetOrgId: string }) {
+  const { data, errors } = await client().mutations.linkVisitor(args, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
