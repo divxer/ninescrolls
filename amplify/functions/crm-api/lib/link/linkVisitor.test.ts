@@ -48,4 +48,26 @@ describe('linkVisitor', () => {
     orgExistsMock.mockResolvedValueOnce(false);
     await expect(linkVisitor({ visitorId: 'v1', targetOrgId: 'nope', operator: 'op' })).rejects.toThrow(/target/i);
   });
+
+  it('F1: a post-commit retro/audit failure does NOT fail the mutation (bridge write already durable)', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
+    upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
+    retroMock.mockRejectedValueOnce(new Error('retro boom'));   // post-commit failure
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });   // must NOT throw
+    expect(r).toMatchObject({ existingOrgId: 'acme.com', postCommitStatus: 'post_commit_failed' });
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it('F1: audit failure after a successful retro also does NOT fail the mutation', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(null);
+    upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
+    retroMock.mockResolvedValueOnce({ summary: { resolved: 2, hasMore: false } });
+    auditMock.mockRejectedValueOnce(new Error('audit boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(r).toMatchObject({ sessionsResolved: 2, postCommitStatus: 'post_commit_failed' });
+    errSpy.mockRestore();
+  });
 });
