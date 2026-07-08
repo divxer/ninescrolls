@@ -38,6 +38,7 @@ describe('OrganizationDetailPage', () => {
       error: new Error('down'),
       hasMore: false,
       loadMore: vi.fn(),
+      reload: vi.fn(),
       includeInternal: false,
       setIncludeInternal: vi.fn(),
     } as never);

@@ -7,7 +7,7 @@ const items = [
   { id: 'b', occurredAt: '2026-03-01T00:00:00Z', source: 'analytics', kind: 'site_visit_session', sourceFilterGroup: 'site_visits', icon: 'site_visit', tone: 'inferred', primaryLabel: 'Site visit — 3 pages', resolutionStatus: 'resolved', resolutionReason: 'visitor_prior_event', confidence: 0.72, isInternalOnly: false, productModel: null, specificModel: null, equipmentCategory: null, leadType: null, productName: null, stageFrom: null, stageTo: null, fileName: null, pageCount: 3, activeSeconds: 240, topPaths: ['/x'], sourceEntityType: 'analytics_session', sourceEntityId: 'sess-1', payload: null },
 ] as never[];
 
-const baseProps = { items, loading: false, error: null as Error | null, hasMore: false, loadMore: vi.fn(), includeInternal: false, setIncludeInternal: vi.fn() };
+const baseProps = { items, loading: false, error: null as Error | null, hasMore: false, loadMore: vi.fn(), reload: vi.fn(), includeInternal: false, setIncludeInternal: vi.fn() };
 
 describe('OrganizationTimeline', () => {
   it('renders mixed kinds as cards', () => {
@@ -46,5 +46,12 @@ describe('OrganizationTimeline', () => {
     expect(screen.getByText(/couldn.t load timeline/i)).toBeTruthy();
     rerender(<OrganizationTimeline {...baseProps} items={[]} loading={false} error={null} />);
     expect(screen.getByText(/no recorded interactions/i)).toBeTruthy();
+  });
+
+  it('a mid-list error keeps already-rendered cards (does not wipe them) and offers inline retry', () => {
+    render(<OrganizationTimeline {...baseProps} error={new Error('load more failed')} />);
+    expect(screen.getByText('Order created')).toBeTruthy();
+    expect(screen.getByText('Site visit')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeTruthy();
   });
 });

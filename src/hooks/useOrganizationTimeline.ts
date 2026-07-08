@@ -15,6 +15,7 @@ export function useOrganizationTimeline(orgId: string | undefined) {
   const load = useCallback(async (token: string | undefined, append: boolean, includeInternalOnly: boolean) => {
     if (!orgId) return;
     setLoading(true);
+    setError(null);
     try {
       const res = await svc.getOrganizationTimeline({ orgId, nextToken: token, includeInternalOnly });
       const page = (res?.items ?? []) as Item[];
@@ -33,7 +34,9 @@ export function useOrganizationTimeline(orgId: string | undefined) {
     if (nextToken) await load(nextToken, true, includeInternal);
   }, [load, nextToken, includeInternal]);
 
+  const reload = useCallback(() => load(undefined, false, includeInternal), [load, includeInternal]);
+
   const setIncludeInternal = useCallback((v: boolean) => { setIncludeInternalState(v); }, []);
 
-  return { items, loading, error, hasMore: nextToken !== null, loadMore, includeInternal, setIncludeInternal };
+  return { items, loading, error, hasMore: nextToken !== null, loadMore, reload, includeInternal, setIncludeInternal };
 }

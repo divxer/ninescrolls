@@ -44,4 +44,15 @@ describe('useOrganizationTimeline', () => {
     const { result } = renderHook(() => useOrganizationTimeline('acme.com'));
     await waitFor(() => expect(result.current.error?.message).toBe('boom'));
   });
+
+  it('clears the error and recovers on a successful reload', async () => {
+    vi.mocked(svc.getOrganizationTimeline)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce({ items: [{ id: 'tev-1' }], nextToken: null } as never);
+    const { result } = renderHook(() => useOrganizationTimeline('acme.com'));
+    await waitFor(() => expect(result.current.error?.message).toBe('boom'));
+    await act(async () => { result.current.reload(); });
+    await waitFor(() => expect(result.current.error).toBeNull());
+    expect(result.current.items).toHaveLength(1);
+  });
 });

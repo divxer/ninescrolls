@@ -80,6 +80,7 @@ export function OrganizationDetailPage() {
                         error={timeline.error}
                         hasMore={timeline.hasMore}
                         loadMore={timeline.loadMore}
+                        reload={timeline.reload}
                         includeInternal={timeline.includeInternal}
                         setIncludeInternal={timeline.setIncludeInternal}
                     />
