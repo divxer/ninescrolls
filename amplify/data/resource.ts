@@ -335,6 +335,27 @@ const schema = a.schema({
     nextToken: a.string(),
   }),
 
+  NeedsLinkingSignal: a.customType({
+    email: a.string(), domain: a.string(), productModel: a.string(), equipmentCategory: a.string(),
+    orgNameDisplay: a.string(), country: a.string(), region: a.string(), topPaths: a.string().array(),
+    enrichmentStatus: a.string().required(),
+  }),
+  NeedsLinkingItem: a.customType({
+    unitKey: a.string().required(), linkUnitType: a.string().required(), source: a.string().required(),
+    kind: a.string().required(), occurredAt: a.string().required(), eventCount: a.integer().required(),
+    sourceEntityId: a.string(), visitorId: a.string(), signal: a.ref('NeedsLinkingSignal').required(),
+  }),
+  NeedsLinkingConnection: a.customType({
+    items: a.ref('NeedsLinkingItem').array().required(), nextToken: a.string(),
+  }),
+  LinkStructuredResult: a.customType({
+    affected: a.integer(), moved: a.integer(), skipped: a.integer(), errors: a.integer(),
+    sourceBackfillStatus: a.string(), contactStatus: a.string(), alreadyLinked: a.boolean(), existingOrgId: a.string(),
+  }),
+  LinkVisitorResult: a.customType({
+    sessionsResolved: a.integer(), pending: a.boolean(), alreadyLinked: a.boolean(), alreadyResolved: a.boolean(), existingOrgId: a.string(),
+  }),
+
   OrderStats: a.customType({
     totalActive: a.integer().required(),
     byStatus: a.json().required(),
@@ -607,6 +628,7 @@ const schema = a.schema({
     operator: a.string().required(),
     reason: a.string().required(),
     timestamp: a.datetime().required(),
+    details: a.json(),
   }),
 
   Organization: a.customType({
@@ -902,6 +924,13 @@ const schema = a.schema({
       includeInternalOnly: a.boolean(),
     })
     .returns(a.ref('OrganizationTimelineConnection').required())
+    .handler(a.handler.function(crmApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  needsLinkingQueue: a
+    .query()
+    .arguments({ limit: a.integer(), nextToken: a.string() })
+    .returns(a.ref('NeedsLinkingConnection').required())
     .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 
@@ -1234,6 +1263,20 @@ const schema = a.schema({
     })
     .returns(a.ref('Organization').required())
     .handler(a.handler.function(organizationApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  linkStructuredUnit: a
+    .mutation()
+    .arguments({ sourceType: a.string().required(), sourceEntityId: a.string().required(), targetOrgId: a.string().required() })
+    .returns(a.ref('LinkStructuredResult').required())
+    .handler(a.handler.function(crmApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  linkVisitor: a
+    .mutation()
+    .arguments({ visitorId: a.string().required(), targetOrgId: a.string().required() })
+    .returns(a.ref('LinkVisitorResult').required())
+    .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 
   updateTenderStatus: a
