@@ -60,6 +60,16 @@ describe('HomePage redesign', () => {
     expect(screen.getByRole('link', { name: 'Talk to an Engineer' })).toHaveAttribute('href', '/contact?topic=expert');
   });
 
+  it('signals the products section is a curated subset, not the full catalog', () => {
+    renderHomePage();
+
+    // The 6 featured platforms are a curated entry point; a note + link makes
+    // clear the lineup is larger (avoids "NineScrolls only has 6 platforms").
+    expect(screen.getByRole('link', { name: /on the full products page/i })).toHaveAttribute('href', '/products');
+    expect(screen.getByText(/E-Beam Evaporation, HDP-CVD, Coater\/Developer/i)).toBeInTheDocument();
+    expect(screen.getByText(/plasma stripping, and plasma cleaner systems/i)).toBeInTheDocument();
+  });
+
   it('uses the finalized brand hero and real standardized product assets', () => {
     renderHomePage();
 
