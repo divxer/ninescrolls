@@ -1060,6 +1060,12 @@ if (!isSandbox) {
             event: RuleTargetInput.fromObject({ action: 'rollupAnalyticsSessions' }),
         })],
     });
+    new Rule(crmApiStack, 'CrmRepairDrainRule', {
+        schedule: Schedule.cron({ minute: '*/15', hour: '*', day: '*', month: '*', year: '*' }),
+        targets: [new LambdaFunctionTarget(backend.crmApi.resources.lambda, {
+            event: RuleTargetInput.fromObject({ action: 'reconcileRepair' }),
+        })],
+    });
 }
 
 // =============================================================================
