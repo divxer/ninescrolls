@@ -26,5 +26,10 @@ describe('Layout navigation', () => {
 
     expect(screen.getByRole('link', { name: /PVD Sputtering/i })).toHaveAttribute('href', '/products/sputter');
     expect(screen.getByRole('link', { name: /IBE\/RIBE/i })).toHaveAttribute('href', '/products/ibe-ribe');
+    expect(screen.getByRole('link', { name: /DRIE \/ Bosch Process/i })).toHaveAttribute(
+      'href',
+      '/insights/deep-reactive-ion-etching-bosch-process',
+    );
+    expect(screen.getByText('Deep silicon etch process')).toBeInTheDocument();
   });
 });
