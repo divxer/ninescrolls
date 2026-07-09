@@ -33,7 +33,7 @@ describe('HomePage redesign', () => {
       'Start with the process, then choose the platform.',
       'Built around the work researchers actually need to do.',
       'Choose the platform that matches the process window.',
-      'Our equipment has been cited in peer-reviewed research.',
+      'Peer-reviewed validation for the platforms we represent.',
       'Process notes for engineers who need a faster first decision.',
       'Let’s Build Your Next Process Together',
     ];
@@ -69,6 +69,32 @@ describe('HomePage redesign', () => {
     expect(screen.getByText('Featured platforms shown above')).toBeInTheDocument();
     expect(screen.getByText(/E-Beam Evaporation, HDP-CVD, Coater\/Developer, stripping, and plasma cleaner systems/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /View All Products/i })).toHaveAttribute('href', '/products');
+  });
+
+  it('reframes research validation as represented-platform validation without misattribution', () => {
+    renderHomePage();
+
+    const pageText = document.body.textContent ?? '';
+
+    // New represented-platform framing is present.
+    expect(pageText).toContain('Peer-reviewed validation for the platforms we represent.');
+    expect(pageText).toContain('Nature Portfolio');
+
+    // Real, verified papers render (journal + title).
+    expect(pageText).toContain('Nature Communications');
+    expect(pageText).toContain('Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions');
+    expect(pageText).toContain('Light: Science & Applications');
+    expect(pageText).toContain('Advanced Materials');
+    expect(pageText).toContain('Materials Today');
+
+    // Mis-attribution and unverifiable aggregate are gone.
+    expect(pageText).not.toContain('Our equipment has been cited');
+    expect(pageText).not.toMatch(/NineScrolls[^.]*\bcited\b/i);
+    expect(pageText).not.toContain('500+');
+
+    // Flagship *Nature* is never claimed as a journal, but Nature Portfolio
+    // titles (Nature Communications / Light: Science & Applications) are allowed.
+    expect(screen.queryByText('Nature', { exact: true })).not.toBeInTheDocument();
   });
 
   it('uses the finalized brand hero and real standardized product assets', () => {
