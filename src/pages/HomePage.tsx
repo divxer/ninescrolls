@@ -588,7 +588,7 @@ export function HomePage() {
                   Research using corresponding plasma, deposition, and vacuum process platforms has appeared in Nature Portfolio journals, Advanced Materials, and Materials Today.
                 </p>
                 <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">245</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">citations — most-cited study using a corresponding RIE platform (as of Jul 2026)</p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">citations — most-cited among the studies we reference, on a corresponding RIE platform (as of Jul 2026)</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {researchCards.map(card => (
