@@ -116,7 +116,8 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/icp-etcher', label: 'ICP‑RIE', desc: 'High-density plasma etching' },
         { to: '/products/rie-etcher', label: 'RIE', desc: 'Reactive ion etching' },
         { to: '/products/compact-rie', label: 'Compact RIE', desc: 'Compact benchtop etcher' },
-        { to: '/insights/deep-reactive-ion-etching-bosch-process', label: 'DRIE (Bosch)', desc: 'Deep silicon etching' },
+        { to: '/products/ibe-ribe', label: 'IBE/RIBE', desc: 'Ion beam etching' },
+        { to: '/insights/deep-reactive-ion-etching-bosch-process', label: 'DRIE / Bosch Process', desc: 'Deep silicon etch process' },
       ]
     },
     {
@@ -126,6 +127,7 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/pecvd', label: 'PECVD', desc: 'Plasma-enhanced thin films' },
         { to: '/products/ald', label: 'ALD', desc: 'Atomic layer deposition' },
         { to: '/products/hdp-cvd', label: 'HDP‑CVD', desc: 'High-density plasma CVD' },
+        { to: '/products/sputter', label: 'PVD Sputtering', desc: 'Magnetron PVD coatings' },
         { to: '/products/e-beam-evaporator', label: 'E-Beam Evaporator', desc: 'Electron-beam evaporation' },
       ]
     },
