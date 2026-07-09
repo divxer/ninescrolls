@@ -67,6 +67,7 @@ describe('HomePage redesign', () => {
     // clear the lineup is larger (avoids "NineScrolls only has 6 platforms").
     expect(screen.getByRole('link', { name: /on the full products page/i })).toHaveAttribute('href', '/products');
     expect(screen.getByText(/E-Beam Evaporation, HDP-CVD, Coater\/Developer/i)).toBeInTheDocument();
+    expect(screen.getByText(/plasma stripping, and plasma cleaner systems/i)).toBeInTheDocument();
   });
 
   it('uses the finalized brand hero and real standardized product assets', () => {
