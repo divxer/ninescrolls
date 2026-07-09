@@ -25,11 +25,17 @@ function BucketCard({ title, bucket }: { title: string; bucket?: Bucket | null }
   );
 }
 
-function SummaryCard({ title, summary }: { title: string; summary?: Record<string, unknown> | null }) {
+function SummaryCard({ title, summary }: { title: string; summary?: unknown }) {
+  // a.json() fields arrive from AppSync as JSON *strings*; parse before pretty-printing so the card
+  // shows readable JSON instead of a double-encoded escaped string. Objects (tests/mocks) pass through.
+  const value = typeof summary === 'string'
+    ? (() => { try { return JSON.parse(summary) as unknown; } catch { return summary; } })()
+    : summary;
+  const isEmpty = value == null || value === '';
   return (
     <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
       <h3 style={{ margin: '0 0 8px' }}>{title}</h3>
-      {summary ? <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap' }}>{JSON.stringify(summary, null, 2)}</pre> : <p style={{ color: '#6b7280' }}>No run yet</p>}
+      {isEmpty ? <p style={{ color: '#6b7280' }}>No run yet</p> : <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap' }}>{JSON.stringify(value, null, 2)}</pre>}
     </section>
   );
 }
@@ -49,10 +55,10 @@ export function CrmHealthPage() {
         <>
           <BucketCard title="Pending repairs" bucket={data.repairPending as Bucket} />
           <BucketCard title="Stuck repairs (needs attention)" bucket={data.repairStuck as Bucket} />
-          <SummaryCard title="Last repair run" summary={data.lastRepairSummary as Record<string, unknown> | null} />
-          <SummaryCard title="Last hot sweep" summary={data.lastHotSweep as Record<string, unknown> | null} />
-          <SummaryCard title="Last cold sweep" summary={data.lastColdSweep as Record<string, unknown> | null} />
-          <SummaryCard title="Last dirty-rollup sweep" summary={data.lastDirtyRollupSweep as Record<string, unknown> | null} />
+          <SummaryCard title="Last repair run" summary={data.lastRepairSummary} />
+          <SummaryCard title="Last hot sweep" summary={data.lastHotSweep} />
+          <SummaryCard title="Last cold sweep" summary={data.lastColdSweep} />
+          <SummaryCard title="Last dirty-rollup sweep" summary={data.lastDirtyRollupSweep} />
         </>
       )}
     </div>
