@@ -62,4 +62,10 @@ describe('replayStructuredSideEffects', () => {
     const r = await replayStructuredSideEffects({ ...base, sourceType: 'quote', sourceEntityId: 'q1', backfillPk: null });
     expect(r).toMatchObject({ ok: true, backfillStatus: 'no_source' });
   });
+  it('transient: backfill SUCCEEDS but audit throws a non-CCFE error → transient', async () => {
+    send.mockResolvedValueOnce({}); // backfill Update ok
+    writeLinkAuditLog.mockRejectedValueOnce(new Error('audit throttled')); // non-CCFE
+    const r = await replayStructuredSideEffects(base);
+    expect(r).toMatchObject({ ok: false, errorType: 'transient' });
+  });
 });

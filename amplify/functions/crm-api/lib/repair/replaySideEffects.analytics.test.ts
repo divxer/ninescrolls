@@ -36,4 +36,10 @@ describe('replayAnalyticsSideEffects', () => {
     const r = await replayAnalyticsSideEffects(base);
     expect(r.ok).toBe(true);
   });
+  it('transient: retro SUCCEEDS but audit throws a non-CCFE error → transient', async () => {
+    reResolve.mockResolvedValueOnce({ summary: { hasMore: false } });
+    writeLinkAuditLog.mockRejectedValueOnce(new Error('audit throttled')); // non-CCFE
+    const r = await replayAnalyticsSideEffects(base);
+    expect(r).toMatchObject({ ok: false, errorType: 'transient' });
+  });
 });
