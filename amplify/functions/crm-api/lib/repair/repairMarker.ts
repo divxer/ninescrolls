@@ -50,6 +50,7 @@ export async function markStuck(m: RepairMarkerItem, reason: 'source_conflict' |
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
     UpdateExpression: 'SET GSI1PK = :g, #s = :st, stuckReason = :sr, lastError = :e, lastAttemptAt = :now, attemptCount = :a',
+    ConditionExpression: 'attribute_exists(PK)',
     ExpressionAttributeNames: { '#s': 'status' },
     ExpressionAttributeValues: { ':g': 'CRM_REPAIR#stuck', ':st': 'stuck', ':sr': reason, ':e': lastError, ':now': nowIso, ':a': (m.attemptCount ?? 0) + 1 },
   }));
@@ -60,6 +61,7 @@ export async function bumpAttempt(m: RepairMarkerItem, lastError: string, nowIso
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
     UpdateExpression: 'SET attemptCount = :a, lastError = :e, lastAttemptAt = :now',
+    ConditionExpression: 'attribute_exists(PK)',
     ExpressionAttributeValues: { ':a': (m.attemptCount ?? 0) + 1, ':e': lastError, ':now': nowIso },
   }));
 }
@@ -69,6 +71,7 @@ export async function touchInProgress(m: RepairMarkerItem, nowIso: string): Prom
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
     UpdateExpression: 'SET lastAttemptAt = :now',
+    ConditionExpression: 'attribute_exists(PK)',
     ExpressionAttributeValues: { ':now': nowIso },
   }));
 }

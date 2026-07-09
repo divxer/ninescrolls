@@ -65,4 +65,12 @@ describe('repairMarker', () => {
     expect(u.UpdateExpression).not.toContain('GSI1PK'); // stays pending, not moved to stuck
     expect(u.ExpressionAttributeValues[':now']).toBe('2026-07-08T02:00:00.000Z');
   });
+  it('markStuck / bumpAttempt / touchInProgress guard on attribute_exists(PK) (no zombie upsert)', async () => {
+    await markStuck({ unitType: 'analytics', unitKey: 'v1', attemptCount: 0 } as never, 'max_attempts', 'e', 't');
+    expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK)');
+    await bumpAttempt({ unitType: 'analytics', unitKey: 'v1', attemptCount: 0 } as never, 'e', 't');
+    expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK)');
+    await touchInProgress({ unitType: 'analytics', unitKey: 'v1' } as never, 't');
+    expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK)');
+  });
 });
