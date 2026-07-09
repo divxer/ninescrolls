@@ -53,10 +53,12 @@ createdAt   <link nowIso>
 status      'pending' | 'stuck'               stuckReason 'source_conflict' | 'max_attempts' | null
 attemptCount 0                                 lastAttemptAt null   lastError null
 --- structured only ---
-sourceType, sourceEntityId,
-backfillPk   <resolved once at link time via backfillTargetPk(); null if no source>
+sourceType, sourceEntityId,             ← ALWAYS stored (the durable inputs the drainer re-resolves from)
+backfillPk   <CACHED optional: best-effort at link time; null if link-time resolution failed OR no source>
 affectedEventIds, movedCount, contactStatus
 ```
+
+**`backfillPk` is a cached optimization, not a hard dependency.** `backfillTargetPk()` is pure for rfq/lead/order (`SOURCE_PK[type](id)`) and in-memory for quote (`events[0].payload.orderId`), but for **logistics it does a `GetCommand` on `LOGISTICS#<id>/META`** that can throw *after* the durable move but *before* the marker put. The marker MUST still be written in that case (with `backfillPk: null`), so the drainer can re-resolve later — otherwise a logistics link-time Get failure would re-open the exact post-commit window 3C exists to close. Resolution rules: rfq/lead/order → pure, always cached; quote → resolved from the in-memory `events` at link time (cannot fail), always cached; logistics → Get at link time, cached on success, `null` on failure and **re-Got by the drainer from `sourceEntityId`**.
 
 **GSI1PK routes visibility:** the drainer Queries **only** `CRM_REPAIR#pending`; `CRM_REPAIR#stuck` is Health-read-only and never auto-retried.
 
@@ -92,6 +94,8 @@ replayAnalyticsSideEffects({ visitorId, targetOrgId, operator, createdAt }): Pro
 
 The helper **does not throw out**; the caller decides delete-vs-keep-vs-stuck. Both replay functions internally: run the idempotent effect (conditional backfill / retro), capture its status, then write the deterministic audit. `source_conflict` comes from `backfillSource` returning `conflict` (a real terminal condition), distinct from a thrown transient error.
 
+**`replayStructuredSideEffects` re-resolves `backfillPk` itself** so the happy path and the drainer behave identically: it takes `{ sourceType, sourceEntityId, backfillPk? }`; if `backfillPk` is present it uses it, else it resolves via a drain-safe `resolveBackfillPk(sourceType, sourceEntityId)` — pure for rfq/lead/order, a `LOGISTICS#<sourceEntityId>/META` Get for logistics, and (quote only) requires the cached value since the drainer has no `events`. A resolution Get that throws surfaces as `errorType:'transient'` (retried next pass), never as a lost backfill. A resolved `null` (genuinely no source record) is `no_source`, which counts as success for marker deletion (nothing to backfill).
+
 Replay is **replay-all**, not per-effect pending flags: since every effect is idempotent, re-running the whole set each drain is simpler, carries less state, and cannot wedge in a half-completed workflow.
 
 ## 5. Link-mutation changes (`linkStructuredUnit.ts`, `linkVisitor.ts`)
@@ -100,10 +104,12 @@ Post-commit block becomes: **putRepairMarker (best-effort, carries committed tar
 
 ```
 structured (after moved>0):
-  backfillPk = await backfillTargetPk(sourceType, sourceEntityId, events)   // resolve once
-  try { await putRepairMarker({ unitType:'structured', unitKey:syntheticOrgId, targetOrgId, operator,
-                                createdAt:nowIso, backfillPk, affectedEventIds, movedCount:moved, contactStatus }) }
-  catch { postCommitStatus = 'post_commit_failed' }        // no marker → falls back to 3B self-heal
+  let backfillPk = null
+  try { backfillPk = await backfillTargetPk(sourceType, sourceEntityId, events) } catch { /* cache best-effort; logistics Get may throw */ }
+  // marker is written REGARDLESS of backfillPk resolution — sourceType/sourceEntityId let the drainer re-resolve
+  try { await putRepairMarker({ unitType:'structured', unitKey:syntheticOrgId, targetOrgId, operator, createdAt:nowIso,
+                                sourceType, sourceEntityId, backfillPk, affectedEventIds, movedCount:moved, contactStatus }) }
+  catch { postCommitStatus = 'post_commit_failed' }        // no marker → falls back to 3B self-heal (see §8)
   const r = await replayStructuredSideEffects({ backfillPk, targetOrgId, unitKey:syntheticOrgId,
                                                 operator, createdAt:nowIso, affectedEventIds, movedCount:moved, contactStatus })
   if (r.ok) { try { await deleteRepairMarker(...) } catch { postCommitStatus = 'post_commit_failed' } }
@@ -124,10 +130,14 @@ analytics (after bridge upsert written):
 
 ## 6. Drainer (`reconcileRepair.ts`) + handler + cron
 
-Dedicated direct action `reconcileRepair({ limit })`, durable lease `CRM_SWEEP#repair#drain / STATE` (reuse `sweepState` helpers; widen `SweepMode` with `'repair'` and `SweepPass` with `'drain'`, exactly as 2C-analytics widened them once for `'analytics'/'sessions'`).
+Dedicated direct action `reconcileRepair({ limit })`, lease `CRM_SWEEP#repair#drain / STATE` (reuse `sweepState` helpers; widen `SweepMode` with `'repair'` and `SweepPass` with `'drain'`, exactly as 2C-analytics widened them once for `'analytics'/'sessions'`).
+
+**No durable cursor.** Unlike the existence/rollup passes, the repair queue self-shrinks — a drained marker is *deleted* — so there is nothing to resume from. Each run Queries `#pending` oldest-first up to `limit`; `hasMore` is simply "were there more pending markers than this run drained" (the Query's `LastEvaluatedKey` is present, or pending count exceeded `limit`). The next `*/15` fire drains the remainder. The lease exists only to keep the cron and an on-demand `runCrmRepair` from overlapping.
+
+**Lease-release helper change (required):** both `releaseLease` and `releaseLeaseKeepCursor` currently hardcode `hasMore=false`, which would make the repair STATE row misreport progress. Add an optional `hasMore` param to `releaseLeaseKeepCursor` (`SET hasMore = :h …`), **defaulting to `false`** so the existing analytics-rollup caller is unaffected; the repair drainer passes the computed `hasMore`. (`releaseLeaseKeepCursor` is correct here — repair has no cursor, so "keep cursor" is a no-op preserve of the absent cursor.) A regression test asserts the repair STATE row stays `hasMore:true` when more pending markers remain.
 
 ```
-acquireLease → null ? return { skipped:true, reason:'lease_held' }         // skippedLeaseHeld
+acquireLease → null ? return { skippedLeaseHeld: true }
 Query GSI1 CRM_REPAIR#pending, oldest-first, up to limit (default 100 — backlog is tiny)
 for each marker (replay-all by unitType):
 ```
@@ -141,8 +151,7 @@ for each marker (replay-all by unitType):
 | `transient`, `attemptCount+1 ≥ MAX` | → **stuck** / `max_attempts`, move to `#stuck` | `stuck` |
 
 ```
-persistPage snapshot per page + heartbeat
-releaseLeaseKeepCursor if more pending remain, else releaseLease
+releaseLeaseKeepCursor('repair','drain', lease, { lastSummary: counters, hasMore })   // single-pass; hasMore from the Query
 log crm.repair.summary { examined, repaired, inProgress, blocked, retrying, stuck, hasMore }
 ```
 
@@ -177,12 +186,13 @@ crmHealth(): {
 ## 8. Residual & failure semantics (documented, accepted)
 
 - **Crash-before-marker window:** a crash between the last successful move and `putRepairMarker` leaves no marker (window ≈ one DynamoDB call). Strictly smaller than 3B's gap. The existing moved>0 self-heal still recovers the *backfill* on re-queue; only the *audit* stays best-effort. No symptom-scan fallback in 3C (a missing audit leaves no symptom to scan for; backfill symptom-recovery is deferred).
-- **Marker-cleanup failure:** not corruption — one extra idempotent repair pass (§5).
+- **Marker-put failure:** `putRepairMarker` is best-effort. If the marker write itself fails AND the subsequent replay also fails (e.g. one correlated DynamoDB brownout kills both), there is no durable marker and we fall back to exactly the old 3B behavior — `postCommitStatus:'post_commit_failed'` + the moved>0 self-heal-on-re-queue for backfill, audit best-effort. This is the same acceptable residual as crash-before-marker, just triggered a step later; writing the marker *before* the fragile side effects (not in the catch) is precisely what keeps this case rare rather than routine.
+- **Marker-cleanup failure:** not corruption — one extra idempotent repair pass (§5). Side effects already succeeded; the drainer re-runs replay (backfill `already_set`, audit no-op, retro no-op) and deletes the marker.
 - **Stuck markers:** never auto-retried; cleared only by a human corrective re-link (overwrites to pending) or manual DB action. Surfaced in the panel.
 
 ## 9. Testing (TDD)
 
-**Backend:** `deterministicAuditId` stability + collision-avoidance across orgs; `auditStore` optional-id path + second-write no-op (not a duplicate row); `replaySideEffects` both types return the exact `ReplayResult` for each situation (ok / transient / source_conflict / in_progress) + idempotency (backfill already_set, audit no-op, retro re-run); `repairMarker` put idempotent (deterministic PK), delete, markStuck transitions + GSI1PK move; `reconcileRepair` full matrix (success→delete, in_progress→keep, conflict→stuck-immediate, transient→attempt++, ≥MAX→stuck, lease-held→skip, empty→noop, oldest-first order); `crmHealth` reads STATE + bounded samples with **no Scan** asserted; `linkStructuredUnit`/`linkVisitor` — marker written after commit / deleted on `ok` / kept on failure, **`moved===0` and short-circuits do NOT put a marker**, deleteMarker-failure ⇒ success + `postCommitStatus:'post_commit_failed'`; `sweepState` union widening.
+**Backend:** `deterministicAuditId` stability + collision-avoidance across orgs; `auditStore` optional-id path + second-write no-op (not a duplicate row); `replaySideEffects` both types return the exact `ReplayResult` for each situation (ok / transient / source_conflict / in_progress) + idempotency (backfill already_set, audit no-op, retro re-run) + **`backfillPk` re-resolution when the marker cached `null` (logistics re-Get; Get-throws ⇒ `transient`; `null` ⇒ `no_source`⇒ok)**; `repairMarker` put idempotent (deterministic PK), delete, markStuck transitions + GSI1PK move; `reconcileRepair` full matrix (success→delete, in_progress→keep, conflict→stuck-immediate, transient→attempt++, ≥MAX→stuck, lease-held→skip, empty→noop, oldest-first order) + **STATE row stays `hasMore:true` when more pending markers remain than `limit`**; `sweepState` — **`releaseLeaseKeepCursor` new optional `hasMore` param (defaults false; analytics caller unaffected)** + union widening; `crmHealth` reads STATE + bounded samples with **no Scan** asserted; `linkStructuredUnit`/`linkVisitor` — marker written after commit / deleted on `ok` / kept on failure, **marker written even when link-time `backfillTargetPk` throws (logistics) with `backfillPk:null`**, **`moved===0` and short-circuits do NOT put a marker**, deleteMarker-failure ⇒ success + `postCommitStatus:'post_commit_failed'`.
 
 **Frontend:** `CrmHealthPage` renders pending/stuck/summaries; "Run repair now" success path + `skippedLeaseHeld` → "already running"; `useCrmHealth` hook; service methods `getCrmHealth`/`runCrmRepair`.
 
