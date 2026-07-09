@@ -3,6 +3,7 @@ import { docClient, TABLE_NAME } from '../dynamodb';
 import { writeLinkAuditLog } from '../auditStore';
 import { deterministicAuditId } from '../idGenerators';
 import { SOURCE_PK } from '../link/sourceEmail';
+import { reResolveVisitorSessions } from '../analytics/reResolveVisitorSessions';
 
 export type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source';
 
@@ -89,4 +90,31 @@ export async function replayStructuredSideEffects(args: {
   if (transientError) return { ok: false, errorType: 'transient', error: transientError, backfillStatus };
   if (backfillStatus === 'conflict') return { ok: false, errorType: 'source_conflict', backfillStatus };
   return { ok: true, backfillStatus };
+}
+
+export async function replayAnalyticsSideEffects(args: {
+  visitorId: string; targetOrgId: string; operator: string; createdAt: string;
+}): Promise<ReplayResult> {
+  let transientError: string | undefined;
+  let summary: Record<string, unknown> = {};
+  let hasMore = false;
+
+  try {
+    const retro = await reResolveVisitorSessions({ visitorId: args.visitorId });
+    summary = (retro?.summary ?? {}) as Record<string, unknown>;
+    hasMore = summary.hasMore === true;
+  } catch (err) { transientError = msg(err); }
+
+  const auditErr = await writeAuditIdempotent({
+    id: deterministicAuditId('manual_link_visitor', args.visitorId, args.targetOrgId),
+    operator: args.operator, reason: 'manual_link_visitor', timestamp: args.createdAt, newOrgId: args.targetOrgId,
+    details: { unitType: 'analytics', unitKey: args.visitorId, targetOrgId: args.targetOrgId, retroSummary: summary },
+  });
+  transientError = transientError ?? auditErr;
+
+  // Preserve linkVisitor's existing return expression exactly (no behavior change vs 3B).
+  const sessionsResolved = Number(summary.resolved ?? summary.emitted ?? 0);
+  if (transientError) return { ok: false, errorType: 'transient', error: transientError, sessionsResolved, pending: hasMore, retroSummary: summary };
+  if (hasMore) return { ok: false, errorType: 'in_progress', sessionsResolved, pending: true, retroSummary: summary };
+  return { ok: true, sessionsResolved, pending: false, retroSummary: summary };
 }
