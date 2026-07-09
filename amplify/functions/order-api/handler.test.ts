@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be defined before handler import
@@ -292,6 +292,178 @@ describe('order-api handler', () => {
             );
 
             expect(result.items).toHaveLength(0);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // listLeads — unfiltered path must merge GSI1 type partitions, never scan
+    // -----------------------------------------------------------------------
+    describe('listLeads', () => {
+        // Restore query/scan mocks after each test: these tests set a persistent
+        // mockImplementation, and beforeEach only clears call history (not impls).
+        afterEach(() => {
+            mockQuery.mockReset();
+            mockScan.mockReset();
+        });
+
+        function makeLead(type: string, leadId: string, submittedAt: string) {
+            return {
+                PK: `LEAD#${leadId}`,
+                SK: 'META',
+                GSI1PK: `LEAD_TYPE#${type}`,
+                GSI1SK: `${submittedAt}#${leadId}`,
+                leadId,
+                type,
+                email: `${leadId}@example.com`,
+                submittedAt,
+            };
+        }
+
+        // Route each parallel GSI1 partition query to its type's rows (or error) by :pk.
+        function routeByType(rowsByType: Record<string, Record<string, unknown>[] | Error>) {
+            mockQuery.mockImplementation((cmd: { ExpressionAttributeValues?: Record<string, string> }) => {
+                const pk = cmd.ExpressionAttributeValues?.[':pk'] ?? '';
+                const type = pk.replace('LEAD_TYPE#', '');
+                const rows = rowsByType[type];
+                if (rows instanceof Error) return Promise.reject(rows);
+                return Promise.resolve({ Items: rows ?? [] });
+            });
+        }
+
+        it('queries GSI1 per type and never scans for the unfiltered list', async () => {
+            routeByType({
+                contact: [makeLead('contact', 'lead-contact-1', '2026-07-01T00:00:00Z')],
+                download_gate: [makeLead('download_gate', 'lead-downloadgate-20260709-02d9a453', '2026-07-09T00:00:00Z')],
+                newsletter: [makeLead('newsletter', 'lead-newsletter-1', '2026-07-05T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listLeads', { limit: 7 }), {} as any, vi.fn());
+
+            expect(mockScan).not.toHaveBeenCalled();
+            expect(mockQuery).toHaveBeenCalledTimes(3);
+            const queried = mockQuery.mock.calls.map((c: [{ IndexName?: string; ExpressionAttributeValues?: Record<string, string>; ScanIndexForward?: boolean; Limit?: number }]) => ({
+                index: c[0].IndexName,
+                pk: c[0].ExpressionAttributeValues?.[':pk'],
+                scanIndexForward: c[0].ScanIndexForward,
+                limit: c[0].Limit,
+            }));
+            expect(queried).toEqual(expect.arrayContaining([
+                { index: 'GSI1', pk: 'LEAD_TYPE#contact', scanIndexForward: false, limit: 7 },
+                { index: 'GSI1', pk: 'LEAD_TYPE#download_gate', scanIndexForward: false, limit: 7 },
+                { index: 'GSI1', pk: 'LEAD_TYPE#newsletter', scanIndexForward: false, limit: 7 },
+            ]));
+            expect(result.items).toHaveLength(3);
+            expect(result.nextToken).toBeNull();
+        });
+
+        it('returns the newest lead across all types first', async () => {
+            routeByType({
+                contact: [makeLead('contact', 'lead-contact-1', '2026-07-01T00:00:00Z')],
+                download_gate: [makeLead('download_gate', 'lead-downloadgate-20260709-02d9a453', '2026-07-09T00:00:00Z')],
+                newsletter: [makeLead('newsletter', 'lead-newsletter-1', '2026-07-05T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listLeads'), {} as any, vi.fn());
+
+            expect(result.items.map((l: { type: string }) => l.type)).toEqual([
+                'download_gate', 'newsletter', 'contact',
+            ]);
+            expect(result.items[0].leadId).toBe('lead-downloadgate-20260709-02d9a453');
+        });
+
+        it('tolerates one failed type partition and still returns the others', async () => {
+            routeByType({
+                contact: new Error('DDB throttled'),
+                download_gate: [makeLead('download_gate', 'lead-dg-1', '2026-07-09T00:00:00Z')],
+                newsletter: [makeLead('newsletter', 'lead-nl-1', '2026-07-05T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listLeads'), {} as any, vi.fn());
+
+            expect(result.items).toHaveLength(2);
+            expect(result.items.map((l: { type: string }) => l.type)).toEqual(['download_gate', 'newsletter']);
+        });
+
+        it('throws when every type partition fails', async () => {
+            routeByType({
+                contact: new Error('fail'),
+                download_gate: new Error('fail'),
+                newsletter: new Error('fail'),
+            });
+
+            await expect(handler(makeAppSyncEvent('listLeads'), {} as any, vi.fn()))
+                .rejects.toThrow(/all lead type partition queries failed/i);
+        });
+
+        it('breaks submittedAt ties deterministically by leadId descending', async () => {
+            const ts = '2026-07-09T00:00:00Z';
+            routeByType({
+                // Supplied in ascending leadId order to prove the resolver re-sorts.
+                download_gate: [
+                    makeLead('download_gate', 'lead-downloadgate-20260709-02d9a453', ts),
+                    makeLead('download_gate', 'lead-downloadgate-20260709-ff0011aa', ts),
+                ],
+                contact: [],
+                newsletter: [],
+            });
+
+            const result = await handler(makeAppSyncEvent('listLeads'), {} as any, vi.fn());
+
+            expect(result.items.map((l: { leadId: string }) => l.leadId)).toEqual([
+                'lead-downloadgate-20260709-ff0011aa',
+                'lead-downloadgate-20260709-02d9a453',
+            ]);
+        });
+
+        it('queries a single GSI1 partition when type is provided (typed path unchanged)', async () => {
+            mockQuery.mockResolvedValueOnce({
+                Items: [makeLead('download_gate', 'lead-dg-typed', '2026-07-09T00:00:00Z')],
+            });
+
+            const result = await handler(
+                makeAppSyncEvent('listLeads', { type: 'download_gate', limit: 10 }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockScan).not.toHaveBeenCalled();
+            expect(mockQuery).toHaveBeenCalledTimes(1);
+            expect(mockQuery.mock.calls[0][0].ExpressionAttributeValues[':pk']).toBe('LEAD_TYPE#download_gate');
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0].type).toBe('download_gate');
+        });
+
+        it('preserves typed path pagination tokens and ExclusiveStartKey', async () => {
+            const lastKey = {
+                PK: 'LEAD#lead-dg-page-1',
+                SK: 'META',
+                GSI1PK: 'LEAD_TYPE#download_gate',
+                GSI1SK: '2026-07-09T00:00:00Z#lead-dg-page-1',
+            };
+            mockQuery
+                .mockResolvedValueOnce({
+                    Items: [makeLead('download_gate', 'lead-dg-page-1', '2026-07-09T00:00:00Z')],
+                    LastEvaluatedKey: lastKey,
+                })
+                .mockResolvedValueOnce({
+                    Items: [makeLead('download_gate', 'lead-dg-page-2', '2026-07-08T00:00:00Z')],
+                });
+
+            const firstPage = await handler(
+                makeAppSyncEvent('listLeads', { type: 'download_gate', limit: 1 }),
+                {} as any,
+                vi.fn(),
+            );
+            const secondPage = await handler(
+                makeAppSyncEvent('listLeads', { type: 'download_gate', limit: 1, nextToken: firstPage.nextToken }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(firstPage.nextToken).toBe(Buffer.from(JSON.stringify(lastKey)).toString('base64'));
+            expect(mockQuery).toHaveBeenCalledTimes(2);
+            expect(mockQuery.mock.calls[1][0].ExclusiveStartKey).toEqual(lastKey);
+            expect(secondPage.items[0].leadId).toBe('lead-dg-page-2');
         });
     });
 
