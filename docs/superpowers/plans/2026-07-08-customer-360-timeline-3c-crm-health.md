@@ -71,22 +71,22 @@ export function deterministicAuditId(reason: string, unitKey: string, targetOrgI
 
 - [ ] **Step 4: Write failing test for optional `id` in `writeLinkAuditLog`**
 
-Append to `amplify/functions/crm-api/lib/auditStore.test.ts` (mirror the existing mock style in that file — it mocks `docClient`). Add:
+Append inside the existing `describe('writeLinkAuditLog', ...)` block in `amplify/functions/crm-api/lib/auditStore.test.ts` (the file already declares `const mockSend = vi.fn()` at top). Add:
 ```ts
 it('uses a caller-supplied deterministic id when provided (else random)', async () => {
+  mockSend.mockResolvedValueOnce({});
   const returned = await writeLinkAuditLog({
     id: 'audit-deadbeef00000000', operator: 'op@x', reason: 'manual_link_unit',
     timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com', details: { unitType: 'structured' },
   });
   expect(returned).toBe('audit-deadbeef00000000');
   // the PutCommand Item.id and Item.PK carry the supplied id
-  const putArg = sendMock.mock.calls.at(-1)![0].input;
+  const putArg = mockSend.mock.calls.at(-1)![0].input;
   expect(putArg.Item.id).toBe('audit-deadbeef00000000');
   expect(putArg.Item.PK).toBe('AUDIT#audit-deadbeef00000000');
   expect(putArg.ConditionExpression).toContain('attribute_not_exists(PK)');
 });
 ```
-(If `auditStore.test.ts` does not already expose a `sendMock`, follow the file's existing mock accessor — read the top of the file and reuse it; assert the same three facts by whatever accessor the file uses.)
 
 - [ ] **Step 5: Run it — expect FAIL**
 
@@ -106,7 +106,17 @@ export async function writeLinkAuditLog(args: {
   details?: Record<string, unknown> | null;
 }): Promise<string> {
   const id = args.id ?? generateAuditId();
-  // ...unchanged...
+```
+Keep the existing `orgForIndex` and `item` construction exactly as-is, but make sure it uses the `id` variable above. Then replace the final `PutCommand` block with:
+```ts
+  try {
+    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
+  } catch (err) {
+    if (args.id && (err as { name?: string }).name === 'ConditionalCheckFailedException') return id;
+    throw err;
+  }
+  return id;
+}
 ```
 
 - [ ] **Step 7: Run both tests — expect PASS**
@@ -1661,6 +1671,16 @@ git add -A -- amplify/functions/crm-api src/pages/admin src/hooks src/services s
 git commit -m "chore(3C): green-bar checkpoint — repair outbox + CRM Health panel" || echo "nothing to commit"
 ```
 Report: test counts, tsc/eslint status, and the invariant re-check (1–7 from the header) before opening the PR.
+
+---
+
+## Plan Self-Review
+
+**Spec coverage:** §1–3 repair outbox and deterministic audit id are covered by Tasks 1–2; §4 replay contract is covered by Tasks 3–4; §5 link-mutation lifecycle and no-marker short circuits are covered by Tasks 5–6; §6 lease/drainer/cron is covered by Tasks 7–8 and 12; §7 thin Health read and page are covered by Tasks 9–11 and 13–14; §8 residual semantics are covered by Task 15's invariant checkpoint; §9 testing is represented in every task; §10 infra guardrails are covered by Task 12 and the deploy notes.
+
+**Placeholder scan:** Checked for `TBD`, `TODO`, `implement later`, vague "appropriate", "similar to", and file/action placeholders. None remain.
+
+**Type consistency:** Core names are consistent across tasks: `deterministicAuditId`, `writeLinkAuditLog({ id })`, `putRepairMarker`, `deleteRepairMarker`, `markStuck`, `bumpAttempt`, `touchInProgress`, `queryPendingMarkers`, `replayStructuredSideEffects`, `replayAnalyticsSideEffects`, `releaseLeaseKeepCursor(..., { hasMore })`, `reconcileRepair`, `crmHealth`, `getCrmHealth`, and `runCrmRepair`.
 
 ---
 
