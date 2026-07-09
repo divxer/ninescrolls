@@ -2,6 +2,7 @@ import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 import { writeLinkAuditLog } from '../auditStore';
 import { deterministicAuditId } from '../idGenerators';
+import { SOURCE_PK } from '../link/sourceEmail';
 
 export type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source';
 
@@ -18,7 +19,6 @@ export interface ReplayResult {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const SOURCE_PK: Record<string, (id: string) => string> = { rfq: (id) => `RFQ#${id}`, lead: (id) => `LEAD#${id}`, order: (id) => `ORDER#${id}` };
 
 // Drain-safe pk resolution (no `events`): pure for rfq/lead/order, a Get for logistics.
 // Quote is unresolvable here (needs in-memory events) → caller MUST cache backfillPk at link time.
