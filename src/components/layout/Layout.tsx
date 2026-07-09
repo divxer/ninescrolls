@@ -126,6 +126,7 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/pecvd', label: 'PECVD', desc: 'Plasma-enhanced thin films' },
         { to: '/products/ald', label: 'ALD', desc: 'Atomic layer deposition' },
         { to: '/products/hdp-cvd', label: 'HDP‑CVD', desc: 'High-density plasma CVD' },
+        { to: '/products/sputter', label: 'PVD Sputtering', desc: 'Magnetron PVD coatings' },
         { to: '/products/e-beam-evaporator', label: 'E-Beam Evaporator', desc: 'Electron-beam evaporation' },
       ]
     },
