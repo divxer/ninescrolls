@@ -376,7 +376,7 @@ const schema = a.schema({
   RunCrmRepairResult: a.customType({
     skippedLeaseHeld: a.boolean(),
     examined: a.integer(), repaired: a.integer(), inProgress: a.integer(),
-    blocked: a.integer(), retrying: a.integer(), stuck: a.integer(), hasMore: a.boolean(),
+    blocked: a.integer(), retrying: a.integer(), stuck: a.integer(), errors: a.integer(), hasMore: a.boolean(),
   }),
 
   OrderStats: a.customType({
