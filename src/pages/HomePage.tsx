@@ -547,13 +547,21 @@ export function HomePage() {
               ))}
             </div>
 
-            <p className="mt-10 max-w-3xl text-base leading-8 text-slate-600">
-              These are our core process platforms. Explore additional systems — including E-Beam Evaporation, HDP-CVD, Coater/Developer, plasma stripping, and plasma cleaner systems —{' '}
-              <Link to="/products" className="font-semibold text-sky-700 underline decoration-slate-300 underline-offset-4 hover:text-sky-800 hover:decoration-sky-400">
-                on the full products page
+            <div className="mt-12 flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white px-7 py-7 md:flex-row md:items-center md:justify-between md:px-9">
+              <div className="max-w-2xl">
+                <p className="font-headline text-lg font-semibold text-slate-950">Featured platforms shown above</p>
+                <p className="mt-1.5 text-base leading-7 text-slate-600">
+                  Explore the full lineup, including E-Beam Evaporation, HDP-CVD, Coater/Developer, stripping, and plasma cleaner systems.
+                </p>
+              </div>
+              <Link
+                to="/products"
+                className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 motion-reduce:transform-none md:self-auto"
+              >
+                View All Products
+                <span aria-hidden="true">→</span>
               </Link>
-              .
-            </p>
+            </div>
           </div>
         </section>
 
