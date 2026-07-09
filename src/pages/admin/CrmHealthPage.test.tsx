@@ -4,7 +4,9 @@ const runRepair = vi.fn();
 vi.mock('../../hooks/useCrmHealth', () => ({ useCrmHealth: () => ({
   data: { repairPending: { count: 2, more: false, sample: [{ unitType: 'structured', unitKey: 'u1', targetOrgId: 'acme.com', attemptCount: 1, lastError: 'x', createdAt: 't' }] },
           repairStuck: { count: 1, more: false, sample: [{ unitType: 'analytics', unitKey: 'v1', targetOrgId: 'b.com', stuckReason: 'source_conflict', createdAt: 't2' }] },
-          lastRepairSummary: { repaired: 3 }, lastHotSweep: { expected: 9, hasMore: false }, lastColdSweep: null, lastDirtyRollupSweep: null },
+          // a.json() summaries arrive from AppSync as JSON *strings* (lastHotSweep), while an object
+          // (lastRepairSummary) must still render — SummaryCard handles both.
+          lastRepairSummary: { repaired: 3 }, lastHotSweep: '{"expected":9,"hasMore":false}', lastColdSweep: null, lastDirtyRollupSweep: null },
   loading: false, error: null, runMsg: null, reload: vi.fn(), runRepair,
 }) }));
 import { CrmHealthPage } from './CrmHealthPage';
@@ -17,5 +19,12 @@ describe('CrmHealthPage', () => {
     expect(screen.getByText(/source_conflict/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Run repair now/i }));
     expect(runRepair).toHaveBeenCalled();
+  });
+
+  it('renders a JSON-string summary as de-escaped pretty JSON (not a double-encoded string)', () => {
+    render(<CrmHealthPage />);
+    const body = document.body.textContent ?? '';
+    expect(body).toContain('"expected": 9');    // parsed + pretty-printed
+    expect(body).not.toContain('\\"expected\\"'); // NOT the escaped double-encoded form
   });
 });
