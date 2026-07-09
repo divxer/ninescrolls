@@ -23,6 +23,7 @@ const LeadsListPage = lazyWithReload(() => import('../pages/admin/LeadsListPage'
 const OrganizationListPage = lazyWithReload(() => import('../pages/admin/OrganizationListPage').then(m => ({ default: m.OrganizationListPage })));
 const OrganizationDetailPage = lazyWithReload(() => import('../pages/admin/OrganizationDetailPage').then(m => ({ default: m.OrganizationDetailPage })));
 const NeedsLinkingPage = lazyWithReload(() => import('../pages/admin/NeedsLinkingPage').then(m => ({ default: m.NeedsLinkingPage })));
+const CrmHealthPage = lazyWithReload(() => import('../pages/admin/CrmHealthPage').then(m => ({ default: m.CrmHealthPage })));
 const DashboardPage = lazyWithReload(() => import('../pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AdminQuestionsPage = lazyWithReload(() => import('../pages/admin/AdminQuestionsPage').then(m => ({ default: m.AdminQuestionsPage })));
 const TenderListPage = lazyWithReload(() => import('../pages/admin/TenderListPage').then(m => ({ default: m.TenderListPage })));
@@ -63,6 +64,7 @@ export function AdminRoutes() {
           <Route path="organizations" element={<OrganizationListPage />} />
           <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
           <Route path="needs-linking" element={<NeedsLinkingPage />} />
+          <Route path="crm-health" element={<CrmHealthPage />} />
           <Route path="tenders" element={<TenderListPage />} />
           <Route path="tenders/keywords" element={<TenderKeywordConfigPage />} />
           <Route path="tenders/runs" element={<TenderPipelineRunsPage />} />
