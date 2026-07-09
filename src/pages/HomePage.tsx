@@ -546,6 +546,14 @@ export function HomePage() {
                   </Link>
               ))}
             </div>
+
+            <p className="mt-10 max-w-3xl text-base leading-8 text-slate-600">
+              These are our core process platforms. Explore additional systems — including E-Beam Evaporation, HDP-CVD, Coater/Developer, plasma stripping, and plasma cleaner systems —{' '}
+              <Link to="/products" className="font-semibold text-sky-700 underline decoration-slate-300 underline-offset-4 hover:text-sky-800 hover:decoration-sky-400">
+                on the full products page
+              </Link>
+              .
+            </p>
           </div>
         </section>
 
