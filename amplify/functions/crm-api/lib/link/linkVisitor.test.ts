@@ -37,6 +37,16 @@ describe('linkVisitor', () => {
     expect(out.postCommitStatus).toBe('post_commit_failed');
   });
 
+  it('replay in_progress (large retro) → keep marker but postCommitStatus stays ok + pending', async () => {
+    orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(undefined);
+    upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
+    replayAnalyticsSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', pending: true, sessionsResolved: 200 });
+    const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(deleteRepairMarker).not.toHaveBeenCalled();
+    expect(out.postCommitStatus).toBe('ok');
+    expect(out.pending).toBe(true);
+  });
+
   it('already-manual bridge → NO marker (existing idempotent retro only)', async () => {
     orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce({ matchedOrgId: 'acme.com', orgSource: 'manual' });
     retroMock.mockResolvedValueOnce({ summary: { resolved: 0, hasMore: false } });

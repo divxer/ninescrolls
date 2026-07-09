@@ -38,7 +38,8 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   if (replay.ok) {
     try { await deleteRepairMarker('analytics', args.visitorId); }
     catch { postCommitStatus = 'post_commit_failed'; }
-  } else {
+  } else if (replay.errorType !== 'in_progress') {
+    // in_progress = retro has more pages; the marker survives and the drainer completes it — not a failure.
     postCommitStatus = 'post_commit_failed';
   }
 
