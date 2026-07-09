@@ -2,18 +2,19 @@ import { docClient, TABLE_NAME } from '../dynamodb';
 import { orgExists } from '../orgStore';
 import { readVisitorBridge, upsertManualVisitorBridge, toSend } from '../../../../lib/crm/visitor-bridge';
 import { reResolveVisitorSessions } from '../analytics/reResolveVisitorSessions';
-import { writeLinkAuditLog } from '../auditStore';
+import { putRepairMarker, deleteRepairMarker } from '../repair/repairMarker';
+import { replayAnalyticsSideEffects } from '../repair/replaySideEffects';
 
 export async function linkVisitor(args: { visitorId: string; targetOrgId: string; operator: string }): Promise<Record<string, unknown>> {
   if (!(await orgExists(args.targetOrgId))) throw new Error(`invalid target org: ${args.targetOrgId}`);
   const send = toSend(docClient);
   const bridge = await readVisitorBridge(send, TABLE_NAME(), args.visitorId);
+
   if (bridge?.orgSource === 'manual') {
+    // already committed-manual: heal sessions a prior attempt's retro missed (idempotent). NO marker.
     let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
-    try {
-      // repair: heal sessions a prior attempt's retro failed to resolve (idempotent)
-      await reResolveVisitorSessions({ visitorId: args.visitorId });
-    } catch (err) {
+    try { await reResolveVisitorSessions({ visitorId: args.visitorId }); }
+    catch (err) {
       postCommitStatus = 'post_commit_failed';
       console.error(JSON.stringify({ event: 'crm.link.post_commit_error', visitorId: args.visitorId, phase: 'repair_retro', error: err instanceof Error ? err.message : String(err) }));
     }
@@ -25,19 +26,21 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   const up = await upsertManualVisitorBridge(send, TABLE_NAME(), { visitorId: args.visitorId, matchedOrgId: args.targetOrgId, now: nowIso });
   if (!up.written) return { alreadyResolved: true, existingOrgId: up.existingOrgId };
 
-  let sessionsResolved = 0; let pending = false; let postCommitStatus = 'ok';
+  let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
   try {
-    const retro = await reResolveVisitorSessions({ visitorId: args.visitorId });
-    const summary = (retro?.summary ?? {}) as Record<string, unknown>;
-    sessionsResolved = Number(summary.resolved ?? summary.emitted ?? 0);
-    pending = summary.hasMore === true;
-    await writeLinkAuditLog({
-      operator: args.operator, reason: 'manual_link_visitor', timestamp: nowIso, newOrgId: args.targetOrgId,
-      details: { unitType: 'analytics', unitKey: args.visitorId, targetOrgId: args.targetOrgId, retroSummary: summary },
-    });
+    await putRepairMarker({ unitType: 'analytics', unitKey: args.visitorId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso });
   } catch (err) {
     postCommitStatus = 'post_commit_failed';
-    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', visitorId: args.visitorId, error: err instanceof Error ? err.message : String(err) }));
+    console.error(JSON.stringify({ event: 'crm.link.marker_put_error', visitorId: args.visitorId, error: err instanceof Error ? err.message : String(err) }));
   }
-  return { sessionsResolved, pending, existingOrgId: args.targetOrgId, postCommitStatus };
+
+  const replay = await replayAnalyticsSideEffects({ visitorId: args.visitorId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso });
+  if (replay.ok) {
+    try { await deleteRepairMarker('analytics', args.visitorId); }
+    catch { postCommitStatus = 'post_commit_failed'; }
+  } else {
+    postCommitStatus = 'post_commit_failed';
+  }
+
+  return { sessionsResolved: replay.sessionsResolved ?? 0, pending: replay.pending ?? false, existingOrgId: args.targetOrgId, postCommitStatus };
 }
