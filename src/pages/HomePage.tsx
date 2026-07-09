@@ -176,12 +176,14 @@ const products: Product[] = [
 // represented-platform validation, NOT NineScrolls installed-base citations.
 // Customer-facing copy names the process type only (never the vendor/model).
 // Interim static list (mirrors eBeamEvaporatorConfig research.cards); durable
-// home is the Evidence Framework. Counts + DOIs verified 2026-07-08.
+// home is the Evidence Framework. Citation counts are Google Scholar figures
+// verified live 2026-07-08 (Scholar count; live and will drift — refresh the
+// "as of" date on any update). DOIs verified the same day.
 const researchCards = [
   {
     journal: 'Nature Communications',
     title: 'Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions',
-    meta: 'Zhang et al., 2021 · 218 citations (as of Jul 2026) · fabricated using a corresponding RIE process platform.',
+    meta: 'Zhang et al., 2021 · 245 citations (as of Jul 2026) · fabricated using a corresponding RIE process platform.',
     doi: '10.1038/s41467-021-21861-6',
   },
   {
@@ -200,7 +202,7 @@ const researchCards = [
     journal: 'Materials Today',
     title: 'Solar-blind deep-UV photodetector based on β-Ga₂O₃/AlN/p-Si',
     meta: 'Gao et al., 2026 · 9 citations (as of Jul 2026) · fabricated using a corresponding PECVD process platform.',
-    doi: 'https://www.sciencedirect.com/science/article/abs/pii/S1369702126000660',
+    doi: '10.1016/j.mattod.2026.103220',
   },
 ];
 
@@ -585,7 +587,7 @@ export function HomePage() {
                 <p className="mt-6 text-base leading-8 text-slate-600">
                   Research using corresponding plasma, deposition, and vacuum process platforms has appeared in Nature Portfolio journals, Advanced Materials, and Materials Today.
                 </p>
-                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">218</p>
+                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">245</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">citations — most-cited study using a corresponding RIE platform (as of Jul 2026)</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
