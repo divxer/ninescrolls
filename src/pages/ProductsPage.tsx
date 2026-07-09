@@ -247,7 +247,6 @@ const trustSignals = [
   ['12+', 'Equipment platforms'],
   ['50+', 'Supported processes'],
   ['2-Year', 'Standard warranty'],
-  ['500+', 'Peer-reviewed publications'],
 ];
 
 function ProductCardView({ product }: { product: ProductCard }) {
@@ -350,7 +349,7 @@ export function ProductsPage() {
                 </Link>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.08)]">
+            <div className="grid grid-cols-3 gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-[0_18px_70px_rgba(15,23,42,0.08)]">
               {trustSignals.map(([value, label]) => (
                 <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-5">
                   <span className="block text-3xl font-headline font-bold tracking-tight text-slate-950">{value}</span>

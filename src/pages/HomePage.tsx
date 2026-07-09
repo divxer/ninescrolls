@@ -30,7 +30,6 @@ const metrics = [
   { value: '50+', label: 'Supported Processes' },
   { value: '20+', label: 'Research Applications' },
   { value: '2-Year', label: 'Standard Warranty' },
-  { value: '500+', label: 'Peer-reviewed Citations' },
 ];
 
 const processCapabilities: ProcessCapability[] = [
@@ -172,26 +171,38 @@ const products: Product[] = [
   },
 ];
 
+// Research Validation cards — real peer-reviewed papers whose methods used the
+// corresponding process platforms NineScrolls represents. Attributed as
+// represented-platform validation, NOT NineScrolls installed-base citations.
+// Customer-facing copy names the process type only (never the vendor/model).
+// Interim static list (mirrors eBeamEvaporatorConfig research.cards); durable
+// home is the Evidence Framework. Citation counts are Google Scholar figures
+// verified live 2026-07-08 (Scholar count; live and will drift — refresh the
+// "as of" date on any update). DOIs verified the same day.
 const researchCards = [
   {
-    journal: 'Nature',
-    title: 'Plasma process control for next-generation materials research',
-    tag: 'Peer-reviewed validation',
+    journal: 'Nature Communications',
+    title: 'Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions',
+    meta: 'Zhang et al., 2021 · 245 citations (as of Jul 2026) · fabricated using a corresponding RIE process platform.',
+    doi: '10.1038/s41467-021-21861-6',
   },
   {
-    journal: 'ACS',
-    title: 'Thin-film and surface process workflows in applied nanofabrication',
-    tag: 'Materials research',
+    journal: 'Light: Science & Applications',
+    title: 'On-chip nonlocal metasurface for color router',
+    meta: 'Shi et al., 2026 · Nature Portfolio · fabricated using a corresponding RIE process platform.',
+    doi: '10.1038/s41377-025-02146-9',
   },
   {
-    journal: 'Scientific Reports',
-    title: 'Repeatable etch and deposition methods for lab-scale semiconductor devices',
-    tag: 'Device fabrication',
+    journal: 'Advanced Materials',
+    title: 'Diffraction-free omnidirectional antireflection binary metasurface',
+    meta: 'Yuan et al., 2026 · fabricated using a corresponding ICP process platform.',
+    doi: '10.1002/adma.202519943',
   },
   {
-    journal: 'Applied Nano Materials',
-    title: 'Advanced materials processing enabled by plasma and vacuum platforms',
-    tag: 'Nanofabrication',
+    journal: 'Materials Today',
+    title: 'Solar-blind deep-UV photodetector based on β-Ga₂O₃/AlN/p-Si',
+    meta: 'Gao et al., 2026 · 9 citations (as of Jul 2026) · fabricated using a corresponding PECVD process platform.',
+    doi: '10.1016/j.mattod.2026.103220',
   },
 ];
 
@@ -367,7 +378,7 @@ export function HomePage() {
         </section>
 
         <section className="border-b border-slate-200 bg-white">
-          <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-px bg-slate-200 px-px md:grid-cols-5">
+          <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-px bg-slate-200 px-px md:grid-cols-4">
             {metrics.map(metric => (
               <div key={metric.label} className="bg-white px-6 py-8 md:px-8">
                 <p className="font-mono text-3xl font-semibold tracking-normal text-slate-950">{metric.value}</p>
@@ -571,20 +582,20 @@ export function HomePage() {
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Research Validation</p>
                 <h2 className="mt-4 font-headline text-4xl font-semibold leading-tight tracking-normal text-slate-950 md:text-5xl">
-                  Our equipment has been cited in peer-reviewed research.
+                  Peer-reviewed validation for the platforms we represent.
                 </h2>
                 <p className="mt-6 text-base leading-8 text-slate-600">
-                  Cited in peer-reviewed journals including Nature, ACS, and Scientific Reports.
+                  Research using corresponding plasma, deposition, and vacuum process platforms has appeared in Nature Portfolio journals, Advanced Materials, and Materials Today.
                 </p>
-                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">500+</p>
-                <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">research citations</p>
+                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">245</p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">citations — most-cited among the studies we reference, on a corresponding RIE platform (as of Jul 2026)</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {researchCards.map(card => (
                   <article key={card.title} className="rounded-2xl border border-slate-200 bg-[#FAFAFA] p-6">
-                    <p className="font-serif text-3xl font-semibold text-slate-950">{card.journal}</p>
-                    <p className="mt-5 text-base font-semibold leading-7 text-slate-900">{card.title}</p>
-                    <p className="mt-8 font-mono text-xs uppercase tracking-[0.18em] text-slate-500">{card.tag}</p>
+                    <p className="font-serif text-2xl font-semibold text-slate-950">{card.journal}</p>
+                    <p className="mt-4 text-base font-semibold leading-7 text-slate-900">{card.title}</p>
+                    <p className="mt-4 text-sm leading-6 text-slate-500">{card.meta}</p>
                   </article>
                 ))}
               </div>
