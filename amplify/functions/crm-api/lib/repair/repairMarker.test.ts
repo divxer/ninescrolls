@@ -57,4 +57,12 @@ describe('repairMarker', () => {
   it('repairMarkerKeys builds the deterministic PK', () => {
     expect(repairMarkerKeys('structured', 'u1')).toEqual({ PK: 'CRM_REPAIR#structured#u1', SK: 'STATE' });
   });
+  it('touchInProgress bumps lastAttemptAt only, keeps the marker pending', async () => {
+    await touchInProgress({ unitType: 'analytics', unitKey: 'v1' } as never, '2026-07-08T02:00:00.000Z');
+    const u = send.mock.calls[0][0].input;
+    expect(u.Key).toEqual({ PK: 'CRM_REPAIR#analytics#v1', SK: 'STATE' });
+    expect(u.UpdateExpression).toContain('lastAttemptAt = :now');
+    expect(u.UpdateExpression).not.toContain('GSI1PK'); // stays pending, not moved to stuck
+    expect(u.ExpressionAttributeValues[':now']).toBe('2026-07-08T02:00:00.000Z');
+  });
 });
