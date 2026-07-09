@@ -90,4 +90,38 @@ describe('reResolveVisitorSessions', () => {
     expect(clearRetro).not.toHaveBeenCalled();
     errSpy.mockRestore();
   });
+
+  // churning = re-running the SAME failing sessions with no forward progress (the poison-session
+  // case). Distinct from the legit "more pages" hasMore so the repair drainer can age it into stuck
+  // instead of touching it forever.
+  it('flags churning when a retried session fails again with no re-emit (poison, no progress)', async () => {
+    readRetro.mockResolvedValueOnce({ retrySessionIds: ['s-1'], cursor: { PK: 'VISITOR#v-1', SK: 'SESSION#s-9' } });
+    materialize.mockRejectedValueOnce(new Error('boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(out.summary).toMatchObject({ errors: 1, reemitted: 0, hasMore: true, churning: true });
+    errSpy.mockRestore();
+  });
+  it('does NOT flag churning when a retry fails but another session re-emits (forward progress)', async () => {
+    readRetro.mockResolvedValueOnce({ retrySessionIds: ['s-1', 's-2'] });
+    materialize.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ outcome: 'emitted', resolvedOrgId: 'lab.edu' });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(out.summary).toMatchObject({ errors: 1, reemitted: 1, hasMore: true, churning: false });
+    errSpy.mockRestore();
+  });
+  it('flags churning when a fresh page resolves nothing and its only unresolved session fails', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved')] });
+    materialize.mockRejectedValueOnce(new Error('boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(out.summary).toMatchObject({ errors: 1, reemitted: 0, hasMore: true, churning: true });
+    errSpy.mockRestore();
+  });
+  it('legit large retro (cap hit, no failures) is NOT churning', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2 });
+    expect(out.summary).toMatchObject({ hasMore: true, churning: false });
+  });
 });

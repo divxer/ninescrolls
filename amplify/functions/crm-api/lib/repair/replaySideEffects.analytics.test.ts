@@ -25,6 +25,18 @@ describe('replayAnalyticsSideEffects', () => {
     expect(r).toMatchObject({ ok: false, errorType: 'in_progress', pending: true });
     expect(writeLinkAuditLog).toHaveBeenCalled(); // audit still written
   });
+  it('in_progress: legit more-pages retro (not churning) → churning:false', async () => {
+    reResolve.mockResolvedValueOnce({ summary: { reemitted: 5, hasMore: true, churning: false } });
+    const r = await replayAnalyticsSideEffects(base);
+    expect(r).toMatchObject({ ok: false, errorType: 'in_progress', pending: true, churning: false });
+  });
+  it('churning: retro re-failing same sessions (hasMore + churning) → in_progress with churning:true', async () => {
+    reResolve.mockResolvedValueOnce({ summary: { reemitted: 0, errors: 1, hasMore: true, churning: true } });
+    const r = await replayAnalyticsSideEffects(base);
+    // errorType stays in_progress so linkVisitor still treats it as "kept" (not post_commit_failed);
+    // the churning flag is what the drainer routes on.
+    expect(r).toMatchObject({ ok: false, errorType: 'in_progress', pending: true, churning: true });
+  });
   it('transient: retro throws → transient (audit still attempted, idempotent)', async () => {
     reResolve.mockRejectedValueOnce(new Error('boom'));
     const r = await replayAnalyticsSideEffects(base);

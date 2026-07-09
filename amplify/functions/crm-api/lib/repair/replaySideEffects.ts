@@ -8,7 +8,7 @@ import { reResolveVisitorSessions } from '../analytics/reResolveVisitorSessions'
 export type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source';
 
 // Contract: NEVER throws out. transient dominates conflict/in_progress. Extra fields feed the
-// happy-path orchestrators' return values; the drainer only reads ok + errorType.
+// happy-path orchestrators' return values; the drainer reads ok + errorType (+ churning on in_progress).
 export interface ReplayResult {
   ok: boolean;
   errorType?: 'transient' | 'source_conflict' | 'in_progress';
@@ -16,6 +16,7 @@ export interface ReplayResult {
   backfillStatus?: BackfillStatus;   // structured
   sessionsResolved?: number;         // analytics
   pending?: boolean;                 // analytics (retro hasMore)
+  churning?: boolean;                // analytics: in_progress but re-failing the same sessions (no progress)
   retroSummary?: Record<string, unknown>; // analytics
 }
 
@@ -114,7 +115,15 @@ export async function replayAnalyticsSideEffects(args: {
 
   // Preserve linkVisitor's existing return expression exactly (no behavior change vs 3B).
   const sessionsResolved = Number(summary.resolved ?? summary.emitted ?? 0);
+  // errorType stays 'in_progress' for BOTH legit multi-page and churning retros, so linkVisitor's
+  // "in_progress = keep, not post_commit_failed" contract is unchanged. `churning` is a drainer-only
+  // flag distinguishing forward progress (touch) from re-failing the same sessions (age into stuck).
+  const churning = summary.churning === true;
   if (transientError) return { ok: false, errorType: 'transient', error: transientError, sessionsResolved, pending: hasMore, retroSummary: summary };
-  if (hasMore) return { ok: false, errorType: 'in_progress', sessionsResolved, pending: true, retroSummary: summary };
+  if (hasMore) return {
+    ok: false, errorType: 'in_progress', churning,
+    error: churning ? `retro churning: ${summary.errors ?? '?'} session(s) failing` : undefined,
+    sessionsResolved, pending: true, retroSummary: summary,
+  };
   return { ok: true, sessionsResolved, pending: false, retroSummary: summary };
 }

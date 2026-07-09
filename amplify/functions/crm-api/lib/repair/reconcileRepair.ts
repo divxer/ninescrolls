@@ -31,12 +31,15 @@ export async function reconcileRepair(args: { limit?: number }): Promise<Record<
       const r = await replayFor(m);
       if (r.ok) {
         await deleteRepairMarker(m.unitType, m.unitKey); counters.repaired += 1;
-      } else if (r.errorType === 'in_progress') {
+      } else if (r.errorType === 'in_progress' && !r.churning) {
+        // Forward progress (retro has more pages) — keep pending, never counts as an attempt.
         await touchInProgress(m, nowIso); counters.inProgress += 1;
       } else if (r.errorType === 'source_conflict') {
         await markStuck(m, 'source_conflict', 'source_conflict', nowIso); counters.blocked += 1;
-      } else { // transient
-        const err = r.error ?? 'transient';
+      } else { // transient, OR a churning retro (in_progress re-failing the SAME sessions with no
+               // progress): age it through the attempt budget so a persistently-poison marker reaches
+               // `stuck` (surfaces in Health) instead of touchInProgress-ing forever.
+        const err = r.error ?? (r.errorType === 'in_progress' ? 'retro_churning' : 'transient');
         if ((m.attemptCount ?? 0) + 1 >= MAX_ATTEMPTS) { await markStuck(m, 'max_attempts', err, nowIso); counters.stuck += 1; }
         else { await bumpAttempt(m, err, nowIso); counters.retrying += 1; }
       }

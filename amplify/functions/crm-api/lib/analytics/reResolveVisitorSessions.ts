@@ -28,6 +28,11 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
 
   let processed = 0;
   const failedSessionIds = new Set<string>();
+  // churning = this run re-ran the SAME failing sessions and made no forward progress (a persistently
+  // erroring "poison" session). Distinct from a legit multi-page retro, whose hasMore signals more
+  // work, not churn. The repair drainer routes on this so a poison marker ages into `stuck` via the
+  // attempt budget instead of being touched (never-ageing) forever.
+  const isChurning = () => failedSessionIds.size > 0 && counters.reemitted === 0;
   const runMaterialize = async (sessionId: string): Promise<void> => {
     try {
       const r = await materializeSession({ sessionId, nowIso, forceReemit: true });
@@ -51,13 +56,13 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
       ...(startKey ? { cursor: startKey } : {}),
       retrySessionIds: [...failedSessionIds, ...(resume?.retrySessionIds ?? []).slice(processed)],
     });
-    return { summary: { ...counters, hasMore: true } };
+    return { summary: { ...counters, hasMore: true, churning: isChurning() } };
   }
   do {
     const remaining = max - processed;
     if (remaining <= 0) {
       await writeRetroState(args.visitorId, { ...(startKey ? { cursor: startKey } : {}) });
-      return { summary: { ...counters, hasMore: true } };
+      return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
     const { markers, lastKey } = await listMarkers(args.visitorId, { limit: Math.min(PAGE_LIMIT, remaining), startKey });
     for (const m of markers) {
@@ -68,17 +73,17 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
     }
     if (failedSessionIds.size > 0) {
       await writeRetroState(args.visitorId, { ...(lastKey ? { cursor: lastKey } : {}), retrySessionIds: [...failedSessionIds] });
-      return { summary: { ...counters, hasMore: true } };
+      return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
     if (lastKey && processed >= max) {
       await writeRetroState(args.visitorId, { cursor: lastKey });
       console.warn(JSON.stringify({ event: 'crm.analytics.retro.truncated', visitorId: args.visitorId }));
-      return { summary: { ...counters, hasMore: true } };
+      return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
     startKey = lastKey;
   } while (startKey);
 
   await clearRetroState(args.visitorId);
   console.log(JSON.stringify({ event: 'crm.analytics.retro.summary', visitorId: args.visitorId, ...counters }));
-  return { summary: { ...counters, hasMore: false } };
+  return { summary: { ...counters, hasMore: false, churning: false } };
 }

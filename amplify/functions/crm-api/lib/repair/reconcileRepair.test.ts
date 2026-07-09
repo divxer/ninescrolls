@@ -45,13 +45,30 @@ describe('reconcileRepair', () => {
     expect(out.repaired).toBe(1);
     expect(releaseLeaseKeepCursor).toHaveBeenCalledWith('repair', 'drain', 'tok', expect.objectContaining({ hasMore: false }));
   });
-  it('in_progress (analytics retro hasMore) → touchInProgress, keep', async () => {
+  it('in_progress (analytics retro hasMore, not churning) → touchInProgress, keep', async () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [ana], hasMore: false });
     replayAnalytics.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', pending: true });
     const out = await reconcileRepair({});
     expect(touchInProgress).toHaveBeenCalled();
     expect(deleteRepairMarker).not.toHaveBeenCalled();
     expect(out.inProgress).toBe(1);
+  });
+  it('churning in_progress below MAX → bumpAttempt (retrying++), NOT touched', async () => {
+    queryPendingMarkers.mockResolvedValueOnce({ markers: [{ ...ana, attemptCount: 1 }], hasMore: false });
+    replayAnalytics.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', churning: true, pending: true, error: 'retro churning' });
+    const out = await reconcileRepair({});
+    expect(bumpAttempt).toHaveBeenCalled();
+    expect(touchInProgress).not.toHaveBeenCalled();
+    expect(out.retrying).toBe(1);
+    expect(out.inProgress).toBe(0);
+  });
+  it('churning in_progress at MAX → markStuck(max_attempts) (stuck++), surfaces in stuck bucket', async () => {
+    queryPendingMarkers.mockResolvedValueOnce({ markers: [{ ...ana, attemptCount: 4 }], hasMore: false });
+    replayAnalytics.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', churning: true, pending: true, error: 'retro churning: 1 session(s) failing' });
+    const out = await reconcileRepair({});
+    expect(markStuck).toHaveBeenCalledWith(expect.objectContaining({ attemptCount: 4 }), 'max_attempts', expect.any(String), expect.any(String));
+    expect(touchInProgress).not.toHaveBeenCalled();
+    expect(out.stuck).toBe(1);
   });
   it('source_conflict → markStuck(source_conflict) immediately (blocked++)', async () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [struct], hasMore: false });
