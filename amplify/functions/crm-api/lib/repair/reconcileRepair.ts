@@ -22,22 +22,29 @@ export async function reconcileRepair(args: { limit?: number }): Promise<Record<
   if (!lease) return { skippedLeaseHeld: true };
 
   const limit = args.limit ?? 100;
-  const counters = { examined: 0, repaired: 0, inProgress: 0, blocked: 0, retrying: 0, stuck: 0 };
+  const counters = { examined: 0, repaired: 0, inProgress: 0, blocked: 0, retrying: 0, stuck: 0, errors: 0 };
   const { markers, hasMore } = await queryPendingMarkers(limit);
 
   for (const m of markers) {
     counters.examined += 1;
-    const r = await replayFor(m);
-    if (r.ok) {
-      await deleteRepairMarker(m.unitType, m.unitKey); counters.repaired += 1;
-    } else if (r.errorType === 'in_progress') {
-      await touchInProgress(m, nowIso); counters.inProgress += 1;
-    } else if (r.errorType === 'source_conflict') {
-      await markStuck(m, 'source_conflict', 'source_conflict', nowIso); counters.blocked += 1;
-    } else { // transient
-      const err = r.error ?? 'transient';
-      if ((m.attemptCount ?? 0) + 1 >= MAX_ATTEMPTS) { await markStuck(m, 'max_attempts', err, nowIso); counters.stuck += 1; }
-      else { await bumpAttempt(m, err, nowIso); counters.retrying += 1; }
+    try {
+      const r = await replayFor(m);
+      if (r.ok) {
+        await deleteRepairMarker(m.unitType, m.unitKey); counters.repaired += 1;
+      } else if (r.errorType === 'in_progress') {
+        await touchInProgress(m, nowIso); counters.inProgress += 1;
+      } else if (r.errorType === 'source_conflict') {
+        await markStuck(m, 'source_conflict', 'source_conflict', nowIso); counters.blocked += 1;
+      } else { // transient
+        const err = r.error ?? 'transient';
+        if ((m.attemptCount ?? 0) + 1 >= MAX_ATTEMPTS) { await markStuck(m, 'max_attempts', err, nowIso); counters.stuck += 1; }
+        else { await bumpAttempt(m, err, nowIso); counters.retrying += 1; }
+      }
+    } catch (err) {
+      // A bookkeeping write failed (replayFor never throws). Isolate: count it, leave the marker
+      // pending, keep draining the rest. The lease still releases at the end; next fire retries it.
+      counters.errors += 1;
+      console.error(JSON.stringify({ event: 'crm.repair.marker_error', unitType: m.unitType, unitKey: m.unitKey, error: err instanceof Error ? err.message : String(err) }));
     }
   }
 

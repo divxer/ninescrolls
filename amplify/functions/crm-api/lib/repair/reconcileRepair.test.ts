@@ -74,6 +74,17 @@ describe('reconcileRepair', () => {
     expect(markStuck).toHaveBeenCalledWith(expect.objectContaining({ attemptCount: 4 }), 'max_attempts', 'boom', expect.any(String));
     expect(out.stuck).toBe(1);
   });
+  it('isolates a per-marker bookkeeping failure: counts it, keeps draining the rest, still releases lease', async () => {
+    queryPendingMarkers.mockResolvedValueOnce({ markers: [struct, ana], hasMore: false });
+    replayStructured.mockResolvedValueOnce({ ok: true });          // struct: replay ok...
+    deleteRepairMarker.mockRejectedValueOnce(new Error('ddb down')); // ...but delete throws
+    replayAnalytics.mockResolvedValueOnce({ ok: true });           // ana: fully succeeds
+    const out = await reconcileRepair({});
+    expect(out.errors).toBe(1);
+    expect(out.repaired).toBe(1);     // ana still repaired despite struct's failure
+    expect(out.examined).toBe(2);
+    expect(releaseLeaseKeepCursor).toHaveBeenCalled(); // lease released, not stuck
+  });
   it('propagates hasMore:true to releaseLeaseKeepCursor', async () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [struct], hasMore: true });
     replayStructured.mockResolvedValueOnce({ ok: true });
