@@ -32,6 +32,17 @@ describe('ProductsPage', () => {
     expect(screen.queryByText(/supplier-provided/i)).not.toBeInTheDocument();
   });
 
+  it('does not claim an unverifiable aggregate citation count', () => {
+    renderProductsPage();
+
+    const pageText = document.body.textContent ?? '';
+    // The compact trust-signal strip cannot carry the represented-platform
+    // qualifier, so a bare "500+ Peer-reviewed publications" tile there is
+    // always mis-attributable. It must not render.
+    expect(pageText).not.toContain('500+');
+    expect(pageText).not.toContain('Peer-reviewed publications');
+  });
+
   it('distinguishes RFQ platforms from buy-online plasma cleaners', () => {
     renderProductsPage();
 

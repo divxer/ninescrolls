@@ -247,7 +247,6 @@ const trustSignals = [
   ['12+', 'Equipment platforms'],
   ['50+', 'Supported processes'],
   ['2-Year', 'Standard warranty'],
-  ['500+', 'Peer-reviewed publications'],
 ];
 
 function ProductCardView({ product }: { product: ProductCard }) {
