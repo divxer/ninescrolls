@@ -116,6 +116,7 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/icp-etcher', label: 'ICP‑RIE', desc: 'High-density plasma etching' },
         { to: '/products/rie-etcher', label: 'RIE', desc: 'Reactive ion etching' },
         { to: '/products/compact-rie', label: 'Compact RIE', desc: 'Compact benchtop etcher' },
+        { to: '/products/ibe-ribe', label: 'IBE/RIBE', desc: 'Ion beam etching' },
         { to: '/insights/deep-reactive-ion-etching-bosch-process', label: 'DRIE (Bosch)', desc: 'Deep silicon etching' },
       ]
     },

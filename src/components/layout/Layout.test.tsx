@@ -17,7 +17,7 @@ function renderLayout() {
 }
 
 describe('Layout navigation', () => {
-  it('includes the PVD sputtering platform in the Products menu', () => {
+  it('includes all RFQ product platforms that should appear in the Products menu', () => {
     const { container } = renderLayout();
 
     const productsMenu = container.querySelector('.products-dropdown-wrapper');
@@ -25,5 +25,6 @@ describe('Layout navigation', () => {
     fireEvent.mouseEnter(productsMenu as Element);
 
     expect(screen.getByRole('link', { name: /PVD Sputtering/i })).toHaveAttribute('href', '/products/sputter');
+    expect(screen.getByRole('link', { name: /IBE\/RIBE/i })).toHaveAttribute('href', '/products/ibe-ribe');
   });
 });
