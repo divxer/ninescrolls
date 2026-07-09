@@ -8,6 +8,8 @@ import { toOrganizationTimelineItem } from './lib/read/organizationTimelineItem'
 import { needsLinkingQueue } from './lib/read/needsLinkingQueue';
 import { linkStructuredUnit } from './lib/link/linkStructuredUnit';
 import { linkVisitor } from './lib/link/linkVisitor';
+import { reconcileRepair } from './lib/repair/reconcileRepair';
+import { crmHealth } from './lib/repair/crmHealth';
 
 type AppSyncEvent = {
   info?: { fieldName?: string; parentTypeName?: string };
@@ -43,6 +45,11 @@ const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
     const a = (e.arguments ?? {}) as { visitorId?: string; targetOrgId?: string };
     return linkVisitor({ visitorId: a.visitorId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
+  crmHealth: async () => crmHealth(),
+  runCrmRepair: async (e) => {
+    const a = (e.arguments ?? {}) as { limit?: number };
+    return reconcileRepair({ limit: a.limit });
+  },
 };
 
 const actions: Record<string, (e: DirectInvokeEvent) => Promise<unknown>> = {
@@ -51,6 +58,7 @@ const actions: Record<string, (e: DirectInvokeEvent) => Promise<unknown>> = {
   rollupAnalyticsSessions: async (e) => rollupAnalyticsSessions({ limit: e.limit, cursor: e.cursor, maxSessions: e.maxSessions }),
   reResolveVisitorSessions: async (e) => reResolveVisitorSessions({ visitorId: e.visitorId ?? '', startSessionSk: e.startSessionSk, maxSessions: e.maxSessions }),
   backfillVisitorBridge: async (e) => backfillVisitorBridge({ cursor: e.cursor, limit: e.limit }),
+  reconcileRepair: async (e) => reconcileRepair({ limit: e.limit }),
 };
 
 export const handler = async (event: AppSyncEvent | DirectInvokeEvent): Promise<unknown> => {

@@ -91,3 +91,15 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }
+
+export async function getCrmHealth() {
+  const { data, errors } = await client().queries.crmHealth(AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
+
+export async function runCrmRepair(args: { limit?: number } = {}) {
+  const { data, errors } = await client().mutations.runCrmRepair(args, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}

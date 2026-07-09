@@ -119,3 +119,28 @@ describe('handler — 3B resolvers', () => {
     expect(r).toEqual({ items: [], nextToken: null });
   });
 });
+
+const reconcileRepair = vi.fn(); const crmHealthFn = vi.fn();
+vi.mock('./lib/repair/reconcileRepair', () => ({ reconcileRepair: (...a: unknown[]) => reconcileRepair(...a) }));
+vi.mock('./lib/repair/crmHealth', () => ({ crmHealth: (...a: unknown[]) => crmHealthFn(...a) }));
+
+describe('handler — 3C repair/health', () => {
+  beforeEach(() => {
+    reconcileRepair.mockReset(); crmHealthFn.mockReset();
+    reconcileRepair.mockResolvedValue({ repaired: 0 });
+    crmHealthFn.mockResolvedValue({ repairPending: { count: 0 } });
+  });
+
+  it('direct action reconcileRepair dispatches with limit', async () => {
+    await handler({ action: 'reconcileRepair', limit: 50 } as never);
+    expect(reconcileRepair).toHaveBeenCalledWith({ limit: 50 });
+  });
+  it('runCrmRepair mutation dispatches to reconcileRepair', async () => {
+    await handler({ info: { fieldName: 'runCrmRepair' }, arguments: { limit: 10 }, identity: { claims: { email: 'a@x' } } } as never);
+    expect(reconcileRepair).toHaveBeenCalledWith({ limit: 10 });
+  });
+  it('crmHealth query dispatches to crmHealth()', async () => {
+    await handler({ info: { fieldName: 'crmHealth' }, arguments: {} } as never);
+    expect(crmHealthFn).toHaveBeenCalled();
+  });
+});

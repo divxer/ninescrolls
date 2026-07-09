@@ -73,4 +73,14 @@ describe('sweepState', () => {
     mockSend.mockResolvedValueOnce({});
     expect((await readState('cold', 'existence')).cursor).toBeUndefined();
   });
+  it('releaseLeaseKeepCursor keeps hasMore:true when passed (defaults false)', async () => {
+    mockSend.mockResolvedValueOnce({});
+    await releaseLeaseKeepCursor('repair', 'drain', 'tok', { lastSummary: { repaired: 1 }, hasMore: true });
+    const input = mockSend.mock.calls.at(-1)![0].input;
+    expect(input.ExpressionAttributeValues[':f']).toBe(true);
+    mockSend.mockResolvedValueOnce({});
+    await releaseLeaseKeepCursor('analytics', 'sessions', 'tok', { lastSummary: {} });
+    const input2 = mockSend.mock.calls.at(-1)![0].input;
+    expect(input2.ExpressionAttributeValues[':f']).toBe(false);
+  });
 });

@@ -35,3 +35,32 @@ describe('writeLinkAuditLog details payload', () => {
     expect(mockSend.mock.calls[0][0].input.ConditionExpression).toContain('attribute_not_exists');
   });
 });
+
+describe('writeLinkAuditLog idempotent id', () => {
+  it('uses a caller-supplied deterministic id when provided (else random)', async () => {
+    mockSend.mockResolvedValueOnce({});
+    const returned = await writeLinkAuditLog({
+      id: 'audit-deadbeef00000000', operator: 'op@x', reason: 'manual_link_unit',
+      timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com', details: { unitType: 'structured' },
+    });
+    expect(returned).toBe('audit-deadbeef00000000');
+    const putArg = mockSend.mock.calls.at(-1)![0].input;
+    expect(putArg.Item.id).toBe('audit-deadbeef00000000');
+    expect(putArg.Item.PK).toBe('AUDIT#audit-deadbeef00000000');
+    expect(putArg.ConditionExpression).toContain('attribute_not_exists(PK)');
+  });
+
+  it('supplied id + duplicate (CCFE) is an idempotent no-op: returns the id, does not throw', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
+    const returned = await writeLinkAuditLog({
+      id: 'audit-deadbeef00000000', operator: 'op@x', reason: 'manual_link_unit',
+      timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com',
+    });
+    expect(returned).toBe('audit-deadbeef00000000');
+  });
+
+  it('random id (no supplied id) still throws on CCFE (unchanged behavior)', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
+    await expect(writeLinkAuditLog({ operator: 'op', reason: 'manual_link_unit', timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com' })).rejects.toThrow();
+  });
+});

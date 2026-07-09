@@ -5,13 +5,14 @@ import { generateAuditId } from './idGenerators';
 import type { LinkAuditLogItem } from './types';
 
 export async function writeLinkAuditLog(args: {
+  id?: string;
   timelineEventId?: string | null; contactId?: string | null;
   oldOrgId?: string | null; newOrgId?: string | null;
   oldContactId?: string | null; newContactId?: string | null;
   operator: string; reason: string; timestamp: string;
   details?: Record<string, unknown> | null;
 }): Promise<string> {
-  const id = generateAuditId();
+  const id = args.id ?? generateAuditId();
   const orgForIndex = args.newOrgId ?? args.oldOrgId ?? null;
   const item: LinkAuditLogItem = {
     ...auditKeys({ id, orgId: orgForIndex, timestamp: args.timestamp }),
@@ -26,6 +27,11 @@ export async function writeLinkAuditLog(args: {
     details: args.details ?? null,
   } as LinkAuditLogItem;
   // Audit rows are immutable: never overwrite an existing one (ids are unique per write).
-  await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
+  try {
+    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
+  } catch (err) {
+    if (args.id && (err as { name?: string }).name === 'ConditionalCheckFailedException') return id;
+    throw err;
+  }
   return id;
 }

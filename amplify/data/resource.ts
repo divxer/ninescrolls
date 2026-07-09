@@ -357,6 +357,27 @@ const schema = a.schema({
     sessionsResolved: a.integer(), pending: a.boolean(), alreadyLinked: a.boolean(), alreadyResolved: a.boolean(), existingOrgId: a.string(),
     postCommitStatus: a.string(),
   }),
+  RepairMarkerSample: a.customType({
+    unitType: a.string(), unitKey: a.string(), targetOrgId: a.string(),
+    attemptCount: a.integer(), stuckReason: a.string(), lastError: a.string(), createdAt: a.string(),
+  }),
+  RepairBucket: a.customType({
+    count: a.integer().required(), more: a.boolean().required(),
+    sample: a.ref('RepairMarkerSample').array().required(),
+  }),
+  CrmHealthResult: a.customType({
+    repairPending: a.ref('RepairBucket').required(),
+    repairStuck: a.ref('RepairBucket').required(),
+    lastRepairSummary: a.json(),
+    lastHotSweep: a.json(),
+    lastColdSweep: a.json(),
+    lastDirtyRollupSweep: a.json(),
+  }),
+  RunCrmRepairResult: a.customType({
+    skippedLeaseHeld: a.boolean(),
+    examined: a.integer(), repaired: a.integer(), inProgress: a.integer(),
+    blocked: a.integer(), retrying: a.integer(), stuck: a.integer(), errors: a.integer(), hasMore: a.boolean(),
+  }),
 
   OrderStats: a.customType({
     totalActive: a.integer().required(),
@@ -936,6 +957,12 @@ const schema = a.schema({
     .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  crmHealth: a
+    .query()
+    .returns(a.ref('CrmHealthResult').required())
+    .handler(a.handler.function(crmApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   listTenders: a
     .query()
     .arguments({
@@ -1278,6 +1305,13 @@ const schema = a.schema({
     .mutation()
     .arguments({ visitorId: a.string().required(), targetOrgId: a.string().required() })
     .returns(a.ref('LinkVisitorResult').required())
+    .handler(a.handler.function(crmApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  runCrmRepair: a
+    .mutation()
+    .arguments({ limit: a.integer() })
+    .returns(a.ref('RunCrmRepairResult').required())
     .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 

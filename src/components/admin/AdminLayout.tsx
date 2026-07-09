@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
   { path: '/admin/organizations', label: 'Organizations', icon: 'business' },
   { path: '/admin/needs-linking', label: 'Needs Linking', icon: 'link' },
+  { path: '/admin/crm-health', label: 'CRM Health', icon: 'health_and_safety' },
   { path: '/admin/insights', label: 'Insights', icon: 'insights' },
   { path: '/admin/questions', label: 'Q&A', icon: 'forum' },
   { path: '/admin/analytics', label: 'Analytics', icon: 'analytics' },

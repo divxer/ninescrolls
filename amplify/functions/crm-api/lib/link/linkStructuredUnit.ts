@@ -1,12 +1,11 @@
-import { QueryCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 import { orgExists } from '../orgStore';
 import { manualMoveTimelineEvent, type ContactStatus } from './manualMoveTimelineEvent';
-import { writeLinkAuditLog } from '../auditStore';
 import { readSourceEmailForUnit, backfillTargetPk } from './sourceEmail';
+import { putRepairMarker, deleteRepairMarker } from '../repair/repairMarker';
+import { replayStructuredSideEffects } from '../repair/replaySideEffects';
 import type { TimelineEventItem } from '../types';
-
-type BackfillStatus = 'written' | 'already_set' | 'conflict' | 'no_source' | 'not_applicable';
 
 export async function linkStructuredUnit(args: { sourceType: string; sourceEntityId: string; targetOrgId: string; operator: string }): Promise<Record<string, unknown>> {
   if (!(await orgExists(args.targetOrgId))) throw new Error(`invalid target org: ${args.targetOrgId}`);
@@ -59,44 +58,35 @@ export async function linkStructuredUnit(args: { sourceType: string; sourceEntit
 
   if (moved === 0) return { affected: events.length, moved: 0, skipped, errors };
 
-  let sourceBackfillStatus: BackfillStatus | 'not_attempted' = 'not_attempted';
+  // Resolve the backfill PK best-effort for caching. logistics does a Get that CAN throw; if it does,
+  // the marker is still written with backfillPk:null and the drainer re-resolves (spec §5).
+  let backfillPk: string | null = null;
+  try { backfillPk = await backfillTargetPk(args.sourceType, args.sourceEntityId, events); } catch { /* drainer re-resolves */ }
+
   let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
 
-  // split so a backfill failure does NOT suppress the audit attempt (and vice versa)
+  // Marker written AFTER the durable commit (moved>0), BEFORE the fragile side effects, carrying the committed target.
   try {
-    sourceBackfillStatus = await backfillSource(args.sourceType, args.sourceEntityId, args.targetOrgId, events);
-  } catch (err) {
-    postCommitStatus = 'post_commit_failed';
-    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'backfill', error: err instanceof Error ? err.message : String(err) }));
-  }
-
-  try {
-    await writeLinkAuditLog({
-      operator: args.operator, reason: 'manual_link_unit', timestamp: nowIso, newOrgId: args.targetOrgId,
-      details: { unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, affectedCount: moved, affectedEventIds, sourceBackfillStatus, contactStatus },
+    await putRepairMarker({
+      unitType: 'structured', unitKey: syntheticOrgId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso,
+      sourceType: args.sourceType, sourceEntityId: args.sourceEntityId, backfillPk,
+      affectedEventIds, movedCount: moved, contactStatus,
     });
   } catch (err) {
     postCommitStatus = 'post_commit_failed';
-    console.error(JSON.stringify({ event: 'crm.link.post_commit_error', unitKey: syntheticOrgId, phase: 'audit', error: err instanceof Error ? err.message : String(err) }));
+    console.error(JSON.stringify({ event: 'crm.link.marker_put_error', unitKey: syntheticOrgId, error: err instanceof Error ? err.message : String(err) }));
   }
 
-  return { affected: events.length, moved, skipped, errors, sourceBackfillStatus, contactStatus, postCommitStatus };
-}
-
-async function backfillSource(sourceType: string, sourceEntityId: string, targetOrgId: string, events: TimelineEventItem[]): Promise<BackfillStatus> {
-  const pk = await backfillTargetPk(sourceType, sourceEntityId, events);
-  if (!pk) return 'no_source';
-  try {
-    await docClient.send(new UpdateCommand({
-      TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
-      UpdateExpression: 'SET matchedOrgId = :o',
-      ConditionExpression: 'attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',
-      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL' },
-    }));
-    return 'written';
-  } catch (err) {
-    if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
-    const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
-    return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
+  const replay = await replayStructuredSideEffects({
+    sourceType: args.sourceType, sourceEntityId: args.sourceEntityId, backfillPk, targetOrgId: args.targetOrgId,
+    unitKey: syntheticOrgId, operator: args.operator, createdAt: nowIso, affectedEventIds, movedCount: moved, contactStatus,
+  });
+  if (replay.ok) {
+    try { await deleteRepairMarker('structured', syntheticOrgId); }
+    catch { postCommitStatus = 'post_commit_failed'; }
+  } else {
+    postCommitStatus = 'post_commit_failed';
   }
+
+  return { affected: events.length, moved, skipped, errors, sourceBackfillStatus: replay.backfillStatus ?? 'not_attempted', contactStatus, postCommitStatus };
 }
