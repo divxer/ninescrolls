@@ -1,0 +1,48 @@
+import { acquireLease, releaseLeaseKeepCursor } from '../sweep/sweepState';
+import { queryPendingMarkers, deleteRepairMarker, markStuck, bumpAttempt, touchInProgress, type RepairMarkerItem } from './repairMarker';
+import { replayStructuredSideEffects, replayAnalyticsSideEffects, type ReplayResult } from './replaySideEffects';
+
+const LAMBDA_TIMEOUT_SEC = 120; // keep in sync with crm-api/resource.ts
+const MAX_ATTEMPTS = 5;
+
+async function replayFor(m: RepairMarkerItem): Promise<ReplayResult> {
+  if (m.unitType === 'analytics') {
+    return replayAnalyticsSideEffects({ visitorId: m.unitKey, targetOrgId: m.targetOrgId, operator: m.operator, createdAt: m.createdAt });
+  }
+  return replayStructuredSideEffects({
+    sourceType: m.sourceType ?? '', sourceEntityId: m.sourceEntityId ?? '', backfillPk: m.backfillPk ?? null,
+    targetOrgId: m.targetOrgId, unitKey: m.unitKey, operator: m.operator, createdAt: m.createdAt,
+    affectedEventIds: m.affectedEventIds ?? [], movedCount: m.movedCount ?? 0, contactStatus: m.contactStatus ?? 'missing_email',
+  });
+}
+
+export async function reconcileRepair(args: { limit?: number }): Promise<Record<string, unknown>> {
+  const nowIso = new Date().toISOString();
+  const lease = await acquireLease('repair', 'drain', LAMBDA_TIMEOUT_SEC, nowIso);
+  if (!lease) return { skippedLeaseHeld: true };
+
+  const limit = args.limit ?? 100;
+  const counters = { examined: 0, repaired: 0, inProgress: 0, blocked: 0, retrying: 0, stuck: 0 };
+  const { markers, hasMore } = await queryPendingMarkers(limit);
+
+  for (const m of markers) {
+    counters.examined += 1;
+    const r = await replayFor(m);
+    if (r.ok) {
+      await deleteRepairMarker(m.unitType, m.unitKey); counters.repaired += 1;
+    } else if (r.errorType === 'in_progress') {
+      await touchInProgress(m, nowIso); counters.inProgress += 1;
+    } else if (r.errorType === 'source_conflict') {
+      await markStuck(m, 'source_conflict', 'source_conflict', nowIso); counters.blocked += 1;
+    } else { // transient
+      const err = r.error ?? 'transient';
+      if ((m.attemptCount ?? 0) + 1 >= MAX_ATTEMPTS) { await markStuck(m, 'max_attempts', err, nowIso); counters.stuck += 1; }
+      else { await bumpAttempt(m, err, nowIso); counters.retrying += 1; }
+    }
+  }
+
+  const summary = { ...counters, hasMore };
+  await releaseLeaseKeepCursor('repair', 'drain', lease, { lastSummary: summary, hasMore });
+  console.log(JSON.stringify({ event: 'crm.repair.summary', ...summary }));
+  return summary;
+}
