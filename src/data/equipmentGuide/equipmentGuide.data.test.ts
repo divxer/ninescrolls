@@ -4,6 +4,35 @@ import { resolve } from 'node:path';
 import type { GuideProduct, EquipmentGuideData } from './types';
 import { about, evidence, contact } from './guideMeta';
 import { products } from './products';
+import { equipmentGuideData } from './index';
+import { aldSystemConfig } from '../../components/products/productDetailConfigs/aldSystemConfig';
+import { coaterDeveloperConfig } from '../../components/products/productDetailConfigs/coaterDeveloperConfig';
+import { eBeamEvaporatorConfig } from '../../components/products/productDetailConfigs/eBeamEvaporatorConfig';
+import { hdpCvdSystemConfig } from '../../components/products/productDetailConfigs/hdpCvdSystemConfig';
+import { ibeRibeSystemConfig } from '../../components/products/productDetailConfigs/ibeRibeSystemConfig';
+import { icpEtcherConfig } from '../../components/products/productDetailConfigs/icpEtcherConfig';
+import { pecvdSystemConfig } from '../../components/products/productDetailConfigs/pecvdSystemConfig';
+import { rieEtcherConfig } from '../../components/products/productDetailConfigs/rieEtcherConfig';
+import { sputterSystemConfig } from '../../components/products/productDetailConfigs/sputterSystemConfig';
+import { striperSystemConfig } from '../../components/products/productDetailConfigs/striperSystemConfig';
+
+const WEBSITE_CONFIGS = {
+  ald: aldSystemConfig,
+  'coater-developer': coaterDeveloperConfig,
+  'e-beam-evaporator': eBeamEvaporatorConfig,
+  'hdp-cvd': hdpCvdSystemConfig,
+  'ibe-ribe': ibeRibeSystemConfig,
+  'icp-etcher': icpEtcherConfig,
+  pecvd: pecvdSystemConfig,
+  'rie-etcher': rieEtcherConfig,
+  sputter: sputterSystemConfig,
+  striper: striperSystemConfig,
+} as const;
+
+// Normalize a spec value the same way parity checks declare it.
+function norm(v: string): string {
+  return v.toLowerCase().replace(/[\s,]/g, '').replace(/optional|full range|:/g, '');
+}
 
 describe('equipmentGuide types', () => {
   it('SpecRow supports one- and two-column values', () => {
@@ -83,5 +112,45 @@ describe('products completeness', () => {
     const text = JSON.stringify(products);
     expect(text).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
     expect(text).not.toMatch(/1000\+|300\+|30\+ years|global installations/i);
+  });
+});
+
+describe('assembled EquipmentGuideData', () => {
+  it('assembles all four sections and 11 products', () => {
+    expect(equipmentGuideData.products).toHaveLength(11);
+    expect(equipmentGuideData.about.pillars).toHaveLength(4);
+    expect(equipmentGuideData.evidence.studies.length).toBeGreaterThanOrEqual(4);
+    expect(equipmentGuideData.contact.contacts.length).toBeGreaterThan(0);
+  });
+});
+
+describe('spec-parity guard (guide vs website configs)', () => {
+  it('requires parity checks for every website-backed guide product', () => {
+    const expected = Object.keys(WEBSITE_CONFIGS).sort();
+    const actual = equipmentGuideData.products
+      .filter(p => p.websiteSpecParity)
+      .map(p => p.websiteSpecParity!.productSlug)
+      .sort();
+    expect(actual).toEqual(expected);
+    for (const p of equipmentGuideData.products.filter(p => p.websiteSpecParity)) {
+      expect(p.websiteSpecParity!.checks.length, `${p.id} needs at least two parity checks`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('every declared websiteSpecParity check matches both sources', () => {
+    for (const p of equipmentGuideData.products) {
+      if (!p.websiteSpecParity) continue;
+      const cfg = WEBSITE_CONFIGS[p.websiteSpecParity.productSlug as keyof typeof WEBSITE_CONFIGS];
+      expect(cfg, `config for ${p.websiteSpecParity.productSlug} not found`).toBeTruthy();
+      const items: { label: string; value: string }[] = cfg.specifications.items;
+      for (const check of p.websiteSpecParity.checks) {
+        const guideRow = p.specs.find(s => s.label === check.guideLabel);
+        expect(guideRow, `${p.id} missing guide row ${check.guideLabel}`).toBeTruthy();
+        const siteItem = items.find(i => i.label === check.websiteLabel);
+        expect(siteItem, `${p.websiteSpecParity!.productSlug} missing website row ${check.websiteLabel}`).toBeTruthy();
+        expect(norm(guideRow!.value + (guideRow!.value2 ?? '')), `${p.id} ${check.guideLabel} guide value`).toContain(check.guideExpected);
+        expect(norm(siteItem!.value), `${p.websiteSpecParity!.productSlug} ${check.websiteLabel} website value`).toContain(check.websiteExpected);
+      }
+    }
   });
 });
