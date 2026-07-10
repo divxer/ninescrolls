@@ -67,8 +67,8 @@ href = '/products/plasma-cleaner';
 ## CTA (contract 2)
 
 - Rendered as a single line on each product page (only where `content` is present): **`Explore configurations & request a quote →`** followed by the URL, authored as a real `<a href>` so it is a live clickable link in the PDF (Puppeteer preserves anchors).
-- **Data invariant:** `content.href` is stored **site-relative** and MUST match `^/products/[a-z0-9-]+$` (validated by test).
-- **Render invariant:** the renderer builds the anchor href as `${SITE_ORIGIN}${content.href}` with `const SITE_ORIGIN = 'https://ninescrolls.com'`, producing an **absolute** `https://ninescrolls.com/products/<slug>`. Under Puppeteer `setContent()` a bare `/products/…` has no base origin and would not resolve as a working PDF link — the absolute form is required.
+- **Data invariant:** `content.href` is not free-hand — it is set from the canonical `PRODUCT_ROUTES[id]` map (see Testing), is stored **site-relative**, and MUST both match `^/products/[a-z0-9-]+$` and equal `PRODUCT_ROUTES[product.id]` (so a valid-format but wrong route fails).
+- **Render invariant:** the renderer stamps `data-product-id` on the product `<section>` and builds the anchor href as `${SITE_ORIGIN}${content.href}` with `const SITE_ORIGIN = 'https://ninescrolls.com'`, producing an **absolute** `https://ninescrolls.com/products/<slug>` verified per-section against `PRODUCT_ROUTES[thatId]`. Under Puppeteer `setContent()` a bare `/products/…` has no base origin and would not resolve as a working PDF link — the absolute form is required.
 - Exactly **one** CTA per product page; no duplicated global CTA.
 
 ## About page rewrite (`guideMeta.about`)
@@ -96,14 +96,18 @@ Keep the current **2-paragraph + 4-pillar** structure (fits one page, compatible
 | File | Change |
 |---|---|
 | `src/data/equipmentGuide/types.ts` | Add `GuideProductContent`; `GuideProduct.content?` (pilot) → `content` required (final) |
-| `src/data/equipmentGuide/products.ts` | Add `content` + rewritten `bullets` per product (RIE+E-Beam pilot, then all 11) |
+| `src/data/equipmentGuide/products.ts` | Add `PRODUCT_ROUTES` map + `content` + rewritten `bullets` per product (all 11 on the impl branch) |
 | `src/data/equipmentGuide/guideMeta.ts` | Rewrite `about` (paragraphs + 4 fixed pillars incl. evidence qualifier) |
-| `src/data/equipmentGuide/equipmentGuide.data.test.ts` | Applications parity, href format, bullets 3–4, About integrity, completeness (final), protection snapshots for specs/subTable/evidence |
-| `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts` | Render `.lead`/`.apps`/`.cta`; `SITE_ORIGIN` absolute CTA href |
-| `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts` | CTA-per-section, Evidence-HTML-chunk assertion |
+| `src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json` | **New** — committed baseline snapshot captured from `f76765a8` |
+| `src/data/equipmentGuide/__fixtures__/v1-evidence.json` | **New** — committed baseline `evidence` object from `f76765a8` |
+| `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html` | **New** — committed baseline rendered Evidence `<section>` from `f76765a8` |
+| `src/data/equipmentGuide/equipmentGuide.data.test.ts` | Applications ordered-parity, `content.href === PRODUCT_ROUTES[id]` + format, bullets 3–4, About integrity, completeness (final), protection fixtures (specs/subTable/evidence deep-equal committed JSON) |
+| `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts` | `data-product-id` on section; render `.lead`/`.apps`/`.cta`; `SITE_ORIGIN` absolute CTA href |
+| `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts` | id-anchored CTA-per-section, Evidence-HTML-chunk string-equal to fixture |
 | `src/templates/equipmentGuide/equipmentGuide.css.ts` | `.lead`, `.apps`/`.chip`, `.cta`/`.btn` styles |
 | `public/NineScrolls-Equipment-Guide.pdf` | Regenerated (committed atomically; final step only) |
 | `docs/equipment-guide/content-v2-traceability.md` | New — per-product per-line source record |
+| _(uncommitted)_ `/tmp/eqg-v2-pages/*.jpg` | Temporary review screenshots — NOT committed |
 
 ## Page budget & overflow policy (hard 14 pages)
 
@@ -116,11 +120,13 @@ If a product still overflows after these, the content selection isn't strict eno
 
 ## Rollout
 
-1. **Pilot** — author the `content` block + rewritten `bullets` for **RIE and E-Beam only** (`content` optional). Regenerate. **Pilot acceptance (all required):** both pages remain single-page, the guide total is still exactly **14 pages**, and neither page is crowded or has an illegibly-compressed table (verified via the screenshots).
-2. **Review** the two pilot pages with the user; lock voice + format. **The pilot output is REVIEW-ONLY** — its intermediate PDF/commits must **not** be merged to `main` or deployed (9 products would still be thin and `content` is optional). Only the final state in step 5 is mergeable.
-3. **Batch** — author the remaining 9 products under the same rules; rewrite the About page; fill the traceability checklist for all 11.
+1. **Pilot — in an ISOLATED throwaway worktree/branch, never pushed.** Create a temporary worktree (e.g. under `.claude/worktrees/`) off the v2 base; author the `content` block + rewritten `bullets` for **RIE and E-Beam only** (`content` optional there); regenerate. **Pilot acceptance (all required):** both pages remain single-page, the guide total is still exactly **14 pages**, and neither page is crowded or has an illegibly-compressed table (verified via screenshots).
+2. **Review** the two pilot pages with the user; lock voice + format. The pilot worktree is **review-only** — it is discarded after; nothing from it is pushed, merged, or deployed.
+3. **Batch (on the real implementation branch)** — with the voice locked, author **all 11** products' `content` + rewritten `bullets` under the same rules, rewrite the About page, add the committed baseline fixtures, and fill the traceability checklist for all 11.
 4. **Tighten** — make `content` required, add the 11/11 completeness test.
-5. **Finalize** — regenerate + full verification (data tests, render tests incl. protection snapshots, page-count 14, screenshots); the committed PDF ships atomically with the code (v1 rule). This is the only state that merges/deploys.
+5. **Finalize** — regenerate + full verification (data tests, render tests incl. protection fixtures, page-count 14, all-14-page screenshots); the committed PDF ships atomically with the code (v1 rule).
+
+**The PR-able implementation branch must contain, in one complete state, all of: 11/11 required `content`, the About rewrite, the committed baseline fixtures, the traceability doc, all tests passing, and the final regenerated PDF. No pilot-only or partial-content commit is ever opened as a PR.**
 
 ## Testing
 
@@ -134,14 +140,22 @@ Pure/data tests (fast) + generation checks + a manual traceability checklist.
 - **Completeness (after batch, contract 3):** all 11 products have a `content` block with non-empty `lead`, `applications` (length === `applicationCount`), and `href`; once the type is required this is compile-enforced, plus an explicit 11/11 test.
 - **About integrity:** the four pillar headings render verbatim; the fourth pillar body contains the represented-platform qualifier; the About text contains none of the forbidden claims (years-in-business / install / customer counts / supplier identity) and no OEM name.
 
+**Canonical route map (contract — prevents CTA pointing at the wrong product, #2):**
+`products.ts` defines `export const PRODUCT_ROUTES: Record<string, string>` mapping each guide product `id` → its site-relative route (e.g. `'rie' → '/products/rie-etcher'`, `'plasma-cleaner' → '/products/plasma-cleaner'`). `content.href` is NOT authored free-hand — each product sets `content.href = PRODUCT_ROUTES[id]`. A data test asserts, per product, `content.href === PRODUCT_ROUTES[product.id]`, so a format-valid but wrong route (`/products/wrong-product`) fails.
+
 **Render tests (`renderEquipmentGuideHtml.test.ts`):**
-- **CTA per product section:** split by `<section class="page` (v1 helper); for each product section **with content**, assert exactly **one** CTA anchor whose `href` **exactly equals** `https://ninescrolls.com${product.content.href}`, and that the label is `Explore configurations & request a quote`. Non-content (pilot) product sections and non-product pages have zero CTAs.
+- **`data-product-id` per section:** the renderer stamps `data-product-id="${p.id}"` on each product `<section>`. Splitting by section, each product chunk carries its own id.
+- **CTA per product section (id-anchored):** for each product section **with content**, read its `data-product-id`, and assert it contains exactly **one** CTA anchor whose `href` **exactly equals** `https://ninescrolls.com${PRODUCT_ROUTES[thatId]}` (not merely a valid-format `/products/…`) and whose label is `Explore configurations & request a quote`. Non-content (pilot) product sections and non-product pages have zero CTAs.
 - **Copy integrity (v1 guards, still passing):** no OEM/supplier name, no scale claims anywhere in the rendered HTML.
-- **Protection snapshots (replaces the un-executable "byte-for-byte" claim, #6):** the serialized `specs` + `subTable` of every product, and the entire `evidence` data object, are asserted **deep-equal to a committed snapshot** captured from the v1 baseline; additionally the rendered **Evidence page HTML chunk** (the `<section>` containing `Peer-Reviewed Validation`) is asserted **string-equal to a committed expected chunk**. This proves this change touched neither the spec tables nor the evidence page. The PDF itself gets a **visual-consistency** check (below), not a byte comparison.
+- **Protection fixtures — fixed, committed, from the immutable v1 baseline `f76765a8` (#1, replaces the un-executable "byte-for-byte" claim, #6):** capture ONCE, from commit `f76765a8` (its guide data equals the v1-final state), committed fixture files under `src/data/equipmentGuide/__fixtures__/`:
+  - `v1-specs-subtable.json` — the serialized `specs` + `subTable` of all 11 products;
+  - `v1-evidence.json` — the entire `evidence` object;
+  - `v1-evidence-chunk.html` — the rendered Evidence-page `<section>` (the chunk containing `Peer-Reviewed Validation`).
+  The tests **read these committed fixtures** and assert current `specs`/`subTable`/`evidence` deep-equal the JSON and the rendered Evidence chunk string-equals `v1-evidence-chunk.html`. **Expected values MUST NOT be generated at runtime, and vitest auto-snapshot (`toMatchSnapshot` / `--update`) MUST NOT be used** — a self-updating snapshot would silently absorb a real regression. Any intentional change to these fixtures requires an explicit manual review (they encode the "don't touch specs/evidence" guarantee). The PDF itself gets a **visual-consistency** check (below), not a byte comparison.
 
 **Generation / visual checks:**
 - **Page count == 14** after `npm run generate-equipment-guide` (hard constraint); PDF under `MAX_PDF_BYTES = 2_000_000`.
-- **Rendered screenshots (pilot AND final, Minor):** `pdftoppm` the PDF to images; visually confirm no text clipping, no page overflow to a 2nd sheet, and no illegibly-compressed table on any product page. Save the pilot RIE + E-Beam page images for the review checkpoint.
+- **Rendered screenshots (pilot AND final, Minor):** `pdftoppm` the PDF to images and inspect **all 14 pages** (not only product pages — the About and any reflowed page too) for text clipping, overflow to a 2nd sheet, and illegibly-compressed tables. **Minimum font floor:** no rendered text may go below the v1 body size of **12.5px** (labels/notes already at 10–11px stay unchanged); the overflow-reduction order must never breach this. Screenshot images are **temporary review artifacts**, written to the scratch dir (`/tmp/eqg-v2-pages/`), **not committed** to the repo.
 
 **Traceability checklist (manual, #4 — the part tests can't cover):**
 Commit `docs/equipment-guide/content-v2-traceability.md`. For every product, record — per rewritten `lead` and per `bullet` — the exact source it traces to: the config field (`hero.description` / a `processIntro` / `coreWindows` entry), the original guide bullet, or a canonical `specs` row. The implementation review verifies each line against its cited source (no new performance numbers, no superlatives). This file is the auditable record that "traceable" was actually honored.
