@@ -39,12 +39,12 @@
 
 **Before Step 1 — record the implementation baseline (do NOT hardcode a SHA, do NOT use a shared `/tmp` file):**
 ```bash
-git rev-parse HEAD                          # the immutable IMPLEMENTATION_BASE_SHA
-git status --porcelain -- package-lock.json # initial package-lock state (empty = clean)
+git rev-parse HEAD                  # the immutable IMPLEMENTATION_BASE_SHA
+git hash-object package-lock.json   # LOCKFILE_BASE_HASH — content hash of the lockfile
 ```
 Do this **now, before any file change**, and record both values:
-- **`IMPLEMENTATION_BASE_SHA`** (the 40-char HEAD SHA). Do NOT hardcode a SHA in this plan (the spec/plan doc commits shift it) and do NOT persist it to a global path like `/tmp/…` (another worktree/session could overwrite it). Instead, **Task 1 MUST print `IMPLEMENTATION_BASE_SHA=<sha>` verbatim in its completion report**, and Task 2's final audit consumes that exact reported value directly.
-- **Initial `package-lock.json` state** — whether it was already dirty before you started. After `npm run build` (which may run `npm install`), this lets you tell whether a package-lock change is pre-existing or build-induced. Build-induced churn is left **unstaged and un-reverted** (never auto-`checkout`); it is simply not part of the five committed files.
+- **`IMPLEMENTATION_BASE_SHA`** (the 40-char HEAD SHA). Do NOT hardcode a SHA in this plan (the spec/plan doc commits shift it) and do NOT persist it to a global path like `/tmp/…` (another worktree/session could overwrite it). Instead, **Task 1 MUST print `IMPLEMENTATION_BASE_SHA=<sha>` and `LOCKFILE_BASE_HASH=<hash>` verbatim in its completion report**, and Task 2's final audit consumes those exact reported values.
+- **`LOCKFILE_BASE_HASH`** = `git hash-object package-lock.json`. As of PR #272 (merged into the `main` this branch is rebased onto), `npm run build` no longer runs `npm install`, so **the build must not modify `package-lock.json`**. The final gate re-hashes the lockfile and asserts it equals `LOCKFILE_BASE_HASH`. If it ever differs, that is a real, unexpected lockfile change — stop and investigate; do NOT auto-`checkout`/revert it (that could clobber an intentional change).
 
 - [ ] **Step 1: Copy the logo asset into the repo**
 
@@ -390,7 +390,7 @@ Complete the entire gate below before committing — and re-run it after **every
 3. `npm run build` — typecheck + bundle succeed.
 4. Page count is 14 (Step 8) and the generator reported a size under `MAX_PDF_BYTES` (Step 7).
 5. Read `public/NineScrolls-Equipment-Guide.pdf` — visual sanity: a logo on every page (white on the Evidence card), image wells present, no plain-text `NINESCROLLS` wordmark.
-6. `git status --short` — only the five feature files (plus the pre-existing untracked `tmp/` + research-validation docs) appear. If `npm run build` left `package-lock.json` modified in the working tree with **no real dependency change** (none is expected — nothing in `package.json` changed), leave it in the working tree but do NOT stage it.
+6. `git status --short` — only the five feature files (plus the pre-existing untracked `tmp/` + research-validation docs) appear. Post-#272 `npm run build` no longer runs `npm install`, so `package-lock.json` must be unchanged (`git hash-object package-lock.json` still equals `LOCKFILE_BASE_HASH`). If it changed, stop and investigate — do not stage it, and do not auto-revert.
 
 Only once all six pass, commit exactly the five files (the explicit `git add` excludes everything else):
 ```bash
@@ -444,7 +444,7 @@ Only if Step 1 surfaced a visual issue (e.g. image well too tall, table too tigh
 4. `npm run generate-equipment-guide` — regenerate (auto-fails if the PDF exceeds `MAX_PDF_BYTES = 2_000_000`).
 5. `python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"` — must print `14`.
 6. Re-read the affected PDF page(s) to confirm the fix landed and introduced no new regression.
-7. `git status --short` — confirm only `equipmentGuide.css.ts` + `NineScrolls-Equipment-Guide.pdf` changed for this tweak; if `npm run build` left `package-lock.json` modified with no real dependency change, leave it in the working tree but do NOT stage it (the explicit `git add` below excludes it).
+7. `git status --short` — confirm only `equipmentGuide.css.ts` + `NineScrolls-Equipment-Guide.pdf` changed for this tweak. Post-#272 the build does not touch `package-lock.json`; if it appears changed, stop and investigate (the explicit `git add` below excludes it regardless).
 
 Repeat with the user until the look is approved. Each iteration commits ONLY the CSS tweak + regenerated PDF together:
 ```bash
@@ -459,14 +459,21 @@ Run the COMPLETE verification against the current committed state **whether or n
 
 1. `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'` — focused render test green.
 2. `npx vitest run --exclude '**/.claude/**'` — full suite green.
-3. `npm run build` — typecheck + bundle succeed.
+3. `npm run build` — typecheck + bundle succeed. Then assert the build did **not** modify the lockfile (post-#272 it must not run `npm install`):
+   ```bash
+   test "$(git hash-object package-lock.json)" = "<LOCKFILE_BASE_HASH reported by Task 1>" \
+     && echo "lockfile unchanged" \
+     || { echo "FAIL: package-lock.json changed (hash differs from LOCKFILE_BASE_HASH)"; exit 1; }
+   ```
 4. Committed-PDF checks (no regen): `python3 -c "import os; from pypdf import PdfReader; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages), 'bytes', os.path.getsize('public/NineScrolls-Equipment-Guide.pdf'))"` → must print `pages 14` and `bytes` < 2000000.
 5. Read `public/NineScrolls-Equipment-Guide.pdf` — final visual confirmation.
 6. **Exact five-file audit against Task 1's reported `IMPLEMENTATION_BASE_SHA`** (the value Task 1 printed; not a hardcoded SHA, not a `/tmp` file). This block **exits non-zero on any mismatch**, so it actually blocks a bad state:
    ```bash
    BASE=<the IMPLEMENTATION_BASE_SHA reported by Task 1>
    git rev-parse --verify --quiet "${BASE}^{commit}" >/dev/null || { echo "FAIL: baseline ${BASE} is not a valid commit"; exit 1; }
-   ACTUAL="$(git diff --name-only "${BASE}..HEAD" | sort)"
+   # Capture git diff separately so its failure is not masked by the `| sort` pipe.
+   RAW="$(git diff --name-only "${BASE}..HEAD")" || { echo "FAIL: git diff against ${BASE} failed"; exit 1; }
+   ACTUAL="$(printf '%s\n' "${RAW}" | sort)"
    EXPECTED="$(printf '%s\n' \
      public/NineScrolls-Equipment-Guide.pdf \
      public/assets/images/logo-with-text.svg \
@@ -481,7 +488,7 @@ Run the COMPLETE verification against the current committed state **whether or n
      exit 1
    fi
    ```
-   `git status --short` alone is insufficient (it hides already-committed files). If this fails on an extra `package-lock.json`, inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched); if it is spurious `npm install` churn, drop it from this branch's history (amend/rebase the offending commit). Do **NOT** blindly `git checkout -- package-lock.json` — that could clobber unrelated working-tree edits.
+   `git status --short` alone is insufficient (it hides already-committed files). Post-#272 the build no longer runs `npm install`, so `package-lock.json` should never appear in this diff; if it does, it is a real, unexpected change — inspect it (nothing in this feature touches dependencies) and drop it from the branch history (amend/rebase the offending commit). Do **NOT** blindly `git checkout -- package-lock.json` — that could clobber unrelated working-tree edits.
 7. **Preserve pre-existing untracked files** — leave `tmp/` and the untracked `docs/superpowers/**/2026-07-09-research-validation-claim-reframe*` files exactly as they are; do not add, remove, or revert them.
 
 The committed PDF already matches the renderer (committed atomically with the code in Task 1 / the last Step-3 iteration), so post-audit `git status` shows a clean tree apart from any pre-existing untracked files.
