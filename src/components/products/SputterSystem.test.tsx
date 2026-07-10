@@ -46,7 +46,7 @@ describe('SputterSystem redesigned product page', () => {
     expect(within(specs).getByText('Base Pressure')).toBeInTheDocument();
     expect(within(specs).getByText('<5x10^-7 Torr')).toBeInTheDocument();
     expect(within(specs).getByText('Uniformity')).toBeInTheDocument();
-    expect(within(specs).getByText('<1%')).toBeInTheDocument();
+    expect(within(specs).getByText('< +/-5%')).toBeInTheDocument();
   });
 
   it('keeps Sputter conversion and comparison paths visible', () => {

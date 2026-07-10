@@ -7,7 +7,7 @@ export const sputterSystemConfig: ProductDetailConfig = {
   seo: {
     title: 'PVD Magnetron Sputtering Platform',
     description:
-      'PVD magnetron sputtering platform for metal, dielectric, nitride, oxide, magnetic, and compound thin films. Supports 4-12 inch wafers, 2-6 independently configurable targets, substrate temperature from water-cooled to 1200 C, <5x10^-7 Torr base pressure, and <1% uniformity.',
+      'PVD magnetron sputtering platform for metal, dielectric, nitride, oxide, magnetic, and compound thin films. Supports 4-12 inch wafers, 2-6 independently configurable targets, substrate temperature from water-cooled to 1200 C, <5x10^-7 Torr base pressure, and < +/-5% non-uniformity.',
     keywords:
       'sputter system, magnetron sputtering, PVD system, sputtering equipment, thin film sputtering, DC sputtering, RF sputtering, reactive sputtering',
   },
@@ -32,7 +32,7 @@ export const sputterSystemConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the Sputter platform?',
       answer:
-        'The Sputter platform supports 4 inch to 12 inch wafers, 2 to 6 independently configurable targets, substrate temperature from water-cooled to 1200 C, base pressure below 5x10^-7 Torr, and <1% film uniformity.',
+        'The Sputter platform supports 4 inch to 12 inch wafers, 2 to 6 independently configurable targets, substrate temperature from water-cooled to 1200 C, base pressure below 5x10^-7 Torr, and < +/-5% film non-uniformity.',
     },
   ],
   breadcrumb: {
@@ -56,7 +56,7 @@ export const sputterSystemConfig: ProductDetailConfig = {
       { label: 'Wafer Size', value: '4-12 in' },
       { label: 'Targets', value: '2-6 configurable' },
       { label: 'Base Pressure', value: '<5x10^-7 Torr' },
-      { label: 'Uniformity', value: '<1%' },
+      { label: 'Uniformity', value: '< +/-5%' },
     ],
     primaryAction: {
       label: 'Request Quote',
@@ -129,7 +129,7 @@ export const sputterSystemConfig: ProductDetailConfig = {
       { label: 'Targets', value: '2-6 configurable' },
       { label: 'Substrate Temperature', value: 'Water-cooled to 1200 C' },
       { label: 'Base Pressure', value: '<5x10^-7 Torr' },
-      { label: 'Uniformity', value: '<1%' },
+      { label: 'Uniformity', value: '< +/-5%' },
       { label: 'Power Modes', value: 'DC / RF magnetron' },
       { label: 'Process Modes', value: 'Metal, reactive, co-sputter' },
       { label: 'Loading', value: 'Open-load or load-lock' },

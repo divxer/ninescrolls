@@ -261,11 +261,12 @@ export const products: GuideProduct[] = [
     websiteSpecParity: {
       productSlug: 'sputter',
       // Website config: sputterSystemConfig.ts specifications.items
-      //   Wafer Size '4-12 in' | Targets '2-6 configurable' | Substrate Temperature 'Water-cooled to 1200 C' | Base Pressure '<5x10^-7 Torr'
+      //   Wafer Size '4-12 in' | Targets '2-6 configurable' | Substrate Temperature 'Water-cooled to 1200 C' | Base Pressure '<5x10^-7 Torr' | Uniformity '< +/-5%'
       checks: [
         { guideLabel: 'Magnetron Sputtering Source', websiteLabel: 'Targets', guideExpected: '2-6', websiteExpected: '2-6' },
         { guideLabel: 'Substrate Temperature', websiteLabel: 'Substrate Temperature', guideExpected: '1200℃', websiteExpected: '1200c' },
         { guideLabel: 'Wafer Size Range', websiteLabel: 'Wafer Size', guideExpected: '12inch', websiteExpected: '4-12in' },
+        { guideLabel: 'Non-Uniformity', websiteLabel: 'Uniformity', guideExpected: '±5%', websiteExpected: '+/-5%' },
       ],
     },
   },
