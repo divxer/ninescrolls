@@ -37,6 +37,12 @@
 - Test: `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts`
 - Regenerate: `public/NineScrolls-Equipment-Guide.pdf`
 
+**Before Step 1 — record the implementation baseline (do NOT hardcode a SHA):**
+```bash
+git rev-parse HEAD | tee /tmp/eqg-impl-base.sha
+```
+Capture this **now, before any file change**. Do not hardcode a commit SHA anywhere in this plan — the plan/spec docs keep getting committed, which would shift any fixed baseline and make the final five-file audit see extra doc files. The final audit (Task 2 Step 4) reads `/tmp/eqg-impl-base.sha`. If Task 1 runs in a subagent, that subagent MUST also **return this SHA** so the separately-run Task 2 audit uses the same baseline.
+
 - [ ] **Step 1: Copy the logo asset into the repo**
 
 Run:
@@ -60,10 +66,11 @@ import { equipmentGuideData } from '../../data/equipmentGuide';
 
 const html = renderEquipmentGuideHtml(equipmentGuideData);
 
-// Mirror the renderer's HTML-escaping so series containing &/</> (e.g.
-// "Coater/Developer & Hotplate Series") are matched as they actually render.
+// Mirror the renderer's HTML-escaping EXACTLY (including "), so series/alt
+// strings (e.g. "Coater/Developer & Hotplate Series") are matched as they
+// actually render — the renderer's esc() escapes &, <, >, and ".
 const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const navyLogo = logoDataUri('navy');
 const whiteLogo = logoDataUri('white');
@@ -430,32 +437,35 @@ Expected: full suite passes.
 Only if Step 1 surfaced a visual issue (e.g. image well too tall, table too tight, evidence contrast): adjust the specific value in `equipmentGuide.css.ts`, then run the **complete re-verification loop after every change** (not just regeneration):
 1. `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'` — focused render test green.
 2. `npx vitest run --exclude '**/.claude/**'` — full suite green.
-3. `npm run generate-equipment-guide` — regenerate (auto-fails if the PDF exceeds `MAX_PDF_BYTES = 2_000_000`).
-4. `python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"` — must print `14`.
-5. Re-read the affected PDF page(s) to confirm the fix landed and introduced no new regression.
+3. `npm run build` — typecheck + bundle succeed on the tweaked CSS.
+4. `npm run generate-equipment-guide` — regenerate (auto-fails if the PDF exceeds `MAX_PDF_BYTES = 2_000_000`).
+5. `python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"` — must print `14`.
+6. Re-read the affected PDF page(s) to confirm the fix landed and introduced no new regression.
+7. `git status --short` — confirm only `equipmentGuide.css.ts` + `NineScrolls-Equipment-Guide.pdf` changed for this tweak; if `npm run build` left `package-lock.json` modified with no real dependency change, leave it in the working tree but do NOT stage it (the explicit `git add` below excludes it).
 
-Repeat with the user until the look is approved. Each iteration commits the CSS tweak + regenerated PDF together:
+Repeat with the user until the look is approved. Each iteration commits ONLY the CSS tweak + regenerated PDF together:
 ```bash
 git add src/templates/equipmentGuide/equipmentGuide.css.ts public/NineScrolls-Equipment-Guide.pdf
 git commit -m "polish(guide): tune <what> after visual review"
 ```
-If no tweak is needed, no commit here. **Run steps 1–5 once more after the final approved tweak** so the committed state is verified, not just the intermediate ones.
+If no tweak is needed, no commit here. **Run steps 1–7 once more after the final approved tweak** so the committed state — not just an intermediate one — is fully build-verified.
 
 - [ ] **Step 4: Final gate — build + git hygiene**
 
 1. Run: `npm run build` — succeeds, no TypeScript errors (renderer/CSS typecheck; the generator/app bundle is unaffected).
-2. **Exact committed-file audit against the spec/plan baseline `0a88501e`** (the round-3 spec+plan commit, i.e. the last commit before implementation began):
+2. **Exact committed-file audit against the recorded implementation baseline** (`/tmp/eqg-impl-base.sha`, captured before Task 1 Step 1 — NOT a hardcoded SHA, since the spec/plan doc commits before implementation would otherwise show up as extra files). Compare programmatically against the sorted five-file set:
    ```bash
-   git diff --name-only 0a88501e..HEAD
+   BASE=$(cat /tmp/eqg-impl-base.sha)
+   diff <(git diff --name-only "$BASE"..HEAD | sort) \
+        <(printf '%s\n' \
+            public/NineScrolls-Equipment-Guide.pdf \
+            public/assets/images/logo-with-text.svg \
+            src/templates/equipmentGuide/equipmentGuide.css.ts \
+            src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
+            src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort) \
+     && echo "EXACT 5-FILE MATCH" || echo "MISMATCH — investigate"
    ```
-   The output MUST be exactly these five paths — no more, no fewer:
-   - `public/assets/images/logo-with-text.svg`
-   - `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts`
-   - `src/templates/equipmentGuide/equipmentGuide.css.ts`
-   - `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts`
-   - `public/NineScrolls-Equipment-Guide.pdf`
-
-   `git status --short` alone is insufficient (it hides what was already committed). If the diff lists anything extra — e.g. `package-lock.json` — it was committed by mistake: inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched). Only if it is spurious `npm install` churn, remove it from history for this branch (e.g. amend/rebase that commit to drop the file); do **NOT** blindly `git checkout -- package-lock.json`, which could clobber unrelated working-tree edits.
+   (Uses `printf` rather than a heredoc so no stray leading whitespace can creep into the compared paths.) Expected: `EXACT 5-FILE MATCH` (the `diff` prints nothing). `git status --short` alone is insufficient — it hides what was already committed. If the diff shows a difference (e.g. an extra `package-lock.json`), it was committed by mistake: inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched), and if it is spurious `npm install` churn, drop it from this branch's history (amend/rebase that commit). Do **NOT** blindly `git checkout -- package-lock.json`, which could clobber unrelated working-tree edits.
 3. **Preserve pre-existing untracked files** — leave `tmp/` and the untracked `docs/superpowers/**/2026-07-09-research-validation-claim-reframe*` files exactly as they are; they are not part of this feature and must not be added, removed, or reverted.
 4. Confirm the committed PDF matches the current renderer (it was committed atomically with the code in Task 1 / the last Step-3 iteration, so `git status` shows it clean).
 
