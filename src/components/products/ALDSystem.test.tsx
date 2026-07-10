@@ -41,12 +41,8 @@ describe('ALDSystem redesigned product page', () => {
     expect(within(specs).getByText('4-12 in')).toBeInTheDocument();
     expect(within(specs).getByText('Wafer Temperature')).toBeInTheDocument();
     expect(within(specs).getByText('20 to 400 C')).toBeInTheDocument();
-    expect(within(specs).getByText('Growth Rate')).toBeInTheDocument();
-    expect(within(specs).getByText('0.5-2 A/cycle')).toBeInTheDocument();
     expect(within(specs).getByText('Uniformity')).toBeInTheDocument();
     expect(within(specs).getByText('<1%')).toBeInTheDocument();
-    expect(within(specs).getByText('Step Coverage')).toBeInTheDocument();
-    expect(within(specs).getByText('>98%')).toBeInTheDocument();
     expect(within(specs).getByText('Precursor Lines')).toBeInTheDocument();
     expect(within(specs).getByText('2-6 lines')).toBeInTheDocument();
     expect(within(specs).getByText('Remote Plasma')).toBeInTheDocument();

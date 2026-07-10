@@ -158,6 +158,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/products/pluto-t', label: 'PLUTO-T' },
     { to: '/products/pluto-m', label: 'PLUTO-M' },
     { to: '/products/pluto-f', label: 'PLUTO-F' },
+    { to: '/products/pluto-30', label: 'PLUTO-30' },
   ];
 
   // Solutions / Resources column — routes buyers by intent, not just by product.

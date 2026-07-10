@@ -7,7 +7,7 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
   seo: {
     title: 'Coater/Developer Photolithography Track Platform',
     description:
-      'Coater/developer photolithography track platform for repeatable spin coating, photoresist development, HMDS priming, hotplate bake, lift-off preparation, EBR, and thick-film process development. Supports pieces to 12 inch wafers, up to 8000 rpm coater speed, RT to 200 C hotplate operation, <0.5% film uniformity, and modular coat, develop, and bake configurations.',
+      'Coater/developer photolithography track platform for repeatable spin coating, photoresist development, HMDS priming, hotplate bake, lift-off preparation, EBR, and thick-film process development. Supports pieces to 12 inch wafers, up to 8000 rpm coater speed, RT to 200 C hotplate operation, and modular coat, develop, and bake configurations.',
     keywords:
       'coater developer, spin coater, photoresist coater, wafer developer, photolithography track, resist coating, developer system, hotplate module, edge bead removal',
   },
@@ -32,7 +32,7 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the Coater/Developer platform?',
       answer:
-        'Core specifications include pieces to 12 inch wafers, coater speed up to 8000 rpm +/-1 rpm, developer speed up to 5000 rpm +/-1 rpm, RT to 200 C hotplate operation, 2 resist lines, 2 developer lines plus DI, <0.5% film uniformity, and an approx. 1.0m x 0.8m footprint.',
+        'Core specifications include pieces to 12 inch wafers, coater speed up to 8000 rpm +/-1 rpm, developer speed up to 5000 rpm +/-1 rpm, RT to 200 C hotplate operation, 2 resist lines, 2 developer lines plus DI, and an approx. 1.0m x 0.8m footprint.',
     },
   ],
   breadcrumb: {
@@ -56,7 +56,7 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
       { label: 'Wafer Size', value: 'Pieces to 12 in' },
       { label: 'Coater Speed', value: '8000 rpm' },
       { label: 'Hotplate', value: 'RT to 200 C' },
-      { label: 'Uniformity', value: '<0.5%' },
+      { label: 'Developer Speed', value: '5000 rpm' },
     ],
     primaryAction: {
       label: 'Request Quote',
@@ -106,7 +106,7 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
     cards: [
       {
         title: 'Thickness uniformity',
-        copy: 'Spin speed, acceleration, dispense position, resist viscosity, cup airflow, and EBR tuning all contribute to the <0.5% film-uniformity target.',
+        copy: 'Spin speed, acceleration, dispense position, resist viscosity, cup airflow, and EBR tuning all contribute to repeatable film-thickness uniformity.',
       },
       {
         title: 'Recipe repeatability',
@@ -129,7 +129,6 @@ export const coaterDeveloperConfig: ProductDetailConfig = {
       { label: 'Coater Speed', value: 'Up to 8000 rpm +/-1 rpm' },
       { label: 'Developer Speed', value: 'Up to 5000 rpm +/-1 rpm' },
       { label: 'Hotplate', value: 'RT to 200 C' },
-      { label: 'Film Uniformity', value: '<0.5% 3 sigma' },
       { label: 'Dispense', value: '2 resist lines + 2 developer lines + DI' },
       { label: 'Footprint', value: 'Approx. 1.0m x 0.8m' },
       { label: 'EBR', value: 'Optional edge bead removal' },

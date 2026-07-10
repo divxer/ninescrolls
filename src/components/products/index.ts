@@ -15,3 +15,4 @@ export { HY20LRF } from './HY20LRF';
 export { PlutoT } from './PlutoT';
 export { PlutoM } from './PlutoM';
 export { PlutoF } from './PlutoF';
+export { Pluto30 } from './Pluto30';

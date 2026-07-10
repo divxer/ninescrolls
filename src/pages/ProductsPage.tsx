@@ -222,6 +222,17 @@ const products: ProductCard[] = [
     buyingMode: 'Buy Online',
     price: '$15,999',
   },
+  {
+    name: 'PLUTO-30',
+    route: '/products/pluto-30',
+    family: 'Plasma Cleaning',
+    eyebrow: 'Floor-Standing Batch System',
+    image: '/assets/images/redesign/products/pluto-30-standardized.webp',
+    alt: 'PLUTO-30 - 30L floor-standing batch RF plasma system',
+    description: 'Floor-standing 30L RF plasma system with up to 7 adjustable shelves and MFC gas control for batch cleaning, activation, and etching.',
+    chips: ['500 W RF', '30 L chamber', 'Up to 7 shelves'],
+    buyingMode: 'RFQ Platform',
+  },
 ];
 
 const familyIntros: Record<ProductFamily, { heading: string; copy: string }> = {

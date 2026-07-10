@@ -7,7 +7,7 @@ export const aldSystemConfig: ProductDetailConfig = {
   seo: {
     title: 'ALD Atomic Layer Deposition Platform',
     description:
-      'Atomic layer deposition platform for conformal thin films with 4-12 inch wafer support, 20 to 400 C wafer temperature, 0.5-2 A/cycle growth rate, <1% Al2O3 uniformity, >98% step coverage, 2-6 precursor lines, and optional 300-1000 W remote plasma.',
+      'Atomic layer deposition platform for conformal thin films with 4-12 inch wafer support, 20 to 400 C wafer temperature, <1% Al2O3 uniformity, 2-6 precursor lines, and optional 300-1000 W remote plasma.',
     keywords:
       'ALD system, atomic layer deposition, ALD equipment, conformal coating, Al2O3 deposition, HfO2 deposition, PEALD, thin film deposition',
   },
@@ -54,9 +54,9 @@ export const aldSystemConfig: ProductDetailConfig = {
     },
     stats: [
       { label: 'Wafer Size', value: '4-12 in' },
-      { label: 'Growth Rate', value: '0.5-2 A/cycle' },
+      { label: 'Wafer Temp', value: '20 to 400 C' },
       { label: 'Uniformity', value: '<1%' },
-      { label: 'Step Coverage', value: '>98%' },
+      { label: 'Precursor', value: '2-6 lines' },
     ],
     primaryAction: {
       label: 'Request Quote',
@@ -87,7 +87,7 @@ export const aldSystemConfig: ProductDetailConfig = {
       {
         title: '3D Conformal Coatings',
         copy: 'High step coverage for high-aspect-ratio structures, MEMS devices, porous materials, and complex research substrates.',
-        details: ['>98% coverage', 'High aspect ratio', '3D structures'],
+        details: ['Conformal coverage', 'High aspect ratio', '3D structures'],
       },
       {
         title: 'Plasma-Enhanced ALD',
@@ -127,9 +127,7 @@ export const aldSystemConfig: ProductDetailConfig = {
     items: [
       { label: 'Wafer Size', value: '4-12 in' },
       { label: 'Wafer Temperature', value: '20 to 400 C' },
-      { label: 'Growth Rate', value: '0.5-2 A/cycle' },
       { label: 'Uniformity', value: '<1%' },
-      { label: 'Step Coverage', value: '>98%' },
       { label: 'Precursor Lines', value: '2-6 lines' },
       { label: 'Remote Plasma', value: '300-1000 W optional' },
       { label: 'Loading', value: 'Open-load or load-lock' },
