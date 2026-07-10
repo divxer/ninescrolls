@@ -55,7 +55,7 @@ Expected: only `fill="#243959"`.
 Replace `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts` with:
 ```ts
 import { describe, it, expect } from 'vitest';
-import { renderEquipmentGuideHtml, logoDataUri } from './renderEquipmentGuideHtml';
+import { renderEquipmentGuideHtml, logoDataUri, defaultImageDataUri } from './renderEquipmentGuideHtml';
 import { equipmentGuideData } from '../../data/equipmentGuide';
 
 const html = renderEquipmentGuideHtml(equipmentGuideData);
@@ -139,17 +139,20 @@ describe('branding — logo on all 14 pages', () => {
 });
 
 describe('visual polish', () => {
-  it('wraps each product image in exactly one framed image well', () => {
+  it('wraps each product image in exactly one well with THAT product image inside', () => {
     const chunks = html.split('<section class="page').slice(1);
     for (const p of equipmentGuideData.products) {
       const chunk = chunks.find(c => c.includes(esc(p.series)))!;
       expect(chunk, p.id).toBeDefined();
-      // exactly one well in this product's section...
+      // Exactly one image well in this product's section.
       expect(count(chunk, 'class="image-well"'), p.id).toBe(1);
-      // ...and the product image sits directly inside it (renderer emits
-      // `<div class="image-well"><img ...>`), carrying this product's alt.
-      expect(chunk.includes('<div class="image-well"><img '), p.id).toBe(true);
-      expect(chunk.includes(esc(p.imageAlt)), p.id).toBe(true);
+      // Capture the well's INNER markup and assert THIS product's image is the
+      // one inside it — bound by both the exact rendered src (data URI) and alt.
+      const well = chunk.match(/<div class="image-well">([\s\S]*?)<\/div>/);
+      expect(well, p.id).not.toBeNull();
+      const inner = well![1];
+      expect(inner, p.id).toContain(`src="${defaultImageDataUri(p.image)}"`);
+      expect(inner, p.id).toContain(`alt="${esc(p.imageAlt)}"`);
     }
     // Non-product pages must NOT have an image well.
     const about = chunks.find(c => c.includes('About NineScrolls LLC'))!;
@@ -367,10 +370,19 @@ Expected: `pages: 14`.
 **If it is > 14, diagnose the actual cause before changing anything — do NOT assume `min-height` is to blame.** An extra page can come from `min-height` too tall, `.image-well { height }`, table cell padding, a margin, or a genuinely tall product's intrinsic content.
 1. Render to images and find the overflowing page: `pdftoppm -jpeg -r 80 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-page` then read the `/tmp/eqg-page-*.jpg` files to see which page spilled to a second sheet and which section caused it.
 2. Identify the causal CSS on that specific section — e.g. a near-empty overflow sheet after a product page ⇒ `.page--product { min-height }` too tall (lower it, e.g. 8.8in); a dense product whose *table* spilled ⇒ trim `td`/`th` padding or `.image-well { height }` for that content; an image pushing height ⇒ `.image-well { height }`.
-3. Change only the causal value in `equipmentGuide.css.ts`, re-run Steps 7–8, and repeat until exactly 14. Record what changed and why in the Step 9 commit body.
+3. Change only the causal value in `equipmentGuide.css.ts`, re-run Steps 6–8 (focused test → regen → page count), and repeat until exactly 14. Record what changed and why in the Step 9 commit body.
 
-- [ ] **Step 9: Commit code + regenerated PDF together**
+- [ ] **Step 9: Full pre-commit verification, then commit code + regenerated PDF together**
 
+Complete the entire gate below before committing — and re-run it after **every** pagination adjustment from Step 8, so the committed state (not just an intermediate one) is fully verified:
+1. `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'` — focused render test green.
+2. `npx vitest run --exclude '**/.claude/**'` — full suite green (no regressions elsewhere).
+3. `npm run build` — typecheck + bundle succeed.
+4. Page count is 14 (Step 8) and the generator reported a size under `MAX_PDF_BYTES` (Step 7).
+5. Read `public/NineScrolls-Equipment-Guide.pdf` — visual sanity: a logo on every page (white on the Evidence card), image wells present, no plain-text `NINESCROLLS` wordmark.
+6. `git status --short` — only the five feature files (plus the pre-existing untracked `tmp/` + research-validation docs) appear. If `npm run build` left `package-lock.json` modified in the working tree with **no real dependency change** (none is expected — nothing in `package.json` changed), leave it in the working tree but do NOT stage it.
+
+Only once all six pass, commit exactly the five files (the explicit `git add` excludes everything else):
 ```bash
 git add public/assets/images/logo-with-text.svg \
         src/templates/equipmentGuide/renderEquipmentGuideHtml.ts \
@@ -432,8 +444,20 @@ If no tweak is needed, no commit here. **Run steps 1–5 once more after the fin
 - [ ] **Step 4: Final gate — build + git hygiene**
 
 1. Run: `npm run build` — succeeds, no TypeScript errors (renderer/CSS typecheck; the generator/app bundle is unaffected).
-2. Run: `git status --short`. `npm run build` runs `npm install` and may touch `package-lock.json`; if it changed with no intended dependency change, discard it: `git checkout -- package-lock.json`. This feature commits **only** the five files in the File Structure table (`logo-with-text.svg`, `renderEquipmentGuideHtml.ts`, `equipmentGuide.css.ts`, `renderEquipmentGuideHtml.test.ts`, `NineScrolls-Equipment-Guide.pdf`). Nothing else — no `tmp/`, no `package-lock.json`, no unrelated docs — may be staged/committed.
-3. Confirm the committed PDF matches the current renderer (it was committed atomically with the code in Task 1 / the last Step-3 iteration, so `git status` shows it clean).
+2. **Exact committed-file audit against the spec/plan baseline `0a88501e`** (the round-3 spec+plan commit, i.e. the last commit before implementation began):
+   ```bash
+   git diff --name-only 0a88501e..HEAD
+   ```
+   The output MUST be exactly these five paths — no more, no fewer:
+   - `public/assets/images/logo-with-text.svg`
+   - `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts`
+   - `src/templates/equipmentGuide/equipmentGuide.css.ts`
+   - `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts`
+   - `public/NineScrolls-Equipment-Guide.pdf`
+
+   `git status --short` alone is insufficient (it hides what was already committed). If the diff lists anything extra — e.g. `package-lock.json` — it was committed by mistake: inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched). Only if it is spurious `npm install` churn, remove it from history for this branch (e.g. amend/rebase that commit to drop the file); do **NOT** blindly `git checkout -- package-lock.json`, which could clobber unrelated working-tree edits.
+3. **Preserve pre-existing untracked files** — leave `tmp/` and the untracked `docs/superpowers/**/2026-07-09-research-validation-claim-reframe*` files exactly as they are; they are not part of this feature and must not be added, removed, or reverted.
+4. Confirm the committed PDF matches the current renderer (it was committed atomically with the code in Task 1 / the last Step-3 iteration, so `git status` shows it clean).
 
 ---
 
