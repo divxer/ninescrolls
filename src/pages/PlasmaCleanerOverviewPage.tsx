@@ -241,8 +241,8 @@ export function PlasmaCleanerOverviewPage() {
   return (
     <>
       <SEO
-        title="Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing"
-        description="Compare NineScrolls HY and PLUTO benchtop plasma cleaner systems for research laboratories. Explore RF and MF models, chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
+        title="Plasma Cleaner Systems | Benchtop & Floor-Standing RF Plasma Cleaners | Request Pricing"
+        description="Compare NineScrolls HY and PLUTO plasma cleaner systems — benchtop and floor-standing RF and MF models — for research laboratories. Explore chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
         keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F, PLUTO-30, floor-standing plasma cleaner"
         url="/products/plasma-cleaner"
         type="website"

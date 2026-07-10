@@ -19,11 +19,11 @@ describe('PlasmaCleanerOverviewPage', () => {
     renderPlasmaCleanerOverviewPage();
 
     await waitFor(() => {
-      expect(document.title).toBe('Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing | NineScrolls LLC');
+      expect(document.title).toBe('Plasma Cleaner Systems | Benchtop & Floor-Standing RF Plasma Cleaners | Request Pricing | NineScrolls LLC');
     });
 
     const metaDescription = document.head.querySelector('meta[name="description"]');
-    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('benchtop plasma cleaner systems'));
+    expect(metaDescription).toHaveAttribute('content', expect.stringContaining('benchtop and floor-standing'));
     expect(metaDescription).toHaveAttribute('content', expect.stringContaining('request pricing'));
     expect(metaDescription).toHaveAttribute('content', expect.stringContaining('surface activation'));
     expect(metaDescription?.getAttribute('content')).not.toMatch(/online pricing/i);
