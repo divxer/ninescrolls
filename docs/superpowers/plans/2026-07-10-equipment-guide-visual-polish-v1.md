@@ -37,11 +37,14 @@
 - Test: `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts`
 - Regenerate: `public/NineScrolls-Equipment-Guide.pdf`
 
-**Before Step 1 — record the implementation baseline (do NOT hardcode a SHA):**
+**Before Step 1 — record the implementation baseline (do NOT hardcode a SHA, do NOT use a shared `/tmp` file):**
 ```bash
-git rev-parse HEAD | tee /tmp/eqg-impl-base.sha
+git rev-parse HEAD                          # the immutable IMPLEMENTATION_BASE_SHA
+git status --porcelain -- package-lock.json # initial package-lock state (empty = clean)
 ```
-Capture this **now, before any file change**. Do not hardcode a commit SHA anywhere in this plan — the plan/spec docs keep getting committed, which would shift any fixed baseline and make the final five-file audit see extra doc files. The final audit (Task 2 Step 4) reads `/tmp/eqg-impl-base.sha`. If Task 1 runs in a subagent, that subagent MUST also **return this SHA** so the separately-run Task 2 audit uses the same baseline.
+Do this **now, before any file change**, and record both values:
+- **`IMPLEMENTATION_BASE_SHA`** (the 40-char HEAD SHA). Do NOT hardcode a SHA in this plan (the spec/plan doc commits shift it) and do NOT persist it to a global path like `/tmp/…` (another worktree/session could overwrite it). Instead, **Task 1 MUST print `IMPLEMENTATION_BASE_SHA=<sha>` verbatim in its completion report**, and Task 2's final audit consumes that exact reported value directly.
+- **Initial `package-lock.json` state** — whether it was already dirty before you started. After `npm run build` (which may run `npm install`), this lets you tell whether a package-lock change is pre-existing or build-induced. Build-induced churn is left **unstaged and un-reverted** (never auto-`checkout`); it is simply not part of the five committed files.
 
 - [ ] **Step 1: Copy the logo asset into the repo**
 
@@ -448,26 +451,40 @@ Repeat with the user until the look is approved. Each iteration commits ONLY the
 git add src/templates/equipmentGuide/equipmentGuide.css.ts public/NineScrolls-Equipment-Guide.pdf
 git commit -m "polish(guide): tune <what> after visual review"
 ```
-If no tweak is needed, no commit here. **Run steps 1–7 once more after the final approved tweak** so the committed state — not just an intermediate one — is fully build-verified.
+If no tweak is needed, no commit here — proceed straight to Step 4, which runs the same complete verification against the committed state either way.
 
-- [ ] **Step 4: Final gate — build + git hygiene**
+- [ ] **Step 4: Final verification (runs on BOTH paths) + hard-failing file audit**
 
-1. Run: `npm run build` — succeeds, no TypeScript errors (renderer/CSS typecheck; the generator/app bundle is unaffected).
-2. **Exact committed-file audit against the recorded implementation baseline** (`/tmp/eqg-impl-base.sha`, captured before Task 1 Step 1 — NOT a hardcoded SHA, since the spec/plan doc commits before implementation would otherwise show up as extra files). Compare programmatically against the sorted five-file set:
+Run the COMPLETE verification against the current committed state **whether or not Task 2 made a tweak** — if the first render needed no adjustment, this is the full final gate on Task 1's committed state; if tweaks happened, it re-confirms the last committed one. All checks here are **non-mutating** — do NOT regenerate the PDF (Puppeteer stamps a creation timestamp, so a re-render would create a spurious PDF diff); verify the already-committed PDF.
+
+1. `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'` — focused render test green.
+2. `npx vitest run --exclude '**/.claude/**'` — full suite green.
+3. `npm run build` — typecheck + bundle succeed.
+4. Committed-PDF checks (no regen): `python3 -c "import os; from pypdf import PdfReader; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages), 'bytes', os.path.getsize('public/NineScrolls-Equipment-Guide.pdf'))"` → must print `pages 14` and `bytes` < 2000000.
+5. Read `public/NineScrolls-Equipment-Guide.pdf` — final visual confirmation.
+6. **Exact five-file audit against Task 1's reported `IMPLEMENTATION_BASE_SHA`** (the value Task 1 printed; not a hardcoded SHA, not a `/tmp` file). This block **exits non-zero on any mismatch**, so it actually blocks a bad state:
    ```bash
-   BASE=$(cat /tmp/eqg-impl-base.sha)
-   diff <(git diff --name-only "$BASE"..HEAD | sort) \
-        <(printf '%s\n' \
-            public/NineScrolls-Equipment-Guide.pdf \
-            public/assets/images/logo-with-text.svg \
-            src/templates/equipmentGuide/equipmentGuide.css.ts \
-            src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
-            src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort) \
-     && echo "EXACT 5-FILE MATCH" || echo "MISMATCH — investigate"
+   BASE=<the IMPLEMENTATION_BASE_SHA reported by Task 1>
+   git rev-parse --verify --quiet "${BASE}^{commit}" >/dev/null || { echo "FAIL: baseline ${BASE} is not a valid commit"; exit 1; }
+   ACTUAL="$(git diff --name-only "${BASE}..HEAD" | sort)"
+   EXPECTED="$(printf '%s\n' \
+     public/NineScrolls-Equipment-Guide.pdf \
+     public/assets/images/logo-with-text.svg \
+     src/templates/equipmentGuide/equipmentGuide.css.ts \
+     src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
+     src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort)"
+   if [ "${ACTUAL}" = "${EXPECTED}" ]; then
+     echo "EXACT 5-FILE MATCH"
+   else
+     echo "FAIL: committed file set is not exactly the five allowed files:"
+     diff <(printf '%s\n' "${EXPECTED}") <(printf '%s\n' "${ACTUAL}")
+     exit 1
+   fi
    ```
-   (Uses `printf` rather than a heredoc so no stray leading whitespace can creep into the compared paths.) Expected: `EXACT 5-FILE MATCH` (the `diff` prints nothing). `git status --short` alone is insufficient — it hides what was already committed. If the diff shows a difference (e.g. an extra `package-lock.json`), it was committed by mistake: inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched), and if it is spurious `npm install` churn, drop it from this branch's history (amend/rebase that commit). Do **NOT** blindly `git checkout -- package-lock.json`, which could clobber unrelated working-tree edits.
-3. **Preserve pre-existing untracked files** — leave `tmp/` and the untracked `docs/superpowers/**/2026-07-09-research-validation-claim-reframe*` files exactly as they are; they are not part of this feature and must not be added, removed, or reverted.
-4. Confirm the committed PDF matches the current renderer (it was committed atomically with the code in Task 1 / the last Step-3 iteration, so `git status` shows it clean).
+   `git status --short` alone is insufficient (it hides already-committed files). If this fails on an extra `package-lock.json`, inspect whether it reflects a real dependency change (none is expected; `package.json` is untouched); if it is spurious `npm install` churn, drop it from this branch's history (amend/rebase the offending commit). Do **NOT** blindly `git checkout -- package-lock.json` — that could clobber unrelated working-tree edits.
+7. **Preserve pre-existing untracked files** — leave `tmp/` and the untracked `docs/superpowers/**/2026-07-09-research-validation-claim-reframe*` files exactly as they are; do not add, remove, or revert them.
+
+The committed PDF already matches the renderer (committed atomically with the code in Task 1 / the last Step-3 iteration), so post-audit `git status` shows a clean tree apart from any pre-existing untracked files.
 
 ---
 
