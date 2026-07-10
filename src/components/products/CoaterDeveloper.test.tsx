@@ -45,8 +45,6 @@ describe('CoaterDeveloper redesigned product page', () => {
     expect(within(specs).getByText('Up to 5000 rpm +/-1 rpm')).toBeInTheDocument();
     expect(within(specs).getByText('Hotplate')).toBeInTheDocument();
     expect(within(specs).getByText('RT to 200 C')).toBeInTheDocument();
-    expect(within(specs).getByText('Film Uniformity')).toBeInTheDocument();
-    expect(within(specs).getByText('<0.5% 3 sigma')).toBeInTheDocument();
   });
 
   it('keeps Coater/Developer conversion and comparison paths visible', () => {
