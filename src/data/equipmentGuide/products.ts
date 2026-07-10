@@ -350,7 +350,10 @@ export const products: GuideProduct[] = [
     ],
     specs: [
       { label: 'Substrate', value: 'Φ6 in x1 flat substrate holder' },
+      { label: 'Substrate Heating', value: 'RT to 300°C' },
+      { label: 'Substrate Rotation', value: '1–10 rpm' },
       { label: 'E-Gun Crucible', value: '6 pockets, 17 cc each' },
+      { label: 'E-Beam Power', value: '~10 kW' },
       { label: 'Uniformity', value: '≤±5% within Φ6 in' },
       { label: 'Thickness Control', value: 'In-situ QCM endpoint' },
       { label: 'Vacuum', value: '6.7×10⁻⁵ Pa ultimate vacuum' },

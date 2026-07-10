@@ -7,7 +7,7 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
   seo: {
     title: 'MEB-600 E-Beam Evaporation Platform',
     description:
-      'MEB-600 multi-source e-beam and thermal evaporation platform for IR sensors, photonic crystals, optical multilayers, lift-off metallization, and quantum device thin films. Supports a Φ6 in x1 flat substrate holder, 6-pocket 17 cc e-gun crucible, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
+      'MEB-600 multi-source e-beam and thermal evaporation platform for IR sensors, photonic crystals, optical multilayers, lift-off metallization, and quantum device thin films. Supports a Φ6 in x1 flat substrate holder, 6-pocket 17 cc e-gun crucible, ~10 kW e-beam power, RT to 300°C substrate heating, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
     keywords:
       'e-beam evaporator, MEB-600, electron beam evaporation, thermal evaporator, PVD evaporation, QCM thickness monitor, optical multilayers, lift-off metallization',
   },
@@ -32,7 +32,7 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the MEB-600?',
       answer:
-        'The MEB-600 supports a Φ6 in x1 flat substrate holder, a 6-pocket 17 cc e-gun crucible, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
+        'The MEB-600 supports a Φ6 in x1 flat substrate holder, a 6-pocket 17 cc e-gun crucible, ~10 kW e-beam power, RT to 300°C substrate heating, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
     },
   ],
   breadcrumb: {
@@ -126,7 +126,10 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
     testId: 'e-beam-specifications',
     items: [
       { label: 'Substrate', value: 'Φ6 in x1 flat substrate holder' },
+      { label: 'Substrate Heating', value: 'RT to 300°C' },
+      { label: 'Substrate Rotation', value: '1–10 rpm' },
       { label: 'E-Gun Crucible', value: '6 pockets, 17 cc each' },
+      { label: 'E-Beam Power', value: '~10 kW' },
       { label: 'Uniformity', value: '≤±5% within Φ6 in' },
       { label: 'Thickness Control', value: 'In-situ QCM endpoint' },
       { label: 'Vacuum', value: '6.7×10⁻⁵ Pa ultimate vacuum' },

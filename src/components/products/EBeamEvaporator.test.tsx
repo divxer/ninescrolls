@@ -41,6 +41,8 @@ describe('EBeamEvaporator redesigned product page', () => {
     expect(within(specs).getByText('Φ6 in x1 flat substrate holder')).toBeInTheDocument();
     expect(within(specs).getByText('E-Gun Crucible')).toBeInTheDocument();
     expect(within(specs).getByText('6 pockets, 17 cc each')).toBeInTheDocument();
+    expect(within(specs).getByText('E-Beam Power')).toBeInTheDocument();
+    expect(within(specs).getByText('~10 kW')).toBeInTheDocument();
     expect(within(specs).getByText('Uniformity')).toBeInTheDocument();
     expect(within(specs).getByText('≤±5% within Φ6 in')).toBeInTheDocument();
     expect(within(specs).getByText('Vacuum')).toBeInTheDocument();
