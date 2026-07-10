@@ -45,6 +45,7 @@ const HY20LRF = lazyWithReload(() => import('../components/products').then(m => 
 const PlutoT = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoT })));
 const PlutoM = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoM })));
 const PlutoF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoF })));
+const Pluto30 = lazyWithReload(() => import('../components/products').then(m => ({ default: m.Pluto30 })));
 
 // ─── Loading fallback ───────────────────────────────────────────────────────
 function PageLoader() {
@@ -98,6 +99,7 @@ export function AppRoutes() {
         <Route path="/products/pluto-t" element={<PlutoT />} />
         <Route path="/products/pluto-m" element={<PlutoM />} />
         <Route path="/products/pluto-f" element={<PlutoF />} />
+        <Route path="/products/pluto-30" element={<Pluto30 />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

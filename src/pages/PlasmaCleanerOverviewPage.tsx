@@ -17,6 +17,7 @@ interface CleanerCard {
   description: string;
   chips: string[];
   featured?: boolean;
+  quoteOnly?: boolean;
 }
 
 const cleaners: CleanerCard[] = [
@@ -102,6 +103,25 @@ const cleaners: CleanerCard[] = [
   },
 ];
 
+// Floor-standing / large-chamber systems — kept separate from the benchtop group
+// and out of the benchtop comparison matrix (different form factor and selection logic).
+const floorStanding: CleanerCard[] = [
+  {
+    name: 'PLUTO-30',
+    route: '/products/pluto-30',
+    label: 'Floor-Standing Batch',
+    image: '/assets/images/redesign/products/pluto-30-standardized.webp',
+    alt: 'PLUTO-30 - 30L floor-standing batch RF plasma system',
+    price: 'Request quote',
+    chamber: '30 L',
+    power: '500 W RF',
+    workflow: 'Batch and pilot-scale processing',
+    description: 'Floor-standing 30 L RF plasma system with up to 7 adjustable shelves and MFC gas control for batch cleaning, activation, and etching.',
+    chips: ['30 L chamber', 'Up to 7 shelves', 'MFC gas control'],
+    quoteOnly: true,
+  },
+];
+
 const pricingFaqs = [
   {
     question: 'How much does a plasma cleaner cost?',
@@ -149,7 +169,11 @@ function CleanerCardView({ cleaner }: { cleaner: CleanerCard }) {
               <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-600">{cleaner.label}</span>
               <h2 className="mt-2 text-2xl font-headline font-bold tracking-tight text-slate-950">{cleaner.name}</h2>
             </div>
-            <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Buy Online</span>
+            {cleaner.quoteOnly ? (
+              <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Request Quote</span>
+            ) : (
+              <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Buy Online</span>
+            )}
           </div>
           <p className="text-sm leading-6 text-slate-600">{cleaner.description}</p>
           <div className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -194,7 +218,7 @@ export function PlasmaCleanerOverviewPage() {
     '@type': 'ItemList',
     name: 'NineScrolls plasma cleaner systems',
     description: 'RF and mid-frequency plasma cleaners for research laboratories, surface activation, bonding preparation, and precision sample cleaning.',
-    itemListElement: cleaners.map((cleaner, index) => ({
+    itemListElement: [...cleaners, ...floorStanding].map((cleaner, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: cleaner.name,
@@ -219,7 +243,7 @@ export function PlasmaCleanerOverviewPage() {
       <SEO
         title="Benchtop Plasma Cleaner Systems | RF Plasma Cleaners | Request Pricing"
         description="Compare NineScrolls HY and PLUTO benchtop plasma cleaner systems for research laboratories. Explore RF and MF models, chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
-        keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F"
+        keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F, PLUTO-30, floor-standing plasma cleaner"
         url="/products/plasma-cleaner"
         type="website"
       />
@@ -282,6 +306,23 @@ export function PlasmaCleanerOverviewPage() {
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {cleaners.map((cleaner) => (
+              <CleanerCardView key={cleaner.route} cleaner={cleaner} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white pb-14">
+        <div className="mx-auto max-w-screen-2xl px-6 lg:px-10">
+          <div className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-8">
+            <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Floor-Standing / Large-Chamber</span>
+            <h2 className="text-4xl font-headline font-bold tracking-tight text-slate-950">Larger batch and pilot-scale systems</h2>
+            <p className="max-w-3xl text-base leading-7 text-slate-600">
+              Floor-standing systems step up from the benchtop cleaners with a larger chamber, multi-shelf loading, and MFC gas control for higher-throughput batch and pilot-scale work. Configured and quoted per application rather than sold online.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {floorStanding.map((cleaner) => (
               <CleanerCardView key={cleaner.route} cleaner={cleaner} />
             ))}
           </div>
