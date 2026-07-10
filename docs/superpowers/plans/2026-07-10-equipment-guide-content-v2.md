@@ -49,27 +49,36 @@ Each product's `lead` is rewritten from its config `hero.description` (listed in
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 
-- [ ] **Step 0: Record the pre-existing state (for the Task 6 hygiene gate)**
+- [ ] **Step 0: Record the pre-existing state to a sourceable file (for the Task 6 hygiene gate)**
 
+Persist the three baseline values so Task 6 (a different shell / subagent) can read them reliably — do NOT rely on terminal output:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
-git rev-parse HEAD                               # IMPLEMENTATION_BASE_SHA — record + report
-git status --porcelain --untracked-files=all | grep '^??' | sort | tee /tmp/eqg-pre-untracked.txt   # PRE_UNTRACKED
-git hash-object package-lock.json                # LOCKFILE_BASE_HASH — record + report
+{ echo "IMPLEMENTATION_BASE_SHA=$(git rev-parse HEAD)"
+  echo "LOCKFILE_BASE_HASH=$(git hash-object package-lock.json)"
+} > /tmp/eqg-v2-state.sh
+git status --porcelain --untracked-files=all | grep '^??' | sort > /tmp/eqg-pre-untracked.txt
+cat /tmp/eqg-v2-state.sh; echo "PRE_UNTRACKED:"; cat /tmp/eqg-pre-untracked.txt
 ```
-Record all three verbatim (report them if executing via subagent). These pre-existing untracked files (`tmp/`, the two `research-validation-claim-reframe*` docs) MUST still be present and untouched at Task 6 — the hygiene gate compares against this list rather than demanding an empty untracked set.
+`IMPLEMENTATION_BASE_SHA` + `LOCKFILE_BASE_HASH` land in `/tmp/eqg-v2-state.sh`; the pre-existing untracked list (`tmp/`, the two `research-validation-claim-reframe*` docs) in `/tmp/eqg-pre-untracked.txt`. These files MUST still be present and untouched at Task 6 — the hygiene gate compares against this list rather than demanding an empty untracked set. (If executing via subagents, Task 1 also reports these values so the controller can re-create the files if `/tmp` didn't survive.)
 
-- [ ] **Step 1: Generate all three fixtures from a detached baseline worktree (one runnable block)**
+- [ ] **Step 1: Generate all three fixtures from a detached baseline worktree (fail-fast, one runnable block)**
 
-Do NOT export from the current working tree (uncommitted edits could contaminate it) and do NOT use `git stash`. Run `tsx` **from the main repo** (which has `node_modules/tsx`) but import the **baseline** files by absolute path from a detached worktree (the baseline TS imports are relative + `node:*` only, so no npm deps are needed from the worktree):
+Do NOT export from the current working tree and do NOT use `git stash`. Run the **locked local** `./node_modules/.bin/tsx` (never `npx tsx`, which can silently network-download) importing the **baseline** files by absolute path from a detached worktree (baseline TS imports are relative + `node:*` only):
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
-mkdir -p src/data/equipmentGuide/__fixtures__
+set -euo pipefail
+test -x ./node_modules/.bin/tsx || { echo "FAIL: ./node_modules/.bin/tsx missing — run npm ci first"; exit 1; }
 BASE=/tmp/eqg-v1-baseline
-[ -e "$BASE" ] && git worktree remove --force "$BASE" 2>/dev/null   # preflight: clear a stale worktree
+git worktree prune                                          # clear registered-but-deleted worktrees
+git worktree remove --force "$BASE" 2>/dev/null || true     # clear a stale worktree dir
+mkdir -p src/data/equipmentGuide/__fixtures__
+rm -f src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json \
+      src/data/equipmentGuide/__fixtures__/v1-evidence.json \
+      src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html   # delete targets FIRST so a failed run can't pass on stale files
 git worktree add --detach "$BASE" f76765a8
-trap 'git worktree remove --force "$BASE" 2>/dev/null' EXIT
-OUT="$PWD/src/data/equipmentGuide/__fixtures__" BASE="$BASE" npx tsx -e '
+trap 'git worktree remove --force "$BASE" 2>/dev/null || true' EXIT
+OUT="$PWD/src/data/equipmentGuide/__fixtures__" BASE="$BASE" ./node_modules/.bin/tsx -e '
   (async () => {
     const { writeFileSync } = await import("node:fs");
     const OUT = process.env.OUT, BASE = process.env.BASE;
@@ -89,8 +98,9 @@ git worktree remove --force "$BASE"; trap - EXIT
 for f in v1-specs-subtable.json v1-evidence.json v1-evidence-chunk.html; do
   test -s "src/data/equipmentGuide/__fixtures__/$f" || { echo "FAIL: fixture $f missing/empty"; exit 1; }
 done
+echo "fixtures OK"
 ```
-The three fixtures now exist, generated from the baseline's own data. (`process.cwd()` stays the main repo, so the renderer's product-image reads resolve to the unchanged `public/` — fine; the Evidence chunk contains no product images anyway.)
+With `set -euo pipefail`, any failure (worktree add, `tsx` run) aborts; the three targets are deleted before generation, so a failed run cannot pass on stale files. (`process.cwd()` stays the main repo, so the renderer's product-image reads resolve to the unchanged `public/`.)
 
 - [ ] **Step 2: Sanity-check the fixtures are non-trivial**
 
@@ -406,22 +416,49 @@ Create `docs/equipment-guide/content-v2-traceability.md`; one row per `lead` and
 
 Before committing, go through `content-v2-traceability.md` **line by line** and verify each `lead` and `bullet` against the source it cites — confirm the claim actually appears in that config `hero.description` / original guide bullet / `specs` row, that **no performance number was introduced that isn't already in `specs`**, and that there are **no superlatives**. (Cross-check `e-beam` bullet 2 against the `Uniformity` spec row: it must read `≤±5% within Φ6 in`, never `±3–5%`.) If executing via subagents, this is a human/controller checkpoint, not an automated test — the traceability file is the artifact reviewed. Fix any drift in `products.ts` + the traceability file before continuing.
 
-- [ ] **Step 5: Tighten `content` to required (drives optional→required now that all 11 are authored)**
+- [ ] **Step 5: Tighten `content` to required + remove ALL optional-content branches**
 
-In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`. Run `tsc` / the data suite: with all 11 authored it compiles green; if any product were still missing `content`, `tsc` now fails. This is the real optional→required transition (Task 6 does not touch the type).
+In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`.
+In `renderEquipmentGuideHtml.ts`, `content` is now guaranteed — drop the `p.content ? … : ''` guards; render lead/apps/cta unconditionally:
+```ts
+const lead = `<p class="lead">${esc(p.content.lead)}</p>`;
+const apps = `<div class="apps"><p class="lab">Typical applications</p><div class="chips">${p.content.applications.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div></div>`;
+const cta = `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${p.content.href}">Explore configurations &amp; request a quote <span class="arr">→</span></a></div>`;
+```
+In `renderEquipmentGuideHtml.test.ts`, **delete** the `real products: … else expect 0` CTA test (its zero-branch is now unreachable) and replace it with a required-content assertion — exactly one CTA for every product (keep the synthetic red-first test):
+```ts
+it('renders exactly one CTA per product (content required), canonical route + exact text', () => {
+  for (const p of equipmentGuideData.products) {
+    const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
+    const anchors = [...chunk.matchAll(CTA_ANCHOR)];
+    expect(anchors.length, p.id).toBe(1);
+    expect(anchors[0][1], p.id).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[p.id]}`);
+    expect(anchors[0][2], p.id).toBe(CTA_TEXT);
+  }
+});
+```
+Run `tsc` + the suite → green with all 11 authored; a product missing `content` now fails to compile. (Task 6 does not touch the type or these branches.)
 
 - [ ] **Step 6: Regenerate to a temp check (do NOT stage the PDF), then commit data + types + tests + traceability**
 
+Verify to a **temporary** PDF and restore the tracked production file (the generator always writes `public/…pdf`, so back it up + restore — the real PDF is committed only in Task 6):
 ```bash
-npm run generate-equipment-guide   # regenerates public/…pdf in the working tree (verify only)
-PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))")
+set -euo pipefail
+PROD=public/NineScrolls-Equipment-Guide.pdf
+BEFORE=$(git hash-object "$PROD")
+npm run generate-equipment-guide                    # writes $PROD in the working tree
+cp "$PROD" /tmp/eqg-check.pdf                        # snapshot the v2-content render for verification
+git checkout -- "$PROD"                             # restore the committed (v1) PDF — tracked file untouched
+[ "$(git hash-object "$PROD")" = "$BEFORE" ] || { echo "FAIL: tracked PDF not restored"; exit 1; }
+PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('/tmp/eqg-check.pdf').pages))")
 [ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages (want 14)"; exit 1; }
-pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p   # inspect ALL 14 for clipping/overflow
+pdftoppm -jpeg -r 100 /tmp/eqg-check.pdf /tmp/eqg-v2-pages/p   # inspect ALL 14 for clipping/overflow
 ```
-If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 for a **config-backed** product only, never plasma-cleaner → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6):
+If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 for a **config-backed** product only, never plasma-cleaner → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6), including the renderer/test changes from Step 5:
 ```bash
 git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/types.ts \
-        src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md
+        src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md \
+        src/templates/equipmentGuide/renderEquipmentGuideHtml.ts src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts
 git commit -m "feat(guide): content-v2 — leads, applications, CTAs, rewritten bullets for all 11 products; content required"
 ```
 
@@ -476,7 +513,17 @@ export const about: EquipmentGuideData['about'] = {
   ],
 };
 ```
-Run tests → **PASS**. Regenerate to temp + confirm About still fits one page and guide == 14 (do **not** stage the PDF). Commit **without the PDF**:
+Run tests → **PASS**. Verify to a temp PDF and restore the tracked file (same pattern as Task 4 Step 6), confirming the About page still fits one page and the guide == 14:
+```bash
+set -euo pipefail
+PROD=public/NineScrolls-Equipment-Guide.pdf; BEFORE=$(git hash-object "$PROD")
+npm run generate-equipment-guide; cp "$PROD" /tmp/eqg-check.pdf; git checkout -- "$PROD"
+[ "$(git hash-object "$PROD")" = "$BEFORE" ] || { echo "FAIL: tracked PDF not restored"; exit 1; }
+PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('/tmp/eqg-check.pdf').pages))")
+[ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages"; exit 1; }
+pdftoppm -jpeg -r 100 /tmp/eqg-check.pdf /tmp/eqg-v2-pages/p   # confirm About page (p1) fits one page
+```
+Commit **without the PDF**:
 ```bash
 git add src/data/equipmentGuide/guideMeta.ts src/data/equipmentGuide/equipmentGuide.data.test.ts
 git commit -m "feat(guide): rewrite About page to NineScrolls' real value (process-first, U.S. support)"
@@ -507,19 +554,31 @@ pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p
 ```
 Then read all 14 page images: every product page single, no clipping/overflow, no body text < 12.5px, Evidence + Contact + all spec tables visually unchanged.
 
-- [ ] **Step 3: Hygiene gate — executable, untracked-baseline-aware, all breaches exit 1**
+- [ ] **Step 3: Commit the final PDF (atomic with the completed state)**
 
-Uses the values recorded in Task 1 Step 0 (`IMPLEMENTATION_BASE_SHA`, `LOCKFILE_BASE_HASH`, and `PRE_UNTRACKED` — save the untracked list to a file in Step 0: `… | sort > /tmp/eqg-pre-untracked.txt`).
+Task 6's regen (Step 2) wrote the real production PDF. Commit it:
 ```bash
-BASE=<IMPLEMENTATION_BASE_SHA from Task 1 Step 0>
+git add public/NineScrolls-Equipment-Guide.pdf
+git commit -m "feat(guide): regenerate final Equipment Guide PDF with content-v2"
+```
+
+- [ ] **Step 4: Hygiene audit (post-commit; every breach exits 1)**
+
+`source` the state recorded in Task 1 Step 0 and audit committed + working-tree + untracked, with a **two-way** allowlist compare (rejects extra AND missing):
+```bash
+set -euo pipefail
+source /tmp/eqg-v2-state.sh   # sets IMPLEMENTATION_BASE_SHA, LOCKFILE_BASE_HASH
+test -n "${IMPLEMENTATION_BASE_SHA:-}" && test -n "${LOCKFILE_BASE_HASH:-}" || { echo "FAIL: state file missing fields"; exit 1; }
 # (a) lockfile unchanged
-[ "$(git hash-object package-lock.json)" = "<LOCKFILE_BASE_HASH>" ] || { echo "FAIL: package-lock.json changed"; exit 1; }
-# (b) the pre-existing untracked files are still present, unchanged (NOT demanding an empty set)
+[ "$(git hash-object package-lock.json)" = "$LOCKFILE_BASE_HASH" ] || { echo "FAIL: package-lock.json changed"; exit 1; }
+# (b) NO uncommitted tracked drift (staged or unstaged) — everything is committed
+test -z "$(git status --porcelain --untracked-files=no)" || { echo "FAIL: uncommitted tracked changes:"; git status --porcelain --untracked-files=no; exit 1; }
+# (c) pre-existing untracked files unchanged (present; nothing added/removed)
 git status --porcelain --untracked-files=all | grep '^??' | sort > /tmp/eqg-untracked-now
-diff /tmp/eqg-pre-untracked.txt /tmp/eqg-untracked-now || { echo "FAIL: untracked set changed (research docs / tmp must remain, nothing new added)"; exit 1; }
-# (c) tracked changes since baseline are EXACTLY the v2 allowlist (no out-of-scope edits)
-RAW="$(git diff --name-only "${BASE}..HEAD")" || { echo "FAIL: git diff"; exit 1; }
-EXTRA=$(comm -23 <(printf '%s\n' "$RAW" | sort -u) <(printf '%s\n' \
+diff /tmp/eqg-pre-untracked.txt /tmp/eqg-untracked-now || { echo "FAIL: untracked set changed (research docs / tmp must remain, nothing new)"; exit 1; }
+# (d) committed change set BASE..HEAD == EXACTLY the allowlist (two-way diff: extra OR missing both fail)
+git diff --name-only "${IMPLEMENTATION_BASE_SHA}..HEAD" | sort -u > /tmp/eqg-changed.txt
+printf '%s\n' \
   docs/equipment-guide/content-v2-traceability.md \
   public/NineScrolls-Equipment-Guide.pdf \
   src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html \
@@ -531,19 +590,11 @@ EXTRA=$(comm -23 <(printf '%s\n' "$RAW" | sort -u) <(printf '%s\n' \
   src/data/equipmentGuide/types.ts \
   src/templates/equipmentGuide/equipmentGuide.css.ts \
   src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
-  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort -u))
-[ -z "$EXTRA" ] || { echo "FAIL: out-of-scope tracked changes:"; echo "$EXTRA"; exit 1; }
-echo "hygiene OK"
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort -u > /tmp/eqg-allow.txt
+diff /tmp/eqg-allow.txt /tmp/eqg-changed.txt || { echo "FAIL: committed file set != allowlist (extra or MISSING files)"; exit 1; }
+echo "hygiene OK — ready for PR"
 ```
-(`BASE = IMPLEMENTATION_BASE_SHA` is the HEAD recorded at Task 1 Step 0 — i.e. after the spec/plan doc commits — so `BASE..HEAD` is exactly the Task 1–6 implementation files; the spec/plan docs live in `BASE` and correctly do NOT appear.)
-
-- [ ] **Step 4: Commit the final PDF (atomic with the completed state)**
-
-Only after Steps 1–3 all pass:
-```bash
-git add public/NineScrolls-Equipment-Guide.pdf
-git commit -m "feat(guide): regenerate final Equipment Guide PDF with content-v2"
-```
+(`BASE` is the HEAD recorded at Task 1 Step 0 — after the spec/plan commits — so `BASE..HEAD` is exactly the Task 1–6 implementation files; the two-way `diff` fails if any expected file is missing OR any extra file crept in. If it fails, fix + amend before opening the PR.)
 
 ---
 
