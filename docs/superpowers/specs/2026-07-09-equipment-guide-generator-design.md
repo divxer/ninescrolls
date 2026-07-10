@@ -82,7 +82,8 @@ export interface SpecRow { label: string; value: string; value2?: string } // va
 export interface SpecParityCheck {
   guideLabel: string;       // the spec row's label in THIS guide product, e.g. 'RF Power'
   websiteLabel: string;     // the matching label in the website config's specifications.items, e.g. 'RF Power'
-  normalizedValue: string;  // the value both must normalize to, e.g. '1000-3000w' (lowercased, spaces/units collapsed)
+  guideExpected: string;    // normalized substring expected in the guide row
+  websiteExpected: string;  // normalized substring expected in the website row (may differ when guide combines values)
 }
 export interface GuideProduct {
   id: string;               // 'icp-rie'
@@ -98,7 +99,7 @@ export interface GuideProduct {
   // Explicit, testable mapping to the website config for the spec-parity guard.
   // Omitted for products with no website page (none currently). productSlug is the
   // website config slug (may differ from `id`); each check names both labels
-  // (which need NOT be identically spelled) plus the normalized value both hold.
+  // (which need NOT be identically spelled) plus explicit normalized values for each side.
   websiteSpecParity?: {
     productSlug: string;                 // e.g. 'icp-etcher'
     checks: SpecParityCheck[];
@@ -185,7 +186,7 @@ Pure-function and data tests (fast, no browser):
 2. **No unverified scale claims:** rendered HTML contains no `30+`, `1000+`, `300+`, `Trusted Manufacturer Partner`, `Years of Experience`, `Global Installations`, `Research Institutions Served`.
 3. **Evidence integrity:** every journal named in the evidence subtitle appears in `evidence.studies`; no bare flagship `Nature`; any displayed citation count has an `asOf`.
 4. **Completeness:** exactly 11 products, each with a non-empty `specs`, a `-standardized.webp` image path that exists on disk, non-empty `bullets`.
-5. **Spec-parity consistency (reverse-drift guard) — driven by the explicit `websiteSpecParity` mapping.** For every product that declares `websiteSpecParity`, the test loads that website config (`productSlug`) and, for each `check`, asserts: (a) the guide product has a spec row labeled `guideLabel`; (b) the website config's `specifications.items` has an item labeled `websiteLabel`; (c) both values normalize (lowercase, collapse spaces/units) to the declared `normalizedValue`. This makes the guard deterministic — the labels need not be spelled identically across the two sources (e.g. guide `RF Power` ↔ website `RF Power`), and drift on either side fails the test with a specific message. A guide product with no `websiteSpecParity` is skipped (and the test asserts every website-backed product in scope declares one, so coverage can't silently lapse).
+5. **Spec-parity consistency (reverse-drift guard) — driven by the explicit `websiteSpecParity` mapping.** For every product that declares `websiteSpecParity`, the test loads that website config (`productSlug`) and, for each `check`, asserts: (a) the guide product has a spec row labeled `guideLabel`; (b) the website config's `specifications.items` has an item labeled `websiteLabel`; (c) the guide value contains `guideExpected` after normalization; and (d) the website value contains `websiteExpected` after normalization. This makes the guard deterministic while still handling real source-shape differences — for example, a guide row may combine source + bias RF power while the website splits them into separate rows. The test also asserts every website-backed product in scope declares at least two `websiteSpecParity.checks`, so coverage cannot silently lapse.
 
 Generation smoke (script / manual, may run outside unit CI given Puppeteer weight):
 

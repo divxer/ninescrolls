@@ -21,6 +21,7 @@
 | `src/data/equipmentGuide/products.ts` | The 11 `GuideProduct` entries (bullets + spec tables + image map + `websiteSpecParity`) |
 | `src/data/equipmentGuide/index.ts` | Assembles + exports the single `EquipmentGuideData` object |
 | `src/data/equipmentGuide/equipmentGuide.data.test.ts` | Data invariants: completeness, brand-integrity, evidence integrity, spec-parity |
+| `docs/equipment-guide/evidence-verification.md` | Task-0 source notes for the ACS / Scientific Reports evidence studies |
 | `src/templates/equipmentGuide/equipmentGuide.css.ts` | Exported CSS string (navy/slate/sky design system) |
 | `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts` | Pure `(EquipmentGuideData) => string` full HTML doc; embeds images as base64 |
 | `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts` | Rendered-output invariants (no OEM, no scale claims, evidence, 11 products, data-URI images) |
@@ -34,7 +35,10 @@ Run tests with: `npx vitest run <file> --exclude '**/.claude/**'` (nested-worktr
 
 ### Task 0: Evidence source verification (gates the evidence page)
 
-**Files:** none yet — this task records verified facts used in Task 2. Do NOT author `guideMeta.ts` evidence until this passes.
+**Files:**
+- Create: `docs/equipment-guide/evidence-verification.md`
+
+This task records verified facts used in Task 2. Do NOT author `guideMeta.ts` evidence until this passes.
 
 - [ ] **Step 1: Verify the two candidate studies via live sources**
 
@@ -53,7 +57,24 @@ Decision rule:
 - If ONLY Scientific Reports verifies: drop `ACS` from the subtitle and omit study 5.
 - If NEITHER: subtitle = `Nature Portfolio journals, Advanced Materials, and Materials Today` (matches the shipped homepage), omit both.
 
-- [ ] **Step 3: Record the verified facts** in this plan file under Task 2 (edit the `studies` array comment with the confirmed title/DOI/count/asOf) so Task 2 authors from confirmed data, not candidates. No commit (no code yet).
+- [ ] **Step 3: Record and commit the verified facts**
+
+Create `docs/equipment-guide/evidence-verification.md` with:
+- date of verification
+- query/source URL(s)
+- exact title
+- journal
+- year
+- DOI or canonical publisher URL
+- Google Scholar citation count + as-of date
+- whether the study is included in the final evidence page
+
+This provenance file is committed so the Task-0 gate survives worker/session handoff. Do not leave the only evidence record as an uncommitted plan edit.
+
+```bash
+git add docs/equipment-guide/evidence-verification.md
+git commit -m "docs(guide): verify evidence-page source studies"
+```
 
 ---
 
@@ -117,7 +138,8 @@ export interface SubTable {
 export interface SpecParityCheck {
   guideLabel: string;      // spec row label in THIS guide product
   websiteLabel: string;    // matching label in the website config specifications.items
-  normalizedValue: string; // value both must normalize to (lowercased, spaces/units collapsed)
+  guideExpected: string;   // normalized substring expected in the guide value
+  websiteExpected: string; // normalized substring expected in the website value
 }
 
 export interface GuideProduct {
@@ -133,7 +155,7 @@ export interface GuideProduct {
   subTable?: SubTable;            // e.g. Coater/Developer hotplate section
   familyOptions?: string[];      // plasma-cleaner family SKUs
   websiteSpecParity?: {
-    productSlug: string;
+    productSlug: string; // canonical config slug, e.g. 'icp-etcher' / 'ald'
     checks: SpecParityCheck[];
   };
 }
@@ -230,6 +252,15 @@ describe('guideMeta content integrity', () => {
       if (s.citations !== undefined) expect(s.citationsAsOf, `${s.title} needs citationsAsOf`).toBeTruthy();
     }
   });
+
+  it('ships no Task-0 placeholders and every listed study has a DOI/source', () => {
+    const serialized = JSON.stringify(evidence);
+    expect(serialized).not.toMatch(/<<|TASK-0|CONFIRMED TITLE|TODO|TBD/i);
+    for (const s of evidence.studies) {
+      expect(s.title.trim(), `${s.journal} needs a real title`).not.toHaveLength(0);
+      expect(s.doi, `${s.title} needs a DOI before shipping`).toMatch(/^10\./);
+    }
+  });
 });
 ```
 
@@ -292,7 +323,7 @@ export const contact: EquipmentGuideData['contact'] = {
   ],
 };
 ```
-> The `<<TASK-0 …>>` markers MUST be replaced with Task 0's confirmed values before this step is considered done — the tests in Step 1 do not catch a placeholder title, so this is a manual gate: if Task 0 dropped a study, delete that entry AND remove its journal from `evidence.subtitle`.
+> The `<<TASK-0 …>>` markers MUST be replaced with Task 0's confirmed values before this step is considered done. The tests above reject `<<`, `TASK-0`, `TODO`, `TBD`, blank titles, and missing/non-DOI links, so placeholders cannot pass green. If Task 0 dropped a study, delete that entry AND remove its journal from `evidence.subtitle`.
 
 - [ ] **Step 4: Run to verify it passes**
 
@@ -390,7 +421,7 @@ export const products: GuideProduct[] = [
       checks: [
         // Author from src/components/products/productDetailConfigs/rieEtcherConfig.ts specifications.items.
         // Example shape (confirm exact website values when authoring):
-        // { guideLabel: 'Wafer Stage Temperature Range', websiteLabel: 'Stage Temp', normalizedValue: '-70to200c' },
+        // { guideLabel: 'Wafer Stage Temperature Range', websiteLabel: 'Stage Temp', guideExpected: '-70to200c', websiteExpected: '-70to200c' },
       ],
     },
   },
@@ -421,9 +452,10 @@ export const products: GuideProduct[] = [
       checks: [
         // Website config specifications.items (confirmed from icpEtcherConfig.ts):
         //   Wafer Size '4-12 in' | Gas System '5 lines std.' | Stage Temp '-70 to 200 C' | RF Power '1000-3000 W' | Bias RF '300-1000 W optional'
-        { guideLabel: 'Wafer Stage Temperature Range', websiteLabel: 'Stage Temp', normalizedValue: '-70to200c' },
-        { guideLabel: 'RF Power', websiteLabel: 'RF Power', normalizedValue: 'source1000-3000wbias300-1000w' },
-        { guideLabel: 'Gas System', websiteLabel: 'Gas System', normalizedValue: '5lines' },
+        { guideLabel: 'Wafer Stage Temperature Range', websiteLabel: 'Stage Temp', guideExpected: '-70to200c', websiteExpected: '-70to200c' },
+        { guideLabel: 'RF Power', websiteLabel: 'RF Power', guideExpected: 'source1000-3000w', websiteExpected: '1000-3000w' },
+        { guideLabel: 'RF Power', websiteLabel: 'Bias RF', guideExpected: 'bias300-1000w', websiteExpected: '300-1000w' },
+        { guideLabel: 'Gas System', websiteLabel: 'Gas System', guideExpected: '5lines', websiteExpected: '5lines' },
       ],
     },
   },
@@ -676,14 +708,14 @@ export const products: GuideProduct[] = [
       checks: [
         // Website config specifications.items (confirmed from eBeamEvaporatorConfig.ts):
         //   Substrate '1x8 in or 5x4 in' | Uniformity '+/-3-5%' | Vacuum '~8x10^-4 Pa'
-        { guideLabel: 'Substrate', websiteLabel: 'Substrate', normalizedValue: '1x8inor5x4in' },
-        { guideLabel: 'Uniformity', websiteLabel: 'Uniformity', normalizedValue: '3-5%' },
+        { guideLabel: 'Substrate', websiteLabel: 'Substrate', guideExpected: '1x8inor5x4in', websiteExpected: '1x8inor5x4in' },
+        { guideLabel: 'Uniformity', websiteLabel: 'Uniformity', guideExpected: '3-5%', websiteExpected: '3-5%' },
       ],
     },
   },
 ];
 ```
-> **Authoring note for `websiteSpecParity.checks`:** for each product that has a website page, open the matching config in `src/components/products/productDetailConfigs/` (e.g. `rieEtcherConfig.ts`), read its `specifications.items`, and add 2–3 `checks` for stable values (wafer size, RF power, gas lines, temperature). ICP and E-Beam are fully worked above as the pattern. This is done values-in-hand from the config — not a guess. The parity TEST (Task 4) will fail loudly if a `check` doesn't match, so partial coverage is safe but each declared check must be real.
+> **Authoring note for `websiteSpecParity.checks`:** for each product that has a website page, open the matching config in `src/components/products/productDetailConfigs/` (e.g. `rieEtcherConfig.ts`), read its `specifications.items`, and add at least **2** `checks` for stable values (wafer size, RF power, gas lines, temperature). ICP and E-Beam are fully worked above as the pattern. This is done values-in-hand from the config — not a guess. The parity TEST (Task 4) will fail if a website-backed product has fewer than 2 checks, so coverage cannot lapse silently.
 
 - [ ] **Step 4: Run to verify it passes**
 
@@ -710,6 +742,29 @@ git commit -m "feat(guide): 11 series product data (specs, bullets, standardized
 Append to `equipmentGuide.data.test.ts`:
 ```ts
 import { equipmentGuideData } from './index';
+import { aldSystemConfig } from '../../components/products/productDetailConfigs/aldSystemConfig';
+import { coaterDeveloperConfig } from '../../components/products/productDetailConfigs/coaterDeveloperConfig';
+import { eBeamEvaporatorConfig } from '../../components/products/productDetailConfigs/eBeamEvaporatorConfig';
+import { hdpCvdSystemConfig } from '../../components/products/productDetailConfigs/hdpCvdSystemConfig';
+import { ibeRibeSystemConfig } from '../../components/products/productDetailConfigs/ibeRibeSystemConfig';
+import { icpEtcherConfig } from '../../components/products/productDetailConfigs/icpEtcherConfig';
+import { pecvdSystemConfig } from '../../components/products/productDetailConfigs/pecvdSystemConfig';
+import { rieEtcherConfig } from '../../components/products/productDetailConfigs/rieEtcherConfig';
+import { sputterSystemConfig } from '../../components/products/productDetailConfigs/sputterSystemConfig';
+import { striperSystemConfig } from '../../components/products/productDetailConfigs/striperSystemConfig';
+
+const WEBSITE_CONFIGS = {
+  ald: aldSystemConfig,
+  'coater-developer': coaterDeveloperConfig,
+  'e-beam-evaporator': eBeamEvaporatorConfig,
+  'hdp-cvd': hdpCvdSystemConfig,
+  'ibe-ribe': ibeRibeSystemConfig,
+  'icp-etcher': icpEtcherConfig,
+  pecvd: pecvdSystemConfig,
+  'rie-etcher': rieEtcherConfig,
+  sputter: sputterSystemConfig,
+  striper: striperSystemConfig,
+} as const;
 
 // Normalize a spec value the same way parity checks declare it.
 function norm(v: string): string {
@@ -726,13 +781,22 @@ describe('assembled EquipmentGuideData', () => {
 });
 
 describe('spec-parity guard (guide vs website configs)', () => {
-  it('every declared websiteSpecParity check matches both sources', async () => {
+  it('requires parity checks for every website-backed guide product', () => {
+    const expected = Object.keys(WEBSITE_CONFIGS).sort();
+    const actual = equipmentGuideData.products
+      .filter(p => p.websiteSpecParity)
+      .map(p => p.websiteSpecParity!.productSlug)
+      .sort();
+    expect(actual).toEqual(expected);
+    for (const p of equipmentGuideData.products.filter(p => p.websiteSpecParity)) {
+      expect(p.websiteSpecParity!.checks.length, `${p.id} needs at least two parity checks`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('every declared websiteSpecParity check matches both sources', () => {
     for (const p of equipmentGuideData.products) {
       if (!p.websiteSpecParity) continue;
-      const mod = await import(`../../components/products/productDetailConfigs/${p.websiteSpecParity.productSlug.replace(/-(\w)/g, (_, c) => c.toUpperCase())}Config`)
-        .catch(() => null);
-      // Fallback: resolve by scanning known config export if the name mapping differs.
-      const cfg = mod ? (Object.values(mod)[0] as any) : null;
+      const cfg = WEBSITE_CONFIGS[p.websiteSpecParity.productSlug as keyof typeof WEBSITE_CONFIGS];
       expect(cfg, `config for ${p.websiteSpecParity.productSlug} not found`).toBeTruthy();
       const items: { label: string; value: string }[] = cfg.specifications.items;
       for (const check of p.websiteSpecParity.checks) {
@@ -740,14 +804,14 @@ describe('spec-parity guard (guide vs website configs)', () => {
         expect(guideRow, `${p.id} missing guide row ${check.guideLabel}`).toBeTruthy();
         const siteItem = items.find(i => i.label === check.websiteLabel);
         expect(siteItem, `${p.websiteSpecParity!.productSlug} missing website row ${check.websiteLabel}`).toBeTruthy();
-        expect(norm(guideRow!.value + (guideRow!.value2 ?? '')), `${p.id} ${check.guideLabel} guide value`).toContain(check.normalizedValue);
-        expect(norm(siteItem!.value), `${p.websiteSpecParity!.productSlug} ${check.websiteLabel} website value`).toContain(check.normalizedValue);
+        expect(norm(guideRow!.value + (guideRow!.value2 ?? '')), `${p.id} ${check.guideLabel} guide value`).toContain(check.guideExpected);
+        expect(norm(siteItem!.value), `${p.websiteSpecParity!.productSlug} ${check.websiteLabel} website value`).toContain(check.websiteExpected);
       }
     }
   });
 });
 ```
-> If the dynamic config-import path/name mapping proves brittle, replace it with an explicit `import` map of the 10 website configs at the top of the test (deterministic and simplest). Prefer the explicit map if the slug→filename transform is not 1:1.
+> The explicit `WEBSITE_CONFIGS` map is intentional. Do not replace it with slug→filename inference; product routes and config filenames are not one-to-one (`ald` → `aldSystemConfig`, `ibe-ribe` → `ibeRibeSystemConfig`, etc.).
 
 - [ ] **Step 2: Run to verify it fails**
 
@@ -767,7 +831,7 @@ export const equipmentGuideData: EquipmentGuideData = { about, evidence, product
 - [ ] **Step 4: Adjust parity checks until green**
 
 Run: `npx vitest run src/data/equipmentGuide/equipmentGuide.data.test.ts --exclude '**/.claude/**'`
-Expected: PASS. If a parity check fails, the message names the product + label + which side mismatched — fix the `normalizedValue` (or the guide value if genuinely wrong) so guide and website agree. Add checks for the remaining website-backed products (RIE, Stripper, IBE/RIBE, ALD, PECVD, HDP-CVD, Sputter, Coater) using each config's `specifications.items`.
+Expected: PASS. If a parity check fails, the message names the product + label + which side mismatched — fix `guideExpected` / `websiteExpected` (or the guide value if genuinely wrong) so guide and website agree. Add at least 2 checks for each website-backed product using each config's `specifications.items`.
 
 - [ ] **Step 5: Commit**
 
@@ -861,7 +925,7 @@ describe('renderEquipmentGuideHtml', () => {
 
   it('makes no mis-attributed scale claims and no flagship Nature', () => {
     expect(html).not.toMatch(/trusted manufacturer partner|1000\+|300\+|30\+ years|global installations|research institutions served/i);
-    expect(html).not.toMatch(/>Nature<\/) /i); // no card whose journal is exactly "Nature"
+    expect(html).not.toContain('class="j">Nature ·'); // no card whose journal is exactly flagship Nature
   });
 
   it('renders the represented-platform evidence page', () => {
@@ -1044,7 +1108,32 @@ main().catch(err => { console.error(err); process.exit(1); });
 Run: `npm run generate-equipment-guide`
 Expected: `Wrote …/public/NineScrolls-Equipment-Guide.pdf (NNN KB)` — non-trivial size (> 200 KB, images embedded).
 
-- [ ] **Step 3: Verify the output visually**
+- [ ] **Step 3: Verify the output structurally**
+
+Use Python `pypdf` (available in the local runtime; install only if missing) to assert page count and text invariants:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+from pypdf import PdfReader
+
+pdf = Path('public/NineScrolls-Equipment-Guide.pdf')
+reader = PdfReader(str(pdf))
+text = '\n'.join((page.extract_text() or '') for page in reader.pages)
+assert len(reader.pages) == 14, f'expected 14 pages, got {len(reader.pages)}'
+assert 'Peer-Reviewed Validation for the Platforms We Represent' in text
+assert 'Trusted Manufacturer Partner' not in text
+assert 'Tyloong' not in text
+assert '1000+' not in text
+assert '300+' not in text
+assert 'E-Beam Evaporation' in text
+print(f'PDF structure OK: {len(reader.pages)} pages, {len(text)} extracted chars')
+PY
+```
+
+Expected: exits 0 and prints page count + extracted text size.
+
+- [ ] **Step 4: Verify the output visually**
 
 Read the generated PDF: `Read public/NineScrolls-Equipment-Guide.pdf` (all pages). Confirm:
 - Page 1 About; Page 2 is the dark **represented-platform evidence** page (title + real studies + disclaimer) — NOT the old "Trusted Manufacturer Partner".
@@ -1052,12 +1141,12 @@ Read the generated PDF: `Read public/NineScrolls-Equipment-Guide.pdf` (all pages
 - No "Tyloong", no 30+/1000+/300+ anywhere.
 - Contact page present.
 
-- [ ] **Step 4: Grep the raw PDF for regressions**
+- [ ] **Step 5: Grep the raw PDF for regressions**
 
 Run: `grep -aiE "tyloong|1000\+|300\+|trusted manufacturer" public/NineScrolls-Equipment-Guide.pdf && echo "LEAK" || echo "clean"`
 Expected: `clean` (text may be compressed in the PDF stream; the render-invariant tests are the authoritative guard — this is a best-effort double-check).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add scripts/generate-equipment-guide.ts public/NineScrolls-Equipment-Guide.pdf
@@ -1075,18 +1164,23 @@ git commit -m "feat(guide): puppeteer generator + regenerated clean Equipment Gu
 Run: `npx vitest run --exclude '**/.claude/**'`
 Expected: PASS — all prior tests plus the new guide data + render tests.
 
-- [ ] **Step 2: Build**
+- [ ] **Step 2: Generator smoke (script type/runtime path)**
+
+Run: `npm run generate-equipment-guide`
+Expected: succeeds. This is the verification that actually exercises `scripts/generate-equipment-guide.ts`; `tsconfig.json` only includes `src`, so `tsc` alone does not check this script.
+
+- [ ] **Step 3: Build**
 
 Run: `npm run build`
-Expected: succeeds; no TypeScript errors. (Confirms the new `src/data` + `src/templates` files typecheck; note `scripts/generate-equipment-guide.ts` imports `puppeteer` — ensure it's excluded from the app build if `tsc` scans it, or that puppeteer types resolve.)
+Expected: succeeds; no TypeScript errors for app code. This also confirms the Puppeteer devDependency does not enter the web bundle.
 
-- [ ] **Step 3: Confirm the guide download still resolves**
+- [ ] **Step 4: Confirm the guide download still resolves**
 
 The 7 configs already point to `/NineScrolls-Equipment-Guide.pdf`; we overwrote that same path, so no link change is needed. Spot-check one config still references it:
 Run: `grep -l "NineScrolls-Equipment-Guide.pdf" src/components/products/productDetailConfigs/*.ts | head`
 Expected: still lists hy4l/hy20l/etc.
 
-- [ ] **Step 4: No stray staging of forbidden files**
+- [ ] **Step 5: No stray staging of forbidden files**
 
 Run: `git status --porcelain`
 Expected: clean (or only intended files). Confirm `tmp/` and (post-Task-1) `package-lock.json` are NOT modified/staged here.
