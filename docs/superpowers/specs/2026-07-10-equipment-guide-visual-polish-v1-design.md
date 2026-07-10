@@ -29,18 +29,34 @@ Copy the company logo lockup into the repo as a first-class asset:
 
 Verified properties: pure vector (19 `<path>`, no raster `<image>`/`<text>`), single fill `#243959`, transparent bg, `viewBox="0 0 659 249"` (~2.65:1 horizontal lockup). Single fill → the white variant is a deterministic `#243959` → `#ffffff` string replace.
 
+## Files (implementation touches exactly these)
+
+| File | Change |
+|---|---|
+| `public/assets/images/logo-with-text.svg` | **New** — the company logo lockup copied into the repo (committed asset) |
+| `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts` | `logoDataUri()` + memoization; `brandbar(variant)` renders the logo; About/Evidence gain headers; `.section-accent`, `.image-well`, `.page-foot` markup |
+| `src/templates/equipmentGuide/equipmentGuide.css.ts` | `.brand-logo`, refined table styles, `.spec-table` wrapper, `.image-well`, `.section-accent`, `.page-foot` rules |
+| `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts` | Structural logo assertions (see Testing) |
+| `public/NineScrolls-Equipment-Guide.pdf` | **Regenerated** — committed generated artifact (see below) |
+
+**`scripts/generate-equipment-guide.ts` is NOT modified** (the Puppeteer footer stays as-is; see §E).
+
+**Committed generated artifact:** `public/NineScrolls-Equipment-Guide.pdf` is a checked-in build output (the 7 product pages link to it). The implementation commit that changes the renderer/CSS **MUST** include the regenerated PDF, so the committed file always matches the current generator. Do not land renderer/CSS changes without regenerating and committing the PDF in the same change.
+
 ## Changes
 
 ### A. Logo on all 14 pages
-- New `logoDataUri(variant: 'navy' | 'white'): string` in the renderer: reads `public/assets/images/logo-with-text.svg` (same `readFileSync` + `resolve(process.cwd(), 'public', …)` pattern as product images); for `'white'` replaces `#243959`→`#ffffff` (case-insensitive, all occurrences); returns `data:image/svg+xml;base64,<b64>`. ~12KB × 14 pages ≈ <0.2MB added, negligible vs the ~1.2MB PDF.
+- New `logoDataUri(variant: 'navy' | 'white'): string` in the renderer.
+- **Caching (required):** the source SVG is read from disk **at most once** and each variant's data-URI is memoized at module scope — e.g. a module-level `const logoCache = new Map<'navy' | 'white', string>()` plus a lazily-read `logoSvgSource` (read once on first `logoDataUri` call, then reused). Subsequent calls return the cached URI; `logoDataUri` must NOT call `readFileSync` per page (14 header renders → **1** disk read, **≤2** encodes total). Use the same `resolve(process.cwd(), 'public', …)` path convention as product images.
+- For `'white'`, replace `#243959`→`#ffffff` (case-insensitive, all occurrences) on the source SVG before encoding; return `data:image/svg+xml;base64,<b64>`. ~12KB × 14 pages ≈ <0.2MB added, negligible vs the ~1.2MB PDF.
 - Remove the plain-text `<strong>NINESCROLLS</strong>` header wordmark everywhere.
 
 ### B. Unified brand header (all page types)
 - `brandbar(variant: 'navy' | 'white' = 'navy')`: logo `<img class="brand-logo" alt="NineScrolls LLC">` (left) + right-side `https://ninescrolls.com … info@ninescrolls.com`.
 - **White pages** (About, product pages, Contact): navy logo, thin brand bottom-border, light-gray `.site` text.
-- **Dark Evidence page**: white logo header **inside** the dark card; right-side URL/email brightened to a legible light tone (e.g. `#cbd5e1`) on the dark bg (resolves the low-contrast concern), or logo-only if it reads cleaner — decided during implementation by viewing the render.
+- **Dark Evidence page (hard contract):** `brandbar('white')` renders the **white** logo header **inside** the dark card, AND the right-side `https://ninescrolls.com … info@ninescrolls.com` renders in `#cbd5e1` (legible on the dark bg). URL/email are **NOT** omitted and logo-only is **not** permitted — this is a fixed requirement, not an implementation judgment call. The dark-card variant suppresses the navy bottom-border (uses a `rgba(255,255,255,0.14)` hairline instead).
 - **About page** currently has no header → gains `brandbar('navy')` so it opens with the same rhythm as the rest.
-- Add a subtle shared **section-open rhythm**: consistent top spacing + a thin sky accent under the eyebrow/heading so every page (About, Evidence, product) starts with the same visual beat. Keep it light — no heavy chrome.
+- **Concrete shared section-open accent:** a `.section-accent` element — `width: 40px; height: 3px; background: #0284c7; border-radius: 2px; margin: 8px 0 14px;` — rendered directly under the eyebrow on product pages, and directly under the `<h1>` on About and Evidence (which have no eyebrow), so all three page types open with the same visual beat. On the dark Evidence card the accent stays `#0284c7` (sky reads fine on navy). No other chrome.
 
 ### C. Refined table styling (`equipmentGuide.css.ts`)
 - Wrap each spec table in a rounded container (`.spec-table { border: 1px solid #e8edf3; border-radius: 8px; overflow: hidden }`) so it reads as a contained card, not a raw grid.
@@ -54,15 +70,21 @@ Verified properties: pure vector (19 `<path>`, no raster `<image>`/`<text>`), si
 - Keep the existing two-column product head (copy left, image right); only the image container styling changes.
 
 ### E. Whitespace / lower-page balance (light touch)
-- The Puppeteer footer already prints `Page X of Y · ninescrolls.com`. Add a thin full-width brand hairline above the footer content area (or a small right-aligned platform tagline) so the empty lower half of table pages feels intentional rather than blank. Keep minimal — no filler content, no fabricated data.
+- **Done purely in HTML/CSS content — the Puppeteer `footerTemplate` in `scripts/generate-equipment-guide.ts` is NOT modified** (the existing `Page X of Y · ninescrolls.com` page-number footer stays as-is; this task does not touch the generator script).
+- Append a `.page-foot` element at the end of each product `<section>`: a full-width `border-top: 1px solid #eef2f7` hairline with a small right-aligned muted tagline (`Configured and quoted per application.`, `#94a3b8`, ~10px) so the empty lower half reads as intentional rather than blank. No filler content, no fabricated data.
 
 ## Testing
 
 Extend `renderEquipmentGuideHtml.test.ts` (pure, fast) — lock the durable invariants; the aesthetic tuning (C/D/E) is validated by rendering, not asserted pixel-by-pixel:
-- Logo data-URI (`data:image/svg+xml;base64,`) appears **≥14 times** (every page branded).
-- **White variant present**: at least one embedded logo's decoded SVG contains `#ffffff` (Evidence page provably uses the recolored logo, not the navy one) — assert via the `logoDataUri('white')` output or by decoding.
-- Former header wordmark gone: rendered HTML does not contain `<strong>NINESCROLLS</strong>` (company-name text elsewhere is unaffected; assert only the old header element is absent).
-- Each product page renders its image inside the framed well (assert the `.image-well`/container class wraps the product `<img>`).
+- **Per-variant counts (structural, not just `≥14`):** compute `logoDataUri('navy')` and `logoDataUri('white')` in the test; assert the rendered HTML contains the **navy** URI exactly **13** times (About + 11 product pages + Contact) and the **white** URI exactly **1** time (Evidence). Total 14 — every page branded, none double-branded.
+- **Per-page structure:** split the rendered HTML on `<section class="page">`; assert **every** section contains exactly one logo data-URI, and specifically:
+  - the About section (identified by `About NineScrolls LLC`) has 1 **navy** logo;
+  - the Evidence section (identified by `Peer-Reviewed Validation`) has 1 **white** logo;
+  - the Contact section (identified by `Office Location`) has 1 **navy** logo;
+  - each of the 11 product sections (identified by their `series`) has 1 **navy** logo.
+- **White-variant correctness:** the white URI's decoded SVG contains `#ffffff` and no `#243959` (recolor applied).
+- **Former header wordmark gone:** rendered HTML does not contain `<strong>NINESCROLLS</strong>` (company-name text elsewhere is unaffected; assert only the old header element is absent).
+- **Image well:** each product page renders its image inside the framed container (assert the `.image-well` class wraps each product `<img>`; ≥11 occurrences).
 - All existing render invariants still pass (no OEM leak, no scale claims, evidence page, 11 products, product images embedded).
 
 Then **regenerate + visually verify + iterate**: `npm run generate-equipment-guide`, read the PDF, confirm — navy logo top-left on About/product/contact pages, white logo on the dark Evidence card, no plain-text wordmark, uniform image wells, elevated tables, URL/email legible on every page. Because C/D/E are aesthetic, expect one short iteration loop on the rendered PDF with the user before finalizing. Confirm final PDF stays ~≤1.5MB.
