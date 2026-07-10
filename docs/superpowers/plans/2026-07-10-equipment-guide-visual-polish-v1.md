@@ -139,8 +139,21 @@ describe('branding — logo on all 14 pages', () => {
 });
 
 describe('visual polish', () => {
-  it('wraps every product image in a framed image well', () => {
-    expect(count(html, 'class="image-well"')).toBeGreaterThanOrEqual(11);
+  it('wraps each product image in exactly one framed image well', () => {
+    const chunks = html.split('<section class="page').slice(1);
+    for (const p of equipmentGuideData.products) {
+      const chunk = chunks.find(c => c.includes(esc(p.series)))!;
+      expect(chunk, p.id).toBeDefined();
+      // exactly one well in this product's section...
+      expect(count(chunk, 'class="image-well"'), p.id).toBe(1);
+      // ...and the product image sits directly inside it (renderer emits
+      // `<div class="image-well"><img ...>`), carrying this product's alt.
+      expect(chunk.includes('<div class="image-well"><img '), p.id).toBe(true);
+      expect(chunk.includes(esc(p.imageAlt)), p.id).toBe(true);
+    }
+    // Non-product pages must NOT have an image well.
+    const about = chunks.find(c => c.includes('About NineScrolls LLC'))!;
+    expect(count(about, 'class="image-well"')).toBe(0);
   });
 });
 ```
@@ -148,7 +161,7 @@ describe('visual polish', () => {
 - [ ] **Step 3: Run to verify it fails**
 
 Run: `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'`
-Expected: FAIL — `logoDataUri` is not exported yet (import error), and the branding/image-well assertions fail.
+Expected: FAIL — the suite errors at **module load** because `logoDataUri` is not exported yet, so the test's `import { logoDataUri }` can't resolve and **no assertions execute**. This module-load error IS the RED phase. (The renderer is replaced wholesale in Step 4, which adds the exported `logoDataUri` plus the full markup, so this is a single RED → GREEN transition; the individual branding/image-well assertions only become exercisable once the import resolves in Step 6.)
 
 - [ ] **Step 4: Update the renderer**
 
@@ -349,7 +362,12 @@ Run:
 ```bash
 python3 -c "from pypdf import PdfReader; print('pages:', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"
 ```
-Expected: `pages: 14`. If it is >14, the `.page--product { min-height: 9.1in }` forced overflow — reduce `min-height` (e.g. 8.8in) in `equipmentGuide.css.ts`, re-run Steps 7–8 until it is exactly 14.
+Expected: `pages: 14`.
+
+**If it is > 14, diagnose the actual cause before changing anything — do NOT assume `min-height` is to blame.** An extra page can come from `min-height` too tall, `.image-well { height }`, table cell padding, a margin, or a genuinely tall product's intrinsic content.
+1. Render to images and find the overflowing page: `pdftoppm -jpeg -r 80 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-page` then read the `/tmp/eqg-page-*.jpg` files to see which page spilled to a second sheet and which section caused it.
+2. Identify the causal CSS on that specific section — e.g. a near-empty overflow sheet after a product page ⇒ `.page--product { min-height }` too tall (lower it, e.g. 8.8in); a dense product whose *table* spilled ⇒ trim `td`/`th` padding or `.image-well { height }` for that content; an image pushing height ⇒ `.image-well { height }`.
+3. Change only the causal value in `equipmentGuide.css.ts`, re-run Steps 7–8, and repeat until exactly 14. Record what changed and why in the Step 9 commit body.
 
 - [ ] **Step 9: Commit code + regenerated PDF together**
 
@@ -395,19 +413,27 @@ Read `public/NineScrolls-Equipment-Guide.pdf` (all 14 pages). Confirm:
 Run: `npx vitest run --exclude '**/.claude/**'`
 Expected: full suite passes.
 
-- [ ] **Step 3: If a visual value needs tuning, iterate**
+- [ ] **Step 3: If a visual value needs tuning, iterate — with full re-verification after EVERY tweak**
 
-Only if Step 1 surfaced a visual issue (e.g. image well too tall, table too tight, evidence contrast): adjust the specific value in `equipmentGuide.css.ts`, re-run `npm run generate-equipment-guide`, re-check page count is 14, and re-read the PDF. Repeat with the user until the look is approved. Each iteration commits the CSS tweak + regenerated PDF together:
+Only if Step 1 surfaced a visual issue (e.g. image well too tall, table too tight, evidence contrast): adjust the specific value in `equipmentGuide.css.ts`, then run the **complete re-verification loop after every change** (not just regeneration):
+1. `npx vitest run src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts --exclude '**/.claude/**'` — focused render test green.
+2. `npx vitest run --exclude '**/.claude/**'` — full suite green.
+3. `npm run generate-equipment-guide` — regenerate (auto-fails if the PDF exceeds `MAX_PDF_BYTES = 2_000_000`).
+4. `python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"` — must print `14`.
+5. Re-read the affected PDF page(s) to confirm the fix landed and introduced no new regression.
+
+Repeat with the user until the look is approved. Each iteration commits the CSS tweak + regenerated PDF together:
 ```bash
 git add src/templates/equipmentGuide/equipmentGuide.css.ts public/NineScrolls-Equipment-Guide.pdf
 git commit -m "polish(guide): tune <what> after visual review"
 ```
-If no tweak is needed, no commit here.
+If no tweak is needed, no commit here. **Run steps 1–5 once more after the final approved tweak** so the committed state is verified, not just the intermediate ones.
 
-- [ ] **Step 4: Final full verification**
+- [ ] **Step 4: Final gate — build + git hygiene**
 
-Run: `npm run build`
-Expected: succeeds; no TypeScript errors (the renderer/CSS typecheck; the generator/app bundle is unaffected).
+1. Run: `npm run build` — succeeds, no TypeScript errors (renderer/CSS typecheck; the generator/app bundle is unaffected).
+2. Run: `git status --short`. `npm run build` runs `npm install` and may touch `package-lock.json`; if it changed with no intended dependency change, discard it: `git checkout -- package-lock.json`. This feature commits **only** the five files in the File Structure table (`logo-with-text.svg`, `renderEquipmentGuideHtml.ts`, `equipmentGuide.css.ts`, `renderEquipmentGuideHtml.test.ts`, `NineScrolls-Equipment-Guide.pdf`). Nothing else — no `tmp/`, no `package-lock.json`, no unrelated docs — may be staged/committed.
+3. Confirm the committed PDF matches the current renderer (it was committed atomically with the code in Task 1 / the last Step-3 iteration, so `git status` shows it clean).
 
 ---
 

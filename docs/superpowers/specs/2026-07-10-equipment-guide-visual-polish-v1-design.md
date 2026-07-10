@@ -62,10 +62,11 @@ Verified properties: pure vector (19 `<path>`, no raster `<image>`/`<text>`), si
 - Wrap each spec table in a rounded container (`.spec-table { border: 1px solid #e8edf3; border-radius: 8px; overflow: hidden }`) so it reads as a contained card, not a raw grid.
 - Cell padding (fixed values): `td { padding: 10px 14px }` (from `8px 12px`); `th { padding: 11px 14px }`.
 - Softer borders: row separators `td { border-bottom: 1px solid #eef2f7 }` (lighter than current `#e2e8f0`); drop any heavy lines.
-- Subtle zebra: `tr:nth-child(even) td { background: #fafbfc }`, keep the label column tint (`td.label { background: #f5f8fc; font-weight: 600 }`).
+- Subtle zebra: `tr:nth-child(even) td:not(.label) { background: #fafbfc }` (scoped to non-label cells so the label column tint survives on even rows); keep the label column tint (`td.label { background: #f5f8fc; font-weight: 600 }`).
 - Header (`th`): keep navy `#1e3a5f`, white text, `letter-spacing: 0.04em`, uppercase.
 - Logo sizing (fixed): `.brand-logo { height: 30px; width: auto }` (matches the site's ~h-8 scale; ~79px wide at the 659×249 aspect).
 
+### D. Uniform product-image presentation
 - Replace the ad-hoc top-right image with a consistent framed **`.image-well`** container (fixed values): `height: 200px; padding: 14px; border: 1px solid #eef2f7; border-radius: 10px; box-shadow: 0 6px 24px rgba(15,23,42,0.06); background: linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%); display: flex; align-items: center; justify-content: center;`. The `<img>` inside: `object-fit: contain; max-width: 100%; max-height: 100%;`. Every product image then sits in an identical branded frame (removes the "pasted-on" feel) and all product pages share one image rhythm.
 - Keep the existing two-column product head (copy left, `.image-well` right, `flex: 0 0 42%`); only the image container styling changes.
 
@@ -79,7 +80,7 @@ Verified properties: pure vector (19 `<path>`, no raster `<image>`/`<text>`), si
 
 Extend `renderEquipmentGuideHtml.test.ts` (pure, fast) — lock the durable invariants; the aesthetic tuning (C/D/E) is validated by rendering, not asserted pixel-by-pixel:
 - **Per-variant counts (structural, not just `≥14`):** compute `logoDataUri('navy')` and `logoDataUri('white')` in the test; assert the rendered HTML contains the **navy** URI exactly **13** times (About + 11 product pages + Contact) and the **white** URI exactly **1** time (Evidence). Total 14 — every page branded, none double-branded.
-- **Per-page structure:** split the rendered HTML into page chunks with `html.split('<section class="page"').slice(1)` — the `.slice(1)` drops the leading pre-first-section chunk (doctype/`<head>`/opening `<body>`) so the array is exactly the 14 page sections. Assert `chunks.length === 14`, and that **every** chunk contains exactly one logo data-URI, and specifically:
+- **Per-page structure:** split the rendered HTML into page chunks with `html.split('<section class="page').slice(1)` — note the delimiter has **no closing quote after `page`**, so it matches both `class="page"` (About/Evidence/Contact) and `class="page page--product"` (product pages). The `.slice(1)` drops the leading pre-first-section chunk (doctype/`<head>`/opening `<body>`) so the array is exactly the 14 page sections. Assert `chunks.length === 14`, and that **every** chunk contains exactly one logo data-URI, and specifically:
   - the About chunk (identified by `About NineScrolls LLC`) has 1 **navy** logo;
   - the Evidence chunk (identified by `Peer-Reviewed Validation`) has 1 **white** logo;
   - the Contact chunk (identified by `Office Location`) has 1 **navy** logo;
