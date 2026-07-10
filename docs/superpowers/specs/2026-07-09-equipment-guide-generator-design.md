@@ -79,6 +79,11 @@ public/NineScrolls-Equipment-Guide.pdf   # generated output (committed)
 
 ```ts
 export interface SpecRow { label: string; value: string; value2?: string } // value2 for 2-column spec tables (e.g. IBE Kaufman/RF, Coater/Developer)
+export interface SpecParityCheck {
+  guideLabel: string;       // the spec row's label in THIS guide product, e.g. 'RF Power'
+  websiteLabel: string;     // the matching label in the website config's specifications.items, e.g. 'RF Power'
+  normalizedValue: string;  // the value both must normalize to, e.g. '1000-3000w' (lowercased, spaces/units collapsed)
+}
 export interface GuideProduct {
   id: string;               // 'icp-rie'
   series: string;           // 'ICP Etcher Series'
@@ -90,6 +95,14 @@ export interface GuideProduct {
   specHeaders?: [string, string]; // for 2-col tables: ['Kaufman ion source','RF ion Source']
   specs: SpecRow[];
   familyOptions?: string[]; // plasma-cleaner page lists HY-4L/HY-20L/... here
+  // Explicit, testable mapping to the website config for the spec-parity guard.
+  // Omitted for products with no website page (none currently). productSlug is the
+  // website config slug (may differ from `id`); each check names both labels
+  // (which need NOT be identically spelled) plus the normalized value both hold.
+  websiteSpecParity?: {
+    productSlug: string;                 // e.g. 'icp-etcher'
+    checks: SpecParityCheck[];
+  };
 }
 export interface EvidenceStudy {
   journal: string; year: number; title: string; platform: string; // 'RIE' | 'ICP' | ...
@@ -121,6 +134,7 @@ Retain the current About copy: NineScrolls is a US start-up building a platform 
   5. **ACS Applied Nano Materials**, 2025 — RIE-100 SERS (Liu et al.) — RIE platform — *verify DOI + count*
   6. **Scientific Reports**, 2025 — ICP diamond etch (Zhao et al.) — ICP platform — *verify DOI + count*
   If studies 5–6 fail verification, drop them **and** trim ACS / Scientific Reports from the subtitle.
+  - **Implementation ordering (hard):** verification of studies 5–6 and locking the final subtitle journal list is **Task 0** of the plan — it runs and passes **before** `guideMeta.ts` `evidence` is authored, so the subtitle and study list are never written speculatively and then reworked. The four ✓ studies are already verified (shipped in the reframe) and need no re-check.
 - **Disclaimer ("How to read this evidence"):** `These publications validate represented platform classes and process capabilities. They are not claims of NineScrolls-branded installed-base citations.`
 
 ### Pages 3–13 — 11 product series pages
@@ -171,7 +185,7 @@ Pure-function and data tests (fast, no browser):
 2. **No unverified scale claims:** rendered HTML contains no `30+`, `1000+`, `300+`, `Trusted Manufacturer Partner`, `Years of Experience`, `Global Installations`, `Research Institutions Served`.
 3. **Evidence integrity:** every journal named in the evidence subtitle appears in `evidence.studies`; no bare flagship `Nature`; any displayed citation count has an `asOf`.
 4. **Completeness:** exactly 11 products, each with a non-empty `specs`, a `-standardized.webp` image path that exists on disk, non-empty `bullets`.
-5. **Spec-parity consistency (reverse-drift guard):** for products that also exist on the website, assert the Guide's screening-relevant values are consistent with the website config's `specifications.items` (e.g., ICP RF Power, gas lines, stage temp) — flags future drift between the two sources.
+5. **Spec-parity consistency (reverse-drift guard) — driven by the explicit `websiteSpecParity` mapping.** For every product that declares `websiteSpecParity`, the test loads that website config (`productSlug`) and, for each `check`, asserts: (a) the guide product has a spec row labeled `guideLabel`; (b) the website config's `specifications.items` has an item labeled `websiteLabel`; (c) both values normalize (lowercase, collapse spaces/units) to the declared `normalizedValue`. This makes the guard deterministic — the labels need not be spelled identically across the two sources (e.g. guide `RF Power` ↔ website `RF Power`), and drift on either side fails the test with a specific message. A guide product with no `websiteSpecParity` is skipped (and the test asserts every website-backed product in scope declares one, so coverage can't silently lapse).
 
 Generation smoke (script / manual, may run outside unit CI given Puppeteer weight):
 
@@ -184,5 +198,5 @@ Generation smoke (script / manual, may run outside unit CI given Puppeteer weigh
 
 ## Open Items For User
 
-- Studies 5–6 (ACS Applied Nano 2025, Scientific Reports 2025): include (verify DOIs) or trim the subtitle. Default: include + verify.
+- **Resolved:** Studies 5–6 (ACS Applied Nano 2025, Scientific Reports 2025) — include, with DOI/title/count verified at plan **Task 0** before `guideMeta.ts` is authored; trim the subtitle only if verification fails.
 - Heading font: match the redesign's display face exactly (embed) vs. a close web-safe fallback. Default: web-safe fallback unless you want pixel-match.
