@@ -192,6 +192,73 @@ describe('order-api handler', () => {
     // listOrders
     // -----------------------------------------------------------------------
     describe('listOrders', () => {
+        // routeOrders sets a persistent mockImplementation; beforeEach only clears
+        // call history, so reset query/scan mocks between tests.
+        afterEach(() => {
+            mockQuery.mockReset();
+            mockScan.mockReset();
+        });
+
+        type Row = Record<string, unknown> & { GSI1SK: string; orderId: string };
+
+        function makeOrder(status: string, orderId: string, createdAt: string, extra: Record<string, unknown> = {}): Row {
+            return {
+                ...SAMPLE_ORDER,
+                PK: `ORDER#${orderId}`,
+                SK: 'META',
+                orderId,
+                status,
+                createdAt,
+                updatedAt: createdAt,
+                GSI1PK: `ORDER_STATUS#${status}`,
+                GSI1SK: `${createdAt}#${orderId}`,
+                ...extra,
+            } as Row;
+        }
+
+        // Minimal GSI1 emulator: honors ScanIndexForward:false (GSI1SK desc),
+        // GSI1SK < :w, ExclusiveStartKey, and Limit/pageSize truncation with a
+        // LastEvaluatedKey. Contact queries (PK ORDER#…) return empty. This lets
+        // the composite-cursor pagination be exercised end-to-end against a store
+        // that actually responds to the `< watermark` boundary.
+        function routeOrders(
+            partitions: Record<string, Row[] | Error>,
+            opts: { pageSize?: number } = {},
+        ) {
+            mockQuery.mockImplementation((cmd: {
+                ExpressionAttributeValues?: Record<string, string>;
+                ExclusiveStartKey?: { GSI1SK?: string };
+                Limit?: number;
+            }) => {
+                const values = cmd.ExpressionAttributeValues ?? {};
+                const pk = String(values[':pk'] ?? '');
+                if (pk.startsWith('ORDER#')) return Promise.resolve({ Items: [] }); // contacts
+                if (!pk.startsWith('ORDER_STATUS#')) return Promise.resolve({ Items: [] });
+                const st = pk.replace('ORDER_STATUS#', '');
+                const rows = partitions[st];
+                if (rows instanceof Error) return Promise.reject(rows);
+                let arr = (rows ?? []).slice().sort((a, b) => (a.GSI1SK < b.GSI1SK ? 1 : a.GSI1SK > b.GSI1SK ? -1 : 0));
+                const w = values[':w'];
+                if (w) arr = arr.filter((o) => o.GSI1SK < w);
+                if (cmd.ExclusiveStartKey?.GSI1SK) {
+                    const idx = arr.findIndex((o) => o.GSI1SK === cmd.ExclusiveStartKey!.GSI1SK);
+                    arr = idx >= 0 ? arr.slice(idx + 1) : arr;
+                }
+                const pageSize = cmd.Limit ?? opts.pageSize ?? Infinity;
+                const page = arr.slice(0, pageSize);
+                const more = arr.length > pageSize;
+                return Promise.resolve({
+                    Items: page,
+                    ...(more ? { LastEvaluatedKey: { GSI1PK: pk, GSI1SK: page[page.length - 1].GSI1SK, PK: page[page.length - 1].PK as string, SK: 'META' } } : {}),
+                });
+            });
+        }
+
+        const statusPartitionQueries = () => mockQuery.mock.calls
+            .map((c: [{ ExpressionAttributeValues?: Record<string, string>; ScanIndexForward?: boolean; Limit?: number; KeyConditionExpression?: string; ExclusiveStartKey?: unknown }]) => c[0])
+            .filter((q) => String(q.ExpressionAttributeValues?.[':pk'] ?? '').startsWith('ORDER_STATUS#'));
+
+        // --- typed (status) path: unchanged -----------------------------------
         it('queries GSI1 when status is provided', async () => {
             mockQuery
                 .mockResolvedValueOnce({ Items: [SAMPLE_ORDER] })     // GSI1 query
@@ -206,58 +273,6 @@ describe('order-api handler', () => {
             expect(result.items).toHaveLength(1);
             expect(result.items[0].orderId).toBe('ord-20260310-abcd');
             expect(result.nextToken).toBeNull();
-        });
-
-        it('scans when no status filter', async () => {
-            mockScan.mockResolvedValueOnce({ Items: [SAMPLE_ORDER] });
-            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
-
-            const result = await handler(
-                makeAppSyncEvent('listOrders', {}),
-                {} as any,
-                vi.fn(),
-            );
-
-            expect(result.items).toHaveLength(1);
-        });
-
-        it('server-side search filters scan results by quoteNumber substring', async () => {
-            mockScan.mockResolvedValueOnce({
-                Items: [
-                    { ...SAMPLE_ORDER, orderId: 'ord-1', quoteNumber: 'NS-Q-2026-GH-001' },
-                    { ...SAMPLE_ORDER, orderId: 'ord-2', quoteNumber: 'NS-Q-2026-XY-999' },
-                ],
-            });
-            // contacts for the one matched order
-            mockQuery.mockResolvedValueOnce({ Items: [] });
-
-            const result = await handler(
-                makeAppSyncEvent('listOrders', { search: 'GH-001' }),
-                {} as any,
-                vi.fn(),
-            );
-
-            expect(result.items).toHaveLength(1);
-            expect(result.items[0].orderId).toBe('ord-1');
-        });
-
-        it('server-side search matches institution case-insensitively', async () => {
-            mockScan.mockResolvedValueOnce({
-                Items: [
-                    { ...SAMPLE_ORDER, orderId: 'ord-1', institution: 'Stanford University' },
-                    { ...SAMPLE_ORDER, orderId: 'ord-2', institution: 'MIT' },
-                ],
-            });
-            mockQuery.mockResolvedValueOnce({ Items: [] });
-
-            const result = await handler(
-                makeAppSyncEvent('listOrders', { search: 'stanford' }),
-                {} as any,
-                vi.fn(),
-            );
-
-            expect(result.items).toHaveLength(1);
-            expect(result.items[0].institution).toBe('Stanford University');
         });
 
         it('search combined with status filters within the GSI1 bucket', async () => {
@@ -280,9 +295,192 @@ describe('order-api handler', () => {
             expect(result.items[0].orderId).toBe('ord-1');
         });
 
-        it('returns empty when search matches nothing', async () => {
-            mockScan.mockResolvedValueOnce({
-                Items: [{ ...SAMPLE_ORDER, quoteNumber: 'Q-1' }],
+        // --- unfiltered path: merge status partitions, never scan -------------
+        it('queries every status partition on GSI1 and never scans (unfiltered)', async () => {
+            routeOrders({
+                INQUIRY: [makeOrder('INQUIRY', 'o-inq', '2026-07-01T00:00:00Z')],
+                SHIPPED: [makeOrder('SHIPPED', 'o-shp', '2026-07-02T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listOrders', { limit: 50 }), {} as any, vi.fn());
+
+            expect(mockScan).not.toHaveBeenCalled();
+            const pks = statusPartitionQueries().map((q) => q.ExpressionAttributeValues?.[':pk']);
+            expect(new Set(pks)).toEqual(new Set([
+                'ORDER_STATUS#INQUIRY', 'ORDER_STATUS#QUOTING', 'ORDER_STATUS#QUOTE_SENT',
+                'ORDER_STATUS#PO_RECEIVED', 'ORDER_STATUS#IN_PRODUCTION', 'ORDER_STATUS#SHIPPED',
+                'ORDER_STATUS#INSTALLED', 'ORDER_STATUS#CLOSED', 'ORDER_STATUS#DECLINED',
+            ]));
+            statusPartitionQueries().forEach((q) => {
+                expect(q.ScanIndexForward).toBe(false);
+                expect(q.Limit).toBe(50);
+            });
+            expect(result.items).toHaveLength(2);
+        });
+
+        it('merges and orders by createdAt/GSI1SK descending across statuses', async () => {
+            routeOrders({
+                INQUIRY: [makeOrder('INQUIRY', 'o-old', '2026-07-01T00:00:00Z')],
+                SHIPPED: [makeOrder('SHIPPED', 'o-new', '2026-07-09T00:00:00Z')],
+                CLOSED: [makeOrder('CLOSED', 'o-mid', '2026-07-05T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listOrders', {}), {} as any, vi.fn());
+
+            expect(result.items.map((o: { orderId: string }) => o.orderId)).toEqual(['o-new', 'o-mid', 'o-old']);
+        });
+
+        it('throws when any status partition fails in the paginated unfiltered list', async () => {
+            routeOrders({
+                INQUIRY: new Error('DDB throttled'),
+                SHIPPED: [makeOrder('SHIPPED', 'o-new', '2026-07-09T00:00:00Z')],
+                CLOSED: [makeOrder('CLOSED', 'o-mid', '2026-07-05T00:00:00Z')],
+            });
+
+            await expect(handler(makeAppSyncEvent('listOrders', {}), {} as any, vi.fn()))
+                .rejects.toThrow(/order status partition query failed/i);
+        });
+
+        it('throws when every status partition fails', async () => {
+            const partitions: Record<string, Row[] | Error> = {};
+            ['INQUIRY', 'QUOTING', 'QUOTE_SENT', 'PO_RECEIVED', 'IN_PRODUCTION', 'SHIPPED', 'INSTALLED', 'CLOSED', 'DECLINED']
+                .forEach((s) => { partitions[s] = new Error('fail'); });
+            routeOrders(partitions);
+
+            await expect(handler(makeAppSyncEvent('listOrders', {}), {} as any, vi.fn()))
+                .rejects.toThrow(/order status partition query failed/i);
+        });
+
+        it('paginates via a composite watermark cursor without skipping overflow rows', async () => {
+            // Global createdAt order: o5 > o4 > o3 > o2 > o1. INQUIRY holds o5,o3,o1;
+            // SHIPPED holds o4,o2. With limit 2, o3 is fetched on page 1 (INQUIRY
+            // returns o5,o3) but not returned — it must resurface on page 2, not vanish.
+            routeOrders({
+                INQUIRY: [
+                    makeOrder('INQUIRY', 'o5', '2026-07-05T00:00:00Z'),
+                    makeOrder('INQUIRY', 'o3', '2026-07-03T00:00:00Z'),
+                    makeOrder('INQUIRY', 'o1', '2026-07-01T00:00:00Z'),
+                ],
+                SHIPPED: [
+                    makeOrder('SHIPPED', 'o4', '2026-07-04T00:00:00Z'),
+                    makeOrder('SHIPPED', 'o2', '2026-07-02T00:00:00Z'),
+                ],
+            });
+
+            const page1 = await handler(makeAppSyncEvent('listOrders', { limit: 2 }), {} as any, vi.fn());
+            expect(page1.items.map((o: { orderId: string }) => o.orderId)).toEqual(['o5', 'o4']);
+            expect(page1.nextToken).not.toBeNull();
+
+            mockQuery.mockClear();
+            const page2 = await handler(makeAppSyncEvent('listOrders', { limit: 2, nextToken: page1.nextToken }), {} as any, vi.fn());
+            // page 2 resumes every partition below the watermark (o4's GSI1SK).
+            statusPartitionQueries().forEach((q) => {
+                expect(q.KeyConditionExpression).toContain('GSI1SK < :w');
+                expect(q.ExpressionAttributeValues?.[':w']).toBe('2026-07-04T00:00:00Z#o4');
+            });
+            expect(page2.items.map((o: { orderId: string }) => o.orderId)).toEqual(['o3', 'o2']);
+            expect(page2.nextToken).not.toBeNull();
+
+            mockQuery.mockClear();
+            const page3 = await handler(makeAppSyncEvent('listOrders', { limit: 2, nextToken: page2.nextToken }), {} as any, vi.fn());
+            expect(page3.items.map((o: { orderId: string }) => o.orderId)).toEqual(['o1']);
+            expect(page3.nextToken).toBeNull();
+        });
+
+        it('returns nextToken null when the unfiltered result fits in one page', async () => {
+            routeOrders({
+                INQUIRY: [makeOrder('INQUIRY', 'o-a', '2026-07-01T00:00:00Z')],
+                SHIPPED: [makeOrder('SHIPPED', 'o-b', '2026-07-02T00:00:00Z')],
+            });
+
+            const result = await handler(makeAppSyncEvent('listOrders', { limit: 50 }), {} as any, vi.fn());
+
+            expect(result.items).toHaveLength(2);
+            expect(result.nextToken).toBeNull();
+        });
+
+        // --- unfiltered search: exhaust partitions (B1) ----------------------
+        it('finds an older matching order outside the newest window (unfiltered search)', async () => {
+            routeOrders({
+                INQUIRY: [
+                    makeOrder('INQUIRY', 'n3', '2026-07-09T00:00:00Z', { quoteNumber: 'Q-NOPE-3' }),
+                    makeOrder('INQUIRY', 'n2', '2026-07-08T00:00:00Z', { quoteNumber: 'Q-NOPE-2' }),
+                    makeOrder('INQUIRY', 'n1', '2026-01-01T00:00:00Z', { quoteNumber: 'Q-FINDME-1' }),
+                ],
+            });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'FINDME', limit: 1 }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(mockScan).not.toHaveBeenCalled();
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0].orderId).toBe('n1');
+            expect(result.nextToken).toBeNull();
+            // search must not cap partitions to a bounded newest-N Limit
+            statusPartitionQueries().forEach((q) => expect(q.Limit).toBeUndefined());
+        });
+
+        it('follows LastEvaluatedKey across pages when searching a partition', async () => {
+            routeOrders({
+                INQUIRY: [
+                    makeOrder('INQUIRY', 'a', '2026-07-09T00:00:00Z', { quoteNumber: 'Q-NOPE' }),
+                    makeOrder('INQUIRY', 'b', '2026-07-08T00:00:00Z', { quoteNumber: 'Q-MATCH-B' }),
+                    makeOrder('INQUIRY', 'c', '2026-07-07T00:00:00Z', { quoteNumber: 'Q-MATCH-C' }),
+                ],
+            }, { pageSize: 2 });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'MATCH', limit: 50 }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items.map((o: { orderId: string }) => o.orderId)).toEqual(['b', 'c']);
+            const inqCalls = statusPartitionQueries().filter((q) => q.ExpressionAttributeValues?.[':pk'] === 'ORDER_STATUS#INQUIRY');
+            expect(inqCalls.length).toBeGreaterThanOrEqual(2);
+            expect(inqCalls.some((q) => q.ExclusiveStartKey)).toBe(true);
+        });
+
+        it('continues unfiltered search past twenty DynamoDB pages', async () => {
+            routeOrders({
+                INQUIRY: Array.from({ length: 21 }, (_, i) => makeOrder(
+                    'INQUIRY',
+                    `search-page-${String(i + 1).padStart(2, '0')}`,
+                    `2026-07-${String(31 - i).padStart(2, '0')}T00:00:00Z`,
+                    { quoteNumber: i === 20 ? 'Q-DEEP-MATCH' : `Q-NOPE-${i}` },
+                )),
+            }, { pageSize: 1 });
+
+            const result = await handler(
+                makeAppSyncEvent('listOrders', { search: 'DEEP-MATCH', limit: 10 }),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result.items.map((o: { orderId: string }) => o.orderId)).toEqual(['search-page-21']);
+            const inqCalls = statusPartitionQueries().filter((q) => q.ExpressionAttributeValues?.[':pk'] === 'ORDER_STATUS#INQUIRY');
+            expect(inqCalls).toHaveLength(21);
+        });
+
+        it('throws when any status partition fails during unfiltered search', async () => {
+            routeOrders({
+                INQUIRY: new Error('DDB throttled'),
+                SHIPPED: [makeOrder('SHIPPED', 'o-new', '2026-07-09T00:00:00Z', { quoteNumber: 'Q-MATCH' })],
+            });
+
+            await expect(handler(
+                makeAppSyncEvent('listOrders', { search: 'MATCH', limit: 10 }),
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/order status partition search query failed/i);
+        });
+
+        it('returns empty with null token when unfiltered search matches nothing', async () => {
+            routeOrders({
+                INQUIRY: [makeOrder('INQUIRY', 'o-1', '2026-07-01T00:00:00Z', { quoteNumber: 'Q-1' })],
             });
 
             const result = await handler(
@@ -292,6 +490,7 @@ describe('order-api handler', () => {
             );
 
             expect(result.items).toHaveLength(0);
+            expect(result.nextToken).toBeNull();
         });
     });
 
