@@ -49,35 +49,48 @@ Each product's `lead` is rewritten from its config `hero.description` (listed in
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 
-- [ ] **Step 1: Generate all three fixtures from a detached baseline worktree**
+- [ ] **Step 0: Record the pre-existing state (for the Task 6 hygiene gate)**
 
-Do NOT export from the current working tree (uncommitted edits could contaminate it) and do NOT use `git stash` (it would hide the untracked research docs / `tmp/`). Use a detached checkout of the baseline:
+```bash
+cd /Users/harvey/Dev/src/cursor/ninescrolls
+git rev-parse HEAD                               # IMPLEMENTATION_BASE_SHA — record + report
+git status --porcelain --untracked-files=all | grep '^??' | sort | tee /tmp/eqg-pre-untracked.txt   # PRE_UNTRACKED
+git hash-object package-lock.json                # LOCKFILE_BASE_HASH — record + report
+```
+Record all three verbatim (report them if executing via subagent). These pre-existing untracked files (`tmp/`, the two `research-validation-claim-reframe*` docs) MUST still be present and untouched at Task 6 — the hygiene gate compares against this list rather than demanding an empty untracked set.
+
+- [ ] **Step 1: Generate all three fixtures from a detached baseline worktree (one runnable block)**
+
+Do NOT export from the current working tree (uncommitted edits could contaminate it) and do NOT use `git stash`. Run `tsx` **from the main repo** (which has `node_modules/tsx`) but import the **baseline** files by absolute path from a detached worktree (the baseline TS imports are relative + `node:*` only, so no npm deps are needed from the worktree):
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
 mkdir -p src/data/equipmentGuide/__fixtures__
-git worktree add --detach /tmp/eqg-v1-baseline f76765a8
-( cd /tmp/eqg-v1-baseline && npx tsx -e '
-  const fs = require("node:fs");
-  const OUT = process.env.OUT;
-  Promise.all([
-    import("./src/data/equipmentGuide/index.ts"),
-    import("./src/templates/equipmentGuide/renderEquipmentGuideHtml.ts"),
-  ]).then(([data, tmpl]) => {
-    const d = data.equipmentGuideData;
-    const specs = d.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
-    fs.writeFileSync(OUT + "/v1-specs-subtable.json", JSON.stringify(specs, null, 2) + "\n");
-    fs.writeFileSync(OUT + "/v1-evidence.json", JSON.stringify(d.evidence, null, 2) + "\n");
-    const html = tmpl.renderEquipmentGuideHtml(d);
-    const chunks = html.split("<section class=\"page").map(c => "<section class=\"page" + c);
-    const ev = chunks.find(c => c.includes("Peer-Reviewed Validation"));
-    fs.writeFileSync(OUT + "/v1-evidence-chunk.html", ev.trim() + "\n");
-  });
-' )
-# NOTE: run the above with OUT set to the MAIN repo fixtures dir:
-OUT="$PWD/src/data/equipmentGuide/__fixtures__" bash -c 'cd /tmp/eqg-v1-baseline && OUT="'"$PWD"'/src/data/equipmentGuide/__fixtures__" npx tsx -e "…"'
-git worktree remove --force /tmp/eqg-v1-baseline
+BASE=/tmp/eqg-v1-baseline
+[ -e "$BASE" ] && git worktree remove --force "$BASE" 2>/dev/null   # preflight: clear a stale worktree
+git worktree add --detach "$BASE" f76765a8
+trap 'git worktree remove --force "$BASE" 2>/dev/null' EXIT
+OUT="$PWD/src/data/equipmentGuide/__fixtures__" BASE="$BASE" npx tsx -e '
+  (async () => {
+    const { writeFileSync } = await import("node:fs");
+    const OUT = process.env.OUT, BASE = process.env.BASE;
+    const { equipmentGuideData: d } = await import(BASE + "/src/data/equipmentGuide/index.ts");
+    const { renderEquipmentGuideHtml } = await import(BASE + "/src/templates/equipmentGuide/renderEquipmentGuideHtml.ts");
+    const specs = d.products.map((p) => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
+    writeFileSync(OUT + "/v1-specs-subtable.json", JSON.stringify(specs, null, 2) + "\n");
+    writeFileSync(OUT + "/v1-evidence.json", JSON.stringify(d.evidence, null, 2) + "\n");
+    const html = renderEquipmentGuideHtml(d);
+    const parts = html.split("<section class=\"page");
+    const ev = parts.map((c, i) => (i === 0 ? c : "<section class=\"page" + c)).find((c) => c.includes("Peer-Reviewed Validation"));
+    if (!ev) throw new Error("evidence chunk not found in baseline render");
+    writeFileSync(OUT + "/v1-evidence-chunk.html", ev.trim() + "\n");
+  })();
+'
+git worktree remove --force "$BASE"; trap - EXIT
+for f in v1-specs-subtable.json v1-evidence.json v1-evidence-chunk.html; do
+  test -s "src/data/equipmentGuide/__fixtures__/$f" || { echo "FAIL: fixture $f missing/empty"; exit 1; }
+done
 ```
-(Concretely: `cd /tmp/eqg-v1-baseline`, set `OUT=/Users/harvey/Dev/src/cursor/ninescrolls/src/data/equipmentGuide/__fixtures__`, run the extraction, then remove the worktree.) The fixtures are now generated **from the baseline's own data**, written into the main repo.
+The three fixtures now exist, generated from the baseline's own data. (`process.cwd()` stays the main repo, so the renderer's product-image reads resolve to the unchanged `public/` — fine; the Evidence chunk contains no product images anyway.)
 
 - [ ] **Step 2: Sanity-check the fixtures are non-trivial**
 
@@ -167,15 +180,32 @@ describe('content-v2 render', () => {
       expect(chunks.some(c => c.includes(`data-product-id="${p.id}"`)), p.id).toBe(true);
     }
   });
-  it('renders one CTA per content product binding text AND href on the same anchor', () => {
+  const CTA_ANCHOR = /<a class="btn" href="([^"]+)">([\s\S]*?)<\/a>/g;
+  const CTA_TEXT = 'Explore configurations &amp; request a quote <span class="arr">→</span>';
+
+  it('CTA path (synthetic, reds first): a product WITH content renders exactly one correct anchor', () => {
+    const first = equipmentGuideData.products[0];
+    const withContent = {
+      ...equipmentGuideData,
+      products: equipmentGuideData.products.map((p, i) => i === 0
+        ? { ...p, content: { lead: 'L', applications: ['A', 'B', 'C'], applicationCount: 3 as const, href: PRODUCT_ROUTES[p.id] } }
+        : p),
+    };
+    const chunk = renderEquipmentGuideHtml(withContent).split('<section class="page').find(c => c.includes(`data-product-id="${first.id}"`))!;
+    const anchors = [...chunk.matchAll(CTA_ANCHOR)];
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0][1]).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[first.id]}`); // canonical route, not any /products/…
+    expect(anchors[0][2]).toBe(CTA_TEXT);                                            // exact text, not toContain
+  });
+
+  it('real products: exactly one CTA per content product, canonical route + exact text', () => {
     for (const p of equipmentGuideData.products) {
       const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
-      const anchors = [...chunk.matchAll(/<a class="btn" href="([^"]+)">([\s\S]*?)<\/a>/g)];
+      const anchors = [...chunk.matchAll(CTA_ANCHOR)];
       if (p.content) {
         expect(anchors.length, p.id).toBe(1);
-        const [, href, text] = anchors[0];
-        expect(href, p.id).toBe(`https://ninescrolls.com${p.content.href}`);
-        expect(text, p.id).toContain('Explore configurations &amp; request a quote');
+        expect(anchors[0][1], p.id).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[p.id]}`);
+        expect(anchors[0][2], p.id).toBe(CTA_TEXT);
       } else {
         expect(anchors.length, p.id).toBe(0);
       }
@@ -305,24 +335,28 @@ Append to `equipmentGuide.data.test.ts`:
 const PLASMA_CLEANER_APPS = ['Surface activation', 'Surface cleaning', 'Failure analysis', 'Optical & biomedical device prep'];
 
 describe('content-v2 content integrity', () => {
+  it('all 11 products have a content block — no product may be skipped', () => {
+    expect(equipmentGuideData.products).toHaveLength(11);
+    for (const p of equipmentGuideData.products) expect(p.content, p.id).toBeTruthy();
+  });
   it('applications = config.applications.items.slice(0, applicationCount), verbatim & ordered', () => {
     for (const p of equipmentGuideData.products) {
-      if (!p.content) continue;
-      expect([3, 4]).toContain(p.content.applicationCount);
-      expect(p.content.applications).toHaveLength(p.content.applicationCount);
+      const c = p.content!; // guaranteed present by the completeness test above
+      expect([3, 4]).toContain(c.applicationCount);
+      expect(c.applications).toHaveLength(c.applicationCount);
       if (p.id === 'plasma-cleaner') {
-        expect(p.content.applications).toEqual(PLASMA_CLEANER_APPS.slice(0, p.content.applicationCount));
+        expect(c.applicationCount).toBe(4);            // pinned family list is exactly 4, never 3
+        expect(c.applications).toEqual(PLASMA_CLEANER_APPS);
         continue;
       }
       const cfg = WEBSITE_CONFIGS[p.websiteSpecParity!.productSlug as keyof typeof WEBSITE_CONFIGS];
-      expect(p.content.applications).toEqual(cfg.applications.items.slice(0, p.content.applicationCount));
+      expect(c.applications).toEqual(cfg.applications.items.slice(0, c.applicationCount));
     }
   });
   it('content.href equals the canonical route and is site-relative', () => {
     for (const p of equipmentGuideData.products) {
-      if (!p.content) continue;
-      expect(p.content.href).toBe(PRODUCT_ROUTES[p.id]);
-      expect(p.content.href).toMatch(/^\/products\/[a-z0-9-]+$/);
+      expect(p.content!.href).toBe(PRODUCT_ROUTES[p.id]);
+      expect(p.content!.href).toMatch(/^\/products\/[a-z0-9-]+$/);
     }
   });
   it('every product has 3–4 bullets', () => {
@@ -333,7 +367,7 @@ describe('content-v2 content integrity', () => {
   });
 });
 ```
-Run → **FAIL** where content is missing / a product still has >4 bullets. (This is the red for the batch.)
+Run → **FAIL** — the completeness test reds until all 11 have `content`; parity/bullets red for any not-yet-authored product. (This is the real red that drives the whole batch, including the optional→required tightening in Step 5.)
 
 - [ ] **Step 2: Author `content` + rewritten bullets for all 11 (→ green)**
 
@@ -368,17 +402,27 @@ Create `docs/equipment-guide/content-v2-traceability.md`; one row per `lead` and
 - …
 ```
 
-- [ ] **Step 4: Regenerate to a temp check (do NOT stage the PDF), then commit data + tests + traceability**
+- [ ] **Step 4: BLOCKING traceability review (STOP — do not proceed until it passes)**
+
+Before committing, go through `content-v2-traceability.md` **line by line** and verify each `lead` and `bullet` against the source it cites — confirm the claim actually appears in that config `hero.description` / original guide bullet / `specs` row, that **no performance number was introduced that isn't already in `specs`**, and that there are **no superlatives**. (Cross-check `e-beam` bullet 2 against the `Uniformity` spec row: it must read `≤±5% within Φ6 in`, never `±3–5%`.) If executing via subagents, this is a human/controller checkpoint, not an automated test — the traceability file is the artifact reviewed. Fix any drift in `products.ts` + the traceability file before continuing.
+
+- [ ] **Step 5: Tighten `content` to required (drives optional→required now that all 11 are authored)**
+
+In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`. Run `tsc` / the data suite: with all 11 authored it compiles green; if any product were still missing `content`, `tsc` now fails. This is the real optional→required transition (Task 6 does not touch the type).
+
+- [ ] **Step 6: Regenerate to a temp check (do NOT stage the PDF), then commit data + types + tests + traceability**
 
 ```bash
-npm run generate-equipment-guide   # regenerates public/…pdf in the working tree
-python3 -c "from pypdf import PdfReader; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"   # must be 14
+npm run generate-equipment-guide   # regenerates public/…pdf in the working tree (verify only)
+PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))")
+[ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages (want 14)"; exit 1; }
 pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p   # inspect ALL 14 for clipping/overflow
 ```
-If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6):
+If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 for a **config-backed** product only, never plasma-cleaner → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6):
 ```bash
-git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md
-git commit -m "feat(guide): content-v2 — leads, applications, CTAs, rewritten bullets for all 11 products"
+git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/types.ts \
+        src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md
+git commit -m "feat(guide): content-v2 — leads, applications, CTAs, rewritten bullets for all 11 products; content required"
 ```
 
 ---
@@ -440,58 +484,72 @@ git commit -m "feat(guide): rewrite About page to NineScrolls' real value (proce
 
 ---
 
-### Task 6: Tighten `content` to required + finalize (single PDF commit)
+### Task 6: Finalize — full verification + atomic PDF commit
 
-**Files:** `types.ts`, `equipmentGuide.data.test.ts`, `public/NineScrolls-Equipment-Guide.pdf`
+**Files:** `public/NineScrolls-Equipment-Guide.pdf` (the only new committed file; `content` is already required after Task 4).
 
-- [ ] **Step 1: Write the 11/11 completeness test FIRST**
-
-Append to `equipmentGuide.data.test.ts`:
-```ts
-it('all 11 products have a complete content block', () => {
-  expect(equipmentGuideData.products).toHaveLength(11);
-  for (const p of equipmentGuideData.products) {
-    expect(p.content, p.id).toBeTruthy();
-    expect(p.content!.lead.length, p.id).toBeGreaterThan(0);
-    expect(p.content!.applications.length, p.id).toBe(p.content!.applicationCount);
-    expect(p.content!.href, p.id).toBe(PRODUCT_ROUTES[p.id]);
-  }
-});
-```
-Run → **PASS if all 11 authored in Task 4** (red earlier if any were missing). Then make it compile-enforced:
-
-- [ ] **Step 2: Tighten the type to required**
-
-In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`. Run `tsc`/tests → any product missing `content` now fails to compile.
-
-- [ ] **Step 3: Full final verification (all 14 pages) + regenerate the committed PDF**
+- [ ] **Step 1: Tests + build (fail hard)**
 
 ```bash
-npx vitest run --exclude '**/.claude/**'                    # full suite green
-npm run build                                               # typecheck + bundle
-npm run generate-equipment-guide                            # regenerate the committed PDF
-python3 -c "from pypdf import PdfReader; import os; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages), 'bytes', os.path.getsize('public/NineScrolls-Equipment-Guide.pdf'))"
-pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p   # read all 14
+npx vitest run --exclude '**/.claude/**' || { echo "FAIL: tests"; exit 1; }
+npm run build || { echo "FAIL: build"; exit 1; }
 ```
-Expected: full suite green; build OK; `pages 14`, `bytes` < 2000000; every product page single, no clipping/overflow, no body text < 12.5px, Evidence + Contact + all spec tables visually unchanged.
 
-- [ ] **Step 4: Git hygiene gate + commit the tightening WITH the final PDF (atomic)**
+- [ ] **Step 2: Regenerate + hard PDF asserts (each exits 1 on breach)**
 
 ```bash
-git status --short
-test "$(git hash-object package-lock.json)" = "$(git show HEAD:package-lock.json | git hash-object --stdin)" && echo "lockfile unchanged ✓" || echo "FAIL: package-lock changed"
+npm run generate-equipment-guide || { echo "FAIL: generate"; exit 1; }
+PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))")
+[ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages (want 14)"; exit 1; }
+BYTES=$(python3 -c "import os; print(os.path.getsize('public/NineScrolls-Equipment-Guide.pdf'))")
+[ "$BYTES" -lt 2000000 ] || { echo "FAIL: $BYTES bytes >= 2000000"; exit 1; }
+pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p
 ```
-Confirm `git status` shows only intended files (the guide data/test/types/css/renderer, the traceability doc, the fixtures, the PDF — no `tmp/`, no research docs, no `package-lock.json`). Then:
+Then read all 14 page images: every product page single, no clipping/overflow, no body text < 12.5px, Evidence + Contact + all spec tables visually unchanged.
+
+- [ ] **Step 3: Hygiene gate — executable, untracked-baseline-aware, all breaches exit 1**
+
+Uses the values recorded in Task 1 Step 0 (`IMPLEMENTATION_BASE_SHA`, `LOCKFILE_BASE_HASH`, and `PRE_UNTRACKED` — save the untracked list to a file in Step 0: `… | sort > /tmp/eqg-pre-untracked.txt`).
 ```bash
-git add src/data/equipmentGuide/types.ts src/data/equipmentGuide/equipmentGuide.data.test.ts public/NineScrolls-Equipment-Guide.pdf
-git commit -m "feat(guide): require content on all 11 products + 11/11 test; regenerate final PDF"
+BASE=<IMPLEMENTATION_BASE_SHA from Task 1 Step 0>
+# (a) lockfile unchanged
+[ "$(git hash-object package-lock.json)" = "<LOCKFILE_BASE_HASH>" ] || { echo "FAIL: package-lock.json changed"; exit 1; }
+# (b) the pre-existing untracked files are still present, unchanged (NOT demanding an empty set)
+git status --porcelain --untracked-files=all | grep '^??' | sort > /tmp/eqg-untracked-now
+diff /tmp/eqg-pre-untracked.txt /tmp/eqg-untracked-now || { echo "FAIL: untracked set changed (research docs / tmp must remain, nothing new added)"; exit 1; }
+# (c) tracked changes since baseline are EXACTLY the v2 allowlist (no out-of-scope edits)
+RAW="$(git diff --name-only "${BASE}..HEAD")" || { echo "FAIL: git diff"; exit 1; }
+EXTRA=$(comm -23 <(printf '%s\n' "$RAW" | sort -u) <(printf '%s\n' \
+  docs/equipment-guide/content-v2-traceability.md \
+  public/NineScrolls-Equipment-Guide.pdf \
+  src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html \
+  src/data/equipmentGuide/__fixtures__/v1-evidence.json \
+  src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json \
+  src/data/equipmentGuide/equipmentGuide.data.test.ts \
+  src/data/equipmentGuide/guideMeta.ts \
+  src/data/equipmentGuide/products.ts \
+  src/data/equipmentGuide/types.ts \
+  src/templates/equipmentGuide/equipmentGuide.css.ts \
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort -u))
+[ -z "$EXTRA" ] || { echo "FAIL: out-of-scope tracked changes:"; echo "$EXTRA"; exit 1; }
+echo "hygiene OK"
+```
+(`BASE = IMPLEMENTATION_BASE_SHA` is the HEAD recorded at Task 1 Step 0 — i.e. after the spec/plan doc commits — so `BASE..HEAD` is exactly the Task 1–6 implementation files; the spec/plan docs live in `BASE` and correctly do NOT appear.)
+
+- [ ] **Step 4: Commit the final PDF (atomic with the completed state)**
+
+Only after Steps 1–3 all pass:
+```bash
+git add public/NineScrolls-Equipment-Guide.pdf
+git commit -m "feat(guide): regenerate final Equipment Guide PDF with content-v2"
 ```
 
 ---
 
 ## Self-Review
 
-**1. Spec coverage:** data model (Task 2/6) ✓; copy rules + applications ordered-parity + plasma-cleaner literals (Task 4 Step 1) ✓; CTA absolute + canonical route + `data-product-id` + same-anchor text/href binding (Task 2) ✓; all-or-none nested content + pilot isolation + one-complete-PR (Task 2/3/6) ✓; protection fixtures from detached `f76765a8`, committed, no auto-snapshot (Task 1) ✓; About rewrite + exact evidence-pillar body + 2-para/4-pillar lock (Task 5) ✓; traceability (Task 4 Step 3) ✓; page policy hard-14/≥12.5px/all-14 screenshots (Task 3/4/6) ✓; PDF committed only in the final step (Task 6, boundary note) ✓; git-hygiene + lockfile-hash gate (Task 6 Step 4) ✓.
+**1. Spec coverage:** data model incl. optional→required (Task 2 + Task 4 Step 5) ✓; copy rules + applications ordered-parity + plasma-cleaner **exactly 4** literals + completeness-first no-skip (Task 4 Step 1) ✓; CTA absolute + **canonical `PRODUCT_ROUTES[id]`** + `data-product-id` + same-anchor **exact-text** binding + synthetic red-first (Task 2 Step 3) ✓; all-or-none nested content + pilot isolation + one-complete-PR (Task 2/3/6) ✓; protection fixtures from a **detached** `f76765a8` worktree, committed, no auto-snapshot, runnable one-block command (Task 1) ✓; About rewrite + exact evidence-pillar body + 2-para/4-pillar lock (Task 5) ✓; traceability doc + **blocking line-by-line review** (Task 4 Steps 3–4) ✓; page policy hard-14/≥12.5px/all-14 screenshots (Task 3/4/6) ✓; PDF committed only in Task 6 (boundary note; Tasks 4/5 verify to temp, don't stage) ✓; **exit-1** page/size asserts + **untracked-baseline-aware** hygiene (records `PRE_UNTRACKED`/`LOCKFILE_BASE_HASH`/`IMPLEMENTATION_BASE_SHA` in Task 1 Step 0; tracked-file allowlist via `comm`) (Task 6 Steps 2–3) ✓.
 
 **2. Placeholder scan:** RIE + E-Beam pilot copy is authored verbatim (with the corrected E-Beam uniformity). The 9 batch leads/bullets are authored in Task 4 from the exact `hero.description` + `specs` cited inline — intentional per pilot-first, not a vague TODO. No "TBD".
 
