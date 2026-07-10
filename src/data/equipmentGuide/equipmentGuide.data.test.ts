@@ -165,6 +165,12 @@ describe('spec-parity guard (guide vs website configs)', () => {
     expect(actual).toEqual(expected);
     for (const p of equipmentGuideData.products.filter(p => p.websiteSpecParity)) {
       expect(p.websiteSpecParity!.checks.length, `${p.id} needs at least two parity checks`).toBeGreaterThanOrEqual(2);
+      for (const check of p.websiteSpecParity!.checks) {
+        expect(check.guideLabel.trim(), `${p.id} guideLabel must be non-empty`).not.toBe('');
+        expect(check.websiteLabel.trim(), `${p.id} websiteLabel must be non-empty`).not.toBe('');
+        expect(check.guideExpected.trim(), `${p.id} ${check.guideLabel} guideExpected must be non-empty`).not.toBe('');
+        expect(check.websiteExpected.trim(), `${p.id} ${check.websiteLabel} websiteExpected must be non-empty`).not.toBe('');
+      }
     }
   });
 
@@ -183,5 +189,18 @@ describe('spec-parity guard (guide vs website configs)', () => {
         expect(norm(siteItem!.value), `${p.websiteSpecParity!.productSlug} ${check.websiteLabel} website value`).toContain(check.websiteExpected);
       }
     }
+  });
+
+  it('locks the corrected MEB-600 source-conflict values', () => {
+    const eBeam = equipmentGuideData.products.find(p => p.id === 'e-beam');
+    expect(eBeam).toBeTruthy();
+    expect(eBeam!.specs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'Substrate', value: 'Φ6 in x1 flat substrate holder' }),
+        expect.objectContaining({ label: 'Uniformity', value: '≤±5% within Φ6 in' }),
+        expect.objectContaining({ label: 'Vacuum', value: '6.7×10⁻⁵ Pa ultimate vacuum' }),
+      ]),
+    );
+    expect(JSON.stringify(eBeam)).not.toMatch(/1×8|1x8|5×4|5x4|3-5%|8×10⁻⁴|8x10\^-4/i);
   });
 });

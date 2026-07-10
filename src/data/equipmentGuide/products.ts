@@ -343,7 +343,7 @@ export const products: GuideProduct[] = [
     // No websiteSpecParity: the guide's cleaner page is a family summary, not a single website SKU.
   },
   {
-    id: 'e-beam', series: 'E-Beam Evaporation Series', order: 11,
+    id: 'e-beam', series: 'MEB-600 E-Beam Evaporation Series', order: 11,
     image: `${IMG}/e-beam-standardized.webp`, imageAlt: 'NineScrolls e-beam and thermal evaporation system',
     footprint: undefined,
     bullets: [
@@ -354,11 +354,11 @@ export const products: GuideProduct[] = [
       { heading: 'Directional Lift-off Deposition', body: 'Directional deposition suited to lift-off metallization and patterning.' },
     ],
     specs: [
-      { label: 'Substrate', value: '1×8 in or 5×4 in' },
+      { label: 'Substrate', value: 'Φ6 in x1 flat substrate holder' },
       { label: 'E-Gun Crucible', value: '6 pockets, 17 cc each' },
-      { label: 'Uniformity', value: '±3-5%' },
+      { label: 'Uniformity', value: '≤±5% within Φ6 in' },
       { label: 'Thickness Control', value: 'In-situ QCM endpoint' },
-      { label: 'Vacuum', value: '~8×10⁻⁴ Pa' },
+      { label: 'Vacuum', value: '6.7×10⁻⁵ Pa ultimate vacuum' },
       { label: 'Operating Modes', value: 'Manual / semi-auto / full-auto' },
       { label: 'Sources', value: 'E-beam + thermal resistance' },
       { label: 'Materials', value: 'Metals, oxides, fluorides, IR films' },
@@ -366,12 +366,11 @@ export const products: GuideProduct[] = [
     websiteSpecParity: {
       productSlug: 'e-beam-evaporator',
       // Website config: eBeamEvaporatorConfig.ts specifications.items
-      //   Substrate '1x8 in or 5x4 in' | Uniformity '+/-3-5%' | Vacuum '~8x10^-4 Pa'
-      // NOTE: the guide value uses U+00D7 '×' (e.g. '1×8'); the website uses ascii 'x' ('1x8'). norm() does not
-      // transliterate, so guideExpected keeps '×' while websiteExpected keeps 'x'.
+      //   Substrate 'Φ6 in x1 flat substrate holder' | Uniformity '≤±5% within Φ6 in' | Vacuum '6.7×10⁻⁵ Pa ultimate vacuum'
       checks: [
-        { guideLabel: 'Substrate', websiteLabel: 'Substrate', guideExpected: '1×8inor5×4in', websiteExpected: '1x8inor5x4in' },
-        { guideLabel: 'Uniformity', websiteLabel: 'Uniformity', guideExpected: '3-5%', websiteExpected: '3-5%' },
+        { guideLabel: 'Substrate', websiteLabel: 'Substrate', guideExpected: 'φ6inx1flatsubstrateholder', websiteExpected: 'φ6inx1flatsubstrateholder' },
+        { guideLabel: 'Uniformity', websiteLabel: 'Uniformity', guideExpected: '≤±5%withinφ6in', websiteExpected: '≤±5%withinφ6in' },
+        { guideLabel: 'Vacuum', websiteLabel: 'Vacuum', guideExpected: '6.7×10⁻⁵paultimatevacuum', websiteExpected: '6.7×10⁻⁵paultimatevacuum' },
       ],
     },
   },

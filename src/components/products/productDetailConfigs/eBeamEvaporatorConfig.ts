@@ -7,7 +7,7 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
   seo: {
     title: 'MEB-600 E-Beam Evaporation Platform',
     description:
-      'MEB-600 multi-source e-beam and thermal evaporation platform for IR sensors, photonic crystals, optical multilayers, lift-off metallization, and quantum device thin films. Supports 1x8 inch or 5x4 inch substrates, 6-pocket 17 cc e-gun crucible, +/-3-5% uniformity, in-situ QCM endpoint detection, ~8x10^-4 Pa vacuum, and manual, semi-auto, or full-auto modes.',
+      'MEB-600 multi-source e-beam and thermal evaporation platform for IR sensors, photonic crystals, optical multilayers, lift-off metallization, and quantum device thin films. Supports a Φ6 in x1 flat substrate holder, 6-pocket 17 cc e-gun crucible, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
     keywords:
       'e-beam evaporator, MEB-600, electron beam evaporation, thermal evaporator, PVD evaporation, QCM thickness monitor, optical multilayers, lift-off metallization',
   },
@@ -32,7 +32,7 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the MEB-600?',
       answer:
-        'The MEB-600 supports 1x8 inch or 5x4 inch substrate configurations, a 6-pocket 17 cc e-gun crucible, +/-3-5% uniformity, in-situ QCM endpoint detection, ~8x10^-4 Pa vacuum, and manual, semi-auto, or full-auto modes.',
+        'The MEB-600 supports a Φ6 in x1 flat substrate holder, a 6-pocket 17 cc e-gun crucible, ≤±5% uniformity within Φ6 in, in-situ QCM endpoint detection, 6.7×10⁻⁵ Pa ultimate vacuum, and manual, semi-auto, or full-auto modes.',
     },
   ],
   breadcrumb: {
@@ -53,10 +53,10 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
       height: 1295,
     },
     stats: [
-      { label: 'Substrate', value: '1x8 in / 5x4 in' },
+      { label: 'Substrate', value: 'Φ6 in x1 flat' },
       { label: 'Crucible', value: '6x17 cc' },
-      { label: 'Uniformity', value: '+/-3-5%' },
-      { label: 'Vacuum', value: '~8x10^-4 Pa' },
+      { label: 'Uniformity', value: '≤±5% @ Φ6 in' },
+      { label: 'Vacuum', value: '6.7×10⁻⁵ Pa' },
     ],
     primaryAction: {
       label: 'Request Quote',
@@ -122,14 +122,14 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
     eyebrow: 'Technical Specifications',
     title: 'Clear screening values for MEB-600 process planning.',
     copy:
-      'Core values are taken from the equipment summary and legacy page for fast process screening. Final fixture, crucible, pump, monitor, and automation options should be confirmed with engineering during quote review.',
+      'Core values are taken from the MEB-600 technical specification for fast process screening. Final fixture, crucible, pump, monitor, and automation options should be confirmed with engineering during quote review.',
     testId: 'e-beam-specifications',
     items: [
-      { label: 'Substrate', value: '1x8 in or 5x4 in' },
+      { label: 'Substrate', value: 'Φ6 in x1 flat substrate holder' },
       { label: 'E-Gun Crucible', value: '6 pockets, 17 cc each' },
-      { label: 'Uniformity', value: '+/-3-5%' },
+      { label: 'Uniformity', value: '≤±5% within Φ6 in' },
       { label: 'Thickness Control', value: 'In-situ QCM endpoint' },
-      { label: 'Vacuum', value: '~8x10^-4 Pa' },
+      { label: 'Vacuum', value: '6.7×10⁻⁵ Pa ultimate vacuum' },
       { label: 'Modes', value: 'Manual / semi-auto / full-auto' },
       { label: 'Sources', value: 'E-beam + thermal resistance' },
       { label: 'Materials', value: 'Metals, oxides, fluorides, IR films' },
