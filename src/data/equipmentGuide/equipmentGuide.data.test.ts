@@ -31,7 +31,7 @@ const WEBSITE_CONFIGS = {
 
 // Normalize a spec value the same way parity checks declare it.
 function norm(v: string): string {
-  return v.toLowerCase().replace(/[\s,]/g, '').replace(/optional|full range|:/g, '');
+  return v.toLowerCase().replace(/[\s,]/g, '').replace(/optional|:/g, '');
 }
 
 describe('equipmentGuide types', () => {
@@ -63,13 +63,44 @@ describe('guideMeta content integrity', () => {
   });
 
   it('backs every journal named in the evidence subtitle with a listed study', () => {
-    const named = ['Nature Portfolio', 'ACS', 'Advanced Materials', 'Materials Today', 'Scientific Reports']
-      .filter(j => evidence.subtitle.includes(j));
-    for (const j of named) {
-      const family = j === 'Nature Portfolio'
-        ? evidence.studies.some(s => s.journal === 'Nature Communications' || s.journal === 'Light: Science & Applications')
-        : evidence.studies.some(s => s.journal.startsWith(j));
-      expect(family, `journal "${j}" named in subtitle must have a study`).toBe(true);
+    // "Nature Portfolio" is an umbrella term, legitimately backed by any Nature-family study.
+    const naturePortfolioBacked = evidence.studies.some(
+      s => s.journal === 'Nature Communications' || s.journal === 'Light: Science & Applications',
+    );
+
+    // The union of journal names the subtitle is allowed to name: every concrete
+    // journal actually present in evidence.studies, plus the Nature Portfolio umbrella
+    // (only when a Nature-family study backs it). Derived from the data, not hardcoded,
+    // so a newly added/removed study automatically re-scopes what the subtitle may claim.
+    const allowed = new Set<string>(evidence.studies.map(s => s.journal));
+    if (naturePortfolioBacked) allowed.add('Nature Portfolio');
+
+    // Candidate universe of distinct journal names we scan the subtitle for. Deliberately
+    // includes journals NOT in our data (ACS Nano, Applied Physics Letters, etc.) so that
+    // naming an UNBACKED journal in the subtitle is caught by the negative branch below.
+    // (Bare "Nature"/"Science" are omitted on purpose: they are substrings of allowed names
+    // like "Nature Portfolio" and "Light: Science & Applications", so they cannot be
+    // word-detected via substring matching; flagship-Nature misuse is guarded separately.)
+    const CANDIDATE_JOURNALS = [
+      'Nature Portfolio', 'Nature Communications', 'Light: Science & Applications',
+      'Advanced Materials', 'Materials Today', 'Scientific Reports',
+      'ACS Nano', 'Applied Physics Letters', 'Advanced Functional Materials', 'Small',
+    ];
+
+    for (const j of CANDIDATE_JOURNALS) {
+      const named = evidence.subtitle.includes(j);
+      if (allowed.has(j)) {
+        // A journal the subtitle is allowed to name must, if actually named, be backed.
+        if (named && j !== 'Nature Portfolio') {
+          expect(
+            evidence.studies.some(s => s.journal.startsWith(j)),
+            `journal "${j}" named in subtitle must have a listed study`,
+          ).toBe(true);
+        }
+      } else {
+        // A journal outside the allowed union must NOT appear in the subtitle.
+        expect(named, `subtitle names unbacked journal "${j}"`).toBe(false);
+      }
     }
   });
 
@@ -111,7 +142,7 @@ describe('products completeness', () => {
   it('names no OEM/supplier and no scale claims in product content', () => {
     const text = JSON.stringify(products);
     expect(text).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
-    expect(text).not.toMatch(/1000\+|300\+|30\+ years|global installations/i);
+    expect(text).not.toMatch(/1000\+|300\+|30\+ years|global installations|trusted manufacturer partner|years of experience|research institutions served/i);
   });
 });
 

@@ -4,9 +4,15 @@ import type { EquipmentGuideData, GuideProduct, SpecRow } from '../../data/equip
 import { equipmentGuideCss } from './equipmentGuide.css';
 
 const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function imageDataUri(publicRelPath: string): string {
+/**
+ * Default image resolver: reads the full-resolution webp from public/ and
+ * inlines it as a base64 data URI. Kept pure and dependency-free so the
+ * renderer's unit tests exercise the real embedding path. The generator
+ * injects an optimized (downscaled JPEG) resolver at PDF-build time.
+ */
+export function defaultImageDataUri(publicRelPath: string): string {
   const abs = resolve(process.cwd(), 'public', publicRelPath.replace(/^\//, ''));
   const b64 = readFileSync(abs).toString('base64');
   return `data:image/webp;base64,${b64}`;
@@ -22,7 +28,7 @@ function specRowsHtml(specs: SpecRow[], twoCol: boolean): string {
   }).join('');
 }
 
-function productPage(p: GuideProduct): string {
+function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => string): string {
   const twoCol = !!p.specHeaders;
   const bullets = p.bullets.map(b =>
     `<div class="bullet"><span class="h">${esc(b.heading)}</span> <span class="b">${esc(b.body)}</span></div>`).join('');
@@ -84,8 +90,14 @@ function contactPage(d: EquipmentGuideData): string {
   </section>`;
 }
 
-export function renderEquipmentGuideHtml(d: EquipmentGuideData): string {
-  const products = [...d.products].sort((a, b) => a.order - b.order).map(productPage).join('');
+export function renderEquipmentGuideHtml(
+  d: EquipmentGuideData,
+  imageDataUri: (publicRelPath: string) => string = defaultImageDataUri,
+): string {
+  const products = [...d.products]
+    .sort((a, b) => a.order - b.order)
+    .map(p => productPage(p, imageDataUri))
+    .join('');
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
 <title>NineScrolls LLC — Equipment Guide</title>
 <style>${equipmentGuideCss}</style></head><body>
