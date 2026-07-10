@@ -4,23 +4,23 @@
 
 **Goal:** Give each Equipment Guide product page a benefit `lead`, a real `applications` strip, and a per-product CTA, rewrite the mechanical bullets into plain-English benefits, and rewrite the About page — all copy/data, no spec/evidence/layout change, hard 14 pages.
 
-**Architecture:** Extend the canonical `GuideProduct` with a nested all-or-none `content` block; drive the CTA from a canonical `PRODUCT_ROUTES` map rendered as an absolute link; protect the untouched spec/evidence data with committed fixtures captured from the immutable v1 baseline `f76765a8`. Author the copy pilot-first (RIE + E-Beam in an isolated worktree → review → batch all 11).
+**Architecture:** Extend `GuideProduct` with a nested all-or-none `content` block; drive the CTA from the product's own `content.href` (validated against a canonical `PRODUCT_ROUTES` map) rendered as an absolute link; protect the untouched spec/evidence data with committed fixtures captured from a **detached** checkout of the immutable v1 baseline. Author copy pilot-first (RIE + E-Beam in an isolated worktree → review → batch all 11).
 
 **Tech Stack:** TypeScript, Vitest, the existing Puppeteer generator + `pdftoppm`/`pypdf`.
 
 **Spec:** `docs/superpowers/specs/2026-07-10-equipment-guide-content-v2-design.md`
 
-## Baseline & branch
+## Baseline, branch & sequencing
 
-- **Immutable protection baseline:** `f76765a8` (its guide data == v1-final). Fixtures are captured from it and never regenerated.
-- This plan is executed on branch `feature/equipment-guide-content-v2` (stacked on v1). **Do not open a PR until the final state (Task 6) is complete** — 11/11 required content, About, fixtures, traceability, tests, PDF, in one branch.
-- The **pilot (Task 3)** runs in an **isolated throwaway worktree that is never pushed** and is discarded after review.
+- **Immutable protection baseline:** `f76765a8` (its guide data == v1-final). Fixtures are generated from a **detached worktree** of it in Task 1 and **committed** — after that they are self-contained files with no live dependency on the SHA.
+- **Sequencing (recommended):** merge PR #273 (v1) first, then `git rebase origin/main` this branch, *then* execute. The committed fixtures survive the rebase because `f76765a8`'s guide data is byte-identical to the v1 state that lands on `main` via #273, so the protection tests stay valid. Task 1 may capture the fixtures anytime (it uses `f76765a8` directly). The pilot (Task 3) is worktree-isolated and independent of sequencing.
+- **One-complete-PR rule:** do not open a PR until the final state (Task 6) is complete — 11/11 required content, About, fixtures, traceability, tests, and the single regenerated PDF, in one branch.
 
 ## Ground data (used verbatim by the content tasks)
 
-`PRODUCT_ROUTES` (guide `id` → site-relative route) and `applications = config.applications.items.slice(0, 4)` (config order preserved):
+`PRODUCT_ROUTES` (guide `id` → route) and `applications = config.applications.items.slice(0, applicationCount)` (config order preserved):
 
-| id | route | applications (first 4, verbatim) | config slug |
+| id | route | applications (first 4, verbatim, config order) | config slug |
 |---|---|---|---|
 | `rie` | `/products/rie-etcher` | Semiconductor R&D · Dielectric patterning · Polymer removal · Surface activation | rie-etcher |
 | `icp-rie` | `/products/icp-etcher` | MEMS fabrication · Advanced packaging · Photonics · Power electronics | icp-etcher |
@@ -34,109 +34,75 @@
 | `e-beam` | `/products/e-beam-evaporator` | Infrared image sensors · Ge/ZnS photonic crystals · UV down-conversion films · Optical AR coatings | e-beam-evaporator |
 | `plasma-cleaner` | `/products/plasma-cleaner` | Surface activation · Surface cleaning · Failure analysis · Optical & biomedical device prep (pinned literals) | _(none)_ |
 
-Each product's **`lead`** is rewritten from that config's `hero.description` (listed per product in Task 5); **`bullets`** are rewritten from the product's existing guide bullets + `specs` rows. No new performance numbers, no superlatives.
+Each product's `lead` is rewritten from its config `hero.description` (listed in Task 4); `bullets` are rewritten from its existing guide bullets + `specs` rows. **No new performance numbers, no superlatives** — every value must already appear in the canonical `specs`.
+
+> **PDF-commit boundary (contract):** Tasks 2/4/5 regenerate the PDF only to a **temporary** file for verification and do **NOT** stage `public/NineScrolls-Equipment-Guide.pdf`. The committed PDF is regenerated and staged **only in Task 6**, atomically with the final 11/11 state.
+>
+> **Pre-review note:** the 9 non-pilot products' final leads/bullets are authored during Task 4 *after* the pilot voice is locked, from the exact `hero.description` + `specs` cited inline — they are therefore not literally pre-written here (intentional, per pilot-first), while RIE + E-Beam are authored verbatim.
 
 ---
 
-### Task 1: Baseline protection fixtures (from `f76765a8`)
+### Task 1: Baseline protection fixtures (from a detached `f76765a8` worktree)
 
 **Files:**
 - Create: `src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 
-- [ ] **Step 1: Capture the data fixtures from the immutable baseline**
+- [ ] **Step 1: Generate all three fixtures from a detached baseline worktree**
 
-Run a one-off extraction against `f76765a8` (uses the baseline's own data, not current):
+Do NOT export from the current working tree (uncommitted edits could contaminate it) and do NOT use `git stash` (it would hide the untracked research docs / `tmp/`). Use a detached checkout of the baseline:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
 mkdir -p src/data/equipmentGuide/__fixtures__
-git stash --include-untracked 2>/dev/null || true   # ensure a clean tree for the checkout dance is NOT needed; we use `git show`
-npx tsx -e '
-  // Load the BASELINE data by importing from a temp checkout is overkill; instead
-  // the current products.ts specs/subTable/evidence are still == baseline at Task 1
-  // start (no content edits yet). Assert that below before trusting it.
-  import("./src/data/equipmentGuide/index.ts").then(({ equipmentGuideData }) => {
-    const fs = require("node:fs");
-    const specs = equipmentGuideData.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
-    fs.writeFileSync("src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json", JSON.stringify(specs, null, 2) + "\n");
-    fs.writeFileSync("src/data/equipmentGuide/__fixtures__/v1-evidence.json", JSON.stringify(equipmentGuideData.evidence, null, 2) + "\n");
-  });
-'
-```
-Then **verify the captured specs/evidence equal the baseline** (guards against capturing an already-mutated state):
-```bash
-git show f76765a8:src/data/equipmentGuide/products.ts > /tmp/base-products.ts
-git show f76765a8:src/data/equipmentGuide/guideMeta.ts > /tmp/base-guidemeta.ts
-diff <(git show HEAD:src/data/equipmentGuide/products.ts) /tmp/base-products.ts && echo "products == baseline ✓"
-diff <(git show HEAD:src/data/equipmentGuide/guideMeta.ts) /tmp/base-guidemeta.ts && echo "guideMeta == baseline ✓"
-```
-Expected: both `== baseline ✓` (Task 1 runs before any data edit, so current == `f76765a8`).
-
-- [ ] **Step 2: Capture the rendered Evidence HTML chunk from the baseline**
-
-```bash
-npx tsx -e '
-  import("./src/templates/equipmentGuide/renderEquipmentGuideHtml.ts").then(async (m) => {
-    const { equipmentGuideData } = await import("./src/data/equipmentGuide/index.ts");
-    const html = m.renderEquipmentGuideHtml(equipmentGuideData);
-    // the Evidence page is the section containing "Peer-Reviewed Validation"
+git worktree add --detach /tmp/eqg-v1-baseline f76765a8
+( cd /tmp/eqg-v1-baseline && npx tsx -e '
+  const fs = require("node:fs");
+  const OUT = process.env.OUT;
+  Promise.all([
+    import("./src/data/equipmentGuide/index.ts"),
+    import("./src/templates/equipmentGuide/renderEquipmentGuideHtml.ts"),
+  ]).then(([data, tmpl]) => {
+    const d = data.equipmentGuideData;
+    const specs = d.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
+    fs.writeFileSync(OUT + "/v1-specs-subtable.json", JSON.stringify(specs, null, 2) + "\n");
+    fs.writeFileSync(OUT + "/v1-evidence.json", JSON.stringify(d.evidence, null, 2) + "\n");
+    const html = tmpl.renderEquipmentGuideHtml(d);
     const chunks = html.split("<section class=\"page").map(c => "<section class=\"page" + c);
     const ev = chunks.find(c => c.includes("Peer-Reviewed Validation"));
-    require("node:fs").writeFileSync("src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html", ev.trim() + "\n");
+    fs.writeFileSync(OUT + "/v1-evidence-chunk.html", ev.trim() + "\n");
   });
-'
+' )
+# NOTE: run the above with OUT set to the MAIN repo fixtures dir:
+OUT="$PWD/src/data/equipmentGuide/__fixtures__" bash -c 'cd /tmp/eqg-v1-baseline && OUT="'"$PWD"'/src/data/equipmentGuide/__fixtures__" npx tsx -e "…"'
+git worktree remove --force /tmp/eqg-v1-baseline
 ```
+(Concretely: `cd /tmp/eqg-v1-baseline`, set `OUT=/Users/harvey/Dev/src/cursor/ninescrolls/src/data/equipmentGuide/__fixtures__`, run the extraction, then remove the worktree.) The fixtures are now generated **from the baseline's own data**, written into the main repo.
 
-- [ ] **Step 3: Commit the fixtures (before any content edit exists to contaminate them)**
+- [ ] **Step 2: Sanity-check the fixtures are non-trivial**
+
+```bash
+python3 -c "import json;d=json.load(open('src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json'));print('products',len(d));assert len(d)==11"
+grep -c "Peer-Reviewed Validation" src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html
+grep -c "Near-ideal van der Waals" src/data/equipmentGuide/__fixtures__/v1-evidence.json
+```
+Expected: `products 11`, and the two greps ≥ 1.
+
+- [ ] **Step 3: Commit the fixtures**
 
 ```bash
 git add src/data/equipmentGuide/__fixtures__/
-git commit -m "test(guide): capture v1 baseline protection fixtures from f76765a8"
+git commit -m "test(guide): capture v1 baseline protection fixtures from detached f76765a8"
 ```
 
 ---
 
-### Task 2: Scaffolding — `content` type, `PRODUCT_ROUTES`, renderer, CSS
+### Task 2: Scaffolding — `content` type, `PRODUCT_ROUTES`, renderer, CSS (TDD red→green)
 
-**Files:**
-- Modify: `src/data/equipmentGuide/types.ts`
-- Modify: `src/data/equipmentGuide/products.ts` (add `PRODUCT_ROUTES` only; no content yet)
-- Modify: `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts`
-- Modify: `src/templates/equipmentGuide/equipmentGuide.css.ts`
-- Test: `src/data/equipmentGuide/equipmentGuide.data.test.ts`, `src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts`
+**Files:** `types.ts`, `products.ts`, `renderEquipmentGuideHtml.ts`, `equipmentGuide.css.ts`, `equipmentGuide.data.test.ts`, `renderEquipmentGuideHtml.test.ts`
 
-- [ ] **Step 1: Add the `content` type (optional for the pilot) + `SITE_ORIGIN`**
+- [ ] **Step 1: Write the failing scaffolding tests FIRST**
 
-In `types.ts`, add:
-```ts
-export interface GuideProductContent {
-  lead: string;
-  applications: string[];
-  applicationCount: 3 | 4;
-  href: string; // site-relative, e.g. '/products/rie-etcher'
-}
-```
-and add `content?: GuideProductContent;` to `GuideProduct` (optional during the pilot/batch; tightened to required in Task 6).
-
-- [ ] **Step 2: Add `PRODUCT_ROUTES` + protection & route tests (RED)**
-
-In `products.ts`, above the `products` array, add:
-```ts
-export const PRODUCT_ROUTES: Record<string, string> = {
-  rie: '/products/rie-etcher',
-  'icp-rie': '/products/icp-etcher',
-  stripper: '/products/striper',
-  'ibe-ribe': '/products/ibe-ribe',
-  ald: '/products/ald',
-  pecvd: '/products/pecvd',
-  'hdp-cvd': '/products/hdp-cvd',
-  sputter: '/products/sputter',
-  'coater-developer': '/products/coater-developer',
-  'plasma-cleaner': '/products/plasma-cleaner',
-  'e-beam': '/products/e-beam-evaporator',
-};
-```
 Append to `equipmentGuide.data.test.ts`:
 ```ts
 import { readFileSync } from 'node:fs';
@@ -147,122 +113,138 @@ const FIX = (f: string) => readFileSync(resolve(process.cwd(), 'src/data/equipme
 
 describe('content-v2 scaffolding', () => {
   it('PRODUCT_ROUTES covers every product id with a /products/<slug> route', () => {
+    expect(Object.keys(PRODUCT_ROUTES).sort()).toEqual(equipmentGuideData.products.map(p => p.id).sort());
     for (const p of equipmentGuideData.products) {
       expect(PRODUCT_ROUTES[p.id], p.id).toMatch(/^\/products\/[a-z0-9-]+$/);
     }
-    expect(Object.keys(PRODUCT_ROUTES).sort()).toEqual(equipmentGuideData.products.map(p => p.id).sort());
   });
-
   it('protects v1 specs + subTable (deep-equal committed fixture)', () => {
     const expected = JSON.parse(FIX('v1-specs-subtable.json'));
     const actual = equipmentGuideData.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
     expect(actual).toEqual(expected);
   });
-
   it('protects the v1 evidence object (deep-equal committed fixture)', () => {
     expect(equipmentGuideData.evidence).toEqual(JSON.parse(FIX('v1-evidence.json')));
   });
 });
 ```
 Run: `npx vitest run src/data/equipmentGuide/equipmentGuide.data.test.ts --exclude '**/.claude/**'`
-Expected: FAIL — `PRODUCT_ROUTES` import unresolved until the export is added; then the protection tests pass (data unchanged) and the route test passes once the map is present.
+Expected: **FAIL** — `PRODUCT_ROUTES` import can't resolve (not exported yet). (Protection tests would pass, but the file won't load until the export exists — this is the red.)
 
-- [ ] **Step 3: Renderer — `data-product-id`, lead/apps/cta, absolute CTA (RED test first)**
+- [ ] **Step 2: Add the type + `PRODUCT_ROUTES` (→ green for data tests)**
 
-Append to `renderEquipmentGuideHtml.test.ts`:
+In `types.ts` add:
+```ts
+export interface GuideProductContent {
+  lead: string;
+  applications: string[];
+  applicationCount: 3 | 4;
+  href: string; // site-relative, e.g. '/products/rie-etcher'
+}
+```
+and `content?: GuideProductContent;` on `GuideProduct` (optional for the pilot/batch; required in Task 6).
+In `products.ts`, above the `products` array:
+```ts
+export const PRODUCT_ROUTES: Record<string, string> = {
+  rie: '/products/rie-etcher', 'icp-rie': '/products/icp-etcher', stripper: '/products/striper',
+  'ibe-ribe': '/products/ibe-ribe', ald: '/products/ald', pecvd: '/products/pecvd',
+  'hdp-cvd': '/products/hdp-cvd', sputter: '/products/sputter', 'coater-developer': '/products/coater-developer',
+  'plasma-cleaner': '/products/plasma-cleaner', 'e-beam': '/products/e-beam-evaporator',
+};
+```
+Run the data test → **PASS** (route + both protection tests).
+
+- [ ] **Step 3: Write the failing render tests FIRST**
+
+Append to `renderEquipmentGuideHtml.test.ts` (add a `fixTrim` helper that reads `src/data/equipmentGuide/__fixtures__/<f>` and `.trim()`s it):
 ```ts
 import { PRODUCT_ROUTES } from '../../data/equipmentGuide/products';
 
-const evidenceChunkFixture = readFileSyncTrim('v1-evidence-chunk.html'); // helper defined in test setup
-
 describe('content-v2 render', () => {
+  const chunks = html.split('<section class="page').slice(1);
   it('stamps data-product-id on every product section', () => {
     for (const p of equipmentGuideData.products) {
-      expect(html, p.id).toContain(`data-product-id="${p.id}"`);
+      expect(chunks.some(c => c.includes(`data-product-id="${p.id}"`)), p.id).toBe(true);
     }
   });
-
-  it('renders exactly one CTA per content product, absolute href matching that product route', () => {
-    const chunks = html.split('<section class="page').slice(1);
+  it('renders one CTA per content product binding text AND href on the same anchor', () => {
     for (const p of equipmentGuideData.products) {
       const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
-      const ctas = (chunk.match(/Explore configurations &amp; request a quote/g) ?? []).length;
+      const anchors = [...chunk.matchAll(/<a class="btn" href="([^"]+)">([\s\S]*?)<\/a>/g)];
       if (p.content) {
-        expect(ctas, p.id).toBe(1);
-        expect(chunk, p.id).toContain(`href="https://ninescrolls.com${PRODUCT_ROUTES[p.id]}"`);
+        expect(anchors.length, p.id).toBe(1);
+        const [, href, text] = anchors[0];
+        expect(href, p.id).toBe(`https://ninescrolls.com${p.content.href}`);
+        expect(text, p.id).toContain('Explore configurations &amp; request a quote');
       } else {
-        expect(ctas, p.id).toBe(0);
+        expect(anchors.length, p.id).toBe(0);
       }
     }
   });
-
-  it('keeps the Evidence page byte-identical to the v1 fixture', () => {
-    const chunks = html.split('<section class="page').map(c => '<section class="page' + c);
-    const ev = chunks.find(c => c.includes('Peer-Reviewed Validation'))!.trim();
-    expect(ev).toBe(evidenceChunkFixture);
+  it('keeps the Evidence page string-identical to the v1 fixture', () => {
+    const ev = chunks.map(c => '<section class="page' + c).find(c => c.includes('Peer-Reviewed Validation'))!.trim();
+    // note: split() dropped the delimiter; re-prepend it, then compare to the committed chunk
+    expect(ev).toBe(fixTrim('v1-evidence-chunk.html'));
   });
 });
 ```
-(Add a small `readFileSyncTrim` helper at the top of the test that reads `src/data/equipmentGuide/__fixtures__/<f>` and `.trim()`s it.)
+Run: expect **FAIL** — no `data-product-id`, no CTA markup. (The Evidence-fixture test should already pass; the split re-prepend must reproduce the exact stored chunk — adjust the split/prepend so it matches the fixture exactly.)
 
-Run: expect FAIL (no `data-product-id`, no CTA markup yet).
+- [ ] **Step 4: Implement the renderer changes (→ green)**
 
-- [ ] **Step 4: Implement the renderer changes**
-
-In `renderEquipmentGuideHtml.ts`: add `const SITE_ORIGIN = 'https://ninescrolls.com';` and import `PRODUCT_ROUTES`. In `productPage(p, imageDataUri)`:
-- Add `data-product-id="${p.id}"` to the `<section class="page page--product" ...>` open tag.
-- After the series title / section accent, if `p.content`, render the lead: `<p class="lead">${esc(p.content.lead)}</p>`.
-- After the spec table(s), if `p.content`, render the applications strip and CTA:
+In `renderEquipmentGuideHtml.ts`: add `const SITE_ORIGIN = 'https://ninescrolls.com';`. In `productPage(p, imageDataUri)`:
+- Change the section open tag to `<section class="page page--product" data-product-id="${p.id}">`.
+- After the `.section-accent` / title, insert the lead when present: `${p.content ? `<p class="lead">${esc(p.content.lead)}</p>` : ''}`.
+- Build apps + cta (the anchor uses the product's OWN `content.href`, not the map — the data test proves they're equal):
 ```ts
 const apps = p.content ? `<div class="apps"><p class="lab">Typical applications</p><div class="chips">${p.content.applications.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div></div>` : '';
-const cta = p.content ? `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${PRODUCT_ROUTES[p.id]}">Explore configurations &amp; request a quote <span class="arr">→</span></a></div>` : '';
+const cta = p.content ? `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${p.content.href}">Explore configurations &amp; request a quote <span class="arr">→</span></a></div>` : '';
 ```
-Place `${apps}${cta}` before the `.page-foot`. Leave the Evidence/About/Contact functions untouched. Run tests → GREEN.
+Place `${apps}${cta}` before the `.page-foot`. Do not touch `evidencePage`/`aboutPage`/`contactPage`. Run tests → **PASS**.
 
-- [ ] **Step 5: CSS — `.lead`, `.apps`/`.chip`, `.cta`/`.btn`**
+- [ ] **Step 5: CSS — `.lead`, `.apps`/`.chip`, `.cta`/`.btn` (body ≥ 12.5px)**
 
-In `equipmentGuide.css.ts` add (mirrors the approved mockup; body copy stays ≥12.5px):
+Append to `equipmentGuide.css.ts` (chips are new **body content** → ≥12.5px per the min-font contract; `.lab` is a label like the existing `.eyebrow`, kept small):
 ```css
 .lead { font-size: 13px; color: #334155; margin: 0 0 12px; max-width: 52ch; }
 .apps { margin: 14px 0 0; padding: 10px 12px; border-radius: 9px; background: #f7f9fc; border: 1px solid #eef2f7; }
-.apps .lab { font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #8a97a6; margin: 0 0 6px; }
+.apps .lab { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #8a97a6; margin: 0 0 6px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font-size: 11px; font-weight: 600; color: #1e3a5f; background: #fff; border: 1px solid #e6ebf1; border-radius: 999px; padding: 3px 10px; }
+.chip { font-size: 12.5px; font-weight: 600; color: #1e3a5f; background: #fff; border: 1px solid #e6ebf1; border-radius: 999px; padding: 3px 10px; }
 .cta { margin-top: 12px; }
 .cta .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; background: #0284c7; color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; }
 ```
 
-- [ ] **Step 6: Run + commit scaffolding**
+- [ ] **Step 6: Run + commit scaffolding (NO PDF)**
 
-Run: `npx vitest run src/data/equipmentGuide src/templates/equipmentGuide --exclude '**/.claude/**'` → all green (CTA tests trivially pass — no product has `content` yet, so every product asserts 0 CTAs; protection + route + data-product-id pass).
+Run: `npx vitest run src/data/equipmentGuide src/templates/equipmentGuide --exclude '**/.claude/**'` → all green (CTA tests pass because no product has `content` yet → 0 CTAs everywhere).
 ```bash
 git add src/data/equipmentGuide/types.ts src/data/equipmentGuide/products.ts \
         src/data/equipmentGuide/equipmentGuide.data.test.ts \
         src/templates/equipmentGuide/renderEquipmentGuideHtml.ts \
         src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
         src/templates/equipmentGuide/equipmentGuide.css.ts
-git commit -m "feat(guide): content-v2 scaffolding — content type, PRODUCT_ROUTES, lead/apps/cta renderer + guards"
+git commit -m "feat(guide): content-v2 scaffolding — content type, PRODUCT_ROUTES, data-product-id + lead/apps/cta renderer, protection guards"
 ```
 
 ---
 
-### Task 3: Pilot (RIE + E-Beam) — ISOLATED worktree, review-only
+### Task 3: Pilot (RIE + E-Beam) — ISOLATED worktree, review-only, never pushed
 
-**Files (in a throwaway worktree, never pushed):** `products.ts` (add `content` for `rie` + `e-beam` only, rewrite their bullets).
+**Files (throwaway worktree only):** `products.ts`.
 
-- [ ] **Step 1: Create an isolated pilot worktree**
+- [ ] **Step 1: Isolated pilot worktree**
 
 ```bash
+cd /Users/harvey/Dev/src/cursor/ninescrolls
 git worktree add .claude/worktrees/eqg-v2-pilot -b eqg-v2-pilot-throwaway HEAD
 cd .claude/worktrees/eqg-v2-pilot
 ```
 
-- [ ] **Step 2: Author RIE + E-Beam content (final wording below)**
+- [ ] **Step 2: Author RIE + E-Beam `content` + rewritten bullets (final wording)**
 
-In this worktree's `products.ts`, set `content` and rewrite `bullets` for the two products:
-
+RIE (`id: 'rie'`):
 ```ts
-// rie
 content: {
   lead: 'Reliable anisotropic plasma etching for university and R&D labs — dielectric patterning, polymer removal, surface activation, and device prototyping across silicon, compound, and 2D materials.',
   applications: ['Semiconductor R&D', 'Dielectric patterning', 'Polymer removal', 'Surface activation'],
@@ -275,8 +257,9 @@ bullets: [
   { heading: 'Low-damage by design.', body: 'Showerhead gas feed and a configurable discharge gap give gentle, tunable etch profiles.' },
   { heading: 'Lab-ready and configurable.', body: '1.0 × 1.0 m footprint; open-load or load-lock; cost- or performance-optimized builds.' },
 ],
-
-// e-beam
+```
+E-Beam (`id: 'e-beam'`) — **uniformity is `≤±5% within Φ6 in` (canonical, post-audit); do NOT write ±3–5%:**
+```ts
 content: {
   lead: 'Multi-source e-beam and thermal evaporation for optical and IR research — photonic crystals, optical multilayers, IR sensors, and lift-off metallization at research-grade purity.',
   applications: ['Infrared image sensors', 'Ge/ZnS photonic crystals', 'UV down-conversion films', 'Optical AR coatings'],
@@ -285,7 +268,7 @@ content: {
 },
 bullets: [
   { heading: 'Two evaporation sources.', body: 'E-beam plus thermal resistance for metals, oxides, fluorides, and IR films.' },
-  { heading: 'Precise thickness control.', body: 'In-situ QCM monitoring and endpoint; ±3–5% uniformity across the substrate.' },
+  { heading: 'Precise thickness control.', body: 'In-situ QCM endpoint monitoring; uniformity ≤±5% within Φ6 in.' },
   { heading: 'Optical and IR stacks ready.', body: 'High-purity films for photonic crystals, optical multilayers, and IR sensors.' },
   { heading: 'Flexible operation.', body: 'Manual, semi-automatic, or full-automatic; suited to lift-off metallization and patterning.' },
 ],
@@ -293,17 +276,16 @@ bullets: [
 
 - [ ] **Step 3: Regenerate + screenshot the two pilot pages**
 
-Run: `npm run generate-equipment-guide`
-Then: page count must be 14; render to images and read the RIE + E-Beam pages:
 ```bash
+npm run generate-equipment-guide
 python3 -c "from pypdf import PdfReader; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"
 mkdir -p /tmp/eqg-v2-pages && pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p
 ```
-Read the RIE page (p3) and E-Beam page (p13) images. **Pilot acceptance:** both single-page, guide == 14 pages, no crowding, no table compressed below legibility, no body text < 12.5px.
+Read the RIE page (p3) and E-Beam page (p13) images. **Pilot acceptance:** both single-page, guide == 14 pages, no crowding, no table compressed illegibly, no body text < 12.5px.
 
-- [ ] **Step 4: Review checkpoint (STOP)**
+- [ ] **Step 4: Review checkpoint (STOP), then discard the worktree**
 
-Present the two pilot pages to the user. Get voice/format sign-off. **Do not commit/push/merge this worktree.** After approval, discard it:
+Present the two pilot pages to the user; get voice/format sign-off. **Nothing here is committed/pushed/merged.** After approval:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
 git worktree remove --force .claude/worktrees/eqg-v2-pilot
@@ -312,38 +294,11 @@ git branch -D eqg-v2-pilot-throwaway
 
 ---
 
-### Task 4: Batch — all 11 products' content + rewritten bullets (real branch)
+### Task 4: Batch — all 11 products' content + rewritten bullets (real branch, TDD)
 
-**Files:** `src/data/equipmentGuide/products.ts`, `docs/equipment-guide/content-v2-traceability.md`
+**Files:** `products.ts`, `equipmentGuide.data.test.ts`, `docs/equipment-guide/content-v2-traceability.md`
 
-- [ ] **Step 1: Author `content` + rewritten bullets for all 11 products**
-
-On `feature/equipment-guide-content-v2`, add the (now voice-locked) RIE + E-Beam content from Task 3, and author the remaining 9 the same way. For each product: `content.lead` = rewritten from its `hero.description` (below), `content.applications` = the first-4 list from the Ground-data table (verbatim, config order), `content.applicationCount` = 4 (use 3 only if Step 3 shows overflow), `content.href` = `PRODUCT_ROUTES[id]`; `bullets` = 3–4 benefits rewritten from that product's existing guide bullets + `specs` rows.
-
-Source `hero.description` for the 9 (rewrite into ≤2-line leads; no new numbers/superlatives):
-- **icp-rie:** "High-density plasma etching for silicon, MEMS, diamond, compound semiconductors, and process development where independent plasma density and ion energy control are critical."
-- **stripper:** "Dedicated plasma stripping and ashing for photoresist removal, post-etch residue cleaning, organic contamination removal, and damage-sensitive semiconductor process flows."
-- **ibe-ribe:** "Directional ion beam etching and reactive ion beam etching for magnetic films, noble metals, optical materials, multilayer stacks, and difficult-to-etch research materials."
-- **ald:** "Atomic-level thin film deposition for conformal coatings, high-k dielectrics, passivation layers, 3D structures, and research material stacks."
-- **pecvd:** "Low-temperature plasma-enhanced CVD for dielectric films, passivation layers, optical coatings, MEMS stacks, and research thin-film process development."
-- **hdp-cvd:** "High-density plasma CVD for dense dielectric films, void-free trench fill, STI, IMD, PMD, and advanced packaging process development."
-- **sputter:** "Physical vapor deposition for metal, dielectric, nitride, oxide, magnetic, optical, and compound thin films using configurable DC/RF magnetron sputtering sources."
-- **coater-developer:** "Modular spin coating, development, hotplate, HMDS, and EBR process control for repeatable photolithography workflows from research wafers to pilot-line substrates."
-- **plasma-cleaner:** author from the guide's own `plasma-cleaner` Main Functions / Typical Applications rows (no config); `content.applications` = the pinned literals `['Surface activation', 'Surface cleaning', 'Failure analysis', 'Optical & biomedical device prep']`.
-
-- [ ] **Step 2: Fill the traceability record**
-
-Create `docs/equipment-guide/content-v2-traceability.md`. For every product, one row per `lead` and per `bullet`, citing its source (config `hero.description`, an original guide bullet, or a `specs`/`subTable` row). Example (RIE):
-```
-## rie
-- lead ← rieEtcherConfig.hero.description
-- bullet "Broad material range" ← specs row "Etching Materials"
-- bullet "Wide, repeatable process window" ← specs rows RF Power / Gas System / Wafer Stage Temp / Non-Uniformity
-- bullet "Low-damage by design" ← original bullets "Showerhead Gas Feed-in" + "Configurable Plasma Discharge Gap"
-- bullet "Lab-ready and configurable" ← original bullets "Uni-body … footprint" + "Sample Handling" + "Cost or Performance"
-```
-
-- [ ] **Step 3: Add the applications-parity + bullets + CTA-format tests (they now have data to check)**
+- [ ] **Step 1: Write the failing content-integrity tests FIRST**
 
 Append to `equipmentGuide.data.test.ts`:
 ```ts
@@ -359,12 +314,10 @@ describe('content-v2 content integrity', () => {
         expect(p.content.applications).toEqual(PLASMA_CLEANER_APPS.slice(0, p.content.applicationCount));
         continue;
       }
-      const slug = p.websiteSpecParity!.productSlug;
-      const cfg = WEBSITE_CONFIGS[slug as keyof typeof WEBSITE_CONFIGS];
+      const cfg = WEBSITE_CONFIGS[p.websiteSpecParity!.productSlug as keyof typeof WEBSITE_CONFIGS];
       expect(p.content.applications).toEqual(cfg.applications.items.slice(0, p.content.applicationCount));
     }
   });
-
   it('content.href equals the canonical route and is site-relative', () => {
     for (const p of equipmentGuideData.products) {
       if (!p.content) continue;
@@ -372,7 +325,6 @@ describe('content-v2 content integrity', () => {
       expect(p.content.href).toMatch(/^\/products\/[a-z0-9-]+$/);
     }
   });
-
   it('every product has 3–4 bullets', () => {
     for (const p of equipmentGuideData.products) {
       expect(p.bullets.length, p.id).toBeGreaterThanOrEqual(3);
@@ -381,30 +333,68 @@ describe('content-v2 content integrity', () => {
   });
 });
 ```
-Run tests → green (applications match config slices; note the config `applications.items` must be exported/available via the existing `WEBSITE_CONFIGS` map — it is, from v1).
+Run → **FAIL** where content is missing / a product still has >4 bullets. (This is the red for the batch.)
 
-- [ ] **Step 4: Regenerate, confirm 14 pages, commit**
+- [ ] **Step 2: Author `content` + rewritten bullets for all 11 (→ green)**
 
-Run: `npm run generate-equipment-guide` → 14 pages; `pdftoppm` all pages to `/tmp/eqg-v2-pages/` and inspect **all 14** for clipping/overflow. If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → applicationCount 4→3 → tighten spacing; never <12.5px body, never spill). Then:
+Add the voice-locked RIE + E-Beam content from Task 3, and author the other 9 the same way: `content.lead` rewritten from the `hero.description` below (≤2 lines, no new numbers/superlatives), `content.applications` = the first-4 list from the Ground-data table (verbatim, config order), `content.applicationCount` = 4 (only drop to 3 if Step 4 shows overflow), `content.href = PRODUCT_ROUTES[id]`; `bullets` = 3–4 benefits rewritten from that product's existing guide bullets + `specs` rows (every number must already be in `specs`).
+
+Source `hero.description` for the 9:
+- **icp-rie:** "High-density plasma etching for silicon, MEMS, diamond, compound semiconductors, and process development where independent plasma density and ion energy control are critical."
+- **stripper:** "Dedicated plasma stripping and ashing for photoresist removal, post-etch residue cleaning, organic contamination removal, and damage-sensitive semiconductor process flows."
+- **ibe-ribe:** "Directional ion beam etching and reactive ion beam etching for magnetic films, noble metals, optical materials, multilayer stacks, and difficult-to-etch research materials."
+- **ald:** "Atomic-level thin film deposition for conformal coatings, high-k dielectrics, passivation layers, 3D structures, and research material stacks."
+- **pecvd:** "Low-temperature plasma-enhanced CVD for dielectric films, passivation layers, optical coatings, MEMS stacks, and research thin-film process development."
+- **hdp-cvd:** "High-density plasma CVD for dense dielectric films, void-free trench fill, STI, IMD, PMD, and advanced packaging process development."
+- **sputter:** "Physical vapor deposition for metal, dielectric, nitride, oxide, magnetic, optical, and compound thin films using configurable DC/RF magnetron sputtering sources."
+- **coater-developer:** "Modular spin coating, development, hotplate, HMDS, and EBR process control for repeatable photolithography workflows from research wafers to pilot-line substrates."
+- **plasma-cleaner:** author `lead`/`bullets` from the guide's own `plasma-cleaner` Main Functions / Typical Applications rows (no config); `content.applications` = the pinned literals `['Surface activation', 'Surface cleaning', 'Failure analysis', 'Optical & biomedical device prep']`.
+
+Run the data test → **PASS**.
+
+- [ ] **Step 3: Fill the traceability record**
+
+Create `docs/equipment-guide/content-v2-traceability.md`; one row per `lead` and per `bullet` per product, citing its source (config `hero.description`, an original guide bullet, or a `specs`/`subTable` row). Example (RIE):
+```
+## rie
+- lead ← rieEtcherConfig.hero.description
+- bullet "Broad material range" ← specs row "Etching Materials"
+- bullet "Wide, repeatable process window" ← specs rows RF Power / Gas System / Wafer Stage Temp / Non-Uniformity
+- bullet "Low-damage by design" ← original bullets "Showerhead Gas Feed-in" + "Configurable Plasma Discharge Gap"
+- bullet "Lab-ready and configurable" ← original bullets "Uni-body … footprint" + "Sample Handling" + "Cost or Performance"
+## e-beam
+- lead ← eBeamEvaporatorConfig.hero.description
+- bullet "Precise thickness control" ← specs rows "Thickness Control" + "Uniformity" (≤±5% within Φ6 in)
+- …
+```
+
+- [ ] **Step 4: Regenerate to a temp check (do NOT stage the PDF), then commit data + tests + traceability**
+
 ```bash
-git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/equipmentGuide.data.test.ts \
-        docs/equipment-guide/content-v2-traceability.md public/NineScrolls-Equipment-Guide.pdf
+npm run generate-equipment-guide   # regenerates public/…pdf in the working tree
+python3 -c "from pypdf import PdfReader; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))"   # must be 14
+pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p   # inspect ALL 14 for clipping/overflow
+```
+If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6):
+```bash
+git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md
 git commit -m "feat(guide): content-v2 — leads, applications, CTAs, rewritten bullets for all 11 products"
 ```
 
 ---
 
-### Task 5: About page rewrite
+### Task 5: About page rewrite (TDD, no PDF commit)
 
-**Files:** `src/data/equipmentGuide/guideMeta.ts`, `equipmentGuide.data.test.ts`
+**Files:** `guideMeta.ts`, `equipmentGuide.data.test.ts`
 
-- [ ] **Step 1: Add the About integrity test (RED)**
+- [ ] **Step 1: Write the failing About test FIRST**
 
 Append to `equipmentGuide.data.test.ts`:
 ```ts
 describe('content-v2 about', () => {
-  const aboutText = JSON.stringify(about);
-  it('uses the four fixed pillar headings', () => {
+  it('keeps exactly 2 paragraphs + 4 fixed pillars', () => {
+    expect(about.paragraphs).toHaveLength(2);
+    expect(about.pillars).toHaveLength(4);
     expect(about.pillars.map(p => p.heading)).toEqual([
       'Process-first platform selection',
       'Configured around your lab',
@@ -412,15 +402,19 @@ describe('content-v2 about', () => {
       'Peer-reviewed validation for represented platforms',
     ]);
   });
-  it('carries the represented-platform qualifier and no forbidden claims', () => {
-    expect(about.pillars[3].body.toLowerCase()).toMatch(/not.*ninescrolls|represented|corresponding/);
-    expect(aboutText).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|customers/i);
-    expect(aboutText).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+  it('states the exact represented-platform attribution boundary in pillar 4', () => {
+    expect(about.pillars[3].body).toBe('The corresponding platform classes appear in real peer-reviewed research — validating the process capability, not NineScrolls-owned equipment or NineScrolls-authored papers.');
+  });
+  it('has no forbidden claims or OEM names', () => {
+    const t = JSON.stringify(about);
+    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|\bcustomers\b/i);
+    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
   });
 });
 ```
+Run → **FAIL** (current About still has the old boilerplate + pillars).
 
-- [ ] **Step 2: Rewrite `about` in `guideMeta.ts`**
+- [ ] **Step 2: Rewrite `about` (→ green)**
 
 ```ts
 export const about: EquipmentGuideData['about'] = {
@@ -438,67 +432,67 @@ export const about: EquipmentGuideData['about'] = {
   ],
 };
 ```
-Run tests → green. Regenerate the PDF (About page reflow — confirm still 14 pages, About fits one page). Commit:
+Run tests → **PASS**. Regenerate to temp + confirm About still fits one page and guide == 14 (do **not** stage the PDF). Commit **without the PDF**:
 ```bash
-git add src/data/equipmentGuide/guideMeta.ts src/data/equipmentGuide/equipmentGuide.data.test.ts public/NineScrolls-Equipment-Guide.pdf
+git add src/data/equipmentGuide/guideMeta.ts src/data/equipmentGuide/equipmentGuide.data.test.ts
 git commit -m "feat(guide): rewrite About page to NineScrolls' real value (process-first, U.S. support)"
 ```
 
 ---
 
-### Task 6: Tighten `content` to required + finalize
+### Task 6: Tighten `content` to required + finalize (single PDF commit)
 
-**Files:** `src/data/equipmentGuide/types.ts`, `equipmentGuide.data.test.ts`, regenerated PDF
+**Files:** `types.ts`, `equipmentGuide.data.test.ts`, `public/NineScrolls-Equipment-Guide.pdf`
 
-- [ ] **Step 1: Make `content` required + 11/11 completeness test**
+- [ ] **Step 1: Write the 11/11 completeness test FIRST**
 
-In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`. Append the completeness test:
+Append to `equipmentGuide.data.test.ts`:
 ```ts
 it('all 11 products have a complete content block', () => {
   expect(equipmentGuideData.products).toHaveLength(11);
   for (const p of equipmentGuideData.products) {
-    expect(p.content.lead.length, p.id).toBeGreaterThan(0);
-    expect(p.content.applications.length, p.id).toBe(p.content.applicationCount);
-    expect(p.content.href, p.id).toBe(PRODUCT_ROUTES[p.id]);
+    expect(p.content, p.id).toBeTruthy();
+    expect(p.content!.lead.length, p.id).toBeGreaterThan(0);
+    expect(p.content!.applications.length, p.id).toBe(p.content!.applicationCount);
+    expect(p.content!.href, p.id).toBe(PRODUCT_ROUTES[p.id]);
   }
 });
 ```
-Run `tsc`/tests → any product missing `content` now fails to compile. Green after all 11 authored.
+Run → **PASS if all 11 authored in Task 4** (red earlier if any were missing). Then make it compile-enforced:
 
-- [ ] **Step 2: Full final verification (all 14 pages)**
+- [ ] **Step 2: Tighten the type to required**
 
-Run in order:
+In `types.ts` change `content?: GuideProductContent;` → `content: GuideProductContent;`. Run `tsc`/tests → any product missing `content` now fails to compile.
+
+- [ ] **Step 3: Full final verification (all 14 pages) + regenerate the committed PDF**
+
 ```bash
 npx vitest run --exclude '**/.claude/**'                    # full suite green
 npm run build                                               # typecheck + bundle
-npm run generate-equipment-guide                            # regenerate
+npm run generate-equipment-guide                            # regenerate the committed PDF
 python3 -c "from pypdf import PdfReader; import os; print('pages', len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages), 'bytes', os.path.getsize('public/NineScrolls-Equipment-Guide.pdf'))"
+pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf /tmp/eqg-v2-pages/p   # read all 14
 ```
-Expected: full suite green; build OK; `pages 14`, `bytes` < 2000000. `pdftoppm` all 14 pages → read them: every product page single, no clipping/overflow, no body text < 12.5px, Evidence + Contact + spec tables unchanged.
+Expected: full suite green; build OK; `pages 14`, `bytes` < 2000000; every product page single, no clipping/overflow, no body text < 12.5px, Evidence + Contact + all spec tables visually unchanged.
 
-- [ ] **Step 3: Commit the final tightening + regenerated PDF**
+- [ ] **Step 4: Git hygiene gate + commit the tightening WITH the final PDF (atomic)**
 
 ```bash
+git status --short
+test "$(git hash-object package-lock.json)" = "$(git show HEAD:package-lock.json | git hash-object --stdin)" && echo "lockfile unchanged ✓" || echo "FAIL: package-lock changed"
+```
+Confirm `git status` shows only intended files (the guide data/test/types/css/renderer, the traceability doc, the fixtures, the PDF — no `tmp/`, no research docs, no `package-lock.json`). Then:
+```bash
 git add src/data/equipmentGuide/types.ts src/data/equipmentGuide/equipmentGuide.data.test.ts public/NineScrolls-Equipment-Guide.pdf
-git commit -m "feat(guide): require content on all 11 products + 11/11 completeness test"
+git commit -m "feat(guide): require content on all 11 products + 11/11 test; regenerate final PDF"
 ```
 
 ---
 
 ## Self-Review
 
-**1. Spec coverage:**
-- Data model (`GuideProductContent`, optional→required) → Task 2 Step 1, Task 6 Step 1. ✓
-- Copy rules (lead from hero.description, applications = slice, bullets 3–4, specs untouched) → Task 3/4 content + Task 4 Step 3 tests. ✓
-- Applications ordered deep-equality + plasma-cleaner literals (contract 1) → Task 4 Step 3. ✓
-- CTA absolute + canonical route + `data-product-id` per section (contract 2) → Task 2 Steps 2–4. ✓
-- All-or-none nested content + pilot review-only isolated worktree + one-complete-PR (contract 3) → Task 2/3/6. ✓
-- Protection fixtures from `f76765a8`, committed, no auto-snapshot (#1) → Task 1 + Task 2 Steps 2–3. ✓
-- About rewrite + evidence-pillar qualifier (#7) → Task 5. ✓
-- Traceability doc (#4) → Task 4 Step 2. ✓
-- Page policy: hard 14, budget, overflow order, ≥12.5px, all-14 screenshots → Task 3 Step 3, Task 4 Step 4, Task 6 Step 2. ✓
-- Files list → matches the six task files + fixtures + traceability. ✓
+**1. Spec coverage:** data model (Task 2/6) ✓; copy rules + applications ordered-parity + plasma-cleaner literals (Task 4 Step 1) ✓; CTA absolute + canonical route + `data-product-id` + same-anchor text/href binding (Task 2) ✓; all-or-none nested content + pilot isolation + one-complete-PR (Task 2/3/6) ✓; protection fixtures from detached `f76765a8`, committed, no auto-snapshot (Task 1) ✓; About rewrite + exact evidence-pillar body + 2-para/4-pillar lock (Task 5) ✓; traceability (Task 4 Step 3) ✓; page policy hard-14/≥12.5px/all-14 screenshots (Task 3/4/6) ✓; PDF committed only in the final step (Task 6, boundary note) ✓; git-hygiene + lockfile-hash gate (Task 6 Step 4) ✓.
 
-**2. Placeholder scan:** The 9 non-pilot leads/bullets are authored during Task 4 execution *from the exact `hero.description` + specs listed inline* — this is intentional (pilot-first locks the voice before the 9 are written), not a vague TODO; the source inputs and rules are fully specified. RIE + E-Beam are authored verbatim in the plan.
+**2. Placeholder scan:** RIE + E-Beam pilot copy is authored verbatim (with the corrected E-Beam uniformity). The 9 batch leads/bullets are authored in Task 4 from the exact `hero.description` + `specs` cited inline — intentional per pilot-first, not a vague TODO. No "TBD".
 
-**3. Type/name consistency:** `GuideProductContent` (lead/applications/applicationCount/href), `PRODUCT_ROUTES`, `SITE_ORIGIN`, `data-product-id`, `content?`→`content`, `WEBSITE_CONFIGS` (reused from v1), the `<section class="page` split helper, and `esc()` are consistent across tasks.
+**3. Type/name consistency:** `GuideProductContent` (lead/applications/applicationCount/href), `PRODUCT_ROUTES`, `SITE_ORIGIN`, `data-product-id`, `content?`→`content`, `WEBSITE_CONFIGS` (v1), `fixTrim`, the `<section class="page` split, and `esc()` are consistent across tasks. TDD is red→green in every task (test appended and run-to-fail before the implementing edit).
