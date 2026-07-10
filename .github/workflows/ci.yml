@@ -23,14 +23,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      # The committed lockfile is generated on macOS, so it omits the Linux
-      # rollup native binary and trips the npm optional-deps bug (npm/cli#4828)
-      # on the runner. Remove it and install fresh — exactly what amplify.yml
-      # does — so npm resolves platform-correct optional deps.
+      # The committed lockfile includes the Linux native optional packages used
+      # by Rollup and Parcel. Keep installs deterministic and fail if package.json
+      # and package-lock.json ever drift apart.
       - name: Install dependencies
-        run: |
-          rm -rf node_modules package-lock.json
-          npm install --no-ignore-optional
+        run: npm ci
 
       # amplify_outputs.json is generated at deploy time and gitignored. The app
       # only does Amplify.configure(outputs), so a stub is enough for the import
