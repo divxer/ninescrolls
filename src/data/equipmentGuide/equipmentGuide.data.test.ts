@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { GuideProduct, EquipmentGuideData } from './types';
 import { about, evidence, contact } from './guideMeta';
+import { products } from './products';
 
 describe('equipmentGuide types', () => {
   it('SpecRow supports one- and two-column values', () => {
@@ -55,5 +58,30 @@ describe('guideMeta content integrity', () => {
       expect(s.title.trim(), `${s.journal} needs a real title`).not.toHaveLength(0);
       expect(s.doi, `${s.title} needs a DOI before shipping`).toMatch(/^10\./);
     }
+  });
+});
+
+describe('products completeness', () => {
+  it('has exactly 11 series in stable order', () => {
+    expect(products).toHaveLength(11);
+    const orders = products.map(p => p.order);
+    expect(orders).toEqual([...orders].sort((a, b) => a - b));
+    expect(new Set(orders).size).toBe(11);
+  });
+
+  it('every product has a real standardized image, series, bullets, and specs', () => {
+    for (const p of products) {
+      expect(p.series, p.id).toBeTruthy();
+      expect(p.bullets.length, p.id).toBeGreaterThan(0);
+      expect(p.specs.length, p.id).toBeGreaterThan(0);
+      expect(p.image, p.id).toMatch(/-standardized\.webp$/);
+      expect(existsSync(resolve(process.cwd(), 'public', p.image.replace(/^\//, ''))), `${p.id} image missing`).toBe(true);
+    }
+  });
+
+  it('names no OEM/supplier and no scale claims in product content', () => {
+    const text = JSON.stringify(products);
+    expect(text).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+    expect(text).not.toMatch(/1000\+|300\+|30\+ years|global installations/i);
   });
 });
