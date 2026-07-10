@@ -40,11 +40,9 @@ describe('RIEEtcher redesigned product page', () => {
     expect(within(specs).getByText('Wafer Size')).toBeInTheDocument();
     expect(within(specs).getByText('4-12 in')).toBeInTheDocument();
     expect(within(specs).getByText('RF Power')).toBeInTheDocument();
-    expect(within(specs).getByText('Up to 600 W')).toBeInTheDocument();
+    expect(within(specs).getByText('300-1000 W')).toBeInTheDocument();
     expect(within(specs).getByText('Gas System')).toBeInTheDocument();
     expect(within(specs).getByText('4 gas lines')).toBeInTheDocument();
-    expect(within(specs).getByText('Base Pressure')).toBeInTheDocument();
-    expect(within(specs).getByText('<= 5x10^-6 Torr')).toBeInTheDocument();
   });
 
   it('keeps RIE conversion and comparison paths visible', () => {

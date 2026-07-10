@@ -28,18 +28,12 @@ export const products: GuideProduct[] = [
     websiteSpecParity: {
       productSlug: 'rie-etcher',
       // Website config: rieEtcherConfig.ts specifications.items
-      //   Wafer Size '4-12 in' | RF Power 'Up to 600 W' | Gas System '4 gas lines' | Temperature '20 to 80 C'
-      //
-      // PARITY EXCLUSION (RF Power + Wafer Stage Temperature): intentionally omitted.
-      // The guide values — RF Power 'Full Range 300-1000W' and Stage Temp '-70℃ to 200℃' — are
-      // CORRECT, confirmed against the authoritative OEM brochure. The WEBSITE config is the
-      // erroneous side here: rieEtcherConfig says 'Up to 600 W' / '20 to 80 C', which is wrong and
-      // is being corrected under a separate task. Do NOT "fix" the guide to match the website.
-      // Re-add these two parity checks once rieEtcherConfig's RF Power + Temperature are corrected.
-      // Parity is asserted below only on the rows that already agree across both sources.
+      //   Wafer Size '4-12 in' | RF Power '300-1000 W' | Gas System '4 gas lines' | Temperature '-70 to 200 C'
       checks: [
         { guideLabel: 'Gas System', websiteLabel: 'Gas System', guideExpected: '4lines', websiteExpected: '4gaslines' },
         { guideLabel: 'Wafer Size Range', websiteLabel: 'Wafer Size', guideExpected: '12inch', websiteExpected: '4-12in' },
+        { guideLabel: 'RF Power', websiteLabel: 'RF Power', guideExpected: '300-1000w', websiteExpected: '300-1000w' },
+        { guideLabel: 'Wafer Stage Temperature Range', websiteLabel: 'Temperature', guideExpected: '-70℃to200℃', websiteExpected: '-70to200c' },
       ],
     },
   },

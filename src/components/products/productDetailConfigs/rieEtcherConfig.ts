@@ -7,7 +7,7 @@ export const rieEtcherConfig: ProductDetailConfig = {
   seo: {
     title: 'RIE Plasma Etching Platform',
     description:
-      'Reactive ion etching platform for universities and R&D labs. Supports 4-12 inch wafers, up to 600 W RF power, 4 gas lines, 20 to 80 C temperature control, and <= 5x10^-6 Torr base pressure.',
+      'Reactive ion etching platform for universities and R&D labs. Supports 4-12 inch wafers, 300-1000 W RF power, 4 gas lines, and -70 to 200 C temperature control.',
     keywords:
       'RIE etcher, reactive ion etching, RIE plasma etching, dielectric etching, polymer removal, semiconductor R&D equipment',
   },
@@ -32,7 +32,7 @@ export const rieEtcherConfig: ProductDetailConfig = {
     {
       question: 'What core specifications define the RIE platform?',
       answer:
-        'The RIE platform supports 4 inch to 12 inch wafers, up to 600 W RF power at 13.56 MHz, 4 process gas lines, 20 to 80 C temperature control, and base pressure of <= 5x10^-6 Torr.',
+        'The RIE platform supports 4 inch to 12 inch wafers, 300-1000 W RF power at 13.56 MHz, 4 process gas lines, and -70 to 200 C temperature control.',
     },
   ],
   breadcrumb: {
@@ -54,9 +54,9 @@ export const rieEtcherConfig: ProductDetailConfig = {
     },
     stats: [
       { label: 'Wafer Size', value: '4-12 in' },
-      { label: 'RF Power', value: 'Up to 600 W' },
+      { label: 'RF Power', value: '300-1000 W' },
       { label: 'Gas Lines', value: '4 lines' },
-      { label: 'Temp Range', value: '20 to 80 C' },
+      { label: 'Temp Range', value: '-70 to 200 C' },
     ],
     primaryAction: {
       label: 'Request Quote',
@@ -126,11 +126,10 @@ export const rieEtcherConfig: ProductDetailConfig = {
     testId: 'rie-specifications',
     items: [
       { label: 'Wafer Size', value: '4-12 in' },
-      { label: 'RF Power', value: 'Up to 600 W' },
+      { label: 'RF Power', value: '300-1000 W' },
       { label: 'Frequency', value: '13.56 MHz' },
       { label: 'Gas System', value: '4 gas lines' },
-      { label: 'Temperature', value: '20 to 80 C' },
-      { label: 'Base Pressure', value: '<= 5x10^-6 Torr' },
+      { label: 'Temperature', value: '-70 to 200 C' },
       { label: 'Materials', value: 'Si, SiO2, SiNx, metals, polymers' },
       { label: 'Loading', value: 'Open-load or load-lock' },
     ],
