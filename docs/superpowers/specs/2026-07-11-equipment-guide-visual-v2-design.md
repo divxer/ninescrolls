@@ -103,8 +103,8 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 
 - **Category colors:** as `CATEGORY_META` above. Applied to: product-page eyebrow text, title accent rule, cover TOC category labels + underline. Everything else stays in the navy/blue brand family (`#1e3a5f` navy, `#0284c7` CTA blue unchanged).
 - **Type scale:** page title 26px (Space Grotesk 700), lead 13px, body/bullets 12.5px, chips 12.5px. Body-copy floor stays **≥12.5px**, with this EXHAUSTIVE exception list (the only roles allowed below 12.5px, all label/metadata — not body copy):
-  - `.eyebrow` (10px), `.apps .lab` (10px), cover edition line (10–11px), cover TOC page numbers (11px)
-  - Evidence study metadata line (journal · year · platform, 10–11px) and citation note (10–11px); `evidence.disclaimer` note (11px italic)
+  - `.eyebrow` (10px), `.apps .lab` (10px), cover edition line (10–11px), cover TOC page numbers (11px), cover TOC category labels (11px)
+  - Evidence study metadata line (journal · year · platform, 10–11px), citation note (10–11px), DOI link inside the metadata line (`.study .m .doi`, 11–11.5px); `evidence.disclaimer` note (11px italic)
   - `.page-foot` (9–10px), Puppeteer footer template (9px), brandbar header links (10–11px)
   - CTA-band sub-line, if split from the main sentence (11px)
   **Enforcement test:** parse `equipmentGuide.css.ts` for every `font-size` declaration below 12.5px and assert its selector is in the allowlist above; any new sub-12.5px selector fails the suite.
@@ -161,7 +161,8 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 - Modify: `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts`, `equipmentGuide.css.ts`, `renderEquipmentGuideHtml.test.ts`
 - Modify: `src/data/equipmentGuide/guideMeta.ts` (add `cover` object only), `types.ts` (add `cover` type), `equipmentGuide.data.test.ts` (cover-literal tests)
 - Create: `src/templates/equipmentGuide/fontsCss.ts`, `src/templates/equipmentGuide/fonts/*` (5 woff2 + 2 OFL + PROVENANCE.md)
-- Modify: `scripts/generate-equipment-guide.ts` (EXPECTED_PAGES, required strings, pdffonts assert)
+- Create: `src/templates/equipmentGuide/pdfFontsCheck.ts` + `pdfFontsCheck.test.ts` (pure, unit-tested pdffonts parsing/validation), `tsconfig.scripts.json` (real typecheck for scripts/)
+- Modify: `scripts/generate-equipment-guide.ts` (EXPECTED_PAGES, required strings, pdffonts assert wiring)
 - Delete: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 - Modify: `public/NineScrolls-Equipment-Guide.pdf` (finalize only)
 - **Explicitly NOT in allowlist:** `products.ts`, `index.ts`, `v1-specs-subtable.json`, `v1-evidence.json`, `package-lock.json` — any diff there fails the audit.

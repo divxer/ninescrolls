@@ -44,7 +44,9 @@ cd /Users/harvey/Dev/src/cursor/ninescrolls
 set -euo pipefail
 [ "$(git branch --show-current)" = "feature/equipment-guide-visual-v2" ] || { echo "FAIL: wrong branch"; exit 1; }
 git fetch origin --quiet
-git merge-base --is-ancestor origin/main HEAD || { echo "FAIL: branch not on top of origin/main — rebase first"; exit 1; }
+APPROVED_BASELINE=844ea29bf3a65242da2aaa48c40cc8a282835b5b   # #275 merge — the baseline this plan was approved against
+git merge-base --is-ancestor "$APPROVED_BASELINE" HEAD || { echo "FAIL: approved baseline not an ancestor"; exit 1; }
+[ "$(git rev-parse origin/main)" = "$APPROVED_BASELINE" ] || { echo "FAIL: origin/main moved past the approved baseline ($(git rev-parse --short origin/main)) — STOP and re-review the plan against the new main"; exit 1; }
 command -v pdffonts >/dev/null || { echo "FAIL: pdffonts missing — install poppler (brew install poppler)"; exit 1; }
 test -z "$(git status --porcelain --untracked-files=no)" || { echo "FAIL: dirty tracked tree"; exit 1; }
 ```
@@ -79,20 +81,53 @@ Report `STATE_DIR` to the controller; Task 9 reads it (plain files, never source
 
 - [ ] **Step 0: USER PERMISSION GATE — downloads (STOP until granted)**
 
-Vendoring needs two one-time downloads from official upstream releases. Ask the user before downloading, stating exactly:
-- `space-grotesk-2.0.0.zip` from `https://github.com/floriankarsten/space-grotesk/releases/tag/2.0.0` (~1 MB) — extract `SpaceGrotesk-SemiBold.woff2`, `SpaceGrotesk-Bold.woff2`
-- `Inter-4.1.zip` from `https://github.com/rsms/inter/releases/tag/v4.1` (~10 MB) — extract `web/Inter-Regular.woff2`, `web/Inter-Medium.woff2`, `web/Inter-SemiBold.woff2`
-- Each repo's `OFL.txt` (from the same archive) → committed as `OFL-SpaceGrotesk.txt` / `OFL-Inter.txt`
+**Plan approval does NOT authorize these downloads.** Before downloading, ask the user for separate, explicit authorization for exactly these two archives (filename, source, size stated):
+- `SpaceGrotesk-2.0.0.zip` from `https://github.com/floriankarsten/space-grotesk/releases/download/2.0.0/SpaceGrotesk-2.0.0.zip` (~1 MB)
+- `Inter-4.1.zip` from `https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip` (~10 MB)
 
-If exact filenames inside an archive differ (e.g. `InterVariable` naming), pick the static-weight woff2 files matching Regular/Medium/SemiBold and record the actual archive paths in PROVENANCE.md. Download to the session scratchpad (never the repo's `tmp/`), extract only the 7 files into `src/templates/equipmentGuide/fonts/`.
+Only after the user grants it: download to the session scratchpad (never the repo's `tmp/`).
 
-- [ ] **Step 1: Write PROVENANCE.md with real SHA-256 values**
+- [ ] **Step 0b: Inspect archive listings, then WRITE THE EXACT PATHS BACK INTO THIS PLAN before extracting**
+
+```bash
+unzip -l "$SCRATCH/SpaceGrotesk-2.0.0.zip" | grep -i woff2
+unzip -l "$SCRATCH/Inter-4.1.zip" | grep -iE 'woff2|OFL|LICENSE' | grep -viE 'italic|display'
+```
+From the listings, record in this plan (edit this block in place) the exact archive-internal paths for: Space Grotesk SemiBold + Bold woff2, Inter Regular/Medium/SemiBold woff2 (static weights, NOT variable/italic/display), and each archive's OFL/LICENSE text. Then extract with explicit per-file commands, e.g.:
+```bash
+cd /Users/harvey/Dev/src/cursor/ninescrolls/src/templates/equipmentGuide/fonts
+unzip -p "$SCRATCH/SpaceGrotesk-2.0.0.zip" '<exact-archive-path>/SpaceGrotesk-SemiBold.woff2' > SpaceGrotesk-SemiBold.woff2
+unzip -p "$SCRATCH/SpaceGrotesk-2.0.0.zip" '<exact-archive-path>/SpaceGrotesk-Bold.woff2'     > SpaceGrotesk-Bold.woff2
+unzip -p "$SCRATCH/Inter-4.1.zip" '<exact-archive-path>/Inter-Regular.woff2'  > Inter-Regular.woff2
+unzip -p "$SCRATCH/Inter-4.1.zip" '<exact-archive-path>/Inter-Medium.woff2'   > Inter-Medium.woff2
+unzip -p "$SCRATCH/Inter-4.1.zip" '<exact-archive-path>/Inter-SemiBold.woff2' > Inter-SemiBold.woff2
+unzip -p "$SCRATCH/SpaceGrotesk-2.0.0.zip" '<exact-path>/OFL.txt' > OFL-SpaceGrotesk.txt
+unzip -p "$SCRATCH/Inter-4.1.zip" '<exact-path>/LICENSE.txt'      > OFL-Inter.txt
+file *.woff2   # each must report: Web Open Font Format (Version 2)
+```
+No guessing at execution time: if a listing has no matching static-weight woff2, STOP and report instead of substituting.
+
+- [ ] **Step 1: Write PROVENANCE.md as a PARSEABLE table with real values**
 
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls/src/templates/equipmentGuide/fonts
 shasum -a 256 *.woff2
 ```
-`PROVENANCE.md` lists, per woff2: upstream project, release version, release URL, archive-internal path, SHA-256 (paste real values). Plus: "Licenses: SIL OFL 1.1, committed alongside. Refresh policy: only via an explicit spec change; generation and tests never download."
+`PROVENANCE.md` format (machine-parseable; the test binds filename → its OWN row's hash):
+```markdown
+# Font provenance (deterministic build — generation and tests never download)
+
+| file | project | version | release url | archive path | sha256 |
+|---|---|---|---|---|---|
+| SpaceGrotesk-SemiBold.woff2 | floriankarsten/space-grotesk | 2.0.0 | <release url> | <exact archive path> | <real sha256> |
+| SpaceGrotesk-Bold.woff2     | floriankarsten/space-grotesk | 2.0.0 | <release url> | <exact archive path> | <real sha256> |
+| Inter-Regular.woff2         | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
+| Inter-Medium.woff2          | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
+| Inter-SemiBold.woff2        | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
+
+Licenses: SIL OFL 1.1 — OFL-SpaceGrotesk.txt, OFL-Inter.txt (committed). Refresh policy: only via an explicit spec change.
+```
+(`<…>` are filled with the Step 0b/Step 1 real values at vendoring time — the committed file contains no placeholders.)
 
 - [ ] **Step 2: Write the failing font tests FIRST**
 
@@ -104,11 +139,22 @@ import { readdirSync } from 'node:fs';
 describe('visual-v2 fonts (deterministic, embedded)', () => {
   const FONT_DIR = resolve(process.cwd(), 'src/templates/equipmentGuide/fonts');
   const WOFF2 = ['SpaceGrotesk-SemiBold.woff2', 'SpaceGrotesk-Bold.woff2', 'Inter-Regular.woff2', 'Inter-Medium.woff2', 'Inter-SemiBold.woff2'];
-  it('every committed woff2 matches its PROVENANCE.md SHA-256', () => {
+  it('every committed woff2 matches the SHA-256 on ITS OWN PROVENANCE.md row (filename-bound, swap-proof)', () => {
     const prov = readFileSync(resolve(FONT_DIR, 'PROVENANCE.md'), 'utf8');
+    const rows = new Map(
+      [...prov.matchAll(/^\|\s*(\S+\.woff2)\s*\|.*\|\s*([0-9a-f]{64})\s*\|\s*$/gm)].map(m => [m[1], m[2]]),
+    );
+    expect([...rows.keys()].sort()).toEqual([...WOFF2].sort());
     for (const f of WOFF2) {
       const sha = createHash('sha256').update(readFileSync(resolve(FONT_DIR, f))).digest('hex');
-      expect(prov, f).toContain(sha);
+      expect(sha, f).toBe(rows.get(f));
+    }
+  });
+  it('committed licenses are genuine SIL OFL 1.1 texts', () => {
+    for (const lic of ['OFL-SpaceGrotesk.txt', 'OFL-Inter.txt']) {
+      const t = readFileSync(resolve(FONT_DIR, lic), 'utf8');
+      expect(t, lic).toMatch(/SIL OPEN FONT LICENSE/i);
+      expect(t, lic).toMatch(/Version 1\.1/);
     }
   });
   it('renders one base64 @font-face per committed woff2 (no network sources)', () => {
@@ -177,10 +223,11 @@ describe('visual-v2 cover', () => {
     expect(cover.tagline).toBe('Etching, thin-film deposition, lithography, and surface-processing platforms for university, national laboratory, institute, and corporate R&D facilities.');
     expect(cover.edition).toBe('Equipment Guide · 2026 Edition · ninescrolls.com · info@ninescrolls.com');
   });
-  it('cover copy passes the banned-claims scan', () => {
+  it('cover copy passes the FULL banned-claims scan (generator banned list + About-test list)', () => {
     const t = JSON.stringify(cover);
-    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|research-grade|industry-leading|world-class|state-of-the-art/i);
-    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|global installations|research institutions served|trusted manufacturer partner|1000\+|300\+|\bcustomers\b/i);
+    expect(t).not.toMatch(/research-grade|industry-leading|world-class|state-of-the-art|best-in-class|unmatched/i);
+    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯|promiso|plutovac/i);
   });
 });
 ```
@@ -227,23 +274,37 @@ ln -s /Users/harvey/Dev/src/cursor/ninescrolls/node_modules .claude/worktrees/eq
 
 - [ ] **Step 2: Implement the full visual skeleton in the worktree** — PAGE_ORDER + cover page + category colors + font families applied + About cards + CTA band + evidence blocks + generator `EXPECTED_PAGES = 15`, using the exact code from Tasks 5–8 below as the reference (the pilot is the integration rehearsal; anything learned here — pagination budgets, plasma-cleaner tier values — feeds back into those tasks' values before they run).
 
-- [ ] **Step 3: Generate + inspect ALL 15 pages**
+- [ ] **Step 3: Generate + HARD pilot gates (fonts, pages, size are pilot-blocking — not deferred to Task 8)**
 
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls/.claude/worktrees/eqg-visual-v2-pilot
+set -euo pipefail
 SHOT=$(mktemp -d)
 npm run generate-equipment-guide
-pdffonts public/NineScrolls-Equipment-Guide.pdf
-pdftoppm -jpeg -r 100 public/NineScrolls-Equipment-Guide.pdf "$SHOT/p"; echo "SHOT=$SHOT"
+PDF=public/NineScrolls-Equipment-Guide.pdf
+PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('$PDF').pages))")
+[ "$PAGES" = "15" ] || { echo "FAIL: pilot pages = $PAGES (want 15)"; exit 1; }
+BYTES=$(python3 -c "import os; print(os.path.getsize('$PDF'))")
+[ "$BYTES" -lt 2000000 ] || { echo "FAIL: pilot PDF $BYTES bytes >= 2MB — fonts/design too heavy, resolve BEFORE the batch"; exit 1; }
+FONTS=$(pdffonts "$PDF")
+echo "$FONTS"
+echo "$FONTS" | grep -qiE '\+?SpaceGrotesk' || { echo "FAIL: Space Grotesk not in PDF"; exit 1; }
+echo "$FONTS" | grep -qiE '\+?Inter'        || { echo "FAIL: Inter not in PDF"; exit 1; }
+echo "$FONTS" | grep -qiE 'helvetica|arial|times|liberation|dejavu|noto' && { echo "FAIL: fallback font present"; exit 1; }
+pdftoppm -jpeg -r 100 "$PDF" "$SHOT/p"
+[ "$(ls "$SHOT"/p-*.jpg | wc -l | tr -d ' ')" = "15" ] || { echo "FAIL: screenshot count != 15"; exit 1; }
+echo "SHOT=$SHOT"
 ```
-**Pilot acceptance (spec §9):** 15 pages; visual focus = cover + RIE + plasma-cleaner, BUT all other 12 pages checked for pagination breaks, clipped tables, font fallback (`pdffonts` shows SpaceGrotesk + Inter embedded, no Helvetica/Arial/Times/Liberation/DejaVu/Noto).
+**Pilot acceptance (spec §9):** the gates above, plus visual review — focus cover + RIE + plasma-cleaner, and ALL other 12 pages checked for pagination breaks and clipped tables.
 
-- [ ] **Step 4: Save the pilot diff as reference, present, STOP**
+- [ ] **Step 4: Save the pilot diff to a mktemp path (reliable reuse), present, STOP**
 
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls/.claude/worktrees/eqg-visual-v2-pilot
-git diff > /private/tmp/claude-501/-Users-harvey-Dev-src-cursor-ninescrolls/bb23dd09-e6fb-474e-bc60-2f14978aa465/scratchpad/visual-v2-pilot.patch
+PATCH=$(mktemp -d)/visual-v2-pilot.patch
+git diff > "$PATCH"; wc -l "$PATCH"; echo "PATCH=$PATCH"
 ```
+Report `PATCH` to the controller. **Reuse contract for Tasks 5–8:** each task writes its failing tests first (RED), then applies the corresponding implementation hunks from `$PATCH` (`git apply --include='src/templates/equipmentGuide/renderEquipmentGuideHtml.ts' "$PATCH"` style, or manual transfer for partial hunks) instead of re-typing — the signed-off pilot IS the implementation source. Any pagination constants discovered during the pilot (image-well heights, plasma-cleaner tier paddings, cover spacing) are ALSO written back into Task 7's token list before Task 5 starts, so the plan text and the patch agree.
 Present all 15 page images to the user; **do not proceed until sign-off**. Then:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
@@ -407,40 +468,43 @@ Minimal CSS for this task (appended; full token port is Task 7): `.page--cover`,
 
 - [ ] **Step 1: Write the failing parity tests FIRST; delete the fixture test in the same edit**
 
-DELETE the `keeps the Evidence page string-identical to the v1 fixture` test and the `fixTrim` helper (if now unused). Append:
+DELETE the `keeps the Evidence page string-identical to the v1 fixture` test and the `fixTrim` helper (if now unused). The markup contract renders every field in its OWN classed element (`.j` journal, `.y` year, `.t` title, `.pf` platform, `.cite` citation note, `.doi` link), so exactly-once assertions are element-scoped and immune to value collisions (e.g. `2026` appearing again inside `citationsAsOf`). Append (a local `esc` copy mirroring the renderer's four-entity escaper sits next to `count`):
 ```ts
-describe('visual-v2 evidence strong parity (markup-free content lock)', () => {
+const studyBlocks = (sectionHtml: string) =>
+  [...sectionHtml.matchAll(/<article data-study-index="(\d+)"[^>]*>([\s\S]*?)<\/article>/g)];
+const fieldOnce = (block: string, cls: string, value: string, label: string) => {
+  const matches = [...block.matchAll(new RegExp(`<(?:span|div|a)[^>]*class="${cls}"[^>]*>([\\s\\S]*?)</(?:span|div|a)>`, 'g'))];
+  expect(matches, `${label}: element count`).toHaveLength(1);
+  expect(matches[0][1], label).toBe(value);
+};
+
+describe('visual-v2 evidence strong parity (element-scoped content lock)', () => {
   const section = chunks.find(c => c.includes('data-page="evidence"'))!;
   const studies = equipmentGuideData.evidence.studies;
-  const blocks = [...section.matchAll(/<article data-study-index="(\d+)">([\s\S]*?)<\/article>/g)];
+  const blocks = studyBlocks(section);
   const occurrences = (hay: string, needle: string) => hay.split(needle).length - 1;
   it('renders exactly one block per study, indices ascending', () => {
     expect(blocks).toHaveLength(studies.length);
     expect(blocks.map(b => Number(b[1]))).toEqual(studies.map((_, i) => i));
   });
-  it('each block contains its own title/journal/year/platform exactly once (scoped)', () => {
+  it('each block renders each field in its own element, exactly once, exact value', () => {
     for (const [i, s] of studies.entries()) {
       const b = blocks[i][2];
-      expect(occurrences(b, esc(s.title)), `title ${i}`).toBe(1);
-      expect(occurrences(b, esc(s.journal)), `journal ${i}`).toBe(1);
-      expect(occurrences(b, String(s.year)), `year ${i}`).toBeGreaterThanOrEqual(1); // year may appear in citationsAsOf
-      expect(occurrences(b, esc(s.platform)), `platform ${i}`).toBeGreaterThanOrEqual(1);
+      fieldOnce(b, 'j', esc(s.journal), `journal ${i}`);
+      fieldOnce(b, 'y', String(s.year), `year ${i}`);
+      fieldOnce(b, 't', esc(s.title), `title ${i}`);
+      fieldOnce(b, 'pf', esc(s.platform), `platform ${i}`);
       if (s.citations !== undefined) {
-        expect(occurrences(b, `${s.citations} citations`), `citations ${i}`).toBe(1);
-        expect(occurrences(b, esc(s.citationsAsOf!)), `citationsAsOf ${i}`).toBe(1);
+        fieldOnce(b, 'cite', `${s.citations} citations (as of ${esc(s.citationsAsOf!)})`, `cite ${i}`);
       } else {
-        expect(b).not.toMatch(/\d+ citations/);
+        expect(occurrences(b, 'class="cite"'), `no cite element ${i}`).toBe(0);
       }
-    }
-  });
-  it('each block links its DOI exactly once (when present)', () => {
-    for (const [i, s] of studies.entries()) {
-      const anchors = [...blocks[i][2].matchAll(/<a class="doi" href="([^"]+)"/g)];
+      const anchors = [...b.matchAll(/<a class="doi" href="([^"]+)"/g)];
       if (s.doi) {
         expect(anchors, `doi ${i}`).toHaveLength(1);
         expect(anchors[0][1]).toBe(`https://doi.org/${s.doi}`);
       } else {
-        expect(anchors).toHaveLength(0);
+        expect(anchors, `no doi ${i}`).toHaveLength(0);
       }
     }
   });
@@ -449,31 +513,65 @@ describe('visual-v2 evidence strong parity (markup-free content lock)', () => {
       expect(occurrences(section, esc(s)), s.slice(0, 30)).toBe(1);
     }
   });
+  it('SYNTHETIC branches: no-DOI, no-citations, HTML-escaping, colliding values across studies', () => {
+    const synthetic = {
+      ...equipmentGuideData,
+      evidence: {
+        ...equipmentGuideData.evidence,
+        studies: [
+          { journal: 'J & Sons <Test>', year: 2026, title: 'A & B <C> "D"', platform: 'RIE', citations: 7, citationsAsOf: 'Jul 2026', doi: '10.1000/x&y' },
+          { journal: 'J & Sons <Test>', year: 2026, title: 'A & B <C> "D" second', platform: 'RIE' }, // same journal/year/platform, no doi, no citations
+        ],
+      },
+    };
+    const html2 = renderEquipmentGuideHtml(synthetic);
+    const sec = html2.split('<section class="page').map((c, i) => (i === 0 ? c : '<section class="page' + c)).find(c => c.includes('data-page="evidence"'))!;
+    const bl = studyBlocks(sec);
+    expect(bl).toHaveLength(2);
+    fieldOnce(bl[0][2], 'j', 'J &amp; Sons &lt;Test&gt;', 'escaped journal');
+    fieldOnce(bl[0][2], 't', 'A &amp; B &lt;C&gt; &quot;D&quot;', 'escaped title');
+    fieldOnce(bl[0][2], 'cite', '7 citations (as of Jul 2026)', 'cite present');
+    expect([...bl[0][2].matchAll(/<a class="doi" href="([^"]+)"/g)][0][1]).toBe('https://doi.org/10.1000/x&amp;y');
+    expect(bl[1][2]).not.toContain('class="cite"');
+    expect(bl[1][2]).not.toContain('class="doi"');
+    fieldOnce(bl[1][2], 'j', 'J &amp; Sons &lt;Test&gt;', 'colliding journal still exactly once per block');
+  });
 });
 ```
-(A local `esc` copy in the test file mirrors the renderer's four-entity escaper — add it next to `count`.) Run → **FAIL** (no `data-study-index` articles, no `.doi` anchors).
+Run → **FAIL** (no `data-study-index` articles, no field-classed spans, no `.doi` anchors).
 
 - [ ] **Step 2: Rework `evidencePage` (→ green)**
 
 ```ts
 function evidencePage(d: EquipmentGuideData): string {
   const studies = d.evidence.studies.map((s, i) => {
-    const cite = s.citations !== undefined ? ` · ${s.citations} citations (as of ${esc(s.citationsAsOf ?? '')})` : '';
-    const doi = s.doi ? `<a class="doi" href="https://doi.org/${esc(s.doi)}">doi.org/${esc(s.doi)}</a>` : '';
-    return `<article data-study-index="${i}" class="study"><span class="j">${esc(s.journal)} · ${s.year}</span>
+    const cite = s.citations !== undefined
+      ? ` · <span class="cite">${s.citations} citations (as of ${esc(s.citationsAsOf ?? '')})</span>` : '';
+    const doi = s.doi ? ` · <a class="doi" href="https://doi.org/${esc(s.doi)}">doi.org/${esc(s.doi)}</a>` : '';
+    return `<article data-study-index="${i}" class="study"><span class="j">${esc(s.journal)}</span> · <span class="y">${s.year}</span>
       <div class="t">${esc(s.title)}</div>
-      <div class="m">Corresponding ${esc(s.platform)} process platform${cite}${doi ? ' · ' : ''}${doi}</div></article>`;
+      <div class="m">Corresponding <span class="pf">${esc(s.platform)}</span> process platform${cite}${doi}</div></article>`;
   }).join('');
   // section wrapper + title/subtitle/intro/disclaimer unchanged apart from data-page="evidence"
   …
 }
 ```
-Delete the fixture:
-```bash
-git rm src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html
-```
+(Every field gets its own classed element — `.j/.y/.t/.pf/.cite/.doi` — matching the element-scoped tests exactly.)
+- [ ] **Step 3: Run suites + tsc → green. Commit (empty-index check BEFORE any staging — `git rm` stages, so it must come after the guard):**
 
-- [ ] **Step 3: Run suites + tsc → green. Commit** FILES = `renderEquipmentGuideHtml.ts renderEquipmentGuideHtml.test.ts` plus the deletion (`git rm` stages it; include the fixture path in the staged-set guard list). Message: `feat(guide): visual-v2 evidence — per-study blocks with DOI links; retire markup fixture for strong parity tests`
+```bash
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage before this commit"; exit 1; }
+git rm -q src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html
+git add src/templates/equipmentGuide/renderEquipmentGuideHtml.ts src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts
+diff <(git diff --cached --name-only | sort) <(printf '%s\n' \
+  src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html \
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort) \
+  || { echo "FAIL: staged set != intended (2 modified + 1 deletion)"; exit 1; }
+git commit -m "feat(guide): visual-v2 evidence — per-study blocks with DOI links; retire markup fixture for strong parity tests
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+```
 
 ---
 
@@ -496,14 +594,18 @@ describe('visual-v2 tokens', () => {
     expect([...about.matchAll(/class="pillar-card"/g)]).toHaveLength(4);
     expect([...about.matchAll(/<svg[\s>]/g)].length).toBeGreaterThanOrEqual(4);
   });
-  it('every sub-12.5px font-size in the CSS belongs to the spec exception allowlist', () => {
-    const ALLOW = ['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub', '.family-label'];
+  it('every sub-12.5px font-size in the CSS belongs to the spec §6 exception allowlist (exact selectors)', () => {
+    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub']);
     const rules = [...equipmentGuideCss.matchAll(/([^{}]+){[^}]*font-size:\s*([\d.]+)px/g)];
+    let checked = 0;
     for (const [, selector, size] of rules) {
       if (parseFloat(size) >= 12.5) continue;
-      const sel = selector.trim().split(',').map(s => s.trim());
-      for (const s of sel) expect(ALLOW.some(a => s.endsWith(a) || s.includes(a)), `${s} @ ${size}px`).toBe(true);
+      for (const s of selector.trim().split(',').map(x => x.trim())) {
+        expect(ALLOW.has(s), `${s} @ ${size}px not in spec exception list`).toBe(true);
+        checked++;
+      }
     }
+    expect(checked).toBeGreaterThan(0); // the scan actually ran
   });
   it('category color is applied via data-category rules', () => {
     for (const meta of Object.values(CATEGORY_META)) expect(equipmentGuideCss).toContain(meta.color);
@@ -541,7 +643,7 @@ Rewrite `equipmentGuide.css.ts` values (structure preserved; every selector keep
 - Cover styles (full): `.page--cover { display:flex; flex-direction:column; min-height: 9.1in; } .cover-main { margin-top: 90px; } .cover-title { font-size: 46px; letter-spacing: -0.01em; margin: 4px 0 10px; } .cover-tagline { font-size: 14px; color: #334155; max-width: 58ch; } .cover-edition { font-size: 11px; color: #64748b; letter-spacing: .06em; margin-top: 10px; } .toc { display:flex; gap: 28px; margin-top: auto; padding-top: 24px; border-top: 1px solid #eef2f7; } .toc-col { flex: 1; } .toc-cat { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; border-bottom: 2px solid; padding-bottom: 5px; margin-bottom: 8px; } .toc ul { list-style:none; margin:0; padding:0; } .toc li { display:flex; justify-content:space-between; font-size: 12.5px; color:#0f172a; padding: 3px 0; } .toc-page { color:#64748b; font-size: 11px; font-variant-numeric: tabular-nums; }`
 - Pillar cards: `.pillars-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; } .pillar-card { break-inside: avoid; background:#f4f5fb; border:1px solid #e7e9f4; border-radius: 10px; padding: 12px 14px; } .pillar-card .pi { color:#1e3a5f; display:inline-block; width:18px; height:18px; margin-bottom:4px; } .pillar-card .pi svg { width:18px; height:18px; } .pillar-card .h { display:block; font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13px; color:#1e3a5f; margin-bottom:3px; } .pillar-card div { font-size:12.5px; color:#334155; }` (drop the old `.pillar` rules)
 - CTA band: `.cta-band { background:#0f2440; color:#fff; border-radius: 10px; padding: 14px 18px; font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13.5px; margin-bottom: 18px; -webkit-print-color-adjust: exact; }`
-- Evidence `.doi { color:#7dd3fc; font-size: 11.5px; text-decoration: none; }` (metadata role, in allowlist as `.study .m` context — keep the anchor inside `.m`)
+- Evidence DOI link — EXACT selector matching the allowlist: `.study .m .doi { color:#7dd3fc; font-size: 11.5px; text-decoration: none; }` (the anchor lives inside `.m`; spec §6 authorizes this metadata role)
 - Print robustness kept/extended: `.page { break-after: page; }` unchanged; `tr, .bullet, .pillar-card { break-inside: avoid; }`; add `.apps, .cta, .cta-band { break-inside: avoid; }`
 Update the old `.pillar` usages in `aboutPage` (done in Step 2). Run suites + tsc → all green.
 
@@ -549,43 +651,119 @@ Update the old `.pillar` usages in `aboutPage` (done in Step 2). Run suites + ts
 
 ---
 
-### Task 8: Generator — 15 pages, required strings, fail-closed `pdffonts` (spec §5, §7)
+### Task 8: Generator — 15 pages, required strings, fail-closed `pdffonts` via TDD pure functions (spec §5, §7)
 
-**Files:** `scripts/generate-equipment-guide.ts`
+**Files:** Create `src/templates/equipmentGuide/pdfFontsCheck.ts`, `src/templates/equipmentGuide/pdfFontsCheck.test.ts`, `tsconfig.scripts.json`; Modify `scripts/generate-equipment-guide.ts`
 
-- [ ] **Step 1: Edit the generator**
+- [ ] **Step 1: Write the failing pdffonts-parser unit tests FIRST** (`pdfFontsCheck.test.ts`)
 
-- `EXPECTED_PAGES = 15`
-- `required` gains: `'Equipment Guide · 2026 Edition'`, `'Ready to scope your process?'`, `'Etch & Ion Beam'`
-- New font validation inside `validatePdf` (after the pages check):
 ```ts
-function assertEmbeddedFonts(outPath: string): void {
-  let out: string;
-  try {
-    out = execFileSync('pdffonts', [outPath], { encoding: 'utf8' });
-  } catch {
-    throw new Error('pdffonts (poppler) is a required build dependency — install it (brew install poppler)');
-  }
-  const rows = out.split('\n').slice(2).filter(l => l.trim());
-  const fonts = rows.map(l => {
-    const cols = l.trim().split(/\s+/);
-    // columns: name type encoding emb sub uni object ID — emb/sub are 3rd/4th from the end offsets vary, so read by header index instead:
-    return { raw: l, name: cols[0] };
+import { describe, it, expect } from 'vitest';
+import { parsePdfFonts, assertEmbeddedFontsOutput } from './pdfFontsCheck';
+
+const HEADER = 'name                                 type              encoding         emb sub uni object ID\n' +
+               '------------------------------------ ----------------- ---------------- --- --- --- ---------';
+const GOOD = `${HEADER}
+BCDEEF+SpaceGrotesk-Bold             CID TrueType      Identity-H       yes yes yes     12  0
+ABCDEF+Inter-Regular                 CID TrueType      Identity-H       yes yes yes     14  0`;
+
+describe('parsePdfFonts', () => {
+  it('parses rows into {name, emb, sub} with header skipped', () => {
+    expect(parsePdfFonts(GOOD)).toEqual([
+      { name: 'BCDEEF+SpaceGrotesk-Bold', emb: 'yes', sub: 'yes' },
+      { name: 'ABCDEF+Inter-Regular', emb: 'yes', sub: 'yes' },
+    ]);
   });
-  const norm = (n: string) => n.replace(/^[A-Z]{6}\+/, '').replace(/[-_ ].*$/, '').toLowerCase();
-  const embedded = rows.filter(l => /\byes\b\s+\byes\b/.test(l)); // emb + sub columns both 'yes'
-  const names = embedded.map(l => norm(l.trim().split(/\s+/)[0]));
-  if (!names.some(n => n.startsWith('spacegrotesk'))) throw new Error('Space Grotesk not embedded+subset in PDF (font fallback?)');
-  if (!names.some(n => n === 'inter' || n.startsWith('inter'))) throw new Error('Inter not embedded+subset in PDF (font fallback?)');
-  const banned = /helvetica|arial|times|liberationsans|dejavu|noto/;
-  for (const f of fonts) if (banned.test(norm(f.name))) throw new Error(`Fallback font detected in PDF: ${f.name}`);
+  it('throws on unrecognizable output (fail-closed, never silently passes)', () => {
+    expect(() => parsePdfFonts('')).toThrow();
+    expect(() => parsePdfFonts('garbage with no header')).toThrow();
+  });
+});
+
+describe('assertEmbeddedFontsOutput', () => {
+  it('accepts subset-embedded Space Grotesk + Inter', () => {
+    expect(() => assertEmbeddedFontsOutput(parsePdfFonts(GOOD))).not.toThrow();
+  });
+  it('rejects when a required family is missing', () => {
+    const one = parsePdfFonts(`${HEADER}\nBCDEEF+SpaceGrotesk-Bold             CID TrueType      Identity-H       yes yes yes     12  0`);
+    expect(() => assertEmbeddedFontsOutput(one)).toThrow(/Inter/);
+  });
+  it('rejects emb=no or sub=no for a required family', () => {
+    const bad = parsePdfFonts(GOOD.replace('yes yes yes     14', 'no  no  yes     14'));
+    expect(() => assertEmbeddedFontsOutput(bad)).toThrow(/Inter/);
+  });
+  it('rejects any fallback family regardless of the rest (subset prefix stripped, case-folded)', () => {
+    const fb = parsePdfFonts(`${GOOD}\nGHIJKL+Helvetica                     TrueType          WinAnsi          yes yes yes     16  0`);
+    expect(() => assertEmbeddedFontsOutput(fb)).toThrow(/Helvetica/i);
+  });
+});
+```
+Run: `npx vitest run src/templates/equipmentGuide/pdfFontsCheck.test.ts --exclude '**/.claude/**'` → **FAIL** (module missing).
+
+- [ ] **Step 2: Implement `pdfFontsCheck.ts` (→ green)**
+
+```ts
+// Pure parsing/validation for pdffonts output — unit-testable; the generator wires in execFileSync.
+export interface PdfFontRow { name: string; emb: string; sub: string; }
+
+export function parsePdfFonts(output: string): PdfFontRow[] {
+  const lines = output.split('\n');
+  const headerIdx = lines.findIndex(l => /^name\s+.*\bemb\b\s+\bsub\b/.test(l));
+  if (headerIdx < 0) throw new Error('parsePdfFonts: unrecognized pdffonts output (no header row)');
+  const header = lines[headerIdx];
+  const embCol = header.indexOf('emb');
+  const subCol = header.indexOf('sub');
+  return lines.slice(headerIdx + 2).filter(l => l.trim()).map(l => ({
+    name: l.slice(0, header.indexOf('type')).trim(),
+    emb: l.slice(embCol, embCol + 3).trim(),
+    sub: l.slice(subCol, subCol + 3).trim(),
+  }));
+}
+
+const normalize = (name: string): string =>
+  name.replace(/^[A-Z]{6}\+/, '').replace(/[-_ ].*$/, '').toLowerCase();
+
+const FALLBACK = /^(helvetica|arial|times|timesnewroman|liberationsans|liberationserif|dejavu\w*|noto\w*)$/;
+
+export function assertEmbeddedFontsOutput(rows: PdfFontRow[]): void {
+  const embedded = rows.filter(r => r.emb === 'yes' && r.sub === 'yes').map(r => normalize(r.name));
+  if (!embedded.includes('spacegrotesk')) throw new Error('Space Grotesk not embedded+subset in PDF (fallback?)');
+  if (!embedded.includes('inter')) throw new Error('Inter not embedded+subset in PDF (fallback?)');
+  for (const r of rows) {
+    if (FALLBACK.test(normalize(r.name))) throw new Error(`Fallback font detected in PDF: ${r.name}`);
+  }
 }
 ```
-Call `assertEmbeddedFonts(outPath)` from `validatePdf`. (Exact column parsing may be tuned against real `pdffonts` output during implementation — the CONTRACT is fixed: fail-closed when pdffonts missing; subset-prefix-stripped, case-folded names; Space Grotesk AND Inter with emb=yes,sub=yes; zero fallback-family rows.)
+Run the unit tests → **PASS**.
 
-- [ ] **Step 2: Typecheck** (`npx tsc --noEmit -p tsconfig.json` covers scripts if in tsconfig scope — otherwise `npx tsx --check` equivalent: run the generator in Step 4).
+- [ ] **Step 3: Wire the generator + create `tsconfig.scripts.json`**
 
-- [ ] **Step 3: Commit the generator change alone** FILES = `scripts/generate-equipment-guide.ts`. Message: `feat(guide): generator visual-v2 — 15 pages, cover/CTA required strings, fail-closed pdffonts embedding check`
+`scripts/generate-equipment-guide.ts`:
+- `EXPECTED_PAGES = 15`
+- `required` gains: `'Equipment Guide · 2026 Edition'`, `'Ready to scope your process?'`, `'Etch & Ion Beam'`
+- In `validatePdf`, after the pages check:
+```ts
+import { parsePdfFonts, assertEmbeddedFontsOutput } from '../src/templates/equipmentGuide/pdfFontsCheck';
+// …
+let fontsOut: string;
+try {
+  fontsOut = execFileSync('pdffonts', [outPath], { encoding: 'utf8' });
+} catch {
+  throw new Error('pdffonts (poppler) is a REQUIRED build dependency — brew install poppler');
+}
+assertEmbeddedFontsOutput(parsePdfFonts(fontsOut));
+```
+Create `tsconfig.scripts.json` (real scripts typecheck — `tsx` does not typecheck and the app tsconfig excludes scripts/):
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "types": ["node"] },
+  "include": ["scripts/**/*.ts", "src/**/*.ts"]
+}
+```
+Run: `npx tsc --noEmit -p tsconfig.scripts.json` → clean. (If the base tsconfig's `include`/module settings conflict, adjust ONLY within this new file; never touch `tsconfig.json`.)
+
+- [ ] **Step 3b: Commit** FILES = `src/templates/equipmentGuide/pdfFontsCheck.ts src/templates/equipmentGuide/pdfFontsCheck.test.ts scripts/generate-equipment-guide.ts tsconfig.scripts.json`. Message: `feat(guide): generator visual-v2 — 15 pages, cover/CTA required strings, TDD fail-closed pdffonts embedding check`
 
 - [ ] **Step 4: Temp-PDF verify (do NOT stage the PDF)** — exact safe pattern:
 
@@ -678,7 +856,7 @@ git ls-files --others --exclude-standard -z | sort -z \
 cmp -s "$S/untracked-manifest" "$S/untracked-now" || { echo "FAIL: protected untracked changed"; exit 1; }
 git ls-files --others --exclude-standard -z | sort -z > "$S/untracked-paths-now"
 cmp -s "$S/untracked-paths" "$S/untracked-paths-now" || { echo "FAIL: untracked path set changed"; exit 1; }
-# two-way allowlist (16 files incl. the deletion; spec/plan docs live in BASE)
+# two-way allowlist — 21 paths = 20 present/modified files + 1 deletion (the fixture); spec/plan docs live in BASE
 git diff --name-only "${BASE}..HEAD" | sort -u > "$S/changed"
 printf '%s\n' \
   public/NineScrolls-Equipment-Guide.pdf \
@@ -697,8 +875,12 @@ printf '%s\n' \
   src/templates/equipmentGuide/fonts/SpaceGrotesk-Bold.woff2 \
   src/templates/equipmentGuide/fonts/SpaceGrotesk-SemiBold.woff2 \
   src/templates/equipmentGuide/fontsCss.ts \
+  src/templates/equipmentGuide/pdfFontsCheck.test.ts \
+  src/templates/equipmentGuide/pdfFontsCheck.ts \
   src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
-  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort -u > "$S/allow"
+  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts \
+  tsconfig.scripts.json | sort -u > "$S/allow"
+[ "$(wc -l < "$S/allow" | tr -d ' ')" = "21" ] || { echo "FAIL: allowlist count drifted"; exit 1; }
 diff "$S/allow" "$S/changed" || { echo "FAIL: change set != allowlist"; exit 1; }
 echo "hygiene OK — ready for PR"
 ```
@@ -709,8 +891,8 @@ echo "hygiene OK — ready for PR"
 
 ## Self-Review
 
-**1. Spec coverage:** D1–D5 ✓ (15p, typographic cover, fonts, direct replace, token port). §3 PAGE_ORDER single source + shape/sequence/TOC/data-category tests (Task 5) ✓; §4 cover literals + banned scan as data tests (Task 3) with approved tagline ✓; §5 vendored fonts + SHA-256 provenance tests + fail-closed pdffonts with normalization (Tasks 2, 8) + download permission gate ✓; §6 tokens: category colors incl. "Etch & Ion Beam" label, type scale, image wells 215×200 (170 plasma-cleaner), pillar cards, CTA band literal, print robustness, 12.5px exception allowlist test (Task 7) ✓; §7 evidence strong parity per-block with optional-DOI branches + fixture retirement in-step (Task 6), evidence-fixture SHA pinned & directly compared (Tasks 1, 9), 14→15 sweep enumerated at the real line numbers (Task 5) ✓; §8 hard asserts (Task 9) ✓; §9 pilot = full 15-page worktree build with all-page regression check + STOP (Task 4) ✓; §10 allowlist == Task 9 list (16 paths incl. deletion) ✓.
+**1. Spec coverage:** D1–D5 ✓ (15p, typographic cover, fonts, direct replace, token port). §3 PAGE_ORDER single source + shape/sequence/TOC/data-category tests (Task 5) ✓; §4 cover literals + banned scan as data tests (Task 3) with approved tagline ✓; §5 vendored fonts + SHA-256 provenance tests + fail-closed pdffonts with normalization (Tasks 2, 8) + download permission gate ✓; §6 tokens: category colors incl. "Etch & Ion Beam" label, type scale, image wells 215×200 (170 plasma-cleaner), pillar cards, CTA band literal, print robustness, 12.5px exception allowlist test (Task 7) ✓; §7 evidence strong parity per-block with optional-DOI branches + fixture retirement in-step (Task 6), evidence-fixture SHA pinned & directly compared (Tasks 1, 9), 14→15 sweep enumerated at the real line numbers (Task 5) ✓; §8 hard asserts (Task 9) ✓; §9 pilot = full 15-page worktree build with hard font/page/size gates + all-page regression check + STOP + mktemp patch reuse contract (Task 4) ✓; §10 allowlist == Task 9 list (21 paths = 20 files + 1 deletion, count-asserted) ✓.
 
-**2. Placeholder scan:** all copy literals pinned; pdffonts parsing marked tunable-against-real-output with a fixed contract (intentional — column layout varies by poppler version); pilot Step 2 references Tasks 5–8 code as its source (repeat-reading is acceptable for a rehearsal task). No TBDs.
+**2. Placeholder scan:** all copy literals pinned. Task 2 Step 0b/Step 1 `<…>` markers are EXECUTION-FILLED values (archive paths/SHAs unknowable before the authorized download) with an explicit write-back-into-the-plan step — not open placeholders. The canned `pdffonts` sample in Task 8 Step 1 must be column-aligned against real `pdffonts` output when the test is written (the slice-based parser depends on header/row alignment). No TBDs.
 
-**3. Type/name consistency:** `GuideCover` (types) ↔ `cover` (guideMeta) ↔ Task 5 cover builder; `PAGE_ORDER`/`CATEGORY_META`/`PageEntry` exported from the renderer and imported by tests; `data-page`/`data-category`/`data-study-index`/`.toc-name`/`.toc-page`/`.pillar-card`/`.cta-band`/`.doi` used consistently across Tasks 5–7 tests and implementations; `equipmentGuideFontsCss()` wired in Task 2 and reused in Task 5's assembly snippet.
+**3. Type/name consistency:** `GuideCover` (types) ↔ `cover` (guideMeta) ↔ Task 5 cover builder; `PAGE_ORDER`/`CATEGORY_META`/`PageEntry` exported from the renderer and imported by tests; `data-page`/`data-category`/`data-study-index`/`.j/.y/.t/.pf/.cite/.doi` field elements/`.toc-name`/`.toc-page`/`.pillar-card`/`.cta-band` used consistently across Tasks 5–7 tests and implementations; `equipmentGuideFontsCss()` wired in Task 2 and reused in Task 5; `parsePdfFonts`/`assertEmbeddedFontsOutput` defined in Task 8 Step 2 and imported by the generator in Step 3; final allowlist = 21 paths (20 files + 1 deletion) and Task 9 hard-asserts that count.
