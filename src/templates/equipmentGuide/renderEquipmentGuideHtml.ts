@@ -127,7 +127,7 @@ function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => s
   return `
   <section class="page page--product" data-page="product" data-product-id="${p.id}" data-category="${category}">
     ${brandbar('navy')}
-    <p class="eyebrow eyebrow--cat">${esc(CATEGORY_META[category].label)}</p>
+    <p class="eyebrow eyebrow--cat">Equipment Platform — ${esc(CATEGORY_META[category].label)}</p>
     <div class="section-accent"></div>
     <h1 class="series-title">${esc(p.series)}</h1>
     ${lead}

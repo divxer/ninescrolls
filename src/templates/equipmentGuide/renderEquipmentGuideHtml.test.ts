@@ -388,3 +388,15 @@ describe('visual-v2 contact page matches the design', () => {
     expect(contact).toContain('ninescrolls.com · info@ninescrolls.com');
   });
 });
+
+describe('visual-v2 product eyebrow format matches the design', () => {
+  const chunks = html.split('<section class="page').slice(1);
+  it('every product eyebrow reads "Equipment Platform — <category label>"', () => {
+    for (const e of PAGE_ORDER) {
+      if (e.kind !== 'product') continue;
+      const cat = (e as { category: keyof typeof CATEGORY_META }).category;
+      const chunk = chunks.find(c => c.includes(`data-product-id="${(e as { id: string }).id}"`))!;
+      expect(chunk).toContain(`<p class="eyebrow eyebrow--cat">Equipment Platform — ${esc(CATEGORY_META[cat].label)}</p>`);
+    }
+  });
+});
