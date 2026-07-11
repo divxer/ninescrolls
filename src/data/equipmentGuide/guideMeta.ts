@@ -2,16 +2,16 @@ import type { EquipmentGuideData } from './types';
 
 export const about: EquipmentGuideData['about'] = {
   title: 'About NineScrolls LLC',
-  subtitle: 'Leading Innovation in Scientific Research Equipment',
+  subtitle: 'U.S.-based process-equipment selection, configuration, and support',
   paragraphs: [
-    'NineScrolls LLC is a dynamic start-up company dedicated to advancing innovation and integration in the scientific research equipment industry. Our primary focus is on establishing a comprehensive platform that connects manufacturers, researchers, and industry professionals across the United States.',
-    'By fostering collaboration and streamlining access to cutting-edge laboratory equipment, we aim to empower scientific discovery and drive technological advancements. At NineScrolls LLC, we are committed to delivering tailored solutions and creating value for our partners and clients through expertise, efficiency, and innovation.',
+    'NineScrolls LLC helps universities, national laboratories, and R&D and advanced-manufacturing teams across the United States select, configure, and support semiconductor process equipment. We start from the work — your materials, target process window, sample size, and facility conditions — and match the platform to it, rather than starting from a catalog.',
+    'As a U.S.-based partner, we coordinate selection, configuration, quoting, delivery, and after-sales support so a research team gets a process-ready platform and a local point of contact.',
   ],
   pillars: [
-    { heading: 'Integration', body: 'We create seamless connections between manufacturers, researchers, and industry professionals to advance scientific discovery.' },
-    { heading: 'Innovation', body: 'We drive advancement in the scientific equipment industry through innovative solutions and platforms.' },
-    { heading: 'Collaboration', body: 'We foster partnerships and facilitate connections across the scientific community to accelerate progress.' },
-    { heading: 'Expertise', body: 'We leverage deep industry knowledge to deliver tailored solutions that create value for our partners and clients.' },
+    { heading: 'Process-first platform selection', body: 'We confirm materials, process window, sample size, and facility conditions first, then match the platform — not the other way around.' },
+    { heading: 'Configured around your lab', body: 'Platforms are specified to your throughput, wafer sizes, gases, and space, rather than sold as a fixed SKU.' },
+    { heading: 'U.S.-based project coordination and support', body: 'Selection, configuration, quoting, delivery, and after-sales support are coordinated locally.' },
+    { heading: 'Peer-reviewed validation for represented platforms', body: 'The corresponding platform classes appear in real peer-reviewed research — validating the process capability, not NineScrolls-owned equipment or NineScrolls-authored papers.' },
   ],
 };
 

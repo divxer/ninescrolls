@@ -258,3 +258,24 @@ describe('content-v2 content integrity', () => {
     }
   });
 });
+
+describe('content-v2 about', () => {
+  it('keeps exactly 2 paragraphs + 4 fixed pillars', () => {
+    expect(about.paragraphs).toHaveLength(2);
+    expect(about.pillars).toHaveLength(4);
+    expect(about.pillars.map(p => p.heading)).toEqual([
+      'Process-first platform selection',
+      'Configured around your lab',
+      'U.S.-based project coordination and support',
+      'Peer-reviewed validation for represented platforms',
+    ]);
+  });
+  it('states the exact represented-platform attribution boundary in pillar 4', () => {
+    expect(about.pillars[3].body).toBe('The corresponding platform classes appear in real peer-reviewed research — validating the process capability, not NineScrolls-owned equipment or NineScrolls-authored papers.');
+  });
+  it('has no forbidden claims or OEM names', () => {
+    const t = JSON.stringify(about);
+    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|\bcustomers\b/i);
+    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+  });
+});
