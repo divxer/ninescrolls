@@ -1,0 +1,445 @@
+[
+  {
+    "id": "rie",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Etching Materials",
+        "value": "Si-Based (Si/SiO2/SiNx/SiC/Quartz etc.), Compounds (InP/GaN/GaAs/Ga2O3/ZnS etc.), 1D&2D Materials (MoS2/BN/Graphene etc.), Metals (Au/Pt/W/Ta/Mo etc.), Failure Analysis, etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "TMP & Mechanical Pump"
+      },
+      {
+        "label": "RF Power",
+        "value": "Full Range 300-1000W, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "4 lines (Standard) or customized"
+      },
+      {
+        "label": "Wafer Cooling",
+        "value": "Water Cooling or He Backside Cooling optional"
+      },
+      {
+        "label": "Wafer Stage Temperature Range",
+        "value": "From -70℃ to 200℃, optional"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "icp-rie",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Etching Materials",
+        "value": "Si-Based (Si/SiO2/SiNx/SiC/Quartz etc.), Compounds (InP/GaN/GaAs/Ga2O3 etc.), 2D Materials (MoS2/BN/Graphene etc.), Metals (W/Ta/Mo etc.), Diamond, Failure Analysis, etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "TMP & Mechanical Pump"
+      },
+      {
+        "label": "RF Power",
+        "value": "Source 1000-3000W, Bias 300-1000W, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "5 lines (Standard) and He backside cooling, or customized"
+      },
+      {
+        "label": "Wafer Stage Temperature Range",
+        "value": "From -70℃ to 200℃, optional"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "stripper",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Etching Materials",
+        "value": "Organics (PR/PMMA/PS nanosphere etc.), 2D Materials (MoS2/BN/Graphene etc.), Failure Analysis, etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "Mechanical pump"
+      },
+      {
+        "label": "RF Power",
+        "value": "Full range 300-1000W, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "2 lines (Standard) or customized"
+      },
+      {
+        "label": "Wafer Cooling",
+        "value": "Water cooling"
+      },
+      {
+        "label": "Wafer Stage Temperature Range",
+        "value": "From 5℃ to 200℃, optional"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "ibe-ribe",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "up to 6 inch",
+        "value2": "up to 12 inch"
+      },
+      {
+        "label": "Gas System",
+        "value": "1 line (standard) or customized",
+        "value2": "3 line (standard) or customized"
+      },
+      {
+        "label": "Wafer Stage Motion",
+        "value": "Tilt from 0° to 90°, Rotation from 1-10 rpm/min"
+      },
+      {
+        "label": "Wafer Stage Cooling",
+        "value": "From 5 to 20℃, Water cooling; He backside cooling optional"
+      },
+      {
+        "label": "Vacuum",
+        "value": "TMP & Mechanical Pump"
+      },
+      {
+        "label": "Base Vacuum",
+        "value": "Better than 7E-7 Torr"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "ald",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or Supersize optional"
+      },
+      {
+        "label": "Growth Materials",
+        "value": "Oxides (Al2O3/HfO2/SiO2/TiO2/Ga2O3/ZnO etc.), Nitrides (TiN/TaN/SiNx/AlN/GaN etc.), Metals (Pt/Pd/W etc.), etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "TMP & Mechanical Pump"
+      },
+      {
+        "label": "Base Vacuum",
+        "value": "Better than 5E-5 Torr"
+      },
+      {
+        "label": "RF Power",
+        "value": "Remote Plasma 300-1000W, optional"
+      },
+      {
+        "label": "Number of Precursor",
+        "value": "2-6 lines or customized"
+      },
+      {
+        "label": "Temperature of Source",
+        "value": "From 20℃ to 150℃ (Standard), 200℃ optional"
+      },
+      {
+        "label": "Wafer Temperature Range",
+        "value": "From 20℃ to 400℃, higher temperature optional"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±1% (Al2O3)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "pecvd",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Deposition Materials",
+        "value": "Si-Based (α-Si:H/SiO2/SiNx/SiC etc.), etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "Roots & Mechanical Pump"
+      },
+      {
+        "label": "RF Power",
+        "value": "Full Range 500-2000W, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "6 lines (Standard) or customized"
+      },
+      {
+        "label": "Wafer Stage Temperature Range",
+        "value": "From 20℃ to 400℃, higher temperature optional"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "hdp-cvd",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Deposition Materials",
+        "value": "Si/SiO2/SiNx/SiON/SiC, etc."
+      },
+      {
+        "label": "Vacuum",
+        "value": "TMP & Mechanical Pump"
+      },
+      {
+        "label": "RF Power",
+        "value": "Full Range: Source 1000-3000W, Bias 300-1000W, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "6 lines (Standard) or customized"
+      },
+      {
+        "label": "Wafer Stage Temperature Range",
+        "value": "From 20℃ to 200℃"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5% (Edge Exclusion)"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "sputter",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "4, 6, 8, 12 inch or multi-wafers optional"
+      },
+      {
+        "label": "Magnetron Sputtering Source",
+        "value": "2-6 optional"
+      },
+      {
+        "label": "Substrate Temperature",
+        "value": "Water-cooling, 400℃, 800℃, 1200℃, optional"
+      },
+      {
+        "label": "Gas System",
+        "value": "2 lines (Standard), number of lines customized"
+      },
+      {
+        "label": "Power",
+        "value": "DC or RF customized, automatic switcher"
+      },
+      {
+        "label": "Non-Uniformity",
+        "value": "Less than ±5%"
+      },
+      {
+        "label": "Pre-Cleaning",
+        "value": "Independent chamber or in-situ, RF plasma, optional"
+      },
+      {
+        "label": "Base Pressure",
+        "value": "Better than 5E-7 Torr, higher vacuum customized"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "coater-developer",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "Small-piece, 2, 4, 6, 8, 12 inch or Square optional"
+      },
+      {
+        "label": "Max. Spin Speed",
+        "value": "8000 rpm ±1rpm",
+        "value2": "5000 rpm ±1rpm"
+      },
+      {
+        "label": "Max. Acceleration",
+        "value": "8000 rpm/s",
+        "value2": "5000 rpm/s"
+      },
+      {
+        "label": "Dispense Arm",
+        "value": "Up to 2 photoresist lines",
+        "value2": "Up to 2 developer lines and deionized water line"
+      },
+      {
+        "label": "Interlock",
+        "value": "Vacuum pressure, uncover etc."
+      }
+    ],
+    "subTable": {
+      "title": "Hotplate Specifications",
+      "specs": [
+        {
+          "label": "Wafer Size Range",
+          "value": "Small-piece, 2, 4, 6, 8, 12 inch or Square optional"
+        },
+        {
+          "label": "Max. Temperature",
+          "value": "Up to 200℃, Higher Temperature optional"
+        },
+        {
+          "label": "Lift-Pins",
+          "value": "3 lift-pins, minimum compatible 2 inch"
+        }
+      ]
+    }
+  },
+  {
+    "id": "plasma-cleaner",
+    "specs": [
+      {
+        "label": "Wafer Size Range",
+        "value": "≤ 6 inch, multi-wafer batch processing"
+      },
+      {
+        "label": "RF Power",
+        "value": "0 ~ 300 W / 500 W, automatic matching"
+      },
+      {
+        "label": "Gas System",
+        "value": "2 ~ 3 gas lines"
+      },
+      {
+        "label": "Process Gases",
+        "value": "O₂, N₂, Ar"
+      },
+      {
+        "label": "Flow Control Range",
+        "value": "0 ~ 300 sccm"
+      },
+      {
+        "label": "Flow Control",
+        "value": "MFC or manual control"
+      },
+      {
+        "label": "Pump System",
+        "value": "Mechanical pump (TMP optional)"
+      },
+      {
+        "label": "Operation",
+        "value": "Touchscreen control, fully automated"
+      },
+      {
+        "label": "Footprint",
+        "value": "630 mm × 600 mm"
+      },
+      {
+        "label": "Compatible Materials",
+        "value": "Photoresist (PR); PMMA; PDMS; HMDS; organic films and polymers; semiconductor materials; optical materials; biomedical materials"
+      },
+      {
+        "label": "Main Functions",
+        "value": "Surface cleaning; surface activation; hydrophilic / hydrophobic treatment; functional group modification (–OH / –H / –COOH); contact-free plasma processing"
+      },
+      {
+        "label": "Typical Applications",
+        "value": "Chemical & biological laboratories; failure analysis; optical components; biomedical and medical devices"
+      }
+    ],
+    "subTable": null
+  },
+  {
+    "id": "e-beam",
+    "specs": [
+      {
+        "label": "Substrate",
+        "value": "Φ6 in x1 flat substrate holder"
+      },
+      {
+        "label": "Substrate Heating",
+        "value": "RT to 300°C"
+      },
+      {
+        "label": "Substrate Rotation",
+        "value": "1–10 rpm"
+      },
+      {
+        "label": "E-Gun Crucible",
+        "value": "6 pockets, 17 cc each"
+      },
+      {
+        "label": "E-Beam Power",
+        "value": "~10 kW"
+      },
+      {
+        "label": "Uniformity",
+        "value": "≤±5% within Φ6 in"
+      },
+      {
+        "label": "Thickness Control",
+        "value": "In-situ QCM endpoint"
+      },
+      {
+        "label": "Vacuum",
+        "value": "6.7×10⁻⁵ Pa ultimate vacuum"
+      },
+      {
+        "label": "Operating Modes",
+        "value": "Manual / semi-auto / full-auto"
+      },
+      {
+        "label": "Sources",
+        "value": "E-beam + thermal resistance"
+      },
+      {
+        "label": "Materials",
+        "value": "Metals, oxides, fluorides, IR films"
+      }
+    ],
+    "subTable": null
+  }
+]

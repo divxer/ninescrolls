@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { renderEquipmentGuideHtml, logoDataUri, defaultImageDataUri } from './renderEquipmentGuideHtml';
 import { equipmentGuideData } from '../../data/equipmentGuide';
+import { PRODUCT_ROUTES } from '../../data/equipmentGuide/products';
+
+const fixTrim = (f: string): string =>
+  readFileSync(resolve(process.cwd(), 'src/data/equipmentGuide/__fixtures__', f), 'utf8').trim();
 
 const html = renderEquipmentGuideHtml(equipmentGuideData);
 
@@ -102,5 +108,46 @@ describe('visual polish', () => {
     // Non-product pages must NOT have an image well.
     const about = chunks.find(c => c.includes('About NineScrolls LLC'))!;
     expect(count(about, 'class="image-well"')).toBe(0);
+  });
+});
+
+describe('content-v2 render', () => {
+  const chunks = html.split('<section class="page').slice(1);
+  it('stamps data-product-id on every product section', () => {
+    for (const p of equipmentGuideData.products) {
+      expect(chunks.some(c => c.includes(`data-product-id="${p.id}"`)), p.id).toBe(true);
+    }
+  });
+  const CTA_ANCHOR = /<a class="btn" href="([^"]+)">([\s\S]*?)<\/a>/g;
+  const CTA_TEXT = 'Explore configurations &amp; request a quote <span class="arr">→</span>';
+
+  it('CTA path (synthetic, reds first): a product WITH content renders exactly one correct anchor', () => {
+    const first = equipmentGuideData.products[0];
+    const withContent = {
+      ...equipmentGuideData,
+      products: equipmentGuideData.products.map((p, i) => i === 0
+        ? { ...p, content: { lead: 'L', applications: ['A', 'B', 'C'], applicationCount: 3 as const, href: PRODUCT_ROUTES[p.id] } }
+        : p),
+    };
+    const chunk = renderEquipmentGuideHtml(withContent).split('<section class="page').find(c => c.includes(`data-product-id="${first.id}"`))!;
+    const anchors = [...chunk.matchAll(CTA_ANCHOR)];
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0][1]).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[first.id]}`); // canonical route, not any /products/…
+    expect(anchors[0][2]).toBe(CTA_TEXT);                                            // exact text, not toContain
+  });
+
+  it('renders exactly one CTA per product (content required), canonical route + exact text', () => {
+    for (const p of equipmentGuideData.products) {
+      const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
+      const anchors = [...chunk.matchAll(CTA_ANCHOR)];
+      expect(anchors.length, p.id).toBe(1);
+      expect(anchors[0][1], p.id).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[p.id]}`);
+      expect(anchors[0][2], p.id).toBe(CTA_TEXT);
+    }
+  });
+  it('keeps the Evidence page string-identical to the v1 fixture', () => {
+    const ev = chunks.map(c => '<section class="page' + c).find(c => c.includes('Peer-Reviewed Validation'))!.trim();
+    // note: split() dropped the delimiter; re-prepend it, then compare to the committed chunk
+    expect(ev).toBe(fixTrim('v1-evidence-chunk.html'));
   });
 });

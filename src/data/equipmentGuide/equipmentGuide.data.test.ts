@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { GuideProduct, EquipmentGuideData } from './types';
 import { about, evidence, contact } from './guideMeta';
-import { products } from './products';
+import { products, PRODUCT_ROUTES } from './products';
 import { equipmentGuideData } from './index';
 import { aldSystemConfig } from '../../components/products/productDetailConfigs/aldSystemConfig';
 import { coaterDeveloperConfig } from '../../components/products/productDetailConfigs/coaterDeveloperConfig';
@@ -202,5 +202,80 @@ describe('spec-parity guard (guide vs website configs)', () => {
       ]),
     );
     expect(JSON.stringify(eBeam)).not.toMatch(/1×8|1x8|5×4|5x4|3-5%|8×10⁻⁴|8x10\^-4/i);
+  });
+});
+
+const FIX = (f: string) => readFileSync(resolve(process.cwd(), 'src/data/equipmentGuide/__fixtures__', f), 'utf8');
+
+describe('content-v2 scaffolding', () => {
+  it('PRODUCT_ROUTES covers every product id with a /products/<slug> route', () => {
+    expect(Object.keys(PRODUCT_ROUTES).sort()).toEqual(equipmentGuideData.products.map(p => p.id).sort());
+    for (const p of equipmentGuideData.products) {
+      expect(PRODUCT_ROUTES[p.id], p.id).toMatch(/^\/products\/[a-z0-9-]+$/);
+    }
+  });
+  it('protects v1 specs + subTable (deep-equal committed fixture)', () => {
+    const expected = JSON.parse(FIX('v1-specs-subtable.json'));
+    const actual = equipmentGuideData.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
+    expect(actual).toEqual(expected);
+  });
+  it('protects the v1 evidence object (deep-equal committed fixture)', () => {
+    expect(equipmentGuideData.evidence).toEqual(JSON.parse(FIX('v1-evidence.json')));
+  });
+});
+
+const PLASMA_CLEANER_APPS = ['Surface activation', 'Surface cleaning', 'Failure analysis', 'Optical & biomedical device prep'];
+
+describe('content-v2 content integrity', () => {
+  it('all 11 products have a content block — no product may be skipped', () => {
+    expect(equipmentGuideData.products).toHaveLength(11);
+    for (const p of equipmentGuideData.products) expect(p.content, p.id).toBeTruthy();
+  });
+  it('applications = config.applications.items.slice(0, applicationCount), verbatim & ordered', () => {
+    for (const p of equipmentGuideData.products) {
+      const c = p.content!; // guaranteed present by the completeness test above
+      expect([3, 4]).toContain(c.applicationCount);
+      expect(c.applications).toHaveLength(c.applicationCount);
+      if (p.id === 'plasma-cleaner') {
+        expect(c.applicationCount).toBe(4);            // pinned family list is exactly 4, never 3
+        expect(c.applications).toEqual(PLASMA_CLEANER_APPS);
+        continue;
+      }
+      const cfg = WEBSITE_CONFIGS[p.websiteSpecParity!.productSlug as keyof typeof WEBSITE_CONFIGS];
+      expect(c.applications).toEqual(cfg.applications.items.slice(0, c.applicationCount));
+    }
+  });
+  it('content.href equals the canonical route and is site-relative', () => {
+    for (const p of equipmentGuideData.products) {
+      expect(p.content!.href).toBe(PRODUCT_ROUTES[p.id]);
+      expect(p.content!.href).toMatch(/^\/products\/[a-z0-9-]+$/);
+    }
+  });
+  it('every product has 3–4 bullets', () => {
+    for (const p of equipmentGuideData.products) {
+      expect(p.bullets.length, p.id).toBeGreaterThanOrEqual(3);
+      expect(p.bullets.length, p.id).toBeLessThanOrEqual(4);
+    }
+  });
+});
+
+describe('content-v2 about', () => {
+  it('keeps exactly 2 paragraphs + 4 fixed pillars', () => {
+    expect(about.paragraphs).toHaveLength(2);
+    expect(about.pillars).toHaveLength(4);
+    expect(about.pillars.map(p => p.heading)).toEqual([
+      'Process-first platform selection',
+      'Configured around your lab',
+      'U.S.-based project coordination and support',
+      'Peer-reviewed validation for represented platforms',
+    ]);
+  });
+  it('states the exact represented-platform attribution boundary in pillar 4', () => {
+    expect(about.pillars[3].body).toBe('The corresponding platform classes appear in real peer-reviewed research — validating the process capability, not NineScrolls-owned equipment or NineScrolls-authored papers.');
+  });
+  it('has no forbidden claims or OEM names', () => {
+    const t = JSON.stringify(about);
+    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|\bcustomers\b/i);
+    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
   });
 });

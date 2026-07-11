@@ -16,6 +16,13 @@ export interface SpecParityCheck {
   websiteExpected: string; // normalized substring expected in the website value
 }
 
+export interface GuideProductContent {
+  lead: string;
+  applications: string[];
+  applicationCount: 3 | 4;
+  href: string; // site-relative, e.g. '/products/rie-etcher'
+}
+
 export interface GuideProduct {
   id: string;
   series: string;
@@ -32,6 +39,7 @@ export interface GuideProduct {
     productSlug: string; // canonical config slug, e.g. 'icp-etcher' / 'ald'
     checks: SpecParityCheck[];
   };
+  content: GuideProductContent;
 }
 
 export interface EvidenceStudy {
