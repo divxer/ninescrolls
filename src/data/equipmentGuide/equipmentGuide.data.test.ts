@@ -276,8 +276,10 @@ describe('content-v2 about', () => {
   });
   it('has no forbidden claims or OEM names', () => {
     const t = JSON.stringify(about);
-    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|\bcustomers\b/i);
-    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+    for (const pattern of BANNED_CONTENT_PATTERNS) {
+      expect(t, String(pattern)).not.toMatch(pattern);
+    }
+    expect(t).not.toMatch(/\binstallations\b|\bcustomers\b/i); // About-specific extras not in the shared policy
   });
 });
 
