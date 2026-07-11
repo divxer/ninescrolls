@@ -79,7 +79,7 @@ No number appears that is not present in that product's own entry in `products.t
 - bullet "Batch-friendly" ← specs rows "Wafer Size Range" ("≤ 6 inch, multi-wafer batch processing") / "Flow Control" ("MFC or manual control") / "Flow Control Range" ("0 ~ 300 sccm")
 
 ## e-beam
-- lead ← eBeamEvaporatorConfig.hero.description
+- lead ← eBeamEvaporatorConfig.hero.description (hero's "research-grade" qualifier intentionally omitted per the guide's banned-content policy — unverifiable grade claim)
 - bullet "Two evaporation sources" ← specs rows "Sources" ("E-beam + thermal resistance") / "Materials" ("Metals, oxides, fluorides, IR films")
 - bullet "Precise thickness control" ← specs rows "Thickness Control" ("In-situ QCM endpoint") / "Uniformity" ("≤±5% within Φ6 in")
 - bullet "Optical and IR stacks ready" ← original bullet "Optical and IR Stack Ready" (photonic crystals, optical multilayers, IR sensors)
