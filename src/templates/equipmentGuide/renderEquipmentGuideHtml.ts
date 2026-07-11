@@ -8,14 +8,38 @@ const esc = (s: string): string =>
 
 /**
  * Default image resolver: reads the full-resolution webp from public/ and
- * inlines it as a base64 data URI. Kept pure and dependency-free so the
- * renderer's unit tests exercise the real embedding path. The generator
- * injects an optimized (downscaled JPEG) resolver at PDF-build time.
+ * inlines it as a base64 data URI. Kept pure so the renderer's unit tests
+ * exercise the real embedding path. The generator injects an optimized
+ * (downscaled JPEG) resolver at PDF-build time.
  */
 export function defaultImageDataUri(publicRelPath: string): string {
   const abs = resolve(process.cwd(), 'public', publicRelPath.replace(/^\//, ''));
   const b64 = readFileSync(abs).toString('base64');
   return `data:image/webp;base64,${b64}`;
+}
+
+// Logo: read the source SVG at most once, memoize each variant's data URI.
+const LOGO_PATH = resolve(process.cwd(), 'public', 'assets/images/logo-with-text.svg');
+let logoSvgSource: string | null = null;
+const logoCache = new Map<'navy' | 'white', string>();
+
+export function logoDataUri(variant: 'navy' | 'white'): string {
+  const cached = logoCache.get(variant);
+  if (cached) return cached;
+  if (logoSvgSource === null) logoSvgSource = readFileSync(LOGO_PATH, 'utf8');
+  const svg = variant === 'white' ? logoSvgSource.replace(/#243959/gi, '#ffffff') : logoSvgSource;
+  const uri = `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`;
+  logoCache.set(variant, uri);
+  return uri;
+}
+
+function brandbar(variant: 'navy' | 'white' = 'navy'): string {
+  const cls = variant === 'white' ? 'brandbar brandbar--dark' : 'brandbar';
+  return `<div class="${cls}"><img class="brand-logo" src="${logoDataUri(variant)}" alt="NineScrolls LLC"/><span class="site">https://ninescrolls.com&nbsp;&nbsp;&nbsp;info@ninescrolls.com</span></div>`;
+}
+
+function specTable(inner: string): string {
+  return `<div class="spec-table"><table>${inner}</table></div>`;
 }
 
 function specRowsHtml(specs: SpecRow[], twoCol: boolean): string {
@@ -38,30 +62,28 @@ function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => s
   const family = p.familyOptions
     ? `<p class="family"><strong>Family options:</strong> ${p.familyOptions.map(esc).join(' · ')}</p>` : '';
   const sub = p.subTable
-    ? `<table><tr><th colspan="2">${esc(p.subTable.title)}</th></tr>${specRowsHtml(p.subTable.specs, false)}</table>` : '';
+    ? specTable(`<tr><th colspan="2">${esc(p.subTable.title)}</th></tr>${specRowsHtml(p.subTable.specs, false)}`) : '';
   return `
-  <section class="page">
-    ${brandbar()}
+  <section class="page page--product">
+    ${brandbar('navy')}
     <p class="eyebrow">Equipment Platform</p>
+    <div class="section-accent"></div>
     <h1 class="series-title">${esc(p.series)}</h1>
     <div class="product-head">
       <div class="product-copy">${bullets}</div>
-      <div class="product-img"><img src="${imageDataUri(p.image)}" alt="${esc(p.imageAlt)}"/></div>
+      <div class="image-well"><img src="${imageDataUri(p.image)}" alt="${esc(p.imageAlt)}"/></div>
     </div>
-    <table>${headRow}${specRowsHtml(p.specs, twoCol)}</table>
+    ${specTable(`${headRow}${specRowsHtml(p.specs, twoCol)}`)}
     ${sub}${family}
+    <div class="page-foot"></div>
   </section>`;
-}
-
-function brandbar(): string {
-  return `<div class="brandbar"><strong>NINESCROLLS</strong><span class="site">https://ninescrolls.com&nbsp;&nbsp;&nbsp;info@ninescrolls.com</span></div>`;
 }
 
 function aboutPage(d: EquipmentGuideData): string {
   const pillars = d.about.pillars.map(p =>
     `<div class="pillar"><span class="h">${esc(p.heading)}</span><div>${esc(p.body)}</div></div>`).join('');
   const paras = d.about.paragraphs.map(t => `<p>${esc(t)}</p>`).join('');
-  return `<section class="page"><h1>${esc(d.about.title)}</h1><p class="eyebrow">${esc(d.about.subtitle)}</p>${paras}${pillars}</section>`;
+  return `<section class="page">${brandbar('navy')}<h1>${esc(d.about.title)}</h1><div class="section-accent"></div><p class="eyebrow">${esc(d.about.subtitle)}</p>${paras}${pillars}</section>`;
 }
 
 function evidencePage(d: EquipmentGuideData): string {
@@ -71,8 +93,8 @@ function evidencePage(d: EquipmentGuideData): string {
       <div class="t">${esc(s.title)}</div>
       <div class="m">Corresponding ${esc(s.platform)} process platform${cite}</div></div>`;
   }).join('');
-  return `<section class="page"><div class="evidence">
-    <h1>${esc(d.evidence.title)}</h1>
+  return `<section class="page"><div class="evidence">${brandbar('white')}
+    <h1>${esc(d.evidence.title)}</h1><div class="section-accent"></div>
     <div class="sub">${esc(d.evidence.subtitle)}</div>
     <p>${esc(d.evidence.intro)}</p>
     ${studies}
@@ -82,7 +104,7 @@ function evidencePage(d: EquipmentGuideData): string {
 
 function contactPage(d: EquipmentGuideData): string {
   const line = (label: string, val: string) => `<p><strong>${esc(label)}:</strong> ${esc(val)}</p>`;
-  return `<section class="page">${brandbar()}
+  return `<section class="page">${brandbar('navy')}
     <h2>Office Location</h2><p>${d.contact.office.map(esc).join('<br/>')}</p>
     <h2>Business Hours</h2><p>${d.contact.hours.map(esc).join('<br/>')}</p>
     <h2>Contact Information</h2>${d.contact.contacts.map(c => line(c.label, c.value)).join('')}
