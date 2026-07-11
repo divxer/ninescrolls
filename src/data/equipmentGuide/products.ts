@@ -387,7 +387,7 @@ export const products: GuideProduct[] = [
     image: `${IMG}/e-beam-standardized.webp`, imageAlt: 'NineScrolls e-beam and thermal evaporation system',
     footprint: undefined,
     content: {
-      lead: 'Multi-source e-beam and thermal evaporation for optical and IR research — photonic crystals, optical multilayers, IR sensors, and lift-off metallization at research-grade purity.',
+      lead: 'Multi-source e-beam and thermal evaporation for optical and IR research — photonic crystals, optical multilayers, IR sensors, and lift-off metallization.',
       applications: ['Infrared image sensors', 'Ge/ZnS photonic crystals', 'UV down-conversion films', 'Optical AR coatings'],
       applicationCount: 4,
       href: '/products/e-beam-evaporator',
