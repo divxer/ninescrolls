@@ -127,8 +127,9 @@ function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => s
     <p class="eyebrow eyebrow--cat">${esc(CATEGORY_META[category].label)}</p>
     <div class="section-accent"></div>
     <h1 class="series-title">${esc(p.series)}</h1>
+    ${lead}
     <div class="product-head">
-      <div class="product-copy">${lead}${bullets}</div>
+      <div class="product-copy">${bullets}</div>
       <div class="image-well"><img src="${imageDataUri(p.image)}" alt="${esc(p.imageAlt)}"/></div>
     </div>
     ${specTable(`${headRow}${specRowsHtml(p.specs, twoCol)}`)}
