@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "types": ["node"] },
+  "include": ["scripts/generate-equipment-guide.ts", "src/**/*.ts"]
+}
