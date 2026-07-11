@@ -7,7 +7,7 @@
 
 ## 1. Goal
 
-Port the approved Claude Design visual language into the repo's PDF generator so the **official** `public/NineScrolls-Equipment-Guide.pdf` ships the new design: typographic cover with categorized, page-numbered TOC; category color coding; modern sans type; unified page rhythm; About pillar cards; closing CTA band. **Copy/data change: zero.** Every content-v2 string ships byte-identical.
+Port the approved Claude Design visual language into the repo's PDF generator so the **official** `public/NineScrolls-Equipment-Guide.pdf` ships the new design: typographic cover with categorized, page-numbered TOC; category color coding; modern sans type; unified page rhythm; About pillar cards; closing CTA band. **All existing content-v2 data and copy: zero modification** (ships byte-identical). The ONLY new copy this project may introduce is what this spec pins verbatim: the cover strings (§4) and the closing CTA band literal (§6) — nothing else may be authored at implementation time.
 
 **Non-goals:** any copy edit, any spec-table change, any evidence-content change, datasheets, website pages.
 
@@ -29,8 +29,8 @@ One canonical constant drives BOTH the cover TOC and the render sequence. No pag
 // renderEquipmentGuideHtml.ts (renderer level — the products DATA array is untouched)
 export type GuideCategory = 'plasma-etch' | 'thin-film' | 'litho-surface';
 export const CATEGORY_META: Record<GuideCategory, { label: string; color: string }> = {
-  'plasma-etch':   { label: 'Plasma Etch',              color: '#0066cc' },
-  'thin-film':     { label: 'Thin-Film Deposition',     color: '#022448' },
+  'plasma-etch':   { label: 'Etch & Ion Beam',            color: '#0066cc' },  // display name is technically accurate for IBE/RIBE; internal key unchanged
+  'thin-film':     { label: 'Thin-Film Deposition',       color: '#022448' },
   'litho-surface': { label: 'Litho & Surface Processing', color: '#0d7ea8' },
 };
 export const PAGE_ORDER: ReadonlyArray<
@@ -73,7 +73,7 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 
 - Eyebrow: `Precision Instrumentation`
 - Title: `Equipment Guide`
-- Tagline: `Research-grade plasma etching, thin-film deposition, and lithography platforms for university, institute, and corporate R&D laboratories.`
+- Tagline (user-approved final, 2026-07-11): `Etching, thin-film deposition, lithography, and surface-processing platforms for university, national laboratory, institute, and corporate R&D facilities.`
 - Edition line: `Equipment Guide · 2026 Edition · ninescrolls.com · info@ninescrolls.com`
 - TOC category labels: exactly the three `CATEGORY_META` labels.
 - TOC entries: exactly the 11 `series` strings from `products.ts` (no rewording).
@@ -92,13 +92,22 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 - **Tests:**
   - Rendered HTML contains `@font-face` rules for both families with `data:font/woff2;base64,` sources (one per committed file).
   - Each committed woff2's SHA-256 equals the value pinned in `PROVENANCE.md` (test parses the file and compares — the provenance doc is executable documentation, not prose).
-  - **No-fallback proof (PDF level, in the generator's `validatePdf`):** run `pdffonts` on the output; assert at least one embedded font name matches `/SpaceGrotesk/` and one matches `/Inter/`, and assert NO line matches `/Helvetica|Arial|Times|LiberationSans/` — a match means Chrome fell back to system fonts and the build must fail.
+  - **No-fallback proof (PDF level, in the generator's `validatePdf`, fail-closed):**
+    - Poppler is a REQUIRED build dependency: if `pdffonts` is not on PATH, `validatePdf` throws with a clear install message — it must never silently skip the check.
+    - Parse `pdffonts` tabular output into `{ name, emb, sub }` per row; strip the 6-letter subset prefix (`ABCDEF+`) and normalize the name (strip style suffixes, case-fold).
+    - Require: at least one row normalizing to Space Grotesk AND one to Inter, **each with `emb = yes` and `sub = yes`**.
+    - Reject: any row whose normalized name matches `Helvetica | Arial | Times | LiberationSans | DejaVu | Noto` (fallback families) → build fails.
 - Size budget: ~300 KB of woff2 → Chrome subsets embedded glyphs at PDF export; expected PDF growth well under the 2 MB cap (hard-asserted anyway).
 
 ## 6. Design tokens (extracted from the approved design; exact values for implementation)
 
 - **Category colors:** as `CATEGORY_META` above. Applied to: product-page eyebrow text, title accent rule, cover TOC category labels + underline. Everything else stays in the navy/blue brand family (`#1e3a5f` navy, `#0284c7` CTA blue unchanged).
-- **Type scale:** page title 26px (Space Grotesk 700), lead 13px, body/bullets 12.5px, chips 12.5px, labels/eyebrows 10px (v1 sizes retained), footers 9px. Body copy floor stays **≥12.5px**.
+- **Type scale:** page title 26px (Space Grotesk 700), lead 13px, body/bullets 12.5px, chips 12.5px. Body-copy floor stays **≥12.5px**, with this EXHAUSTIVE exception list (the only roles allowed below 12.5px, all label/metadata — not body copy):
+  - `.eyebrow` (10px), `.apps .lab` (10px), cover edition line (10–11px), cover TOC page numbers (11px)
+  - Evidence study metadata line (journal · year · platform, 10–11px) and citation note (10–11px); `evidence.disclaimer` note (11px italic)
+  - `.page-foot` (9–10px), Puppeteer footer template (9px), brandbar header links (10–11px)
+  - CTA-band sub-line, if split from the main sentence (11px)
+  **Enforcement test:** parse `equipmentGuide.css.ts` for every `font-size` declaration below 12.5px and assert its selector is in the allowlist above; any new sub-12.5px selector fails the suite.
 - **Rhythm:** image well fixed 215px wide × 200px tall (lightweight border + light background, `object-fit: contain`, centered) — the design's post-pagination-fix values; spacing scale 16/24/24 (lead→bullets→table); chips row 20px top offset; CTA row 16px.
 - **Plasma-cleaner density tier** (carried over from content-v2, re-derived if the new base rhythm changes the budget): page-scoped `section[data-product-id="plasma-cleaner"]` paddings + image well reduced to 170px tall; its 4 pinned chips and CTA must hold on one page.
 - **About pillars:** 2×2 card grid (light indigo panel, icon + heading + body) — icons are inline SVG strokes in brand color, no external assets, no new copy.
@@ -115,18 +124,21 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 
 **Retired:** `v1-evidence-chunk.html` (markup-level pin — markup change is the point of this project). Deleted in the same commit that introduces its replacement:
 
-**Replacement — evidence STRONG parity (render-level, order- and multiplicity-aware):**
-- The Evidence page section (located by `data-section="evidence"`) contains, for the `evidence.publications` array:
-  - exactly `publications.length` publication blocks (count),
-  - in the SAME order as the data array (assert indexOf monotonicity of each title),
-  - each `title`, `journal`, `year`, and (where present) `citations` + `citationsAsOf` rendered **exactly once** within the section (count occurrences == 1, escaped form),
-  - each `doi` rendered exactly once as an `https://doi.org/<doi>` href, exact string equality per publication,
-  - the attribution-boundary line rendered exactly once, verbatim.
+**Replacement — evidence STRONG parity (render-level, per-block scoped so shared values like `year: 2026` can't false-pass):**
+- The renderer stamps each study as its own block: `<article data-study-index="<i>">…</article>` inside the Evidence section (`data-section="evidence"`). The test contract, against the actual data shape (`evidence.studies`, fields `journal / year / title / platform / citations? / citationsAsOf? / doi`):
+  - the section contains exactly `evidence.studies.length` `data-study-index` blocks, indices `0..n-1` in ascending DOM order (order lock);
+  - **within block `i`** (scoped, not page-wide): `studies[i].title`, `.journal`, `.year`, `.platform`, and — where present — `.citations` + `.citationsAsOf` each rendered exactly once (escaped form); a study without `citations` renders no citation count in its block;
+  - **within block `i`**: exactly one anchor with `href === 'https://doi.org/' + studies[i].doi` (exact string equality);
+  - `evidence.title`, `evidence.subtitle`, and `evidence.disclaimer` each rendered exactly once in the section, verbatim (the disclaimer IS the attribution boundary).
 - Plus the untouched `v1-evidence.json` deep-equal test — together these lock content, order, multiplicity, and links while freeing markup.
+- `v1-evidence.json` pre-redesign SHA-256 (recorded now, compared directly in the final audit — not just via the allowlist):
+  `c56fbe1f698313f100cd72dc30aa0066362cd94d95da3ddf880bb659ebe8badc`
 
 **New visual-v2 tests (summarized §3–§6):** PAGE_ORDER shape/sequence/TOC consistency; cover literals + banned scan; `data-category` stamping; font data-URIs + SHA-256 provenance; CTA band literal; 15-section render.
 
 **Generator (`scripts/generate-equipment-guide.ts` — modifiable this time):** `EXPECTED_PAGES` 14→15; required-text list gains `Equipment Guide · 2026 Edition` and `Ready to scope your process?`; banned list unchanged; new `pdffonts` no-fallback assert (§5).
+
+**14-page assumption sweep (required, not just the generator):** grep the existing suites for every executable 14-page-era assumption and update to the 15-page reality in the same TDD commit that introduces the cover — known instances: section-count assertions (`toHaveLength(14)` / `.length === 14`), the brandbar/logo-variant counts (v1 expects 13 navy + 1 white → v2 expects **14 navy + 1 white**, the cover using the navy logo on light background), and any page-index-based lookups. The plan must list each hit found by `grep -n "14" src/templates/equipmentGuide/*.test.ts src/data/equipmentGuide/*.test.ts` with its disposition (update / not-page-related).
 
 ## 8. Constraints (hard, all exit-1 at finalize)
 
