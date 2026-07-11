@@ -45,8 +45,9 @@ export const equipmentGuideCss = `
   .apps .lab { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #8a97a6; margin: 0 0 6px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { font-size: 12.5px; font-weight: 600; color: #1e3a5f; background: #fff; border: 1px solid #e6ebf1; border-radius: 999px; padding: 3px 10px; }
-  .cta { margin-top: 12px; }
-  .cta .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; background: #0284c7; color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; }
+  .cta { margin-top: 12px; display: flex; align-items: center; gap: 12px; }
+  .cta .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; background: #0284c7; color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; white-space: nowrap; }
+  .cta-url { font-size: 12.5px; color: #64748b; letter-spacing: .01em; white-space: nowrap; }
   /* plasma-cleaner carries the guide's densest spec table — tighten locally to hold one page */
   section[data-product-id="plasma-cleaner"] td, section[data-product-id="plasma-cleaner"] th { padding-top: 4px; padding-bottom: 4px; }
   section[data-product-id="plasma-cleaner"] .apps { margin-top: 8px; padding: 7px 12px; }

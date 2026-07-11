@@ -145,6 +145,14 @@ describe('content-v2 render', () => {
       expect(anchors[0][2], p.id).toBe(CTA_TEXT);
     }
   });
+  it('prints a visible short URL beside every CTA (print readers cannot follow the button link)', () => {
+    for (const p of equipmentGuideData.products) {
+      const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
+      const urls = [...chunk.matchAll(/<span class="cta-url">([^<]+)<\/span>/g)];
+      expect(urls.length, p.id).toBe(1);
+      expect(urls[0][1], p.id).toBe(`ninescrolls.com${PRODUCT_ROUTES[p.id]}`); // no scheme — compact print form
+    }
+  });
   it('keeps the Evidence page string-identical to the v1 fixture', () => {
     const ev = chunks.map(c => '<section class="page' + c).find(c => c.includes('Peer-Reviewed Validation'))!.trim();
     // note: split() dropped the delimiter; re-prepend it, then compare to the committed chunk
