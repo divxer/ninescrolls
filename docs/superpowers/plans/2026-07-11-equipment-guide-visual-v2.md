@@ -44,7 +44,7 @@ cd /Users/harvey/Dev/src/cursor/ninescrolls
 set -euo pipefail
 [ "$(git branch --show-current)" = "feature/equipment-guide-visual-v2" ] || { echo "FAIL: wrong branch"; exit 1; }
 git fetch origin --quiet
-APPROVED_BASELINE=844ea29bf3a65242da2aaa48c40cc8a282835b5b   # #275 merge — the baseline this plan was approved against
+APPROVED_BASELINE=3d9bb4d3db8ef968e1c0970ed96b421009b4214f   # #276 merge (e-beam lead hotfix) — baseline re-pinned after the user-approved pre-requisite hotfix
 git merge-base --is-ancestor "$APPROVED_BASELINE" HEAD || { echo "FAIL: approved baseline not an ancestor"; exit 1; }
 [ "$(git rev-parse origin/main)" = "$APPROVED_BASELINE" ] || { echo "FAIL: origin/main moved past the approved baseline ($(git rev-parse --short origin/main)) — STOP and re-review the plan against the new main"; exit 1; }
 command -v pdffonts >/dev/null || { echo "FAIL: pdffonts missing — install poppler (brew install poppler)"; exit 1; }
