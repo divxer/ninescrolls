@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EquipmentGuideData, GuideProduct, SpecRow } from '../../data/equipmentGuide/types';
 import { equipmentGuideCss } from './equipmentGuide.css';
+import { equipmentGuideFontsCss } from './fontsCss';
 
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -129,7 +130,7 @@ export function renderEquipmentGuideHtml(
     .join('');
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
 <title>NineScrolls LLC — Equipment Guide</title>
-<style>${equipmentGuideCss}</style></head><body>
+<style>${equipmentGuideFontsCss()}\n${equipmentGuideCss}</style></head><body>
 ${aboutPage(d)}${evidencePage(d)}${products}${contactPage(d)}
 </body></html>`;
 }

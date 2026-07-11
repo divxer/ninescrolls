@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 import { renderEquipmentGuideHtml, logoDataUri, defaultImageDataUri } from './renderEquipmentGuideHtml';
 import { equipmentGuideData } from '../../data/equipmentGuide';
 import { PRODUCT_ROUTES } from '../../data/equipmentGuide/products';
@@ -157,5 +158,50 @@ describe('content-v2 render', () => {
     const ev = chunks.map(c => '<section class="page' + c).find(c => c.includes('Peer-Reviewed Validation'))!.trim();
     // note: split() dropped the delimiter; re-prepend it, then compare to the committed chunk
     expect(ev).toBe(fixTrim('v1-evidence-chunk.html'));
+  });
+});
+
+describe('visual-v2 fonts (deterministic, embedded)', () => {
+  const FONT_DIR = resolve(process.cwd(), 'src/templates/equipmentGuide/fonts');
+  const WOFF2 = ['SpaceGrotesk-Variable.woff2', 'Inter-Regular.woff2', 'Inter-Medium.woff2', 'Inter-SemiBold.woff2'];
+  it('every committed woff2 matches the SHA-256 on ITS OWN PROVENANCE.md row (filename-bound, swap-proof)', () => {
+    const prov = readFileSync(resolve(FONT_DIR, 'PROVENANCE.md'), 'utf8');
+    const rows = new Map(
+      [...prov.matchAll(/^\|\s*(\S+\.woff2)\s*\|.*\|\s*([0-9a-f]{64})\s*\|\s*$/gm)].map(m => [m[1], m[2]]),
+    );
+    expect([...rows.keys()].sort()).toEqual([...WOFF2].sort());
+    for (const f of WOFF2) {
+      const sha = createHash('sha256').update(readFileSync(resolve(FONT_DIR, f))).digest('hex');
+      expect(sha, f).toBe(rows.get(f));
+    }
+  });
+  it('renders one base64 @font-face per committed woff2 (no network sources); Space Grotesk is a variable face 300 700', () => {
+    const faces = [...html.matchAll(/@font-face\s*{[^}]*}/g)].map(m => m[0]);
+    expect(faces).toHaveLength(WOFF2.length);
+    for (const face of faces) {
+      expect(face).toContain('data:font/woff2;base64,');
+      expect(face).not.toMatch(/https?:\/\//);
+    }
+    const sg = faces.filter(f => f.includes("'Space Grotesk'"));
+    expect(sg).toHaveLength(1);
+    expect(sg[0]).toContain('font-weight: 300 700');
+    expect(faces.filter(f => f.includes("'Inter'"))).toHaveLength(3);
+  });
+  it('committed licenses are genuine SIL OFL 1.1 texts with their own provenance rows (filename-bound SHA)', () => {
+    const prov = readFileSync(resolve(FONT_DIR, 'PROVENANCE.md'), 'utf8');
+    const rows = new Map(
+      [...prov.matchAll(/^\|\s*(\S+\.txt)\s*\|.*\|\s*([0-9a-f]{64})\s*\|\s*$/gm)].map(m => [m[1], m[2]]),
+    );
+    for (const lic of ['OFL-SpaceGrotesk.txt', 'OFL-Inter.txt']) {
+      const t = readFileSync(resolve(FONT_DIR, lic), 'utf8');
+      expect(t, lic).toMatch(/SIL OPEN FONT LICENSE/i);
+      expect(t, lic).toMatch(/Version 1\.1/);
+      const sha = createHash('sha256').update(readFileSync(resolve(FONT_DIR, lic))).digest('hex');
+      expect(sha, `${lic} provenance row`).toBe(rows.get(lic));
+    }
+  });
+  it('licenses and provenance are committed', () => {
+    const files = readdirSync(FONT_DIR);
+    for (const req of ['OFL-SpaceGrotesk.txt', 'OFL-Inter.txt', 'PROVENANCE.md']) expect(files).toContain(req);
   });
 });
