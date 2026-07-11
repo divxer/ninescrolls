@@ -133,9 +133,9 @@ export const products: GuideProduct[] = [
       href: '/products/ibe-ribe',
     },
     bullets: [
-      { heading: 'Swappable ion sources.', body: 'Kaufman (up to 6 in) or RF (up to 12 in) sources in an easy-to-swap design, matched to your materials.' },
+      { heading: 'Swappable ion sources.', body: 'Kaufman (up to 6 inch) or RF (up to 12 inch) sources in an easy-to-swap design, matched to your materials.' },
       { heading: 'Controlled beam geometry.', body: 'Stage tilt from 0° to 90° and rotation from 1–10 rpm for tunable etch angles and profiles.' },
-      { heading: 'Clean, high-vacuum process.', body: 'Base vacuum better than 7E-7 Torr, with a water-cooled 5–20 °C stage and optional He backside cooling.' },
+      { heading: 'Clean, high-vacuum process.', body: 'Base vacuum better than 7E-7 Torr, with a water-cooled 5 to 20 °C stage and optional He backside cooling.' },
       { heading: 'Easy to run and maintain.', body: '1.0 × 0.8 m footprint; open-load or load-lock; sample holder and ion source designed for easy operation.' },
     ],
     specHeaders: ['Kaufman ion source', 'RF ion Source'],
