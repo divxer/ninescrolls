@@ -87,13 +87,13 @@ Report `STATE_DIR` to the controller; Task 9 reads it (plain files, never source
 
 Only after the user grants it: download to the session scratchpad (never the repo's `tmp/`).
 
-- [ ] **Step 0b: Inspect archive listings, then WRITE THE EXACT PATHS BACK INTO THIS PLAN before extracting**
+- [ ] **Step 0b: Inspect archive listings, record exact paths in PROVENANCE.md's `archive path` column (NOT in this plan — the plan is outside the change allowlist), then extract**
 
 ```bash
 unzip -l "$SCRATCH/SpaceGrotesk-2.0.0.zip" | grep -i woff2
 unzip -l "$SCRATCH/Inter-4.1.zip" | grep -iE 'woff2|OFL|LICENSE' | grep -viE 'italic|display'
 ```
-From the listings, record in this plan (edit this block in place) the exact archive-internal paths for: Space Grotesk SemiBold + Bold woff2, Inter Regular/Medium/SemiBold woff2 (static weights, NOT variable/italic/display), and each archive's OFL/LICENSE text. Then extract with explicit per-file commands, e.g.:
+From the listings, take the exact archive-internal paths for: Space Grotesk SemiBold + Bold woff2, Inter Regular/Medium/SemiBold woff2 (static weights, NOT variable/italic/display), and each archive's OFL/LICENSE text. These paths go into `PROVENANCE.md`'s `archive path` column in Step 1 — the committed provenance table is the durable record; the plan file is never edited at execution time. Then extract with explicit per-file commands, e.g.:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls/src/templates/equipmentGuide/fonts
 unzip -p "$SCRATCH/SpaceGrotesk-2.0.0.zip" '<exact-archive-path>/SpaceGrotesk-SemiBold.woff2' > SpaceGrotesk-SemiBold.woff2
@@ -208,9 +208,24 @@ In `renderEquipmentGuideHtml.ts`: `import { equipmentGuideFontsCss } from './fon
 
 ---
 
-### Task 3: Cover data — `cover` object + literals tests (spec §4)
+### Task 3: Cover data — `cover` object, SHARED banned-pattern constant, literals tests (spec §4)
 
-**Files:** Modify `types.ts`, `guideMeta.ts`, `src/data/equipmentGuide/index.ts`? — **NO**: `index.ts` is frozen. The renderer imports `cover` directly from `guideMeta` — keeping `EquipmentGuideData` and `index.ts` untouched. Modify `equipmentGuide.data.test.ts`.
+**Files:** Modify `types.ts`, `guideMeta.ts`, `equipmentGuide.data.test.ts`; Create `src/data/equipmentGuide/bannedContent.ts`. (`index.ts` stays frozen — the renderer imports `cover` directly from `guideMeta`.)
+
+- [ ] **Step 0: Extract the single-source banned list**
+
+Create `src/data/equipmentGuide/bannedContent.ts` with the generator's COMPLETE current policy (copy the regex list verbatim from `scripts/generate-equipment-guide.ts` `banned` — includes `1×8|1x8|5×4|5x4`, `3-5%`, `8×10⁻⁴|8x10\^-4`, OEM names, retired claims) plus the copy-level additions used by the About test:
+```ts
+// Single source of truth for banned content — used by the generator's validatePdf AND the data tests.
+export const BANNED_CONTENT_PATTERNS: RegExp[] = [
+  /tyloong/i, /zhongke|tailong|中科泰隆/i, /chuangshi|创世威纳/i, /peiyuan|沛沅/i, /advanstech|埃德万斯/i, /promiso/i, /plutovac/i,
+  /trusted manufacturer partner/i, /global installations/i, /research institutions served/i,
+  /30\+\s*years/i, /\d+\+\s*years/i, /years of experience/i, /1000\+/, /300\+/,
+  /1×8|1x8|5×4|5x4/i, /3-5%/i, /8×10⁻⁴|8x10\^-4/i,
+  /research-grade/i, /industry-leading/i, /world-class/i, /state-of-the-art/i, /best-in-class/i, /unmatched/i,
+];
+```
+(Reconcile against the actual generator list when copying — the generator's regexes are authoritative; nothing may be dropped. `scripts/generate-equipment-guide.ts` switches to importing this constant in Task 8 Step 3, eliminating the dual source.)
 
 - [ ] **Step 1: Write the failing cover tests FIRST**
 
@@ -223,11 +238,12 @@ describe('visual-v2 cover', () => {
     expect(cover.tagline).toBe('Etching, thin-film deposition, lithography, and surface-processing platforms for university, national laboratory, institute, and corporate R&D facilities.');
     expect(cover.edition).toBe('Equipment Guide · 2026 Edition · ninescrolls.com · info@ninescrolls.com');
   });
-  it('cover copy passes the FULL banned-claims scan (generator banned list + About-test list)', () => {
+  it('cover copy passes the FULL shared banned-content policy (single source, no drift)', () => {
     const t = JSON.stringify(cover);
-    expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|global installations|research institutions served|trusted manufacturer partner|1000\+|300\+|\bcustomers\b/i);
-    expect(t).not.toMatch(/research-grade|industry-leading|world-class|state-of-the-art|best-in-class|unmatched/i);
-    expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯|promiso|plutovac/i);
+    for (const pattern of BANNED_CONTENT_PATTERNS) {
+      expect(t, String(pattern)).not.toMatch(pattern);
+    }
+    expect(t).not.toMatch(/\binstallations\b|\bcustomers\b/i); // About-test extras not in the generator policy
   });
 });
 ```
@@ -255,7 +271,7 @@ export const cover: GuideCover = {
 ```
 (with `import type { GuideCover } from './types';` adjusted to the file's existing import style.)
 
-- [ ] **Step 3: Run tests + typecheck → green. Commit** FILES = `types.ts guideMeta.ts equipmentGuide.data.test.ts`. Message: `feat(guide): visual-v2 cover data — pinned literals + banned-claims scan`
+- [ ] **Step 3: Run tests + typecheck → green. Commit** FILES = `src/data/equipmentGuide/types.ts src/data/equipmentGuide/guideMeta.ts src/data/equipmentGuide/equipmentGuide.data.test.ts src/data/equipmentGuide/bannedContent.ts` (the test imports `BANNED_CONTENT_PATTERNS` from `./bannedContent`). Message: `feat(guide): visual-v2 cover data — pinned literals + single-source banned-content policy`
 
 ---
 
@@ -272,7 +288,14 @@ git worktree add .claude/worktrees/eqg-visual-v2-pilot -b eqg-visual-v2-pilot-th
 ln -s /Users/harvey/Dev/src/cursor/ninescrolls/node_modules .claude/worktrees/eqg-visual-v2-pilot/node_modules
 ```
 
-- [ ] **Step 2: Implement the full visual skeleton in the worktree** — PAGE_ORDER + cover page + category colors + font families applied + About cards + CTA band + evidence blocks + generator `EXPECTED_PAGES = 15`, using the exact code from Tasks 5–8 below as the reference (the pilot is the integration rehearsal; anything learned here — pagination budgets, plasma-cleaner tier values — feeds back into those tasks' values before they run).
+- [ ] **Step 2: Implement the full visual skeleton in the worktree — as FOUR task-shaped commits**
+
+Implement using the exact code from Tasks 5–8 below as the reference, committing INSIDE the throwaway worktree in task-shaped slices (these commits are never pushed; the branch is deleted in Step 5):
+1. commit `pilot: structure` — PAGE_ORDER + cover page + data-category + assembly (Task 5 scope)
+2. commit `pilot: evidence` — per-study field-element markup (Task 6 scope)
+3. commit `pilot: tokens` — CSS port + About cards + CTA band + font families applied (Task 7 scope)
+4. commit `pilot: generator` — `pdfFontsCheck.ts` + generator 15p/strings/pdffonts wiring + `tsconfig.scripts.json` (Task 8 scope)
+The pilot is the integration rehearsal; anything learned (pagination budgets, plasma-cleaner tier values) feeds back into those tasks' values before they run.
 
 - [ ] **Step 3: Generate + HARD pilot gates (fonts, pages, size are pilot-blocking — not deferred to Task 8)**
 
@@ -286,25 +309,35 @@ PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('$PDF').pag
 [ "$PAGES" = "15" ] || { echo "FAIL: pilot pages = $PAGES (want 15)"; exit 1; }
 BYTES=$(python3 -c "import os; print(os.path.getsize('$PDF'))")
 [ "$BYTES" -lt 2000000 ] || { echo "FAIL: pilot PDF $BYTES bytes >= 2MB — fonts/design too heavy, resolve BEFORE the batch"; exit 1; }
-FONTS=$(pdffonts "$PDF")
-echo "$FONTS"
-echo "$FONTS" | grep -qiE '\+?SpaceGrotesk' || { echo "FAIL: Space Grotesk not in PDF"; exit 1; }
-echo "$FONTS" | grep -qiE '\+?Inter'        || { echo "FAIL: Inter not in PDF"; exit 1; }
-echo "$FONTS" | grep -qiE 'helvetica|arial|times|liberation|dejavu|noto' && { echo "FAIL: fallback font present"; exit 1; }
+# reuse the SAME strict validator the generator will ship (pilot commit 4 includes pdfFontsCheck.ts): emb=yes AND sub=yes required, fallback families rejected
+./node_modules/.bin/tsx -e '
+import { execFileSync } from "node:child_process";
+import { parsePdfFonts, assertEmbeddedFontsOutput } from "./src/templates/equipmentGuide/pdfFontsCheck";
+assertEmbeddedFontsOutput(parsePdfFonts(execFileSync("pdffonts", ["public/NineScrolls-Equipment-Guide.pdf"], { encoding: "utf8" })));
+console.log("fonts: Space Grotesk + Inter emb=yes sub=yes, no fallback — OK");
+' || { echo "FAIL: pilot font embedding check"; exit 1; }
+pdffonts "$PDF"   # human-readable record for the sign-off report
 pdftoppm -jpeg -r 100 "$PDF" "$SHOT/p"
 [ "$(ls "$SHOT"/p-*.jpg | wc -l | tr -d ' ')" = "15" ] || { echo "FAIL: screenshot count != 15"; exit 1; }
 echo "SHOT=$SHOT"
 ```
 **Pilot acceptance (spec §9):** the gates above, plus visual review — focus cover + RIE + plasma-cleaner, and ALL other 12 pages checked for pagination breaks and clipped tables.
 
-- [ ] **Step 4: Save the pilot diff to a mktemp path (reliable reuse), present, STOP**
+- [ ] **Step 4: Export ONE PATCH PER TASK-SHAPED COMMIT (safe reuse), present, STOP**
 
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls/.claude/worktrees/eqg-visual-v2-pilot
-PATCH=$(mktemp -d)/visual-v2-pilot.patch
-git diff > "$PATCH"; wc -l "$PATCH"; echo "PATCH=$PATCH"
+PDIR=$(mktemp -d)
+git format-patch --output-directory "$PDIR" HEAD~4..HEAD   # 0001 structure, 0002 evidence, 0003 tokens, 0004 generator
+ls "$PDIR"; echo "PDIR=$PDIR"
 ```
-Report `PATCH` to the controller. **Reuse contract for Tasks 5–8:** each task writes its failing tests first (RED), then applies the corresponding implementation hunks from `$PATCH` (`git apply --include='src/templates/equipmentGuide/renderEquipmentGuideHtml.ts' "$PATCH"` style, or manual transfer for partial hunks) instead of re-typing — the signed-off pilot IS the implementation source. Any pagination constants discovered during the pilot (image-well heights, plasma-cleaner tier paddings, cover spacing) are ALSO written back into Task 7's token list before Task 5 starts, so the plan text and the patch agree.
+Report `PDIR` to the controller. **Reuse contract for Tasks 5–8:** each task, AFTER its RED step, applies ONLY its own patch:
+```bash
+git apply --check -p1 "$PDIR/000N-pilot-<slice>.patch" || { echo "context drift — transfer this patch's hunks manually, do NOT apply others"; }
+git apply -p1 "$PDIR/000N-pilot-<slice>.patch" && echo "000N" >> "$STATE_DIR/applied-patches"
+grep -c "000N" "$STATE_DIR/applied-patches" | grep -qx 1 || { echo "FAIL: patch 000N applied more than once"; exit 1; }
+```
+A patch is applied AT MOST ONCE (the `applied-patches` ledger in the Task 1 state dir enforces it); if `--check` fails because the task's freshly-written tests shifted context, transfer that patch's hunks manually — never resolve by applying a different task's patch early. Any pagination constants discovered during the pilot (image-well heights, plasma-cleaner tier paddings, cover spacing) are ALSO written back into Task 7's token list before Task 5 starts, so the plan text and the patches agree.
 Present all 15 page images to the user; **do not proceed until sign-off**. Then:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
@@ -529,12 +562,16 @@ describe('visual-v2 evidence strong parity (element-scoped content lock)', () =>
     const bl = studyBlocks(sec);
     expect(bl).toHaveLength(2);
     fieldOnce(bl[0][2], 'j', 'J &amp; Sons &lt;Test&gt;', 'escaped journal');
+    fieldOnce(bl[0][2], 'y', '2026', 'year exactly once despite "Jul 2026" in cite'); // the collision the element scoping exists for
     fieldOnce(bl[0][2], 't', 'A &amp; B &lt;C&gt; &quot;D&quot;', 'escaped title');
+    fieldOnce(bl[0][2], 'pf', 'RIE', 'platform');
     fieldOnce(bl[0][2], 'cite', '7 citations (as of Jul 2026)', 'cite present');
     expect([...bl[0][2].matchAll(/<a class="doi" href="([^"]+)"/g)][0][1]).toBe('https://doi.org/10.1000/x&amp;y');
     expect(bl[1][2]).not.toContain('class="cite"');
     expect(bl[1][2]).not.toContain('class="doi"');
     fieldOnce(bl[1][2], 'j', 'J &amp; Sons &lt;Test&gt;', 'colliding journal still exactly once per block');
+    fieldOnce(bl[1][2], 'y', '2026', 'colliding year, element-scoped');
+    fieldOnce(bl[1][2], 'pf', 'RIE', 'colliding platform, element-scoped');
   });
 });
 ```
@@ -594,18 +631,33 @@ describe('visual-v2 tokens', () => {
     expect([...about.matchAll(/class="pillar-card"/g)]).toHaveLength(4);
     expect([...about.matchAll(/<svg[\s>]/g)].length).toBeGreaterThanOrEqual(4);
   });
-  it('every sub-12.5px font-size in the CSS belongs to the spec §6 exception allowlist (exact selectors)', () => {
+  it('every sub-12.5px font-size in the CSS belongs to the spec §6 exception allowlist (comment-stripped, ALL declarations per rule)', () => {
     const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub']);
-    const rules = [...equipmentGuideCss.matchAll(/([^{}]+){[^}]*font-size:\s*([\d.]+)px/g)];
+    const css = equipmentGuideCss.replace(/\/\*[\s\S]*?\*\//g, '');      // strip comments first
+    expect(css).not.toContain('@media');                                  // flat rule set assumed — a nested block would silently escape this parser
     let checked = 0;
-    for (const [, selector, size] of rules) {
-      if (parseFloat(size) >= 12.5) continue;
-      for (const s of selector.trim().split(',').map(x => x.trim())) {
-        expect(ALLOW.has(s), `${s} @ ${size}px not in spec exception list`).toBe(true);
+    for (const [, rawSelector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      if (rawSelector.trim().startsWith('@page')) continue;
+      const sizes = [...body.matchAll(/font-size:\s*([\d.]+)px/g)].map(m => parseFloat(m[1])); // ALL declarations, not just the first
+      for (const size of sizes) {
         checked++;
+        if (size >= 12.5) continue;
+        for (const s of rawSelector.trim().split(',').map(x => x.trim())) {
+          expect(ALLOW.has(s), `${s} @ ${size}px not in spec exception list`).toBe(true);
+        }
       }
     }
-    expect(checked).toBeGreaterThan(0); // the scan actually ran
+    expect(checked).toBeGreaterThan(10); // the scan really walked the sheet
+  });
+  it('font-size scanner self-test: catches comma selectors, duplicates in one rule, decimals', () => {
+    const sample = `/* x */ .a, .bad { font-size: 13px; font-size: 10.5px; } .eyebrow { font-size: 10px; }`;
+    const hits: string[] = [];
+    for (const [, sel, body] of sample.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      for (const m of body.matchAll(/font-size:\s*([\d.]+)px/g)) {
+        if (parseFloat(m[1]) < 12.5) for (const s of sel.trim().split(',').map(x => x.trim())) hits.push(`${s}@${m[1]}`);
+      }
+    }
+    expect(hits).toEqual(['.a@10.5', '.bad@10.5', '.eyebrow@10']);
   });
   it('category color is applied via data-category rules', () => {
     for (const meta of Object.values(CATEGORY_META)) expect(equipmentGuideCss).toContain(meta.color);
@@ -741,6 +793,7 @@ Run the unit tests → **PASS**.
 `scripts/generate-equipment-guide.ts`:
 - `EXPECTED_PAGES = 15`
 - `required` gains: `'Equipment Guide · 2026 Edition'`, `'Ready to scope your process?'`, `'Etch & Ion Beam'`
+- Replace the inline `banned` array with `import { BANNED_CONTENT_PATTERNS } from '../src/data/equipmentGuide/bannedContent';` (single source with the data tests — verify every regex from the old inline list exists in the shared constant before deleting it)
 - In `validatePdf`, after the pages check:
 ```ts
 import { parsePdfFonts, assertEmbeddedFontsOutput } from '../src/templates/equipmentGuide/pdfFontsCheck';
@@ -856,12 +909,13 @@ git ls-files --others --exclude-standard -z | sort -z \
 cmp -s "$S/untracked-manifest" "$S/untracked-now" || { echo "FAIL: protected untracked changed"; exit 1; }
 git ls-files --others --exclude-standard -z | sort -z > "$S/untracked-paths-now"
 cmp -s "$S/untracked-paths" "$S/untracked-paths-now" || { echo "FAIL: untracked path set changed"; exit 1; }
-# two-way allowlist — 21 paths = 20 present/modified files + 1 deletion (the fixture); spec/plan docs live in BASE
+# two-way allowlist — 22 paths = 21 present/modified files + 1 deletion (the fixture); spec/plan docs live in BASE
 git diff --name-only "${BASE}..HEAD" | sort -u > "$S/changed"
 printf '%s\n' \
   public/NineScrolls-Equipment-Guide.pdf \
   scripts/generate-equipment-guide.ts \
   src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html \
+  src/data/equipmentGuide/bannedContent.ts \
   src/data/equipmentGuide/equipmentGuide.data.test.ts \
   src/data/equipmentGuide/guideMeta.ts \
   src/data/equipmentGuide/types.ts \
@@ -880,8 +934,11 @@ printf '%s\n' \
   src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
   src/templates/equipmentGuide/renderEquipmentGuideHtml.ts \
   tsconfig.scripts.json | sort -u > "$S/allow"
-[ "$(wc -l < "$S/allow" | tr -d ' ')" = "21" ] || { echo "FAIL: allowlist count drifted"; exit 1; }
+[ "$(wc -l < "$S/allow" | tr -d ' ')" = "22" ] || { echo "FAIL: allowlist count drifted"; exit 1; }
 diff "$S/allow" "$S/changed" || { echo "FAIL: change set != allowlist"; exit 1; }
+# the fixture must be a REAL deletion (status D), and the only one — a modification would pass the name-only diff
+DELETED=$(git diff --name-status "${BASE}..HEAD" | awk '$1=="D"{print $2}')
+[ "$DELETED" = "src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html" ] || { echo "FAIL: deletions != exactly the evidence chunk fixture (got: $DELETED)"; exit 1; }
 echo "hygiene OK — ready for PR"
 ```
 
@@ -891,8 +948,8 @@ echo "hygiene OK — ready for PR"
 
 ## Self-Review
 
-**1. Spec coverage:** D1–D5 ✓ (15p, typographic cover, fonts, direct replace, token port). §3 PAGE_ORDER single source + shape/sequence/TOC/data-category tests (Task 5) ✓; §4 cover literals + banned scan as data tests (Task 3) with approved tagline ✓; §5 vendored fonts + SHA-256 provenance tests + fail-closed pdffonts with normalization (Tasks 2, 8) + download permission gate ✓; §6 tokens: category colors incl. "Etch & Ion Beam" label, type scale, image wells 215×200 (170 plasma-cleaner), pillar cards, CTA band literal, print robustness, 12.5px exception allowlist test (Task 7) ✓; §7 evidence strong parity per-block with optional-DOI branches + fixture retirement in-step (Task 6), evidence-fixture SHA pinned & directly compared (Tasks 1, 9), 14→15 sweep enumerated at the real line numbers (Task 5) ✓; §8 hard asserts (Task 9) ✓; §9 pilot = full 15-page worktree build with hard font/page/size gates + all-page regression check + STOP + mktemp patch reuse contract (Task 4) ✓; §10 allowlist == Task 9 list (21 paths = 20 files + 1 deletion, count-asserted) ✓.
+**1. Spec coverage:** D1–D5 ✓ (15p, typographic cover, fonts, direct replace, token port). §3 PAGE_ORDER single source + shape/sequence/TOC/data-category tests (Task 5) ✓; §4 cover literals + banned scan as data tests (Task 3) with approved tagline ✓; §5 vendored fonts + SHA-256 provenance tests + fail-closed pdffonts with normalization (Tasks 2, 8) + download permission gate ✓; §6 tokens: category colors incl. "Etch & Ion Beam" label, type scale, image wells 215×200 (170 plasma-cleaner), pillar cards, CTA band literal, print robustness, 12.5px exception allowlist test (Task 7) ✓; §7 evidence strong parity per-block with optional-DOI branches + fixture retirement in-step (Task 6), evidence-fixture SHA pinned & directly compared (Tasks 1, 9), 14→15 sweep enumerated at the real line numbers (Task 5) ✓; §8 hard asserts (Task 9) ✓; §9 pilot = full 15-page worktree build with hard gates (pypdf 15p, <2MB, screenshot count, `parsePdfFonts` emb=yes/sub=yes reuse) + all-page regression check + STOP + per-task format-patch reuse contract with applied-once ledger (Task 4) ✓; §10 allowlist == Task 9 list (22 paths = 21 files + 1 deletion, count-asserted, deletion verified as status-D exactly-one) ✓; single-source banned policy `bannedContent.ts` shared by cover test + generator (Tasks 3, 8) ✓; archive paths recorded in PROVENANCE.md, never by editing the plan (Task 2 Step 0b) ✓; font-size scan comment-stripped, all-declarations, @media-guarded, with a scanner self-test (Task 7) ✓.
 
 **2. Placeholder scan:** all copy literals pinned. Task 2 Step 0b/Step 1 `<…>` markers are EXECUTION-FILLED values (archive paths/SHAs unknowable before the authorized download) with an explicit write-back-into-the-plan step — not open placeholders. The canned `pdffonts` sample in Task 8 Step 1 must be column-aligned against real `pdffonts` output when the test is written (the slice-based parser depends on header/row alignment). No TBDs.
 
-**3. Type/name consistency:** `GuideCover` (types) ↔ `cover` (guideMeta) ↔ Task 5 cover builder; `PAGE_ORDER`/`CATEGORY_META`/`PageEntry` exported from the renderer and imported by tests; `data-page`/`data-category`/`data-study-index`/`.j/.y/.t/.pf/.cite/.doi` field elements/`.toc-name`/`.toc-page`/`.pillar-card`/`.cta-band` used consistently across Tasks 5–7 tests and implementations; `equipmentGuideFontsCss()` wired in Task 2 and reused in Task 5; `parsePdfFonts`/`assertEmbeddedFontsOutput` defined in Task 8 Step 2 and imported by the generator in Step 3; final allowlist = 21 paths (20 files + 1 deletion) and Task 9 hard-asserts that count.
+**3. Type/name consistency:** `GuideCover` (types) ↔ `cover` (guideMeta) ↔ Task 5 cover builder; `PAGE_ORDER`/`CATEGORY_META`/`PageEntry` exported from the renderer and imported by tests; `data-page`/`data-category`/`data-study-index`/`.j/.y/.t/.pf/.cite/.doi` field elements/`.toc-name`/`.toc-page`/`.pillar-card`/`.cta-band` used consistently across Tasks 5–7 tests and implementations; `equipmentGuideFontsCss()` wired in Task 2 and reused in Task 5; `parsePdfFonts`/`assertEmbeddedFontsOutput` defined in Task 8 Step 2, imported by the generator in Step 3, and reused by the pilot gate; `BANNED_CONTENT_PATTERNS` created in Task 3 Step 0, consumed by the cover test and (Task 8) the generator; final allowlist = 22 paths (21 files + 1 deletion) and Task 9 hard-asserts both the count and the exactly-one-deletion status.

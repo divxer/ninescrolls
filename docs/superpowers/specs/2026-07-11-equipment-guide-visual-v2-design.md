@@ -161,7 +161,7 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 - Modify: `src/templates/equipmentGuide/renderEquipmentGuideHtml.ts`, `equipmentGuide.css.ts`, `renderEquipmentGuideHtml.test.ts`
 - Modify: `src/data/equipmentGuide/guideMeta.ts` (add `cover` object only), `types.ts` (add `cover` type), `equipmentGuide.data.test.ts` (cover-literal tests)
 - Create: `src/templates/equipmentGuide/fontsCss.ts`, `src/templates/equipmentGuide/fonts/*` (5 woff2 + 2 OFL + PROVENANCE.md)
-- Create: `src/templates/equipmentGuide/pdfFontsCheck.ts` + `pdfFontsCheck.test.ts` (pure, unit-tested pdffonts parsing/validation), `tsconfig.scripts.json` (real typecheck for scripts/)
+- Create: `src/templates/equipmentGuide/pdfFontsCheck.ts` + `pdfFontsCheck.test.ts` (pure, unit-tested pdffonts parsing/validation), `tsconfig.scripts.json` (real typecheck for scripts/), `src/data/equipmentGuide/bannedContent.ts` (single-source banned-content policy shared by generator + tests)
 - Modify: `scripts/generate-equipment-guide.ts` (EXPECTED_PAGES, required strings, pdffonts assert wiring)
 - Delete: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 - Modify: `public/NineScrolls-Equipment-Guide.pdf` (finalize only)
