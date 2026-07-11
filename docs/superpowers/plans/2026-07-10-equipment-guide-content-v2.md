@@ -12,7 +12,7 @@
 
 ## Blocking preflight (must pass before Task 1)
 
-1. **#273 merged:** `gh pr view 273 --json state -q .state` must print `MERGED`. If not, STOP — v2 depends on v1's renderer/data being on `main`. (This is a hard gate, not a suggestion. As of writing #273 is still `OPEN` — merge it before starting.)
+1. **#273 merged:** `gh pr view 273 --json state -q .state` must print `MERGED`. If not, STOP — v2 depends on v1's renderer/data being on `main`. (This is a hard gate, not a suggestion. ✅ #273 was squash-merged into `main` on 2026-07-11 as commit `9e8e4f3e`, and its head branch `feature/equipment-guide-logo` was deleted — this gate now passes.)
 2. **Fresh main + rebase:** `git fetch origin --prune`; then `git rebase origin/main` this branch onto the merged v1.
 3. **Pin the baseline to an immutable SHA immediately after the rebase** — do NOT keep using the moving `origin/main` ref (it can advance again before Task 1 runs). The merged-v1 tip is byte-identical to the old `f76765a8` but permanent and reachable in a fresh clone (the orphan is not):
 ```bash
