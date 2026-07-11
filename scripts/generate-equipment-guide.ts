@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import puppeteer from 'puppeteer';
 import sharp from 'sharp';
@@ -118,8 +118,12 @@ async function main() {
       headerTemplate: '<span></span>',
       footerTemplate,
     });
-    writeFileSync(outPath, pdf);
-    validatePdf(outPath);
+    // Write to a temp path, validate, and only rename into place on success — so a
+    // validation failure never leaves an invalid PDF on disk to be committed.
+    const tmpPath = `${outPath}.tmp`;
+    writeFileSync(tmpPath, pdf);
+    validatePdf(tmpPath);
+    renameSync(tmpPath, outPath);
     console.log(`Wrote ${outPath} (${(pdf.length / 1024).toFixed(0)} KB)`);
   } finally {
     await browser.close();

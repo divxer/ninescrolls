@@ -19,6 +19,11 @@ describe('parsePdfFonts', () => {
     expect(() => parsePdfFonts('')).toThrow();
     expect(() => parsePdfFonts('garbage with no header')).toThrow();
   });
+  it('parses emb/sub correctly even when a long name overflows the fixed-width column', () => {
+    // real variable-font instance names overrun the 36-char name column, shifting absolute offsets
+    const long = `${HEADER}\nEAAAAA+SpaceGrotesk-Light_wght2580000 Type 3           Custom           yes yes yes     12  0`;
+    expect(parsePdfFonts(long)).toEqual([{ name: 'EAAAAA+SpaceGrotesk-Light_wght2580000', emb: 'yes', sub: 'yes' }]);
+  });
 });
 
 describe('assertEmbeddedFontsOutput', () => {
