@@ -340,16 +340,27 @@ PDIR=$(mktemp -d)
 git format-patch --output-directory "$PDIR" HEAD~4..HEAD   # 0001 structure, 0002 evidence, 0003 tokens, 0004 generator
 ls "$PDIR"; echo "PDIR=$PDIR"
 ```
-Report `PDIR` to the controller. **Reuse contract for Tasks 5–8:** each task, AFTER its RED step, applies ONLY its own patch — ledger-checked BEFORE, fail-closed on drift, registered atomically AFTER:
+Report `PDIR` to the controller. **Reuse contract for Tasks 5–8 — a RECOVERABLE exactly-once protocol** (apply and ledger-write cannot be one atomic transaction across git + the filesystem, so every state is detectable and recoverable instead):
 ```bash
 N=000N   # this task's patch number
-grep -qx "$N" "$STATE_DIR/applied-patches" 2>/dev/null && { echo "FAIL: patch $N already applied"; exit 1; }
-git apply --check -p1 "$PDIR/$N-pilot-"*.patch \
-  || { echo "STOP: context drift on patch $N — transfer its hunks MANUALLY (never apply another task's patch), run the suite to green, then register: echo $N >> $STATE_DIR/applied-patches"; exit 1; }
-git apply -p1 "$PDIR/$N-pilot-"*.patch
-echo "$N" >> "$STATE_DIR/applied-patches"
+LEDGER="$STATE_DIR/applied-patches"; touch "$LEDGER"
+register(){ local tmp; tmp=$(mktemp "$STATE_DIR/.ledgerXXXXXX");   # atomic ledger update: copy + append + rename
+  grep -qx "$N" "$LEDGER" && { echo "FAIL: patch $N already registered (duplicate registration attempt)"; exit 1; }
+  cat "$LEDGER" > "$tmp"; echo "$N" >> "$tmp"; mv -f "$tmp" "$LEDGER"; }
+grep -qx "$N" "$LEDGER" && { echo "FAIL: patch $N already registered — do not re-apply"; exit 1; }
+if git apply --reverse --check -p1 "$PDIR/$N-pilot-"*.patch 2>/dev/null; then
+  # crash-recovery state: applied earlier, never registered — verify, then register; do NOT re-apply
+  npx vitest run src/data/equipmentGuide src/templates/equipmentGuide --exclude '**/.claude/**' \
+    || { echo "FAIL: patch $N present in tree but suite red — resolve before registering"; exit 1; }
+  register; echo "recovered: patch $N verified green and registered"
+else
+  git apply --check -p1 "$PDIR/$N-pilot-"*.patch \
+    || { echo "STOP: context drift on patch $N — transfer its hunks MANUALLY (never apply another task's patch), run the suite to green, then register with the same register() flow (duplicate-check + tmp + mv)"; exit 1; }
+  git apply -p1 "$PDIR/$N-pilot-"*.patch
+  register
+fi
 ```
-The `applied-patches` ledger in the Task 1 state dir enforces at-most-once for BOTH routes: automatic apply registers immediately after a successful apply; the manual-transfer route registers only after the transfer is complete and the suite is green (the STOP message carries the exact command). The signed-off pilot patches are AUTHORITATIVE for token values — where a patch's constants (image-well heights, plasma-cleaner tier paddings, cover spacing) differ from the reference values written in Tasks 5–7 below, the patch wins and the executing task notes the difference in its commit message; the plan file itself is never edited at execution time.
+Both routes end in `register()` (duplicate-check + temp file + `mv`); the manual-transfer route registers only after transfer + green, using the same duplicate-checked flow. The `--reverse --check` probe makes the applied-but-unregistered crash state self-healing. The signed-off pilot patches are AUTHORITATIVE for token values — where a patch's constants (image-well heights, plasma-cleaner tier paddings, cover spacing) differ from the reference values written in Tasks 5–7 below, the patch wins and the executing task notes the difference in its commit message; the plan file itself is never edited at execution time.
 Present all 15 page images to the user; **do not proceed until sign-off**. Then:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls

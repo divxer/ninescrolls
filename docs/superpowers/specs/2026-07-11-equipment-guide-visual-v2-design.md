@@ -153,7 +153,7 @@ Layout (typographic, no photo): brandbar; NINESCROLLS logo; eyebrow; title + acc
 
 ## 9. Process (review point 4 — pilot is a FULL 15-page build)
 
-1. **Pilot (isolated worktree, review-only, never committed/pushed):** implement the full skeleton — fonts, PAGE_ORDER, cover, category coding, CSS — enough to generate the **complete 15-page PDF**. Visual polish focuses on cover + RIE + plasma-cleaner, but acceptance reviews ALL pages: the other 12 must show no pagination breaks, no font fallback (`pdffonts` clean), no clipped tables. Screenshots of all 15 pages presented for **user sign-off**; worktree then discarded.
+1. **Pilot (isolated worktree, review-only):** implement the full skeleton — fonts, PAGE_ORDER, cover, category coding, CSS — enough to generate the **complete 15-page PDF**. Pilot changes may be committed ONLY on the isolated throwaway branch, to produce task-shaped patches; those commits are never pushed, merged, or retained in formal history — the branch is deleted after sign-off. Visual polish focuses on cover + RIE + plasma-cleaner, but acceptance reviews ALL pages: the other 12 must show no pagination breaks, no font fallback (`pdffonts` clean), no clipped tables. Screenshots of all 15 pages presented for **user sign-off**; worktree then discarded.
 2. **Batch port (real branch, TDD):** tests first per §3–§7, then implementation, page-by-page verification against the design reference.
 3. **Finalize:** full suite + build + regenerate + hard asserts (§8) + all-15-page inspection + atomic PDF commit + hygiene audit (state-dir pattern from content-v2, allowlist per §10).
 4. One complete PR; direct replacement (D4).
