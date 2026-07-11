@@ -1,4 +1,11 @@
-import type { EquipmentGuideData } from './types';
+import type { EquipmentGuideData, GuideCover } from './types';
+
+export const cover: GuideCover = {
+  eyebrow: 'Precision Instrumentation',
+  title: 'Equipment Guide',
+  tagline: 'Etching, thin-film deposition, lithography, and surface-processing platforms for university, national laboratory, institute, and corporate R&D facilities.',
+  edition: 'Equipment Guide · 2026 Edition · ninescrolls.com · info@ninescrolls.com',
+};
 
 export const about: EquipmentGuideData['about'] = {
   title: 'About NineScrolls LLC',

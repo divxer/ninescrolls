@@ -1,3 +1,10 @@
+export interface GuideCover {
+  eyebrow: string;
+  title: string;
+  tagline: string;
+  edition: string;
+}
+
 export interface SpecRow {
   label: string;
   value: string;

@@ -1,10 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import puppeteer from 'puppeteer';
 import sharp from 'sharp';
 import { equipmentGuideData } from '../src/data/equipmentGuide';
+import { BANNED_CONTENT_PATTERNS } from '../src/data/equipmentGuide/bannedContent';
 import { renderEquipmentGuideHtml } from '../src/templates/equipmentGuide/renderEquipmentGuideHtml';
+import { parsePdfFonts, assertEmbeddedFontsOutput } from '../src/templates/equipmentGuide/pdfFontsCheck';
 
 // Downscale + JPEG-encode each product image so the PDF embeds compact assets
 // instead of full-resolution lossless webp (which Chrome re-encodes losslessly,
@@ -14,7 +16,7 @@ const IMG_CACHE = resolve(process.cwd(), 'tmp', 'equipment-guide-images');
 const JPEG_WIDTH = 1100;
 const JPEG_QUALITY = 85;
 const MAX_PDF_BYTES = 2_000_000;
-const EXPECTED_PAGES = 14;
+const EXPECTED_PAGES = 15;
 
 function cachePathFor(publicRelPath: string): string {
   const base = basename(publicRelPath).replace(/\.[^.]+$/, '');
@@ -56,6 +58,14 @@ function validatePdf(outPath: string): void {
     throw new Error(`Expected ${EXPECTED_PAGES} PDF pages, got ${pages || 'unknown'}`);
   }
 
+  let fontsOut: string;
+  try {
+    fontsOut = execFileSync('pdffonts', [outPath], { encoding: 'utf8' });
+  } catch {
+    throw new Error('pdffonts (poppler) is a REQUIRED build dependency — brew install poppler');
+  }
+  assertEmbeddedFontsOutput(parsePdfFonts(fontsOut));
+
   const text = execFileSync('pdftotext', [outPath, '-'], { encoding: 'utf8' });
   const lowerText = text.toLowerCase();
   const required = [
@@ -64,6 +74,10 @@ function validatePdf(outPath: string): void {
     'MEB-600',
     'Φ6 in x1 flat substrate holder',
     '6.7×10',
+    'Equipment Guide · 2026 Edition',
+    'Ready to scope your process?',
+    'Etch & Ion Beam',
+    'Contact NineScrolls',
   ];
   for (const phrase of required) {
     if (!lowerText.includes(phrase.toLowerCase())) {
@@ -71,21 +85,7 @@ function validatePdf(outPath: string): void {
     }
   }
 
-  const banned = [
-    /tyloong/i,
-    /zhongke|tailong|中科泰隆/i,
-    /chuangshi|创世威纳/i,
-    /trusted manufacturer partner/i,
-    /global installations/i,
-    /research institutions served/i,
-    /30\+\s*years/i,
-    /1000\+/i,
-    /300\+/i,
-    /1×8|1x8|5×4|5x4/i,
-    /3-5%/i,
-    /8×10⁻⁴|8x10\^-4/i,
-  ];
-  for (const pattern of banned) {
+  for (const pattern of BANNED_CONTENT_PATTERNS) {
     if (pattern.test(text)) {
       throw new Error(`Generated PDF contains banned text matching ${pattern}`);
     }
@@ -97,20 +97,33 @@ async function main() {
   const html = renderEquipmentGuideHtml(equipmentGuideData, optimizedResolver);
   const outPath = resolve(process.cwd(), 'public', 'NineScrolls-Equipment-Guide.pdf');
 
+  // Chrome renders the print footer in a separate mini-document that does NOT inherit
+  // the page's styles — without an inline @font-face it falls back to Times, which the
+  // fail-closed pdffonts gate rejects. Embed Inter 400 directly in the footer template.
+  const footerFontB64 = readFileSync(
+    resolve(process.cwd(), 'src/templates/equipmentGuide/fonts/Inter-Regular.woff2'),
+  ).toString('base64');
+  const footerTemplate = `<style>@font-face{font-family:'Inter';font-style:normal;font-weight:400;src:url(data:font/woff2;base64,${footerFontB64}) format('woff2');}</style><div style="width:100%;font-family:'Inter',sans-serif;font-size:9px;color:#64748b;text-align:center;">Page <span class="pageNumber"></span> of <span class="totalPages"></span> &nbsp;·&nbsp; ninescrolls.com</div>`;
+
   const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load' });
+    await page.evaluateHandle('document.fonts.ready');
     const pdf = await page.pdf({
       format: 'Letter',
       printBackground: true,
       margin: { top: '0.6in', right: '0.6in', bottom: '0.7in', left: '0.6in' },
       displayHeaderFooter: true,
       headerTemplate: '<span></span>',
-      footerTemplate: '<div style="width:100%;font-size:9px;color:#64748b;text-align:center;">Page <span class="pageNumber"></span> of <span class="totalPages"></span> &nbsp;·&nbsp; ninescrolls.com</div>',
+      footerTemplate,
     });
-    writeFileSync(outPath, pdf);
-    validatePdf(outPath);
+    // Write to a temp path, validate, and only rename into place on success — so a
+    // validation failure never leaves an invalid PDF on disk to be committed.
+    const tmpPath = `${outPath}.tmp`;
+    writeFileSync(tmpPath, pdf);
+    validatePdf(tmpPath);
+    renameSync(tmpPath, outPath);
     console.log(`Wrote ${outPath} (${(pdf.length / 1024).toFixed(0)} KB)`);
   } finally {
     await browser.close();
