@@ -124,9 +124,12 @@ shasum -a 256 *.woff2
 | Inter-Regular.woff2         | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
 | Inter-Medium.woff2          | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
 | Inter-SemiBold.woff2        | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
+| OFL-SpaceGrotesk.txt        | floriankarsten/space-grotesk | 2.0.0 | <release url> | <exact archive path> | <real sha256> |
+| OFL-Inter.txt               | rsms/inter | 4.1 | <release url> | <exact archive path> | <real sha256> |
 
-Licenses: SIL OFL 1.1 — OFL-SpaceGrotesk.txt, OFL-Inter.txt (committed). Refresh policy: only via an explicit spec change.
+Licenses: SIL OFL 1.1. Refresh policy: only via an explicit spec change.
 ```
+(The two license files get full provenance rows — same structure, `shasum -a 256 *.txt` for their hashes.)
 (`<…>` are filled with the Step 0b/Step 1 real values at vendoring time — the committed file contains no placeholders.)
 
 - [ ] **Step 2: Write the failing font tests FIRST**
@@ -150,11 +153,17 @@ describe('visual-v2 fonts (deterministic, embedded)', () => {
       expect(sha, f).toBe(rows.get(f));
     }
   });
-  it('committed licenses are genuine SIL OFL 1.1 texts', () => {
+  it('committed licenses are genuine SIL OFL 1.1 texts with their own provenance rows (filename-bound SHA)', () => {
+    const prov = readFileSync(resolve(FONT_DIR, 'PROVENANCE.md'), 'utf8');
+    const rows = new Map(
+      [...prov.matchAll(/^\|\s*(\S+\.txt)\s*\|.*\|\s*([0-9a-f]{64})\s*\|\s*$/gm)].map(m => [m[1], m[2]]),
+    );
     for (const lic of ['OFL-SpaceGrotesk.txt', 'OFL-Inter.txt']) {
       const t = readFileSync(resolve(FONT_DIR, lic), 'utf8');
       expect(t, lic).toMatch(/SIL OPEN FONT LICENSE/i);
       expect(t, lic).toMatch(/Version 1\.1/);
+      const sha = createHash('sha256').update(readFileSync(resolve(FONT_DIR, lic))).digest('hex');
+      expect(sha, `${lic} provenance row`).toBe(rows.get(lic));
     }
   });
   it('renders one base64 @font-face per committed woff2 (no network sources)', () => {
@@ -225,7 +234,7 @@ export const BANNED_CONTENT_PATTERNS: RegExp[] = [
   /research-grade/i, /industry-leading/i, /world-class/i, /state-of-the-art/i, /best-in-class/i, /unmatched/i,
 ];
 ```
-(Reconcile against the actual generator list when copying — the generator's regexes are authoritative; nothing may be dropped. `scripts/generate-equipment-guide.ts` switches to importing this constant in Task 8 Step 3, eliminating the dual source.)
+(This is the spec §7-approved **policy strengthening**: the union of the generator list + data-test lists + superlatives. Reconcile against the actual generator list when copying — nothing from it may be dropped; the additions are deliberate. `scripts/generate-equipment-guide.ts` switches to importing this constant in Task 8 Step 3, eliminating the dual source. If the strengthened scan trips on any CURRENT guide string, fix the copy — never weaken the pattern.)
 
 - [ ] **Step 1: Write the failing cover tests FIRST**
 
@@ -277,7 +286,7 @@ export const cover: GuideCover = {
 
 ### Task 4: PILOT — full 15-page build in an isolated worktree (spec §9; STOP for sign-off)
 
-**Files (throwaway worktree only):** renderer/CSS/generator — no tests, no commits, never pushed.
+**Files (throwaway worktree only):** renderer/CSS/generator — no tests. **Commit policy:** temporary commits are allowed ONLY on the throwaway branch (they exist to produce per-task patches); they are never pushed and never reach the real branch's history — the worktree and its branch are destroyed in Step 5.
 
 - [ ] **Step 1: Worktree + node_modules link**
 
@@ -331,13 +340,16 @@ PDIR=$(mktemp -d)
 git format-patch --output-directory "$PDIR" HEAD~4..HEAD   # 0001 structure, 0002 evidence, 0003 tokens, 0004 generator
 ls "$PDIR"; echo "PDIR=$PDIR"
 ```
-Report `PDIR` to the controller. **Reuse contract for Tasks 5–8:** each task, AFTER its RED step, applies ONLY its own patch:
+Report `PDIR` to the controller. **Reuse contract for Tasks 5–8:** each task, AFTER its RED step, applies ONLY its own patch — ledger-checked BEFORE, fail-closed on drift, registered atomically AFTER:
 ```bash
-git apply --check -p1 "$PDIR/000N-pilot-<slice>.patch" || { echo "context drift — transfer this patch's hunks manually, do NOT apply others"; }
-git apply -p1 "$PDIR/000N-pilot-<slice>.patch" && echo "000N" >> "$STATE_DIR/applied-patches"
-grep -c "000N" "$STATE_DIR/applied-patches" | grep -qx 1 || { echo "FAIL: patch 000N applied more than once"; exit 1; }
+N=000N   # this task's patch number
+grep -qx "$N" "$STATE_DIR/applied-patches" 2>/dev/null && { echo "FAIL: patch $N already applied"; exit 1; }
+git apply --check -p1 "$PDIR/$N-pilot-"*.patch \
+  || { echo "STOP: context drift on patch $N — transfer its hunks MANUALLY (never apply another task's patch), run the suite to green, then register: echo $N >> $STATE_DIR/applied-patches"; exit 1; }
+git apply -p1 "$PDIR/$N-pilot-"*.patch
+echo "$N" >> "$STATE_DIR/applied-patches"
 ```
-A patch is applied AT MOST ONCE (the `applied-patches` ledger in the Task 1 state dir enforces it); if `--check` fails because the task's freshly-written tests shifted context, transfer that patch's hunks manually — never resolve by applying a different task's patch early. Any pagination constants discovered during the pilot (image-well heights, plasma-cleaner tier paddings, cover spacing) are ALSO written back into Task 7's token list before Task 5 starts, so the plan text and the patches agree.
+The `applied-patches` ledger in the Task 1 state dir enforces at-most-once for BOTH routes: automatic apply registers immediately after a successful apply; the manual-transfer route registers only after the transfer is complete and the suite is green (the STOP message carries the exact command). The signed-off pilot patches are AUTHORITATIVE for token values — where a patch's constants (image-well heights, plasma-cleaner tier paddings, cover spacing) differ from the reference values written in Tasks 5–7 below, the patch wins and the executing task notes the difference in its commit message; the plan file itself is never edited at execution time.
 Present all 15 page images to the user; **do not proceed until sign-off**. Then:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
@@ -631,33 +643,38 @@ describe('visual-v2 tokens', () => {
     expect([...about.matchAll(/class="pillar-card"/g)]).toHaveLength(4);
     expect([...about.matchAll(/<svg[\s>]/g)].length).toBeGreaterThanOrEqual(4);
   });
-  it('every sub-12.5px font-size in the CSS belongs to the spec §6 exception allowlist (comment-stripped, ALL declarations per rule)', () => {
-    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub']);
-    const css = equipmentGuideCss.replace(/\/\*[\s\S]*?\*\//g, '');      // strip comments first
-    expect(css).not.toContain('@media');                                  // flat rule set assumed — a nested block would silently escape this parser
-    let checked = 0;
+  // ONE scanner used by both the production check and its self-test — no duplicated algorithm to drift.
+  // Returns every (selector, size) pair below the floor; total = every font-size declaration seen.
+  const scanFontSizes = (cssText: string, floorPx: number): { below: Array<{ selector: string; size: number }>; total: number } => {
+    const css = cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+    if (css.includes('@media')) throw new Error('scanFontSizes: nested @media not supported — flat rule set required');
+    const below: Array<{ selector: string; size: number }> = [];
+    let total = 0;
     for (const [, rawSelector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
       if (rawSelector.trim().startsWith('@page')) continue;
-      const sizes = [...body.matchAll(/font-size:\s*([\d.]+)px/g)].map(m => parseFloat(m[1])); // ALL declarations, not just the first
-      for (const size of sizes) {
-        checked++;
-        if (size >= 12.5) continue;
-        for (const s of rawSelector.trim().split(',').map(x => x.trim())) {
-          expect(ALLOW.has(s), `${s} @ ${size}px not in spec exception list`).toBe(true);
-        }
+      for (const m of body.matchAll(/font-size:\s*([\d.]+)px/g)) {   // ALL declarations per rule
+        total++;
+        const size = parseFloat(m[1]);
+        if (size < floorPx) for (const s of rawSelector.trim().split(',').map(x => x.trim())) below.push({ selector: s, size });
       }
     }
-    expect(checked).toBeGreaterThan(10); // the scan really walked the sheet
+    return { below, total };
+  };
+  it('every sub-12.5px font-size in the CSS belongs to the spec §6 exception allowlist (exact selectors)', () => {
+    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub']);
+    const { below, total } = scanFontSizes(equipmentGuideCss, 12.5);
+    for (const { selector, size } of below) {
+      expect(ALLOW.has(selector), `${selector} @ ${size}px not in spec exception list`).toBe(true);
+    }
+    expect(total).toBeGreaterThan(10); // the scan really walked the sheet
   });
-  it('font-size scanner self-test: catches comma selectors, duplicates in one rule, decimals', () => {
+  it('scanFontSizes self-test: comma selectors, duplicate declarations in one rule, decimals, comments, @media guard', () => {
     const sample = `/* x */ .a, .bad { font-size: 13px; font-size: 10.5px; } .eyebrow { font-size: 10px; }`;
-    const hits: string[] = [];
-    for (const [, sel, body] of sample.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-      for (const m of body.matchAll(/font-size:\s*([\d.]+)px/g)) {
-        if (parseFloat(m[1]) < 12.5) for (const s of sel.trim().split(',').map(x => x.trim())) hits.push(`${s}@${m[1]}`);
-      }
-    }
-    expect(hits).toEqual(['.a@10.5', '.bad@10.5', '.eyebrow@10']);
+    expect(scanFontSizes(sample, 12.5).below).toEqual([
+      { selector: '.a', size: 10.5 }, { selector: '.bad', size: 10.5 }, { selector: '.eyebrow', size: 10 },
+    ]);
+    expect(scanFontSizes(sample, 12.5).total).toBe(3);
+    expect(() => scanFontSizes('@media print { .x { font-size: 9px; } }', 12.5)).toThrow(/@media/);
   });
   it('category color is applied via data-category rules', () => {
     for (const meta of Object.values(CATEGORY_META)) expect(equipmentGuideCss).toContain(meta.color);
@@ -950,6 +967,6 @@ echo "hygiene OK — ready for PR"
 
 **1. Spec coverage:** D1–D5 ✓ (15p, typographic cover, fonts, direct replace, token port). §3 PAGE_ORDER single source + shape/sequence/TOC/data-category tests (Task 5) ✓; §4 cover literals + banned scan as data tests (Task 3) with approved tagline ✓; §5 vendored fonts + SHA-256 provenance tests + fail-closed pdffonts with normalization (Tasks 2, 8) + download permission gate ✓; §6 tokens: category colors incl. "Etch & Ion Beam" label, type scale, image wells 215×200 (170 plasma-cleaner), pillar cards, CTA band literal, print robustness, 12.5px exception allowlist test (Task 7) ✓; §7 evidence strong parity per-block with optional-DOI branches + fixture retirement in-step (Task 6), evidence-fixture SHA pinned & directly compared (Tasks 1, 9), 14→15 sweep enumerated at the real line numbers (Task 5) ✓; §8 hard asserts (Task 9) ✓; §9 pilot = full 15-page worktree build with hard gates (pypdf 15p, <2MB, screenshot count, `parsePdfFonts` emb=yes/sub=yes reuse) + all-page regression check + STOP + per-task format-patch reuse contract with applied-once ledger (Task 4) ✓; §10 allowlist == Task 9 list (22 paths = 21 files + 1 deletion, count-asserted, deletion verified as status-D exactly-one) ✓; single-source banned policy `bannedContent.ts` shared by cover test + generator (Tasks 3, 8) ✓; archive paths recorded in PROVENANCE.md, never by editing the plan (Task 2 Step 0b) ✓; font-size scan comment-stripped, all-declarations, @media-guarded, with a scanner self-test (Task 7) ✓.
 
-**2. Placeholder scan:** all copy literals pinned. Task 2 Step 0b/Step 1 `<…>` markers are EXECUTION-FILLED values (archive paths/SHAs unknowable before the authorized download) with an explicit write-back-into-the-plan step — not open placeholders. The canned `pdffonts` sample in Task 8 Step 1 must be column-aligned against real `pdffonts` output when the test is written (the slice-based parser depends on header/row alignment). No TBDs.
+**2. Placeholder scan:** all copy literals pinned. Task 2 Step 0b/Step 1 `<…>` markers are EXECUTION-FILLED values (archive paths/SHAs unknowable before the authorized download) recorded in the committed `PROVENANCE.md` table — the plan file is never edited at execution time; these are not open placeholders. The canned `pdffonts` sample in Task 8 Step 1 must be column-aligned against real `pdffonts` output when the test is written (the slice-based parser depends on header/row alignment). No TBDs.
 
 **3. Type/name consistency:** `GuideCover` (types) ↔ `cover` (guideMeta) ↔ Task 5 cover builder; `PAGE_ORDER`/`CATEGORY_META`/`PageEntry` exported from the renderer and imported by tests; `data-page`/`data-category`/`data-study-index`/`.j/.y/.t/.pf/.cite/.doi` field elements/`.toc-name`/`.toc-page`/`.pillar-card`/`.cta-band` used consistently across Tasks 5–7 tests and implementations; `equipmentGuideFontsCss()` wired in Task 2 and reused in Task 5; `parsePdfFonts`/`assertEmbeddedFontsOutput` defined in Task 8 Step 2, imported by the generator in Step 3, and reused by the pilot gate; `BANNED_CONTENT_PATTERNS` created in Task 3 Step 0, consumed by the cover test and (Task 8) the generator; final allowlist = 22 paths (21 files + 1 deletion) and Task 9 hard-asserts both the count and the exactly-one-deletion status.
