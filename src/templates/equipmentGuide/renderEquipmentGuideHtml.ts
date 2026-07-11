@@ -88,10 +88,12 @@ function coverPage(d: EquipmentGuideData): string {
       .filter(x => x.e.kind === 'product' && (x.e as { category: GuideCategory }).category === cat)
       .map(x => {
         const p = d.products.find(pp => pp.id === (x.e as { id: string }).id)!;
-        return `<li><span class="toc-name">${esc(p.series)}</span><span class="toc-page">${x.page}</span></li>`;
+        return `<li><span class="toc-name">${esc(p.series)}</span><span class="toc-dots"></span><span class="toc-page">${x.page}</span></li>`;
       }).join('');
     return `<div class="toc-col" data-toc-category="${cat}"><p class="toc-cat" style="color:${CATEGORY_META[cat].color};border-color:${CATEGORY_META[cat].color}">${esc(CATEGORY_META[cat].label)}</p><ul>${entries}</ul></div>`;
   }).join('');
+  const pageOf = (kind: string) => PAGE_ORDER.findIndex(e => e.kind === kind) + 1;
+  const frontMatter = `<div class="toc-front"><span>About&nbsp;<b>${pageOf('about')}</b></span><span>Peer-Reviewed Validation&nbsp;<b>${pageOf('evidence')}</b></span><span>Contact&nbsp;<b>${pageOf('contact')}</b></span></div>`;
   return `
   <section class="page page--cover" data-page="cover">
     ${brandbar('navy')}
@@ -100,9 +102,10 @@ function coverPage(d: EquipmentGuideData): string {
       <h1 class="cover-title">${esc(cover.title)}</h1>
       <div class="section-accent"></div>
       <p class="cover-tagline">${esc(cover.tagline)}</p>
-      <p class="cover-edition">${esc(cover.edition)}</p>
     </div>
     <div class="toc">${groups}</div>
+    ${frontMatter}
+    <p class="cover-edition">${esc(cover.edition)}</p>
     <div class="page-foot"></div>
   </section>`;
 }

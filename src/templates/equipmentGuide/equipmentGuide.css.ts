@@ -73,13 +73,17 @@ export const equipmentGuideCss = `
   .cover-main { margin-top: 90px; }
   .cover-title { font-size: 46px; letter-spacing: -0.01em; margin: 4px 0 10px; }
   .cover-tagline { font-size: 14px; color: #334155; max-width: 58ch; }
-  .cover-edition { font-size: 11px; color: #64748b; letter-spacing: .06em; margin-top: 10px; }
+  .cover-edition { font-size: 11px; color: #64748b; letter-spacing: .06em; margin-top: 12px; }
   .toc { display: flex; gap: 28px; margin-top: auto; padding-top: 24px; border-top: 1px solid #eef2f7; }
   .toc-col { flex: 1; }
   .toc-cat { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; border-bottom: 2px solid; padding-bottom: 5px; margin-bottom: 8px; }
   .toc ul { list-style: none; margin: 0; padding: 0; }
-  .toc li { display: flex; justify-content: space-between; font-size: 12.5px; color: #0f172a; padding: 3px 0; }
-  .toc-page { color: #64748b; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .toc li { display: flex; align-items: flex-end; font-size: 12.5px; color: #0f172a; padding: 3px 0; }
+  .toc-name { flex: 0 1 auto; }
+  .toc-dots { flex: 1 1 auto; min-width: 10px; border-bottom: 1px dotted #b6c2d2; margin: 0 6px 4px; }
+  .toc-page { flex: 0 0 auto; color: #475569; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .toc-front { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eef2f7; font-size: 11px; color: #64748b; }
+  .toc-front b { color: #475569; font-weight: 600; }
   /* e-beam: 10-row spec table + 4 wrapping app chips — tighten locally to hold one page */
   section[data-product-id="e-beam"] td, section[data-product-id="e-beam"] th { padding-top: 4px; padding-bottom: 4px; }
   section[data-product-id="e-beam"] .apps { margin-top: 8px; padding: 7px 12px; }

@@ -307,11 +307,21 @@ describe('visual-v2 structure — PAGE_ORDER single source of truth', () => {
     for (const [i, e] of PAGE_ORDER.entries()) {
       if (e.kind !== 'product') continue;
       const p = equipmentGuideData.products.find(x => x.id === (e as { id: string }).id)!;
-      const re = new RegExp(`<span class="toc-name">${esc(p.series).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</span><span class="toc-page">${i + 1}</span>`);
+      const re = new RegExp(`<span class="toc-name">${esc(p.series).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</span><span class="toc-dots"></span><span class="toc-page">${i + 1}</span>`);
       expect(coverChunk, p.id).toMatch(re);
     }
     for (const meta of Object.values(CATEGORY_META)) expect(coverChunk).toContain(`>${esc(meta.label)}<`);
     expect([...coverChunk.matchAll(/class="toc-name"/g)]).toHaveLength(11);
+    expect([...coverChunk.matchAll(/class="toc-dots"/g)]).toHaveLength(11); // leader dots on every entry
+  });
+
+  it('cover front-matter row lists About/Evidence/Contact with their PAGE_ORDER page numbers', () => {
+    const coverChunk = chunks[0];
+    const pageOf = (kind: string) => PAGE_ORDER.findIndex(e => e.kind === kind) + 1;
+    expect(coverChunk).toContain('class="toc-front"');
+    expect(coverChunk).toContain(`About&nbsp;<b>${pageOf('about')}</b>`);
+    expect(coverChunk).toContain(`Peer-Reviewed Validation&nbsp;<b>${pageOf('evidence')}</b>`);
+    expect(coverChunk).toContain(`Contact&nbsp;<b>${pageOf('contact')}</b>`);
   });
 
   it('cover renders the pinned literals and one navy logo', () => {
@@ -341,7 +351,7 @@ const scanFontSizes = (cssText: string, floorPx: number): { below: Array<{ selec
 };
 describe('visual-v2 font-size floor', () => {
   it('every sub-12.5px font-size belongs to the spec §6 exception allowlist (exact selectors)', () => {
-    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub', '.footer-bar', '.fb-slogan']);
+    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub', '.footer-bar', '.fb-slogan', '.toc-front']);
     const { below, total } = scanFontSizes(equipmentGuideCss, 12.5);
     for (const { selector, size } of below) {
       expect(ALLOW.has(selector), `${selector} @ ${size}px not in spec exception list`).toBe(true);
