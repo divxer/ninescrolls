@@ -67,7 +67,7 @@ function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => s
     ? specTable(`<tr><th colspan="2">${esc(p.subTable.title)}</th></tr>${specRowsHtml(p.subTable.specs, false)}`) : '';
   const lead = `<p class="lead">${esc(p.content.lead)}</p>`;
   const apps = `<div class="apps"><p class="lab">Typical applications</p><div class="chips">${p.content.applications.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div></div>`;
-  const cta = `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${p.content.href}">Explore configurations &amp; request a quote <span class="arr">→</span></a></div>`;
+  const cta = `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${p.content.href}">Explore configurations &amp; request a quote <span class="arr">→</span></a><span class="cta-url">ninescrolls.com${p.content.href}</span></div>`;
   return `
   <section class="page page--product" data-product-id="${p.id}">
     ${brandbar('navy')}
