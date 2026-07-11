@@ -181,7 +181,7 @@ const CONTACT_ICONS = [
 
 function contactPage(d: EquipmentGuideData): string {
   const line = (label: string, val: string) => `<p><strong>${esc(label)}:</strong> ${esc(val)}</p>`;
-  const band = `<div class="cta-band">Ready to scope your process? Request a quote — ninescrolls.com/products · sales@ninescrolls.com</div>`;
+  const band = `<div class="cta-band"><span class="cta-band-h">Ready to scope your process? Request a quote</span><span class="sub">ninescrolls.com/products · sales@ninescrolls.com</span></div>`;
   const card = (i: number, label: string, body: string) =>
     `<div class="pillar-card contact-card"><span class="pi">${CONTACT_ICONS[i]}</span><span class="h">${esc(label)}</span><div>${body}</div></div>`;
   const cards = [
@@ -190,11 +190,12 @@ function contactPage(d: EquipmentGuideData): string {
     card(2, 'Contact Information', d.contact.contacts.map(c => line(c.label, c.value)).join('')),
     card(3, 'Technical Support', d.contact.support.map(c => line(c.label, c.value)).join('')),
   ].join('');
-  const footerBar = `<div class="footer-bar"><span class="fb-left"><img class="fb-logo" src="${logoDataUri('navy')}" alt="NineScrolls LLC"/><span>NineScrolls LLC · Equipment Guide</span></span><span class="fb-right">ninescrolls.com · info@ninescrolls.com</span></div>`;
+  const footerBar = `<div class="footer-bar"><span class="fb-left"><img class="fb-logo" src="${logoDataUri('navy')}" alt="NineScrolls LLC"/><span>NineScrolls LLC · Equipment Guide</span></span><span class="fb-right"><span class="fb-slogan">Powered by Precision · U.S. Operations</span><span>ninescrolls.com · info@ninescrolls.com</span></span></div>`;
   return `<section class="page page--contact" data-page="contact">${brandbar('navy')}
-    ${band}
+    <p class="eyebrow">General Inquiries</p>
     <h1>Contact NineScrolls</h1>
     <div class="section-accent"></div>
+    ${band}
     <div class="contact-grid">${cards}</div>
     ${footerBar}
     <div class="page-foot"></div>

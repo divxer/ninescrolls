@@ -46,7 +46,9 @@ export const equipmentGuideCss = `
   .pillar-card .pi svg { width: 18px; height: 18px; }
   .pillar-card .h { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; color: #1e3a5f; margin-bottom: 3px; }
   .pillar-card div { font-size: 12.5px; color: #334155; }
-  .cta-band { background: #0f2440; color: #fff; border-radius: 10px; padding: 14px 18px; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13.5px; margin-bottom: 18px; -webkit-print-color-adjust: exact; }
+  .cta-band { display: flex; flex-direction: column; gap: 4px; background: #0f2440; color: #fff; border-radius: 10px; padding: 16px 18px; margin: 4px 0 18px; -webkit-print-color-adjust: exact; }
+  .cta-band-h { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; }
+  .cta-band .sub { font-size: 11px; font-weight: 400; color: #9fb3cc; letter-spacing: .01em; }
   .apps, .cta, .cta-band { break-inside: avoid; }
   .page--contact { display: flex; flex-direction: column; min-height: 9.1in; }
   .page--contact .page-foot { margin-top: 8px; }
@@ -56,6 +58,8 @@ export const equipmentGuideCss = `
   .footer-bar { margin-top: auto; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #eef2f7; padding-top: 10px; margin-bottom: 6px; font-size: 12.5px; color: #64748b; }
   .fb-left { display: inline-flex; align-items: center; gap: 8px; color: #1e3a5f; font-weight: 600; }
   .fb-logo { height: 20px; width: auto; }
+  .fb-right { display: inline-flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px; }
+  .fb-slogan { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; }
   .family { color: #334155; font-size: 12.5px; margin-top: 8px; }
   .lead { font-size: 13px; color: #334155; margin: 0 0 14px; }
   .apps { margin: 14px 0 0; padding: 10px 12px; border-radius: 9px; background: #f7f9fc; border: 1px solid #eef2f7; }

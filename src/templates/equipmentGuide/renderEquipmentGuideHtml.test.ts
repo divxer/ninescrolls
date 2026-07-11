@@ -341,7 +341,7 @@ const scanFontSizes = (cssText: string, floorPx: number): { below: Array<{ selec
 };
 describe('visual-v2 font-size floor', () => {
   it('every sub-12.5px font-size belongs to the spec §6 exception allowlist (exact selectors)', () => {
-    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub', '.footer-bar']);
+    const ALLOW = new Set(['.eyebrow', '.apps .lab', '.cover-edition', '.toc-page', '.toc-cat', '.study .m', '.study .m .doi', '.disclaimer', '.page-foot', '.brandbar .site', '.cta-band .sub', '.footer-bar', '.fb-slogan']);
     const { below, total } = scanFontSizes(equipmentGuideCss, 12.5);
     for (const { selector, size } of below) {
       expect(ALLOW.has(selector), `${selector} @ ${size}px not in spec exception list`).toBe(true);
@@ -355,5 +355,26 @@ describe('visual-v2 font-size floor', () => {
     ]);
     expect(scanFontSizes(sample, 12.5).total).toBe(3);
     expect(() => scanFontSizes('@media print { .x { font-size: 9px; } }', 12.5)).toThrow(/@media/);
+  });
+});
+
+describe('visual-v2 contact page matches the design', () => {
+  const contact = html.split('<section class="page').slice(1).find(c => c.includes('data-page="contact"'))!;
+  it('has the General Inquiries eyebrow, then heading, then the CTA band below it', () => {
+    const iEyebrow = contact.indexOf('>General Inquiries<');
+    const iHeading = contact.indexOf('Contact NineScrolls');
+    const iBand = contact.indexOf('class="cta-band"');
+    expect(iEyebrow).toBeGreaterThan(-1);
+    expect(iHeading).toBeGreaterThan(iEyebrow);
+    expect(iBand).toBeGreaterThan(iHeading); // band is BELOW the heading, per design
+  });
+  it('renders the CTA band as headline + contact sub-line exactly once', () => {
+    expect(count(contact, 'class="cta-band"')).toBe(1);
+    expect(contact).toContain('<span class="cta-band-h">Ready to scope your process? Request a quote</span>');
+    expect(contact).toContain('<span class="sub">ninescrolls.com/products · sales@ninescrolls.com</span>');
+  });
+  it('footer bar carries the Powered by Precision slogan and site identifiers', () => {
+    expect(contact).toContain('class="fb-slogan">Powered by Precision · U.S. Operations<');
+    expect(contact).toContain('ninescrolls.com · info@ninescrolls.com');
   });
 });
