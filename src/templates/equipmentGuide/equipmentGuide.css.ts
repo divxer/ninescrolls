@@ -57,7 +57,7 @@ export const equipmentGuideCss = `
   .fb-left { display: inline-flex; align-items: center; gap: 8px; color: #1e3a5f; font-weight: 600; }
   .fb-logo { height: 20px; width: auto; }
   .family { color: #334155; font-size: 12.5px; margin-top: 8px; }
-  .lead { font-size: 13px; color: #334155; margin: 0 0 12px; max-width: 52ch; }
+  .lead { font-size: 13px; color: #334155; margin: 0 0 14px; }
   .apps { margin: 14px 0 0; padding: 10px 12px; border-radius: 9px; background: #f7f9fc; border: 1px solid #eef2f7; }
   .apps .lab { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #8a97a6; margin: 0 0 6px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
