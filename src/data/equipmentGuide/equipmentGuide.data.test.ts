@@ -223,3 +223,38 @@ describe('content-v2 scaffolding', () => {
     expect(equipmentGuideData.evidence).toEqual(JSON.parse(FIX('v1-evidence.json')));
   });
 });
+
+const PLASMA_CLEANER_APPS = ['Surface activation', 'Surface cleaning', 'Failure analysis', 'Optical & biomedical device prep'];
+
+describe('content-v2 content integrity', () => {
+  it('all 11 products have a content block — no product may be skipped', () => {
+    expect(equipmentGuideData.products).toHaveLength(11);
+    for (const p of equipmentGuideData.products) expect(p.content, p.id).toBeTruthy();
+  });
+  it('applications = config.applications.items.slice(0, applicationCount), verbatim & ordered', () => {
+    for (const p of equipmentGuideData.products) {
+      const c = p.content!; // guaranteed present by the completeness test above
+      expect([3, 4]).toContain(c.applicationCount);
+      expect(c.applications).toHaveLength(c.applicationCount);
+      if (p.id === 'plasma-cleaner') {
+        expect(c.applicationCount).toBe(4);            // pinned family list is exactly 4, never 3
+        expect(c.applications).toEqual(PLASMA_CLEANER_APPS);
+        continue;
+      }
+      const cfg = WEBSITE_CONFIGS[p.websiteSpecParity!.productSlug as keyof typeof WEBSITE_CONFIGS];
+      expect(c.applications).toEqual(cfg.applications.items.slice(0, c.applicationCount));
+    }
+  });
+  it('content.href equals the canonical route and is site-relative', () => {
+    for (const p of equipmentGuideData.products) {
+      expect(p.content!.href).toBe(PRODUCT_ROUTES[p.id]);
+      expect(p.content!.href).toMatch(/^\/products\/[a-z0-9-]+$/);
+    }
+  });
+  it('every product has 3–4 bullets', () => {
+    for (const p of equipmentGuideData.products) {
+      expect(p.bullets.length, p.id).toBeGreaterThanOrEqual(3);
+      expect(p.bullets.length, p.id).toBeLessThanOrEqual(4);
+    }
+  });
+});

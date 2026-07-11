@@ -39,7 +39,7 @@ export interface GuideProduct {
     productSlug: string; // canonical config slug, e.g. 'icp-etcher' / 'ald'
     checks: SpecParityCheck[];
   };
-  content?: GuideProductContent;
+  content: GuideProductContent;
 }
 
 export interface EvidenceStudy {

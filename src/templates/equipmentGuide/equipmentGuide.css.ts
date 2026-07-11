@@ -47,4 +47,8 @@ export const equipmentGuideCss = `
   .chip { font-size: 12.5px; font-weight: 600; color: #1e3a5f; background: #fff; border: 1px solid #e6ebf1; border-radius: 999px; padding: 3px 10px; }
   .cta { margin-top: 12px; }
   .cta .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; background: #0284c7; color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; }
+  /* plasma-cleaner carries the guide's densest spec table — tighten locally to hold one page */
+  section[data-product-id="plasma-cleaner"] td, section[data-product-id="plasma-cleaner"] th { padding-top: 4px; padding-bottom: 4px; }
+  section[data-product-id="plasma-cleaner"] .apps { margin-top: 8px; padding: 7px 12px; }
+  section[data-product-id="plasma-cleaner"] .cta { margin-top: 8px; }
 `;

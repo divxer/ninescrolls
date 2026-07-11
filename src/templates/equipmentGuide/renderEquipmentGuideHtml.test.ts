@@ -136,17 +136,13 @@ describe('content-v2 render', () => {
     expect(anchors[0][2]).toBe(CTA_TEXT);                                            // exact text, not toContain
   });
 
-  it('real products: exactly one CTA per content product, canonical route + exact text', () => {
+  it('renders exactly one CTA per product (content required), canonical route + exact text', () => {
     for (const p of equipmentGuideData.products) {
       const chunk = chunks.find(c => c.includes(`data-product-id="${p.id}"`))!;
       const anchors = [...chunk.matchAll(CTA_ANCHOR)];
-      if (p.content) {
-        expect(anchors.length, p.id).toBe(1);
-        expect(anchors[0][1], p.id).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[p.id]}`);
-        expect(anchors[0][2], p.id).toBe(CTA_TEXT);
-      } else {
-        expect(anchors.length, p.id).toBe(0);
-      }
+      expect(anchors.length, p.id).toBe(1);
+      expect(anchors[0][1], p.id).toBe(`https://ninescrolls.com${PRODUCT_ROUTES[p.id]}`);
+      expect(anchors[0][2], p.id).toBe(CTA_TEXT);
     }
   });
   it('keeps the Evidence page string-identical to the v1 fixture', () => {
