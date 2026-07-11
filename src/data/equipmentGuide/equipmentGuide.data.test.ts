@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { GuideProduct, EquipmentGuideData } from './types';
-import { about, evidence, contact } from './guideMeta';
+import { about, evidence, contact, cover } from './guideMeta';
+import { BANNED_CONTENT_PATTERNS } from './bannedContent';
 import { products, PRODUCT_ROUTES } from './products';
 import { equipmentGuideData } from './index';
 import { aldSystemConfig } from '../../components/products/productDetailConfigs/aldSystemConfig';
@@ -277,5 +278,21 @@ describe('content-v2 about', () => {
     const t = JSON.stringify(about);
     expect(t).not.toMatch(/\d+\+\s*years|years of experience|installations|research institutions served|\bcustomers\b/i);
     expect(t).not.toMatch(/tyloong|zhongke|tailong|中科泰隆|chuangshi|创世威纳|peiyuan|沛沅|advanstech|埃德万斯/i);
+  });
+});
+
+describe('visual-v2 cover', () => {
+  it('pins the user-approved cover literals verbatim', () => {
+    expect(cover.eyebrow).toBe('Precision Instrumentation');
+    expect(cover.title).toBe('Equipment Guide');
+    expect(cover.tagline).toBe('Etching, thin-film deposition, lithography, and surface-processing platforms for university, national laboratory, institute, and corporate R&D facilities.');
+    expect(cover.edition).toBe('Equipment Guide · 2026 Edition · ninescrolls.com · info@ninescrolls.com');
+  });
+  it('cover copy passes the FULL shared banned-content policy (single source, no drift)', () => {
+    const t = JSON.stringify(cover);
+    for (const pattern of BANNED_CONTENT_PATTERNS) {
+      expect(t, String(pattern)).not.toMatch(pattern);
+    }
+    expect(t).not.toMatch(/\binstallations\b|\bcustomers\b/i); // About-test extras not in the generator policy
   });
 });
