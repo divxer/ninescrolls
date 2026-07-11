@@ -12,13 +12,17 @@
 
 ## Blocking preflight (must pass before Task 1)
 
-1. **#273 merged:** `gh pr view 273 --json state -q .state` must print `MERGED`. If not, STOP — v2 depends on v1's renderer/data being on `main`. (This is a hard gate, not a suggestion.)
+1. **#273 merged:** `gh pr view 273 --json state -q .state` must print `MERGED`. If not, STOP — v2 depends on v1's renderer/data being on `main`. (This is a hard gate, not a suggestion. As of writing #273 is still `OPEN` — merge it before starting.)
 2. **Fresh main + rebase:** `git fetch origin --prune`; then `git rebase origin/main` this branch onto the merged v1.
-3. **Baseline = the merged-v1 state on `main`.** After the rebase, `origin/main` carries v1's final renderer/data — **byte-identical to the old `f76765a8`** but permanent and reachable in a fresh clone (the orphaned `f76765a8` is not). Capture the protection fixtures from `origin/main`. Verify reachable: `git rev-parse --verify origin/main^{commit}` (abort if it fails).
-4. Set `BASELINE_REF=origin/main` (recorded into the state dir in Task 1 Step 0) — every Task-1 reference to the baseline uses this ref, not `f76765a8`.
+3. **Pin the baseline to an immutable SHA immediately after the rebase** — do NOT keep using the moving `origin/main` ref (it can advance again before Task 1 runs). The merged-v1 tip is byte-identical to the old `f76765a8` but permanent and reachable in a fresh clone (the orphan is not):
+```bash
+git rev-parse --verify origin/main^{commit} >/dev/null || { echo "FAIL: origin/main not reachable"; exit 1; }
+BASELINE_SHA=$(git rev-parse origin/main^{commit})   # capture ONCE, right after rebase
+```
+   Task 1 Step 0 persists `BASELINE_SHA` into the state dir; every fixture step checks out **that SHA**, never the live `origin/main`.
 
 ## Branch & rules
-- Fixtures are generated from a **detached worktree of `BASELINE_REF`** in Task 1 and **committed** — self-contained, no live SHA dependency.
+- Fixtures are generated from a **detached worktree of the pinned `BASELINE_SHA`** in Task 1 and **committed** — self-contained, no live ref dependency.
 - The pilot (Task 3) is worktree-isolated and independent of sequencing.
 - **One-complete-PR rule:** do not open a PR until the final state (Task 6) is complete — 11/11 required content, About, fixtures, traceability, tests, and the single regenerated PDF, in one branch.
 
@@ -48,38 +52,48 @@ Each product's `lead` is rewritten from its config `hero.description` (listed in
 
 ---
 
-### Task 1: Baseline protection fixtures (from a detached `origin/main` worktree)
+### Task 1: Baseline protection fixtures (from a detached, pinned-`BASELINE_SHA` worktree)
 
 **Files:**
 - Create: `src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence.json`
 - Create: `src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html`
 
-- [ ] **Step 0: Record the pre-existing state to a 0700 state dir (non-executable, content-hashed)**
+- [ ] **Step 0: Record the pre-existing state to a unique `mktemp` state dir (non-executable, atomic, NUL-hashed)**
 
-Persist state as **plain, non-executable** files (never a sourced shell file) in a 0700 dir, and record a **content-hash manifest** of the pre-existing untracked files (so a later content change — not just a path change — is caught):
+Persist state as **plain, non-executable** files (never a sourced shell file) in a **unique `mktemp -d`** dir (0700 by default), written **atomically** (temp file + `mv`), and record a **NUL-delimited manifest** of the pre-existing untracked files as `hash \0 mode \0 path` — so a content change, a mode/type flip, or a path with newlines is all caught. Exclude **only** the generator's own image cache (`tmp/equipment-guide-images/`), not the rest of `tmp/`:
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
 set -euo pipefail
-S=/tmp/eqg-v2-state; rm -rf "$S"; mkdir -m 700 "$S"
-git rev-parse HEAD              > "$S/base_sha"        # IMPLEMENTATION_BASE_SHA (post-rebase HEAD)
-git hash-object package-lock.json > "$S/lockfile_hash"
-# content-hash manifest of pre-existing untracked files, EXCLUDING the generator's own tmp/ cache
-git ls-files --others --exclude-standard -z | grep -zv '^tmp/' | sort -z \
-  | while IFS= read -r -d '' f; do printf '%s  %s\n' "$(git hash-object "$f")" "$f"; done > "$S/untracked-manifest"
-git status --porcelain --untracked-files=all | grep '^??' | sort > "$S/untracked-paths"   # full path set (incl tmp/)
-cat "$S/base_sha" "$S/lockfile_hash"; echo "manifest:"; cat "$S/untracked-manifest"
+S=$(mktemp -d)                                        # unique per-run state dir (not a fixed /tmp path)
+w(){ local d; d=$(mktemp "$S/.wXXXXXX"); cat > "$d"; mv -f "$d" "$S/$1"; }   # atomic write helper
+git rev-parse HEAD                    | w base_sha        # IMPLEMENTATION_BASE_SHA (post-rebase HEAD)
+git rev-parse origin/main^{commit}    | w baseline_sha    # pinned v1 fixture baseline (immutable SHA)
+git hash-object package-lock.json     | w lockfile_hash
+# NUL manifest (hash, mode, path) of pre-existing untracked files, EXCLUDING only tmp/equipment-guide-images/
+# (filter in-loop with `case`, not `grep -z` — macOS BSD grep has no -z)
+git ls-files --others --exclude-standard -z | sort -z \
+  | while IFS= read -r -d '' f; do
+      case "$f" in tmp/equipment-guide-images/*) continue;; esac
+      printf '%s\0%s\0%s\0' "$(git hash-object "$f")" "$(stat -f '%p' "$f")" "$f"
+    done | w untracked-manifest
+# full untracked path set (incl the excluded cache dir) for a no-new-paths check
+git ls-files --others --exclude-standard -z | sort -z | w untracked-paths
+echo "STATE_DIR=$S"; echo "BASELINE_SHA=$(cat "$S/baseline_sha")"; echo "BASE=$(cat "$S/base_sha")"
 ```
-`$S/base_sha`, `$S/lockfile_hash`, `$S/untracked-manifest`, `$S/untracked-paths` are plain files read + strictly validated in Task 6 (never executed). The manifest content-protects the user's untracked WIP (the two `research-validation-claim-reframe*` docs); `tmp/` is the generator's deterministic scratch cache and is excluded from content-protection (path-set still checked). If executing via subagents, Task 1 also reports these values so the controller can recreate `$S` if `/tmp` didn't survive.
+Print `STATE_DIR=$S` so the executor/controller passes it to later tasks as `$STATE_DIR` (each is read + strictly validated, never executed). `baseline_sha` pins the fixture worktree; `base_sha` bounds the Task-6 allowlist diff; the manifest content-protects **all** untracked WIP (the two `research-validation-claim-reframe*` docs, plus any screenshots/audit files elsewhere under `tmp/`) except the deterministic image cache. Handles the empty set (the `while` loop yields an empty manifest, which diffs clean).
 
-- [ ] **Step 1: Generate all three fixtures from a `mktemp -d` detached worktree of `origin/main` (fail-fast)**
+- [ ] **Step 1: Generate all three fixtures from a `mktemp -d` detached worktree of the pinned `BASELINE_SHA` (fail-fast)**
 
-Baseline = `origin/main` (the merged-v1 state; permanent + reachable, unlike the orphaned `f76765a8`). Use a **unique `mktemp -d`** path (no fixed `/tmp` dir to collide with a leftover) and the **locked local** `./node_modules/.bin/tsx` (never `npx`):
+Check out the **immutable `BASELINE_SHA`** recorded in Step 0 (not the moving `origin/main`). Use a **unique `mktemp -d`** worktree path and the **locked local** `./node_modules/.bin/tsx` (never `npx`):
 ```bash
 cd /Users/harvey/Dev/src/cursor/ninescrolls
 set -euo pipefail
+S="${STATE_DIR:?set STATE_DIR to Task 1 Step 0's printed state dir}"
+BASELINE_SHA=$(cat "$S/baseline_sha")   # $(cat) drops trailing newline; embedded newline/extra bytes fail the regex
+[[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "FAIL: baseline_sha not a single 40-hex line"; exit 1; }
+git cat-file -e "${BASELINE_SHA}^{commit}" 2>/dev/null || { echo "FAIL: BASELINE_SHA not a reachable commit"; exit 1; }
 test -x ./node_modules/.bin/tsx || { echo "FAIL: ./node_modules/.bin/tsx missing — run npm ci first"; exit 1; }
-git rev-parse --verify origin/main^{commit} >/dev/null || { echo "FAIL: origin/main not reachable (run preflight)"; exit 1; }
 mkdir -p src/data/equipmentGuide/__fixtures__
 rm -f src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json \
       src/data/equipmentGuide/__fixtures__/v1-evidence.json \
@@ -87,7 +101,7 @@ rm -f src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json \
 git worktree prune
 WT=$(mktemp -d); rmdir "$WT"                                        # unique empty path; git worktree add creates the dir itself
 trap 'git worktree remove --force "$WT" 2>/dev/null || rm -rf "$WT"' EXIT
-git worktree add --detach "$WT" origin/main
+git worktree add --detach "$WT" "$BASELINE_SHA"
 OUT="$PWD/src/data/equipmentGuide/__fixtures__" BASE="$WT" ./node_modules/.bin/tsx -e '
   (async () => {
     const { writeFileSync } = await import("node:fs");
@@ -123,7 +137,7 @@ Expected: `products 11`, and the two greps ≥ 1.
 - [ ] **Step 3: Commit the fixtures**
 
 ```bash
-git reset -q
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage your work before this commit"; exit 1; }
 git add src/data/equipmentGuide/__fixtures__/v1-specs-subtable.json \
         src/data/equipmentGuide/__fixtures__/v1-evidence.json \
         src/data/equipmentGuide/__fixtures__/v1-evidence-chunk.html
@@ -276,7 +290,7 @@ Append to `equipmentGuide.css.ts` (chips are new **body content** → ≥12.5px 
 
 Run: `npx vitest run src/data/equipmentGuide src/templates/equipmentGuide --exclude '**/.claude/**'` → all green (CTA tests pass because no product has `content` yet → 0 CTAs everywhere).
 ```bash
-git reset -q
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage your work before this commit"; exit 1; }
 git add src/data/equipmentGuide/types.ts src/data/equipmentGuide/products.ts \
         src/data/equipmentGuide/equipmentGuide.data.test.ts \
         src/templates/equipmentGuide/renderEquipmentGuideHtml.ts \
@@ -475,32 +489,33 @@ set -euo pipefail
 PROD=public/NineScrolls-Equipment-Guide.pdf
 git diff --quiet -- "$PROD" && git diff --cached --quiet -- "$PROD" \
   || { echo "FAIL: $PROD has uncommitted changes — resolve before regenerating"; exit 1; }
+ORIG=$(git hash-object "$PROD")                      # committed bytes we must restore to
 SHOT=$(mktemp -d)                                   # persists after this block for image inspection
-BK=$(mktemp -d)/before.pdf                          # exact pre-gen bytes
-cp "$PROD" "$BK"
+BK=$(mktemp -d)/before.pdf; cp "$PROD" "$BK"        # exact pre-gen bytes
 trap 'cp "$BK" "'"$PROD"'" 2>/dev/null' EXIT        # backstop restore on any failure below
-npm run generate-equipment-guide                    # writes $PROD in the working tree
+npm run generate-equipment-guide                    # overwrites $PROD
+GEN=$(git hash-object "$PROD")
 cp "$PROD" "$SHOT/check.pdf"                         # snapshot the v2-content render for verification
-cp "$BK" "$PROD"                                     # restore exact pre-gen bytes now (trap is the backstop)
-git diff --quiet -- "$PROD" || { echo "FAIL: tracked PDF not restored"; exit 1; }
+[ "$(git hash-object "$PROD")" = "$GEN" ] || { echo "FAIL: $PROD changed under us mid-verify"; exit 1; }
+cp "$BK" "$PROD"                                     # restore exact pre-gen bytes
+[ "$(git hash-object "$PROD")" = "$ORIG" ] || { echo "FAIL: tracked PDF not restored to committed bytes"; exit 1; }
+git diff --quiet -- "$PROD" || { echo "FAIL: tracked PDF still shows as modified"; exit 1; }
+trap - EXIT                                          # success: release trap so shell-exit won't re-copy over a later change
 PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('$SHOT/check.pdf').pages))")
 [ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages (want 14)"; exit 1; }
 pdftoppm -jpeg -r 100 "$SHOT/check.pdf" "$SHOT/p"    # inspect ALL 14 for clipping/overflow
 echo "page images in $SHOT"
 ```
-If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 for a **config-backed** product only, never plasma-cleaner → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6). Stage only the explicit files and verify the staged set exactly, so nothing pre-staged (or the PDF/lockfile) rides along:
+If any product overflows, apply the spec's reduction order (compress bullets → shorten lead → `applicationCount` 4→3 for a **config-backed** product only, never plasma-cleaner → tighten spacing; never <12.5px body, never spill). Then commit **without the PDF** (it lands in Task 6). The overflow flow may edit CSS spacing, so include the CSS **only if it actually changed**; stage the explicit set and verify it exactly, so nothing pre-staged (or the PDF/lockfile) rides along:
 ```bash
-git reset -q                                        # drop anything already staged
-git add src/data/equipmentGuide/products.ts src/data/equipmentGuide/types.ts \
-        src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md \
-        src/templates/equipmentGuide/renderEquipmentGuideHtml.ts src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts
-diff <(git diff --cached --name-only | sort) <(printf '%s\n' \
-  docs/equipment-guide/content-v2-traceability.md \
-  src/data/equipmentGuide/equipmentGuide.data.test.ts \
-  src/data/equipmentGuide/products.ts \
-  src/data/equipmentGuide/types.ts \
-  src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts \
-  src/templates/equipmentGuide/renderEquipmentGuideHtml.ts | sort) \
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage before this commit"; exit 1; }   # never silently reset user staging
+FILES="src/data/equipmentGuide/products.ts src/data/equipmentGuide/types.ts \
+src/data/equipmentGuide/equipmentGuide.data.test.ts docs/equipment-guide/content-v2-traceability.md \
+src/templates/equipmentGuide/renderEquipmentGuideHtml.ts src/templates/equipmentGuide/renderEquipmentGuideHtml.test.ts"
+CSS=src/templates/equipmentGuide/equipmentGuide.css.ts
+git diff --quiet -- "$CSS" || FILES="$FILES $CSS"   # a spacing tweak from the overflow flow is allowed here
+git add $FILES
+diff <(git diff --cached --name-only | sort) <(printf '%s\n' $FILES | sort) \
   || { echo "FAIL: staged set != intended files (extra or missing)"; exit 1; }
 git commit -m "feat(guide): content-v2 — leads, applications, CTAs, rewritten bullets for all 11 products; content required"
 ```
@@ -562,11 +577,16 @@ set -euo pipefail
 PROD=public/NineScrolls-Equipment-Guide.pdf
 git diff --quiet -- "$PROD" && git diff --cached --quiet -- "$PROD" \
   || { echo "FAIL: $PROD has uncommitted changes — resolve before regenerating"; exit 1; }
+ORIG=$(git hash-object "$PROD")
 SHOT=$(mktemp -d); BK=$(mktemp -d)/before.pdf; cp "$PROD" "$BK"
 trap 'cp "$BK" "'"$PROD"'" 2>/dev/null' EXIT
 npm run generate-equipment-guide
-cp "$PROD" "$SHOT/check.pdf"; cp "$BK" "$PROD"
-git diff --quiet -- "$PROD" || { echo "FAIL: tracked PDF not restored"; exit 1; }
+GEN=$(git hash-object "$PROD"); cp "$PROD" "$SHOT/check.pdf"
+[ "$(git hash-object "$PROD")" = "$GEN" ] || { echo "FAIL: $PROD changed under us mid-verify"; exit 1; }
+cp "$BK" "$PROD"
+[ "$(git hash-object "$PROD")" = "$ORIG" ] || { echo "FAIL: tracked PDF not restored to committed bytes"; exit 1; }
+git diff --quiet -- "$PROD" || { echo "FAIL: tracked PDF still shows as modified"; exit 1; }
+trap - EXIT                                          # success: release trap
 PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('$SHOT/check.pdf').pages))")
 [ "$PAGES" = "14" ] || { echo "FAIL: $PAGES pages"; exit 1; }
 pdftoppm -jpeg -r 100 "$SHOT/check.pdf" "$SHOT/p"   # confirm About page (p1) fits one page
@@ -574,7 +594,7 @@ echo "page images in $SHOT"
 ```
 Commit **without the PDF**, staging only the two intended files and verifying the staged set:
 ```bash
-git reset -q
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage your work before this commit"; exit 1; }
 git add src/data/equipmentGuide/guideMeta.ts src/data/equipmentGuide/equipmentGuide.data.test.ts
 diff <(git diff --cached --name-only | sort) <(printf '%s\n' \
   src/data/equipmentGuide/equipmentGuide.data.test.ts \
@@ -600,6 +620,9 @@ npm run build || { echo "FAIL: build"; exit 1; }
 
 ```bash
 set -euo pipefail
+PROD=public/NineScrolls-Equipment-Guide.pdf
+git diff --quiet -- "$PROD" && git diff --cached --quiet -- "$PROD" \
+  || { echo "FAIL: $PROD dirty/staged before final regen — resolve first"; exit 1; }   # same refuse-dirty guard as Tasks 4/5
 SHOT=$(mktemp -d)
 npm run generate-equipment-guide || { echo "FAIL: generate"; exit 1; }
 PAGES=$(python3 -c "from pypdf import PdfReader; print(len(PdfReader('public/NineScrolls-Equipment-Guide.pdf').pages))")
@@ -613,7 +636,7 @@ Then read all 14 page images: every product page single, no clipping/overflow, n
 - [ ] **Step 3: Commit the final PDF (stage only the PDF; verify the staged set)**
 
 ```bash
-git reset -q                                        # drop anything already staged
+test -z "$(git diff --cached --name-only)" || { echo "FAIL: index not empty — unstage before this commit"; exit 1; }   # never silently reset user staging
 git add public/NineScrolls-Equipment-Guide.pdf
 STAGED=$(git diff --cached --name-only)
 [ "$STAGED" = "public/NineScrolls-Equipment-Guide.pdf" ] || { echo "FAIL: unexpected staged files: $STAGED"; exit 1; }
@@ -622,26 +645,30 @@ git commit -m "feat(guide): regenerate final Equipment Guide PDF with content-v2
 
 - [ ] **Step 4: Hygiene audit (post-commit; every breach exits 1)**
 
-Read the Task 1 Step 0 state from **plain, non-executable** files (never `source`), strictly validate them, then audit committed + working-tree + untracked with a **two-way** allowlist compare and a **content-hash** untracked check:
+Read the Task 1 Step 0 state from **plain, non-executable** files (never `source`), strictly validate them (exact single-line 40-hex — a valid SHA plus an extra line must NOT pass), then audit committed + working-tree + untracked with a **two-way** allowlist compare and a **NUL content+mode** untracked check:
 ```bash
 set -euo pipefail
-S=/tmp/eqg-v2-state
+S="${STATE_DIR:?set STATE_DIR to Task 1 Step 0's printed state dir}"
 test -d "$S" || { echo "FAIL: state dir $S missing (re-run Task 1 Step 0)"; exit 1; }
-BASE=$(cat "$S/base_sha"); LOCK=$(cat "$S/lockfile_hash")
-printf '%s' "$BASE" | grep -Eq '^[0-9a-f]{40}$' || { echo "FAIL: base_sha not 40-hex"; exit 1; }
+# rdsha: strict — $(cat) drops the trailing newline; any embedded newline/extra bytes fail the whole-string regex
+rdsha(){ local v; v=$(cat "$1"); [[ "$v" =~ ^[0-9a-f]{40}$ ]] && printf '%s' "$v"; }
+BASE=$(rdsha "$S/base_sha")     || { echo "FAIL: base_sha not a single 40-hex line"; exit 1; }
+LOCK=$(rdsha "$S/lockfile_hash") || { echo "FAIL: lockfile_hash not a single 40-hex line"; exit 1; }
 git cat-file -e "${BASE}^{commit}" 2>/dev/null || { echo "FAIL: base_sha not a reachable commit"; exit 1; }
-printf '%s' "$LOCK" | grep -Eq '^[0-9a-f]{40}$' || { echo "FAIL: lockfile_hash not 40-hex"; exit 1; }
 # (a) lockfile unchanged
 [ "$(git hash-object package-lock.json)" = "$LOCK" ] || { echo "FAIL: package-lock.json changed"; exit 1; }
 # (b) NO uncommitted tracked drift (staged or unstaged) — everything is committed
 test -z "$(git status --porcelain --untracked-files=no)" || { echo "FAIL: uncommitted tracked changes:"; git status --porcelain --untracked-files=no; exit 1; }
-# (c) pre-existing untracked WIP byte-unchanged (content hash, not just path) — tmp/ generator cache excluded
-git ls-files --others --exclude-standard -z | grep -zv '^tmp/' | sort -z \
-  | while IFS= read -r -d '' f; do printf '%s  %s\n' "$(git hash-object "$f")" "$f"; done > "$S/untracked-now"
-diff "$S/untracked-manifest" "$S/untracked-now" || { echo "FAIL: a non-tmp untracked file changed/added/removed"; exit 1; }
-# (c2) no NEW untracked paths appeared anywhere (incl under tmp/)
-git status --porcelain --untracked-files=all | grep '^??' | sort > "$S/untracked-paths-now"
-diff "$S/untracked-paths" "$S/untracked-paths-now" || { echo "FAIL: untracked path set changed"; exit 1; }
+# (c) protected untracked WIP byte+mode-unchanged — recompute the SAME NUL manifest (excludes ONLY tmp/equipment-guide-images/)
+git ls-files --others --exclude-standard -z | sort -z \
+  | while IFS= read -r -d '' f; do
+      case "$f" in tmp/equipment-guide-images/*) continue;; esac
+      printf '%s\0%s\0%s\0' "$(git hash-object "$f")" "$(stat -f '%p' "$f")" "$f"
+    done > "$S/untracked-now"
+cmp -s "$S/untracked-manifest" "$S/untracked-now" || { echo "FAIL: a protected untracked file changed/added/removed"; exit 1; }
+# (c2) no NEW untracked paths anywhere (incl the excluded cache dir)
+git ls-files --others --exclude-standard -z | sort -z > "$S/untracked-paths-now"
+cmp -s "$S/untracked-paths" "$S/untracked-paths-now" || { echo "FAIL: untracked path set changed"; exit 1; }
 # (d) committed change set BASE..HEAD == EXACTLY the allowlist (two-way diff: extra OR missing both fail)
 git diff --name-only "${BASE}..HEAD" | sort -u > "$S/changed"
 printf '%s\n' \
@@ -666,7 +693,7 @@ echo "hygiene OK — ready for PR"
 
 ## Self-Review
 
-**1. Spec coverage:** data model incl. optional→required (Task 2 + Task 4 Step 5) ✓; copy rules + applications ordered-parity + plasma-cleaner **exactly 4** literals + completeness-first no-skip (Task 4 Step 1) ✓; CTA absolute + **canonical `PRODUCT_ROUTES[id]`** + `data-product-id` + same-anchor **exact-text** binding + synthetic red-first (Task 2 Step 3) ✓; all-or-none nested content + pilot isolation + one-complete-PR (Task 2/3/6) ✓; blocking preflight (#273 merged → rebase → baseline = permanent `origin/main`) ✓; protection fixtures from a **`mktemp -d` detached `origin/main`** worktree, committed, no auto-snapshot, fail-fast one-block command (Task 1) ✓; About rewrite + exact evidence-pillar body + 2-para/4-pillar lock (Task 5) ✓; traceability doc + **blocking line-by-line review** (Task 4 Steps 3–4) ✓; page policy hard-14/≥12.5px/all-14 screenshots (Task 3/4/6) ✓; PDF committed only in Task 6 — Tasks 4/5 refuse-dirty + `mktemp` byte-backup + trap-restore (never `git checkout --`), verify to a temp copy, don't stage ✓; every commit is `git reset -q` + explicit `git add` + staged-set `diff` guard ✓; **exit-1** page/size asserts + hygiene from a **0700 non-executable state dir** (strict 40-hex + `git cat-file -e`), content-hash untracked manifest, no staged/unstaged drift, two-way `diff` allowlist (Task 6 Steps 2–4) ✓.
+**1. Spec coverage:** data model incl. optional→required (Task 2 + Task 4 Step 5) ✓; copy rules + applications ordered-parity + plasma-cleaner **exactly 4** literals + completeness-first no-skip (Task 4 Step 1) ✓; CTA absolute + **canonical `PRODUCT_ROUTES[id]`** + `data-product-id` + same-anchor **exact-text** binding + synthetic red-first (Task 2 Step 3) ✓; all-or-none nested content + pilot isolation + one-complete-PR (Task 2/3/6) ✓; blocking preflight (#273 merged → rebase → **pin `BASELINE_SHA` once**, immutable) ✓; protection fixtures from a **`mktemp -d` detached `BASELINE_SHA`** worktree, committed, no auto-snapshot, fail-fast one-block command (Task 1) ✓; About rewrite + exact evidence-pillar body + 2-para/4-pillar lock (Task 5) ✓; traceability doc + **blocking line-by-line review** (Task 4 Steps 3–4) ✓; page policy hard-14/≥12.5px/all-14 screenshots (Task 3/4/6) ✓; PDF committed only in Task 6 — Tasks 4/5/6 refuse-dirty + `mktemp` byte-backup + hash-verified restore + **`trap - EXIT` release**, verify to a temp copy, don't stage (4/5) ✓; every commit **fails on a non-empty index** (never `git reset`) + explicit `git add` + staged-set `diff` guard (CSS included in Task 4 only if it actually changed) ✓; **exit-1** page/size asserts + hygiene from a **unique `mktemp` state dir** (atomic writes; strict single-line-40-hex `[[ =~ ]]` + `git cat-file -e`), **NUL content+mode** untracked manifest excluding only `tmp/equipment-guide-images/`, no staged/unstaged drift, two-way `diff` allowlist (Task 6 Steps 2–4) ✓.
 
 **2. Placeholder scan:** RIE + E-Beam pilot copy is authored verbatim (with the corrected E-Beam uniformity). The 9 batch leads/bullets are authored in Task 4 from the exact `hero.description` + `specs` cited inline — intentional per pilot-first, not a vague TODO. No "TBD".
 
