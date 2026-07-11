@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { GuideProduct, EquipmentGuideData } from './types';
 import { about, evidence, contact } from './guideMeta';
-import { products } from './products';
+import { products, PRODUCT_ROUTES } from './products';
 import { equipmentGuideData } from './index';
 import { aldSystemConfig } from '../../components/products/productDetailConfigs/aldSystemConfig';
 import { coaterDeveloperConfig } from '../../components/products/productDetailConfigs/coaterDeveloperConfig';
@@ -202,5 +202,24 @@ describe('spec-parity guard (guide vs website configs)', () => {
       ]),
     );
     expect(JSON.stringify(eBeam)).not.toMatch(/1×8|1x8|5×4|5x4|3-5%|8×10⁻⁴|8x10\^-4/i);
+  });
+});
+
+const FIX = (f: string) => readFileSync(resolve(process.cwd(), 'src/data/equipmentGuide/__fixtures__', f), 'utf8');
+
+describe('content-v2 scaffolding', () => {
+  it('PRODUCT_ROUTES covers every product id with a /products/<slug> route', () => {
+    expect(Object.keys(PRODUCT_ROUTES).sort()).toEqual(equipmentGuideData.products.map(p => p.id).sort());
+    for (const p of equipmentGuideData.products) {
+      expect(PRODUCT_ROUTES[p.id], p.id).toMatch(/^\/products\/[a-z0-9-]+$/);
+    }
+  });
+  it('protects v1 specs + subTable (deep-equal committed fixture)', () => {
+    const expected = JSON.parse(FIX('v1-specs-subtable.json'));
+    const actual = equipmentGuideData.products.map(p => ({ id: p.id, specs: p.specs, subTable: p.subTable ?? null }));
+    expect(actual).toEqual(expected);
+  });
+  it('protects the v1 evidence object (deep-equal committed fixture)', () => {
+    expect(equipmentGuideData.evidence).toEqual(JSON.parse(FIX('v1-evidence.json')));
   });
 });

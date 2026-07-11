@@ -40,4 +40,11 @@ export const equipmentGuideCss = `
   .pillar { break-inside: avoid; margin-bottom: 10px; }
   .pillar .h { color: #0369a1; font-weight: 700; }
   .family { color: #334155; font-size: 12.5px; margin-top: 8px; }
+  .lead { font-size: 13px; color: #334155; margin: 0 0 12px; max-width: 52ch; }
+  .apps { margin: 14px 0 0; padding: 10px 12px; border-radius: 9px; background: #f7f9fc; border: 1px solid #eef2f7; }
+  .apps .lab { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: #8a97a6; margin: 0 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12.5px; font-weight: 600; color: #1e3a5f; background: #fff; border: 1px solid #e6ebf1; border-radius: 999px; padding: 3px 10px; }
+  .cta { margin-top: 12px; }
+  .cta .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; background: #0284c7; color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; }
 `;

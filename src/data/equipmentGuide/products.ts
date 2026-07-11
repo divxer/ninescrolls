@@ -2,6 +2,13 @@ import type { GuideProduct } from './types';
 
 const IMG = '/assets/images/redesign/products';
 
+export const PRODUCT_ROUTES: Record<string, string> = {
+  rie: '/products/rie-etcher', 'icp-rie': '/products/icp-etcher', stripper: '/products/striper',
+  'ibe-ribe': '/products/ibe-ribe', ald: '/products/ald', pecvd: '/products/pecvd',
+  'hdp-cvd': '/products/hdp-cvd', sputter: '/products/sputter', 'coater-developer': '/products/coater-developer',
+  'plasma-cleaner': '/products/plasma-cleaner', 'e-beam': '/products/e-beam-evaporator',
+};
+
 export const products: GuideProduct[] = [
   {
     id: 'rie', series: 'RIE Etcher Series', order: 1,

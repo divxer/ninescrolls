@@ -6,6 +6,8 @@ import { equipmentGuideCss } from './equipmentGuide.css';
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const SITE_ORIGIN = 'https://ninescrolls.com';
+
 /**
  * Default image resolver: reads the full-resolution webp from public/ and
  * inlines it as a base64 data URI. Kept pure so the renderer's unit tests
@@ -63,18 +65,23 @@ function productPage(p: GuideProduct, imageDataUri: (publicRelPath: string) => s
     ? `<p class="family"><strong>Family options:</strong> ${p.familyOptions.map(esc).join(' · ')}</p>` : '';
   const sub = p.subTable
     ? specTable(`<tr><th colspan="2">${esc(p.subTable.title)}</th></tr>${specRowsHtml(p.subTable.specs, false)}`) : '';
+  const lead = p.content ? `<p class="lead">${esc(p.content.lead)}</p>` : '';
+  const apps = p.content ? `<div class="apps"><p class="lab">Typical applications</p><div class="chips">${p.content.applications.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div></div>` : '';
+  const cta = p.content ? `<div class="cta"><a class="btn" href="${SITE_ORIGIN}${p.content.href}">Explore configurations &amp; request a quote <span class="arr">→</span></a></div>` : '';
   return `
-  <section class="page page--product">
+  <section class="page page--product" data-product-id="${p.id}">
     ${brandbar('navy')}
     <p class="eyebrow">Equipment Platform</p>
     <div class="section-accent"></div>
     <h1 class="series-title">${esc(p.series)}</h1>
+    ${lead}
     <div class="product-head">
       <div class="product-copy">${bullets}</div>
       <div class="image-well"><img src="${imageDataUri(p.image)}" alt="${esc(p.imageAlt)}"/></div>
     </div>
     ${specTable(`${headRow}${specRowsHtml(p.specs, twoCol)}`)}
     ${sub}${family}
+    ${apps}${cta}
     <div class="page-foot"></div>
   </section>`;
 }
