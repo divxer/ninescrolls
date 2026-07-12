@@ -52,7 +52,20 @@ NineScrolls replicates that structure for the Americas.
    All gated outputs are defined in ONE controlled-wording registry next to
    the flag (data module): attestation phrases ("Authorized channel partner",
    "Channel Partner"), partner badges/logos, and JSON-LD partnership claims.
-   Nothing outside the registry may emit these (enforced by test, §6).
+   Enforcement is two-layer (details in §6):
+   - **Access path**: components never hardcode partner-relationship phrasing
+     or assets; every gated output (banner text, gated title variant,
+     Organization JSON-LD claim, badge assets) is obtained through the
+     registry's API, which resolves per the flag.
+   - **Static scan**: the registry also exports a forbidden-pattern list — a
+     superset of the gated phrases plus known synonym PHRASES (phrase-level
+     patterns such as `authori[sz]ed (channel )?(partner|distributor|dealer|
+     reseller)`, `official (partner|distributor)`, case-insensitive — NOT the
+     bare word "authorized", which would false-positive on auth code like
+     "Unauthorized") and badge asset path patterns — and a static test fails
+     if any of them appears in `src/**` source outside the registry module and
+     its tests. This catches hardcoded bypasses; genuinely novel synonyms
+     remain a review-time concern, which is why the access-path rule exists.
 7. **No unverifiable specs**: if a specification (or an entire product-line
    block) has no qualifying public source, it is omitted — not inferred, not
    paraphrased from memory, not back-filled from third-party sites. An omitted
@@ -146,9 +159,18 @@ New files:
   3. `StationTypeComparison` — manual / semi-auto / full-auto comparison block
      for the React pages. The insight article (HTML stored in DynamoDB) cannot
      render React components, so it keeps its own editorial comparison table;
-     that table is qualitative (no numeric specs), so there is no single-source
-     requirement between the two — numeric specs live only in the data module
-     and render only through `SourcedSpecTable`.
+     there is no shared rendering or single-source requirement between the two.
+     The scope of the "data-module only" rule: **product-line performance
+     specifications** — any number attributed to a specific SEMISHARE series
+     or model (e.g. "CGX: 77K–450K", "A series: 12-inch, 8-inch compatible",
+     positioning resolution of a given micropositioner) — live only in
+     `semishare.ts` and render only through `SourcedSpecTable`. Generic domain
+     quantities NOT attributed to a SEMISHARE product (LN2 temperature 77 K as
+     physics, standard wafer diameters as a category, typical temperature
+     regimes in educational prose and schematics) may appear in page prose,
+     the article, and diagrams; they still follow normal editorial accuracy
+     but need no `source` entry. If a sentence ties a number to a SEMISHARE
+     product, that number must come from the data module.
   4. `SchematicFigure` — figure wrapper that always renders the "Schematic
      illustration, not actual product appearance" caption.
 - `src/data/probeStations/semishare.ts` — the single source of truth for all
@@ -205,18 +227,30 @@ via the existing insights pipeline:
 - Each page gets a `.test.tsx` (renders, SEO tags present — including exact
   final document title with the `| NineScrolls LLC` suffix — key content
   assertions) matching existing page-test style.
-- Attestation gate tests, driven by the controlled-wording registry
-  (Constraint 6), covering BOTH flag states:
-  - Flag OFF: no registry phrase appears in rendered body text, document
-    title, JSON-LD payloads, or image alt/src (badges/logos) on any of the 4
-    pages.
-  - Flag ON: the attestation banner and gated title render the registry
-    wording as specified.
+- Attestation gate tests (Constraint 6), three layers:
+  - **Static scan test**: no forbidden-literal (registry's forbidden list:
+    gated phrases + known synonyms, case-insensitive) and no badge asset path
+    pattern appears anywhere in `src/**` source outside the registry module
+    and test files. This runs against source text, not rendered output, so it
+    is not circular with the registry.
+  - **Render tests, all 4 routes × both flag states**. Per state, assert each
+    output category separately — rendered body text, document title, every
+    JSON-LD script payload, and image alt/src (badges/logos):
+    - Flag OFF: no gated phrase or badge asset in any category on any route;
+      the banner renders the neutral service wording; the brand-page title is
+      the "Sales & Support" variant; Organization JSON-LD contains no
+      partnership claim.
+    - Flag ON: each gated output renders exactly its registry value — banner
+      phrase, "Channel Partner" title variant, Organization JSON-LD
+      partnership claim, and badge assets (if defined) each asserted
+      individually.
 - Spec-traceability test: every spec entry in
   `src/data/probeStations/semishare.ts` has a `source.url` that parses via
   `new URL()`, uses `https:`, and whose hostname is exactly
   `semishareprober.com` or `www.semishareprober.com`; and a `capturedOn` that
-  is a valid ISO date (`YYYY-MM-DD`) not in the future.
+  matches `YYYY-MM-DD`, is a real calendar date (round-trip check — parsing
+  then re-formatting yields the same string, rejecting rollover dates like
+  `2026-02-30`), and is not in the future.
 - Browser verification on the dev server: all 4 pages + the published article
   render; mobile breakpoint screenshots; console free of new errors (known
   pre-existing: Segment fetch failures, fetchPriority warning).
