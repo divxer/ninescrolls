@@ -232,8 +232,10 @@ export function getPartnerJsonLdDescription(confirmed: boolean): string {
 }
 
 /** Gated visual assets (badges / partner logos). None until SEMISHARE provides
- *  an authorized asset AND written confirmation lands. */
-export const PARTNER_BADGE_ASSETS: string[] = [];
+ *  an authorized asset AND written confirmation lands. When populated, the
+ *  PartnerAttestationBanner renders every entry — but only while the flag is
+ *  ON (enforced by the gate tests, which iterate this list in both states). */
+export const PARTNER_BADGE_ASSETS: ReadonlyArray<{ src: string; alt: string }> = [];
 
 /**
  * Static-scan list (spec Constraint 6): phrase-level patterns on purpose —
@@ -394,19 +396,19 @@ git commit -m "test(probe-stations): static scan forbids attestation wording out
 // src/components/probeStations/probeStationComponents.test.tsx
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { getPartnerBannerText } from '../../data/probeStations/semishare';
 import { PartnerAttestationBanner } from './PartnerAttestationBanner';
 import { SchematicFigure } from './SchematicFigure';
 import { SourcedSpecTable } from './SourcedSpecTable';
 import { StationTypeComparison } from './StationTypeComparison';
 
 describe('PartnerAttestationBanner', () => {
-  it('renders the neutral registry wording while the gate is off', () => {
-    render(<PartnerAttestationBanner />);
-    expect(
-      screen.getByText(
-        'NineScrolls provides US & Canada procurement, import, and support for SEMISHARE wafer probe stations.'
-      )
-    ).toBeInTheDocument();
+  it('renders the neutral registry wording and no badge images while the gate is off', () => {
+    const { container } = render(<PartnerAttestationBanner />);
+    // Expected value comes from the registry getter; the literal string is
+    // pinned separately in src/data/probeStations/semishare.test.ts.
+    expect(screen.getByText(getPartnerBannerText(false))).toBeInTheDocument();
+    expect(container.querySelector('img')).toBeNull();
   });
 });
 
@@ -466,7 +468,11 @@ Expected: FAIL — modules not found.
 
 ```tsx
 // src/components/probeStations/PartnerAttestationBanner.tsx
-import { ATTESTATION_CONFIRMED, getPartnerBannerText } from '../../data/probeStations/semishare';
+import {
+  ATTESTATION_CONFIRMED,
+  PARTNER_BADGE_ASSETS,
+  getPartnerBannerText,
+} from '../../data/probeStations/semishare';
 
 export function PartnerAttestationBanner() {
   return (
@@ -474,6 +480,13 @@ export function PartnerAttestationBanner() {
       <p className="m-0 text-sm font-semibold text-slate-900">
         {getPartnerBannerText(ATTESTATION_CONFIRMED)}
       </p>
+      {ATTESTATION_CONFIRMED && PARTNER_BADGE_ASSETS.length > 0 && (
+        <div className="mt-3 flex items-center gap-4">
+          {PARTNER_BADGE_ASSETS.map((badge) => (
+            <img key={badge.src} src={badge.src} alt={badge.alt} className="h-10 w-auto" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -710,9 +723,23 @@ done
 # emits -sm/-md/-lg/-xl variants, so convert the base file explicitly:
 node -e "require('sharp')('public/assets/images/redesign/products/probe-station-schematic-standardized.png').webp({ quality: 82 }).toFile('public/assets/images/redesign/products/probe-station-schematic-standardized.webp').then(() => console.log('webp written'))"
 test -f public/assets/images/redesign/products/probe-station-schematic-standardized.webp && echo OK
+
+# Verify EVERY expected variant exists — optimize-images.js catches per-file
+# errors and exits 0, so a silent failure would otherwise slip through:
+for f in probe-station-anatomy probe-station-temperature-regimes probe-station-automation-levels probe-station-guide-cover; do
+  for s in sm md lg xl; do
+    for ext in png webp; do
+      test -f "public/assets/images/insights/$f-$s.$ext" || echo "MISSING: $f-$s.$ext"
+    done
+  done
+done
+echo "variant check done"
 ```
 
-Expected: `-sm/-md/-lg/-xl` png+webp variants appear next to each insights image; the `test -f` prints `OK` for the products-card webp.
+Expected: the `test -f` prints `OK` for the products-card webp, and the variant
+check prints only `variant check done` with NO `MISSING:` lines. Any `MISSING:`
+line means optimize-images.js swallowed an error — rerun it for that file and
+inspect its output.
 
 - [ ] **Step 3: Commit**
 
@@ -1604,15 +1631,26 @@ git commit -m "feat(probe-stations): cryogenic and silicon photonics application
 
 ```tsx
 // src/pages/probeStations/attestationGate.test.tsx
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
+import {
+  FORBIDDEN_ATTESTATION_PATTERNS,
+  PARTNER_BADGE_ASSETS,
+  getBrandPageSeoTitle,
+  getPartnerBannerText,
+  getPartnerJsonLdDescription,
+} from '../../data/probeStations/semishare';
 import { WaferProbeStationsPage } from './WaferProbeStationsPage';
 import { SemishareBrandPage } from './SemishareBrandPage';
 import { CryogenicProbingPage } from './CryogenicProbingPage';
 import { SiliconPhotonicsProbingPage } from './SiliconPhotonicsProbingPage';
+
+// Expected values below come from the registry getters (getPartnerBannerText
+// etc.). This is NOT circular: the getters' literal outputs are pinned in
+// src/data/probeStations/semishare.test.ts; these tests verify the pages
+// actually render what the registry resolves for each flag state.
 
 const PAGES = [
   ['/wafer-probe-stations', WaferProbeStationsPage],
@@ -1621,15 +1659,23 @@ const PAGES = [
   ['/applications/silicon-photonics-probing', SiliconPhotonicsProbingPage],
 ] as const;
 
+function renderPage(path: string, Page: (typeof PAGES)[number][1]) {
+  return render(
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Page />
+      </MemoryRouter>
+    </HelmetProvider>
+  );
+}
+
+function cleanupHead() {
+  document.head.querySelectorAll('script[type="application/ld+json"]').forEach((s) => s.remove());
+}
+
 describe('attestation gate OFF (default)', () => {
   it.each(PAGES)('%s emits no gated wording in body, title, JSON-LD, or image attrs', async (path, Page) => {
-    const { container, unmount } = render(
-      <HelmetProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <Page />
-        </MemoryRouter>
-      </HelmetProvider>
-    );
+    const { container, unmount } = renderPage(path, Page);
 
     // Flush react-helmet-async head commits before reading document.title/head
     await waitFor(() => expect(document.title).toContain('NineScrolls LLC'));
@@ -1652,8 +1698,28 @@ describe('attestation gate OFF (default)', () => {
         expect(text, `${path} ${surface} vs ${pattern}`).not.toMatch(pattern);
       }
     }
+    // Registry badge assets must not render anywhere while OFF — even if the
+    // list is populated later, this assertion keeps biting.
+    for (const badge of PARTNER_BADGE_ASSETS) {
+      expect(imgAttrs, `${path} badge ${badge.src}`).not.toContain(badge.src);
+    }
     unmount();
-    document.head.querySelectorAll('script[type="application/ld+json"]').forEach((s) => s.remove());
+    cleanupHead();
+  });
+
+  it('brand page renders exactly the neutral registry outputs: banner, title, Organization JSON-LD', async () => {
+    const { unmount } = renderPage('/wafer-probe-stations/semishare', SemishareBrandPage);
+
+    expect(screen.getByText(getPartnerBannerText(false))).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.title).toBe(`${getBrandPageSeoTitle(false)} | NineScrolls LLC`);
+    });
+    const jsonLd = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+      .map((s) => JSON.parse(s.textContent || '{}'));
+    const org = jsonLd.find((s) => s['@type'] === 'Organization');
+    expect(org?.description).toBe(getPartnerJsonLdDescription(false));
+    unmount();
+    cleanupHead();
   });
 });
 ```
@@ -1666,7 +1732,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
+import {
+  FORBIDDEN_ATTESTATION_PATTERNS,
+  PARTNER_BADGE_ASSETS,
+  getBrandPageSeoTitle,
+  getPartnerBannerText,
+  getPartnerJsonLdDescription,
+} from '../../data/probeStations/semishare';
 import { WaferProbeStationsPage } from './WaferProbeStationsPage';
 import { SemishareBrandPage } from './SemishareBrandPage';
 import { CryogenicProbingPage } from './CryogenicProbingPage';
@@ -1677,8 +1749,10 @@ vi.mock('../../data/probeStations/semishare', async (importOriginal) => {
   return { ...actual, ATTESTATION_CONFIRMED: true };
 });
 
-// NOTE: FORBIDDEN_ATTESTATION_PATTERNS imported above comes from the mocked
-// module, but the mock spreads the actual module, so the patterns are real.
+// NOTE: everything imported from the mocked module except ATTESTATION_CONFIRMED
+// is the actual implementation (the mock spreads the original), so the getters
+// and pattern list used as expected values below are real. The getters' literal
+// outputs are pinned in semishare.test.ts — using them here is not circular.
 
 const NON_BRAND_PAGES = [
   ['/wafer-probe-stations', WaferProbeStationsPage],
@@ -1715,32 +1789,33 @@ describe('attestation gate ON (mocked written confirmation)', () => {
       </HelmetProvider>
     );
 
-    // Banner
-    expect(
-      screen.getByText('Authorized channel partner for SEMISHARE wafer probe stations (US & Canada, non-exclusive).')
-    ).toBeInTheDocument();
+    // Banner — expected value resolved by the registry getter for ON
+    expect(screen.getByText(getPartnerBannerText(true))).toBeInTheDocument();
 
     // Title (gated variant + SEO suffix)
     await waitFor(() => {
-      expect(document.title).toBe(
-        'SEMISHARE Wafer Probe Stations | US & Canada Channel Partner | NineScrolls LLC'
-      );
+      expect(document.title).toBe(`${getBrandPageSeoTitle(true)} | NineScrolls LLC`);
     });
 
     // Organization JSON-LD claim
     const jsonLd = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
       .map((s) => JSON.parse(s.textContent || '{}'));
     const org = jsonLd.find((s) => s['@type'] === 'Organization');
-    expect(org?.description).toBe(
-      'NineScrolls LLC is an authorized, non-exclusive channel partner for SEMISHARE wafer probe stations in the United States and Canada.'
-    );
+    expect(org?.description).toBe(getPartnerJsonLdDescription(true));
 
-    // Badges: registry defines none yet — none may render
-    // (PARTNER_BADGE_ASSETS is empty; assert no img src references a badge)
-    const badgeImgs = Array.from(document.images).filter((img) =>
-      /badge|partner-?logo/i.test(`${img.src} ${img.alt}`)
+    // Badges: every registry asset must render with its exact src and alt.
+    // Empty registry today ⇒ the loop is vacuous AND the guard below asserts
+    // nothing badge-shaped sneaks in from outside the registry. When assets
+    // are added later, the loop starts verifying them without a test change.
+    for (const badge of PARTNER_BADGE_ASSETS) {
+      const img = screen.getByAltText(badge.alt);
+      expect(img).toHaveAttribute('src', badge.src);
+    }
+    const registrySrcs = new Set(PARTNER_BADGE_ASSETS.map((b) => b.src));
+    const strayBadgeImgs = Array.from(document.images).filter(
+      (img) => /badge|partner-?logo/i.test(`${img.src} ${img.alt}`) && !registrySrcs.has(img.getAttribute('src') ?? '')
     );
-    expect(badgeImgs).toEqual([]);
+    expect(strayBadgeImgs).toEqual([]);
     unmount();
     cleanupHead();
   });
@@ -1970,11 +2045,14 @@ In `scripts/generate-seo.ts` after the last `/products/*` entry AND in `amplify/
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+// The full expected entries, lastmod included. When a launch-page lastmod is
+// intentionally bumped later, update it HERE too — the test forces both
+// generators and this expectation to move together.
 const ENTRIES = [
-  { loc: '/wafer-probe-stations', changefreq: 'weekly', priority: '0.9' },
-  { loc: '/wafer-probe-stations/semishare', changefreq: 'weekly', priority: '0.9' },
-  { loc: '/applications/cryogenic-probing', changefreq: 'monthly', priority: '0.8' },
-  { loc: '/applications/silicon-photonics-probing', changefreq: 'monthly', priority: '0.8' },
+  { loc: '/wafer-probe-stations', lastmod: '2026-07-12', changefreq: 'weekly', priority: '0.9' },
+  { loc: '/wafer-probe-stations/semishare', lastmod: '2026-07-12', changefreq: 'weekly', priority: '0.9' },
+  { loc: '/applications/cryogenic-probing', lastmod: '2026-07-12', changefreq: 'monthly', priority: '0.8' },
+  { loc: '/applications/silicon-photonics-probing', lastmod: '2026-07-12', changefreq: 'monthly', priority: '0.8' },
 ];
 const GENERATORS = [
   'scripts/generate-seo.ts',
@@ -1983,11 +2061,9 @@ const GENERATORS = [
 
 describe.each(GENERATORS)('%s', (file) => {
   const text = readFileSync(file, 'utf8');
-  it.each(ENTRIES)('contains $loc with matching metadata', ({ loc, changefreq, priority }) => {
-    // Matches the object-literal entry regardless of lastmod value, but pins
-    // loc, changefreq, and priority so both generators stay in lockstep.
+  it.each(ENTRIES)('contains $loc with the exact expected metadata', ({ loc, lastmod, changefreq, priority }) => {
     const entry = new RegExp(
-      `\\{\\s*loc:\\s*'${loc.replace(/[/]/g, '\\/')}',\\s*lastmod:\\s*'\\d{4}-\\d{2}-\\d{2}',\\s*changefreq:\\s*'${changefreq}',\\s*priority:\\s*'${priority}'\\s*\\}`
+      `\\{\\s*loc:\\s*'${loc.replace(/[/]/g, '\\/')}',\\s*lastmod:\\s*'${lastmod}',\\s*changefreq:\\s*'${changefreq}',\\s*priority:\\s*'${priority}'\\s*\\}`
     );
     expect(text).toMatch(entry);
   });
@@ -2031,19 +2107,42 @@ describe('probe station buyer-guide article entry', () => {
   it('exists with full content and no hand-written TOC', () => {
     expect(post).toBeTruthy();
     expect(post!.content!.length).toBeGreaterThan(10_000); // full conversion, not a stub
-    expect(post!.content).not.toMatch(/table of contents/i); // page auto-generates the TOC
+    // The page auto-generates the TOC — the content must not carry one in any
+    // of the forms the site (or a naive conversion) could produce:
+    expect(post!.content).not.toMatch(/table of contents/i);
+    expect(post!.content).not.toMatch(/\bid="toc"|class="[^"]*\btoc\b[^"]*"/i);
+    expect(post!.content).not.toMatch(/<nav[^>]*toc/i);
+    expect(post!.content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
   });
 
-  it('embeds both figures as <picture> blocks whose responsive assets exist on disk', () => {
+  it('embeds each figure as its own complete <picture> block with caption and on-disk assets', () => {
+    const pictureBlocks = post!.content!.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
+
     for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
-      expect(post!.content).toContain(`/assets/images/insights/${base}`);
-      const pictureBlock = post!.content!.includes('<picture>');
-      expect(pictureBlock).toBe(true);
+      // The block DEDICATED to this figure — not just any <picture> plus a bare URL
+      const block = pictureBlocks.find((b) => b.includes(`/assets/images/insights/${base}`));
+      expect(block, `<picture> block for ${base}`).toBeTruthy();
+
+      // Responsive webp srcset + png fallback, all inside THIS block
       for (const size of ['sm', 'md', 'lg', 'xl']) {
-        expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp`).toBe(true);
+        expect(block, `${base}-${size}.webp in srcset`).toContain(`/assets/images/insights/${base}-${size}.webp`);
+        expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp on disk`).toBe(true);
+        expect(existsSync(`public/assets/images/insights/${base}-${size}.png`), `${base}-${size}.png on disk`).toBe(true);
       }
+      expect(block, `${base}.png fallback <img>`).toMatch(
+        new RegExp(`<img[^>]+src="/assets/images/insights/${base}\\.png"`)
+      );
+      expect(existsSync(`public/assets/images/insights/${base}.png`), `${base}.png on disk`).toBe(true);
+
+      // The figure's own caption (within 400 chars after the block) carries the
+      // schematic disclaimer
+      const afterBlock = post!.content!.slice(
+        post!.content!.indexOf(block!) + block!.length,
+        post!.content!.indexOf(block!) + block!.length + 400
+      );
+      expect(afterBlock, `caption after ${base}`).toMatch(/Schematic illustration/i);
     }
-    expect(existsSync(`public/assets/images/insights/probe-station-guide-cover.png`)).toBe(true);
+    expect(existsSync('public/assets/images/insights/probe-station-guide-cover.png')).toBe(true);
   });
 
   it('links to the capability hub and the brand page', () => {
