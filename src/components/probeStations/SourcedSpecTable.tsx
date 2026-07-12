@@ -20,28 +20,18 @@ export function SourcedSpecTable({ specs, caption }: SourcedSpecTableProps) {
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-slate-200 text-left">
-            <th className="py-2 pr-4 font-semibold text-slate-900">Specification</th>
-            <th className="py-2 pr-4 font-semibold text-slate-900">Value</th>
-            <th className="py-2 font-semibold text-slate-900">Reference</th>
+            <th scope="col" className="py-2 pr-4 font-semibold text-slate-900">Specification</th>
+            <th scope="col" className="py-2 font-semibold text-slate-900">Value</th>
           </tr>
         </thead>
         <tbody>
           {specs.map((spec) => (
             <tr key={spec.label} className="border-b border-slate-100">
+              {/* spec.source stays in the data module as the audit trail; it is
+                  deliberately NOT rendered — per-row outbound OEM links leaked
+                  visitors to the manufacturer and read as second-hand data. */}
               <td className="py-2 pr-4 text-slate-700">{spec.label}</td>
-              <td className="py-2 pr-4 text-slate-900">{spec.value}</td>
-              <td className="py-2 text-slate-500">
-                <a
-                  href={spec.source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Source for ${spec.label}`}
-                  className="underline hover:text-sky-700"
-                >
-                  source
-                </a>{' '}
-                ({spec.source.capturedOn})
-              </td>
+              <td className="py-2 text-slate-900">{spec.value}</td>
             </tr>
           ))}
         </tbody>

@@ -25,12 +25,14 @@ describe('SourcedSpecTable', () => {
     },
   ];
 
-  it('renders each row with a source reference and the OEM disclaimer', () => {
-    render(<SourcedSpecTable specs={specs} caption="X Series" />);
+  it('renders spec rows with the OEM disclaimer and NO outbound source links', () => {
+    const { container } = render(<SourcedSpecTable specs={specs} caption="X Series" />);
     expect(screen.getByText('Wafer size')).toBeInTheDocument();
     expect(screen.getByText('Up to 200 mm')).toBeInTheDocument();
-    const sourceLink = screen.getByRole('link', { name: /source/i });
-    expect(sourceLink).toHaveAttribute('href', 'https://www.semishareprober.com/example');
+    // The source stays in the data module (audit trail) but must not render:
+    // per-row OEM links leaked visitors to the manufacturer's site.
+    expect(container.querySelector('a')).toBeNull();
+    expect(container.textContent).not.toContain('semishareprober.com');
     expect(
       screen.getByText(/from manufacturer public materials.*subject to OEM confirmation/i)
     ).toBeInTheDocument();

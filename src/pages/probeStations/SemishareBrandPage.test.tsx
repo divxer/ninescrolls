@@ -30,10 +30,13 @@ describe('SemishareBrandPage', () => {
     for (const line of productLines) {
       expect(screen.getByRole('heading', { level: 3, name: line.name })).toBeInTheDocument();
     }
-    // Every numeric spec that appears is sourced (rendered by SourcedSpecTable)
-    const sourceLinks = screen.queryAllByRole('link', { name: /^Source for /i });
-    const specCount = productLines.reduce((n, l) => n + l.specs.length, 0);
-    expect(sourceLinks).toHaveLength(specCount);
+    // Traceability lives in the data module; the page must NOT leak visitors
+    // to the OEM site — zero outbound semishareprober.com links.
+    const oemLinks = Array.from(document.querySelectorAll('a')).filter((a) =>
+      (a.getAttribute('href') ?? '').includes('semishareprober.com')
+    );
+    expect(oemLinks).toHaveLength(0);
+    expect(productLines.reduce((n, l) => n + l.specs.length, 0)).toBeGreaterThan(0);
   });
 
   it('renders the neutral attestation banner, why-NineScrolls section, FAQ, and CTA', () => {
