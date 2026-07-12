@@ -42,41 +42,42 @@
 
       <h3>1. Sample size and chuck</h3>
       <p>Start with the largest sample you realistically test. Specify the largest wafer, die, coupon, or carrier you expect to handle, then confirm chuck diameter, vacuum-zone geometry, travel, edge clearance, and sample-carrier options. Do not assume nominal chuck diameter alone determines compatibility.</p>
-      <p>Common nominal chuck sizes exist — 2", 4", 6" (150 mm), 8" (200 mm), and 12" (300 mm) among them — but the nominal number is only a starting point. A smaller sample generally runs fine on a larger chuck, while a larger sample may not fit a smaller one; confirm the actual usable area and fixturing for your parts. Because the chuck is central to system cost and is not casually swapped later, size for your largest expected sample rather than your typical one.</p>
+      <p>Common nominal classes include 2-inch, 4-inch, 150 mm, 200 mm, and 300 mm systems, but the nominal number is only a starting point. A smaller sample generally runs fine on a larger chuck, while a larger sample may not fit a smaller one; confirm the actual usable area and fixturing for your parts. Chuck upgrades may affect travel, vacuum zoning, temperature hardware, calibration, and cost, so confirm the upgrade path before purchase, and size for your largest expected sample rather than your typical one.</p>
 
       <h3>2. Manual, semi-automatic, or fully automatic</h3>
-      <p>This single choice moves the price by more than 10x, so it deserves the most thought. The right answer is usually set by <strong>how many measurements you run</strong>, not by how advanced the lab wants to feel.</p>
+      <p>Automation can move a system into a very different price tier, especially once wafer mapping, alignment, software, and unattended handling are included, so this choice deserves the most thought. The right answer is usually set by <strong>how many measurements you run</strong>, not by how advanced the lab wants to feel.</p>
 
       <table>
+        <caption style="caption-side:top;text-align:left;font-size:0.9em;color:#555;padding:0 0 8px;font-style:italic">Comparison of wafer probe station automation levels</caption>
         <thead>
           <tr>
-            <th></th>
-            <th>Manual<br><span>Maximum hands-on flexibility</span></th>
-            <th>Semi-automated<br><span>Recipe-assisted efficiency</span></th>
-            <th>Fully automated<br><span>Program-controlled workflow</span></th>
+            <th scope="col"></th>
+            <th scope="col">Manual<br><span>Maximum hands-on flexibility</span></th>
+            <th scope="col">Semi-automated<br><span>Recipe-assisted efficiency</span></th>
+            <th scope="col">Fully automated<br><span>Program-controlled workflow</span></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Positioning</strong></td>
+            <th scope="row"><strong>Positioning</strong></th>
             <td>Hand-driven micropositioners</td>
             <td>Motorized stage with manual probe setup</td>
             <td>Programmed wafer mapping and alignment</td>
           </tr>
           <tr>
-            <td><strong>Workflow</strong></td>
+            <th scope="row"><strong>Workflow</strong></th>
             <td>Device-by-device measurement</td>
             <td>Recipe-assisted multi-site stepping</td>
             <td>Automated wafer-map execution</td>
           </tr>
           <tr>
-            <td><strong>Best fit</strong></td>
+            <th scope="row"><strong>Best fit</strong></th>
             <td>Exploratory research, teaching, flexible setups</td>
             <td>R&amp;D characterization and repeated measurements</td>
             <td>High-volume mapping and production-style test</td>
           </tr>
           <tr>
-            <td><strong>Operator involvement</strong></td>
+            <th scope="row"><strong>Operator involvement</strong></th>
             <td>Continuous hands-on control</td>
             <td>Setup plus supervision</td>
             <td>Exception handling and run oversight</td>
@@ -95,12 +96,12 @@
         <figcaption>Figure 1: Choosing the right level of automation — how manual, semi-automated, and fully automated probe stations differ across positioning, workflow, best fit, and operator involvement. Automation level and temperature capability are separate configuration decisions. Schematic illustration for comparison; not a specification of any particular system.</figcaption>
       </figure>
 
-      <p>For a lab characterizing a handful of devices per sample — the norm in most materials science and device-physics groups — a <strong>manual</strong> station is not a compromise; it is the correct tool. Semi-automatic systems earn their cost for repeated multi-site measurements where recipe-assisted stepping improves consistency and operator efficiency. Fully automatic probers belong in high-volume test environments and are rarely the right first purchase for an academic lab.</p>
+      <p>For labs characterizing a limited number of devices per sample, a <strong>manual</strong> station may be the most appropriate tool rather than a compromise. Semi-automatic systems earn their cost for repeated multi-site measurements where recipe-assisted stepping improves consistency and operator efficiency. Fully automatic probers belong in high-volume test environments and are rarely the right first purchase for an academic lab.</p>
 
       <h3>3. Temperature environment</h3>
       <p>Ambient-temperature probing covers a great deal of electrical characterization. But if your science lives at temperature — superconductors, quantum transport, 2D materials, low-temperature device physics — the temperature stage often becomes the defining element of the system. Temperature capability can become one of the dominant cost and integration drivers.</p>
       <p>Probe-station temperature configurations range from ambient systems, to controlled thermal chucks for below- or above-ambient characterization, to cryogenic-vacuum systems for low-temperature research. Exact limits depend on the chuck, cooling architecture, vacuum package, wiring, and options; verify the full usable range against the selected configuration.</p>
-      <p>The figure below places these regimes against familiar physics reference points — roughly 10 K-class cryogenic systems, 77 K liquid nitrogen, 300 K room temperature, and above-ambient thermal work near 300 °C (≈573 K). Treat those points as orientation, not as the guaranteed range of any given system.</p>
+      <p>The figure below places these regimes against familiar physics reference points — a 10 K-class cryogenic reference, 77 K liquid nitrogen, 300 K room temperature, and an example upper thermal-chuck reference near 300 °C. Treat those points as orientation, not as the operating range of any given system.</p>
 
       <figure class="post-figure">
         <picture>
@@ -110,14 +111,14 @@
           <source srcset="https://cdn.ninescrolls.com/insights/probe-station-temperature-regimes-sm.webp" media="(max-width: 767px)" type="image/webp" />
           <img src="https://cdn.ninescrolls.com/insights/probe-station-temperature-regimes.png" alt="Probe-station temperature environments on a low-to-high scale: cryogenic (10 K-class to 77 K-class), controlled thermal chuck (below- to above-ambient), and ambient (~300 K), with representative research applications for each" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
         </picture>
-        <figcaption>Figure 2: Choosing the right temperature environment — cryogenic, controlled thermal-chuck, and ambient regimes shown against reference points (10 K, 77 K liquid nitrogen, 300 K room temperature, and ≈573 K / 300 °C), with typical applications for each. No single system covers the full range; verify the usable range of your selected configuration. Schematic illustration for orientation; not a specification of any particular system.</figcaption>
+        <figcaption>Figure 2: Temperature environments — cryogenic, controlled thermal-chuck, and ambient regimes against reference points (a 10 K-class cryogenic reference, 77 K liquid nitrogen, 300 K room temperature, and an example upper thermal-chuck reference near 300 °C). No single system covers the full range; verify your configuration's usable range. Schematic illustration for orientation; not a specification of any particular system.</figcaption>
       </figure>
 
       <h3>4. Signal type: DC, RF, or optical</h3>
       <p>The measurement signal decides the probes, cabling, and shielding you need:</p>
       <ul>
         <li><strong>DC / low-frequency (I–V, C–V):</strong> the default for most device and materials characterization. Probe material and cabling depend on current level, guarding, voltage, contact resistance, and instrument interface; low-current measurements often benefit from guarded triax paths.</li>
-        <li><strong>RF / microwave / mmWave:</strong> requires ground–signal–ground (GSG) probes, calibrated coaxial paths, and often shielding against interference. Essential for high-frequency transistors and passives.</li>
+        <li><strong>RF / microwave / mmWave:</strong> commonly uses calibrated RF probes such as ground–signal–ground (GSG) or differential configurations, matched to the device pad layout, along with calibrated coaxial paths and often shielding against interference. Essential for high-frequency transistors and passives.</li>
         <li><strong>Optical / silicon photonics:</strong> wafer-level photonic testing needs fiber alignment stages alongside electrical probes to couple light into and out of on-chip waveguides.</li>
       </ul>
       <p>Mixing these is common — a photonics group may need optical <em>and</em> RF <em>and</em> DC on the same wafer — but each capability adds cost, so specify only what your measurements require.</p>
@@ -151,102 +152,103 @@
       </ul>
 
       <h3>Federal award examples</h3>
-      <p>US federal purchases are a matter of public record. Each row below is a historical transaction example — a total purchase order that typically includes options, installation, and warranty, not a bare-machine list price — verifiable on USAspending.gov by its unique Award ID (PIID). Accessed 2026-07-12.</p>
+      <p>US federal purchases are a matter of public record. Each row below is a historical transaction example. Each amount is the total value associated with the cited purchase order, not a normalized bare-machine list price; the public award summary may not identify which accessories, services, installation, training, or warranty items were included. Each row is independently verifiable on USAspending.gov by its unique Award ID (PIID) — the linked identifier opens the award-detail record. Accessed 2026-07-12.</p>
       <table>
+        <caption style="caption-side:top;text-align:left;font-size:0.9em;color:#555;padding:0 0 8px;font-style:italic">Historical federal purchase examples (public records; not current quotations)</caption>
         <thead>
           <tr>
-            <th>Vendor</th>
-            <th>Buyer</th>
-            <th>Award FY</th>
-            <th>Amount</th>
-            <th>Description</th>
-            <th>Award ID (PIID)</th>
+            <th scope="col">Vendor</th>
+            <th scope="col">Buyer</th>
+            <th scope="col">Award FY</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Award description (as recorded)</th>
+            <th scope="col">Award ID (PIID)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>FormFactor</td>
+            <th scope="row">FormFactor</th>
             <td>US Navy</td>
             <td>FY2022</td>
             <td>$103,877</td>
             <td>Wafer probe station</td>
-            <td>N6600122P6113</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_N6600122P6113_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>N6600122P6113</code></a></td>
           </tr>
           <tr>
-            <td>Keithley</td>
+            <th scope="row">Keithley</th>
             <td>Army Research Laboratory</td>
             <td>FY2010</td>
             <td>$157,272</td>
             <td>Semi-automatic 200 mm probe station</td>
-            <td>W911QX10P0505</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_W911QX10P0505_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>W911QX10P0505</code></a></td>
           </tr>
           <tr>
-            <td>Micromanipulator</td>
+            <th scope="row">Micromanipulator</th>
             <td>US Army</td>
             <td>FY2014</td>
             <td>$134,131</td>
             <td>300 mm motorized probe station</td>
-            <td>W31P4Q14P0049</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_W31P4Q14P0049_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>W31P4Q14P0049</code></a></td>
           </tr>
           <tr>
-            <td>Lake Shore Cryotronics</td>
+            <th scope="row">Lake Shore Cryotronics</th>
             <td>US Navy</td>
             <td>FY2018</td>
             <td>$249,991</td>
-            <td>Cryogenic probe station</td>
-            <td>N6600118P8072</td>
+            <td>Probe station (exact configuration not stated in award summary)</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_N6600118P8072_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>N6600118P8072</code></a></td>
           </tr>
           <tr>
-            <td>Accretech</td>
+            <th scope="row">Accretech</th>
             <td>DTRA</td>
             <td>FY2018</td>
             <td>$220,430</td>
-            <td>UF2000 300 mm fully automatic prober</td>
-            <td>HQ072718P0020</td>
+            <td>New Accretech UF2000 probing system</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072718P0020_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072718P0020</code></a></td>
           </tr>
           <tr>
-            <td>Accretech</td>
+            <th scope="row">Accretech</th>
             <td>DTRA</td>
             <td>FY2018</td>
             <td>$250,416</td>
-            <td>UF2000 300 mm fully automatic prober</td>
-            <td>HQ072718P0016</td>
+            <td>Accretech UF2000 demo prober</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072718P0016_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072718P0016</code></a></td>
           </tr>
           <tr>
-            <td>Accretech</td>
+            <th scope="row">Accretech</th>
             <td>DTRA</td>
             <td>FY2019</td>
             <td>$292,470</td>
-            <td>UF2000 300 mm fully automatic prober</td>
-            <td>HQ072719P0032</td>
+            <td>Accretech UF2000 prober station</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072719P0032_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072719P0032</code></a></td>
           </tr>
           <tr>
-            <td>MPI America</td>
+            <th scope="row">MPI America</th>
             <td>AFRL</td>
             <td>FY2022</td>
             <td>$572,323</td>
-            <td>Fully automatic wafer probe test system</td>
-            <td>FA875122C0022</td>
+            <td>Automated wafer probe test system</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_FA875122C0022_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>FA875122C0022</code></a></td>
           </tr>
         </tbody>
       </table>
-      <p><em>Note:</em> each row is a historical transaction example — a total purchase order (typically including options, installation, and warranty), not a bare-machine list price — verifiable on USAspending.gov by its Award ID; accessed 2026-07-12.</p>
+      <p><em>Note:</em> each row is a historical transaction example. Each amount is the total value associated with the cited purchase order, not a normalized bare-machine list price; the public award summary may not identify which accessories, services, installation, training, or warranty items were included. Descriptions are reproduced from the recorded award summary. Each Award ID links to its USAspending.gov award-detail record; accessed 2026-07-12. To verify any row independently: search the Award ID on USAspending.gov (Advanced Search &rarr; Award ID), or query the public API at <code>https://api.usaspending.gov/api/v2/search/spending_by_award/</code> using the PIID as the <code>award_id</code> filter.</p>
 
-      <p>The practical takeaway: entry manual systems can begin in the high four figures, while application-ready analytical configurations commonly move into five figures once positioners, probes, optics, shielding, instruments, installation, and options are included. Cryogenic and fully automatic systems move into six figures, as the federal award examples above show. Anchor your grant budget to the tier you actually need, then get current pricing the only reliable way — request quotes with a fully specified configuration so you are comparing like for like.</p>
+      <p>The practical takeaway: entry manual systems can begin in the high four figures, while application-ready analytical configurations commonly move into five figures once positioners, probes, optics, shielding, instruments, installation, and options are added. Cryogenic and fully automatic systems move into six figures, as the federal award examples above show. Anchor your grant budget to the tier you actually need, then get current pricing the only reliable way — request quotes with a fully specified configuration so you are comparing like for like.</p>
 
       <h2>University Procurement Considerations: Fiscal Year, Grants, and Federal Rules</h2>
       <p>For university labs, choosing the instrument is often the easy part. Getting it purchased is where timelines slip.</p>
       <p><strong>Fiscal-year timing.</strong> Capital equipment purchases cluster around fiscal-year boundaries and grant milestones. If a quote, a sole-source justification, and a purchase order all have to clear before funds expire, start the conversation months ahead — probe stations frequently carry multi-week to multi-month lead times.</p>
       <p><strong>Federally funded purchases.</strong> Purchases charged to federal awards must follow the university's procurement policies and the applicable Uniform Guidance requirements. SAM registration is generally required when the supplier contracts directly with the federal government, but it is not a universal requirement for every vendor paid by a university under a federal grant. Confirm vendor-onboarding, competitive-bid, domestic-preference, and documentation requirements with your institution's procurement office.</p>
-      <p><strong>Import duties.</strong> Many probe stations are manufactured outside the United States, and duty treatment varies with an instrument's country of origin and customs classification (HTS) — a line item first-time buyers rarely anticipate. Whatever brand you evaluate, ask whether the quoted price is delivered or ex-works, and who is the importer of record. NineScrolls quotes <a href="/wafer-probe-stations/semishare">SEMISHARE probe stations</a> as delivered pricing with import coordination included, so any duty cost is visible in the quote rather than a surprise at customs.</p>
+      <p><strong>Import duties.</strong> Many probe stations are manufactured outside the United States, and duty treatment varies with an instrument's country of origin and customs classification (HTS) — a line item first-time buyers rarely anticipate. Whatever brand you evaluate, ask whether the quoted price is delivered or ex-works, and who is the importer of record. NineScrolls can quote <a href="/wafer-probe-stations/semishare">SEMISHARE probe stations</a> with delivered pricing, with import coordination identified in the quotation, so any duty cost is visible in the quote rather than a surprise at customs.</p>
 
       <h2>Where SEMISHARE Fits</h2>
       <p>Among the options a US research lab can consider, <strong>SEMISHARE</strong> is worth knowing about. It is a Shenzhen-based wafer-prober manufacturer with a product range that maps onto the five decisions above:</p>
       <ul>
-        <li><strong>Manual</strong> stations, including fine-pitch configurations for small bond pads</li>
-        <li><strong>Semi-automatic</strong> stations for multi-site device characterization</li>
-        <li><strong>Cryogenic-vacuum</strong> stations with liquid-nitrogen and liquid-helium cooling options</li>
-        <li><strong>Fully automatic</strong> production probers for higher-volume test</li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Manual</strong> stations, including fine-pitch configurations for small bond pads</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Semi-automatic</strong> stations for multi-site device characterization</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Cryogenic-vacuum</strong> stations with liquid-nitrogen and liquid-helium cooling options</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Fully automatic</strong> production probers for higher-volume test</a></li>
       </ul>
       <p>For US buyers, the practical question has usually been the procurement path — obtaining a compliant quote and arranging import — rather than the equipment itself.</p>
       <p>That is where <strong>NineScrolls</strong> fits. NineScrolls provides a US-based path for configuration discussions, quoting, import coordination, and post-sale support. Installation, calibration, training, warranty handling, and on-site service scope are confirmed for each quoted configuration.</p>
@@ -263,9 +265,9 @@
         <li>FormFactor MPS150 manual probe system (published starting price; listed pricing varies by catalog version) — <a href="https://www.formfactor.com/product/probe-systems/150-mm-systems/mps150/" target="_blank" rel="noopener noreferrer">formfactor.com</a>. Accessed 2026-07-12.</li>
         <li>Lake Shore Cryotronics cryogenic probe stations (catalog cost comparison, ~$100k–$400k across configurations including multi-year operating costs) — <a href="https://www.lakeshore.com/docs/default-source/product-downloads/catalog/probestationcatalog_l.pdf" target="_blank" rel="noopener noreferrer">probestationcatalog_l.pdf</a>. Accessed 2026-07-12.</li>
         <li>US federal procurement award records (probe-station awards, FY2010–FY2022), verifiable by Award ID (PIID) — <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer">usaspending.gov</a>. Accessed 2026-07-12. Award IDs cited in the table above: N6600122P6113, W911QX10P0505, W31P4Q14P0049, N6600118P8072, HQ072718P0020, HQ072718P0016, HQ072719P0032, FA875122C0022.</li>
-        <li>NSF Proposal &amp; Award Policies &amp; Procedures Guide (PAPPG), recipient standards for procurement under federal awards — <a href="https://www.nsf.gov/policies/pappg/23-1/ch-9-recipient-standards" target="_blank" rel="noopener noreferrer">nsf.gov/policies/pappg</a>. Accessed 2026-07-12.</li>
-        <li>2 CFR 200 Uniform Guidance, procurement standards (Subpart D) — <a href="https://www.ecfr.gov/current/title-2/subtitle-A/chapter-II/part-200/subpart-D/subject-group-ECFR45ddd4419ad436d" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200 Subpart D</a>. Accessed 2026-07-12.</li>
-        <li>FAR 4.1103, System for Award Management (SAM) registration for direct federal contracting — <a href="https://www.acquisition.gov/far/4.1103" target="_blank" rel="noopener noreferrer">acquisition.gov/far/4.1103</a>. Accessed 2026-07-12.</li>
+        <li>2 CFR 200 Uniform Guidance, Subpart D &mdash; Procurement Standards (&sect;&sect; 200.317&ndash;200.327), the primary standards recipients follow when procuring equipment under federal awards — <a href="https://www.ecfr.gov/current/title-2/subtitle-A/chapter-II/part-200/subpart-D" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200 Subpart D</a>. Accessed 2026-07-12.</li>
+        <li>NSF Proposal &amp; Award Policies &amp; Procedures Guide (PAPPG) (NSF 24-1), Chapter IX &mdash; Recipient Standards, which directs recipients to the 2 CFR 200 procurement standards — <a href="https://www.nsf.gov/policies/pappg/24-1/ch-9-recipient-standards" target="_blank" rel="noopener noreferrer">nsf.gov/policies/pappg/24-1</a>. Accessed 2026-07-12.</li>
+        <li>FAR 4.1103, System for Award Management (SAM) registration (direct federal contracting only) — <a href="https://www.acquisition.gov/far/4.1103" target="_blank" rel="noopener noreferrer">acquisition.gov/far/4.1103</a>. Accessed 2026-07-12.</li>
       </ol>
 </body>
 </html>

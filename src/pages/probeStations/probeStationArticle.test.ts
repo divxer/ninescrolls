@@ -135,3 +135,78 @@ describe('probe station buyer-guide standalone article', () => {
     expect(generateSlug(parsed.title)).not.toBe(SLUG);
   });
 });
+
+describe('probe station buyer-guide evidence chain and table accessibility', () => {
+  // The eight federal-award PIIDs cited in the article. Amounts were verified
+  // out-of-band against the USAspending API; this test deliberately does NOT
+  // fetch live data (CI has no external network). It guards the STRUCTURE of
+  // the citation — the exact, unique set of award IDs and their shape.
+  const EXPECTED_PIIDS = [
+    'N6600122P6113',
+    'W911QX10P0505',
+    'W31P4Q14P0049',
+    'N6600118P8072',
+    'HQ072718P0020',
+    'HQ072718P0016',
+    'HQ072719P0032',
+    'FA875122C0022',
+  ];
+
+  it('cites exactly the eight verified award PIIDs, each a 13-char alphanumeric ID', () => {
+    // The reference list is itself exactly eight and free of duplicates.
+    expect(EXPECTED_PIIDS).toHaveLength(8);
+    expect(new Set(EXPECTED_PIIDS).size).toBe(8);
+
+    for (const piid of EXPECTED_PIIDS) {
+      expect(piid, `${piid} PIID shape`).toMatch(/^[A-Z0-9]{13}$/);
+      expect(content, `${piid} present in article`).toContain(piid);
+    }
+
+    // Each award row renders its PIID inside a <code> cell. The set of
+    // 13-char alphanumeric <code> tokens must be EXACTLY the verified eight —
+    // no ninth, unverified award id may slip into the table.
+    const codeCited = [...content.matchAll(/<code>([A-Z0-9]{13})<\/code>/g)].map((m) => m[1]);
+    expect(new Set(codeCited)).toEqual(new Set(EXPECTED_PIIDS));
+
+    // Every PIID cell links directly to its USAspending award-detail record.
+    for (const piid of EXPECTED_PIIDS) {
+      expect(content, `${piid} detail link`).toContain(
+        `href="https://www.usaspending.gov/award/CONT_AWD_${piid}_9700_-NONE-_-NONE-"`,
+      );
+    }
+  });
+
+  it('avoids high-risk procurement and award over-claims', () => {
+    const BANNED: RegExp[] = [
+      /generally need(s)? .{0,40}SAM/i,
+      /cannot buy with your grant/i,
+      /\bguaranteed\b/i,
+      /installation.{0,30}(included|free)/i,
+      /typically includes? .{0,40}(installation|warranty)/i,
+    ];
+    for (const pattern of BANNED) {
+      expect(content, `banned wording ${pattern}`).not.toMatch(pattern);
+    }
+  });
+
+  it('gives every content table a caption, column headers, and row headers', () => {
+    const tables = content.match(/<table[\s\S]*?<\/table>/gi) ?? [];
+    expect(tables.length, 'at least the automation + awards tables').toBeGreaterThanOrEqual(2);
+
+    for (const table of tables) {
+      expect(table, 'table <caption>').toMatch(/<caption[\s>]/i);
+      expect(table, 'table has a scope="col" header').toMatch(/<th\s+scope="col"/i);
+
+      const tbody = table.match(/<tbody[\s\S]*?<\/tbody>/i)?.[0];
+      expect(tbody, 'table has a <tbody>').toBeTruthy();
+
+      const rows = tbody!.match(/<tr[\s\S]*?<\/tr>/gi) ?? [];
+      expect(rows.length, 'tbody has rows').toBeGreaterThan(0);
+      for (const row of rows) {
+        expect(row, 'body row starts with a scope="row" header').toMatch(
+          /^\s*<tr[^>]*>\s*<th\s+scope="row"/i,
+        );
+      }
+    }
+  });
+});
