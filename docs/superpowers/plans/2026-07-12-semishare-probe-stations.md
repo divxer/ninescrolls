@@ -725,21 +725,24 @@ node -e "require('sharp')('public/assets/images/redesign/products/probe-station-
 test -f public/assets/images/redesign/products/probe-station-schematic-standardized.webp && echo OK
 
 # Verify EVERY expected variant exists — optimize-images.js catches per-file
-# errors and exits 0, so a silent failure would otherwise slip through:
+# errors and exits 0, so a silent failure would otherwise slip through.
+# Accumulate failures and exit non-zero so the step cannot false-pass:
+missing=0
 for f in probe-station-anatomy probe-station-temperature-regimes probe-station-automation-levels probe-station-guide-cover; do
   for s in sm md lg xl; do
     for ext in png webp; do
-      test -f "public/assets/images/insights/$f-$s.$ext" || echo "MISSING: $f-$s.$ext"
+      test -f "public/assets/images/insights/$f-$s.$ext" || { echo "MISSING: $f-$s.$ext"; missing=1; }
     done
   done
 done
-echo "variant check done"
+if [ "$missing" -ne 0 ]; then echo "variant check FAILED"; exit 1; fi
+echo "variant check OK"
 ```
 
 Expected: the `test -f` prints `OK` for the products-card webp, and the variant
-check prints only `variant check done` with NO `MISSING:` lines. Any `MISSING:`
-line means optimize-images.js swallowed an error — rerun it for that file and
-inspect its output.
+check prints `variant check OK` and exits 0. A non-zero exit with `MISSING:`
+lines means optimize-images.js swallowed an error — rerun it for that file and
+inspect its output before proceeding.
 
 - [ ] **Step 3: Commit**
 
@@ -1634,10 +1637,9 @@ git commit -m "feat(probe-stations): cryogenic and silicon photonics application
 import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   FORBIDDEN_ATTESTATION_PATTERNS,
-  PARTNER_BADGE_ASSETS,
   getBrandPageSeoTitle,
   getPartnerBannerText,
   getPartnerJsonLdDescription,
@@ -1647,8 +1649,20 @@ import { SemishareBrandPage } from './SemishareBrandPage';
 import { CryogenicProbingPage } from './CryogenicProbingPage';
 import { SiliconPhotonicsProbingPage } from './SiliconPhotonicsProbingPage';
 
+// The production badge list is EMPTY (pinned by semishare.test.ts). To prove
+// the gate actually controls badge rendering — not just that nothing renders
+// because nothing is configured — these tests mock a non-empty fixture list.
+// Flag stays at its real value (OFF) here.
+const TEST_BADGE = vi.hoisted(() => ({ src: '/test-partner-badge.svg', alt: 'Test partner badge' }));
+
+vi.mock('../../data/probeStations/semishare', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../data/probeStations/semishare')>();
+  return { ...actual, PARTNER_BADGE_ASSETS: [TEST_BADGE] };
+});
+
 // Expected values below come from the registry getters (getPartnerBannerText
-// etc.). This is NOT circular: the getters' literal outputs are pinned in
+// etc.) — real implementations, since the mock spreads the actual module.
+// This is NOT circular: the getters' literal outputs are pinned in
 // src/data/probeStations/semishare.test.ts; these tests verify the pages
 // actually render what the registry resolves for each flag state.
 
@@ -1698,11 +1712,11 @@ describe('attestation gate OFF (default)', () => {
         expect(text, `${path} ${surface} vs ${pattern}`).not.toMatch(pattern);
       }
     }
-    // Registry badge assets must not render anywhere while OFF — even if the
-    // list is populated later, this assertion keeps biting.
-    for (const badge of PARTNER_BADGE_ASSETS) {
-      expect(imgAttrs, `${path} badge ${badge.src}`).not.toContain(badge.src);
-    }
+    // Badge gate: the mocked fixture list is non-empty, so this actually
+    // proves the OFF flag suppresses configured badges (not merely that no
+    // badge is configured).
+    expect(imgAttrs, `${path} badge src`).not.toContain(TEST_BADGE.src);
+    expect(screen.queryByAltText(TEST_BADGE.alt), `${path} badge alt`).toBeNull();
     unmount();
     cleanupHead();
   });
@@ -1734,7 +1748,6 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import {
   FORBIDDEN_ATTESTATION_PATTERNS,
-  PARTNER_BADGE_ASSETS,
   getBrandPageSeoTitle,
   getPartnerBannerText,
   getPartnerJsonLdDescription,
@@ -1744,15 +1757,20 @@ import { SemishareBrandPage } from './SemishareBrandPage';
 import { CryogenicProbingPage } from './CryogenicProbingPage';
 import { SiliconPhotonicsProbingPage } from './SiliconPhotonicsProbingPage';
 
+// Non-empty badge fixture (production list is empty, pinned by
+// semishare.test.ts) — proves the ON flag actually renders configured badges.
+const TEST_BADGE = vi.hoisted(() => ({ src: '/test-partner-badge.svg', alt: 'Test partner badge' }));
+
 vi.mock('../../data/probeStations/semishare', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../data/probeStations/semishare')>();
-  return { ...actual, ATTESTATION_CONFIRMED: true };
+  return { ...actual, ATTESTATION_CONFIRMED: true, PARTNER_BADGE_ASSETS: [TEST_BADGE] };
 });
 
 // NOTE: everything imported from the mocked module except ATTESTATION_CONFIRMED
-// is the actual implementation (the mock spreads the original), so the getters
-// and pattern list used as expected values below are real. The getters' literal
-// outputs are pinned in semishare.test.ts — using them here is not circular.
+// and PARTNER_BADGE_ASSETS is the actual implementation (the mock spreads the
+// original), so the getters and pattern list used as expected values below are
+// real. The getters' literal outputs are pinned in semishare.test.ts — using
+// them here is not circular.
 
 const NON_BRAND_PAGES = [
   ['/wafer-probe-stations', WaferProbeStationsPage],
@@ -1803,17 +1821,14 @@ describe('attestation gate ON (mocked written confirmation)', () => {
     const org = jsonLd.find((s) => s['@type'] === 'Organization');
     expect(org?.description).toBe(getPartnerJsonLdDescription(true));
 
-    // Badges: every registry asset must render with its exact src and alt.
-    // Empty registry today ⇒ the loop is vacuous AND the guard below asserts
-    // nothing badge-shaped sneaks in from outside the registry. When assets
-    // are added later, the loop starts verifying them without a test change.
-    for (const badge of PARTNER_BADGE_ASSETS) {
-      const img = screen.getByAltText(badge.alt);
-      expect(img).toHaveAttribute('src', badge.src);
-    }
-    const registrySrcs = new Set(PARTNER_BADGE_ASSETS.map((b) => b.src));
+    // Badge gate: the mocked fixture MUST render with its exact src and alt —
+    // proves ON actually flows registry assets to the DOM.
+    expect(screen.getByAltText(TEST_BADGE.alt)).toHaveAttribute('src', TEST_BADGE.src);
+    // And nothing badge-shaped outside the registry list may render.
     const strayBadgeImgs = Array.from(document.images).filter(
-      (img) => /badge|partner-?logo/i.test(`${img.src} ${img.alt}`) && !registrySrcs.has(img.getAttribute('src') ?? '')
+      (img) =>
+        /badge|partner-?logo/i.test(`${img.src} ${img.alt}`) &&
+        img.getAttribute('src') !== TEST_BADGE.src
     );
     expect(strayBadgeImgs).toEqual([]);
     unmount();
@@ -2134,13 +2149,18 @@ describe('probe station buyer-guide article entry', () => {
       );
       expect(existsSync(`public/assets/images/insights/${base}.png`), `${base}.png on disk`).toBe(true);
 
-      // The figure's own caption (within 400 chars after the block) carries the
-      // schematic disclaimer
+      // The IMMEDIATELY ADJACENT caption element (allowing only closing
+      // wrapper tags in between) must be a post-figure-caption carrying the
+      // schematic disclaimer — proximity alone is not enough.
       const afterBlock = post!.content!.slice(
         post!.content!.indexOf(block!) + block!.length,
         post!.content!.indexOf(block!) + block!.length + 400
       );
-      expect(afterBlock, `caption after ${base}`).toMatch(/Schematic illustration/i);
+      const captionMatch = afterBlock.match(
+        /^\s*(?:<\/[a-z]+>\s*)*<p class="post-figure-caption">([\s\S]*?)<\/p>/i
+      );
+      expect(captionMatch, `adjacent post-figure-caption after ${base}`).toBeTruthy();
+      expect(captionMatch![1], `schematic disclaimer in ${base} caption`).toMatch(/Schematic illustration/i);
     }
     expect(existsSync('public/assets/images/insights/probe-station-guide-cover.png')).toBe(true);
   });
@@ -2170,7 +2190,7 @@ Expected: FAIL — `post` is undefined (entry not added yet).
 
 Conversion rules:
 - Content: full HTML conversion of the draft, faithful to the text. **No TOC** (the page auto-generates one). Match the HTML conventions already used in `insightsPostsData.ts` — before writing, copy the exact `<picture>` block and table/figure class patterns from an existing entry (`grep -n -m1 -A8 '<picture>' scripts/insightsPostsData.ts` and `grep -n -m2 'post-figure-caption\|<table' scripts/insightsPostsData.ts`).
-- Replace the draft's two "Figure Suggestion" placeholders with `<picture>` blocks for `/assets/images/insights/probe-station-temperature-regimes` and `/assets/images/insights/probe-station-automation-levels` (sm/md/lg/xl webp + png fallback), each with a `post-figure-caption` including "Schematic illustration".
+- Replace the draft's two "Figure Suggestion" placeholders with `<picture>` blocks for `/assets/images/insights/probe-station-temperature-regimes` and `/assets/images/insights/probe-station-automation-levels` (sm/md/lg/xl webp srcset + png fallback `<img>`). Immediately after each `</picture>` (only closing wrapper tags in between), place a `<p class="post-figure-caption">` whose text includes "Schematic illustration" — the article test asserts this exact adjacency.
 - Keep the draft's sourced cost discussion as written; if any sentence attributes a spec to SEMISHARE specifically, either source it from the brand-page data module values or cut it (Constraint 7). Generic market prose is fine.
 - Internal links: add links to `/wafer-probe-stations` (in the introduction or "what a probe station does" section) and `/wafer-probe-stations/semishare` (in the procurement/buying section).
 
