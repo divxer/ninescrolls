@@ -48,4 +48,8 @@ describe('extractClickIds', () => {
     const long = 'a'.repeat(500);
     expect(extractClickIds(`?gclid=${long}`).gclid).toHaveLength(200);
   });
+
+  it('retains the first value when a click-ID param is duplicated', () => {
+    expect(extractClickIds('?gclid=first&gclid=second')).toEqual({ gclid: 'first' });
+  });
 });
