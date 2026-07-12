@@ -15,7 +15,7 @@ const faqs = [
   {
     question: 'Manual or semi-automatic probe station — which should a university lab buy?',
     answer:
-      'If your group characterizes a handful of devices per sample, a manual analytical station is usually the correct tool, not a compromise. Semi-automatic stations earn their cost when you step across dozens of sites per wafer and need recipe-driven repeatability.',
+      'If your group characterizes a handful of devices per sample, a manual analytical station is usually the correct tool, not a compromise. Semi-automatic stations earn their cost for repeated multi-site measurements, where recipe-assisted stepping improves consistency and operator efficiency.',
   },
   {
     question: 'Can I buy a probe station in the US through NineScrolls?',

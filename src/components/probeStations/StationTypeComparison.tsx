@@ -1,21 +1,29 @@
+// Cell texts mirror the automation-levels figure — qualitative dimensions only,
+// no throughput or wafer-size claims (they are configuration-dependent).
 const ROWS = [
   {
     aspect: 'Positioning',
     manual: 'Hand-driven micropositioners',
-    semi: 'Motorized stage, manual probe setup',
-    auto: 'Programmed wafer mapping and auto-alignment',
+    semi: 'Motorized stage with manual probe setup',
+    auto: 'Programmed wafer mapping and alignment',
   },
   {
-    aspect: 'Throughput',
-    manual: 'One measurement at a time',
-    semi: 'Moderate; recipe-assisted stepping',
-    auto: 'High; unattended full-wafer runs',
+    aspect: 'Workflow',
+    manual: 'Device-by-device measurement',
+    semi: 'Recipe-assisted multi-site stepping',
+    auto: 'Automated wafer-map execution',
   },
   {
-    aspect: 'Best for',
-    manual: 'Materials studies, single-device work, teaching',
-    semi: 'Multi-site device characterization',
-    auto: 'Production-style test with ATE',
+    aspect: 'Best fit',
+    manual: 'Exploratory research, teaching, flexible setups',
+    semi: 'R&D characterization and repeated measurements',
+    auto: 'High-volume mapping and production-style test',
+  },
+  {
+    aspect: 'Operator involvement',
+    manual: 'Continuous hands-on control',
+    semi: 'Setup plus supervision',
+    auto: 'Exception handling and run oversight',
   },
 ] as const;
 

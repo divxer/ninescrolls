@@ -33,9 +33,10 @@ export function CryogenicProbingPage() {
           Probing setups fall into three tiers. An ambient station measures at room temperature.
           A thermal-chuck station adds a heated or cooled chuck for reliability and
           temperature-dependent I–V work. A cryogenic-vacuum station encloses the sample in
-          vacuum and cools it with liquid nitrogen (reaching the ~77 K range) or a liquid helium /
-          closed-cycle system (reaching single-digit kelvin) — the regime where superconductivity
-          and quantum transport phenomena become measurable.
+          vacuum and cools it with liquid nitrogen or liquid helium / closed-cycle architectures —
+          the regime where superconductivity and quantum transport phenomena become measurable.
+          Exact usable temperature limits depend on the chuck, cooling architecture, vacuum
+          package, wiring, and options; verify the range against the selected configuration.
         </p>
         <SchematicFigure
           src="/assets/images/insights/probe-station-temperature-regimes.png"
