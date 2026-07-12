@@ -31,7 +31,7 @@ describe('SemishareBrandPage', () => {
       expect(screen.getByRole('heading', { level: 3, name: line.name })).toBeInTheDocument();
     }
     // Every numeric spec that appears is sourced (rendered by SourcedSpecTable)
-    const sourceLinks = screen.queryAllByRole('link', { name: /^source$/i });
+    const sourceLinks = screen.queryAllByRole('link', { name: /^Source for /i });
     const specCount = productLines.reduce((n, l) => n + l.specs.length, 0);
     expect(sourceLinks).toHaveLength(specCount);
   });

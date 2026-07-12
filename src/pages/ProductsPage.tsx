@@ -342,8 +342,8 @@ export function ProductsPage() {
     <>
       <SEO
         title="Semiconductor Process Equipment | Plasma Etching, Deposition & Cleaning"
-        description="Choose NineScrolls process equipment by application: ICP-RIE, RIE, PECVD, ALD, sputter, IBE/RIBE, e-beam evaporation, HDP-CVD, coating/developing, stripping, and plasma cleaning systems."
-        keywords="semiconductor process equipment, plasma etching systems, thin film deposition systems, plasma cleaner, ICP-RIE, PECVD, ALD, sputter, e-beam evaporator"
+        description="Choose NineScrolls process equipment by application: ICP-RIE, RIE, PECVD, ALD, sputter, IBE/RIBE, e-beam evaporation, HDP-CVD, coating/developing, stripping, plasma cleaning, and wafer probe stations for device characterization."
+        keywords="semiconductor process equipment, plasma etching systems, thin film deposition systems, plasma cleaner, wafer probe stations, device characterization, ICP-RIE, PECVD, ALD, sputter, e-beam evaporator"
         url="/products/"
       />
 

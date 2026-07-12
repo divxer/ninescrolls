@@ -35,6 +35,7 @@ export function SourcedSpecTable({ specs, caption }: SourcedSpecTableProps) {
                   href={spec.source.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`Source for ${spec.label}`}
                   className="underline hover:text-sky-700"
                 >
                   source

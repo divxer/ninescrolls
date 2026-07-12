@@ -9,7 +9,8 @@ import type { InsightsPost, RelatedProduct } from '../types';
 import { rankRelatedInsights } from '../utils/insights';
 import { PlasmaCleanerComparisonPage } from './PlasmaCleanerComparisonPage';
 import DOMPurify from 'dompurify';
-import { cdnUrl, CDN_BASE_URL } from '../config/imageConfig';
+import { cdnUrl } from '../config/imageConfig';
+import { rewriteContentImages } from '../utils/rewriteContentImages';
 import { ArticleQASection, FloatingAskButton } from '../components/insights/ArticleQASection';
 import { LightboxContainer } from '../components/common/ImageLightbox';
 import { HeroCleanroomBackground } from '../components/HeroCleanroomBackground';
@@ -17,24 +18,11 @@ import { RfqCtaCard } from '../components/insights/RfqCtaCard';
 import { RfqCtaSidebar } from '../components/insights/RfqCtaSidebar';
 import '../styles/article-content.css';
 
-/**
- * Rewrite /assets/images/ paths inside HTML content to CDN URLs.
- * Only active when VITE_CDN_BASE_URL is set; otherwise returns content as-is.
- */
 function toIsoDateTime(dateStr: string | undefined): string {
   if (!dateStr) return new Date().toISOString();
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return `${dateStr}T00:00:00Z`;
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
-}
-
-function rewriteContentImages(html: string): string {
-  if (!CDN_BASE_URL) return html;
-  // Match src="..." and srcSet="..." attributes containing /assets/images/
-  return html.replace(
-    /((?:src|srcSet)\s*=\s*")\/assets\/images\//g,
-    `$1${CDN_BASE_URL}/`,
-  );
 }
 
 // Consolidated article redirects: weaker → stronger article
