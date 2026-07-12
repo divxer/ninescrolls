@@ -86,28 +86,192 @@ export const productLines: readonly ProductLine[] = [
     name: 'A Series — Fully Automatic Probe Stations',
     positioning:
       'Production-style fully automatic wafer probing designed to run with ATE for wafer acceptance testing and chip probing at volume.',
-    specs: [],
+    specs: [
+      {
+        label: 'Temperature control range',
+        value: '-50°C to 200°C (optionally -60°C to 300°C)',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/a-series-full-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Temperature control accuracy',
+        value: '0.1°C',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/a-series-full-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Probing accuracy',
+        value: '±2μm (with screw structure) / ±1.5μm (with linear motor)',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/a-series-full-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Chuck movement speed',
+        value: 'exceeding 300mm/s',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/a-series-full-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Leakage current',
+        value: 'fA level',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/a-series-full-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+    ],
   },
   {
     key: 'x-series',
     name: 'X Series — Semi-Automatic Probe Stations',
     positioning:
       'Recipe-assisted, motorized probing for multi-site device characterization across a wafer — the step up from manual stations when repeatability and throughput start to matter.',
-    specs: [],
+    specs: [
+      {
+        label: 'Chuck running speed',
+        value: '>70mm/s',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Translocation time',
+        value: '500ms',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Needle seat capacity',
+        value: 'up to 12 needle seats',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+    ],
   },
   {
     key: 'cgx-series',
     name: 'CGX Series — Cryogenic Vacuum Probe Stations',
     positioning:
       'Closed vacuum enclosure with cryogenic cooling for low-temperature device physics, superconducting electronics, and quantum transport measurements.',
-    specs: [],
+    specs: [
+      {
+        label: 'Chuck size',
+        value: '8"',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Temperature range',
+        value: '77K-450K (liquid nitrogen), 10K-450K (liquid helium)',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Chuck stage repeated positioning accuracy',
+        value: '±1μm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Probe arm positioning accuracy',
+        value: '2μm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Temperature controller resolution',
+        value: '0.001℃',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'System ultimate pressure',
+        value: '＜5.0x10-4Pa',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+    ],
   },
   {
     key: 'manual-series',
     name: 'SM / SE / SH Series — Manual Analytical Probe Stations',
     positioning:
       'Hand-driven analytical stations for university teaching labs, materials research, and single-device characterization where flexibility beats throughput.',
-    specs: [],
+    specs: [
+      {
+        label: 'Chuck size',
+        value: 'M4: 4" / M6: 6" / M8: 8"',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Stage travel (X-Y)',
+        value: 'M4: 100*100mm / M6: 150*150mm / M8: 200*200mm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Movement accuracy',
+        value: '10μm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Theta rotation',
+        value: '±45° rotation (coarse adjustment); fine adjustment range ±8°, fine adjustment accuracy 0.01°',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Probe travel (X-Y-Z)',
+        value: '12mm-12mm-12mm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Probe mechanical precision',
+        value: '10μm/2μm/0.7μm',
+        source: {
+          url: 'https://www.semishareprober.com/products/probe-station-system/m4-basics-manual-probe.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+    ],
   },
   {
     key: 'silicon-photonics',
@@ -121,6 +285,55 @@ export const productLines: readonly ProductLine[] = [
     name: 'Mask Laser Repair',
     positioning:
       'Laser-based photomask defect repair systems — a specialty line alongside the probe station families.',
-    specs: [],
+    specs: [
+      {
+        label: 'Laser wavelength',
+        value: 'optional wavelength: 1064/532/355/266nm band',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Laser output power',
+        value: '2.2mJ/pulse',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Stage X-Y travel',
+        value: '8*8 inches',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Stage Z-axis travel',
+        value: '50mm',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Minimum process accuracy',
+        value: '1*1μm (when equipped with 100X lens)',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+      {
+        label: 'Objective lens',
+        value: '5X, 10X, 20X, 50X (optional), 100X (optional)',
+        source: {
+          url: 'https://www.semishareprober.com/products/laser-repair-system/mask-cut-repair-l14-series.html',
+          capturedOn: '2026-07-12',
+        },
+      },
+    ],
   },
 ];
