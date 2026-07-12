@@ -146,6 +146,16 @@ export function Layout({ children }: LayoutProps) {
         { to: '/products/plasma-cleaner', label: 'Plasma Cleaners', desc: 'Surface clean & activation' },
       ]
     },
+    {
+      key: 'probing',
+      label: 'Test & Probing',
+      items: [
+        { to: '/wafer-probe-stations', label: 'Wafer Probe Stations', desc: 'Selection hub & buying guide' },
+        { to: '/wafer-probe-stations/semishare', label: 'SEMISHARE Probe Stations', desc: 'US & Canada procurement' },
+        { to: '/applications/cryogenic-probing', label: 'Cryogenic Probing', desc: 'Low-temperature measurement' },
+        { to: '/applications/silicon-photonics-probing', label: 'Silicon Photonics Probing', desc: 'Wafer-level photonic test' },
+      ]
+    },
   ];
 
   // Plasma-cleaner model variants live in the footer (sitewide internal links
@@ -184,13 +194,14 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   // Desktop mega-menu column layout: stack the short single-item Coating
-  // category with Deposition so no column is left mostly empty. Order follows
-  // productCategories (etching, deposition, coating, cleaning).
-  const [etchingCat, depositionCat, coatingCat, cleaningCat] = productCategories;
+  // category with Deposition, and the new Probing category with Cleaning, so
+  // no column is left mostly empty. Order follows productCategories (etching,
+  // deposition, coating, cleaning, probing).
+  const [etchingCat, depositionCat, coatingCat, cleaningCat, probingCat] = productCategories;
   const productColumns = [
     [etchingCat],
     [depositionCat, coatingCat],
-    [cleaningCat],
+    [cleaningCat, probingCat],
   ];
 
   return (

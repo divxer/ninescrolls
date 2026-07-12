@@ -32,4 +32,17 @@ describe('Layout navigation', () => {
     );
     expect(screen.getByText('Deep silicon etch process')).toBeInTheDocument();
   });
+
+  it('includes the probe station pages in the Products menu', () => {
+    const { container } = renderLayout();
+    const productsMenu = container.querySelector('.products-dropdown-wrapper');
+    fireEvent.mouseEnter(productsMenu as Element);
+
+    expect(screen.getByRole('link', { name: /Wafer Probe Stations/i })).toHaveAttribute(
+      'href', '/wafer-probe-stations'
+    );
+    expect(screen.getByRole('link', { name: /SEMISHARE Probe Stations/i })).toHaveAttribute(
+      'href', '/wafer-probe-stations/semishare'
+    );
+  });
 });
