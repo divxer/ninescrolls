@@ -30,8 +30,8 @@ export function SiliconPhotonicsProbingPage() {
         <h2 className="text-2xl font-bold">What makes photonic probing different</h2>
         <p className="mt-3 text-slate-700">
           Electrical probes tolerate a few microns of placement error; optical coupling does not.
-          Grating couplers accept fiber from above with sub-micron alignment tolerance, while
-          edge coupling needs polished facets and even tighter control. A photonics-capable probe
+          Grating couplers accept fiber from above with an alignment tolerance of a micron or
+          two, while edge coupling needs polished facets and sub-micron control. A photonics-capable probe
           station therefore adds piezo-driven fiber positioners, alignment optimization (peak
           search on transmitted power), and stable mechanics so alignment holds during the sweep.
         </p>
