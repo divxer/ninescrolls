@@ -1,72 +1,137 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { insightsPosts } from '../../../scripts/insightsPostsData';
+import { parseArticleHtml } from '../../../scripts/lib/parseArticleHtml';
 import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
 
 const SLUG = 'how-to-choose-wafer-probe-station-university-lab';
+const HTML_PATH = `scripts/articles/${SLUG}.html`;
 
-describe('probe station buyer-guide article entry', () => {
-  const post = insightsPosts.find((p) => p.slug === SLUG);
+// The article now lives as a standalone HTML file consumed by create-insight.ts;
+// parseArticleHtml is the exact parser that script uses, so these assertions
+// guard the content as it will actually be written to DynamoDB.
+const html = readFileSync(HTML_PATH, 'utf8');
+const parsed = parseArticleHtml(html);
+const content = parsed.content;
 
-  it('exists with full content and no hand-written TOC', () => {
-    expect(post).toBeTruthy();
-    expect(post!.content!.length).toBeGreaterThan(10_000); // full conversion, not a stub
+// Replicated verbatim from scripts/create-insight.ts::generateSlug — the test
+// deliberately does NOT import create-insight.ts (it pulls in Amplify/AWS,
+// which must not load in this pure node test). Keep this in lockstep with the
+// script so the slug asserted here matches the slug the script would derive.
+function generateSlug(title: string): string {
+  const raw = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (raw.length <= 80) return raw;
+  return raw.slice(0, 80).replace(/-[^-]*$/, '');
+}
+
+describe('probe station buyer-guide standalone article', () => {
+  it('parses to full content with no hand-written TOC', () => {
+    expect(content.length).toBeGreaterThan(10_000); // full conversion, not a stub
     // The page auto-generates the TOC — the content must not carry one in any
     // of the forms the site (or a naive conversion) could produce:
-    expect(post!.content).not.toMatch(/table of contents/i);
-    expect(post!.content).not.toMatch(/\bid="toc"|class="[^"]*\btoc\b[^"]*"/i);
-    expect(post!.content).not.toMatch(/<nav[^>]*toc/i);
-    expect(post!.content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
+    expect(content).not.toMatch(/table of contents/i);
+    expect(content).not.toMatch(/\bid="toc"|class="[^"]*\btoc\b[^"]*"/i);
+    expect(content).not.toMatch(/<nav[^>]*toc/i);
+    expect(content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
   });
 
-  it('embeds each figure as its own complete <picture> block with caption and on-disk assets', () => {
-    const pictureBlocks = post!.content!.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
+  it('embeds each figure as its own complete <picture> block with CDN URLs, adjacent caption, and on-disk source assets', () => {
+    const pictureBlocks = content.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
+    const CDN = 'https://cdn.ninescrolls.com/insights';
 
     for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
       // The block DEDICATED to this figure — not just any <picture> plus a bare URL
-      const block = pictureBlocks.find((b) => b.includes(`/assets/images/insights/${base}`));
+      const block = pictureBlocks.find((b) => b.includes(`${CDN}/${base}`));
       expect(block, `<picture> block for ${base}`).toBeTruthy();
 
-      // Responsive webp srcset + png fallback, all inside THIS block
+      // Responsive webp srcset (absolute CDN) + png fallback (absolute CDN), all inside THIS block
       for (const size of ['sm', 'md', 'lg', 'xl']) {
-        expect(block, `${base}-${size}.webp in srcset`).toContain(`/assets/images/insights/${base}-${size}.webp`);
+        expect(block, `${base}-${size}.webp CDN srcset`).toContain(`${CDN}/${base}-${size}.webp`);
+        // The local source copies remain on disk — they are the upload source of truth.
         expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp on disk`).toBe(true);
         expect(existsSync(`public/assets/images/insights/${base}-${size}.png`), `${base}-${size}.png on disk`).toBe(true);
       }
-      expect(block, `${base}.png fallback <img>`).toMatch(
-        new RegExp(`<img[^>]+src="/assets/images/insights/${base}\\.png"`)
+      expect(block, `${base}.png CDN fallback <img>`).toMatch(
+        new RegExp(`<img[^>]+src="${CDN}/${base}\\.png"`)
       );
       expect(existsSync(`public/assets/images/insights/${base}.png`), `${base}.png on disk`).toBe(true);
 
-      // The IMMEDIATELY ADJACENT caption element (allowing only closing
-      // wrapper tags in between) must be a post-figure-caption carrying the
-      // schematic disclaimer — proximity alone is not enough.
-      const afterBlock = post!.content!.slice(
-        post!.content!.indexOf(block!) + block!.length,
-        post!.content!.indexOf(block!) + block!.length + 400
+      // The IMMEDIATELY ADJACENT caption element (allowing only closing wrapper
+      // tags in between) must be a <figcaption> carrying the schematic
+      // disclaimer — proximity alone is not enough.
+      const afterBlock = content.slice(
+        content.indexOf(block!) + block!.length,
+        content.indexOf(block!) + block!.length + 500
       );
       const captionMatch = afterBlock.match(
-        /^\s*(?:<\/[a-z]+>\s*)*<p class="post-figure-caption">([\s\S]*?)<\/p>/i
+        /^\s*(?:<\/[a-z]+>\s*)*<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i
       );
-      expect(captionMatch, `adjacent post-figure-caption after ${base}`).toBeTruthy();
+      expect(captionMatch, `adjacent <figcaption> after ${base}`).toBeTruthy();
       expect(captionMatch![1], `schematic disclaimer in ${base} caption`).toMatch(/Schematic illustration/i);
     }
     expect(existsSync('public/assets/images/insights/probe-station-guide-cover.png')).toBe(true);
   });
 
-  it('links to the capability hub and the brand page', () => {
-    expect(post!.content).toContain('href="/wafer-probe-stations"');
-    expect(post!.content).toContain('href="/wafer-probe-stations/semishare"');
+  it('links to the capability hub, the brand page, and the RFQ path', () => {
+    expect(content).toContain('href="/wafer-probe-stations"');
+    expect(content).toContain('href="/wafer-probe-stations/semishare"');
+    expect(content).toContain('href="/request-quote"');
+    // The RFQ route is /request-quote, never /quote.
+    expect(content).not.toContain('href="/quote"');
   });
 
   it('carries no attestation wording and no SEMISHARE-attributed numbers (Constraint 7 tripwire)', () => {
     for (const pattern of FORBIDDEN_ATTESTATION_PATTERNS) {
-      expect(post!.content).not.toMatch(pattern);
+      expect(content).not.toMatch(pattern);
     }
     // Heuristic tripwire, not proof: a number within 60 chars after "SEMISHARE"
     // flags a potentially product-attributed spec. On a hit, either source the
     // value from src/data/probeStations/semishare.ts (and render it there, not
     // here) or cut the sentence — do not weaken this regex.
-    expect(post!.content).not.toMatch(/SEMISHARE[^<.]{0,60}\d+\s?(K\b|mm|inch|"|µm|um)/i);
+    expect(content).not.toMatch(/SEMISHARE[^<.]{0,60}\d+\s?(K\b|mm|inch|"|µm|um)/i);
+  });
+
+  it('exposes the authoring metadata the create-insight flow will write to DynamoDB', () => {
+    expect(parsed.excerpt).toBe(
+      'The five choices that determine which probe station fits your research — automation level, temperature, signal type, sample size, and positioning — plus real cost ranges and the university procurement angles that trip up first-time buyers.'
+    );
+    expect(parsed.category).toBe('Metrology & Testing');
+    expect(parsed.tags).toEqual([
+      'probe station',
+      'wafer probing',
+      'university lab',
+      'equipment procurement',
+      'device characterization',
+    ]);
+    expect(parsed.tags).toHaveLength(5);
+    expect(parsed.articleType).toBe('TechArticle');
+    expect(parsed.imageUrl).toBe('/assets/images/insights/probe-station-guide-cover.png');
+    expect(parsed.publishDate).toBe('2026-07-12');
+    expect(parsed.author).toBe('NineScrolls Engineering');
+
+    expect(parsed.relatedProducts).toHaveLength(2);
+    expect(parsed.relatedProducts!.map((p) => p.href)).toEqual([
+      '/wafer-probe-stations',
+      '/wafer-probe-stations/semishare',
+    ]);
+  });
+
+  it('derives the expected title and a create-insight-compatible slug', () => {
+    const expectedTitle = 'How to Choose a Wafer Probe Station for Your University Research Lab';
+    expect(parsed.title).toBe(expectedTitle);
+
+    // create-insight.ts resolves the slug as: --slug flag > <meta article:slug>
+    // > generateSlug(title). This title alone would derive a DIFFERENT, longer
+    // slug, so the standalone file carries an explicit article:slug meta to
+    // preserve the canonical /insights/<slug> URL (hard-linked from
+    // WaferProbeStationsPage). Assert the resolved slug matches canonical.
+    expect(parsed.slug).toBe(SLUG);
+    const resolvedSlug = parsed.slug ?? generateSlug(parsed.title);
+    expect(resolvedSlug).toBe(SLUG);
+    // Guard that the meta override is actually doing work — the title alone
+    // would NOT produce the canonical slug.
+    expect(generateSlug(parsed.title)).not.toBe(SLUG);
   });
 });

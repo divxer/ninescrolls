@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs';
 import DOMPurify from 'dompurify';
 import { describe, expect, it } from 'vitest';
-import { insightsPosts } from '../../scripts/insightsPostsData';
+import { parseArticleHtml } from '../../scripts/lib/parseArticleHtml';
 import { rewriteContentImages } from '../utils/rewriteContentImages';
 
 const CDN = 'https://cdn.example.com';
@@ -30,28 +31,30 @@ describe('rewriteContentImages', () => {
     expect(rewriteContentImages(html, '')).toBe(html);
   });
 
-  it('routes BOTH src and srcset of the probe-station article through the CDN after rewrite + sanitize', () => {
-    const post = insightsPosts.find(
-      (p) => p.slug === 'how-to-choose-wafer-probe-station-university-lab'
+  it('delivers the probe-station standalone article via absolute CDN URLs through sanitize + rewrite', () => {
+    const html = readFileSync(
+      'scripts/articles/how-to-choose-wafer-probe-station-university-lab.html',
+      'utf8'
     );
-    expect(post).toBeTruthy();
+    const content = parseArticleHtml(html).content;
+    const ABS_CDN = 'https://cdn.ninescrolls.com/insights';
 
-    const delivered = DOMPurify.sanitize(
-      rewriteContentImages(post!.content!, CDN),
-      SANITIZE_OPTIONS
-    );
+    // (a) The standalone article ships absolute CDN URLs only — no local asset
+    // path may appear on any image attribute (browsers prefer <source srcset>
+    // over the <img src> fallback, so both paths must already be absolute).
+    expect(content).not.toMatch(/(?:src|srcset)\s*=\s*"\/assets\/images\//i);
 
-    // No local asset path may survive on any image attribute — browsers
-    // prefer <source srcset> over the <img src> fallback, so both delivery
-    // paths must point at the CDN.
-    expect(delivered).not.toMatch(/(?:src|srcset)\s*=\s*"\/assets\/images\//i);
-
-    // The article's two figures deliver via CDN on both paths.
+    // (b) After the real delivery-path sanitize, the CDN srcset/src URLs
+    // survive and the responsive <picture> markup is preserved.
+    const delivered = DOMPurify.sanitize(content, SANITIZE_OPTIONS);
     for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
-      expect(delivered).toMatch(new RegExp(`srcset="${CDN}/insights/${base}-sm\\.webp`));
-      expect(delivered).toMatch(new RegExp(`src="${CDN}/insights/${base}\\.png"`));
+      expect(delivered).toMatch(new RegExp(`srcset="${ABS_CDN}/${base}-sm\\.webp`));
+      expect(delivered).toMatch(new RegExp(`src="${ABS_CDN}/${base}\\.png"`));
     }
-    // Sanitizer kept the responsive markup (picture/source/srcset survive).
     expect(delivered).toContain('<picture>');
+
+    // (c) rewriteContentImages only rewrites /assets/images/ paths, so for this
+    // already-absolute article it is a no-op (idempotent).
+    expect(rewriteContentImages(content, CDN)).toBe(content);
   });
 });
