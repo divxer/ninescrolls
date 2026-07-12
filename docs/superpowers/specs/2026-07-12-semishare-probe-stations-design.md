@@ -49,6 +49,15 @@ NineScrolls replicates that structure for the Americas.
    banner uses neutral, factual service wording, e.g. "NineScrolls provides
    US & Canada procurement, import, and support for SEMISHARE wafer probe
    stations." Flipping the wording later is a one-line config change.
+   All gated outputs are defined in ONE controlled-wording registry next to
+   the flag (data module): attestation phrases ("Authorized channel partner",
+   "Channel Partner"), partner badges/logos, and JSON-LD partnership claims.
+   Nothing outside the registry may emit these (enforced by test, §6).
+7. **No unverifiable specs**: if a specification (or an entire product-line
+   block) has no qualifying public source, it is omitted — not inferred, not
+   paraphrased from memory, not back-filled from third-party sites. An omitted
+   block renders as a qualitative description with a "detailed specifications
+   on request" CTA instead of a spec table.
 
 ## 1. Information Architecture & Routing
 
@@ -83,15 +92,20 @@ page).
 
 **Brand page** (`/wafer-probe-stations/semishare`), mirroring the BSW page
 structure:
-- Title follows the attestation gate: flag OFF (default at launch) →
-  `SEMISHARE Wafer Probe Stations | US & Canada Sales & Support | NineScrolls`;
-  flag ON →
-  `SEMISHARE Wafer Probe Stations | US & Canada Channel Partner | NineScrolls`.
+- Title: the `SEO` component appends `| NineScrolls LLC` to every title
+  (`SEO.tsx` `fullTitle`), so pages pass the title WITHOUT a site-name suffix.
+  The `title` prop follows the attestation gate: flag OFF (default at launch) →
+  `SEMISHARE Wafer Probe Stations | US & Canada Sales & Support`; flag ON →
+  `SEMISHARE Wafer Probe Stations | US & Canada Channel Partner`. Rendered
+  document title is therefore `... | NineScrolls LLC`; tests assert the exact
+  final string.
 - Hero with `PartnerAttestationBanner` (gated wording per Constraint 6).
 - Product line sections: A series (fully automatic 8/12"), X series
   (semi-automatic), CGX (cryogenic vacuum 77K/10K–450K), SM/SE/SH manual
   series, wafer-level silicon photonics probing, Mask Laser Repair. Each with a
-  `SourcedSpecTable` of public-verifiable specs.
+  `SourcedSpecTable` of public-verifiable specs — or, where no qualifying
+  public source exists, a qualitative description with a "detailed
+  specifications on request" CTA instead (Constraint 7).
 - "Why buy through NineScrolls": US customs/import experience, SAM.gov UEI
   (C4BFCTH5L5D1) federal supplier registration, local after-sales support,
   8+ years North American research equipment channel.
@@ -106,7 +120,11 @@ transport, 2D materials), selection criteria, embedded CTA.
 coupling + electrical probing, academic use cases, what to look for, embedded
 CTA.
 
-**Structured data (JSON-LD)**: all four pages get `BreadcrumbList` + `FAQPage`.
+**Structured data (JSON-LD)**: all four pages get `BreadcrumbList`. `FAQPage`
+markup is emitted ONLY on pages that render a visible FAQ block, and its
+questions/answers must match the visible content exactly. The capability page
+and brand page ship with visible FAQ blocks; the two application pages add
+`FAQPage` only if their content includes a rendered FAQ section.
 The brand page additionally gets Organization-level markup describing
 NineScrolls as a US-based supplier/support provider for SEMISHARE wafer probe
 stations (wording follows the attestation gate), so Google AI Overview learns
@@ -125,8 +143,12 @@ New files:
      annotation (URL + capture date); renders an OEM-confirmation disclaimer
      ("Specifications from manufacturer public materials; subject to OEM
      confirmation").
-  3. `StationTypeComparison` — manual / semi-auto / full-auto comparison block;
-     the same data feeds the capability page and the article.
+  3. `StationTypeComparison` — manual / semi-auto / full-auto comparison block
+     for the React pages. The insight article (HTML stored in DynamoDB) cannot
+     render React components, so it keeps its own editorial comparison table;
+     that table is qualitative (no numeric specs), so there is no single-source
+     requirement between the two — numeric specs live only in the data module
+     and render only through `SourcedSpecTable`.
   4. `SchematicFigure` — figure wrapper that always renders the "Schematic
      illustration, not actual product appearance" caption.
 - `src/data/probeStations/semishare.ts` — the single source of truth for all
@@ -143,10 +165,18 @@ Reused existing components: `SEO` (`src/components/common/SEO.tsx`),
 - **Sitemap**: add the 4 URLs to BOTH static URL lists —
   `scripts/generate-seo.ts` and
   `amplify/functions/generate-sitemaps/handler.ts` (production Lambda).
-- **Amplify Console rewrite rules**: the 4 new routes need manual rewrite rules
-  in the Amplify Console (SPA fallback). This is a console task — the PR
-  includes a deployment checklist item; the pages 404 on direct load until done.
-- **llms.txt**: add the 4 pages; run `check-llms-sync` to verify.
+- **Amplify Console routing**: rewrite rules live in the Amplify Console, not
+  the repo, so whether the existing SPA fallback covers the new paths cannot be
+  verified from code (past experience says new routes have needed Console
+  rules, but that is unconfirmed for these paths). Do NOT pre-add rules.
+  Deployment acceptance check: after deploy, direct-load all 4 URLs in
+  production (fresh tab, no client-side navigation); add Console rewrite rules
+  only for paths that fail. The PR deployment checklist records this check.
+- **llms.txt**: add the 4 pages to `public/llms.txt` and `public/llms-full.txt`.
+  Note `check-llms-sync` only validates `/insights/<slug>` links against
+  DynamoDB and does NOT cover static pages — so add a unit test asserting all
+  4 URLs are present in both files (still run `check-llms-sync` for the
+  article, §5).
 - **Per-page SEO**: full title / meta description / OG tags / canonical via the
   existing `SEO` component.
 - **Do not compete** with SEMISHARE's own rankings on generic category terms
@@ -172,12 +202,21 @@ via the existing insights pipeline:
 
 ## 6. Testing & Verification
 
-- Each page gets a `.test.tsx` (renders, SEO tags present, key content
-  assertions) matching existing page-test style. Attestation gate test: with
-  the flag off, no "Authorized" wording renders anywhere.
+- Each page gets a `.test.tsx` (renders, SEO tags present — including exact
+  final document title with the `| NineScrolls LLC` suffix — key content
+  assertions) matching existing page-test style.
+- Attestation gate tests, driven by the controlled-wording registry
+  (Constraint 6), covering BOTH flag states:
+  - Flag OFF: no registry phrase appears in rendered body text, document
+    title, JSON-LD payloads, or image alt/src (badges/logos) on any of the 4
+    pages.
+  - Flag ON: the attestation banner and gated title render the registry
+    wording as specified.
 - Spec-traceability test: every spec entry in
-  `src/data/probeStations/semishare.ts` has a non-empty `source.url` on a
-  `semishareprober.com` domain and a `capturedOn` date.
+  `src/data/probeStations/semishare.ts` has a `source.url` that parses via
+  `new URL()`, uses `https:`, and whose hostname is exactly
+  `semishareprober.com` or `www.semishareprober.com`; and a `capturedOn` that
+  is a valid ISO date (`YYYY-MM-DD`) not in the future.
 - Browser verification on the dev server: all 4 pages + the published article
   render; mobile breakpoint screenshots; console free of new errors (known
   pre-existing: Segment fetch failures, fetchPriority warning).
