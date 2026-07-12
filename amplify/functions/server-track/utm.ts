@@ -16,3 +16,26 @@ export function normalizeUtm(value: unknown, maxLength = DEFAULT_MAX_LENGTH): st
   if (!trimmed) return undefined;
   return trimmed.slice(0, maxLength);
 }
+
+// Ad-platform click IDs. Present only in the landing-page URL query string;
+// persisting them enables offline conversion upload (join click → RFQ → order
+// value) back to the ad platforms.
+const CLICK_ID_PARAMS = ['gclid', 'gbraid', 'wbraid', 'msclkid'] as const;
+
+export type ClickIds = Partial<Record<(typeof CLICK_ID_PARAMS)[number], string>>;
+
+/**
+ * Extract ad click IDs from an untrusted URL query string
+ * (context.page.search). Absent/invalid input yields an empty object so
+ * callers can spread the result unconditionally.
+ */
+export function extractClickIds(search: unknown): ClickIds {
+  if (typeof search !== 'string' || !search) return {};
+  const params = new URLSearchParams(search);
+  const out: ClickIds = {};
+  for (const key of CLICK_ID_PARAMS) {
+    const value = normalizeUtm(params.get(key));
+    if (value) out[key] = value;
+  }
+  return out;
+}
