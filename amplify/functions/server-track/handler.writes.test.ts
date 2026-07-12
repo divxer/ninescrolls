@@ -325,6 +325,29 @@ describe('writePageView (via page_view_store branch)', () => {
         expect(item.utmCampaign).toBe('spring_sale');
     });
 
+    it('persists ad click IDs parsed from client context page.search', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        await invoke(handler, pvEvent(
+            { ip: '10.0.0.1' },
+            { page: { search: '?gclid=Cj0KCQjw_abc-123&gbraid=0AAAqq&utm_source=google' } },
+        ));
+        const item = putItem();
+        expect(item.gclid).toBe('Cj0KCQjw_abc-123');
+        expect(item.gbraid).toBe('0AAAqq');
+        expect(item.wbraid).toBeUndefined();
+        expect(item.msclkid).toBeUndefined();
+    });
+
+    it('omits click-ID attributes when the landing URL has none', async () => {
+        const handler = await loadHandler();
+        stubPageViewFetch();
+        await invoke(handler, pvEvent({ ip: '10.0.0.1' }, { page: { search: '?utm_source=google' } }));
+        const item = putItem();
+        expect(item.gclid).toBeUndefined();
+        expect(item.gbraid).toBeUndefined();
+    });
+
     it('public education IP → categorical target → 2nd "Target Customer Detected" Segment event, no Update', async () => {
         const handler = await loadHandler();
         stubPageViewFetch({ companyType: 'education', org: 'AS32 Stanford University' });

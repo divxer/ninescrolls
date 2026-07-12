@@ -150,6 +150,12 @@ const schema = a.schema({
       utmCampaign: a.string(),
       utmContent: a.string(),
       searchQuery: a.string(),
+      // Ad click IDs from the landing URL — needed for offline conversion
+      // upload back to Google Ads / Microsoft Ads (click → RFQ → order value)
+      gclid: a.string(),
+      gbraid: a.string(),
+      wbraid: a.string(),
+      msclkid: a.string(),
 
       pathname: a.string(),
       pageTitle: a.string(),

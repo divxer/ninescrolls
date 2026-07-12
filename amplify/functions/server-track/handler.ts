@@ -4,7 +4,7 @@ import { isbot } from 'isbot';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
-import { normalizeUtm } from './utm';
+import { normalizeUtm, extractClickIds } from './utm';
 
 /** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
 export function isPrivateIP(ip: string): boolean {
@@ -656,6 +656,10 @@ async function writePageView(
             utmCampaign: props.utmCampaign || undefined,
             utmContent: props.utmContent || undefined,
             searchQuery: props.searchQuery || undefined,
+            gclid: props.gclid || undefined,
+            gbraid: props.gbraid || undefined,
+            wbraid: props.wbraid || undefined,
+            msclkid: props.msclkid || undefined,
 
             ip: mergedIp || undefined,
             country: mergedCountry || undefined,
@@ -1108,16 +1112,24 @@ export const handler: APIGatewayProxyHandler = async (event) => {
                 // frontend already sends these via collectBrowserContext(); keys map
                 // utm_campaign → name, utm_content → content, etc.
                 const campaign = (clientContext as { campaign?: Record<string, unknown> } | undefined)?.campaign;
-                const enrichedProps = campaign
-                    ? {
-                        ...properties,
-                        utmSource: normalizeUtm(properties.utmSource ?? campaign.source),
-                        utmMedium: normalizeUtm(properties.utmMedium ?? campaign.medium),
-                        utmCampaign: normalizeUtm(properties.utmCampaign ?? campaign.name),
-                        utmContent: normalizeUtm(properties.utmContent ?? campaign.content),
-                        utmTerm: normalizeUtm(properties.utmTerm ?? campaign.term),
-                    }
-                    : properties;
+                // Ad click IDs (gclid etc.) only exist in the landing-page URL query,
+                // which the frontend already ships as context.page.search.
+                const clickIds = extractClickIds(
+                    (clientContext as { page?: { search?: unknown } } | undefined)?.page?.search,
+                );
+                const enrichedProps = {
+                    ...properties,
+                    ...clickIds,
+                    ...(campaign
+                        ? {
+                            utmSource: normalizeUtm(properties.utmSource ?? campaign.source),
+                            utmMedium: normalizeUtm(properties.utmMedium ?? campaign.medium),
+                            utmCampaign: normalizeUtm(properties.utmCampaign ?? campaign.name),
+                            utmContent: normalizeUtm(properties.utmContent ?? campaign.content),
+                            utmTerm: normalizeUtm(properties.utmTerm ?? campaign.term),
+                        }
+                        : {}),
+                };
                 const result = await writePageView(enrichedProps, userAgent, visitorIp);
                 console.info(`[PVS] OK pvid=${properties.pageViewId} event=${properties.eventName}`);
 

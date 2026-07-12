@@ -176,8 +176,9 @@ export function classifyTrafficChannel(params: {
  * Re-derives from referrer to fix historical misclassifications (e.g. gemini.google.com
  * was stored as organic_search, should be ai_referral). But paid classifications
  * (paid_search, paid_social) are always trusted from the stored value because the
- * parameters that determine paid status (gclid, msclkid, utmMedium) are not persisted
- * in the database and cannot be re-derived.
+ * parameters that determine paid status (gclid, msclkid, utmMedium) exist only on
+ * the landing page view (the /d Lambda persists click IDs there), not on the
+ * individual event being resolved, so paid status cannot be re-derived per event.
  */
 export function resolveTrafficChannel(event: {
   trafficChannel?: string | null;
@@ -186,7 +187,7 @@ export function resolveTrafficChannel(event: {
 }): TrafficChannel {
   const stored = event.trafficChannel as TrafficChannel | undefined;
 
-  // Paid channels can't be re-derived (gclid/msclkid not stored) — always trust stored
+  // Paid channels can't be re-derived (gclid/msclkid only on the landing PV) — trust stored
   if (stored === 'paid_search' || stored === 'paid_social') return stored;
 
   // Re-derive from referrer when available (fixes historical misclassification)
