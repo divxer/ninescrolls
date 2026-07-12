@@ -47,6 +47,16 @@ describe('WaferProbeStationsPage', () => {
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);
   });
 
+  it('renders the anatomy schematic as a responsive <picture> (-lg.png fallback + -sm.webp source)', () => {
+    const { container } = renderPage();
+    const img = screen.getByAltText(
+      'Probe station core subsystems: chuck, micropositioners, optics, signal path'
+    ) as HTMLImageElement;
+    expect(img.getAttribute('src')).toMatch(/\/probe-station-anatomy-lg\.png$/);
+    const sources = Array.from(container.querySelectorAll('picture source'));
+    expect(sources.some((s) => (s.getAttribute('srcset') ?? '').endsWith('/probe-station-anatomy-sm.webp'))).toBe(true);
+  });
+
   it('emits FAQPage JSON-LD that matches the visible FAQ', async () => {
     renderPage();
     let faqSchema: { mainEntity: { name: string }[] } | undefined;

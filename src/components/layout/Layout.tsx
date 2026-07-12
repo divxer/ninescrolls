@@ -235,6 +235,14 @@ export function Layout({ children }: LayoutProps) {
                   onMouseEnter={openProducts}
                   onMouseLeave={scheduleProductsClose}
                   onKeyDown={handleProductsKeyDown}
+                  onBlur={(e) => {
+                    // Close when focus leaves the wrapper entirely (tabbing past
+                    // the last menu link). relatedTarget is the element gaining
+                    // focus; if it's outside the wrapper, the menu is done.
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setIsProductsOpen(false);
+                    }
+                  }}
                 >
                   <Link
                     to={link.to}
@@ -325,6 +333,8 @@ export function Layout({ children }: LayoutProps) {
               className="lg:hidden flex flex-col gap-1.5 p-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle navigation menu"
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-nav-menu"
             >
               <span className={`w-6 h-0.5 bg-slate-900 transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
               <span className={`w-6 h-0.5 bg-slate-900 transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`} />
@@ -335,7 +345,7 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-outline-variant/10 max-h-[calc(100vh-72px)] overflow-y-auto">
+          <div id="mobile-nav-menu" className="lg:hidden bg-white border-t border-outline-variant/10 max-h-[calc(100vh-72px)] overflow-y-auto">
             <div className="px-8 py-6 space-y-1">
               {navLinks.map(link => (
                 link.hasDropdown ? (
@@ -343,23 +353,27 @@ export function Layout({ children }: LayoutProps) {
                     <button
                       className="w-full flex justify-between items-center py-3 text-sm font-headline font-medium text-slate-800"
                       onClick={() => toggleAccordion('products')}
+                      aria-expanded={openAccordions.has('products')}
+                      aria-controls="mobile-cat-products"
                     >
                       Products
                       <span className={`material-symbols-outlined text-base transition-transform duration-200 ${openAccordions.has('products') ? 'rotate-180' : ''}`}>expand_more</span>
                     </button>
                     {openAccordions.has('products') && (
-                      <div className="pl-4 pb-3 space-y-1">
+                      <div id="mobile-cat-products" className="pl-4 pb-3 space-y-1">
                         {productCategories.map(cat => (
                           <div key={cat.key}>
                             <button
                               className="w-full flex justify-between items-center py-2 text-xs font-bold uppercase tracking-widest text-slate-500"
                               onClick={() => toggleAccordion(cat.key)}
+                              aria-expanded={openAccordions.has(cat.key)}
+                              aria-controls={`mobile-cat-${cat.key}`}
                             >
                               {cat.label}
                               <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${openAccordions.has(cat.key) ? 'rotate-180' : ''}`}>expand_more</span>
                             </button>
                             {openAccordions.has(cat.key) && (
-                              <div className="pl-4 space-y-1">
+                              <div id={`mobile-cat-${cat.key}`} className="pl-4 space-y-1">
                                 {cat.items.map(item => (
                                   <div key={item.to}>
                                     <Link

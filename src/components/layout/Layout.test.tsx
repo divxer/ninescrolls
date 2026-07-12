@@ -93,6 +93,57 @@ describe('Layout navigation', () => {
     expect(document.getElementById('products-mega-menu')).toBeNull();
   });
 
+  it('closes the mega menu when focus leaves the wrapper entirely', () => {
+    const { container } = renderLayout();
+    const wrapper = container.querySelector('.products-dropdown-wrapper') as Element;
+    const trigger = screen.getByRole('link', { name: /Products/i });
+
+    fireEvent.mouseEnter(wrapper);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    // Tab past the last focusable link in the menu → focus lands on an element
+    // outside the wrapper; the disclosure must close.
+    const menu = document.getElementById('products-mega-menu') as HTMLElement;
+    const menuLinks = within(menu).getAllByRole('link');
+    const lastLink = menuLinks[menuLinks.length - 1];
+    fireEvent.blur(lastLink, { relatedTarget: document.body });
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('products-mega-menu')).toBeNull();
+  });
+
+  it('keeps the mega menu open when focus moves between elements inside the wrapper', () => {
+    const { container } = renderLayout();
+    const wrapper = container.querySelector('.products-dropdown-wrapper') as Element;
+    const trigger = screen.getByRole('link', { name: /Products/i });
+
+    fireEvent.mouseEnter(wrapper);
+    const menu = document.getElementById('products-mega-menu') as HTMLElement;
+    const menuLinks = within(menu).getAllByRole('link');
+    // Focus moving to another link still inside the wrapper must NOT close it.
+    fireEvent.blur(menuLinks[0], { relatedTarget: menuLinks[1] });
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(document.getElementById('products-mega-menu')).not.toBeNull();
+  });
+
+  it('toggles hamburger aria-expanded and exposes aria-controls on the mobile menu', () => {
+    renderLayout();
+    const hamburger = screen.getByRole('button', { name: /Toggle navigation menu/i });
+
+    expect(hamburger).toHaveAttribute('aria-controls', 'mobile-nav-menu');
+    expect(hamburger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('mobile-nav-menu')).toBeNull();
+
+    fireEvent.click(hamburger);
+    expect(hamburger).toHaveAttribute('aria-expanded', 'true');
+    expect(document.getElementById('mobile-nav-menu')).not.toBeNull();
+
+    fireEvent.click(hamburger);
+    expect(hamburger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('mobile-nav-menu')).toBeNull();
+  });
+
   it('renders the redesigned bottom CTA row', () => {
     const { container } = renderLayout();
     fireEvent.mouseEnter(container.querySelector('.products-dropdown-wrapper') as Element);

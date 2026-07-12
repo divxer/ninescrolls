@@ -37,7 +37,11 @@ describe('rewriteContentImages', () => {
       'utf8'
     );
     const content = parseArticleHtml(html).content;
-    const ABS_CDN = 'https://cdn.ninescrolls.com/insights';
+    // Slug-scoped CDN base — the article points at insights/<slug>/<name>-*, the
+    // exact convention upload-insights-image.ts produces (a flat insights/<name>
+    // key would 404 because nothing uploads it).
+    const ABS_CDN =
+      'https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab';
 
     // (a) The standalone article ships absolute CDN URLs only — no local asset
     // path may appear on any image attribute (browsers prefer <source srcset>
@@ -45,11 +49,12 @@ describe('rewriteContentImages', () => {
     expect(content).not.toMatch(/(?:src|srcset)\s*=\s*"\/assets\/images\//i);
 
     // (b) After the real delivery-path sanitize, the CDN srcset/src URLs
-    // survive and the responsive <picture> markup is preserved.
+    // survive and the responsive <picture> markup is preserved. The <img>
+    // fallback is the -lg variant, never a multi-MB base png.
     const delivered = DOMPurify.sanitize(content, SANITIZE_OPTIONS);
-    for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
-      expect(delivered).toMatch(new RegExp(`srcset="${ABS_CDN}/${base}-sm\\.webp`));
-      expect(delivered).toMatch(new RegExp(`src="${ABS_CDN}/${base}\\.png"`));
+    for (const name of ['temperature-regimes', 'automation-levels']) {
+      expect(delivered).toMatch(new RegExp(`srcset="${ABS_CDN}/${name}-sm\\.webp`));
+      expect(delivered).toMatch(new RegExp(`src="${ABS_CDN}/${name}-lg\\.png"`));
     }
     expect(delivered).toContain('<picture>');
 

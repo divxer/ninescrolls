@@ -47,10 +47,20 @@ describe('SourcedSpecTable', () => {
 
 describe('SchematicFigure', () => {
   it('always renders the schematic disclaimer caption', () => {
-    render(<SchematicFigure src="/assets/x.webp" alt="Probe station schematic" caption="Core subsystems" />);
+    render(<SchematicFigure srcBase="/assets/images/insights/probe-station-anatomy" alt="Probe station schematic" caption="Core subsystems" />);
     expect(screen.getByAltText('Probe station schematic')).toBeInTheDocument();
     expect(screen.getByText(/Schematic illustration, not actual product appearance/i)).toBeInTheDocument();
     expect(screen.getByText(/Core subsystems/)).toBeInTheDocument();
+  });
+
+  it('renders responsive variants: -lg.png fallback img and a -sm.webp source', () => {
+    const { container } = render(
+      <SchematicFigure srcBase="/assets/images/insights/probe-station-anatomy" alt="Probe station schematic" caption="Core subsystems" />
+    );
+    const img = screen.getByAltText('Probe station schematic') as HTMLImageElement;
+    expect(img.getAttribute('src')).toMatch(/\/probe-station-anatomy-lg\.png$/);
+    const sources = Array.from(container.querySelectorAll('picture source'));
+    expect(sources.some((s) => (s.getAttribute('srcset') ?? '').endsWith('/probe-station-anatomy-sm.webp'))).toBe(true);
   });
 });
 

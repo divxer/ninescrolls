@@ -155,7 +155,9 @@ New files:
   2. `SourcedSpecTable` — spec table where every row carries a source
      annotation (URL + capture date); renders an OEM-confirmation disclaimer
      ("Specifications from manufacturer public materials; subject to OEM
-     confirmation").
+     confirmation"). (Superseded by Amendment 2026-07-12: source annotations are
+     data-module-only — the table no longer renders per-row source URLs
+     customer-facing; see the Amendment section below.)
   3. `StationTypeComparison` — manual / semi-auto / full-auto comparison block
      for the React pages. The insight article (HTML stored in DynamoDB) cannot
      render React components, so it keeps its own editorial comparison table;
@@ -275,3 +277,28 @@ via the existing insights pipeline:
    schematic diagrams for principle/process explanations.
 3. Flip the attestation flag upon explicit written L2 confirmation.
 4. Build model-level `/products/*` pages with the ProductDetailPage template.
+
+## Amendment 2026-07-12 — Spec sourcing display policy
+
+Owner-approved amendment to §3's `SourcedSpecTable`. This supersedes the
+customer-facing rendering described above; it does NOT relax the data model or
+its tests.
+
+- **Traceability stays mandatory in the DATA MODULE.** Every spec entry in
+  `src/data/probeStations/semishare.ts` still carries a required
+  `source: { url, capturedOn }` (Constraint 3), and this remains test-enforced
+  (§6 — `source.url` parses, host is `semishareprober.com`/`www.semishareprober.com`,
+  `capturedOn` present). Provenance is retained internally for audit and for the
+  official-datasheet re-verification follow-up.
+- **`SourcedSpecTable` no longer renders per-row source annotations
+  customer-facing.** The table renders Specification / Value columns plus the
+  OEM-confirmation disclaimer only ("Specifications from manufacturer public
+  materials; subject to OEM confirmation"). No per-row source URL or capture date
+  is shown to visitors.
+- **Zero outbound `semishareprober.com` links on the brand page is a tested
+  contract.** `SemishareBrandPage.test.tsx` asserts the rendered page emits no
+  anchor to the manufacturer domain; the removal of per-row Reference links is
+  enforced, not incidental.
+- **Rationale:** funnel protection (per-row OEM links leaked visitors to the
+  manufacturer around our procurement funnel) and authority perception (the page
+  presents NineScrolls as the integrator of record, not a link farm to the OEM).

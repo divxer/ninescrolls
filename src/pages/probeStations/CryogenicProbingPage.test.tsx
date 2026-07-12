@@ -33,4 +33,14 @@ describe('CryogenicProbingPage', () => {
     expect(screen.getByRole('link', { name: /SEMISHARE product lines/i })).toHaveAttribute('href', '/wafer-probe-stations/semishare');
     expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=cryogenic-probe-station');
   });
+
+  it('renders the temperature-regimes schematic as a responsive <picture> (-lg.png fallback + -sm.webp source)', () => {
+    const { container } = renderPage();
+    const img = screen.getByAltText(
+      'Ambient, thermal-chuck, and cryogenic-vacuum probing regimes with example applications'
+    ) as HTMLImageElement;
+    expect(img.getAttribute('src')).toMatch(/\/probe-station-temperature-regimes-lg\.png$/);
+    const sources = Array.from(container.querySelectorAll('picture source'));
+    expect(sources.some((s) => (s.getAttribute('srcset') ?? '').endsWith('/probe-station-temperature-regimes-sm.webp'))).toBe(true);
+  });
 });

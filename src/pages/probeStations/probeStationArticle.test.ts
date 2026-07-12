@@ -37,26 +37,42 @@ describe('probe station buyer-guide standalone article', () => {
     expect(content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
   });
 
-  it('embeds each figure as its own complete <picture> block with CDN URLs, adjacent caption, and on-disk source assets', () => {
+  it('embeds each figure as its own complete <picture> block with slug-scoped CDN URLs, adjacent caption, and on-disk source assets', () => {
     const pictureBlocks = content.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
-    const CDN = 'https://cdn.ninescrolls.com/insights';
+    // Figures reference the SLUG-SCOPED CDN convention the real upload pipeline
+    // produces: upload-insights-image.ts pushes a base image to
+    // insights/<slug>/<name>-*, so the article must point there — a flat
+    // insights/<name> key would 404 in production because nothing uploads it.
+    const CDN = `https://cdn.ninescrolls.com/insights/${SLUG}`;
 
-    for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
+    // figure name (as it appears in the CDN path) -> local UPLOAD SOURCE basename.
+    // The on-disk files under public/ are the source the upload script reads;
+    // they keep the `probe-station-` prefix even though the published CDN name
+    // does not. Map explicitly so the disk assertions can't silently drift.
+    const FIGURES: Array<{ name: string; localBase: string }> = [
+      { name: 'temperature-regimes', localBase: 'probe-station-temperature-regimes' },
+      { name: 'automation-levels', localBase: 'probe-station-automation-levels' },
+    ];
+
+    for (const { name, localBase } of FIGURES) {
       // The block DEDICATED to this figure — not just any <picture> plus a bare URL
-      const block = pictureBlocks.find((b) => b.includes(`${CDN}/${base}`));
-      expect(block, `<picture> block for ${base}`).toBeTruthy();
+      const block = pictureBlocks.find((b) => b.includes(`${CDN}/${name}`));
+      expect(block, `<picture> block for ${name}`).toBeTruthy();
 
-      // Responsive webp srcset (absolute CDN) + png fallback (absolute CDN), all inside THIS block
+      // Responsive webp srcset (absolute slug-scoped CDN), all inside THIS block.
       for (const size of ['sm', 'md', 'lg', 'xl']) {
-        expect(block, `${base}-${size}.webp CDN srcset`).toContain(`${CDN}/${base}-${size}.webp`);
-        // The local source copies remain on disk — they are the upload source of truth.
-        expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp on disk`).toBe(true);
-        expect(existsSync(`public/assets/images/insights/${base}-${size}.png`), `${base}-${size}.png on disk`).toBe(true);
+        expect(block, `${name}-${size}.webp CDN srcset`).toContain(`${CDN}/${name}-${size}.webp`);
+        // The local source copies remain on disk — they are the upload source of
+        // truth (the Lambda regenerates every variant from the base image).
+        expect(existsSync(`public/assets/images/insights/${localBase}-${size}.webp`), `${localBase}-${size}.webp on disk`).toBe(true);
+        expect(existsSync(`public/assets/images/insights/${localBase}-${size}.png`), `${localBase}-${size}.png on disk`).toBe(true);
       }
-      expect(block, `${base}.png CDN fallback <img>`).toMatch(
-        new RegExp(`<img[^>]+src="${CDN}/${base}\\.png"`)
+      // The <img> fallback is the -lg variant, NOT a multi-MB base png.
+      expect(block, `${name}-lg.png CDN fallback <img>`).toMatch(
+        new RegExp(`<img[^>]+src="${CDN}/${name}-lg\\.png"`)
       );
-      expect(existsSync(`public/assets/images/insights/${base}.png`), `${base}.png on disk`).toBe(true);
+      // The upload SOURCE base png (what upload-insights-image.ts is pointed at).
+      expect(existsSync(`public/assets/images/insights/${localBase}.png`), `${localBase}.png on disk`).toBe(true);
 
       // The IMMEDIATELY ADJACENT caption element (allowing only closing wrapper
       // tags in between) must be a <figcaption> carrying the schematic
@@ -68,8 +84,8 @@ describe('probe station buyer-guide standalone article', () => {
       const captionMatch = afterBlock.match(
         /^\s*(?:<\/[a-z]+>\s*)*<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i
       );
-      expect(captionMatch, `adjacent <figcaption> after ${base}`).toBeTruthy();
-      expect(captionMatch![1], `schematic disclaimer in ${base} caption`).toMatch(/Schematic illustration/i);
+      expect(captionMatch, `adjacent <figcaption> after ${name}`).toBeTruthy();
+      expect(captionMatch![1], `schematic disclaimer in ${name} caption`).toMatch(/Schematic illustration/i);
     }
     expect(existsSync('public/assets/images/insights/probe-station-guide-cover.png')).toBe(true);
   });

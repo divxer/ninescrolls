@@ -76,7 +76,7 @@ export function WaferProbeStationsPage() {
           alignment — is a layer on top of that core.
         </p>
         <SchematicFigure
-          src="/assets/images/insights/probe-station-anatomy.png"
+          srcBase="/assets/images/insights/probe-station-anatomy"
           alt="Probe station core subsystems: chuck, micropositioners, optics, signal path"
           caption="Core subsystems of a wafer probe station"
         />

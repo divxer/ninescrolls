@@ -2279,9 +2279,26 @@ Implements docs/superpowers/specs/2026-07-12-semishare-probe-stations-design.md.
 - New insight article entry (publish to DDB post-deploy)
 
 ## Deployment checklist (after merge/deploy)
+
+All publish steps run with admin env prefixed: `ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD` (see each script header) and require `amplify_outputs.json` in the repo root.
+
 - [ ] Direct-load all 4 URLs in production (fresh tab). If any 404s, add an Amplify Console rewrite rule for that path only.
-- [ ] Publish the article: `ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD npx tsx scripts/seed-single-insight.ts how-to-choose-wafer-probe-station-university-lab`
-- [ ] Verify https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab renders.
+- [ ] **Create the DDB record (DRAFT):** `npm run create-insight -- scripts/articles/how-to-choose-wafer-probe-station-university-lab.html` (slug resolved from the `<meta name="article:slug">`; the article is created unpublished). This is first-time-only and NOT idempotent — re-running aborts on the existing slug.
+- [ ] **Upload the two inline figures** (base image → Lambda regenerates sm/md/lg/xl PNG+WebP under `insights/<slug>/<name>-*`; `--no-update-cover` so the article's `imageUrl` is left for the cover step):
+  - `npx tsx scripts/upload-insights-image.ts how-to-choose-wafer-probe-station-university-lab public/assets/images/insights/probe-station-temperature-regimes.png --name temperature-regimes --no-update-cover`
+  - `npx tsx scripts/upload-insights-image.ts how-to-choose-wafer-probe-station-university-lab public/assets/images/insights/probe-station-automation-levels.png --name automation-levels --no-update-cover`
+- [ ] **Upload the cover** (this run rewrites the DDB `imageUrl` to the responsive extension-less `-lg` CDN form): `npx tsx scripts/upload-insights-image.ts how-to-choose-wafer-probe-station-university-lab public/assets/images/insights/probe-station-guide-cover.png --name cover`
+- [ ] **HTTP-verify every referenced image is live before publishing** — all must return 200:
+  ```bash
+  BASE=https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab
+  for name in temperature-regimes automation-levels; do
+    for size in sm md lg xl; do curl -sf -o /dev/null "$BASE/$name-$size.webp" || echo "MISSING $name-$size.webp"; done
+    curl -sf -o /dev/null "$BASE/$name-lg.png" || echo "MISSING $name-lg.png"
+  done
+  curl -sf -o /dev/null "$BASE/cover-lg.webp" || echo "MISSING cover-lg.webp"
+  ```
+- [ ] **Publish:** open `/admin/insights/<id>/edit` and publish the draft. `create-insight` is first-time creation only; all subsequent content edits go through the admin editor, never a re-run of `create-insight`.
+- [ ] Verify https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab renders (hero + both inline figures load, no broken images).
 - [ ] Run `npx tsx scripts/check-llms-sync.ts` (with admin env) — no MISSING/STALE.
 - [ ] Verify the production sitemap.xml includes the 4 new URLs.
 - [ ] Google Search Console: request indexing for the 4 URLs + article.

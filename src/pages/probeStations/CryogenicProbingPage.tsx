@@ -39,7 +39,7 @@ export function CryogenicProbingPage() {
           package, wiring, and options; verify the range against the selected configuration.
         </p>
         <SchematicFigure
-          src="/assets/images/insights/probe-station-temperature-regimes.png"
+          srcBase="/assets/images/insights/probe-station-temperature-regimes"
           alt="Ambient, thermal-chuck, and cryogenic-vacuum probing regimes with example applications"
           caption="Temperature regimes and the research that maps to each"
         />
