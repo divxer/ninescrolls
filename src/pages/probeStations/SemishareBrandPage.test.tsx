@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { productLines } from '../../data/probeStations/semishare';
+import { productLines, SEMISHARE_PUBLICATIONS } from '../../data/probeStations/semishare';
 import { SemishareBrandPage } from './SemishareBrandPage';
 
 function renderPage() {
@@ -46,6 +46,20 @@ describe('SemishareBrandPage', () => {
     const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((h) => h.textContent?.endsWith('?'));
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);
     expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
+  });
+
+  it('renders the peer-reviewed research section with every publication title linked to its DOI', () => {
+    renderPage();
+    expect(
+      screen.getByRole('heading', { level: 2, name: /Used in peer-reviewed research/i })
+    ).toBeInTheDocument();
+    expect(SEMISHARE_PUBLICATIONS.length).toBeGreaterThanOrEqual(3);
+    for (const pub of SEMISHARE_PUBLICATIONS) {
+      const link = screen.getByRole('link', { name: pub.title });
+      expect(link).toHaveAttribute('href', `https://doi.org/${pub.doi}`);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link.getAttribute('rel')).toContain('noopener');
+    }
   });
 
   it('emits Organization JSON-LD with the gated-OFF description and FAQPage matching visible FAQ', async () => {
