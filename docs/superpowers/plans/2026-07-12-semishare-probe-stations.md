@@ -315,6 +315,12 @@ git commit -m "feat(probe-stations): attestation registry + product line data mo
 
 ### Task 2: Static attestation scan test
 
+**TDD exception:** this is a guardrail/characterization test, not red-green TDD —
+it asserts a property of the codebase that is already true (no attestation
+wording exists yet) so that later tasks cannot regress it. There is no red
+phase; the "verify it fails" discipline is replaced by Step 2's sanity check
+(`files.length > 100`) proving the scan actually walks the tree.
+
 **Files:**
 - Test: `src/data/probeStations/attestationScan.test.ts`
 
@@ -629,32 +635,70 @@ Original diagrams only (spec Constraint 4) — never download images from semish
 
 - [ ] **Step 1: Write and run the diagram script**
 
-Write `<scratchpad>/probe_diagrams.py` with Python/PIL. Structure (complete drawing code is left to visual iteration, but the script must follow this skeleton and the text content given here — no numeric SEMISHARE specs in any diagram; generic physics numbers like "77 K (liquid nitrogen)" are allowed per spec §3):
+**This is a visual-iteration step, not run-once code**: the skeleton below is the
+required scaffolding (paths, fonts, clip checks); the drawing coordinates WILL
+need 2–3 iterations of render → look at the PNG → adjust. Budget for that.
+Content rules: no numeric SEMISHARE specs in any diagram; generic physics
+numbers like "77 K (liquid nitrogen)" are allowed per spec §3.
+
+Write `<scratchpad>/probe_diagrams.py`:
 
 ```python
+from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 NAVY = "#1e3a5f"; BLUE = "#3b82f6"; GRAY = "#f5f5f5"; WHITE = "#ffffff"
+REPO = Path("/Users/harvey/Dev/src/cursor/ninescrolls")
+INSIGHTS = REPO / "public/assets/images/insights"
+PRODUCTS = REPO / "public/assets/images/redesign/products"
+INSIGHTS.mkdir(parents=True, exist_ok=True)
+PRODUCTS.mkdir(parents=True, exist_ok=True)
 
-# 1. probe-station-anatomy.png (1600x1000): four labeled blocks around a wafer-on-chuck
-#    sketch: "Chuck (sample stage)", "Micropositioners + probes",
-#    "Microscope / camera", "Shielded signal path to instruments".
-# 2. probe-station-temperature-regimes.png (1600x900): three horizontal tiers —
-#    "Ambient (room temperature)" / "Thermal chuck (heated / cooled)" /
-#    "Cryogenic vacuum (down to liquid-nitrogen and liquid-helium range)" —
-#    with example applications per tier: "standard I-V / C-V", "reliability &
-#    temperature-dependent characterization", "superconductors, quantum
-#    transport, 2D materials".
-# 3. probe-station-automation-levels.png (1600x900): three columns Manual /
-#    Semi-automatic / Fully automatic with one-line descriptors matching
-#    StationTypeComparison rows.
-# 4. probe-station-guide-cover.png (1600x900): title card "Choosing a Wafer
-#    Probe Station" + subtitle "A university lab buyer's guide" on navy.
-# 5. probe-station-schematic-standardized.png (1200x900, white bg, centered
-#    simplified station outline): thumbnail for the ProductsPage card.
+def font(size: int) -> ImageFont.FreeTypeFont:
+    """Helvetica on macOS with a portable fallback — never load_default at
+    final render (it is tiny and unscalable)."""
+    for candidate in ("/System/Library/Fonts/Helvetica.ttc",
+                      "/System/Library/Fonts/Supplemental/Arial.ttf"):
+        try:
+            return ImageFont.truetype(candidate, size)
+        except OSError:
+            continue
+    raise SystemExit("No usable TrueType font found — install one or add a path")
+
+def draw_text_checked(draw: ImageDraw.ImageDraw, xy, text, fnt, fill, canvas_size):
+    """Draw and assert the text bbox stays inside the canvas (anti-clip guard)."""
+    bbox = draw.textbbox(xy, text, font=fnt)
+    assert bbox[0] >= 0 and bbox[1] >= 0, f"clipped at origin: {text!r}"
+    assert bbox[2] <= canvas_size[0] and bbox[3] <= canvas_size[1], f"clipped: {text!r}"
+    draw.text(xy, text, font=fnt, fill=fill)
+
+# Five outputs (exact filenames, sizes, and label text):
+# 1. INSIGHTS/"probe-station-anatomy.png" (1600x1000): four labeled blocks
+#    around a wafer-on-chuck sketch — "Chuck (sample stage)",
+#    "Micropositioners + probes", "Microscope / camera",
+#    "Shielded signal path to instruments".
+# 2. INSIGHTS/"probe-station-temperature-regimes.png" (1600x900): three
+#    horizontal tiers — "Ambient (room temperature)" / "Thermal chuck
+#    (heated / cooled)" / "Cryogenic vacuum (down to liquid-nitrogen and
+#    liquid-helium range)" — with example applications per tier:
+#    "standard I-V / C-V", "reliability & temperature-dependent
+#    characterization", "superconductors, quantum transport, 2D materials".
+# 3. INSIGHTS/"probe-station-automation-levels.png" (1600x900): three columns
+#    Manual / Semi-automatic / Fully automatic with one-line descriptors
+#    matching the StationTypeComparison rows (Task 3).
+# 4. INSIGHTS/"probe-station-guide-cover.png" (1600x900): navy title card —
+#    "Choosing a Wafer Probe Station" + subtitle "A university lab buyer's guide".
+# 5. PRODUCTS/"probe-station-schematic-standardized.png" (1200x900, WHITE
+#    background like the other *-standardized.png card thumbnails, centered
+#    simplified station outline).
+#
+# Long labels: wrap manually with textwrap.wrap(...) — draw_text_checked will
+# assert-fail on any overflow instead of silently clipping.
 ```
 
-Run: `python3 <scratchpad>/probe_diagrams.py` then open each PNG and visually check labels are not clipped.
+Run: `python3 <scratchpad>/probe_diagrams.py` — the assertions catch clipped
+text; then open each PNG and check readability/spacing at 50% zoom. Iterate
+until clean.
 
 - [ ] **Step 2: Generate responsive variants for the insights images**
 
@@ -662,12 +706,13 @@ Run: `python3 <scratchpad>/probe_diagrams.py` then open each PNG and visually ch
 for f in probe-station-anatomy probe-station-temperature-regimes probe-station-automation-levels probe-station-guide-cover; do
   node scripts/optimize-images.js "public/assets/images/insights/$f.png"
 done
-cwebp -q 82 public/assets/images/redesign/products/probe-station-schematic-standardized.png \
-  -o public/assets/images/redesign/products/probe-station-schematic-standardized.webp 2>/dev/null \
-  || node scripts/optimize-images.js public/assets/images/redesign/products/probe-station-schematic-standardized.png
+# Base (un-suffixed) webp for the products card — optimize-images.js only
+# emits -sm/-md/-lg/-xl variants, so convert the base file explicitly:
+node -e "require('sharp')('public/assets/images/redesign/products/probe-station-schematic-standardized.png').webp({ quality: 82 }).toFile('public/assets/images/redesign/products/probe-station-schematic-standardized.webp').then(() => console.log('webp written'))"
+test -f public/assets/images/redesign/products/probe-station-schematic-standardized.webp && echo OK
 ```
 
-Expected: `-sm/-md/-lg/-xl` png+webp variants appear next to each insights image; a webp exists for the products card.
+Expected: `-sm/-md/-lg/-xl` png+webp variants appear next to each insights image; the `test -f` prints `OK` for the products-card webp.
 
 - [ ] **Step 3: Commit**
 
@@ -1621,16 +1666,48 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
+import { WaferProbeStationsPage } from './WaferProbeStationsPage';
 import { SemishareBrandPage } from './SemishareBrandPage';
+import { CryogenicProbingPage } from './CryogenicProbingPage';
+import { SiliconPhotonicsProbingPage } from './SiliconPhotonicsProbingPage';
 
 vi.mock('../../data/probeStations/semishare', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../data/probeStations/semishare')>();
   return { ...actual, ATTESTATION_CONFIRMED: true };
 });
 
+// NOTE: FORBIDDEN_ATTESTATION_PATTERNS imported above comes from the mocked
+// module, but the mock spreads the actual module, so the patterns are real.
+
+const NON_BRAND_PAGES = [
+  ['/wafer-probe-stations', WaferProbeStationsPage],
+  ['/applications/cryogenic-probing', CryogenicProbingPage],
+  ['/applications/silicon-photonics-probing', SiliconPhotonicsProbingPage],
+] as const;
+
+function collectSurfaces(container: HTMLElement): Array<[string, string]> {
+  const jsonLdText = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
+    .map((s) => s.textContent ?? '')
+    .join('\n');
+  const imgAttrs = Array.from(container.querySelectorAll('img'))
+    .map((img) => `${img.getAttribute('alt') ?? ''} ${img.getAttribute('src') ?? ''}`)
+    .join('\n');
+  return [
+    ['body', container.textContent ?? ''],
+    ['title', document.title],
+    ['json-ld', jsonLdText],
+    ['images', imgAttrs],
+  ];
+}
+
+function cleanupHead() {
+  document.head.querySelectorAll('script[type="application/ld+json"]').forEach((s) => s.remove());
+}
+
 describe('attestation gate ON (mocked written confirmation)', () => {
-  it('brand page renders each gated output from the registry: banner, title, JSON-LD', async () => {
-    render(
+  it('brand page renders each gated output from the registry: banner, title, JSON-LD, badges', async () => {
+    const { unmount } = render(
       <HelmetProvider>
         <MemoryRouter initialEntries={['/wafer-probe-stations/semishare']}>
           <SemishareBrandPage />
@@ -1664,7 +1741,31 @@ describe('attestation gate ON (mocked written confirmation)', () => {
       /badge|partner-?logo/i.test(`${img.src} ${img.alt}`)
     );
     expect(badgeImgs).toEqual([]);
+    unmount();
+    cleanupHead();
   });
+
+  it.each(NON_BRAND_PAGES)(
+    '%s still emits NO gated wording in body, title, JSON-LD, or image attrs even when ON',
+    async (path, Page) => {
+      const { container, unmount } = render(
+        <HelmetProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <Page />
+          </MemoryRouter>
+        </HelmetProvider>
+      );
+      await waitFor(() => expect(document.title).toContain('NineScrolls LLC'));
+
+      for (const [surface, text] of collectSurfaces(container)) {
+        for (const pattern of FORBIDDEN_ATTESTATION_PATTERNS) {
+          expect(text, `${path} ${surface} vs ${pattern}`).not.toMatch(pattern);
+        }
+      }
+      unmount();
+      cleanupHead();
+    }
+  );
 });
 ```
 
@@ -1862,16 +1963,45 @@ In `scripts/generate-seo.ts` after the last `/products/*` entry AND in `amplify/
   { loc: '/applications/silicon-photonics-probing', lastmod: '2026-07-12', changefreq: 'monthly', priority: '0.8' },
 ```
 
-- [ ] **Step 4: Verify both files agree and the Lambda tests still pass**
+- [ ] **Step 4: Write the sitemap-sources consistency test**
 
-Run: `npx vitest run amplify/functions/generate-sitemaps/handler.test.ts --exclude '**/.claude/**'` — expected PASS.
-Run: `grep -c "wafer-probe-stations\|applications/" scripts/generate-seo.ts amplify/functions/generate-sitemaps/handler.ts` — both files show the same new entries.
+```ts
+// src/pages/probeStations/sitemapStaticEntries.test.ts
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+const ENTRIES = [
+  { loc: '/wafer-probe-stations', changefreq: 'weekly', priority: '0.9' },
+  { loc: '/wafer-probe-stations/semishare', changefreq: 'weekly', priority: '0.9' },
+  { loc: '/applications/cryogenic-probing', changefreq: 'monthly', priority: '0.8' },
+  { loc: '/applications/silicon-photonics-probing', changefreq: 'monthly', priority: '0.8' },
+];
+const GENERATORS = [
+  'scripts/generate-seo.ts',
+  'amplify/functions/generate-sitemaps/handler.ts',
+];
+
+describe.each(GENERATORS)('%s', (file) => {
+  const text = readFileSync(file, 'utf8');
+  it.each(ENTRIES)('contains $loc with matching metadata', ({ loc, changefreq, priority }) => {
+    // Matches the object-literal entry regardless of lastmod value, but pins
+    // loc, changefreq, and priority so both generators stay in lockstep.
+    const entry = new RegExp(
+      `\\{\\s*loc:\\s*'${loc.replace(/[/]/g, '\\/')}',\\s*lastmod:\\s*'\\d{4}-\\d{2}-\\d{2}',\\s*changefreq:\\s*'${changefreq}',\\s*priority:\\s*'${priority}'\\s*\\}`
+    );
+    expect(text).toMatch(entry);
+  });
+});
+```
+
+Run: `npx vitest run src/pages/probeStations/sitemapStaticEntries.test.ts --exclude '**/.claude/**'` — expected PASS (fails precisely if either generator misses an entry or metadata drifts).
+Run: `npx vitest run amplify/functions/generate-sitemaps/handler.test.ts --exclude '**/.claude/**'` — expected PASS (Lambda's own tests unaffected).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/generate-seo.ts amplify/functions/generate-sitemaps/handler.ts public/llms.txt public/llms-full.txt src/pages/probeStations/llmsStaticPages.test.ts
-git commit -m "seo(probe-stations): sitemap entries (script + lambda), llms.txt sections, static-page llms test"
+git add scripts/generate-seo.ts amplify/functions/generate-sitemaps/handler.ts public/llms.txt public/llms-full.txt src/pages/probeStations/llmsStaticPages.test.ts src/pages/probeStations/sitemapStaticEntries.test.ts
+git commit -m "seo(probe-stations): sitemap entries (script + lambda) with consistency test, llms.txt sections"
 ```
 
 ---
@@ -1880,10 +2010,64 @@ git commit -m "seo(probe-stations): sitemap entries (script + lambda), llms.txt 
 
 **Files:**
 - Modify: `scripts/insightsPostsData.ts` (append one entry to `insightsPosts`)
+- Test: `src/pages/probeStations/probeStationArticle.test.ts`
 
 Source: `/Users/harvey/MyDocuments/Company_Registration/NineScrolls LLC/合作厂家/深圳森美协尔科技有限公司/官网内容/how-to-choose-wafer-probe-station-university-lab.md`
 
-- [ ] **Step 1: Convert the draft to an InsightsPost entry**
+- [ ] **Step 1: Write the failing article data test**
+
+```ts
+// src/pages/probeStations/probeStationArticle.test.ts
+import { existsSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { insightsPosts } from '../../../scripts/insightsPostsData';
+import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
+
+const SLUG = 'how-to-choose-wafer-probe-station-university-lab';
+
+describe('probe station buyer-guide article entry', () => {
+  const post = insightsPosts.find((p) => p.slug === SLUG);
+
+  it('exists with full content and no hand-written TOC', () => {
+    expect(post).toBeTruthy();
+    expect(post!.content!.length).toBeGreaterThan(10_000); // full conversion, not a stub
+    expect(post!.content).not.toMatch(/table of contents/i); // page auto-generates the TOC
+  });
+
+  it('embeds both figures as <picture> blocks whose responsive assets exist on disk', () => {
+    for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
+      expect(post!.content).toContain(`/assets/images/insights/${base}`);
+      const pictureBlock = post!.content!.includes('<picture>');
+      expect(pictureBlock).toBe(true);
+      for (const size of ['sm', 'md', 'lg', 'xl']) {
+        expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp`).toBe(true);
+      }
+    }
+    expect(existsSync(`public/assets/images/insights/probe-station-guide-cover.png`)).toBe(true);
+  });
+
+  it('links to the capability hub and the brand page', () => {
+    expect(post!.content).toContain('href="/wafer-probe-stations"');
+    expect(post!.content).toContain('href="/wafer-probe-stations/semishare"');
+  });
+
+  it('carries no attestation wording and no SEMISHARE-attributed numbers (Constraint 7 tripwire)', () => {
+    for (const pattern of FORBIDDEN_ATTESTATION_PATTERNS) {
+      expect(post!.content).not.toMatch(pattern);
+    }
+    // Heuristic tripwire, not proof: a number within 60 chars after "SEMISHARE"
+    // flags a potentially product-attributed spec. On a hit, either source the
+    // value from src/data/probeStations/semishare.ts (and render it there, not
+    // here) or cut the sentence — do not weaken this regex.
+    expect(post!.content).not.toMatch(/SEMISHARE[^<.]{0,60}\d+\s?(K\b|mm|inch|"|µm|um)/i);
+  });
+});
+```
+
+Run: `npx vitest run src/pages/probeStations/probeStationArticle.test.ts --exclude '**/.claude/**'`
+Expected: FAIL — `post` is undefined (entry not added yet).
+
+- [ ] **Step 2: Convert the draft to an InsightsPost entry**
 
 Conversion rules:
 - Content: full HTML conversion of the draft, faithful to the text. **No TOC** (the page auto-generates one). Match the HTML conventions already used in `insightsPostsData.ts` — before writing, copy the exact `<picture>` block and table/figure class patterns from an existing entry (`grep -n -m1 -A8 '<picture>' scripts/insightsPostsData.ts` and `grep -n -m2 'post-figure-caption\|<table' scripts/insightsPostsData.ts`).
@@ -1917,20 +2101,21 @@ Entry fields (append to `insightsPosts`):
   },
 ```
 
-- [ ] **Step 2: Type-check and lint**
+- [ ] **Step 3: Run the article test, type-check, and lint**
 
-Run: `npx tsc --noEmit -p tsconfig.json 2>&1 | grep insightsPostsData` — expected: no errors.
+Run: `npx vitest run src/pages/probeStations/probeStationArticle.test.ts --exclude '**/.claude/**'` — expected: PASS.
+Run: `npx tsc --noEmit -p tsconfig.json` — expected: exit 0, no errors (do not pipe through grep; a clean run must be visible as a clean exit).
 Run: `npm run lint` — expected: no new errors.
 
-- [ ] **Step 3: Local render check**
+- [ ] **Step 4: Local render check**
 
 Publishing to DynamoDB happens post-deploy (deployment checklist) — the article's internal links would 404 in production until the new routes deploy. For a local check, start the dev server (`.claude/launch.json` name for `npm run dev`, port 5173, requires `amplify_outputs.json`) and confirm existing insights pages still render (`/insights`).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/insightsPostsData.ts
-git commit -m "content(probe-stations): university lab probe station buyer's guide article entry"
+git add scripts/insightsPostsData.ts src/pages/probeStations/probeStationArticle.test.ts
+git commit -m "content(probe-stations): university lab probe station buyer's guide article entry + data-level tests"
 ```
 
 ---
