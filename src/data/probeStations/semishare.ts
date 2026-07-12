@@ -136,7 +136,7 @@ export const productLines: readonly ProductLine[] = [
       'Recipe-assisted, motorized probing for multi-site device characterization across a wafer — the step up from manual stations when repeatability and throughput start to matter.',
     specs: [
       {
-        label: 'Chuck running speed',
+        label: 'Chuck running speed (X12)',
         value: '>70mm/s',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
@@ -144,7 +144,7 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Translocation time',
+        label: 'Translocation time (X12)',
         value: '500ms',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
@@ -152,7 +152,7 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Needle seat capacity',
+        label: 'Needle seat capacity (X12)',
         value: 'up to 12 needle seats',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/x12-semi-automatic-probe-station.html',
@@ -168,7 +168,7 @@ export const productLines: readonly ProductLine[] = [
       'Closed vacuum enclosure with cryogenic cooling for low-temperature device physics, superconducting electronics, and quantum transport measurements.',
     specs: [
       {
-        label: 'Chuck size',
+        label: 'Chuck size (CGX8)',
         value: '8"',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
@@ -176,7 +176,7 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Temperature range',
+        label: 'Temperature range (CGX8)',
         value: '77K-450K (liquid nitrogen), 10K-450K (liquid helium)',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
@@ -184,7 +184,7 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Chuck stage repeated positioning accuracy',
+        label: 'Chuck stage repeated positioning accuracy (CGX8)',
         value: '±1μm',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
@@ -192,7 +192,7 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Probe arm positioning accuracy',
+        label: 'Probe arm positioning accuracy (CGX8)',
         value: '2μm',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
@@ -200,16 +200,16 @@ export const productLines: readonly ProductLine[] = [
         },
       },
       {
-        label: 'Temperature controller resolution',
-        value: '0.001℃',
+        label: 'Temperature controller resolution (CGX8)',
+        value: '0.001°C',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
           capturedOn: '2026-07-12',
         },
       },
       {
-        label: 'System ultimate pressure',
-        value: '＜5.0x10-4Pa',
+        label: 'System ultimate pressure (CGX8)',
+        value: '< 5.0×10⁻⁴ Pa',
         source: {
           url: 'https://www.semishareprober.com/products/probe-station-system/cgx-high-low-temperature-vacuum.html',
           capturedOn: '2026-07-12',
@@ -219,7 +219,7 @@ export const productLines: readonly ProductLine[] = [
   },
   {
     key: 'manual-series',
-    name: 'SM / SE / SH Series — Manual Analytical Probe Stations',
+    name: 'M Series — Manual Analytical Probe Stations',
     positioning:
       'Hand-driven analytical stations for university teaching labs, materials research, and single-device characterization where flexibility beats throughput.',
     specs: [
@@ -282,7 +282,7 @@ export const productLines: readonly ProductLine[] = [
   },
   {
     key: 'mask-laser-repair',
-    name: 'Mask Laser Repair',
+    name: 'Mask Laser Repair (L14 Series)',
     positioning:
       'Laser-based photomask defect repair systems — a specialty line alongside the probe station families.',
     specs: [
