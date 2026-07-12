@@ -86,7 +86,7 @@ export function Layout({ children }: LayoutProps) {
 
   const scheduleProductsClose = () => {
     if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = window.setTimeout(() => setIsProductsOpen(false), 220);
+    hoverTimerRef.current = window.setTimeout(() => setIsProductsOpen(false), 320);
   };
 
   // Close menu when location changes
@@ -218,7 +218,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* ── Header ── */}
       <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
-        <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+        <div className="relative flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <img src={cdnUrl('/assets/images/logo.svg')} alt="NineScrolls LLC" className="h-8 w-auto" />
@@ -231,7 +231,7 @@ export function Layout({ children }: LayoutProps) {
               link.hasDropdown ? (
                 <div
                   key={link.to}
-                  className="products-dropdown-wrapper relative"
+                  className="products-dropdown-wrapper"
                   onMouseEnter={openProducts}
                   onMouseLeave={scheduleProductsClose}
                   onKeyDown={handleProductsKeyDown}
