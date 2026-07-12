@@ -27316,7 +27316,7 @@ result = differential_evolution(
       <h2>Where SEMISHARE Fits</h2>
       <p>Among the options a US research lab can consider, <strong>SEMISHARE</strong> is worth knowing about. It is a Shenzhen-based wafer-prober manufacturer with a full product range that maps cleanly onto the five decisions above:</p>
       <ul>
-        <li><strong>Manual</strong> stations (M/E/H series), including fine-pitch configurations for very small bond pads</li>
+        <li><strong>Manual</strong> stations (M series), including fine-pitch configurations for very small bond pads</li>
         <li><strong>Semi-automatic</strong> stations (X series) for multi-site device characterization</li>
         <li><strong>Cryogenic-vacuum</strong> stations (CGX series) with liquid-nitrogen and liquid-helium cooling options</li>
         <li><strong>Fully automatic</strong> production probers (A series) for higher-volume test</li>
