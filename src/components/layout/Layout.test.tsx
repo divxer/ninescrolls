@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { CartProvider } from '../../contexts/CartContext';
@@ -41,8 +41,63 @@ describe('Layout navigation', () => {
     expect(screen.getByRole('link', { name: /Wafer Probe Stations/i })).toHaveAttribute(
       'href', '/wafer-probe-stations'
     );
-    expect(screen.getByRole('link', { name: /SEMISHARE Probe Stations/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /SEMISHARE Systems/i })).toHaveAttribute(
       'href', '/wafer-probe-stations/semishare'
     );
+  });
+
+  it('no longer renders the removed Solutions/Resources links in the menu', () => {
+    const { container } = renderLayout();
+    fireEvent.mouseEnter(container.querySelector('.products-dropdown-wrapper') as Element);
+
+    // "Knowledge Center" was unique to the removed column; it is gone entirely.
+    expect(screen.queryByRole('link', { name: /Knowledge Center/i })).toBeNull();
+    // "Startup Package" still exists in the footer, so scope to the mega menu.
+    const menu = document.getElementById('products-mega-menu') as HTMLElement;
+    expect(within(menu).queryByRole('link', { name: /Startup Package/i })).toBeNull();
+    expect(within(menu).queryByRole('link', { name: /Research & Citations/i })).toBeNull();
+  });
+
+  it('renders the probe-station application subheader and preserves sub-item hrefs', () => {
+    const { container } = renderLayout();
+    fireEvent.mouseEnter(container.querySelector('.products-dropdown-wrapper') as Element);
+
+    const menu = document.getElementById('products-mega-menu') as HTMLElement;
+    expect(within(menu).getByText('Applications')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Cryogenic probing/i })).toHaveAttribute(
+      'href', '/applications/cryogenic-probing'
+    );
+  });
+
+  it('exposes disclosure ARIA state on the Products trigger', () => {
+    const { container } = renderLayout();
+    const trigger = screen.getByRole('link', { name: /Products/i });
+
+    expect(trigger).toHaveAttribute('aria-controls', 'products-mega-menu');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.mouseEnter(container.querySelector('.products-dropdown-wrapper') as Element);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('closes the mega menu when Escape is pressed', () => {
+    const { container } = renderLayout();
+    const wrapper = container.querySelector('.products-dropdown-wrapper') as Element;
+    const trigger = screen.getByRole('link', { name: /Products/i });
+
+    fireEvent.mouseEnter(wrapper);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.keyDown(wrapper, { key: 'Escape' });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('products-mega-menu')).toBeNull();
+  });
+
+  it('renders the redesigned bottom CTA row', () => {
+    const { container } = renderLayout();
+    fireEvent.mouseEnter(container.querySelector('.products-dropdown-wrapper') as Element);
+
+    expect(screen.getByRole('link', { name: /Browse All Products/i })).toHaveAttribute('href', '/products');
+    expect(screen.getByRole('link', { name: /Request a Quote/i })).toHaveAttribute('href', '/request-quote');
   });
 });

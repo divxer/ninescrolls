@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Chat } from '../common/Chat';
 import { CookieBanner } from '../common/CookieBanner';
 import { CartIcon } from '../common/CartIcon';
@@ -9,12 +10,39 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+type ProductMenuItem = { to: string; label: string; desc?: string; sub?: boolean };
+type ProductCategory = { key: string; label: string; items: ProductMenuItem[] };
+
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [openAccordions, setOpenAccordions] = useState<Set<string>>(new Set());
   const hoverTimerRef = useRef<number | null>(null);
+  const productsTriggerRef = useRef<HTMLAnchorElement | null>(null);
+  // Guards the trigger's onFocus from immediately re-opening the menu when
+  // Escape returns focus to it (focus() fires onFocus synchronously).
+  const suppressReopenRef = useRef(false);
+
+  // Focusing the trigger (keyboard tab-in) opens the menu, except right after
+  // Escape, where we deliberately keep it closed.
+  const handleTriggerFocus = () => {
+    if (suppressReopenRef.current) {
+      suppressReopenRef.current = false;
+      return;
+    }
+    openProducts();
+  };
+
+  // Keyboard support for the products disclosure: Escape closes the mega menu
+  // and returns focus to the trigger link (Enter/Space keep the Link default).
+  const handleProductsKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      suppressReopenRef.current = true;
+      setIsProductsOpen(false);
+      productsTriggerRef.current?.focus();
+    }
+  };
 
   const toggleAccordion = (category: string) => {
     setOpenAccordions(prev => {
@@ -108,7 +136,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/about', label: 'About' },
   ];
 
-  const productCategories = [
+  const productCategories: ProductCategory[] = [
     {
       key: 'etching',
       label: 'Etching',
@@ -151,9 +179,9 @@ export function Layout({ children }: LayoutProps) {
       label: 'Test & Probing',
       items: [
         { to: '/wafer-probe-stations', label: 'Wafer Probe Stations', desc: 'Selection hub & buying guide' },
-        { to: '/wafer-probe-stations/semishare', label: 'SEMISHARE Probe Stations', desc: 'US & Canada procurement' },
-        { to: '/applications/cryogenic-probing', label: 'Cryogenic Probing', desc: 'Low-temperature measurement' },
-        { to: '/applications/silicon-photonics-probing', label: 'Silicon Photonics Probing', desc: 'Wafer-level photonic test' },
+        { to: '/wafer-probe-stations/semishare', label: 'SEMISHARE Systems', desc: 'US & Canada procurement' },
+        { to: '/applications/cryogenic-probing', label: 'Cryogenic probing', desc: 'Low-temperature measurement', sub: true },
+        { to: '/applications/silicon-photonics-probing', label: 'Silicon photonics', desc: 'Wafer-level photonic test', sub: true },
       ]
     },
   ];
@@ -171,37 +199,16 @@ export function Layout({ children }: LayoutProps) {
     { to: '/products/pluto-30', label: 'PLUTO-30' },
   ];
 
-  // Solutions / Resources column — routes buyers by intent, not just by product.
-  const productResources = [
-    {
-      key: 'explore',
-      label: 'Explore',
-      items: [
-        { to: '/#applications', label: 'By Application' },
-        { to: '/#processes', label: 'By Process' },
-        { to: '/#research', label: 'Research & Citations' },
-      ],
-    },
-    {
-      key: 'resources',
-      label: 'Resources',
-      items: [
-        { to: '/insights', label: 'Knowledge Center' },
-        { to: '/startup-package', label: 'Startup Package' },
-        { to: '/service-support', label: 'Service & Support' },
-      ],
-    },
-  ];
-
-  // Desktop mega-menu column layout: stack the short single-item Coating
-  // category with Deposition, and the new Probing category with Cleaning, so
-  // no column is left mostly empty. Order follows productCategories (etching,
-  // deposition, coating, cleaning, probing).
+  // Desktop mega-menu column layout: four true product columns. Coating and
+  // Cleaning both hold few items, so they stack in column 3 (reads as
+  // "Coating & Cleaning"); Test & Probing gets its own column. Order follows
+  // productCategories (etching, deposition, coating, cleaning, probing).
   const [etchingCat, depositionCat, coatingCat, cleaningCat, probingCat] = productCategories;
   const productColumns = [
     [etchingCat],
-    [depositionCat, coatingCat],
-    [cleaningCat, probingCat],
+    [depositionCat],
+    [coatingCat, cleaningCat],
+    [probingCat],
   ];
 
   return (
@@ -227,10 +234,15 @@ export function Layout({ children }: LayoutProps) {
                   className="products-dropdown-wrapper relative"
                   onMouseEnter={openProducts}
                   onMouseLeave={scheduleProductsClose}
+                  onKeyDown={handleProductsKeyDown}
                 >
                   <Link
                     to={link.to}
-                    className={`text-slate-600 hover:text-primary transition-colors duration-200 flex items-center gap-1 ${location.pathname.startsWith('/products') ? 'text-primary' : ''}`}
+                    ref={productsTriggerRef}
+                    aria-expanded={isProductsOpen}
+                    aria-controls="products-mega-menu"
+                    onFocus={handleTriggerFocus}
+                    className={`text-slate-600 hover:text-primary transition-colors duration-200 flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm ${location.pathname.startsWith('/products') ? 'text-primary' : ''}`}
                     onClick={() => trackProductMenuClick('All Products (label)', 'CTA')}
                   >
                     {link.label}
@@ -239,56 +251,53 @@ export function Layout({ children }: LayoutProps) {
 
                   {/* Desktop Dropdown */}
                   {isProductsOpen && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white rounded-xl shadow-2xl border border-outline-variant/10 px-7 py-6 min-w-[820px]">
+                    <div
+                      id="products-mega-menu"
+                      role="region"
+                      aria-label="Products menu"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white rounded-xl shadow-2xl border border-outline-variant/10 px-6 py-5 min-w-[820px]"
+                    >
                       <div className="grid grid-cols-4 gap-x-6 gap-y-5">
                         {productColumns.map((column, colIndex) => (
-                          <div key={colIndex} className="space-y-6">
+                          <div key={colIndex} className="space-y-5">
                             {column.map(cat => (
                               <div key={cat.key}>
-                                <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-3">{cat.label}</h4>
-                                <div className="space-y-2">
-                                  {cat.items.map(item => (
-                                    <div key={item.to}>
-                                      <Link
-                                        to={item.to}
-                                        className="group block"
-                                        onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, cat.label); }}
-                                      >
-                                        <span className="block text-sm text-slate-700 group-hover:text-primary transition-colors">{item.label}</span>
-                                        {item.desc && <span className="block text-xs leading-snug text-slate-400">{item.desc}</span>}
-                                      </Link>
-                                    </div>
-                                  ))}
+                                <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-2">{cat.label}</h4>
+                                <div className="space-y-1.5">
+                                  {cat.items.map((item, i) => {
+                                    const isFirstSub = item.sub && !cat.items[i - 1]?.sub;
+                                    return (
+                                      <div key={item.to}>
+                                        {isFirstSub && (
+                                          <p className="mt-3 mb-1 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Applications</p>
+                                        )}
+                                        <Link
+                                          to={item.to}
+                                          className={`group block focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm ${item.sub ? 'pl-3 border-l border-slate-200' : ''}`}
+                                          onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, cat.label); }}
+                                        >
+                                          <span className={`block ${item.sub ? 'text-[13px]' : 'text-sm'} text-slate-700 group-hover:text-primary transition-colors`}>{item.label}</span>
+                                          {item.desc && <span className="block text-xs leading-snug text-slate-500">{item.desc}</span>}
+                                        </Link>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             ))}
                           </div>
                         ))}
-
-                        {/* Solutions / Resources column */}
-                        <div className="border-l border-slate-100 pl-6 space-y-5">
-                          {productResources.map(group => (
-                            <div key={group.key}>
-                              <h4 className="text-xs uppercase tracking-widest text-slate-900 font-bold mb-3">{group.label}</h4>
-                              <div className="space-y-2">
-                                {group.items.map(item => (
-                                  <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    className="block text-sm text-slate-600 hover:text-primary transition-colors"
-                                    onClick={() => { setIsProductsOpen(false); trackProductMenuClick(item.label, group.label); }}
-                                  >
-                                    {item.label}
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       </div>
-                      <div className="mt-5 pt-5 border-t border-outline-variant/20 flex gap-4">
-                        <Link to="/products" className="flex-1 text-center py-2 text-sm font-bold bg-primary text-white rounded-sm hover:bg-primary-container transition-colors" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('All Products', 'CTA'); }}>All Products</Link>
-                        <Link to="/request-quote" className="flex-1 text-center py-2 text-sm font-bold border border-outline-variant text-on-surface-variant rounded-sm hover:bg-on-surface hover:text-white transition-colors" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote', 'CTA'); }}>Request a Quote</Link>
+                      <div className="mt-4 pt-4 border-t border-outline-variant/20 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <Link to="/#applications" className="hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm" onClick={() => setIsProductsOpen(false)}>By Application</Link>
+                          <span aria-hidden="true">·</span>
+                          <Link to="/#processes" className="hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm" onClick={() => setIsProductsOpen(false)}>By Process</Link>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Link to="/products" className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-sm hover:bg-primary-container transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Browse All Products', 'CTA'); }}>Browse All Products</Link>
+                          <Link to="/request-quote" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm" onClick={() => { setIsProductsOpen(false); trackProductMenuClick('Request a Quote', 'CTA'); }}>Request a Quote <span aria-hidden="true">→</span></Link>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -355,34 +364,16 @@ export function Layout({ children }: LayoutProps) {
                                   <div key={item.to}>
                                     <Link
                                       to={item.to}
-                                      className="group block py-1.5"
+                                      className={`group block py-1.5 ${item.sub ? 'pl-4' : ''}`}
                                       onClick={() => { setIsMenuOpen(false); trackProductMenuClick(item.label, cat.label); }}
                                     >
                                       <span className="block text-sm text-slate-700 group-hover:text-primary">{item.label}</span>
-                                      {item.desc && <span className="block text-xs leading-snug text-slate-400">{item.desc}</span>}
+                                      {item.desc && <span className="block text-xs leading-snug text-slate-500">{item.desc}</span>}
                                     </Link>
                                   </div>
                                 ))}
                               </div>
                             )}
-                          </div>
-                        ))}
-
-                        {productResources.map(group => (
-                          <div key={group.key}>
-                            <p className="py-2 text-xs font-bold uppercase tracking-widest text-slate-500">{group.label}</p>
-                            <div className="pl-4 space-y-1">
-                              {group.items.map(item => (
-                                <Link
-                                  key={item.to}
-                                  to={item.to}
-                                  className="block py-1.5 text-sm text-slate-600 hover:text-primary"
-                                  onClick={() => { setIsMenuOpen(false); trackProductMenuClick(item.label, group.label); }}
-                                >
-                                  {item.label}
-                                </Link>
-                              ))}
-                            </div>
                           </div>
                         ))}
 
