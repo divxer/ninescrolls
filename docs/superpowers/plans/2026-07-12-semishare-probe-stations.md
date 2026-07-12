@@ -1836,7 +1836,7 @@ describe('attestation gate ON (mocked written confirmation)', () => {
   });
 
   it.each(NON_BRAND_PAGES)(
-    '%s still emits NO gated wording in body, title, JSON-LD, or image attrs even when ON',
+    '%s still emits NO gated wording or badge assets even when ON',
     async (path, Page) => {
       const { container, unmount } = render(
         <HelmetProvider>
@@ -1852,6 +1852,11 @@ describe('attestation gate ON (mocked written confirmation)', () => {
           expect(text, `${path} ${surface} vs ${pattern}`).not.toMatch(pattern);
         }
       }
+      // The badge fixture's src/alt do not match FORBIDDEN patterns, so its
+      // absence must be asserted explicitly: only the brand page may render
+      // registry badges, even with the flag ON.
+      expect(container.querySelector(`img[src="${TEST_BADGE.src}"]`), `${path} badge src`).toBeNull();
+      expect(screen.queryByAltText(TEST_BADGE.alt), `${path} badge alt`).toBeNull();
       unmount();
       cleanupHead();
     }
