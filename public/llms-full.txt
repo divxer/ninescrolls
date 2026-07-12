@@ -125,6 +125,29 @@ Best for: Academic research requiring documented, repeatable plasma processing
 
 Plasma Cleaner Comparison: https://ninescrolls.com/products/plasma-cleaner/compare
 
+### Wafer Probe Stations
+
+#### Wafer Probe Stations Hub — Selection Guide
+URL: https://ninescrolls.com/wafer-probe-stations
+Covers: choosing by automation level (manual / semi-automatic / fully automatic), temperature environment (ambient, thermal chuck, cryogenic vacuum), and signal type (DC, RF, or optical)
+Best for: research groups deciding which class of probe station fits their measurement volume, temperature range, and signal requirements, with a US procurement path for purchasing
+
+#### SEMISHARE Wafer Probe Stations — US & Canada Procurement
+URL: https://ninescrolls.com/wafer-probe-stations/semishare
+SEMISHARE is a wafer probe station manufacturer headquartered in Shenzhen, China. Product lines: A Series (fully automatic), X Series (semi-automatic), CGX Series (cryogenic vacuum), M Series (manual analytical), wafer-level silicon photonics probing, and Mask Laser Repair (L14 Series).
+NineScrolls handles the US procurement path for these product lines: USD quoting, import and customs, delivery, and after-sales support, and is a registered US federal supplier on SAM.gov.
+Best for: US and Canadian labs sourcing a SEMISHARE probe station without dealing with international purchasing directly
+
+#### Cryogenic Probing Guide
+URL: https://ninescrolls.com/applications/cryogenic-probing
+Covers: ambient, thermal-chuck, and cryogenic-vacuum probing regimes; liquid-nitrogen cooling (~77 K range) and liquid-helium / closed-cycle cooling (single-digit kelvin); vacuum enclosure prevents condensation and improves thermal stability at low temperature
+Best for: superconductivity, quantum transport, and 2D-materials device physics requiring low-temperature electrical characterization
+
+#### Silicon Photonics Probing Guide
+URL: https://ninescrolls.com/applications/silicon-photonics-probing
+Covers: fiber alignment stages alongside electrical probes for wafer-level photonic testing; grating (vertical) vs edge coupling; mixed-signal probing combining DC bias, RF drive, and optical input/output on the same die
+Best for: silicon photonics groups doing wafer-level electro-optical device testing
+
 ---
 
 ## Technical Articles
