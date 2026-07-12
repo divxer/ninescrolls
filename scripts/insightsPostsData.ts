@@ -27328,7 +27328,7 @@ result = differential_evolution(
       <h2>Conclusion</h2>
       <p>Choosing a probe station comes down to five honest questions: how big is your sample, how many measurements do you run, does your science need temperature, what signals do you measure, and how small are your pads. Answer those, anchor a realistic budget to the right tier, and confirm your procurement path early — and the decision that felt opaque becomes straightforward.</p>
       <p>The instrument matters. So does being able to actually buy it, install it, and get it serviced. NineScrolls helps university and research labs navigate both.</p>
-      <p>To talk through a probe station selection for your lab, <a href="/quote">request a consultation</a> or explore our <a href="/wafer-probe-stations">wafer probe station capabilities</a>.</p>
+      <p>To talk through a probe station selection for your lab, <a href="/request-quote">request a consultation</a> or explore our <a href="/wafer-probe-stations">wafer probe station capabilities</a>.</p>
 
       <h2>References and Further Reading</h2>
       <ul>
