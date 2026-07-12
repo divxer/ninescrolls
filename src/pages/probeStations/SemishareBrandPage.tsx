@@ -32,7 +32,7 @@ const faqs = [
   {
     question: 'Where are SEMISHARE probe stations used in research?',
     answer:
-      'SEMISHARE systems appear in peer-reviewed research worldwide, with published installations at institutions such as the National University of Singapore and Nanyang Technological University.',
+      'SEMISHARE probe stations are named in the methods of peer-reviewed studies worldwide, including work published in Nature Communications and Nature Materials — see the publications section on this page for verified, DOI-linked examples.',
   },
   {
     question: 'What about warranty and support in North America?',
