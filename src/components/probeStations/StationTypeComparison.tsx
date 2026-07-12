@@ -23,9 +23,10 @@ export function StationTypeComparison() {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
+        <caption className="sr-only">Manual vs semi-automatic vs fully automatic probe stations</caption>
         <thead>
           <tr className="border-b border-slate-200 text-left">
-            <th className="py-2 pr-4 font-semibold text-slate-900"> </th>
+            <th className="py-2 pr-4 font-semibold text-slate-900"><span className="sr-only">Aspect</span></th>
             <th className="py-2 pr-4 font-semibold text-slate-900">Manual</th>
             <th className="py-2 pr-4 font-semibold text-slate-900">Semi-automatic</th>
             <th className="py-2 font-semibold text-slate-900">Fully automatic</th>
