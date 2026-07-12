@@ -78,11 +78,11 @@ describe('spec traceability (spec Constraint 3/7)', () => {
       const parsed = new Date(`${s}T00:00:00Z`);
       // Round-trip: rejects rollover dates like 2026-02-30
       expect(parsed.toISOString().slice(0, 10), `${spec.line}/${spec.label}`).toBe(s);
-      expect(parsed.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(parsed.getTime()).toBeLessThanOrEqual(Date.now() + 24 * 60 * 60 * 1000); // +24h: capturedOn is a date, not an instant — tolerate capturer timezones ahead of UTC
     }
   });
 
-  it('every product line has either specs or a qualitative positioning', () => {
+  it('every product line has substantial qualitative positioning', () => {
     for (const line of productLines) {
       expect(line.positioning.length, line.key).toBeGreaterThan(20);
     }

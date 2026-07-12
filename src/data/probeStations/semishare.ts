@@ -18,7 +18,7 @@ export interface ProductLine {
   positioning: string;
   /** Public-verifiable performance specs. Empty ⇒ page renders the
    *  qualitative fallback + "detailed specifications on request" CTA. */
-  specs: SpecEntry[];
+  specs: readonly SpecEntry[];
 }
 
 /**
@@ -68,7 +68,7 @@ export const PARTNER_BADGE_ASSETS: ReadonlyArray<{ src: string; alt: string }> =
  * ("Unauthorized"). attestationScan.test.ts applies these to src/** source
  * text outside this module and test files.
  */
-export const FORBIDDEN_ATTESTATION_PATTERNS: RegExp[] = [
+export const FORBIDDEN_ATTESTATION_PATTERNS: readonly RegExp[] = [
   /authori[sz]ed\s+(channel\s+)?(partner|distributor|dealer|reseller)/i,
   /official\s+(partner|distributor|dealer|reseller)/i,
   /channel\s+partner/i,
@@ -80,7 +80,7 @@ export const FORBIDDEN_ATTESTATION_PATTERNS: RegExp[] = [
  * semishareprober.com public pages (Task 5). Do not add a number here from
  * memory, from third-party sites, or from internal documents.
  */
-export const productLines: ProductLine[] = [
+export const productLines: readonly ProductLine[] = [
   {
     key: 'a-series',
     name: 'A Series — Fully Automatic Probe Stations',
