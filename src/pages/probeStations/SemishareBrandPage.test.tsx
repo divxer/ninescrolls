@@ -45,7 +45,7 @@ describe('SemishareBrandPage', () => {
     expect(screen.getAllByText(/SAM\.gov/).length).toBeGreaterThan(0);
     const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((h) => h.textContent?.endsWith('?'));
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);
-    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote');
+    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
   });
 
   it('emits Organization JSON-LD with the gated-OFF description and FAQPage matching visible FAQ', async () => {

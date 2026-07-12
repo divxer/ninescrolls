@@ -129,6 +129,22 @@ describe('parseRfqUrlParams', () => {
 });
 
 describe('RFQPage URL attribution contract', () => {
+  it('pre-selects the Wafer Probe Station category from probe-station page links', () => {
+    renderRfq('/request-quote?products=semishare-probe-station');
+    const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+    expect(select.value).toBe('Probe-Station');
+    // The slug also lands in the specific-model prefill (existing ?products= contract)
+  });
+
+  it('pre-selects the probe-station category for each probe page slug', () => {
+    for (const slug of ['wafer-probe-station', 'cryogenic-probe-station', 'silicon-photonics-probe-station']) {
+      const { unmount } = renderRfq(`/request-quote?products=${slug}`);
+      const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+      expect(select.value, slug).toBe('Probe-Station');
+      unmount();
+    }
+  });
+
   it('renders the redesigned RFQ header while preserving URL prefill', async () => {
     renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
 

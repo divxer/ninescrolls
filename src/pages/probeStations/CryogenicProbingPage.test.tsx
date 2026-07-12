@@ -31,6 +31,6 @@ describe('CryogenicProbingPage', () => {
     expect(screen.getByText(/liquid helium/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /probe station selection hub/i })).toHaveAttribute('href', '/wafer-probe-stations');
     expect(screen.getByRole('link', { name: /SEMISHARE product lines/i })).toHaveAttribute('href', '/wafer-probe-stations/semishare');
-    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote');
+    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=cryogenic-probe-station');
   });
 });

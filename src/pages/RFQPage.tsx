@@ -40,6 +40,7 @@ const EQUIPMENT_CATEGORIES = [
   { value: 'Plasma-Cleaner', label: 'Plasma Cleaner / Surface Treatment' },
   { value: 'Stripper', label: 'Photoresist Stripping System' },
   { value: 'Coater-Developer', label: 'Coater / Developer (Spin Coater)' },
+  { value: 'Probe-Station', label: 'Wafer Probe Station' },
   { value: 'Other', label: 'Not Sure / Need Recommendation' },
 ];
 
@@ -189,6 +190,7 @@ const PRODUCT_CATEGORY_MAP: Record<string, string> = {
   'Plasma Cleaner': 'Plasma-Cleaner', 'Plasma Treatment': 'Plasma-Cleaner', 'Surface Treatment': 'Plasma-Cleaner',
   'Stripper': 'Stripper', 'Stripping': 'Stripper', 'Photoresist Strip': 'Stripper',
   'Coater': 'Coater-Developer', 'Developer': 'Coater-Developer', 'Spin Coater': 'Coater-Developer',
+  'Probe Station': 'Probe-Station', 'Probe-Station': 'Probe-Station', 'Wafer Probe': 'Probe-Station', 'SEMISHARE': 'Probe-Station',
 };
 
 function inferCategory(product: string, explicitCategory?: string): string {

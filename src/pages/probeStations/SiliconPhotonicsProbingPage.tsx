@@ -76,7 +76,7 @@ export function SiliconPhotonicsProbingPage() {
             Tell us your coupling method, wavelength range, and electrical probing needs — we will
             scope a configuration and quote with US delivery and support.
           </p>
-          <Link to="/request-quote" className="mt-5 inline-flex items-center justify-center rounded-md bg-sky-500 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-400">
+          <Link to="/request-quote?products=silicon-photonics-probe-station" className="mt-5 inline-flex items-center justify-center rounded-md bg-sky-500 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-400">
             Request a quote
           </Link>
         </div>
