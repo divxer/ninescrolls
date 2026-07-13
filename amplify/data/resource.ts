@@ -5,6 +5,7 @@ import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 import { tenderApi } from '../functions/tender-api/resource';
 import { crmApi } from '../functions/crm-api/resource';
+import { EVIDENCE_STATUS } from '../lib/evidence/status';
 
 // =============================================================================
 // Schema: Existing models + Order Tracker / RFQ GraphQL API
@@ -85,6 +86,34 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.publicApiKey().to(['read']),
+      allow.authenticated(),
+    ])
+    .secondaryIndexes((index) => [index('slug')]),
+
+  Evidence: a
+    .model({
+      id: a.id().required(),
+      slug: a.string().required(),
+      title: a.string().required(),
+      type: a.string().required(),
+      summary: a.string(),
+      products: a.string().array().required(),
+      process: a.string(),
+      materials: a.string().array(),
+      keywords: a.string().array(),
+      metrics: a.json(),
+      articleSlug: a.string(),
+      pdfUrl: a.string(),
+      images: a.string().array(),
+      sourceUrl: a.string(),
+      meta: a.json(),
+      publishDate: a.string(),
+      status: a.string().default(EVIDENCE_STATUS.DRAFT),
+    })
+    .authorization((allow) => [
+      // Authenticated identities only. NOT public read — anonymous reads go
+      // through listPublishedEvidence (Public Read Boundary). Per spec "Write
+      // Authorization Premise", this is not admin-only authz.
       allow.authenticated(),
     ])
     .secondaryIndexes((index) => [index('slug')]),
