@@ -5,6 +5,7 @@ import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 import { tenderApi } from '../functions/tender-api/resource';
 import { crmApi } from '../functions/crm-api/resource';
+import { evidenceApi } from '../functions/evidence-api/resource';
 import { EVIDENCE_STATUS } from '../lib/evidence/status';
 
 // =============================================================================
@@ -1045,6 +1046,13 @@ const schema = a.schema({
     .returns(a.json())
     .handler(a.handler.function(tenderApi))
     .authorization((allow) => [allow.authenticated()]),
+
+  listPublishedEvidence: a
+    .query()
+    .arguments({ productSlug: a.string() })
+    .returns(a.ref('Evidence').array().required())
+    .handler(a.handler.function(evidenceApi))
+    .authorization((allow) => [allow.publicApiKey()]),
 
   // =========================================================================
   // Insights Image Upload — queries & mutations
