@@ -9,7 +9,7 @@ const model = {
 };
 vi.mock('./amplifyClient', () => ({ getAmplifyDataClient: () => ({ models: { Evidence: model } }) }));
 
-import { createEvidence, updateEvidence, listAllEvidence } from './evidenceAdminService';
+import { createEvidence, updateEvidence, listAllEvidence, setEvidenceStatus } from './evidenceAdminService';
 import { EVIDENCE_STATUS, EVIDENCE_TYPE } from '../config/evidence';
 
 const base = {
@@ -122,5 +122,18 @@ describe('listAllEvidence', () => {
     expect(model.list.mock.calls[0][0]).toEqual({ authMode: 'userPool', nextToken: undefined });
     expect(model.list.mock.calls[1][0]).toEqual({ authMode: 'userPool', nextToken: 'tok' });
     expect(res.map((r: { id: string }) => r.id)).toEqual(['e-1', 'e-2']);
+  });
+});
+
+describe('setEvidenceStatus', () => {
+  it('updates only id+status under userPool auth (no slug/payload re-validation)', async () => {
+    model.update.mockResolvedValueOnce({ data: { id: 'e-1', status: 'archived' }, errors: null });
+    await setEvidenceStatus('e-1', EVIDENCE_STATUS.ARCHIVED);
+    expect(model.update).toHaveBeenCalledWith({ id: 'e-1', status: 'archived' }, { authMode: 'userPool' });
+    expect(model.listEvidenceBySlug).not.toHaveBeenCalled();
+  });
+  it('throws on errors', async () => {
+    model.update.mockResolvedValueOnce({ data: null, errors: [{ message: 'nope' }] });
+    await expect(setEvidenceStatus('e-1', EVIDENCE_STATUS.ARCHIVED)).rejects.toThrow('nope');
   });
 });
