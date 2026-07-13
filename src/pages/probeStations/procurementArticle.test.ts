@@ -163,6 +163,22 @@ describe('probe station procurement standalone article', () => {
 });
 
 describe('probe station procurement accuracy constraints (editorial-review tripwires)', () => {
+  // Normalized view for phrase-FAMILY bans: lowercase, whitespace collapsed —
+  // so a ban can't be dodged by casing, line wrapping, or double spaces.
+  const normalized = content.toLowerCase().replace(/\s+/g, ' ');
+
+  /** Every window of ±radius chars around each occurrence of `needle`. */
+  const windowsAround = (needle: string, radius: number): string[] => {
+    const wins: string[] = [];
+    let from = 0;
+    for (;;) {
+      const idx = content.indexOf(needle, from);
+      if (idx === -1) return wins;
+      wins.push(content.slice(Math.max(0, idx - radius), idx + needle.length + radius));
+      from = idx + needle.length;
+    }
+  };
+
   it('states the FAR thresholds with institution-first framing (Constraint 1)', () => {
     // The current (2025-10-01) FAR figures must both appear...
     expect(content).toContain('$15,000');
@@ -171,48 +187,86 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
     // each figure sits within 200 chars of the word "institution". This is the
     // tripwire against a bare federal-number recital with no institution-adopted
     // caveat.
-    const nearInstitution = (needle: string): boolean => {
-      let from = 0;
-      for (;;) {
-        const idx = content.indexOf(needle, from);
-        if (idx === -1) return false;
-        const windowText = content.slice(Math.max(0, idx - 200), idx + needle.length + 200);
-        if (/institution/i.test(windowText)) return true;
-        from = idx + needle.length;
-      }
-    };
+    const nearInstitution = (needle: string): boolean =>
+      windowsAround(needle, 200).some((w) => /institution/i.test(w));
     expect(nearInstitution('$15,000'), '$15,000 framed near "institution"').toBe(true);
     expect(nearInstitution('$350,000'), '$350,000 framed near "institution"').toBe(true);
   });
 
+  it('frames the MPT as a baseline (never a ceiling) and the SAT as the true ceiling (Constraint 1)', () => {
+    // $15,000 is the FAR default BASELINE — institutions may go lower, self-
+    // certify up to $50,000 (§200.320(a)(1)(iv)), or exceed $50,000 with
+    // cognizant-agency approval (§200.320(a)(1)(v)). At least one occurrence
+    // must be framed as baseline/default...
+    expect(
+      windowsAround('$15,000', 200).some((w) => /baseline|default/i.test(w)),
+      '$15,000 framed as baseline/default',
+    ).toBe(true);
+    // ...and NO occurrence may be framed as a ceiling/maximum/cap.
+    for (const w of windowsAround('$15,000', 100)) {
+      expect(w, '$15,000 must never read as a ceiling').not.toMatch(/ceiling|maximum|cap\b/i);
+    }
+    // The SAT is the one figure that IS a ceiling institutions may not exceed.
+    expect(
+      windowsAround('$350,000', 200).some((w) => /ceiling|may not exceed/i.test(w)),
+      '$350,000 framed as a ceiling',
+    ).toBe(true);
+    // The (a)(1)(v) above-$50,000 path must be cited, not just (a)(1)(iv).
+    expect(content).toContain('200.320(a)(1)(v)');
+  });
+
   it('does not recite the outdated pre-2025 thresholds (Constraint 1)', () => {
-    // The prior MPT ($10,000) and a common stale SAT figure ($250,000) must not
-    // appear — they signal the numbers were not refreshed to the 2025-10-01 set.
-    expect(content).not.toMatch(/\$10,000/);
-    expect(content).not.toMatch(/\$250,000/);
+    // The prior MPT ($10,000) and stale SAT figure ($250,000) must not appear
+    // in any common spelling — they signal the numbers were not refreshed to
+    // the 2025-10-01 set.
+    expect(normalized).not.toMatch(/\$10,?000|\$10k|\$250,?000|\$250k/i);
   });
 
   it('never implies federal funds expire at a fiscal-year boundary (Constraint 2)', () => {
-    expect(content).not.toMatch(/federal fiscal year/i);
-    expect(content).not.toMatch(/funds\s+expire/i);
+    // Phrase families, not exact spellings.
+    const BANNED_FISCAL: RegExp[] = [
+      /(funds?|money|grant)[^.]{0,40}(lapse|expire)/i,
+      /spend[^.]{0,30}by[^.]{0,30}(\bfy\b|fiscal year|september 30)/i,
+      /federal fiscal year/i,
+      /funds\s+expire/i,
+    ];
+    for (const pattern of BANNED_FISCAL) {
+      expect(normalized, `banned fiscal-expiry wording ${pattern}`).not.toMatch(pattern);
+    }
+    // Positive: the clocks that DO bind must be named — the award's period of
+    // performance and the institution's own internal deadlines.
+    expect(normalized).toContain('period of performance');
+    expect(
+      normalized,
+      'institutional deadline/cutoff/closeout framing present',
+    ).toMatch(/institution[^.]{0,60}(deadline|cutoff|closeout)/i);
   });
 
   it('does not overstate SAM.gov or vendor-registration requirements (Constraint 6)', () => {
     const BANNED_SAM: RegExp[] = [
-      /vendors?\s+must\s+(be\s+)?register(ed)?\s+in\s+SAM/i,
-      /suppliers?\s+must\s+(be\s+)?register(ed)?\s+in\s+SAM/i,
-      /SAM\s+registration\s+is\s+required/i,
-      /federally\s+funded\s+purchases\s+require\s+SAM/i,
-      /(NSF|DOE)\s+requires\s+vendors/i,
+      /vendors?\s+must\s+(be\s+)?register(ed)?\s+in\s+sam/i,
+      /suppliers?\s+must\s+(be\s+)?register(ed)?\s+in\s+sam/i,
+      /sam\s+registration\s+is\s+required/i,
+      /federally\s+funded\s+purchases\s+require\s+sam/i,
+      /(nsf|doe)\s+requires\s+vendors/i,
+      /required to (have|maintain)[^.]{0,30}sam/i,
+      /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
     ];
     for (const pattern of BANNED_SAM) {
-      expect(content, `banned SAM/vendor wording ${pattern}`).not.toMatch(pattern);
+      expect(normalized, `banned SAM/vendor wording ${pattern}`).not.toMatch(pattern);
     }
     // The exact allowed SAM statement must be present verbatim (bonus fact, not
     // requirement) together with its UEI.
     expect(content).toContain(
       'NineScrolls LLC maintains an active SAM.gov registration and UEI C4BFCTH5L5D1.'
     );
+  });
+
+  it('makes no delivered-pricing commitment (locked scope: delivery terms are per-quotation)', () => {
+    // Policy is unsettled — the article may only say the QUOTATION identifies
+    // the delivery term. Any "NineScrolls/SEMISHARE ... delivered pricing"
+    // commitment is a release blocker.
+    expect(normalized).not.toMatch(/(ninescrolls|semishare)[^.]{0,80}delivered pricing/i);
   });
 
   it('avoids NineScrolls approval-status inflation and high-risk procurement over-claims (Constraints 4, 7)', () => {
