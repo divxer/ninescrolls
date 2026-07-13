@@ -27161,5 +27161,5 @@ result = differential_evolution(
       { href: '/products/striper', label: 'Striper Systems', subtitle: 'Low-damage photoresist stripping and post-etch polymer removal' },
       { href: '/products/ibe-ribe', label: 'IBE/RIBE Systems', subtitle: 'Angle-controlled ion beam etching for h-BN taper engineering and metal patterning' }
     ]
-  }
+  },
 ];

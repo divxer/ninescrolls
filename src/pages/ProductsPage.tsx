@@ -6,7 +6,7 @@ import { SEO } from '../components/common/SEO';
 import { DownloadGateModal } from '../components/common/DownloadGateModal';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 
-type ProductFamily = 'Etching' | 'Deposition' | 'Lithography' | 'Plasma Cleaning';
+type ProductFamily = 'Etching' | 'Deposition' | 'Lithography' | 'Plasma Cleaning' | 'Probe Stations';
 type ProductTab = 'All' | ProductFamily;
 
 interface ProductCard {
@@ -23,7 +23,7 @@ interface ProductCard {
   featured?: boolean;
 }
 
-const tabs: ProductTab[] = ['All', 'Etching', 'Deposition', 'Lithography', 'Plasma Cleaning'];
+const tabs: ProductTab[] = ['All', 'Etching', 'Deposition', 'Lithography', 'Plasma Cleaning', 'Probe Stations'];
 
 const products: ProductCard[] = [
   {
@@ -233,6 +233,17 @@ const products: ProductCard[] = [
     chips: ['500 W RF', '30 L chamber', 'Up to 7 shelves'],
     buyingMode: 'RFQ Platform',
   },
+  {
+    name: 'Wafer Probe Stations',
+    route: '/wafer-probe-stations',
+    family: 'Probe Stations',
+    eyebrow: 'Test & Probing',
+    image: '/assets/images/redesign/products/probe-station-schematic-standardized.webp',
+    alt: 'Wafer probe station schematic — chuck, micropositioners, and optics',
+    description: 'Manual, semi-automatic, and cryogenic wafer probe stations with a US procurement path — selection hub, buying guides, and SEMISHARE product lines.',
+    chips: ['Device characterization', 'Cryogenic probing', 'Silicon photonics'],
+    buyingMode: 'RFQ Platform',
+  },
 ];
 
 const familyIntros: Record<ProductFamily, { heading: string; copy: string }> = {
@@ -251,6 +262,10 @@ const familyIntros: Record<ProductFamily, { heading: string; copy: string }> = {
   'Plasma Cleaning': {
     heading: 'Plasma Cleaning Systems',
     copy: 'Buy-online plasma cleaners for surface activation, bonding prep, sample cleaning, and routine laboratory workflows.',
+  },
+  'Probe Stations': {
+    heading: 'Wafer Probe Stations',
+    copy: 'Manual, semi-automatic, and cryogenic wafer probe stations for device characterization, cryogenic probing, and silicon photonics test.',
   },
 };
 
@@ -327,8 +342,8 @@ export function ProductsPage() {
     <>
       <SEO
         title="Semiconductor Process Equipment | Plasma Etching, Deposition & Cleaning"
-        description="Choose NineScrolls process equipment by application: ICP-RIE, RIE, PECVD, ALD, sputter, IBE/RIBE, e-beam evaporation, HDP-CVD, coating/developing, stripping, and plasma cleaning systems."
-        keywords="semiconductor process equipment, plasma etching systems, thin film deposition systems, plasma cleaner, ICP-RIE, PECVD, ALD, sputter, e-beam evaporator"
+        description="Choose NineScrolls process equipment by application: ICP-RIE, RIE, PECVD, ALD, sputter, IBE/RIBE, e-beam evaporation, HDP-CVD, coating/developing, stripping, plasma cleaning, and wafer probe stations for device characterization."
+        keywords="semiconductor process equipment, plasma etching systems, thin film deposition systems, plasma cleaner, wafer probe stations, device characterization, ICP-RIE, PECVD, ALD, sputter, e-beam evaporator"
         url="/products/"
       />
 

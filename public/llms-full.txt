@@ -125,6 +125,29 @@ Best for: Academic research requiring documented, repeatable plasma processing
 
 Plasma Cleaner Comparison: https://ninescrolls.com/products/plasma-cleaner/compare
 
+### Wafer Probe Stations
+
+#### Wafer Probe Stations Hub — Selection Guide
+URL: https://ninescrolls.com/wafer-probe-stations
+Covers: choosing by automation level (manual / semi-automatic / fully automatic), temperature environment (ambient, thermal chuck, cryogenic vacuum), and signal type (DC, RF, or optical)
+Best for: research groups deciding which class of probe station fits their measurement volume, temperature range, and signal requirements, with a US procurement path for purchasing
+
+#### SEMISHARE Wafer Probe Stations — US & Canada Procurement
+URL: https://ninescrolls.com/wafer-probe-stations/semishare
+SEMISHARE is a wafer probe station manufacturer headquartered in Shenzhen, China. Product lines: A Series (fully automatic), X Series (semi-automatic), CGX Series (cryogenic vacuum), M Series (manual analytical), wafer-level silicon photonics probing, and Mask Laser Repair (L14 Series).
+NineScrolls handles the US procurement path for these product lines: USD quoting, import and customs, delivery, and after-sales support, and is a registered US federal supplier on SAM.gov.
+Best for: US and Canadian labs sourcing a SEMISHARE probe station without dealing with international purchasing directly
+
+#### Cryogenic Probing Guide
+URL: https://ninescrolls.com/applications/cryogenic-probing
+Covers: ambient, thermal-chuck, and cryogenic-vacuum probing regimes; liquid-nitrogen cooling (~77 K range) and liquid-helium / closed-cycle cooling (single-digit kelvin); vacuum enclosure prevents condensation and improves thermal stability at low temperature
+Best for: superconductivity, quantum transport, and 2D-materials device physics requiring low-temperature electrical characterization
+
+#### Silicon Photonics Probing Guide
+URL: https://ninescrolls.com/applications/silicon-photonics-probing
+Covers: fiber alignment stages alongside electrical probes for wafer-level photonic testing; grating (vertical) vs edge coupling; mixed-signal probing combining DC bias, RF drive, and optical input/output on the same die
+Best for: silicon photonics groups doing wafer-level electro-optical device testing
+
 ---
 
 ## Technical Articles
@@ -328,6 +351,13 @@ Summary: Comprehensive guide to vacuum technology for semiconductor equipment �
 **Process Chamber Materials & Contamination Control in Semiconductor Equipment**
 URL: https://ninescrolls.com/insights/process-chamber-materials-contamination-control
 Summary: Guide to chamber design and contamination management — covers body materials (6061-T6 aluminum, 304/316 stainless steel, alumina, quartz, SiC), surface treatments (Type III hard anodization, Y₂O₃ plasma spray, electropolishing), electrode materials (anodized Al, Si, SiC, graphite with selection criteria), liner/shield design principles. Seal materials (Viton, Kalrez, Chemraz, PTFE, metal C-seals/Helicoflex) with temperature and chemical compatibility. Gas delivery materials (316L electropolished tubing, VCR fittings). Five contamination categories (particles, metallic, organic, moisture, cross-contamination) with sources and effects. Chamber seasoning protocol. PM schedules from in-situ plasma clean through heavy PM. Cleaning protocols (plasma, wet chemical, bead blasting). Qualification criteria (base pressure, leak rate, particle count, dummy wafer deposition, TXRF metallic contamination).
+
+### Metrology & Testing
+
+#### How to Choose a Wafer Probe Station for Your University Research Lab
+URL: https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab
+Covers: the five configuration decisions (automation level, temperature environment, signal type, sample size/chuck, pad geometry), a quote-comparison checklist, public price and federal award examples (point-in-time, PIID-verifiable), and university procurement considerations (Uniform Guidance, fiscal-year timing, import duties)
+Best for: PIs, lab managers, and first-time probe-station buyers budgeting and specifying a system for a university research lab
 
 ### Process Integration & Applications
 
