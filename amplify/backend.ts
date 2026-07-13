@@ -1251,7 +1251,7 @@ backend.tenderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
 
 // =============================================================================
 // Evidence — public read boundary (Task 6)
-// See docs/superpowers/specs/2026-07-09-research-validation-claim-reframe-design.md
+// See docs/superpowers/specs/2026-07-04-evidence-framework-design.md
 // =============================================================================
 
 // Evidence read path: the evidence-api Lambda gets EXACTLY dynamodb:Scan on the
