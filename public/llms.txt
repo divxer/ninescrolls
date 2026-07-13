@@ -117,6 +117,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 ## Insights — Metrology & Testing
 
 - [How to Choose a Wafer Probe Station for Your University Research Lab](https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab): Buyer's guide — automation level, temperature, signal type, sample size, positioning; public price/award examples and university procurement guidance
+- [Probe Station Procurement for NSF and DOE-Funded Projects](https://ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects): How to buy compliantly under a Federal assistance award — institution-adopted thresholds, procurement methods, noncompetitive circumstances, timelines, and vendor onboarding
 
 ## Insights — Process Integration & Applications
 

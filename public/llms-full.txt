@@ -354,6 +354,11 @@ Summary: Guide to chamber design and contamination management — covers body ma
 
 ### Metrology & Testing
 
+#### Probe Station Procurement for NSF and DOE-Funded Projects: A Practical Guide
+URL: https://ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects
+Covers: Federal assistance award vs Federal procurement contract; institution-adopted micro-purchase and simplified acquisition thresholds under 2 CFR 200 (FAR defaults $15,000 / $350,000 as of 2025-10-01, institution's adopted numbers govern); procurement methods and noncompetitive circumstances (2 CFR 200.320(c)); realistic timelines around the award period of performance; vendor onboarding; NSF PAPPG / DOE 2 CFR 910 overlays
+Best for: PIs and university procurement staff buying probe stations or similar capital equipment under NSF or DOE awards
+
 #### How to Choose a Wafer Probe Station for Your University Research Lab
 URL: https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab
 Covers: the five configuration decisions (automation level, temperature environment, signal type, sample size/chuck, pad geometry), a quote-comparison checklist, public price and federal award examples (point-in-time, PIID-verifiable), and university procurement considerations (Uniform Guidance, fiscal-year timing, import duties)
