@@ -358,6 +358,7 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
     const MUTATIONS = [
       'The old threshold is USD 10,000.',
       'The old threshold is 10 thousand dollars.',
+      'The old threshold is 250 thousand dollars.',
       'The award balance must be used before September 30.',
       'All vendors are required to register with SAM.gov.',
       'Vendors have to register with SAM.gov.',
