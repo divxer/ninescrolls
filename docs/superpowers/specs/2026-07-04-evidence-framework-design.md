@@ -79,7 +79,7 @@ Evidence: a
     status: a.string().default('draft'),  // draft | published | archived
   })
   .authorization((allow) => [
-    allow.authenticated(),                // admin CRUD ONLY — no public read on the base model
+    allow.authenticated(),                // any authenticated identity may CRUD (see Write Authorization Premise); NO public read
   ])
   .secondaryIndexes((index) => [index('slug')]),
 ```
@@ -109,11 +109,22 @@ DynamoDB `Scan`/`Query` returns at most 1 MB per call; a single-page scan would 
 The security boundary is an acceptance contract, not just a description:
 
 - The custom query is explicitly invokable with **`apiKey`** auth.
-- The Lambda's execution role is granted **read-only** access to the Evidence table only — `dynamodb:Query` and `dynamodb:Scan` (and describe as needed). **No** `PutItem` / `UpdateItem` / `DeleteItem`, and no broad/table-wildcard data access.
+- **The Lambda's DynamoDB data-plane permissions are exactly `dynamodb:Query` and `dynamodb:Scan`, scoped by resource to the Evidence base-table and its index ARNs only.** No other DynamoDB action (`PutItem`/`UpdateItem`/`DeleteItem`/`BatchWrite`/etc.), and no access to any other table. `dynamodb:DescribeTable` is **not** granted in Phase 1 (Query/Scan need it under no path here); if a concrete implementation need arises, grant it explicitly and note it here — do not add it speculatively.
+- This constrains **DynamoDB access only.** The execution role still carries the standard non-DynamoDB permissions every Lambda needs (e.g. CloudWatch Logs) — those are expected and out of scope for this constraint.
 - The Lambda enforces the `published` predicate server-side before responding.
-- A deployment/IAM check (or test) verifies both halves: (a) the Lambda role has only the read actions above, and (b) an anonymous `apiKey` query against the **base** `Evidence` model is denied.
+- A deployment/IAM check (or test) verifies both halves: (a) the Lambda's role grants **no DynamoDB action beyond `Query`/`Scan` on the Evidence table/index ARNs** (assert on DynamoDB actions specifically, not "no other permissions at all"), and (b) an anonymous `apiKey` query against the **base** `Evidence` model is denied.
 
 > Note: `InsightsPost` has the same latent exposure (public read + `isDraft`). That is pre-existing and out of scope here; we deliberately do **not** propagate that pattern to Evidence because this spec makes an explicit no-leak commitment.
+
+### Write Authorization Premise (operational — not a security guarantee)
+
+`allow.authenticated()` on the base model means **any authenticated Cognito identity may CRUD Evidence** — it is *not* server-side admin authorization, and this spec does not claim it is. This is stated explicitly to avoid overclaiming:
+
+- The app's auth is bare email login (`defineAuth({ loginWith: { email: true } })`); there is **no Cognito `ADMINS` group** today, and the entire existing admin surface (`InsightsPost`, `Product`, `Order`, `RFQ`) already relies on `allow.authenticated()`.
+- `AdminRoute` is a **UI route guard only** — it does not constrain direct GraphQL calls.
+- **Operational premise:** Cognito accounts are issued only to trusted administrators. Write-side protection rests on this premise, not on a technical admin boundary.
+- **App-wide `ADMINS`-group hardening is tracked as a separate, cross-cutting security initiative** — deliberately out of scope for Phase 1 Evidence, to avoid a false "Evidence is protected while other admin models stay open" inconsistency.
+- This decision **does not affect the anonymous no-leak guarantee**, which is enforced independently by the authenticated-only base model + the `published`-only Lambda (Public Read Boundary above).
 
 ### `type` enum
 
@@ -141,7 +152,7 @@ String constants, defined once in a shared frontend module:
 
 ### `status` semantics
 
-- `draft` — admin only, never public.
+- `draft` — visible only on the admin side (never returned by `listPublishedEvidence`, never public).
 - `published` — public; counted by the product module and (Phase 2) the hub.
 - `archived` — **admin-visible, never shown on the public site.** Unreachable via `listPublishedEvidence` (the only public read path).
 
@@ -211,7 +222,7 @@ Type→label mapping (e.g. `publication` → "Published Research", `validation` 
 
 Mirrors the existing Insights admin pattern:
 
-- **`AdminEvidenceListPage`** — list with filters by `type` and `status`. Reads the base model via authenticated auth (admins see all statuses, including `draft`/`archived`).
+- **`AdminEvidenceListPage`** — list with filters by `type` and `status`. Reads the base model via authenticated auth, so an authenticated user (a trusted admin, per the Write Authorization Premise) sees all statuses, including `draft`/`archived`.
 - **`EvidenceForm`** — full field set and how each is populated in Phase 1:
 
   | Field | Phase 1 handling |
@@ -247,7 +258,7 @@ Security tests target the **server boundary**, not client-side status filtering 
 - **Public read boundary (security):**
   - `listPublishedEvidence` returns only `EVIDENCE_STATUS.PUBLISHED` records — given a table containing `draft`/`published`/`archived`, the Lambda's result excludes non-published rows.
   - The base `Evidence` model is not publicly readable — a direct `apiKey` query against the base model is denied by auth (no path for anonymous callers to read `draft`/`archived`).
-  - **Least-privilege IAM:** the Lambda role has only read actions (`Query`/`Scan`) on the Evidence table and no write actions — asserted by a deployment/IAM check.
+  - **Least-privilege IAM:** assert the Lambda role grants **no DynamoDB action beyond `Query`/`Scan`** on the Evidence table/index ARNs (no writes, no other tables). The assertion targets DynamoDB actions specifically — not "the role has no other permissions" (CloudWatch Logs etc. are expected).
 - **Pagination completeness:** seed/mock results spanning **≥2 `Scan` pages**; assert a `published` record on the second page is included in the returned set and its type count — proving the Lambda drains `LastEvaluatedKey` rather than returning a single page.
 - **Aggregation helper (counting, not gating):** given a set of **already-published** records with varied `products` arrays, it returns correct per-product, per-type counts. It is tested for counting correctness only — status gating is not its job.
 - **Product module:** its input type/fixtures contain **only public records**; renders nothing at 0 matches; renders correct grouped counts at ≥1. (No test feeds it `draft`/`archived` — those cannot reach it in production.)
