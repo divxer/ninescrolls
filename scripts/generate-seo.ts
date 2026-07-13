@@ -87,6 +87,7 @@ const STATIC_PAGES: StaticPage[] = [
   { loc: '/products/pluto-t', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/pluto-m', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/pluto-f', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
+  { loc: '/products/pluto-30', lastmod: '2026-07-10', changefreq: 'monthly', priority: '0.8' },
   { loc: '/wafer-probe-stations', lastmod: '2026-07-12', changefreq: 'weekly', priority: '0.9' },
   { loc: '/wafer-probe-stations/semishare', lastmod: '2026-07-12', changefreq: 'weekly', priority: '0.9' },
   { loc: '/applications/cryogenic-probing', lastmod: '2026-07-12', changefreq: 'monthly', priority: '0.8' },
