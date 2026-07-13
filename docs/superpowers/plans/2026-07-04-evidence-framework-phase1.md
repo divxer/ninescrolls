@@ -30,7 +30,7 @@
 **Backend (Amplify):**
 - `amplify/data/resource.ts` — *modify*: `Evidence` model (authenticated-only) + `listPublishedEvidence` query.
 - `amplify/functions/evidence-api/{resource.ts,handler.ts,handler.test.ts,package.json}` — *create*.
-- `amplify/backend.ts` — *modify*: register `evidenceApi`; grant `Query`/`Scan` on the base table ARN only; inject `EVIDENCE_TABLE`.
+- `amplify/backend.ts` — *modify*: register `evidenceApi`; grant `Scan` on the base table ARN only; inject `EVIDENCE_TABLE`.
 
 **Frontend services:**
 - `src/services/evidenceService.ts` (+ `.test.ts`) — *create*: public read wrapper.
@@ -666,20 +666,20 @@ In the Queries section of the schema (near `listOrders`):
 
 In `amplify/backend.ts`: add `import { evidenceApi } from './functions/evidence-api/resource';` to the imports, and `evidenceApi,` to the `defineBackend({ ... })` object.
 
-- [ ] **Step 4: Grant base-ARN-only Query/Scan + inject env**
+- [ ] **Step 4: Grant base-ARN-only Scan + inject env**
 
 Append after the existing table grants in `amplify/backend.ts` (`PolicyStatement` is already imported at line 52):
 
 ```ts
-// Evidence read path: the evidence-api Lambda gets EXACTLY dynamodb:Query and
-// dynamodb:Scan on the Evidence BASE TABLE ARN. No index ARNs — the handler
-// Scans the base table and never queries the slug GSI (that GSI is used only by
-// the admin client's listEvidenceBySlug via AppSync's own resolver, not here).
-// No write actions, no other tables. This is the no-leak boundary.
+// Evidence read path: the evidence-api Lambda gets EXACTLY dynamodb:Scan on the
+// Evidence BASE TABLE ARN. No Query (the handler never Query's), no index ARNs
+// (never touches the slug GSI — that GSI is used only by the admin client's
+// listEvidenceBySlug via AppSync's own resolver, not here), no write actions,
+// no other tables. This is the no-leak boundary.
 const evidenceTable = backend.data.resources.tables['Evidence'];
 backend.evidenceApi.resources.lambda.addToRolePolicy(
   new PolicyStatement({
-    actions: ['dynamodb:Query', 'dynamodb:Scan'],
+    actions: ['dynamodb:Scan'],
     resources: [evidenceTable.tableArn],
   })
 );
@@ -695,7 +695,7 @@ Expected: no new errors.
 
 ```bash
 git add amplify/data/resource.ts amplify/backend.ts
-git commit -m "feat(evidence): wire listPublishedEvidence with base-ARN-only Query/Scan IAM + env"
+git commit -m "feat(evidence): wire listPublishedEvidence with base-ARN-only Scan IAM + env"
 ```
 
 ---
@@ -843,10 +843,20 @@ describe('createEvidence', () => {
     expect(model.listEvidenceBySlug).not.toHaveBeenCalled(); // payload check precedes slug check
   });
 
-  it('rejects a duplicate slug via the slug GSI query', async () => {
+  it('rejects a duplicate slug via the slug GSI query (nextToken in options param)', async () => {
     model.listEvidenceBySlug.mockResolvedValueOnce({ data: [{ id: 'existing', slug: 'si-deep-etch' }], nextToken: null });
     await expect(createEvidence(base)).rejects.toThrow(/slug/i);
-    expect(model.listEvidenceBySlug).toHaveBeenCalledWith({ slug: 'si-deep-etch' }, { authMode: 'userPool' });
+    expect(model.listEvidenceBySlug).toHaveBeenCalledWith({ slug: 'si-deep-etch' }, { authMode: 'userPool', nextToken: undefined });
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('detects a clash that appears only on the second GSI page (drains nextToken)', async () => {
+    model.listEvidenceBySlug
+      .mockResolvedValueOnce({ data: [], nextToken: 'p2' })
+      .mockResolvedValueOnce({ data: [{ id: 'dup', slug: 'si-deep-etch' }], nextToken: null });
+    await expect(createEvidence(base)).rejects.toThrow(/slug/i);
+    expect(model.listEvidenceBySlug).toHaveBeenCalledTimes(2);
+    expect(model.listEvidenceBySlug.mock.calls[1][1]).toEqual({ authMode: 'userPool', nextToken: 'p2' });
     expect(model.create).not.toHaveBeenCalled();
   });
 
@@ -876,6 +886,15 @@ describe('updateEvidence', () => {
   it('rejects when another record already owns the slug', async () => {
     model.listEvidenceBySlug.mockResolvedValueOnce({ data: [{ id: 'other', slug: 'si-deep-etch' }], nextToken: null });
     await expect(updateEvidence({ ...base, id: 'e-1' })).rejects.toThrow(/slug/i);
+    expect(model.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects when only self is on page 1 but another id owns the slug on page 2', async () => {
+    model.listEvidenceBySlug
+      .mockResolvedValueOnce({ data: [{ id: 'e-1', slug: 'si-deep-etch' }], nextToken: 'p2' })
+      .mockResolvedValueOnce({ data: [{ id: 'other', slug: 'si-deep-etch' }], nextToken: null });
+    await expect(updateEvidence({ ...base, id: 'e-1' })).rejects.toThrow(/slug/i);
+    expect(model.listEvidenceBySlug).toHaveBeenCalledTimes(2);
     expect(model.update).not.toHaveBeenCalled();
   });
 
@@ -949,12 +968,23 @@ function assertPayload(input: EvidenceInput) {
 
 /**
  * Best-effort duplicate-slug guard using the slug GSI (not atomic — spec
- * constraint 1). Excludes the record itself on update.
+ * constraint 1). Drains nextToken so a clashing record on a later page is not
+ * missed, and returns early once any different-id record is found. Excludes the
+ * record itself on update (ignoreId). nextToken belongs in the options (2nd)
+ * param, alongside authMode — the index input (1st param) carries only `slug`.
  */
 async function assertSlugFree(slug: string, ignoreId?: string) {
-  const { data } = await client().models.Evidence.listEvidenceBySlug({ slug }, { authMode: 'userPool' });
-  const clash = (data ?? []).some((r: { id: string }) => r.id !== ignoreId);
-  if (clash) throw new Error(`Evidence slug "${slug}" already exists — choose a unique slug.`);
+  let nextToken: string | undefined = undefined;
+  do {
+    const { data, nextToken: next } = await client().models.Evidence.listEvidenceBySlug(
+      { slug },
+      { authMode: 'userPool', nextToken }
+    );
+    if ((data ?? []).some((r: { id: string }) => r.id !== ignoreId)) {
+      throw new Error(`Evidence slug "${slug}" already exists — choose a unique slug.`);
+    }
+    nextToken = next ?? undefined;
+  } while (nextToken);
 }
 
 function withPublishDate<T extends { status: string; publishDate?: string | null }>(input: T): T {
@@ -1932,53 +1962,114 @@ Expected: prints "OK: base model apiKey read denied", and "0 record(s)" while th
 
 ```ts
 // scripts/verify-evidence-iam.ts
-// Executable acceptance: proves the evidence-api Lambda role has NO DynamoDB
-// action beyond Query/Scan and touches only the Evidence table ARN.
+// Executable least-privilege acceptance. Proves — across BOTH inline and
+// attached managed policies (paginated) — that the evidence-api Lambda role's
+// DynamoDB Allow set is non-empty, its action set is EXACTLY {dynamodb:Scan},
+// and its only resource is EXACTLY the deployed Evidence base-table ARN
+// (rejecting Query, '*', index ARNs, and any other table).
 // Usage: AWS creds for the sandbox account in env, then:
 //   npx tsx scripts/verify-evidence-iam.ts
-import { LambdaClient, ListFunctionsCommand, GetFunctionCommand } from '@aws-sdk/client-lambda';
-import { IAMClient, ListRolePoliciesCommand, GetRolePolicyCommand } from '@aws-sdk/client-iam';
+import { LambdaClient, ListFunctionsCommand, GetFunctionConfigurationCommand } from '@aws-sdk/client-lambda';
+import {
+  IAMClient, ListRolePoliciesCommand, GetRolePolicyCommand,
+  ListAttachedRolePoliciesCommand, GetPolicyCommand, GetPolicyVersionCommand,
+} from '@aws-sdk/client-iam';
+import { DynamoDBClient, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 
 const lambda = new LambdaClient({});
 const iam = new IAMClient({});
-const ALLOWED = new Set(['dynamodb:Query', 'dynamodb:Scan']);
+const ddb = new DynamoDBClient({});
+
+const EXPECTED_ACTIONS = new Set(['dynamodb:Scan']);
+const toArray = <T>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
+
+interface Stmt { Effect: string; Action?: string | string[]; NotAction?: string | string[]; Resource?: string | string[]; NotResource?: string | string[]; }
+
+async function findEvidenceFunctionName(): Promise<string> {
+  let Marker: string | undefined;
+  do {
+    const res = await lambda.send(new ListFunctionsCommand({ Marker }));
+    const fn = (res.Functions ?? []).find((f) => f.FunctionName?.includes('evidence-api'));
+    if (fn?.FunctionName) return fn.FunctionName;
+    Marker = res.NextMarker;
+  } while (Marker);
+  throw new Error('evidence-api Lambda not found — is the sandbox deployed?');
+}
+
+async function collectStatements(roleName: string): Promise<Stmt[]> {
+  const out: Stmt[] = [];
+  // Inline policies (paginated)
+  let inlineMarker: string | undefined;
+  do {
+    const res = await iam.send(new ListRolePoliciesCommand({ RoleName: roleName, Marker: inlineMarker }));
+    for (const name of res.PolicyNames ?? []) {
+      const { PolicyDocument } = await iam.send(new GetRolePolicyCommand({ RoleName: roleName, PolicyName: name }));
+      out.push(...toArray<Stmt>(JSON.parse(decodeURIComponent(PolicyDocument!)).Statement));
+    }
+    inlineMarker = res.Marker;
+  } while (inlineMarker);
+  // Attached managed policies (paginated) -> default version doc
+  let attachedMarker: string | undefined;
+  do {
+    const res = await iam.send(new ListAttachedRolePoliciesCommand({ RoleName: roleName, Marker: attachedMarker }));
+    for (const p of res.AttachedPolicies ?? []) {
+      const pol = await iam.send(new GetPolicyCommand({ PolicyArn: p.PolicyArn }));
+      const ver = await iam.send(new GetPolicyVersionCommand({ PolicyArn: p.PolicyArn, VersionId: pol.Policy!.DefaultVersionId }));
+      out.push(...toArray<Stmt>(JSON.parse(decodeURIComponent(ver.PolicyVersion!.Document!)).Statement));
+    }
+    attachedMarker = res.Marker;
+  } while (attachedMarker);
+  return out;
+}
 
 async function main() {
-  const fns = await lambda.send(new ListFunctionsCommand({}));
-  const fn = (fns.Functions ?? []).find((f) => f.FunctionName?.includes('evidence-api'));
-  if (!fn?.FunctionName) throw new Error('evidence-api Lambda not found — is the sandbox deployed?');
-  const detail = await lambda.send(new GetFunctionCommand({ FunctionName: fn.FunctionName }));
-  const roleName = detail.Configuration!.Role!.split('/').pop()!;
+  const fnName = await findEvidenceFunctionName();
+  const cfg = await lambda.send(new GetFunctionConfigurationCommand({ FunctionName: fnName }));
+  const roleName = cfg.Role!.split('/').pop()!;
+  const tableName = cfg.Environment?.Variables?.EVIDENCE_TABLE;
+  if (!tableName) throw new Error('EVIDENCE_TABLE env var missing on the Lambda');
+  const described = await ddb.send(new DescribeTableCommand({ TableName: tableName }));
+  const tableArn = described.Table!.TableArn!;
 
-  const { PolicyNames = [] } = await iam.send(new ListRolePoliciesCommand({ RoleName: roleName }));
-  const ddbStatements: { Action: string[]; Resource: string[] }[] = [];
-  for (const name of PolicyNames) {
-    const { PolicyDocument } = await iam.send(new GetRolePolicyCommand({ RoleName: roleName, PolicyName: name }));
-    const doc = JSON.parse(decodeURIComponent(PolicyDocument!));
-    for (const st of ([] as any[]).concat(doc.Statement)) {
-      const actions = ([] as string[]).concat(st.Action ?? []);
-      if (actions.some((a) => a.startsWith('dynamodb:'))) {
-        ddbStatements.push({ Action: actions, Resource: ([] as string[]).concat(st.Resource ?? []) });
-      }
-    }
-  }
-
+  const statements = await collectStatements(roleName);
   const violations: string[] = [];
-  for (const st of ddbStatements) {
-    for (const a of st.Action) if (a.startsWith('dynamodb:') && !ALLOWED.has(a)) violations.push(`forbidden action: ${a}`);
-    for (const r of st.Resource) {
-      if (r.includes(':table/') && !r.includes('Evidence')) violations.push(`unexpected table resource: ${r}`);
-      if (r.includes('/index/')) violations.push(`index ARN granted (should be base-table only): ${r}`);
+  const ddbActions = new Set<string>();
+  let ddbAllowCount = 0;
+
+  for (const st of statements) {
+    if (st.Effect !== 'Allow') continue;
+    if (st.NotAction || st.NotResource) { violations.push('Allow statement uses NotAction/NotResource (unbounded)'); continue; }
+    const actions = toArray(st.Action);
+    const resources = toArray(st.Resource);
+    const touchesDdb = actions.some((a) => a === '*' || a.toLowerCase().startsWith('dynamodb:'));
+    if (!touchesDdb) continue;
+    ddbAllowCount++;
+    for (const a of actions) {
+      if (a === '*' || a.toLowerCase() === 'dynamodb:*') { violations.push(`wildcard DynamoDB action: ${a}`); continue; }
+      if (a.toLowerCase().startsWith('dynamodb:')) ddbActions.add(a);
+    }
+    for (const r of resources) {
+      if (r === '*') { violations.push('wildcard resource "*" on a DynamoDB Allow'); continue; }
+      if (r.includes('/index/')) violations.push(`index ARN granted (base-table only expected): ${r}`);
+      else if (r !== tableArn) violations.push(`unexpected resource (want exactly ${tableArn}): ${r}`);
     }
   }
-  if (violations.length) throw new Error('IAM FAIL:\n' + violations.join('\n'));
-  console.log('OK: evidence-api DynamoDB permissions are exactly Query/Scan on the Evidence base table.', JSON.stringify(ddbStatements, null, 2));
+
+  if (ddbAllowCount === 0) violations.push('no DynamoDB Allow statement found (empty permission set)');
+  const actionList = [...ddbActions].sort();
+  const expected = [...EXPECTED_ACTIONS].sort();
+  if (JSON.stringify(actionList) !== JSON.stringify(expected)) {
+    violations.push(`DynamoDB action set is ${JSON.stringify(actionList)}, expected exactly ${JSON.stringify(expected)}`);
+  }
+
+  if (violations.length) throw new Error('IAM FAIL:\n- ' + violations.join('\n- '));
+  console.log(`OK: evidence-api DynamoDB permission is exactly {dynamodb:Scan} on ${tableArn} (inline + managed policies checked).`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
 Run: `npx tsx scripts/verify-evidence-iam.ts`
-Expected: prints "OK: evidence-api DynamoDB permissions are exactly Query/Scan on the Evidence base table." (Non-DynamoDB permissions such as CloudWatch Logs are intentionally ignored.)
+Expected: prints "OK: evidence-api DynamoDB permission is exactly {dynamodb:Scan} on arn:aws:dynamodb:…:table/Evidence-… (inline + managed policies checked)." A non-empty DynamoDB Allow set, action set exactly `{dynamodb:Scan}`, and resource exactly the deployed base-table ARN are all required to pass; `Query`, `*`, index ARNs, other tables, or an empty set each fail loudly. Non-DynamoDB permissions (CloudWatch Logs) are intentionally ignored.
 
 - [ ] **Step 5: Commit (explicit files only — no `git add -A`)**
 
