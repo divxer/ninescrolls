@@ -352,6 +352,13 @@ Summary: Comprehensive guide to vacuum technology for semiconductor equipment �
 URL: https://ninescrolls.com/insights/process-chamber-materials-contamination-control
 Summary: Guide to chamber design and contamination management — covers body materials (6061-T6 aluminum, 304/316 stainless steel, alumina, quartz, SiC), surface treatments (Type III hard anodization, Y₂O₃ plasma spray, electropolishing), electrode materials (anodized Al, Si, SiC, graphite with selection criteria), liner/shield design principles. Seal materials (Viton, Kalrez, Chemraz, PTFE, metal C-seals/Helicoflex) with temperature and chemical compatibility. Gas delivery materials (316L electropolished tubing, VCR fittings). Five contamination categories (particles, metallic, organic, moisture, cross-contamination) with sources and effects. Chamber seasoning protocol. PM schedules from in-situ plasma clean through heavy PM. Cleaning protocols (plasma, wet chemical, bead blasting). Qualification criteria (base pressure, leak rate, particle count, dummy wafer deposition, TXRF metallic contamination).
 
+### Metrology & Testing
+
+#### How to Choose a Wafer Probe Station for Your University Research Lab
+URL: https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab
+Covers: the five configuration decisions (automation level, temperature environment, signal type, sample size/chuck, pad geometry), a quote-comparison checklist, public price and federal award examples (point-in-time, PIID-verifiable), and university procurement considerations (Uniform Guidance, fiscal-year timing, import duties)
+Best for: PIs, lab managers, and first-time probe-station buyers budgeting and specifying a system for a university research lab
+
 ### Process Integration & Applications
 
 **MEMS Fabrication Process Guide — From Design to Device**

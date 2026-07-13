@@ -114,6 +114,10 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Process Chamber Materials & Contamination Control](https://ninescrolls.com/insights/process-chamber-materials-contamination-control): Chamber body materials, surface treatments, electrode materials, seals, contamination sources, chamber seasoning, PM schedules, cleaning protocols, qualification criteria
 - [RIE & ICP System Maintenance & Troubleshooting](https://ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting): Tiered preventive maintenance schedules, vacuum and RF power system care, troubleshooting decision trees for common faults, post-maintenance qualification protocols
 
+## Insights — Metrology & Testing
+
+- [How to Choose a Wafer Probe Station for Your University Research Lab](https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab): Buyer's guide — automation level, temperature, signal type, sample size, positioning; public price/award examples and university procurement guidance
+
 ## Insights — Process Integration & Applications
 
 - [MEMS Fabrication Process Guide](https://ninescrolls.com/insights/mems-fabrication-process-guide): Complete MEMS fabrication chain — bulk/surface micromachining, DRIE, thin-film deposition, wafer bonding, release etching, device-specific flows for accelerometers, pressure sensors, microfluidics, RF MEMS
