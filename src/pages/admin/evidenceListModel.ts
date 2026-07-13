@@ -86,7 +86,16 @@ export function deriveVerification(rec: EvidenceRecord): VerificationItem[] {
 
   const items: VerificationItem[] = [
     { label: 'Product selected', ok: products.length > 0, value: products.join(', ') || '—' },
-    { label: 'Payload present', ok: hasPayload(rec), value: payloadValue },
+    {
+      label: 'Payload present',
+      ok: hasPayload({
+        articleSlug: rec.articleSlug,
+        pdfUrl: rec.pdfUrl,
+        sourceUrl: rec.sourceUrl,
+        images: (rec.images ?? []).filter(Boolean) as string[],
+      }),
+      value: payloadValue,
+    },
   ];
 
   if (rec.type === EVIDENCE_TYPE.PUBLICATION) {
