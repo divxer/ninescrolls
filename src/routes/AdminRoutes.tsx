@@ -10,6 +10,8 @@ import { lazyWithReload } from '../utils/lazyWithReload';
 
 const AdminInsightsListPage = lazyWithReload(() => import('../pages/admin/AdminInsightsListPage').then(m => ({ default: m.AdminInsightsListPage })));
 const AdminInsightsFormPage = lazyWithReload(() => import('../pages/admin/AdminInsightsFormPage').then(m => ({ default: m.AdminInsightsFormPage })));
+const AdminEvidenceListPage = lazyWithReload(() => import('../pages/admin/AdminEvidenceListPage').then(m => ({ default: m.AdminEvidenceListPage })));
+const AdminEvidenceFormPage = lazyWithReload(() => import('../pages/admin/AdminEvidenceFormPage').then(m => ({ default: m.AdminEvidenceFormPage })));
 const AdminAnalyticsPage = lazyWithReload(() => import('../pages/admin/AdminAnalyticsPage').then(m => ({ default: m.AdminAnalyticsPage })));
 const OrderListPage = lazyWithReload(() => import('../pages/admin/OrderListPage').then(m => ({ default: m.OrderListPage })));
 const OrderDetailPage = lazyWithReload(() => import('../pages/admin/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
@@ -50,6 +52,9 @@ export function AdminRoutes() {
           <Route path="insights" element={<AdminInsightsListPage />} />
           <Route path="insights/new" element={<AdminInsightsFormPage />} />
           <Route path="insights/:id/edit" element={<AdminInsightsFormPage />} />
+          <Route path="evidence" element={<AdminEvidenceListPage />} />
+          <Route path="evidence/new" element={<AdminEvidenceFormPage />} />
+          <Route path="evidence/:id/edit" element={<AdminEvidenceFormPage />} />
           <Route path="questions" element={<AdminQuestionsPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="orders" element={<OrderListPage />} />
