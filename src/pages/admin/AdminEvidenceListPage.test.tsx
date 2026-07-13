@@ -20,7 +20,9 @@ const rows = [
 const manyRows = Array.from({ length: 30 }, (_, i) => ({
   id: `m-${i}`, title: `Row ${String(i).padStart(2, '0')}`, type: EVIDENCE_TYPE.PUBLICATION,
   status: EVIDENCE_STATUS.DRAFT, products: ['icp-etcher'], summary: 's', sourceUrl: 'https://doi.org/z',
-  updatedAt: `2026-06-${String((i % 28) + 1).padStart(2, '0')}T00:00:00Z`, meta: null,
+  // Monotonic descending dates (Row 00 newest) so the default updatedAt-desc
+  // sort yields Row 00..29 in numeric order → Row 00 on page 1, Row 25 on page 2.
+  updatedAt: `2026-06-${String(30 - i).padStart(2, '0')}T00:00:00Z`, meta: null,
 }));
 
 beforeEach(() => {
