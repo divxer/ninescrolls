@@ -1958,6 +1958,18 @@ main().catch((e) => { console.error(e); process.exit(1); });
 Run (with the seeded record still `draft`): `npx tsx scripts/verify-evidence-boundary.ts`
 Expected: prints "OK: base model apiKey read denied", and "0 record(s)" while the record is draft. Then flip the record to `published` in the admin UI and re-run → "1 record(s), all published". Reload `/products/ald` and confirm the Evidence section now appears; flip to `archived` → section disappears and the script reports 0 again.
 
+- [ ] **Step 3b: Add the AWS SDK clients the IAM script needs as direct devDependencies**
+
+`@aws-sdk/client-dynamodb` is already a direct dependency, but `@aws-sdk/client-iam` and `@aws-sdk/client-lambda` are only present transitively today — a clean install must not rely on that.
+
+Run: `npm install --save-dev @aws-sdk/client-iam @aws-sdk/client-lambda`
+Then commit the manifest + lockfile so the script is reproducible:
+
+```bash
+git add package.json package-lock.json
+git commit -m "build(evidence): add @aws-sdk/client-iam + client-lambda devDependencies for IAM verifier"
+```
+
 - [ ] **Step 4: Write the least-privilege IAM acceptance script**
 
 ```ts
@@ -1985,15 +1997,31 @@ const toArray = <T>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isAr
 
 interface Stmt { Effect: string; Action?: string | string[]; NotAction?: string | string[]; Resource?: string | string[]; NotResource?: string | string[]; }
 
+// Resolve the exact Lambda. Never "first substring match" — multiple sandboxes
+// or stale stacks can each contain an evidence-api function. Prefer an explicit
+// EVIDENCE_FN_NAME env var; otherwise require EXACTLY ONE candidate and fail
+// (listing them) on zero or multiple.
 async function findEvidenceFunctionName(): Promise<string> {
+  const candidates: string[] = [];
   let Marker: string | undefined;
   do {
     const res = await lambda.send(new ListFunctionsCommand({ Marker }));
-    const fn = (res.Functions ?? []).find((f) => f.FunctionName?.includes('evidence-api'));
-    if (fn?.FunctionName) return fn.FunctionName;
+    for (const f of res.Functions ?? []) if (f.FunctionName?.includes('evidence-api')) candidates.push(f.FunctionName);
     Marker = res.NextMarker;
   } while (Marker);
-  throw new Error('evidence-api Lambda not found — is the sandbox deployed?');
+
+  const explicit = process.env.EVIDENCE_FN_NAME;
+  if (explicit) {
+    if (!candidates.includes(explicit)) {
+      throw new Error(`EVIDENCE_FN_NAME="${explicit}" not found. Candidates: ${candidates.join(', ') || '(none)'}`);
+    }
+    return explicit;
+  }
+  if (candidates.length === 0) throw new Error('No evidence-api Lambda found — is this sandbox deployed?');
+  if (candidates.length > 1) {
+    throw new Error(`Ambiguous: ${candidates.length} evidence-api candidates found — set EVIDENCE_FN_NAME to disambiguate:\n- ${candidates.join('\n- ')}`);
+  }
+  return candidates[0];
 }
 
 async function collectStatements(roleName: string): Promise<Stmt[]> {
@@ -2034,6 +2062,7 @@ async function main() {
   const statements = await collectStatements(roleName);
   const violations: string[] = [];
   const ddbActions = new Set<string>();
+  const ddbResources = new Set<string>();
   let ddbAllowCount = 0;
 
   for (const st of statements) {
@@ -2044,22 +2073,34 @@ async function main() {
     const touchesDdb = actions.some((a) => a === '*' || a.toLowerCase().startsWith('dynamodb:'));
     if (!touchesDdb) continue;
     ddbAllowCount++;
+    // A DynamoDB Allow with no Resource is unbounded — reject it explicitly
+    // (otherwise the resource loop below is skipped and it slips through).
+    if (resources.length === 0) violations.push('DynamoDB Allow statement has no Resource (unbounded)');
     for (const a of actions) {
       if (a === '*' || a.toLowerCase() === 'dynamodb:*') { violations.push(`wildcard DynamoDB action: ${a}`); continue; }
       if (a.toLowerCase().startsWith('dynamodb:')) ddbActions.add(a);
     }
     for (const r of resources) {
-      if (r === '*') { violations.push('wildcard resource "*" on a DynamoDB Allow'); continue; }
-      if (r.includes('/index/')) violations.push(`index ARN granted (base-table only expected): ${r}`);
+      ddbResources.add(r);
+      if (r === '*') violations.push('wildcard resource "*" on a DynamoDB Allow');
+      else if (r.includes('/index/')) violations.push(`index ARN granted (base-table only expected): ${r}`);
       else if (r !== tableArn) violations.push(`unexpected resource (want exactly ${tableArn}): ${r}`);
     }
   }
 
   if (ddbAllowCount === 0) violations.push('no DynamoDB Allow statement found (empty permission set)');
+
   const actionList = [...ddbActions].sort();
-  const expected = [...EXPECTED_ACTIONS].sort();
-  if (JSON.stringify(actionList) !== JSON.stringify(expected)) {
-    violations.push(`DynamoDB action set is ${JSON.stringify(actionList)}, expected exactly ${JSON.stringify(expected)}`);
+  const expectedActions = [...EXPECTED_ACTIONS].sort();
+  if (JSON.stringify(actionList) !== JSON.stringify(expectedActions)) {
+    violations.push(`DynamoDB action set is ${JSON.stringify(actionList)}, expected exactly ${JSON.stringify(expectedActions)}`);
+  }
+
+  // Aggregate closure: the set of ALL granted DynamoDB resources must be exactly
+  // {tableArn} — non-empty, no wildcard, no index, no other table.
+  const resourceList = [...ddbResources].sort();
+  if (JSON.stringify(resourceList) !== JSON.stringify([tableArn])) {
+    violations.push(`DynamoDB resource set is ${JSON.stringify(resourceList)}, expected exactly ${JSON.stringify([tableArn])}`);
   }
 
   if (violations.length) throw new Error('IAM FAIL:\n- ' + violations.join('\n- '));
