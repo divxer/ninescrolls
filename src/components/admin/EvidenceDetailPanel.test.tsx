@@ -73,3 +73,22 @@ describe('EvidenceDetailPanel', () => {
     expect(screen.queryByRole('link', { name: /View source/i })).not.toBeInTheDocument();
   });
 });
+
+describe('EvidenceDetailPanel modal + link behaviour', () => {
+  it('traps Tab / Shift+Tab focus within the dialog', () => {
+    renderPanel();
+    const closeBtn = screen.getByRole('button', { name: /close/i });
+    closeBtn.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    const moreActions = screen.getByRole('button', { name: /More actions/i });
+    expect(document.activeElement).toBe(moreActions);
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(closeBtn);
+  });
+  it('falls back to the DOI link when sourceUrl is unsafe (does not suppress it)', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: 'javascript:alert(1)' });
+    expect(screen.queryByRole('link', { name: /View source/i })).not.toBeInTheDocument();
+    const doiLink = screen.getByRole('link', { name: /10\.1186\/s43074-022-00047-3/ });
+    expect(doiLink).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+  });
+});

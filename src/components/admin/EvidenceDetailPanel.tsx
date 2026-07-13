@@ -28,15 +28,36 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
   const checklist = deriveVerification(record);
 
   const titleId = `evidence-detail-title-${record.id}`;
+  const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Focus the close button on open; restore focus to the previously focused
-  // element on unmount. Escape closes.
+  // Modal behaviour: focus the close button on open, restore focus on unmount,
+  // Escape closes, and Tab / Shift+Tab is trapped inside the dialog so focus
+  // never reaches the (inert) background — making aria-modal="true" truthful.
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const focusables = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !dialogRef.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
@@ -44,13 +65,16 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
     };
   }, [onClose]);
 
+  // Prefer the (safe) sourceUrl; if it is unsafe/absent, fall back to the DOI —
+  // an unsafe sourceUrl must NOT suppress a valid DOI link.
   const sourceHref = safeExternalUrl(record.sourceUrl);
-  const doiHref = safeExternalUrl(record.sourceUrl ?? (doi ? `https://doi.org/${doi}` : null));
+  const doiHref = safeExternalUrl(record.sourceUrl) || safeExternalUrl(doi ? `https://doi.org/${doi}` : null);
 
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/30" aria-hidden onClick={onClose} />
       <aside
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

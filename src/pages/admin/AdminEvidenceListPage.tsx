@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listAllEvidence, deleteEvidence, setEvidenceStatus } from '../../services/evidenceAdminService';
 import { EVIDENCE_STATUS, EVIDENCE_TYPE_ORDER, evidenceTypeLabel } from '../../config/evidence';
@@ -22,6 +22,16 @@ export function AdminEvidenceListPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pageNum, setPageNum] = useState(1);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Make the background content inert while the modal panel is open, so Tab /
+  // AT / mouse cannot reach it — the keyboard side is also trapped in the panel.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (openId) el.setAttribute('inert', '');
+    else el.removeAttribute('inert');
+  }, [openId]);
 
   async function load() {
     setLoading(true); setError(null);
@@ -103,6 +113,7 @@ export function AdminEvidenceListPage() {
 
   return (
     <div className="p-6">
+      <div ref={contentRef}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-on-surface">Evidence</h1>
@@ -171,6 +182,7 @@ export function AdminEvidenceListPage() {
           </div>
         </>
       )}
+      </div>
 
       {openRecord && <EvidenceDetailPanel record={openRecord} onClose={() => setOpenId(null)} onDelete={handleDelete} />}
     </div>

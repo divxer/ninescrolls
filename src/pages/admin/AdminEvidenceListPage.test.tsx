@@ -111,3 +111,46 @@ describe('AdminEvidenceListPage (redesign)', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/load boom/i));
   });
 });
+
+describe('AdminEvidenceListPage modal + edge behaviour', () => {
+  it('makes background content inert while the panel is open', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Alpha publication' }));
+    await screen.findByRole('dialog');
+    await waitFor(() => {
+      const search = screen.getByRole('textbox', { name: /Search evidence/i });
+      expect(search.closest('[inert]')).not.toBeNull();
+    });
+  });
+  it('select-all affects only the current page (25), not all 30 rows', async () => {
+    listAllEvidence.mockReset().mockResolvedValue(manyRows);
+    renderPage();
+    await screen.findByText('Row 00');
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select all/i }));
+    const rowChecks = screen.getAllByRole('checkbox', { name: /^Select Row/i }) as HTMLInputElement[];
+    expect(rowChecks.length).toBe(25);
+    expect(rowChecks.every((c) => c.checked)).toBe(true);
+  });
+  it('resets to page 1 (no crash) when a filter shrinks results while on page 2', async () => {
+    listAllEvidence.mockReset().mockResolvedValue(manyRows);
+    renderPage();
+    await screen.findByText('Row 00');
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+    await screen.findByText('Row 25');
+    fireEvent.change(screen.getByLabelText(/Status/i), { target: { value: EVIDENCE_STATUS.ARCHIVED } });
+    expect(screen.getByText(/0 records/)).toBeInTheDocument();
+  });
+  it('retry after a partial failure archives only the previously-failed record', async () => {
+    setEvidenceStatus.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({});
+    renderPage();
+    await screen.findByText('Alpha publication');
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select all/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Archive selected/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Failed to archive 1 of 2/i));
+    setEvidenceStatus.mockClear();
+    setEvidenceStatus.mockResolvedValue({});
+    fireEvent.click(screen.getByRole('button', { name: /Archive selected/i }));
+    await waitFor(() => expect(setEvidenceStatus).toHaveBeenCalledTimes(1));
+    expect(setEvidenceStatus).toHaveBeenCalledWith('e-1', EVIDENCE_STATUS.ARCHIVED);
+  });
+});
