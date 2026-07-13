@@ -2104,145 +2104,45 @@ git commit -m "seo(probe-stations): sitemap entries (script + lambda) with consi
 
 ### Task 12: Insight article entry
 
-**Files:**
-- Modify: `scripts/insightsPostsData.ts` (append one entry to `insightsPosts`)
-- Test: `src/pages/probeStations/probeStationArticle.test.ts`
+> **REWRITTEN 2026-07-12 (as built).** The original task authored the article as
+> an object appended to `scripts/insightsPostsData.ts`. That approach shipped,
+> was then flagged in PR review (the repo's preferred flow is standalone HTML +
+> `create-insight`), and was migrated in commit 83d70d4d. This section now
+> describes the as-built state so maintainers are not pointed at the retired
+> monolithic flow.
 
-Source: `/Users/harvey/MyDocuments/Company_Registration/NineScrolls LLC/合作厂家/深圳森美协尔科技有限公司/官网内容/how-to-choose-wafer-probe-station-university-lab.md`
+**Files (as built):**
+- Article: `scripts/articles/how-to-choose-wafer-probe-station-university-lab.html`
+  — full HTML document. `<head>` carries all metadata as `article:*` meta tags
+  (slug [canonical override — the title-derived slug differs], excerpt,
+  category, tags, article-type, image-url, publish-date, author) plus a
+  `data-related-products` JSON block.
+- Parser: `scripts/lib/parseArticleHtml.ts` (pure, Amplify-free) +
+  `scripts/lib/parseArticleHtml.test.ts` (12 tests: extraction, meta precedence,
+  date validation, related-products validation).
+- Creation: `scripts/create-insight.ts` consumes the parser; precedence
+  CLI flag > meta tag > derived default; writes articleType + relatedProducts
+  (JSON.stringify, mirroring seed-insights.ts). First-time-only — NOT
+  idempotent; subsequent edits go through /admin/insights/<id>/edit.
+- Guard tests: `src/pages/probeStations/probeStationArticle.test.ts` — content
+  length, no-TOC (4 patterns), per-figure slug-scoped CDN `<picture>` blocks
+  (`insights/<slug>/<name>-{sm,md,lg,xl}.webp` + `-lg.png` fallback) with
+  adjacent "Schematic illustration" figcaptions and on-disk upload-source
+  checks, internal links (hub + brand, /request-quote, no /quote), attestation
+  pattern sweep, SEMISHARE-number tripwire, 8-PIID award-table structure with
+  USAspending detail links, high-risk-wording bans, table a11y (caption +
+  th scope).
 
-- [ ] **Step 1: Write the failing article data test**
+**Image delivery (as built):** figures reference the slug-scoped CDN keys that
+`scripts/upload-insights-image.ts` actually produces (S3 upload → Lambda
+generates sm/md/lg/xl PNG+WebP under `insights/<slug>/<name>-*`); the cover
+upload run rewrites the DDB imageUrl to the responsive extension-less `-lg`
+form. Local files under `public/assets/images/insights/probe-station-*` are the
+upload sources of truth (git-tracked; tests assert their presence).
 
-```ts
-// src/pages/probeStations/probeStationArticle.test.ts
-import { existsSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
-import { insightsPosts } from '../../../scripts/insightsPostsData';
-import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
-
-const SLUG = 'how-to-choose-wafer-probe-station-university-lab';
-
-describe('probe station buyer-guide article entry', () => {
-  const post = insightsPosts.find((p) => p.slug === SLUG);
-
-  it('exists with full content and no hand-written TOC', () => {
-    expect(post).toBeTruthy();
-    expect(post!.content!.length).toBeGreaterThan(10_000); // full conversion, not a stub
-    // The page auto-generates the TOC — the content must not carry one in any
-    // of the forms the site (or a naive conversion) could produce:
-    expect(post!.content).not.toMatch(/table of contents/i);
-    expect(post!.content).not.toMatch(/\bid="toc"|class="[^"]*\btoc\b[^"]*"/i);
-    expect(post!.content).not.toMatch(/<nav[^>]*toc/i);
-    expect(post!.content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
-  });
-
-  it('embeds each figure as its own complete <picture> block with caption and on-disk assets', () => {
-    const pictureBlocks = post!.content!.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
-
-    for (const base of ['probe-station-temperature-regimes', 'probe-station-automation-levels']) {
-      // The block DEDICATED to this figure — not just any <picture> plus a bare URL
-      const block = pictureBlocks.find((b) => b.includes(`/assets/images/insights/${base}`));
-      expect(block, `<picture> block for ${base}`).toBeTruthy();
-
-      // Responsive webp srcset + png fallback, all inside THIS block
-      for (const size of ['sm', 'md', 'lg', 'xl']) {
-        expect(block, `${base}-${size}.webp in srcset`).toContain(`/assets/images/insights/${base}-${size}.webp`);
-        expect(existsSync(`public/assets/images/insights/${base}-${size}.webp`), `${base}-${size}.webp on disk`).toBe(true);
-        expect(existsSync(`public/assets/images/insights/${base}-${size}.png`), `${base}-${size}.png on disk`).toBe(true);
-      }
-      expect(block, `${base}.png fallback <img>`).toMatch(
-        new RegExp(`<img[^>]+src="/assets/images/insights/${base}\\.png"`)
-      );
-      expect(existsSync(`public/assets/images/insights/${base}.png`), `${base}.png on disk`).toBe(true);
-
-      // The IMMEDIATELY ADJACENT caption element (allowing only closing
-      // wrapper tags in between) must be a post-figure-caption carrying the
-      // schematic disclaimer — proximity alone is not enough.
-      const afterBlock = post!.content!.slice(
-        post!.content!.indexOf(block!) + block!.length,
-        post!.content!.indexOf(block!) + block!.length + 400
-      );
-      const captionMatch = afterBlock.match(
-        /^\s*(?:<\/[a-z]+>\s*)*<p class="post-figure-caption">([\s\S]*?)<\/p>/i
-      );
-      expect(captionMatch, `adjacent post-figure-caption after ${base}`).toBeTruthy();
-      expect(captionMatch![1], `schematic disclaimer in ${base} caption`).toMatch(/Schematic illustration/i);
-    }
-    expect(existsSync('public/assets/images/insights/probe-station-guide-cover.png')).toBe(true);
-  });
-
-  it('links to the capability hub and the brand page', () => {
-    expect(post!.content).toContain('href="/wafer-probe-stations"');
-    expect(post!.content).toContain('href="/wafer-probe-stations/semishare"');
-  });
-
-  it('carries no attestation wording and no SEMISHARE-attributed numbers (Constraint 7 tripwire)', () => {
-    for (const pattern of FORBIDDEN_ATTESTATION_PATTERNS) {
-      expect(post!.content).not.toMatch(pattern);
-    }
-    // Heuristic tripwire, not proof: a number within 60 chars after "SEMISHARE"
-    // flags a potentially product-attributed spec. On a hit, either source the
-    // value from src/data/probeStations/semishare.ts (and render it there, not
-    // here) or cut the sentence — do not weaken this regex.
-    expect(post!.content).not.toMatch(/SEMISHARE[^<.]{0,60}\d+\s?(K\b|mm|inch|"|µm|um)/i);
-  });
-});
-```
-
-Run: `npx vitest run src/pages/probeStations/probeStationArticle.test.ts --exclude '**/.claude/**'`
-Expected: FAIL — `post` is undefined (entry not added yet).
-
-- [ ] **Step 2: Convert the draft to an InsightsPost entry**
-
-Conversion rules:
-- Content: full HTML conversion of the draft, faithful to the text. **No TOC** (the page auto-generates one). Match the HTML conventions already used in `insightsPostsData.ts` — before writing, copy the exact `<picture>` block and table/figure class patterns from an existing entry (`grep -n -m1 -A8 '<picture>' scripts/insightsPostsData.ts` and `grep -n -m2 'post-figure-caption\|<table' scripts/insightsPostsData.ts`).
-- Replace the draft's two "Figure Suggestion" placeholders with `<picture>` blocks for `/assets/images/insights/probe-station-temperature-regimes` and `/assets/images/insights/probe-station-automation-levels` (sm/md/lg/xl webp srcset + png fallback `<img>`). Immediately after each `</picture>` (only closing wrapper tags in between), place a `<p class="post-figure-caption">` whose text includes "Schematic illustration" — the article test asserts this exact adjacency.
-- Keep the draft's sourced cost discussion as written; if any sentence attributes a spec to SEMISHARE specifically, either source it from the brand-page data module values or cut it (Constraint 7). Generic market prose is fine.
-- Internal links: add links to `/wafer-probe-stations` (in the introduction or "what a probe station does" section) and `/wafer-probe-stations/semishare` (in the procurement/buying section).
-
-Entry fields (append to `insightsPosts`):
-
-```ts
-  {
-    id: 'how-to-choose-wafer-probe-station-university-lab',
-    slug: 'how-to-choose-wafer-probe-station-university-lab',
-    title: 'How to Choose a Wafer Probe Station for Your University Research Lab',
-    excerpt: 'The five choices that determine which probe station fits your research — automation level, temperature, signal type, sample size, and positioning — plus real cost ranges and the university procurement angles that trip up first-time buyers.',
-    author: 'NineScrolls Engineering',
-    publishDate: '2026-07-12',
-    category: 'Metrology & Testing',
-    readTime: 14,
-    imageUrl: '/assets/images/insights/probe-station-guide-cover.png',
-    tags: ['probe station', 'wafer probing', 'university lab', 'equipment procurement', 'device characterization'],
-    articleType: 'TechArticle',
-    relatedProducts: [
-      { href: '/wafer-probe-stations', label: 'Wafer Probe Stations Hub', subtitle: 'Selection guide: manual, semi-automatic, cryogenic' },
-      { href: '/wafer-probe-stations/semishare', label: 'SEMISHARE Probe Stations', subtitle: 'US & Canada procurement through NineScrolls' },
-    ],
-    content: `<!-- The complete HTML conversion of the source draft (path above),
-      produced per the conversion rules in Step 1. This is NOT optional filler:
-      the entry is only committed once the full converted article HTML is in
-      this field. -->`,
-  },
-```
-
-- [ ] **Step 3: Run the article test, type-check, and lint**
-
-Run: `npx vitest run src/pages/probeStations/probeStationArticle.test.ts --exclude '**/.claude/**'` — expected: PASS.
-Run: `npx tsc --noEmit -p tsconfig.json` — expected: exit 0, no errors (do not pipe through grep; a clean run must be visible as a clean exit).
-Run: `npm run lint` — expected: no new errors.
-
-- [ ] **Step 4: Local render check**
-
-Publishing to DynamoDB happens post-deploy (deployment checklist) — the article's internal links would 404 in production until the new routes deploy. For a local check, start the dev server (`.claude/launch.json` name for `npm run dev`, port 5173, requires `amplify_outputs.json`) and confirm existing insights pages still render (`/insights`).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add scripts/insightsPostsData.ts src/pages/probeStations/probeStationArticle.test.ts
-git commit -m "content(probe-stations): university lab probe station buyer's guide article entry + data-level tests"
-```
-
----
+**Publish flow:** see the deployment checklist in Task 13 (create-insight draft
+→ figure uploads → cover upload → fail-fast per-URL CDN verification → admin
+publish).
 
 ### Task 13: Full verification, browser pass, PR
 
@@ -2259,7 +2159,7 @@ npm run build                               # builds clean
 Using the browser preview against the dev server, verify each of:
 - `/wafer-probe-stations`, `/wafer-probe-stations/semishare`, `/applications/cryogenic-probing`, `/applications/silicon-photonics-probing` render with correct titles (note: check in a FOREGROUND tab — react-helmet-async commits head updates via rAF, which a hidden tab freezes; a missing title in a background tab is a probe artifact, not a bug).
 - Nav dropdown shows "Test & Probing"; ProductsPage shows the probe-station card and tab.
-- Every spec row on the brand page shows a source link; product lines without specs show the request-specs fallback.
+- Brand-page spec tables render Specification/Value plus the OEM-confirmation disclaimer — NO customer-facing source links (Amendment 2026-07-12: provenance lives in the data module only); zero outbound semishareprober.com links anywhere on the page; product lines without specs show the request-specs fallback.
 - Mobile breakpoint (375px) screenshots of all 4 pages — no horizontal overflow.
 - Console: no NEW errors (pre-existing: Segment fetch failures, fetchPriority warning).
 
@@ -2273,7 +2173,7 @@ Implements docs/superpowers/specs/2026-07-12-semishare-probe-stations-design.md.
 ## What
 - /wafer-probe-stations (capability hub), /wafer-probe-stations/semishare (brand page, attestation-gated wording), /applications/cryogenic-probing, /applications/silicon-photonics-probing
 - Attestation gate: controlled-wording registry + static scan + two-state render tests; ships OFF (neutral wording) until written L2 confirmation
-- All SEMISHARE-attributed specs carry per-row public-source annotations (semishareprober.com + capture date), enforced by test
+- All SEMISHARE-attributed specs carry internal provenance (source URL + capture date in the data module, test-enforced); customer UI shows a disclaimer only, with zero outbound OEM links (Amendment 2026-07-12)
 - Original schematic diagrams only (no OEM images)
 - Nav "Test & Probing" category, ProductsPage card, sitemap entries (script + Lambda), llms.txt/llms-full.txt
 - New insight article entry (publish to DDB post-deploy)
@@ -2291,11 +2191,16 @@ All publish steps run with admin env prefixed: `ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_P
 - [ ] **HTTP-verify every referenced image is live before publishing** — all must return 200:
   ```bash
   BASE=https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab
+  missing=0
   for name in temperature-regimes automation-levels; do
-    for size in sm md lg xl; do curl -sf -o /dev/null "$BASE/$name-$size.webp" || echo "MISSING $name-$size.webp"; done
-    curl -sf -o /dev/null "$BASE/$name-lg.png" || echo "MISSING $name-lg.png"
+    for size in sm md lg xl; do
+      curl -sf -o /dev/null "$BASE/$name-$size.webp" || { echo "MISSING $name-$size.webp"; missing=1; }
+    done
+    curl -sf -o /dev/null "$BASE/$name-lg.png" || { echo "MISSING $name-lg.png"; missing=1; }
   done
-  curl -sf -o /dev/null "$BASE/cover-lg.webp" || echo "MISSING cover-lg.webp"
+  curl -sf -o /dev/null "$BASE/cover-lg.webp" || { echo "MISSING cover-lg.webp"; missing=1; }
+  if [ "$missing" -ne 0 ]; then echo "CDN VERIFICATION FAILED — do NOT publish"; exit 1; fi
+  echo "all 11 CDN objects live — safe to publish"
   ```
 - [ ] **Publish:** open `/admin/insights/<id>/edit` and publish the draft. `create-insight` is first-time creation only; all subsequent content edits go through the admin editor, never a re-run of `create-insight`.
 - [ ] Verify https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab renders (hero + both inline figures load, no broken images).
