@@ -6,6 +6,7 @@ import { DownloadGateModal } from '../common/DownloadGateModal';
 import { OptimizedImage } from '../common/OptimizedImage';
 import { SEO } from '../common/SEO';
 import { ProductCommercePanel } from './ProductCommercePanel';
+import { ProductEvidence } from './ProductEvidence';
 import type { ProductDetailConfig } from './ProductDetailPage.types';
 
 interface ProductDetailPageProps {
@@ -255,7 +256,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
           </div>
         </section>
 
-        <section className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
+        <section data-testid="product-applications" className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
           <div className="mx-auto max-w-screen-2xl">
             <div className="max-w-3xl">
               <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">{config.applications.eyebrow}</p>
@@ -272,6 +273,8 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
             </div>
           </div>
         </section>
+
+        <ProductEvidence productSlug={config.slug} />
 
         {config.gallery && (
           <section className="px-6 py-20 md:px-10 lg:px-16">
