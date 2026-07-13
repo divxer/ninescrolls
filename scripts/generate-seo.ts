@@ -87,6 +87,7 @@ const STATIC_PAGES: StaticPage[] = [
   { loc: '/products/pluto-t', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/pluto-m', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
   { loc: '/products/pluto-f', lastmod: '2026-02-14', changefreq: 'monthly', priority: '0.8' },
+  { loc: '/products/pluto-30', lastmod: '2026-07-10', changefreq: 'monthly', priority: '0.8' },
   { loc: '/about', lastmod: '2024-03-20', changefreq: 'monthly', priority: '0.7' },
   { loc: '/return-policy', lastmod: '2026-01-14', changefreq: 'monthly', priority: '0.7' },
   { loc: '/careers', lastmod: '2026-03-08', changefreq: 'monthly', priority: '0.6' },
