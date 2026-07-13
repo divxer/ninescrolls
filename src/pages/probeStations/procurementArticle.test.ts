@@ -70,8 +70,8 @@ describe('probe station procurement standalone article', () => {
 
       // The IMMEDIATELY ADJACENT caption element (allowing only closing wrapper
       // tags in between) must be a <figcaption>. This figure is a process
-      // flowchart, so the caption carries the "illustrative sequence" disclaimer
-      // (the "Schematic illustration" phrasing is for scientific schematics).
+      // flowchart, so the caption states that phase order and duration vary
+      // rather than presenting the sequence as a universal fixed schedule.
       const afterBlock = content.slice(
         content.indexOf(block!) + block!.length,
         content.indexOf(block!) + block!.length + 800
@@ -80,7 +80,9 @@ describe('probe station procurement standalone article', () => {
         /^\s*(?:<\/[a-z]+>\s*)*<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i
       );
       expect(captionMatch, `adjacent <figcaption> after ${name}`).toBeTruthy();
-      expect(captionMatch![1], `illustrative-sequence disclaimer in ${name} caption`).toMatch(/illustrative sequence/i);
+      expect(captionMatch![1], `variable-order-and-duration disclaimer in ${name} caption`).toMatch(
+        /order and duration of individual phases vary by institution and award/i,
+      );
     }
 
     // Cover upload source (base + responsive variants) must be on disk too —
