@@ -1,7 +1,7 @@
 # Evidence Framework — Phase 1 Design
 
 **Date:** 2026-07-04
-**Branch:** feature/homepage-redesign (spec only; implementation branch TBD)
+**Branch:** feature/semishare-probe-stations (spec only; implementation branch to be created)
 **Status:** Approved design, pending implementation plan
 
 ## Background & Motivation
@@ -32,9 +32,10 @@ These define what Evidence *is* and are binding on the implementation:
 
 ### In scope (build now)
 
-1. **`Evidence` Amplify data model** — new, independent model (not an extension of `InsightsPost`).
-2. **Admin CRUD** — `AdminEvidenceListPage` + `EvidenceForm` + an `evidenceAdminService`, mirroring the existing Insights admin pattern. This is the "backend just needs to support it" deliverable.
-3. **Product-page Evidence summary module** — `<ProductEvidence productSlug={slug} />`, inserted after the existing *Process Capabilities* section on each product page. Renders **only** when the product has ≥1 published Evidence record; otherwise renders nothing (no heading, no placeholder).
+1. **`Evidence` Amplify data model** — new, independent model (not an extension of `InsightsPost`), authenticated-only auth.
+2. **`listPublishedEvidence` Lambda-backed custom query** — the sole public read path, returning `published`-only records (see Public Read Boundary). This is the data-level no-leak boundary.
+3. **Admin CRUD** — `AdminEvidenceListPage` + `EvidenceForm` + an `evidenceAdminService`, mirroring the existing Insights admin pattern. This is the "backend just needs to support it" deliverable.
+4. **Product-page Evidence summary module** — `<ProductEvidence productSlug={slug} />`, inserted after the existing *Process Capabilities* section on each product page. Reads via `listPublishedEvidence`. Renders **only** when the product has ≥1 published Evidence record; otherwise renders nothing (no heading, no placeholder).
 
 ### Explicitly out of scope (deferred to Phase 2+)
 
@@ -46,7 +47,7 @@ These define what Evidence *is* and are binding on the implementation:
 
 ## Data Model
 
-New Amplify model in `amplify/data/resource.ts`, following the `InsightsPost` auth + secondary-index pattern:
+New Amplify model in `amplify/data/resource.ts`. **The base model is NOT publicly readable** — see the Public Read Boundary subsection below for why this differs from the `InsightsPost` pattern.
 
 ```ts
 Evidence: a
@@ -78,11 +79,24 @@ Evidence: a
     status: a.string().default('draft'),  // draft | published | archived
   })
   .authorization((allow) => [
-    allow.publicApiKey().to(['read']),
-    allow.authenticated(),
+    allow.authenticated(),                // admin CRUD ONLY — no public read on the base model
   ])
   .secondaryIndexes((index) => [index('slug')]),
 ```
+
+### Public Read Boundary (Critical — data-level, not a frontend convention)
+
+`allow.publicApiKey().to(['read'])` on the base model (the `InsightsPost` pattern) would let any anonymous client issue a raw GraphQL query for the whole table, including `draft`/`archived` rows — bypassing our service entirely. A frontend service that "only requests published" cannot uphold the spec's **防泄露 (no-leak)** goal against a caller who crafts their own query. Amplify's declarative auth has no row-level predicate for `apiKey` (it cannot say "public may read a row only when `status == 'published'`").
+
+Therefore Phase 1 establishes a **server-side published-only boundary**:
+
+- The base `Evidence` model is **authenticated-only** — public clients cannot read it directly at all.
+- A **Lambda-backed custom query** `listPublishedEvidence(productSlug?: string)` is added (`apiKey` auth). The Lambda holds IAM access to the table and returns **only `status = 'published'` records** (optionally pre-filtered by product). `draft`/`archived` rows are physically never returned to an anonymous caller.
+- This mirrors NineScrolls' existing Lambda-backed API pattern (order-api / tender-api / custom list resolvers), so it fits the codebase rather than introducing a new paradigm.
+
+This is a genuine data-access boundary, not a UI convention. Everything downstream (the product module, any Phase 2 hub) reads through `listPublishedEvidence`.
+
+> Note: `InsightsPost` has the same latent exposure (public read + `isDraft`). That is pre-existing and out of scope here; we deliberately do **not** propagate that pattern to Evidence because this spec makes an explicit no-leak commitment.
 
 ### `type` enum
 
@@ -112,7 +126,7 @@ String constants, defined once in a shared frontend module:
 
 - `draft` — admin only, never public.
 - `published` — public; counted by the product module and (Phase 2) the hub.
-- `archived` — **admin-visible, never shown on the public site.** All public queries filter to `status == 'published'`.
+- `archived` — **admin-visible, never shown on the public site.** Unreachable via `listPublishedEvidence` (the only public read path).
 
 ### Deliberate trade-offs
 
@@ -124,15 +138,15 @@ String constants, defined once in a shared frontend module:
 
 > Phase 1 intentionally uses client-side aggregation over published Evidence records because evidence volume is expected to remain small. If evidence grows beyond roughly 100–200 records, introduce a product-evidence lookup model or indexed relation.
 
-`products` is an array, which DynamoDB cannot directly index with a GSI. In Phase 1/2 the product module fetches all `status='published'` Evidence and filters/aggregates client-side by `product.slug` membership.
+`products` is an array, which DynamoDB cannot directly index with a GSI. **Status filtering is server-side** (the `listPublishedEvidence` Lambda returns published-only). Product membership and per-type counting are then computed over that already-published result set — either passed as `productSlug` into the Lambda (server pre-filter) or aggregated in the component. Aggregation here means *counting by type*, not *status gating* — status never crosses the boundary as a client responsibility.
 
 ## Implementation Constraints (normative)
 
 Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation:
 
-1. **`slug` is globally unique.** `Evidence.slug` must be globally unique; admin save must reject a duplicate slug. Prevents ambiguity for future detail pages, anchors, and external links.
+1. **`slug` uniqueness is best-effort in Phase 1 (not a DB-level atomic constraint).** The admin service checks for an existing slug on save and rejects duplicates. This is honest about its limits: a check-then-write has a race window, and the `slug` GSI does **not** impose a DynamoDB uniqueness constraint. This is acceptable in Phase 1 because authoring is single-admin and low-frequency. **Upgrade path** (if concurrent authoring ever becomes real): make `slug` the model identifier (`.identifier(['slug'])`, giving Amplify a conditional `attribute_not_exists` write = atomic uniqueness), or write a companion slug-registry item with a conditional expression. The spec does **not** claim hard atomic global uniqueness in Phase 1 — do not describe it as such in code or docs.
 
-2. **`status` values come from a shared constant, never inline strings:**
+2. **`status` values come from a shared constant, never inline strings — in implementation code AND this spec's pseudocode:**
 
    ```ts
    export const EVIDENCE_STATUS = {
@@ -142,11 +156,11 @@ Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation
    } as const;
    ```
 
-   All public queries must reference `EVIDENCE_STATUS.PUBLISHED`, not a literal `'published'`.
+   Every reference in implementation code must use `EVIDENCE_STATUS.PUBLISHED` etc., never a literal `'published'`. Where this spec's pseudocode writes `status = published`, read it as `EVIDENCE_STATUS.PUBLISHED`.
 
-3. **Public queries fetch only `published` records — never filter status client-side.** The public service must query/list only `status = 'published'` records *before* returning data to React components. Do **not** fetch all Evidence and filter status in the browser: `draft`/`archived` records must never reach the client, even if hidden from view.
+3. **Published-only reads are enforced server-side (see Public Read Boundary), not by client filtering.** The `listPublishedEvidence` Lambda is the only public read path; it returns `status = EVIDENCE_STATUS.PUBLISHED` records exclusively. `draft`/`archived` rows never reach the client because the base model is not publicly readable. Components must never receive non-published records to filter.
 
-4. **Link display priority (defined now, used Phase 2):** when an evidence item is eventually made clickable, the display target resolves in order **`articleSlug` → `pdfUrl` → `sourceUrl`** (prefer the internal article, then the PDF, then the neutral/external source). `sourceUrl` is the guaranteed fallback; `articleSlug`/`pdfUrl` are optional typed conveniences. Phase 1 stores these fields but renders none of them as links.
+4. **Every evidence record must have at least one payload/target; link display priority defined now, used Phase 2.** Admin validation requires **≥1 of `{articleSlug, pdfUrl, sourceUrl, images}`** to be present (a record with none is meaningless — nothing to point at and no inline payload). When an item is eventually made clickable (Phase 2), the display target resolves in order **`articleSlug` → `pdfUrl` → `sourceUrl` → `images` (gallery)**. Because admin validation guarantees ≥1 of these exists, the chain always resolves — no field is individually `required` in the schema, but the cross-field rule makes the set non-empty. Phase 1 stores these fields and renders none as links.
 
 5. **`products` multi-select is sourced from canonical `Product.slug` values.** `EvidenceForm`'s products field is a controlled multi-select populated from the Product model / canonical product list — never a free-text slug entry. A typo'd slug would silently make the product module never aggregate the record.
 
@@ -157,8 +171,8 @@ Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation
 **Behavior:**
 
 ```
-fetch all Evidence where status = 'published'
-  → filter to records whose `products` array contains the current product.slug
+listPublishedEvidence(productSlug)   // Lambda returns EVIDENCE_STATUS.PUBLISHED records only
+  → (records already scoped to this product's slug, published-only)
     → 0 matches: render nothing (return null — no heading, no placeholder)
     → ≥1 match:  render the summary, grouped by `type` with counts
 ```
@@ -180,19 +194,49 @@ Type→label mapping (e.g. `publication` → "Published Research", `validation` 
 
 Mirrors the existing Insights admin pattern:
 
-- **`AdminEvidenceListPage`** — list with filters by `type` and `status`.
-- **`EvidenceForm`** — fields: title, type, products (multi-select of Product slugs), process, materials, metrics (key/value/unit rows), sourceUrl, pdfUrl, images, meta, status.
-- **`evidenceAdminService`** — service layer parallel to `insightsAdminService`.
-- **Images** reuse the existing upload pipeline (`insightsImageService` / `optimize-insights-image`).
-- `status='archived'` records remain visible in the admin list but are never surfaced on the public site.
+- **`AdminEvidenceListPage`** — list with filters by `type` and `status`. Reads the base model via authenticated auth (admins see all statuses, including `draft`/`archived`).
+- **`EvidenceForm`** — full field set and how each is populated in Phase 1:
 
-No new architectural decisions here — it follows established patterns.
+  | Field | Phase 1 handling |
+  | --- | --- |
+  | `title` | user-entered, required |
+  | `slug` | auto-generated from `title`, **editable**; best-effort duplicate check on save (constraint 1) |
+  | `type` | select from the `type` enum, required |
+  | `summary` | user-entered, optional (one-line card text) |
+  | `products` | **controlled multi-select** from canonical `Product.slug` (constraint 5), required (≥1) |
+  | `process` | user-entered, optional |
+  | `materials` | tag input, optional |
+  | `keywords` | tag input, optional |
+  | `metrics` | repeatable key/value/unit rows, optional |
+  | `articleSlug` | optional; select from existing `InsightsPost` slugs |
+  | `pdfUrl` | optional |
+  | `images` | optional; existing upload pipeline (`insightsImageService` / `optimize-insights-image`) |
+  | `sourceUrl` | optional |
+  | `meta` | optional; type-specific JSON (e.g. publication `{journal, year, doi, authors}`) |
+  | `status` | select `draft`/`published`/`archived` (via `EVIDENCE_STATUS`), defaults `draft` |
+  | `publishDate` | **auto-set** when `status` first transitions to `published`; not hand-edited in Phase 1 |
+
+  **Cross-field validation (constraint 4):** save is rejected unless at least one of `{articleSlug, pdfUrl, sourceUrl, images}` is present.
+
+- **`evidenceAdminService`** — service layer parallel to `insightsAdminService`; performs the best-effort slug check and the ≥1-payload validation before write.
+- `status='archived'` records remain visible in the admin list but are never surfaced on the public site (they are unreachable via `listPublishedEvidence`).
+
+No new architectural decisions here — it follows established patterns, except the base-model auth is authenticated-only (Public Read Boundary).
 
 ## Testing
 
-- **Data model:** unit coverage of the aggregation helper — given a set of Evidence records with varied `products` arrays and `status`, it returns correct per-product, per-type counts and excludes non-`published` records.
-- **Product module:** renders nothing at 0 matches; renders correct grouped counts at ≥1; excludes `draft`/`archived`.
-- **Admin:** service-layer create/update/list round-trip, following the existing Insights admin test pattern.
+Security tests target the **server boundary**, not client-side status filtering (constraint 3 / Public Read Boundary):
+
+- **Public read boundary (security):**
+  - `listPublishedEvidence` returns only `EVIDENCE_STATUS.PUBLISHED` records — given a table containing `draft`/`published`/`archived`, the Lambda's result excludes non-published rows.
+  - The base `Evidence` model is not publicly readable — a direct `apiKey` query against the base model is denied by auth (no path for anonymous callers to read `draft`/`archived`).
+- **Aggregation helper (counting, not gating):** given a set of **already-published** records with varied `products` arrays, it returns correct per-product, per-type counts. It is tested for counting correctness only — status gating is not its job.
+- **Product module:** its input type/fixtures contain **only public records**; renders nothing at 0 matches; renders correct grouped counts at ≥1. (No test feeds it `draft`/`archived` — those cannot reach it in production.)
+- **Admin:**
+  - service-layer create/update/list round-trip, following the existing Insights admin test pattern;
+  - best-effort duplicate-slug rejection on save;
+  - ≥1-payload cross-field validation (rejects a record with none of `{articleSlug, pdfUrl, sourceUrl, images}`);
+  - `publishDate` auto-set on first transition to `published`.
 
 ## Out of Scope / Non-Goals
 
