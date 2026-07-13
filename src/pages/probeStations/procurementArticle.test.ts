@@ -167,6 +167,50 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
   // so a ban can't be dodged by casing, line wrapping, or double spaces.
   const normalized = content.toLowerCase().replace(/\s+/g, ' ');
 
+  // ─── Shared guard families (SINGLE SOURCE OF TRUTH) ───────────────────────
+  // The article assertions below AND the mutation meta-test consume these same
+  // arrays. A weakened production guard therefore fails the mutation table —
+  // there is no shadow copy that can stay green (re-review finding).
+  const GUARD_FAMILIES: Record<string, RegExp[]> = {
+    staleThresholds: [
+      /\$10,?000|\$10k|usd\s?10,?000|\b(10|ten)\s+thousand\s+dollars/i,
+      /\$250,?000|\$250k|usd\s?250,?000|\b250\s+thousand\s+dollars/i,
+    ],
+    fiscalExpiry: [
+      /(funds?|money|grant|award|balance)[^.]{0,60}(lapse|expire)/i,
+      /(spend|spent|use|used|obligate|obligated)[^.]{0,40}(by|before)[^.]{0,40}(\bfy\b|fy[- ]end|fiscal year|september 30)/i,
+      /(award|grant|balance|funds?)[^.]{0,60}(must|has|have) to be (used|spent|obligated)[^.]{0,60}(september 30|fiscal year|fy[- ]end)/i,
+      /federal fiscal year/i,
+      /funds\s+expire/i,
+    ],
+    samMandatory: [
+      // Bidirectional proximity with TEMPERED gaps ((?!\bnot\b)[^.]) so the
+      // mandated negated qualifier ("supplier is NOT universally required to
+      // register…") stays legal while every affirmative phrasing — including
+      // "have to register" — is caught.
+      /(vendor|supplier)s?(?:(?!\bnot\b)[^.]){0,80}(must|required|mandatory|need(s|ed)?|ha(s|ve)\s+to)(?:(?!\bnot\b)[^.]){0,80}sam(\.gov)?/i,
+      /sam(\.gov)?(?:(?!\bnot\b)[^.]){0,80}(mandatory|required|must|ha(s|ve)\s+to)(?:(?!\bnot\b)[^.]){0,80}(vendor|supplier)s?/i,
+      /sam\s+registration\s+is\s+required/i,
+      /federally\s+funded\s+purchases\s+require\s+sam/i,
+      /(nsf|doe)\s+requires\s+(vendor|supplier)s?/i,
+      // Lookbehind excludes preceding negation ("not universally required to
+      // register in SAM.gov" is the mandated qualifier and must not match).
+      /(?<!\bnot\b[^.]{0,30})required to (have|maintain|register)[^.]{0,40}sam/i,
+      /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
+    ],
+    deliveryCommitment: [
+      // brand/we/our → delivered/landed → price/quote
+      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivered|landed|delivery[- ]inclusive|all[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+      /(offer|provide)s?[^.]{0,60}(delivered|landed|delivery[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+      // price-first / inclusive forms: "our prices include delivery",
+      // "pricing is inclusive of delivery"
+      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(price|pricing|quote|quotation)s?[^.]{0,40}(includes?|included|inclusive)[^.]{0,30}(delivery|shipping|freight)/i,
+      // delivery-first: "… with delivery included"
+      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivery|shipping|freight)[^.]{0,30}(included|inclusive)/i,
+    ],
+  };
+  const ALL_GUARDS: RegExp[] = Object.values(GUARD_FAMILIES).flat();
+
   /** Every window of ±radius chars around each occurrence of `needle`. */
   const windowsAround = (needle: string, radius: number): string[] => {
     const wins: string[] = [];
@@ -228,19 +272,14 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
     // The prior MPT ($10,000) and stale SAT figure ($250,000) must not appear
     // in any common spelling — they signal the numbers were not refreshed to
     // the 2025-10-01 set.
-    expect(normalized).not.toMatch(/\$10,?000|\$10k|usd\s?10,?000|\$250,?000|\$250k|usd\s?250,?000/i);
+    for (const pattern of GUARD_FAMILIES.staleThresholds) {
+      expect(normalized, `stale threshold spelling ${pattern}`).not.toMatch(pattern);
+    }
   });
 
   it('never implies federal funds expire at a fiscal-year boundary (Constraint 2)', () => {
     // Phrase families, not exact spellings.
-    const BANNED_FISCAL: RegExp[] = [
-      /(funds?|money|grant|award|balance)[^.]{0,60}(lapse|expire)/i,
-      /(spend|spent|use|used|obligate|obligated)[^.]{0,40}(by|before)[^.]{0,40}(\bfy\b|fy[- ]end|fiscal year|september 30)/i,
-      /(award|grant|balance|funds?)[^.]{0,60}(must|has|have) to be (used|spent|obligated)[^.]{0,60}(september 30|fiscal year|fy[- ]end)/i,
-      /federal fiscal year/i,
-      /funds\s+expire/i,
-    ];
-    for (const pattern of BANNED_FISCAL) {
+    for (const pattern of GUARD_FAMILIES.fiscalExpiry) {
       expect(normalized, `banned fiscal-expiry wording ${pattern}`).not.toMatch(pattern);
     }
     // Positive: the clocks that DO bind must be named — the award's period of
@@ -253,24 +292,7 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
   });
 
   it('does not overstate SAM.gov or vendor-registration requirements (Constraint 6)', () => {
-    const BANNED_SAM: RegExp[] = [
-      // Bidirectional proximity families with TEMPERED gaps ((?!\bnot\b)[^.]):
-      // the legitimate negated qualifier ("supplier is NOT universally
-      // required to register…") must not match, while every affirmative
-      // phrasing does.
-      // Bidirectional proximity families: (vendor|supplier) ~ (must|required|
-      // mandatory|need) ~ SAM in either direction, any natural phrasing.
-      /(vendor|supplier)s?(?:(?!\bnot\b)[^.]){0,80}(must|required|mandatory|need(s|ed)?)(?:(?!\bnot\b)[^.]){0,80}sam(\.gov)?/i,
-      /sam(\.gov)?(?:(?!\bnot\b)[^.]){0,80}(mandatory|required|must)(?:(?!\bnot\b)[^.]){0,80}(vendor|supplier)s?/i,
-      /sam\s+registration\s+is\s+required/i,
-      /federally\s+funded\s+purchases\s+require\s+sam/i,
-      /(nsf|doe)\s+requires\s+(vendor|supplier)s?/i,
-      // Lookbehind excludes preceding negation ("not universally required to
-      // register in SAM.gov" is the mandated qualifier and must not match).
-      /(?<!\bnot\b[^.]{0,30})required to (have|maintain|register)[^.]{0,40}sam/i,
-      /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
-    ];
-    for (const pattern of BANNED_SAM) {
+    for (const pattern of GUARD_FAMILIES.samMandatory) {
       expect(normalized, `banned SAM/vendor wording ${pattern}`).not.toMatch(pattern);
     }
     // The exact allowed SAM statement must be present verbatim (bonus fact, not
@@ -284,11 +306,7 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
     // Policy is unsettled — the article may only say the QUOTATION identifies
     // the delivery term. Any "NineScrolls/SEMISHARE ... delivered pricing"
     // commitment is a release blocker.
-    const BANNED_DELIVERY: RegExp[] = [
-      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivered|landed|delivery[- ]inclusive|all[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
-      /(offer|provide)s?[^.]{0,60}(delivered|landed|delivery[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
-    ];
-    for (const pattern of BANNED_DELIVERY) {
+    for (const pattern of GUARD_FAMILIES.deliveryCommitment) {
       expect(normalized, `banned delivery-commitment wording ${pattern}`).not.toMatch(pattern);
     }
   });
@@ -331,42 +349,43 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
   });
 
   it('guard families catch known prohibited variants (table-driven mutation cases)', () => {
-    // Meta-test of the guards themselves: every sentence below is a natural
-    // (non-evasive) phrasing of a prohibited claim from past review rounds.
-    // Each must be caught by at least one banned family when appended to the
-    // article — if a family regresses, this fails without touching the article.
-    const BANNED_ALL: RegExp[] = [
-      // stale thresholds
-      /\$10,?000|\$10k|usd\s?10,?000|\$250,?000|\$250k|usd\s?250,?000/i,
-      // fiscal expiry
-      /(funds?|money|grant|award|balance)[^.]{0,60}(lapse|expire)/i,
-      /(spend|spent|use|used|obligate|obligated)[^.]{0,40}(by|before)[^.]{0,40}(\bfy\b|fy[- ]end|fiscal year|september 30)/i,
-      /(award|grant|balance|funds?)[^.]{0,60}(must|has|have) to be (used|spent|obligated)[^.]{0,60}(september 30|fiscal year|fy[- ]end)/i,
-      // SAM-mandatory (bidirectional)
-      /(vendor|supplier)s?(?:(?!\bnot\b)[^.]){0,80}(must|required|mandatory|need(s|ed)?)(?:(?!\bnot\b)[^.]){0,80}sam(\.gov)?/i,
-      /sam(\.gov)?(?:(?!\bnot\b)[^.]){0,80}(mandatory|required|must)(?:(?!\bnot\b)[^.]){0,80}(vendor|supplier)s?/i,
-      /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
-      // delivery commitments
-      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivered|landed|delivery[- ]inclusive|all[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
-      /(offer|provide)s?[^.]{0,60}(delivered|landed|delivery[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
-    ];
+    // Meta-test of the PRODUCTION guards: it consumes ALL_GUARDS — the exact
+    // arrays the article assertions use — so weakening any family fails here
+    // even though the article itself is untouched. Every sentence is a
+    // natural (non-evasive) phrasing of a prohibited claim from past reviews.
     const MUTATIONS = [
       'The old threshold is USD 10,000.',
+      'The old threshold is 10 thousand dollars.',
       'The award balance must be used before September 30.',
       'All vendors are required to register with SAM.gov.',
+      'Vendors have to register with SAM.gov.',
       'SAM enrollment is mandatory.',
       'We offer delivered pricing for SEMISHARE systems.',
       'NineScrolls offers landed pricing.',
       'NineScrolls offers delivery-inclusive pricing.',
+      'Our prices include delivery.',
+      'NineScrolls pricing is inclusive of delivery.',
+      'We quote SEMISHARE systems with delivery included.',
       'Grant funds lapse at the end of the period.',
     ];
     for (const sentence of MUTATIONS) {
       const mutated = (content + ' ' + sentence).toLowerCase().replace(/\s+/g, ' ');
       expect(
-        BANNED_ALL.some((p) => p.test(sentence.toLowerCase())) &&
-          BANNED_ALL.some((p) => p.test(mutated)),
+        ALL_GUARDS.some((p) => p.test(sentence.toLowerCase())) &&
+          ALL_GUARDS.some((p) => p.test(mutated)),
         `mutation not caught by any guard family: "${sentence}"`,
       ).toBe(true);
+    }
+
+    // Negative controls: the MANDATED wording must never trip a family — a
+    // future "tightening" that flags these is itself a regression.
+    const NEGATIVE_CONTROLS = [
+      'A commercial equipment supplier is not universally required to register in SAM.gov merely because the purchase is charged to a Federal grant.',
+      'The quotation identifies the applicable delivery term, import responsibilities, and any separately stated logistics charges for the quoted configuration.',
+    ];
+    for (const sentence of NEGATIVE_CONTROLS) {
+      const hit = ALL_GUARDS.find((p) => p.test(sentence.toLowerCase()));
+      expect(hit, `negative control falsely flagged by ${hit}: "${sentence}"`).toBeUndefined();
     }
   });
 });
