@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from './StatusBadge';
 import { evidenceTypeLabel, EVIDENCE_TYPE } from '../../config/evidence';
-import { deriveVerification, parseMeta, safeExternalUrl, EvidenceRecord } from '../../pages/admin/evidenceListModel';
+import { deriveVerification, parseMeta, safeExternalUrl, normalizeDoi, EvidenceRecord } from '../../pages/admin/evidenceListModel';
 
 interface EvidenceDetailPanelProps {
   record: EvidenceRecord;
@@ -21,7 +21,7 @@ function MetaRow({ label, children }: { label: string; children: React.ReactNode
 
 export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetailPanelProps) {
   const meta = parseMeta(record.meta);
-  const doi = typeof meta.doi === 'string' ? meta.doi : '';
+  const normDoi = normalizeDoi(meta.doi);
   const journal = typeof meta.journal === 'string' ? meta.journal : '';
   const year = meta.year != null ? String(meta.year) : '';
   const verifiedAt = typeof meta.verifiedAt === 'string' ? meta.verifiedAt : '';
@@ -68,10 +68,9 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
     };
   }, [onClose]);
 
-  // Source DOI ALWAYS resolves via doi.org/{doi} (never a publisher URL).
-  // "View source" uses the safe sourceUrl, falling back to the DOI resolver
-  // when there is no safe source.
-  const doiHref = safeExternalUrl(doi ? `https://doi.org/${doi}` : null);
+  // Source DOI ALWAYS resolves via the validated doi.org URL (never a publisher
+  // URL). "View source" uses the safe sourceUrl, falling back to the DOI.
+  const doiHref = normDoi ? safeExternalUrl(normDoi.url) : null;
   const sourceHref = safeExternalUrl(record.sourceUrl) || doiHref;
 
   return (
@@ -107,9 +106,9 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
         )}
 
         <section className="mt-6 border-t border-slate-200 pt-2">
-          {doi && (
+          {normDoi && doiHref && (
             <MetaRow label="Source DOI">
-              {doiHref ? <a href={doiHref} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">{doi} ↗</a> : <span>{doi}</span>}
+              <a href={doiHref} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">{normDoi.doi} ↗</a>
             </MetaRow>
           )}
           {journal && <MetaRow label="Journal">{journal}</MetaRow>}

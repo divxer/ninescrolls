@@ -92,3 +92,39 @@ describe('safeExternalUrl', () => {
     expect(safeExternalUrl(undefined)).toBeNull();
   });
 });
+
+import { normalizeDoi } from './evidenceListModel';
+describe('normalizeDoi', () => {
+  it('accepts a canonical DOI and builds a doi.org URL', () => {
+    expect(normalizeDoi('10.1186/s43074-022-00047-3')).toEqual({
+      doi: '10.1186/s43074-022-00047-3',
+      url: 'https://doi.org/10.1186/s43074-022-00047-3',
+    });
+  });
+  it('strips doi: / https://doi.org/ / dx.doi.org prefixes and trims', () => {
+    expect(normalizeDoi('  doi:10.3390/nano10071313 ')?.doi).toBe('10.3390/nano10071313');
+    expect(normalizeDoi('https://doi.org/10.3390/nano10071313')?.doi).toBe('10.3390/nano10071313');
+    expect(normalizeDoi('https://dx.doi.org/10.3390/nano10071313')?.doi).toBe('10.3390/nano10071313');
+  });
+  it('rejects blank, arbitrary text, and malformed input', () => {
+    for (const bad of ['', '   ', 'not a doi', '10.abc/xyz', '10.1234', '10.1234/', null, 42]) {
+      expect(normalizeDoi(bad)).toBeNull();
+    }
+  });
+  it('percent-encodes reserved characters (?, #, space) in the suffix', () => {
+    const n = normalizeDoi('10.1000/abc?x#y z');
+    expect(n?.doi).toBe('10.1000/abc?x#y z');
+    expect(n?.url).toBe('https://doi.org/10.1000/abc%3Fx%23y%20z');
+  });
+  it('preserves slashes as separators in a multi-segment suffix', () => {
+    expect(normalizeDoi('10.1000/a/b?c')?.url).toBe('https://doi.org/10.1000/a/b%3Fc');
+  });
+});
+describe('deriveVerification DOI validation', () => {
+  it('marks "DOI recorded" not-ok for a malformed doi', () => {
+    const items = deriveVerification(pub({ meta: JSON.stringify({ doi: 'not-a-doi', relationshipDisclosure: 'd', verifiedAt: '2026-07-13' }) }));
+    const byLabel = Object.fromEntries(items.map((i) => [i.label, i]));
+    expect(byLabel['DOI recorded'].ok).toBe(false);
+    expect(byLabel['DOI recorded'].value).toBe('—');
+  });
+});

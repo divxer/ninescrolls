@@ -99,16 +99,46 @@ export function deriveVerification(rec: EvidenceRecord): VerificationItem[] {
   ];
 
   if (rec.type === EVIDENCE_TYPE.PUBLICATION) {
-    const doi = typeof meta.doi === 'string' ? meta.doi : '';
+    const doi = normalizeDoi(meta.doi); // shared validation — checklist + link agree
     const verifiedAt = typeof meta.verifiedAt === 'string' ? meta.verifiedAt : '';
     const disclosure = typeof meta.relationshipDisclosure === 'string' ? meta.relationshipDisclosure : '';
     items.push(
-      { label: 'DOI recorded', ok: !!doi, value: doi || '—' },
+      { label: 'DOI recorded', ok: !!doi, value: doi?.doi ?? '—' },
       { label: 'Verified', ok: !!verifiedAt, value: verifiedAt || '—' },
       { label: 'Attribution disclosure present', ok: !!disclosure, value: disclosure ? 'Present' : '—' }
     );
   }
   return items;
+}
+
+export interface NormalizedDoi {
+  /** Canonical bare DOI, e.g. "10.1186/s43074-022-00047-3". */
+  doi: string;
+  /** Safe resolver URL with the suffix's reserved chars percent-encoded. */
+  url: string;
+}
+
+/**
+ * Normalize + validate a DOI. Trims, strips a `doi:` or `https://doi.org/`
+ * prefix, validates the `10.<registrant>/<suffix>` structure, and builds a
+ * doi.org URL with reserved characters (?, #, spaces, …) percent-encoded per
+ * suffix segment (path separators preserved). Returns null for blank, arbitrary
+ * text, or malformed input — so the checklist and the link share one verdict.
+ */
+export function normalizeDoi(raw: unknown): NormalizedDoi | null {
+  if (typeof raw !== 'string') return null;
+  const s = raw
+    .trim()
+    .replace(/^doi:\s*/i, '')
+    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
+    .trim();
+  const m = /^(10\.\d{4,9}(?:\.\d+)*)\/(.+)$/.exec(s);
+  if (!m) return null;
+  const suffix = m[2].trim();
+  if (!suffix) return null;
+  const doi = `${m[1]}/${suffix}`;
+  const url = `https://doi.org/${doi.split('/').map(encodeURIComponent).join('/')}`;
+  return { doi, url };
 }
 
 /**

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { EvidenceDetailPanel } from './EvidenceDetailPanel';
 import { EVIDENCE_TYPE, EVIDENCE_STATUS } from '../../config/evidence';
+import type { EvidenceRecord } from '../../pages/admin/evidenceListModel';
 
 const baseRec = {
   id: 'e1',
@@ -17,7 +18,7 @@ const baseRec = {
   meta: JSON.stringify({ doi: '10.1186/s43074-022-00047-3', journal: 'PhotoniX', year: 2022, verifiedAt: '2026-07-13', relationshipDisclosure: 'disclosed' }),
 };
 
-function renderPanel(props = {}, rec = baseRec) {
+function renderPanel(props = {}, rec: EvidenceRecord = baseRec) {
   return render(
     <MemoryRouter>
       <EvidenceDetailPanel record={rec} onClose={vi.fn()} onDelete={vi.fn()} {...props} />
@@ -95,5 +96,16 @@ describe('EvidenceDetailPanel modal + link behaviour', () => {
     renderPanel({}, { ...baseRec, sourceUrl: 'https://link.springer.com/article/xyz' });
     expect(screen.getByRole('link', { name: /10\.1186\/s43074-022-00047-3/ })).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
     expect(screen.getByRole('link', { name: /View source/i })).toHaveAttribute('href', 'https://link.springer.com/article/xyz');
+  });
+});
+
+describe('EvidenceDetailPanel DOI validation', () => {
+  it('renders no Source DOI / doi.org link for a malformed doi', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: null, meta: JSON.stringify({ doi: 'not-a-doi', journal: 'X', year: 2020 }) });
+    screen.queryAllByRole('link').forEach((a) => expect(a.getAttribute('href') ?? '').not.toMatch(/doi\.org/));
+  });
+  it('percent-encodes a DOI suffix with reserved characters in the link', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: null, meta: JSON.stringify({ doi: '10.1000/abc?x#y', journal: 'X', year: 2020 }) });
+    expect(screen.getByRole('link', { name: /10\.1000\/abc\?x#y/ })).toHaveAttribute('href', 'https://doi.org/10.1000/abc%3Fx%23y');
   });
 });
