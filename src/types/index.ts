@@ -85,7 +85,8 @@ export const insightCategories = [
   'Plasma Processing',
   'Equipment Selection',
   'Equipment Maintenance',
-  'Publication Spotlight'
+  'Publication Spotlight',
+  'Metrology & Testing'
 ];
 
 export const newsCategories = [

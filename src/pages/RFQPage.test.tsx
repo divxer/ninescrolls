@@ -129,6 +129,58 @@ describe('parseRfqUrlParams', () => {
 });
 
 describe('RFQPage URL attribution contract', () => {
+  it('pre-selects the Wafer Probe Station category from probe-station page links', () => {
+    renderRfq('/request-quote?products=semishare-probe-station');
+    const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+    expect(select.value).toBe('Probe-Station');
+    // The slug also lands in the specific-model prefill (existing ?products= contract)
+  });
+
+  it('pre-selects the correct category for EVERY product-page CTA slug', () => {
+    // Contract table: every ?products=<slug> a product page can send must
+    // resolve to a non-empty category. Extend when adding product pages.
+    const SLUG_CATEGORY: Record<string, string> = {
+      'icp-etcher': 'ICP',
+      'rie-etcher': 'RIE',
+      'compact-rie': 'RIE',
+      'ibe-ribe': 'IBE',
+      'ald': 'ALD',
+      'pecvd': 'PECVD',
+      'hdp-cvd': 'HDP-CVD',
+      'sputter': 'Sputter',
+      'e-beam-evaporator': 'E-Beam',
+      'coater-developer': 'Coater-Developer',
+      'striper': 'Stripper',
+      'plasma-cleaner': 'Plasma-Cleaner',
+      'hy-4l': 'Plasma-Cleaner',
+      'hy-20l': 'Plasma-Cleaner',
+      'hy-20lrf': 'Plasma-Cleaner',
+      'pluto-t': 'Plasma-Cleaner',
+      'pluto-m': 'Plasma-Cleaner',
+      'pluto-f': 'Plasma-Cleaner',
+      'pluto-30': 'Plasma-Cleaner',
+      'wafer-probe-station': 'Probe-Station',
+      'semishare-probe-station': 'Probe-Station',
+      'cryogenic-probe-station': 'Probe-Station',
+      'silicon-photonics-probe-station': 'Probe-Station',
+    };
+    for (const [slug, expected] of Object.entries(SLUG_CATEGORY)) {
+      const { unmount } = renderRfq(`/request-quote?products=${slug}`);
+      const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+      expect(select.value, slug).toBe(expected);
+      unmount();
+    }
+  });
+
+  it('pre-selects the probe-station category for each probe page slug', () => {
+    for (const slug of ['wafer-probe-station', 'cryogenic-probe-station', 'silicon-photonics-probe-station']) {
+      const { unmount } = renderRfq(`/request-quote?products=${slug}`);
+      const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+      expect(select.value, slug).toBe('Probe-Station');
+      unmount();
+    }
+  });
+
   it('renders the redesigned RFQ header while preserving URL prefill', async () => {
     renderRfq('/request-quote?products=icp-etcher,rie-etcher&category=ICP&source=insights/test&via=ask-checkbox');
 
