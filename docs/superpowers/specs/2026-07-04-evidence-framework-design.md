@@ -33,7 +33,7 @@ These define what Evidence *is* and are binding on the implementation:
 ### In scope (build now)
 
 1. **`Evidence` Amplify data model** — new, independent model (not an extension of `InsightsPost`), authenticated-only auth.
-2. **`listPublishedEvidence` Lambda-backed custom query** — the sole public read path, returning `published`-only records (see Public Read Boundary). This is the data-level no-leak boundary.
+2. **`listPublishedEvidence` Lambda-backed custom query** — the sole public read path, returning `published`-only records, paginating internally to completeness, under a read-only least-privilege role (see Public Read Boundary). This is the data-level no-leak boundary.
 3. **Admin CRUD** — `AdminEvidenceListPage` + `EvidenceForm` + an `evidenceAdminService`, mirroring the existing Insights admin pattern. This is the "backend just needs to support it" deliverable.
 4. **Product-page Evidence summary module** — `<ProductEvidence productSlug={slug} />`, inserted after the existing *Process Capabilities* section on each product page. Reads via `listPublishedEvidence`. Renders **only** when the product has ≥1 published Evidence record; otherwise renders nothing (no heading, no placeholder).
 
@@ -91,10 +91,27 @@ Evidence: a
 Therefore Phase 1 establishes a **server-side published-only boundary**:
 
 - The base `Evidence` model is **authenticated-only** — public clients cannot read it directly at all.
-- A **Lambda-backed custom query** `listPublishedEvidence(productSlug?: string)` is added (`apiKey` auth). The Lambda holds IAM access to the table and returns **only `status = 'published'` records** (optionally pre-filtered by product). `draft`/`archived` rows are physically never returned to an anonymous caller.
+- A **Lambda-backed custom query** `listPublishedEvidence(productSlug?: string)` is added (`apiKey` auth). The Lambda returns **only `status = EVIDENCE_STATUS.PUBLISHED` records** (optionally filtered by product). `draft`/`archived` rows are physically never returned to an anonymous caller.
 - This mirrors NineScrolls' existing Lambda-backed API pattern (order-api / tender-api / custom list resolvers), so it fits the codebase rather than introducing a new paradigm.
 
 This is a genuine data-access boundary, not a UI convention. Everything downstream (the product module, any Phase 2 hub) reads through `listPublishedEvidence`.
+
+#### Pagination contract (normative)
+
+DynamoDB `Scan`/`Query` returns at most 1 MB per call; a single-page scan would silently drop matches once the table crosses that size — and the product module shows **complete** counts, so a missed page = a wrong count. Phase 1 fixes the behavior (plan authors do not get to choose):
+
+- **The Lambda paginates internally until `LastEvaluatedKey` is empty**, accumulating the full result set, then returns the complete (small-scale) published set. It does **not** return a `nextToken`; the caller never has to page.
+- **`status` and `productSlug` filtering happen server-side in the Lambda** (a `FilterExpression`/predicate applied on each page before accumulation), never on the client.
+- **Test coverage must exercise ≥2 pages** (mock/seed so results span more than one `Scan` page) and prove a published record on the second page is included in the counts.
+
+#### Lambda least-privilege (normative — part of the no-leak boundary)
+
+The security boundary is an acceptance contract, not just a description:
+
+- The custom query is explicitly invokable with **`apiKey`** auth.
+- The Lambda's execution role is granted **read-only** access to the Evidence table only — `dynamodb:Query` and `dynamodb:Scan` (and describe as needed). **No** `PutItem` / `UpdateItem` / `DeleteItem`, and no broad/table-wildcard data access.
+- The Lambda enforces the `published` predicate server-side before responding.
+- A deployment/IAM check (or test) verifies both halves: (a) the Lambda role has only the read actions above, and (b) an anonymous `apiKey` query against the **base** `Evidence` model is denied.
 
 > Note: `InsightsPost` has the same latent exposure (public read + `isDraft`). That is pre-existing and out of scope here; we deliberately do **not** propagate that pattern to Evidence because this spec makes an explicit no-leak commitment.
 
@@ -160,7 +177,7 @@ Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation
 
 3. **Published-only reads are enforced server-side (see Public Read Boundary), not by client filtering.** The `listPublishedEvidence` Lambda is the only public read path; it returns `status = EVIDENCE_STATUS.PUBLISHED` records exclusively. `draft`/`archived` rows never reach the client because the base model is not publicly readable. Components must never receive non-published records to filter.
 
-4. **Every evidence record must have at least one payload/target; link display priority defined now, used Phase 2.** Admin validation requires **≥1 of `{articleSlug, pdfUrl, sourceUrl, images}`** to be present (a record with none is meaningless — nothing to point at and no inline payload). When an item is eventually made clickable (Phase 2), the display target resolves in order **`articleSlug` → `pdfUrl` → `sourceUrl` → `images` (gallery)**. Because admin validation guarantees ≥1 of these exists, the chain always resolves — no field is individually `required` in the schema, but the cross-field rule makes the set non-empty. Phase 1 stores these fields and renders none as links.
+4. **Every evidence record must have at least one payload/target; link display priority defined now, used Phase 2.** Admin validation requires **≥1 of `{articleSlug, pdfUrl, sourceUrl, images}`** to be *meaningfully* present (a record with none is meaningless — nothing to point at and no inline payload). "Present" means non-empty: for the string fields a non-blank value, and for `images` **`images.length > 0`** — an empty array must NOT satisfy the rule. When an item is eventually made clickable (Phase 2), the display target resolves in order **`articleSlug` → `pdfUrl` → `sourceUrl` → `images` (gallery)**. Because admin validation guarantees ≥1 of these is non-empty, the chain always resolves — no field is individually `required` in the schema, but the cross-field rule makes the set non-empty. Phase 1 stores these fields and renders none as links.
 
 5. **`products` multi-select is sourced from canonical `Product.slug` values.** `EvidenceForm`'s products field is a controlled multi-select populated from the Product model / canonical product list — never a free-text slug entry. A typo'd slug would silently make the product module never aggregate the record.
 
@@ -216,7 +233,7 @@ Mirrors the existing Insights admin pattern:
   | `status` | select `draft`/`published`/`archived` (via `EVIDENCE_STATUS`), defaults `draft` |
   | `publishDate` | **auto-set** when `status` first transitions to `published`; not hand-edited in Phase 1 |
 
-  **Cross-field validation (constraint 4):** save is rejected unless at least one of `{articleSlug, pdfUrl, sourceUrl, images}` is present.
+  **Cross-field validation (constraint 4):** save is rejected unless at least one of `{articleSlug, pdfUrl, sourceUrl, images}` is *non-empty* (strings non-blank; `images.length > 0` — an empty array does not count).
 
 - **`evidenceAdminService`** — service layer parallel to `insightsAdminService`; performs the best-effort slug check and the ≥1-payload validation before write.
 - `status='archived'` records remain visible in the admin list but are never surfaced on the public site (they are unreachable via `listPublishedEvidence`).
@@ -230,12 +247,14 @@ Security tests target the **server boundary**, not client-side status filtering 
 - **Public read boundary (security):**
   - `listPublishedEvidence` returns only `EVIDENCE_STATUS.PUBLISHED` records — given a table containing `draft`/`published`/`archived`, the Lambda's result excludes non-published rows.
   - The base `Evidence` model is not publicly readable — a direct `apiKey` query against the base model is denied by auth (no path for anonymous callers to read `draft`/`archived`).
+  - **Least-privilege IAM:** the Lambda role has only read actions (`Query`/`Scan`) on the Evidence table and no write actions — asserted by a deployment/IAM check.
+- **Pagination completeness:** seed/mock results spanning **≥2 `Scan` pages**; assert a `published` record on the second page is included in the returned set and its type count — proving the Lambda drains `LastEvaluatedKey` rather than returning a single page.
 - **Aggregation helper (counting, not gating):** given a set of **already-published** records with varied `products` arrays, it returns correct per-product, per-type counts. It is tested for counting correctness only — status gating is not its job.
 - **Product module:** its input type/fixtures contain **only public records**; renders nothing at 0 matches; renders correct grouped counts at ≥1. (No test feeds it `draft`/`archived` — those cannot reach it in production.)
 - **Admin:**
   - service-layer create/update/list round-trip, following the existing Insights admin test pattern;
   - best-effort duplicate-slug rejection on save;
-  - ≥1-payload cross-field validation (rejects a record with none of `{articleSlug, pdfUrl, sourceUrl, images}`);
+  - ≥1-payload cross-field validation (rejects a record with none of `{articleSlug, pdfUrl, sourceUrl, images}`, **including the case where `images` is an empty array** — that must not satisfy the rule);
   - `publishDate` auto-set on first transition to `published`.
 
 ## Out of Scope / Non-Goals
