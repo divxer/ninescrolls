@@ -109,10 +109,10 @@ DynamoDB `Scan`/`Query` returns at most 1 MB per call; a single-page scan would 
 The security boundary is an acceptance contract, not just a description:
 
 - The custom query is explicitly invokable with **`apiKey`** auth.
-- **The Lambda's DynamoDB data-plane permissions are exactly `dynamodb:Query` and `dynamodb:Scan`, scoped by resource to the Evidence base-table and its index ARNs only.** No other DynamoDB action (`PutItem`/`UpdateItem`/`DeleteItem`/`BatchWrite`/etc.), and no access to any other table. `dynamodb:DescribeTable` is **not** granted in Phase 1 (Query/Scan need it under no path here); if a concrete implementation need arises, grant it explicitly and note it here — do not add it speculatively.
+- **The Lambda's DynamoDB data-plane permissions are exactly `dynamodb:Query` and `dynamodb:Scan`, scoped by resource to the Evidence base-table ARN only.** The handler runs a `Scan` on the base table and never queries a GSI, so **index ARNs are deliberately NOT granted** — granting `${tableArn}/index/*` would be unused privilege, contrary to least-privilege. (The `slug` GSI is used only by the admin client's generated `listEvidenceBySlug`, which goes through AppSync's own resolver, not this Lambda.) No other DynamoDB action (`PutItem`/`UpdateItem`/`DeleteItem`/`BatchWrite`/etc.), and no access to any other table. `dynamodb:DescribeTable` is **not** granted in Phase 1; if a concrete implementation need arises, grant it explicitly and note it here — do not add it speculatively.
 - This constrains **DynamoDB access only.** The execution role still carries the standard non-DynamoDB permissions every Lambda needs (e.g. CloudWatch Logs) — those are expected and out of scope for this constraint.
 - The Lambda enforces the `published` predicate server-side before responding.
-- A deployment/IAM check (or test) verifies both halves: (a) the Lambda's role grants **no DynamoDB action beyond `Query`/`Scan` on the Evidence table/index ARNs** (assert on DynamoDB actions specifically, not "no other permissions at all"), and (b) an anonymous `apiKey` query against the **base** `Evidence` model is denied.
+- A deployment/IAM check (or test) verifies both halves: (a) the Lambda's role grants **no DynamoDB action beyond `Query`/`Scan` on the Evidence base-table ARN** (assert on DynamoDB actions specifically, not "no other permissions at all"), and (b) an anonymous `apiKey` query against the **base** `Evidence` model is denied.
 
 > Note: `InsightsPost` has the same latent exposure (public read + `isDraft`). That is pre-existing and out of scope here; we deliberately do **not** propagate that pattern to Evidence because this spec makes an explicit no-leak commitment.
 
@@ -184,7 +184,7 @@ Anti-ambiguity / anti-leak / anti-dirty-data rules binding on the implementation
    } as const;
    ```
 
-   Every reference in implementation code must use `EVIDENCE_STATUS.PUBLISHED` etc., never a literal `'published'`. Where this spec's pseudocode writes `status = published`, read it as `EVIDENCE_STATUS.PUBLISHED`.
+   Every reference in implementation code must use `EVIDENCE_STATUS.PUBLISHED` etc., never a literal `'published'` — **including the `evidence-api` Lambda and the schema `.default(...)`**. Because the constant is needed by both frontend (`src/`) and backend (`amplify/functions/`), it lives in a **dependency-free shared module** both can import: `amplify/lib/evidence/status.ts` (pure `export const` string literals, zero imports). The Lambda imports it via `../../lib/evidence/status`; `src/config/evidence.ts` re-exports it (mirroring the existing `src → amplify` type import in `amplifyClient.ts`). No copy of the literal exists in the Lambda.
 
 3. **Published-only reads are enforced server-side (see Public Read Boundary), not by client filtering.** The `listPublishedEvidence` Lambda is the only public read path; it returns `status = EVIDENCE_STATUS.PUBLISHED` records exclusively. `draft`/`archived` rows never reach the client because the base model is not publicly readable. Components must never receive non-published records to filter.
 
@@ -258,7 +258,7 @@ Security tests target the **server boundary**, not client-side status filtering 
 - **Public read boundary (security):**
   - `listPublishedEvidence` returns only `EVIDENCE_STATUS.PUBLISHED` records — given a table containing `draft`/`published`/`archived`, the Lambda's result excludes non-published rows.
   - The base `Evidence` model is not publicly readable — a direct `apiKey` query against the base model is denied by auth (no path for anonymous callers to read `draft`/`archived`).
-  - **Least-privilege IAM:** assert the Lambda role grants **no DynamoDB action beyond `Query`/`Scan`** on the Evidence table/index ARNs (no writes, no other tables). The assertion targets DynamoDB actions specifically — not "the role has no other permissions" (CloudWatch Logs etc. are expected).
+  - **Least-privilege IAM:** assert the Lambda role grants **no DynamoDB action beyond `Query`/`Scan`** on the Evidence base-table ARN (no writes, no index ARNs, no other tables). The assertion targets DynamoDB actions specifically — not "the role has no other permissions" (CloudWatch Logs etc. are expected).
 - **Pagination completeness:** seed/mock results spanning **≥2 `Scan` pages**; assert a `published` record on the second page is included in the returned set and its type count — proving the Lambda drains `LastEvaluatedKey` rather than returning a single page.
 - **Aggregation helper (counting, not gating):** given a set of **already-published** records with varied `products` arrays, it returns correct per-product, per-type counts. It is tested for counting correctness only — status gating is not its job.
 - **Product module:** its input type/fixtures contain **only public records**; renders nothing at 0 matches; renders correct grouped counts at ≥1. (No test feeds it `draft`/`archived` — those cannot reach it in production.)
