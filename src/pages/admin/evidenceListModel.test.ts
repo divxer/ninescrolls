@@ -95,29 +95,50 @@ describe('safeExternalUrl', () => {
 
 import { normalizeDoi } from './evidenceListModel';
 describe('normalizeDoi', () => {
-  it('accepts a canonical DOI and builds a doi.org URL', () => {
-    expect(normalizeDoi('10.1186/s43074-022-00047-3')).toEqual({
-      doi: '10.1186/s43074-022-00047-3',
-      url: 'https://doi.org/10.1186/s43074-022-00047-3',
-    });
+  const valid: [unknown, string, string][] = [
+    ['10.1186/s43074-022-00047-3', '10.1186/s43074-022-00047-3', 'https://doi.org/10.1186/s43074-022-00047-3'],
+    // trim + doi: prefix
+    ['  doi:10.3390/nano10071313 ', '10.3390/nano10071313', 'https://doi.org/10.3390/nano10071313'],
+    // resolver-URL forms
+    ['https://doi.org/10.3390/nano10071313', '10.3390/nano10071313', 'https://doi.org/10.3390/nano10071313'],
+    ['https://dx.doi.org/10.3390/nano10071313', '10.3390/nano10071313', 'https://doi.org/10.3390/nano10071313'],
+    // full URL: a REAL ?query / #fragment is dropped (not treated as DOI content)
+    ['https://doi.org/10.1234/foo?utm=x#frag', '10.1234/foo', 'https://doi.org/10.1234/foo'],
+    // reserved chars in a bare DOI → encoded in the url, literal in the doi
+    ['10.1000/abc?x#y', '10.1000/abc?x#y', 'https://doi.org/10.1000/abc%3Fx%23y'],
+    // already-encoded input → decoded once then re-encoded (NO double-encoding)
+    ['10.1000/abc%3Fx%23y', '10.1000/abc?x#y', 'https://doi.org/10.1000/abc%3Fx%23y'],
+    // Unicode is allowed, encoded in the url
+    ['10.1234/fôo', '10.1234/fôo', 'https://doi.org/10.1234/f%C3%B4o'],
+    // legit punctuation preserved
+    ['10.1234/foo.bar-baz_qux', '10.1234/foo.bar-baz_qux', 'https://doi.org/10.1234/foo.bar-baz_qux'],
+    // registrant length boundaries (4 and 9 digits)
+    ['10.1000/x', '10.1000/x', 'https://doi.org/10.1000/x'],
+    ['10.123456789/x', '10.123456789/x', 'https://doi.org/10.123456789/x'],
+    // multi-segment suffix keeps slashes as separators
+    ['10.1000/a/b?c', '10.1000/a/b?c', 'https://doi.org/10.1000/a/b%3Fc'],
+  ];
+  it.each(valid)('accepts %s', (input, doi, url) => {
+    expect(normalizeDoi(input)).toEqual({ doi, url });
   });
-  it('strips doi: / https://doi.org/ / dx.doi.org prefixes and trims', () => {
-    expect(normalizeDoi('  doi:10.3390/nano10071313 ')?.doi).toBe('10.3390/nano10071313');
-    expect(normalizeDoi('https://doi.org/10.3390/nano10071313')?.doi).toBe('10.3390/nano10071313');
-    expect(normalizeDoi('https://dx.doi.org/10.3390/nano10071313')?.doi).toBe('10.3390/nano10071313');
-  });
-  it('rejects blank, arbitrary text, and malformed input', () => {
-    for (const bad of ['', '   ', 'not a doi', '10.abc/xyz', '10.1234', '10.1234/', null, 42]) {
-      expect(normalizeDoi(bad)).toBeNull();
-    }
-  });
-  it('percent-encodes reserved characters (?, #, space) in the suffix', () => {
-    const n = normalizeDoi('10.1000/abc?x#y z');
-    expect(n?.doi).toBe('10.1000/abc?x#y z');
-    expect(n?.url).toBe('https://doi.org/10.1000/abc%3Fx%23y%20z');
-  });
-  it('preserves slashes as separators in a multi-segment suffix', () => {
-    expect(normalizeDoi('10.1000/a/b?c')?.url).toBe('https://doi.org/10.1000/a/b%3Fc');
+
+  const invalid: [unknown][] = [
+    [''], ['   '], ['not a doi'],
+    ['10.abc/xyz'],           // non-numeric registrant
+    ['10.123/foo'],           // 3-digit registrant (< 4)
+    ['10.1234567890/foo'],    // 10-digit registrant (> 9)
+    ['10.1234.56/foo'],       // dotted sub-registrant
+    ['10.1234'],              // no suffix
+    ['10.1234/'],             // empty suffix
+    ['10.1234/foo bar'],      // whitespace in suffix
+    ['10.1234/foo\tbar'],     // tab
+    ['10.1234/foo\u0001bar'], // ASCII control char
+    ['10.1234/foo\u007Fbar'], // DEL
+    ['https://example.com/10.1234/foo'], // wrong host
+    [null], [undefined], [42],
+  ];
+  it.each(invalid)('rejects %s', (input) => {
+    expect(normalizeDoi(input)).toBeNull();
   });
 });
 describe('deriveVerification DOI validation', () => {

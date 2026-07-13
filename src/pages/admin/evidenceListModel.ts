@@ -127,16 +127,30 @@ export interface NormalizedDoi {
  */
 export function normalizeDoi(raw: unknown): NormalizedDoi | null {
   if (typeof raw !== 'string') return null;
-  const s = raw
-    .trim()
-    .replace(/^doi:\s*/i, '')
-    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
-    .trim();
-  const m = /^(10\.\d{4,9}(?:\.\d+)*)\/(.+)$/.exec(s);
+  let s = raw.trim();
+  if (!s) return null;
+
+  if (/^https?:\/\//i.test(s)) {
+    // Full resolver URL: parse, require a doi.org host, take only the pathname
+    // (which drops any real ?query / #fragment), then decode once.
+    let u: URL;
+    try { u = new URL(s); } catch { return null; }
+    if (!/^(?:dx\.)?doi\.org$/i.test(u.hostname)) return null;
+    try { s = decodeURIComponent(u.pathname.replace(/^\/+/, '')); } catch { return null; }
+  } else {
+    s = s.replace(/^doi:\s*/i, '').trim();
+    // Decode any already-encoded input once so the re-encode below is
+    // idempotent (no double-encoding). Keep literal if the % is malformed.
+    try { s = decodeURIComponent(s); } catch { /* keep as-is */ }
+  }
+
+  // Canonical policy: "10." + a 4–9 digit registrant (no dotted sub-registrant),
+  // then a non-empty suffix containing no ASCII whitespace or control chars.
+  // eslint-disable-next-line no-control-regex
+  const m = /^(10\.\d{4,9})\/([^\s\u0000-\u001F\u007F]+)$/.exec(s);
   if (!m) return null;
-  const suffix = m[2].trim();
-  if (!suffix) return null;
-  const doi = `${m[1]}/${suffix}`;
+
+  const doi = `${m[1]}/${m[2]}`;
   const url = `https://doi.org/${doi.split('/').map(encodeURIComponent).join('/')}`;
   return { doi, url };
 }
