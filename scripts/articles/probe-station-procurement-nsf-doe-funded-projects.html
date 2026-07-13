@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Probe Station Procurement for NSF and DOE-Funded Projects: A Practical Guide</title>
+  <meta name="article:slug" content="probe-station-procurement-nsf-doe-funded-projects">
+  <meta name="article:excerpt" content="A compliance-first checklist for buying a probe station on an NSF or DOE award — start with your award terms and institutional thresholds, pick the right procurement method, plan realistic time windows, and clear vendor onboarding before the purchase order.">
+  <meta name="article:category" content="Metrology &amp; Testing">
+  <meta name="article:tags" content="probe station, NSF grant, DOE funding, university procurement, equipment procurement, SAM.gov">
+  <meta name="article:article-type" content="TechArticle">
+  <!-- Initial value only: the cover upload step (upload-insights-image.ts, --name cover) rewrites the DDB imageUrl to the responsive CDN form (extension-less -lg, rendered as a <picture>). Do not hand-maintain a CDN URL here. -->
+  <meta name="article:image-url" content="/assets/images/insights/probe-station-procurement-cover.png">
+  <meta name="article:publish-date" content="2026-07-13">
+  <meta name="article:author" content="NineScrolls Engineering">
+  <script type="application/json" data-related-products>
+  [
+    { "href": "/wafer-probe-stations", "label": "Wafer Probe Stations Hub", "subtitle": "Selection guide: manual, semi-automatic, cryogenic" },
+    { "href": "/wafer-probe-stations/semishare", "label": "SEMISHARE Probe Stations", "subtitle": "US & Canada procurement through NineScrolls" }
+  ]
+  </script>
+</head>
+<body>
+      <p>You have the award. The probe station your lab needs is picked out. Now comes the part that quietly derails more equipment purchases than any technical decision: buying it in a way your institution and your Federal sponsor will accept. This guide is about that second problem — <em>how to buy compliantly</em> under an NSF or DOE award — and it is a companion to our <a href="/insights/how-to-choose-wafer-probe-station-university-lab">guide to choosing the right probe station</a>, which covers <em>how to choose</em> the instrument itself.</p>
+
+      <p>The single most useful distinction to start from is this: an NSF or DOE research grant is a <strong>Federal assistance award</strong>, not a <strong>Federal procurement contract</strong>. When a Federal agency buys something for itself, it follows the Federal Acquisition Regulation (FAR). When your university spends assistance-award money to buy equipment for your lab, it does <em>not</em> run a FAR acquisition. Instead: <strong>Universities purchasing equipment under a Federal assistance award generally follow their documented institutional procurement procedures together with the applicable Uniform Guidance procurement standards in 2 CFR 200 — not the FAR procedures used by Federal agencies for their own contracts.</strong> Getting that framing right prevents most of the misunderstandings that follow, including the myth that a supplier must be a Federal contractor to be paid from your grant.</p>
+
+      <p><em>Last reviewed: 2026-07-13.</em></p>
+
+      <h2>The compliance checklist, in order</h2>
+      <p>Before any of the detail below, the sequence that keeps a purchase clean is short. Work it top to bottom:</p>
+      <ul>
+        <li><strong>Award terms first.</strong> Read the award notice and its terms and conditions. They can impose requirements beyond 2 CFR 200 — prior approvals, participant restrictions, reporting — that override any general rule of thumb.</li>
+        <li><strong>Institutional thresholds next.</strong> Your institution adopts its own micro-purchase and simplified-acquisition thresholds within the Federal ceilings. Those adopted numbers — not the headline Federal figures — decide which method you must use. Call your sponsored-programs or purchasing office and ask for them in writing.</li>
+        <li><strong>Method.</strong> Match the purchase amount to the procurement method your institution's thresholds require (micro-purchase, simplified acquisition, or formal procurement), or to a documented noncompetitive exception if one genuinely applies.</li>
+        <li><strong>Time windows.</strong> Map every real clock: the award's period of performance, sponsor-specific conditions, internal requisition and purchase-order deadlines, quote validity, and the full production-plus-import-plus-delivery-plus-acceptance lead time.</li>
+        <li><strong>Vendor onboarding.</strong> Confirm what your institution needs from the supplier — vendor setup forms, tax documentation, banking details, insurance — early, so onboarding is not the thing that runs past a deadline.</li>
+      </ul>
+      <p>The rest of this article expands each step, with three worked examples and the regulatory citations behind them.</p>
+
+      <h2>The rules map: institution-adopted thresholds and the method they select</h2>
+      <p>The Uniform Guidance procurement standards live in 2 CFR 200, Subpart D. They are not homogeneous, and it helps to know which section does what:</p>
+      <ul>
+        <li><strong>&sect;200.317</strong> — <em>States</em> use their own procurement policies (subject to a short list of Federal requirements). This is why state-university buyers should confirm with their own procurement office how their institution is treated.</li>
+        <li><strong>&sect;&sect;200.318&ndash;200.327</strong> — the standards universities and nonprofits center on, covering general standards, competition, methods, contract administration, and records.</li>
+        <li><strong>&sect;200.320</strong> — selects the procurement <em>method</em> (informal, formal, or noncompetitive) by transaction size.</li>
+        <li><strong>&sect;200.324</strong> — adds a required cost or price analysis for every transaction above the simplified acquisition threshold.</li>
+        <li><strong>&sect;200.325</strong> — allows the Federal agency or pass-through entity to review procurement documents before award in certain high-value, noncompetitive, or brand-name situations.</li>
+      </ul>
+
+      <p>The headline Federal numbers are a ceiling, not your operating rule. As of 2025-10-01 the FAR micro-purchase threshold (MPT) is <strong>$15,000</strong> and the simplified acquisition threshold (SAT) is <strong>$350,000</strong> — but your <strong>institution</strong> may adopt <em>lower</em> thresholds, and a recipient may self-certify a micro-purchase threshold up to $50,000 annually under the &sect;200.320(a)(1)(iv) conditions (a higher MPT needs cognizant-agency approval, and an adopted SAT may not exceed the Federal SAT). So a principal investigator's first step is not memorizing the Federal figures at $15,000 and $350,000 — it is checking which numbers their own <strong>institution</strong> has adopted, because those govern.</p>
+
+      <table>
+        <caption style="caption-side:top;text-align:left;font-size:0.9em;color:#555;padding:0 0 8px;font-style:italic">Procurement method by purchase amount under 2 CFR 200 (institution-adopted thresholds govern)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Purchase amount</th>
+            <th scope="col">2 CFR 200 default framework</th>
+            <th scope="col">Practical action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">&le; institution's adopted MPT</th>
+            <td>Micro-purchase</td>
+            <td>No competitive quotes required, but the institution must consider the price reasonable and document it</td>
+          </tr>
+          <tr>
+            <th scope="row">&gt; MPT, &le; institution's adopted SAT</th>
+            <td>Simplified acquisition</td>
+            <td>Price or rate quotations from an adequate number of qualified sources</td>
+          </tr>
+          <tr>
+            <th scope="row">&gt; institution's adopted SAT</th>
+            <td>Formal procurement</td>
+            <td>Public notice + sealed bids or competitive proposals</td>
+          </tr>
+          <tr>
+            <th scope="row">Any amount, qualifying exception</th>
+            <td>Noncompetitive procurement</td>
+            <td>Must fit one of &sect;200.320(c)'s enumerated circumstances, documented per institutional procedure</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Read the table as a default map, not a rulebook. Your institution's adopted thresholds shift the boundaries; your award terms can add conditions on top. When the two disagree, the stricter requirement usually wins — confirm with your procurement office.</p>
+
+      <h2>Three worked examples</h2>
+      <p>These are <strong>illustrative examples</strong> at three probe-station price points, walking through which method applies <em>under the default Federal thresholds</em>. In every case, your institution's adopted numbers — which may be lower — are what actually govern, so treat these as orientation, not a determination for your purchase.</p>
+
+      <h3>Illustrative example 1 &mdash; a $12,000 manual station</h3>
+      <p>At $12,000, a purchase sits at or below the default $15,000 micro-purchase threshold, so under the default framework it is a <strong>micro-purchase</strong>: no competitive quotes are required, but your institution still has to judge the price reasonable and document that judgment. The catch is the institution-first rule — if your university has adopted a lower MPT (some sit well under the Federal ceiling), this same $12,000 buy could land in simplified-acquisition territory and require quotes. Confirm your adopted MPT before assuming a single quote is enough.</p>
+
+      <h3>Illustrative example 2 &mdash; a $120,000 semi-automatic station</h3>
+      <p>At $120,000, the purchase is above any plausible MPT and below the default $350,000 SAT, so under the default framework it is a <strong>simplified acquisition</strong>: obtain price or rate quotations from an adequate number of qualified sources. For specialized instruments where few vendors can meet the technical requirement, "an adequate number" is judged in context — and if genuine competition is not available, that points toward a documented single-source justification rather than a pretense of shopping. Document your market research either way.</p>
+
+      <h3>Illustrative example 3 &mdash; a $400,000 automated or cryogenic system</h3>
+      <p>At $400,000, the purchase exceeds the default $350,000 SAT, so under the default framework it moves into <strong>formal procurement</strong> — public notice with sealed bids or competitive proposals. Two more requirements attach above the SAT: &sect;200.324 requires a cost or price analysis for the transaction, and &sect;200.325 lets the Federal agency or pass-through entity review the procurement documents before award, which is more likely when the buy is noncompetitive or specifies a brand name. Start early; formal procurement and any pre-award review add calendar time. And again — if your institution adopted a lower SAT, the formal-procurement line arrives sooner than $350,000.</p>
+
+      <h2>Noncompetitive procurement: when it is allowed, and why justifications fail</h2>
+      <p>"Sole source" is the phrase everyone reaches for, but the Uniform Guidance is narrower and more specific. Under <strong>&sect;200.320(c)</strong>, noncompetitive procurement is permitted only when one of these circumstances applies:</p>
+      <ul>
+        <li>the aggregate amount does not exceed the micro-purchase threshold;</li>
+        <li>the item or service can only be provided by a <strong>single source</strong>;</li>
+        <li>a <strong>public exigency or emergency</strong> will not permit the delay of a competitive solicitation;</li>
+        <li>the Federal agency or pass-through entity provides <strong>written approval</strong> in response to a written request; or</li>
+        <li><strong>competition is determined inadequate</strong> after a solicitation of several sources.</li>
+      </ul>
+      <p>The common failure mode is arguing preference where the rule demands necessity. Brand preference, "the PI is used to this model," or "this one performs better" are usually <em>not</em> sufficient on their own. A defensible single-source justification argues from non-substitutable technical requirements: specific measurement range, positioning resolution, compatibility with an existing system, interfaces to instruments the lab already owns — supported by a genuine alternatives analysis explaining why other systems were considered and why they do not meet the requirement. The exact format, the approval levels, and the market-research expected are institution-specific, so follow your procurement office's template and process. No template or wording can promise approval; a well-documented technical case simply gives the reviewer what they need to say yes.</p>
+
+      <h2>The realistic timeline (and the clocks that actually matter)</h2>
+      <p>Equipment purchases slip because the calendar is planned around the wrong deadline. The one clock people over-weight is a fiscal boundary; the clocks that actually bind are these:</p>
+      <ul>
+        <li><strong>Award period of performance</strong> — the end date on the award itself, after which costs generally are not allowable.</li>
+        <li><strong>Sponsor-specific award conditions</strong> — prior-approval or restriction clauses in your particular award.</li>
+        <li><strong>Internal institutional deadlines</strong> — requisition, encumbrance, purchase-order, and closeout cutoffs your university sets, which can fall well before an award end date. An institution may also set its own fiscal-year purchasing cutoff; treat that as an institutional variable to confirm, not a Federal rule.</li>
+        <li><strong>Quote validity windows</strong> — a budgetary quote does not hold its price forever.</li>
+        <li><strong>Lead time end to end</strong> — production, plus import and customs, plus delivery, plus installation and acceptance. For a built-to-order or imported instrument this is often the longest clock of all.</li>
+      </ul>
+
+      <figure class="post-figure">
+        <picture>
+          <source srcset="https://cdn.ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects/procurement-timeline-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects/procurement-timeline-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects/procurement-timeline-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects/procurement-timeline-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects/procurement-timeline-lg.png" alt="Seven-phase probe-station procurement sequence: technical scope, budgetary quote, competition or justification, vendor onboarding, purchase order, production and import, and receipt and acceptance" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+        </picture>
+        <figcaption>Figure 1: A typical probe-station procurement flow — technical scope &rarr; budgetary quote &rarr; competition or single-source justification &rarr; vendor onboarding &rarr; purchase order &rarr; production &amp; import &rarr; receipt &amp; acceptance. An illustrative sequence only; the order, overlap, and duration of phases vary by institution and by award.</figcaption>
+      </figure>
+
+      <p>Two practical habits protect the schedule. Begin the technical scoping and budgetary-quote conversation months ahead of any deadline, and start vendor onboarding in parallel — not after the purchase order is approved — so supplier setup is never the item that runs late.</p>
+
+      <h2>NSF and DOE: an award-specific overlay, not a static comparison</h2>
+      <p>There is no single "NSF rule" or "DOE rule" for buying a probe station that sits apart from 2 CFR 200. The agencies add an overlay to the Uniform Guidance, and that overlay is award-specific. The dependable approach: <strong>Start with 2 CFR 200, then check the award notice, current agency supplements, program solicitation, and institutional policy. NSF recipients should review the applicable PAPPG and supplemental notices; DOE awards may carry additional provisions under 2 CFR 910 and the specific award terms.</strong></p>
+      <p>For NSF, the governing policy document is the Proposal &amp; Award Policies &amp; Procedures Guide. The current version is <strong>PAPPG (NSF 24-1)</strong>, and it explicitly defers to the Uniform Guidance where they conflict — in any inconsistency between the PAPPG and 2 CFR (including part 200), 2 CFR controls. NSF has also issued supplemental policy notices affecting some 2025&ndash;2026 awards, which is exactly why the award notice and current supplements must be checked rather than assumed. For DOE, awards are administered under the Department's financial-assistance framework in <strong>2 CFR 910</strong> together with the specific award terms; where an equipment purchase touches a DOE-specific provision, confirm it against your award document rather than a general summary. Beyond that, the honest guidance is a single reminder: the terms of your particular award, read alongside 2 CFR 200, are the authority — not a generic agency comparison.</p>
+
+      <h2>Vendor readiness and what a supplier can (and cannot) claim</h2>
+      <p>Universities onboard new suppliers through their own vendor-setup process, and the requirements vary by institution. A commercial equipment supplier is <em>commonly requested</em> to provide items such as a completed vendor-registration form, a W-9 (for a US entity), quotes stated in US dollars, and a certificate of insurance — but these are things that <em>may be requested</em> under a given institution's policy, not universal legal requirements of every Federal-grant purchase.</p>
+      <p>On the specific question of SAM.gov: <strong>NineScrolls LLC maintains an active SAM.gov registration and UEI C4BFCTH5L5D1.</strong> That is a useful convenience for institutions that prefer to transact with SAM-registered vendors, and nothing more. To be precise about what it does and does not mean: a university's vendor-onboarding requirements are institution-specific, and a commercial equipment supplier is not universally required to register in SAM.gov merely because the purchase is charged to a Federal grant. Treat the registration as a bonus fact that can smooth onboarding, not as a compliance requirement we are asserting on your behalf.</p>
+
+      <h2>Import and quoting boundaries: confirm the terms line by line</h2>
+      <p>Many analytical instruments are built outside the United States, so how a quote handles import materially changes what you pay and who is responsible. "Delivered," "DAP," "DDP," and "ex-works" are not interchangeable, and the difference decides who is the importer of record, who clears customs, and who bears duty. Confirm the incoterm on each line item rather than assuming the headline number is landed cost. Our buyer guide covers this in more depth in its <a href="/insights/how-to-choose-wafer-probe-station-university-lab">section on import duties and delivery terms</a>.</p>
+      <p>NineScrolls can quote SEMISHARE probe stations with delivered pricing and with import coordination identified in the quotation, so any duty and delivery responsibility is visible on the quote rather than surfacing as a surprise at customs. What is included — and what is optional — is stated per quoted configuration rather than assumed.</p>
+
+      <h2>Where NineScrolls fits</h2>
+      <p>For a US or international research lab, the harder part of a <a href="/wafer-probe-stations/semishare">SEMISHARE probe station</a> purchase has usually been the procurement path — obtaining a compliant, comparable quote and arranging import — rather than the instrument. NineScrolls provides a US-based path for configuration discussions, quoting, import coordination, and post-sale support, with installation, calibration, training, warranty handling, and on-site service scope confirmed for each quoted configuration. For the selection side of the decision, our <a href="/wafer-probe-stations">wafer probe stations hub</a> walks through automation level, temperature, signal type, sample size, and positioning.</p>
+      <p>To start a compliant, fully specified quote for your NSF- or DOE-funded project, <a href="/request-quote?products=wafer-probe-station&amp;source=insights/probe-station-procurement-nsf-doe-funded-projects">request a quote</a> and tell us your award and institutional constraints — we will build the quotation to line up with how your procurement office needs to see it.</p>
+
+      <h2>Further reading</h2>
+      <p>This article is the "how to buy compliantly" companion to our selection guide. If you have not yet settled on the configuration, read <a href="/insights/how-to-choose-wafer-probe-station-university-lab">How to Choose a Wafer Probe Station for Your University Research Lab</a> first, then return here for the procurement path.</p>
+
+      <h2>References</h2>
+      <ol>
+        <li>Micro-purchase and simplified acquisition threshold changes (MPT $15,000; SAT $350,000; effective October 1, 2025) — <a href="https://www.acquisition.gov/threshold-changes" target="_blank" rel="noopener noreferrer">acquisition.gov/threshold-changes</a>. Accessed 2026-07-13.</li>
+        <li>2 CFR 200 Uniform Guidance, Subpart D &mdash; Procurement Standards (&sect;&sect; 200.317&ndash;200.327) — <a href="https://www.ecfr.gov/current/title-2/subtitle-A/chapter-II/part-200/subpart-D" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200 Subpart D</a>. Accessed 2026-07-13.</li>
+        <li>2 CFR 200.320, Procurement methods (informal, formal, and noncompetitive; micro-purchase self-certification up to $50,000 at (a)(1)(iv); noncompetitive circumstances at (c)) — <a href="https://www.ecfr.gov/current/title-2/section-200.320" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200.320</a>. Accessed 2026-07-13.</li>
+        <li>2 CFR 200.324, Contract cost and price (cost or price analysis for transactions above the simplified acquisition threshold) — <a href="https://www.ecfr.gov/current/title-2/section-200.324" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200.324</a>. Accessed 2026-07-13.</li>
+        <li>2 CFR 200.325, Federal agency or pass-through entity review (pre-procurement review for certain noncompetitive, brand-name, or above-SAT procurements) — <a href="https://www.ecfr.gov/current/title-2/section-200.325" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200.325</a>. Accessed 2026-07-13.</li>
+        <li>NSF Proposal &amp; Award Policies &amp; Procedures Guide, PAPPG (NSF 24-1) — which defers to 2 CFR (including part 200) in the event of any inconsistency — <a href="https://www.nsf.gov/policies/pappg/24-1/table-of-contents" target="_blank" rel="noopener noreferrer">nsf.gov/policies/pappg/24-1</a>. Accessed 2026-07-13.</li>
+        <li>2 CFR 910, Department of Energy financial assistance (DOE's implementation of the Uniform Guidance) — <a href="https://www.ecfr.gov/current/title-2/part-910" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 910</a>. Accessed 2026-07-13.</li>
+      </ol>
+      <p><em>Last reviewed: 2026-07-13.</em></p>
+</body>
+</html>
