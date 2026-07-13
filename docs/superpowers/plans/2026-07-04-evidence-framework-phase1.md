@@ -1918,26 +1918,43 @@ Deploy the backend, then run **executable** checks for the no-leak boundary and 
 
 Run: `npx ampx sandbox` (provisions the `Evidence` table, `evidence-api` Lambda, `listPublishedEvidence`). Confirm no CloudFormation errors and that `amplify_outputs.json` is refreshed.
 
-- [ ] **Step 2: Seed one record via the admin UI**
+- [ ] **Step 2: Seed one record with a UNIQUE slug via the admin UI**
 
-At `/admin/evidence/new`, create a record: products `['ald']`, a `sourceUrl`, `status = draft`. Note its behavior below; then you will flip it to `published`.
+At `/admin/evidence/new`, create a record with a unique, identifiable slug — e.g. `boundary-test-2026-07-04` — products `['ald']`, a `sourceUrl`, `status = draft`. The unique slug lets the boundary script assert on THIS record's lifecycle independent of any other published Evidence. You will run the script three times, flipping this record's status (`draft` → `published` → `archived`) between runs.
 
 - [ ] **Step 3: Write the public no-leak acceptance script**
 
 ```ts
 // scripts/verify-evidence-boundary.ts
-// Executable acceptance: proves drafts are unreadable by the public apiKey path
-// and listPublishedEvidence returns published-only. Run AFTER deploy + seed.
-// Usage: npx tsx scripts/verify-evidence-boundary.ts
+// Executable acceptance for the no-leak boundary + seed lifecycle. Asserts:
+//  (a) the base Evidence model is NOT publicly readable via apiKey;
+//  (b) listPublishedEvidence succeeds (errors are a failure, not an empty set)
+//      and returns a well-formed array of published-only records;
+//  (c) a UNIQUE seed slug is present exactly once when published and absent when
+//      draft/archived — independent of any other published Evidence, and immune
+//      to a broken resolver that always returns [].
+// Usage:
+//   EVIDENCE_TEST_SLUG=boundary-test-2026-07-04 EVIDENCE_EXPECT=draft \
+//   npx tsx scripts/verify-evidence-boundary.ts
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import outputs from '../amplify_outputs.json';
 import type { Schema } from '../amplify/data/resource';
+import { EVIDENCE_STATUS } from '../amplify/lib/evidence/status';
 
 Amplify.configure(outputs);
 const client = generateClient<Schema>({ authMode: 'apiKey' });
 
+const TEST_SLUG = process.env.EVIDENCE_TEST_SLUG;
+const EXPECT = process.env.EVIDENCE_EXPECT; // draft | published | archived
+const PRODUCT = process.env.EVIDENCE_TEST_PRODUCT ?? 'ald';
+const VALID_EXPECT = new Set(Object.values(EVIDENCE_STATUS));
+
 async function main() {
+  if (!TEST_SLUG || !EXPECT || !VALID_EXPECT.has(EXPECT as never)) {
+    throw new Error('Set EVIDENCE_TEST_SLUG and EVIDENCE_EXPECT (draft|published|archived).');
+  }
+
   // (a) base-model public read must be DENIED
   const baseRead = await client.models.Evidence.list();
   if (!baseRead.errors || baseRead.errors.length === 0) {
@@ -1945,18 +1962,45 @@ async function main() {
   }
   console.log('OK: base model apiKey read denied:', baseRead.errors[0].message);
 
-  // (b) custom query returns published-only (seed a draft first → expect it absent)
-  const published = await client.queries.listPublishedEvidence({ productSlug: 'ald' });
-  const items = (typeof published.data === 'string' ? JSON.parse(published.data) : published.data) ?? [];
-  const leaked = items.filter((e: { status: string }) => e.status !== 'published');
-  if (leaked.length > 0) throw new Error(`SECURITY FAIL: listPublishedEvidence returned ${leaked.length} non-published record(s)`);
-  console.log(`OK: listPublishedEvidence returned ${items.length} record(s), all published`);
+  // (b) custom query must SUCCEED — a null/errored response is a failure, not [].
+  const res = await client.queries.listPublishedEvidence({ productSlug: PRODUCT });
+  if (res.errors?.length) {
+    throw new Error(`SECURITY FAIL: listPublishedEvidence errored: ${res.errors.map((e) => e.message).join(', ')}`);
+  }
+  const parsed = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+  if (!Array.isArray(parsed)) {
+    throw new Error(`SECURITY FAIL: listPublishedEvidence returned a non-array payload: ${JSON.stringify(res.data)}`);
+  }
+  const items = parsed as { slug: string; status: string }[];
+
+  // every returned record must be published
+  const leaked = items.filter((e) => e.status !== EVIDENCE_STATUS.PUBLISHED);
+  if (leaked.length) throw new Error(`SECURITY FAIL: ${leaked.length} non-published record(s) returned`);
+
+  // (c) seed-identity lifecycle — independent of other published data
+  const mine = items.filter((e) => e.slug === TEST_SLUG);
+  if (EXPECT === EVIDENCE_STATUS.PUBLISHED) {
+    if (mine.length !== 1) throw new Error(`FAIL: expected seed "${TEST_SLUG}" exactly once while published, saw ${mine.length}`);
+  } else {
+    if (mine.length !== 0) throw new Error(`FAIL: seed "${TEST_SLUG}" must be absent while ${EXPECT}, saw ${mine.length}`);
+  }
+  console.log(`OK: phase=${EXPECT}, seed "${TEST_SLUG}" occurrences=${mine.length}, all ${items.length} returned record(s) published.`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
-Run (with the seeded record still `draft`): `npx tsx scripts/verify-evidence-boundary.ts`
-Expected: prints "OK: base model apiKey read denied", and "0 record(s)" while the record is draft. Then flip the record to `published` in the admin UI and re-run → "1 record(s), all published". Reload `/products/ald` and confirm the Evidence section now appears; flip to `archived` → section disappears and the script reports 0 again.
+Run it three times, flipping the seed record's status in the admin UI between runs so the env `EVIDENCE_EXPECT` matches the record's actual status:
+
+```bash
+# record is draft → seed must be ABSENT
+EVIDENCE_TEST_SLUG=boundary-test-2026-07-04 EVIDENCE_EXPECT=draft     npx tsx scripts/verify-evidence-boundary.ts
+# flip to published → seed must appear EXACTLY ONCE
+EVIDENCE_TEST_SLUG=boundary-test-2026-07-04 EVIDENCE_EXPECT=published npx tsx scripts/verify-evidence-boundary.ts
+# flip to archived → seed must be ABSENT again
+EVIDENCE_TEST_SLUG=boundary-test-2026-07-04 EVIDENCE_EXPECT=archived  npx tsx scripts/verify-evidence-boundary.ts
+```
+
+Expected: each run prints "OK: base model apiKey read denied" and an "OK: phase=… occurrences=…" line matching the phase (0 while draft/archived, 1 while published). Also reload `/products/ald` while published to confirm the Evidence section appears, and while archived to confirm it disappears.
 
 - [ ] **Step 3b: Add the AWS SDK clients the IAM script needs as direct devDependencies**
 
@@ -2002,6 +2046,12 @@ interface Stmt { Effect: string; Action?: string | string[]; NotAction?: string 
 // EVIDENCE_FN_NAME env var; otherwise require EXACTLY ONE candidate and fail
 // (listing them) on zero or multiple.
 async function findEvidenceFunctionName(): Promise<string> {
+  // An explicit name is authoritative — use it directly. main() then calls
+  // GetFunctionConfiguration on it, which throws ResourceNotFound if it is wrong.
+  // Do NOT gate it behind the fuzzy substring enumeration.
+  const explicit = process.env.EVIDENCE_FN_NAME;
+  if (explicit) return explicit;
+
   const candidates: string[] = [];
   let Marker: string | undefined;
   do {
@@ -2010,13 +2060,6 @@ async function findEvidenceFunctionName(): Promise<string> {
     Marker = res.NextMarker;
   } while (Marker);
 
-  const explicit = process.env.EVIDENCE_FN_NAME;
-  if (explicit) {
-    if (!candidates.includes(explicit)) {
-      throw new Error(`EVIDENCE_FN_NAME="${explicit}" not found. Candidates: ${candidates.join(', ') || '(none)'}`);
-    }
-    return explicit;
-  }
   if (candidates.length === 0) throw new Error('No evidence-api Lambda found — is this sandbox deployed?');
   if (candidates.length > 1) {
     throw new Error(`Ambiguous: ${candidates.length} evidence-api candidates found — set EVIDENCE_FN_NAME to disambiguate:\n- ${candidates.join('\n- ')}`);
