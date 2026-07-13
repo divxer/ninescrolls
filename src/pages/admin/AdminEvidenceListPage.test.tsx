@@ -5,11 +5,15 @@ import { AdminEvidenceListPage } from './AdminEvidenceListPage';
 import { EVIDENCE_TYPE, EVIDENCE_STATUS } from '../../config/evidence';
 
 const listAllEvidence = vi.fn();
+const deleteEvidence = vi.fn();
 vi.mock('../../services/evidenceAdminService', () => ({
   listAllEvidence: () => listAllEvidence(),
-  deleteEvidence: vi.fn(),
+  deleteEvidence: (id: string) => deleteEvidence(id),
 }));
-beforeEach(() => listAllEvidence.mockReset());
+beforeEach(() => {
+  listAllEvidence.mockReset();
+  deleteEvidence.mockReset();
+});
 
 const rows = [
   { id: 'e-1', title: 'Draft Note', type: EVIDENCE_TYPE.APPLICATION_NOTE, status: EVIDENCE_STATUS.DRAFT, products: ['ald'] },
@@ -32,5 +36,20 @@ describe('AdminEvidenceListPage', () => {
     fireEvent.change(screen.getByLabelText(/Filter by status/i), { target: { value: EVIDENCE_STATUS.PUBLISHED } });
     expect(screen.queryByText('Draft Note')).not.toBeInTheDocument();
     expect(screen.getByText('Pub Paper')).toBeInTheDocument();
+  });
+  it('shows an error (not an unhandled rejection) when the list fails to load', async () => {
+    listAllEvidence.mockRejectedValueOnce(new Error('load boom'));
+    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/load boom/i));
+  });
+  it('shows an error when a delete fails', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    listAllEvidence.mockResolvedValueOnce(rows);
+    deleteEvidence.mockRejectedValueOnce(new Error('delete boom'));
+    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('Draft Note')).toBeInTheDocument());
+    fireEvent.click(screen.getAllByRole('button', { name: /Delete/i })[0]);
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/delete boom/i));
+    confirmSpy.mockRestore();
   });
 });

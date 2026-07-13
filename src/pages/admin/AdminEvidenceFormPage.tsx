@@ -16,7 +16,16 @@ export function AdminEvidenceFormPage() {
   useEffect(() => {
     if (!id) return;
     getEvidence(id)
-      .then((data) => setInitial((data ?? undefined) as EvidenceFormValue | undefined))
+      .then((data) => {
+        // A null result means the id does not exist. Do NOT fall through to an
+        // empty form — an empty form has no id and would submit as a CREATE,
+        // silently making a new record from a stale/bad edit URL.
+        if (!data) {
+          setLoadError('Evidence not found — it may have been deleted.');
+          return;
+        }
+        setInitial(data as EvidenceFormValue);
+      })
       .catch((e) => setLoadError(e instanceof Error ? e.message : 'Failed to load evidence'))
       .finally(() => setLoading(false));
   }, [id]);

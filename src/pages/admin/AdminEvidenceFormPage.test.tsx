@@ -33,6 +33,14 @@ describe('AdminEvidenceFormPage', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/not found/i));
     expect(screen.queryByTestId('evidence-form')).not.toBeInTheDocument();
   });
+  it('treats a null result as not-found and does NOT render the (create) form', async () => {
+    // Regression: a null getEvidence result must not fall through to an empty
+    // form, which would submit as a CREATE from a stale/bad edit URL.
+    getEvidence.mockResolvedValueOnce(null);
+    renderAt('/admin/evidence/e-missing/edit');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/not found/i));
+    expect(screen.queryByTestId('evidence-form')).not.toBeInTheDocument();
+  });
   it('renders the form for the new route without loading', () => {
     renderAt('/admin/evidence/new');
     expect(screen.getByTestId('evidence-form')).toBeInTheDocument();

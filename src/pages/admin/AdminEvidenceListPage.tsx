@@ -8,12 +8,20 @@ interface Row { id: string; title: string; type: string; status: string; product
 export function AdminEvidenceListPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
   async function load() {
     setLoading(true);
-    try { setRows((await listAllEvidence()) as Row[]); } finally { setLoading(false); }
+    setError(null);
+    try {
+      setRows((await listAllEvidence()) as Row[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load evidence.');
+    } finally {
+      setLoading(false);
+    }
   }
   useEffect(() => { load(); }, []);
 
@@ -24,8 +32,13 @@ export function AdminEvidenceListPage() {
 
   async function handleDelete(id: string) {
     if (!window.confirm('Delete this evidence record?')) return;
-    await deleteEvidence(id);
-    await load();
+    setError(null);
+    try {
+      await deleteEvidence(id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete evidence.');
+    }
   }
 
   return (
@@ -50,6 +63,7 @@ export function AdminEvidenceListPage() {
           </select>
         </label>
       </div>
+      {error && <p role="alert" className="mt-4 text-red-600">{error}</p>}
       {loading ? <p className="mt-6">Loading…</p> : (
         <table className="mt-6 w-full text-left">
           <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Products</th><th></th></tr></thead>
