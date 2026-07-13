@@ -1050,7 +1050,13 @@ const schema = a.schema({
   listPublishedEvidence: a
     .query()
     .arguments({ productSlug: a.string() })
-    .returns(a.ref('Evidence').array().required())
+    // Returns JSON, NOT a.ref('Evidence'): the Evidence model is
+    // authenticated-only, and returning a model ref from an apiKey query makes
+    // AppSync field-deny the anonymous caller (Unauthorized) even though the
+    // operation-level publicApiKey passes. JSON sidesteps field-level model
+    // auth; the Lambda returns published-only records and the frontend service
+    // + acceptance scripts already parse a JSON array.
+    .returns(a.json())
     .handler(a.handler.function(evidenceApi))
     .authorization((allow) => [allow.publicApiKey()]),
 
