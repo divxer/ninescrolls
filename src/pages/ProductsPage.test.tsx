@@ -92,4 +92,10 @@ describe('ProductsPage', () => {
       expect(screen.getByAltText(alt)).toHaveAttribute('src', src);
     });
   });
+
+  it('lists the wafer probe stations category card linking to the capability hub', () => {
+    renderProductsPage();
+    const card = screen.getByRole('link', { name: /Wafer Probe Stations/i });
+    expect(card).toHaveAttribute('href', '/wafer-probe-stations');
+  });
 });

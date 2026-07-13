@@ -21,6 +21,7 @@ import { submitLead } from './functions/submit-lead/resource';
 import { submitQuestion } from './functions/submit-question/resource';
 import { organizationApi } from './functions/organization-api/resource';
 import { tenderApi } from './functions/tender-api/resource';
+import { evidenceApi } from './functions/evidence-api/resource';
 // Tender Watch — Phase 1
 import { fetchSam } from './functions/fetch-sam/resource';
 import { fetchTed } from './functions/fetch-ted/resource';
@@ -95,6 +96,7 @@ const backend = defineBackend({
     submitQuestion,
     organizationApi,
     tenderApi,
+    evidenceApi,
 
     // Tender Watch — Phase 1
     fetchSam,
@@ -1246,3 +1248,22 @@ backend.tenderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
         'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-*',
     ],
 }));
+
+// =============================================================================
+// Evidence — public read boundary (Task 6)
+// See docs/superpowers/specs/2026-07-04-evidence-framework-design.md
+// =============================================================================
+
+// Evidence read path: the evidence-api Lambda gets EXACTLY dynamodb:Scan on the
+// Evidence BASE TABLE ARN. No Query (the handler never Query's), no index ARNs
+// (never touches the slug GSI — that GSI is used only by the admin client's
+// listEvidenceBySlug via AppSync's own resolver, not here), no write actions,
+// no other tables. This is the no-leak boundary.
+const evidenceTable = backend.data.resources.tables['Evidence'];
+backend.evidenceApi.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['dynamodb:Scan'],
+    resources: [evidenceTable.tableArn],
+  })
+);
+backend.evidenceApi.addEnvironment('EVIDENCE_TABLE', evidenceTable.tableName);

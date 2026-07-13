@@ -42,6 +42,13 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [PLUTO-M](https://ninescrolls.com/products/pluto-m): 200W RF plasma cleaner (~8L), $12,999
 - [PLUTO-F](https://ninescrolls.com/products/pluto-f): 500W RF flagship plasma cleaner (~14.5L), $15,999
 
+## Products — Wafer Probe Stations
+
+- [Wafer Probe Stations Hub](https://ninescrolls.com/wafer-probe-stations): Selection guide — manual vs semi-automatic vs fully automatic, temperature regimes, signal types
+- [SEMISHARE Probe Stations](https://ninescrolls.com/wafer-probe-stations/semishare): SEMISHARE product lines with US & Canada procurement, import, and support through NineScrolls
+- [Cryogenic Probing Guide](https://ninescrolls.com/applications/cryogenic-probing): Low-temperature vacuum probing for superconductors, quantum transport, 2D materials
+- [Silicon Photonics Probing Guide](https://ninescrolls.com/applications/silicon-photonics-probing): Wafer-level photonic testing with fiber alignment
+
 ## Insights — Etching Guides
 
 - [Reactive Ion Etching (RIE) Guide](https://ninescrolls.com/insights/reactive-ion-etching-guide): Complete guide to RIE principles, process control, system types, and equipment selection
@@ -106,6 +113,10 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [Vacuum System Fundamentals](https://ninescrolls.com/insights/vacuum-system-fundamentals-semiconductor): Vacuum regimes, pump technologies, pressure measurement, gas flow regimes, conductance calculations, leak detection, load-lock design, vacuum materials, maintenance
 - [Process Chamber Materials & Contamination Control](https://ninescrolls.com/insights/process-chamber-materials-contamination-control): Chamber body materials, surface treatments, electrode materials, seals, contamination sources, chamber seasoning, PM schedules, cleaning protocols, qualification criteria
 - [RIE & ICP System Maintenance & Troubleshooting](https://ninescrolls.com/insights/rie-icp-system-maintenance-troubleshooting): Tiered preventive maintenance schedules, vacuum and RF power system care, troubleshooting decision trees for common faults, post-maintenance qualification protocols
+
+## Insights — Metrology & Testing
+
+- [How to Choose a Wafer Probe Station for Your University Research Lab](https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab): Buyer's guide — automation level, temperature, signal type, sample size, positioning; public price/award examples and university procurement guidance
 
 ## Insights — Process Integration & Applications
 

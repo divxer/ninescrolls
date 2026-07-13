@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>How to Choose a Wafer Probe Station for Your University Research Lab</title>
+  <meta name="article:slug" content="how-to-choose-wafer-probe-station-university-lab">
+  <meta name="article:excerpt" content="The five choices that determine which probe station fits your research — automation level, temperature, signal type, sample size, and positioning — plus real cost ranges and the university procurement angles that trip up first-time buyers.">
+  <meta name="article:category" content="Metrology &amp; Testing">
+  <meta name="article:tags" content="probe station, wafer probing, university lab, equipment procurement, device characterization">
+  <meta name="article:article-type" content="TechArticle">
+  <!-- Initial value only: the cover upload step (upload-insights-image.ts, --name cover) rewrites the DDB imageUrl to the responsive CDN form (extension-less -lg, rendered as a <picture>). Do not hand-maintain a CDN URL here. -->
+  <meta name="article:image-url" content="/assets/images/insights/probe-station-guide-cover.png">
+  <meta name="article:publish-date" content="2026-07-12">
+  <meta name="article:author" content="NineScrolls Engineering">
+  <script type="application/json" data-related-products>
+  [
+    { "href": "/wafer-probe-stations", "label": "Wafer Probe Stations Hub", "subtitle": "Selection guide: manual, semi-automatic, cryogenic" },
+    { "href": "/wafer-probe-stations/semishare", "label": "SEMISHARE Probe Stations", "subtitle": "US & Canada procurement through NineScrolls" }
+  ]
+  </script>
+</head>
+<body>
+      <p>If your lab has ever needed to put a probe tip on a bond pad and measure a device before dicing, you already know why a probe station matters. What is far less obvious — especially for a first purchase — is <em>which</em> probe station you actually need, and what a complete, working system will cost.</p>
+      <p>The market does not make this easy. Many probe-station configurations are quote-only, and published entry prices rarely reflect the cost of a complete application-ready system. The specification that matters most for your work — sample size, temperature range, signal type, positioning resolution — is rarely the one the sales page leads with.</p>
+      <p>This guide is written for the person who has to make the decision: the PI, the lab manager, the graduate student who drew the short straw on equipment procurement. It walks through the five choices that determine which probe station fits your research, what these systems cost (using publicly sourced listings and federal award records), and how to handle the parts that trip up university buyers most — fiscal-year timing, grant funding, and federal procurement rules.</p>
+      <p><em>Last reviewed: 2026-07-12.</em></p>
+
+      <h2>Quick selection checklist</h2>
+      <p>Before you read further, five answers narrow the field faster than any spec sheet. Pin these down for your own work:</p>
+      <ul>
+        <li><strong>Largest sample.</strong> The biggest wafer, die, coupon, or carrier you expect to handle sets the chuck.</li>
+        <li><strong>Measurement volume.</strong> A few devices per sample points to manual; repeated multi-site mapping points to semi-automatic or automatic.</li>
+        <li><strong>Temperature.</strong> Is temperature part of your science, or is ambient probing enough?</li>
+        <li><strong>Signal type.</strong> DC/low-frequency, RF/microwave, optical — or a combination.</li>
+        <li><strong>Pad size and pitch.</strong> Your smallest contact structure drives microscope, positioner, and stability requirements.</li>
+      </ul>
+
+      <h2>What a Wafer Probe Station Actually Does</h2>
+      <p>A wafer probe station holds a wafer or die flat and stable while you land fine-tipped probes onto specific test points — bond pads, contact structures, or on-wafer device terminals. It combines four things: a <strong>chuck</strong> that holds and (often) heats or cools the sample, <strong>micropositioners</strong> that move probe tips with micron-level precision, a <strong>microscope or camera</strong> to see what you are doing, and <strong>shielding and connections</strong> that carry the electrical or optical signal out to your instruments.</p>
+      <p>Everything else — automation, vacuum enclosures, RF calibration, fiber alignment — is a layer added on top of that core function to serve a particular kind of measurement. Choosing well means matching those layers to what your lab actually measures, and not paying for the ones you do not need. For a structured walk-through of these layers by configuration, see our <a href="/wafer-probe-stations">probe station selection hub</a>.</p>
+
+      <h2>The Five Decisions That Determine Which Probe Station You Need</h2>
+
+      <h3>1. Sample size and chuck</h3>
+      <p>Start with the largest sample you realistically test. Specify the largest wafer, die, coupon, or carrier you expect to handle, then confirm chuck diameter, vacuum-zone geometry, travel, edge clearance, and sample-carrier options. Do not assume nominal chuck diameter alone determines compatibility.</p>
+      <p>Common nominal classes include 2-inch, 4-inch, 150 mm, 200 mm, and 300 mm systems, but the nominal number is only a starting point. A smaller sample generally runs fine on a larger chuck, while a larger sample may not fit a smaller one; confirm the actual usable area and fixturing for your parts. Chuck upgrades may affect travel, vacuum zoning, temperature hardware, calibration, and cost, so confirm the upgrade path before purchase, and size for your largest expected sample rather than your typical one.</p>
+
+      <h3>2. Manual, semi-automatic, or fully automatic</h3>
+      <p>Automation can move a system into a very different price tier, especially once wafer mapping, alignment, software, and unattended handling are included, so this choice deserves the most thought. The right answer is usually set by <strong>how many measurements you run</strong>, not by how advanced the lab wants to feel.</p>
+
+      <table>
+        <caption style="caption-side:top;text-align:left;font-size:0.9em;color:#555;padding:0 0 8px;font-style:italic">Comparison of wafer probe station automation levels</caption>
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Manual<br><span>Maximum hands-on flexibility</span></th>
+            <th scope="col">Semi-automated<br><span>Recipe-assisted efficiency</span></th>
+            <th scope="col">Fully automated<br><span>Program-controlled workflow</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><strong>Positioning</strong></th>
+            <td>Hand-driven micropositioners</td>
+            <td>Motorized stage with manual probe setup</td>
+            <td>Programmed wafer mapping and alignment</td>
+          </tr>
+          <tr>
+            <th scope="row"><strong>Workflow</strong></th>
+            <td>Device-by-device measurement</td>
+            <td>Recipe-assisted multi-site stepping</td>
+            <td>Automated wafer-map execution</td>
+          </tr>
+          <tr>
+            <th scope="row"><strong>Best fit</strong></th>
+            <td>Exploratory research, teaching, flexible setups</td>
+            <td>R&amp;D characterization and repeated measurements</td>
+            <td>High-volume mapping and production-style test</td>
+          </tr>
+          <tr>
+            <th scope="row"><strong>Operator involvement</strong></th>
+            <td>Continuous hands-on control</td>
+            <td>Setup plus supervision</td>
+            <td>Exception handling and run oversight</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <figure class="post-figure">
+        <picture>
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/automation-levels-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/automation-levels-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/automation-levels-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/automation-levels-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/automation-levels-lg.png" alt="Comparison of manual, semi-automated, and fully automated wafer probe stations across four configuration dimensions: positioning, workflow, best fit, and operator involvement" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+        </picture>
+        <figcaption>Figure 1: Choosing the right level of automation — how manual, semi-automated, and fully automated probe stations differ across positioning, workflow, best fit, and operator involvement. Automation level and temperature capability are separate configuration decisions. Schematic illustration for comparison; not a specification of any particular system.</figcaption>
+      </figure>
+
+      <p>For labs characterizing a limited number of devices per sample, a <strong>manual</strong> station may be the most appropriate tool rather than a compromise. Semi-automatic systems earn their cost for repeated multi-site measurements where recipe-assisted stepping improves consistency and operator efficiency. Fully automatic probers belong in high-volume test environments and are rarely the right first purchase for an academic lab.</p>
+
+      <h3>3. Temperature environment</h3>
+      <p>Ambient-temperature probing covers a great deal of electrical characterization. But if your science lives at temperature — superconductors, quantum transport, 2D materials, low-temperature device physics — the temperature stage often becomes the defining element of the system. Temperature capability can become one of the dominant cost and integration drivers.</p>
+      <p>Probe-station temperature configurations range from ambient systems, to controlled thermal chucks for below- or above-ambient characterization, to cryogenic-vacuum systems for low-temperature research. Exact limits depend on the chuck, cooling architecture, vacuum package, wiring, and options; verify the full usable range against the selected configuration.</p>
+      <p>The figure below places these regimes against familiar physics reference points — a 10 K-class cryogenic reference, 77 K liquid nitrogen, 300 K room temperature, and an example upper thermal-chuck reference near 300 °C. Treat those points as orientation, not as the operating range of any given system.</p>
+
+      <figure class="post-figure">
+        <picture>
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/temperature-regimes-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/temperature-regimes-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/temperature-regimes-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/temperature-regimes-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab/temperature-regimes-lg.png" alt="Probe-station temperature environments on a low-to-high scale: cryogenic (10 K-class to 77 K-class), controlled thermal chuck (below- to above-ambient), and ambient (~300 K), with representative research applications for each" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+        </picture>
+        <figcaption>Figure 2: Temperature environments — cryogenic, controlled thermal-chuck, and ambient regimes against reference points (a 10 K-class cryogenic reference, 77 K liquid nitrogen, 300 K room temperature, and an example upper thermal-chuck reference near 300 °C). No single system covers the full range; verify your configuration's usable range. Schematic illustration for orientation; not a specification of any particular system.</figcaption>
+      </figure>
+
+      <h3>4. Signal type: DC, RF, or optical</h3>
+      <p>The measurement signal decides the probes, cabling, and shielding you need:</p>
+      <ul>
+        <li><strong>DC / low-frequency (I–V, C–V):</strong> the default for most device and materials characterization. Probe material and cabling depend on current level, guarding, voltage, contact resistance, and instrument interface; low-current measurements often benefit from guarded triax paths.</li>
+        <li><strong>RF / microwave / mmWave:</strong> commonly uses calibrated RF probes such as ground–signal–ground (GSG) or differential configurations, matched to the device pad layout, along with calibrated coaxial paths and often shielding against interference. Essential for high-frequency transistors and passives.</li>
+        <li><strong>Optical / silicon photonics:</strong> wafer-level photonic testing needs fiber alignment stages alongside electrical probes to couple light into and out of on-chip waveguides.</li>
+      </ul>
+      <p>Mixing these is common — a photonics group may need optical <em>and</em> RF <em>and</em> DC on the same wafer — but each capability adds cost, so specify only what your measurements require.</p>
+
+      <h3>5. Pad size and positioning resolution</h3>
+      <p>Finally, match the positioning capability to your smallest contact. As pad dimensions and pitch shrink, microscope resolution, probe-tip geometry, positioner control, vibration isolation, and mechanical stability become increasingly important. Ask vendors to demonstrate contact on representative structures rather than relying on a single nominal positioning-resolution number.</p>
+      <p>Do not over-buy resolution you will never use; do not under-buy and spend two years fighting your own equipment.</p>
+
+      <h2>Quote-comparison checklist</h2>
+      <p>Probe-station quotes are hard to compare because vendors bundle different things. Pin the following in your RFQ so competing quotes line up like-for-like:</p>
+      <ul>
+        <li><strong>Chuck size and travel</strong> — usable sample area, vacuum zones, X/Y/Z/theta travel and edge clearance.</li>
+        <li><strong>Temperature configuration and usable range</strong> — ambient, thermal, or cryogenic-vacuum, with the verified low/high limits for the quoted build.</li>
+        <li><strong>Positioners</strong> — count, type (manual/motorized), and resolution.</li>
+        <li><strong>Signal types and cabling</strong> — DC/triax, RF/GSG with calibration, optical/fiber alignment.</li>
+        <li><strong>Optics and camera</strong> — microscope, magnification, and imaging.</li>
+        <li><strong>Vibration isolation</strong> — table or platform, if required for your measurements.</li>
+        <li><strong>Installation, training, and warranty scope</strong> — what is included versus optional.</li>
+        <li><strong>Lead time</strong> — build and delivery schedule against your fiscal-year window.</li>
+        <li><strong>Spares and consumables</strong> — probe tips, cables, and recommended spare parts.</li>
+      </ul>
+
+      <h2>Public price and award examples, not quotations</h2>
+      <p>New probe-station prices are seldom published — most major brands quote only on request. The figures below are the ones that are publicly verifiable, so you can anchor a budget before you ever request a quote. Read these as order-of-magnitude anchors, not current quotes: they are point-in-time figures — published listings as of this writing and historical procurement awards whose dates span <strong>FY2010–FY2022</strong>. Real-world pricing moves with inflation, technology generations (a new-generation system rarely costs what its predecessor did), configuration and options, and even tariffs and exchange rates.</p>
+
+      <h3>Published list prices (entry systems)</h3>
+      <ul>
+        <li><strong>Ossila</strong> lists a complete manual probe station <strong>from $5,940</strong> (<a href="https://www.ossila.com/products/probe-station" target="_blank" rel="noopener noreferrer">ossila.com</a>, accessed 2026-07-12).</li>
+        <li><strong>FormFactor MPS150</strong> manual system is publicly listed <strong>starting at $13,880</strong> (page observed on 2026-07-12). Listed pricing varies by catalog version — another FormFactor catalog capture shows $15,130 — so treat published entry prices as approximate.</li>
+        <li><strong>Lake Shore Cryotronics</strong> publishes a <em>cost comparison</em> in its cryogenic probe-station catalog, spanning roughly <strong>$100,000–$400,000</strong> across different system configurations and including multi-year operating costs — not a simple list of system prices (<a href="https://www.lakeshore.com/docs/default-source/product-downloads/catalog/probestationcatalog_l.pdf" target="_blank" rel="noopener noreferrer">catalog PDF</a>, accessed 2026-07-12).</li>
+      </ul>
+
+      <h3>Federal award examples</h3>
+      <p>US federal purchases are a matter of public record. Each row below is a historical transaction example. Each amount is the total value associated with the cited purchase order, not a normalized bare-machine list price; the public award summary may not identify which accessories, services, installation, training, or warranty items were included. Each row is independently verifiable on USAspending.gov by its unique Award ID (PIID) — the linked identifier opens the award-detail record. Accessed 2026-07-12.</p>
+      <table>
+        <caption style="caption-side:top;text-align:left;font-size:0.9em;color:#555;padding:0 0 8px;font-style:italic">Historical federal purchase examples (public records; not current quotations)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Vendor</th>
+            <th scope="col">Buyer</th>
+            <th scope="col">Award FY</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Award description (as recorded)</th>
+            <th scope="col">Award ID (PIID)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">FormFactor</th>
+            <td>US Navy</td>
+            <td>FY2022</td>
+            <td>$103,877</td>
+            <td>Wafer probe station</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_N6600122P6113_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>N6600122P6113</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Keithley</th>
+            <td>Army Research Laboratory</td>
+            <td>FY2010</td>
+            <td>$157,272</td>
+            <td>Semi-automatic 200 mm probe station</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_W911QX10P0505_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>W911QX10P0505</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Micromanipulator</th>
+            <td>US Army</td>
+            <td>FY2014</td>
+            <td>$134,131</td>
+            <td>300 mm motorized probe station</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_W31P4Q14P0049_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>W31P4Q14P0049</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Lake Shore Cryotronics</th>
+            <td>US Navy</td>
+            <td>FY2018</td>
+            <td>$249,991</td>
+            <td>Probe station (exact configuration not stated in award summary)</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_N6600118P8072_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>N6600118P8072</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Accretech</th>
+            <td>DTRA</td>
+            <td>FY2018</td>
+            <td>$220,430</td>
+            <td>New Accretech UF2000 probing system</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072718P0020_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072718P0020</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Accretech</th>
+            <td>DTRA</td>
+            <td>FY2018</td>
+            <td>$250,416</td>
+            <td>Accretech UF2000 demo prober</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072718P0016_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072718P0016</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Accretech</th>
+            <td>DTRA</td>
+            <td>FY2019</td>
+            <td>$292,470</td>
+            <td>Accretech UF2000 prober station</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_HQ072719P0032_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>HQ072719P0032</code></a></td>
+          </tr>
+          <tr>
+            <th scope="row">MPI America</th>
+            <td>AFRL</td>
+            <td>FY2022</td>
+            <td>$572,323</td>
+            <td>Automated wafer probe test system</td>
+            <td><a href="https://www.usaspending.gov/award/CONT_AWD_FA875122C0022_9700_-NONE-_-NONE-" target="_blank" rel="noopener noreferrer"><code>FA875122C0022</code></a></td>
+          </tr>
+        </tbody>
+      </table>
+      <p><em>Note:</em> each row is a historical transaction example. Each amount is the total value associated with the cited purchase order, not a normalized bare-machine list price; the public award summary may not identify which accessories, services, installation, training, or warranty items were included. Descriptions are reproduced from the recorded award summary. Each Award ID links to its USAspending.gov award-detail record; accessed 2026-07-12. To verify any row independently: search the Award ID on USAspending.gov (Advanced Search &rarr; Award ID), or query the public API at <code>https://api.usaspending.gov/api/v2/search/spending_by_award/</code> using the PIID as the <code>award_id</code> filter.</p>
+
+      <p>The practical takeaway: entry manual systems can begin in the high four figures, while application-ready analytical configurations commonly move into five figures once positioners, probes, optics, shielding, instruments, installation, and options are added. Cryogenic and fully automatic systems move into six figures, as the federal award examples above show. Anchor your grant budget to the tier you actually need, then get current pricing the only reliable way — request quotes with a fully specified configuration so you are comparing like for like.</p>
+
+      <h2>University Procurement Considerations: Fiscal Year, Grants, and Federal Rules</h2>
+      <p>For university labs, choosing the instrument is often the easy part. Getting it purchased is where timelines slip.</p>
+      <p><strong>Fiscal-year timing.</strong> Capital equipment purchases cluster around fiscal-year boundaries and grant milestones. If a quote, a sole-source justification, and a purchase order all have to clear before funds expire, start the conversation months ahead — probe stations frequently carry multi-week to multi-month lead times.</p>
+      <p><strong>Federally funded purchases.</strong> Purchases charged to federal awards must follow the university's procurement policies and the applicable Uniform Guidance requirements. SAM registration is generally required when the supplier contracts directly with the federal government, but it is not a universal requirement for every vendor paid by a university under a federal grant. Confirm vendor-onboarding, competitive-bid, domestic-preference, and documentation requirements with your institution's procurement office.</p>
+      <p><strong>Import duties.</strong> Many probe stations are manufactured outside the United States, and duty treatment varies with an instrument's country of origin and customs classification (HTS) — a line item first-time buyers rarely anticipate. Whatever brand you evaluate, ask whether the quoted price is delivered or ex-works, and who is the importer of record. NineScrolls can quote <a href="/wafer-probe-stations/semishare">SEMISHARE probe stations</a> with delivered pricing, with import coordination identified in the quotation, so any duty cost is visible in the quote rather than a surprise at customs.</p>
+
+      <h2>Where SEMISHARE Fits</h2>
+      <p>Among the options a US research lab can consider, <strong>SEMISHARE</strong> is worth knowing about. It is a Shenzhen-based wafer-prober manufacturer with a product range that maps onto the five decisions above:</p>
+      <ul>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Manual</strong> stations, including fine-pitch configurations for small bond pads</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Semi-automatic</strong> stations for multi-site device characterization</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Cryogenic-vacuum</strong> stations with liquid-nitrogen and liquid-helium cooling options</a></li>
+        <li><a href="/wafer-probe-stations/semishare"><strong>Fully automatic</strong> production probers for higher-volume test</a></li>
+      </ul>
+      <p>For US buyers, the practical question has usually been the procurement path — obtaining a compliant quote and arranging import — rather than the equipment itself.</p>
+      <p>That is where <strong>NineScrolls</strong> fits. NineScrolls provides a US-based path for configuration discussions, quoting, import coordination, and post-sale support. Installation, calibration, training, warranty handling, and on-site service scope are confirmed for each quoted configuration.</p>
+      <p><em>Detailed model-by-model specifications and configuration options live on our dedicated <a href="/wafer-probe-stations/semishare">SEMISHARE probe stations page</a>.</em></p>
+
+      <h2>Conclusion</h2>
+      <p>Choosing a probe station comes down to five questions: how big is your sample, how many measurements you run, whether your science needs temperature, what signals you measure, and how small your pads are. Answer those, anchor a realistic budget to the right tier, and confirm your procurement path early — and the decision that felt opaque becomes straightforward.</p>
+      <p>The instrument matters. So does being able to buy it, install it, and get it serviced. NineScrolls helps university and research labs navigate both.</p>
+      <p>To talk through a probe station selection for your lab, <a href="/request-quote">request a consultation</a> or explore our <a href="/wafer-probe-stations">wafer probe station capabilities</a>.</p>
+
+      <h2>References and Further Reading</h2>
+      <ol>
+        <li>Ossila Probe Station (published price, from $5,940) — <a href="https://www.ossila.com/products/probe-station" target="_blank" rel="noopener noreferrer">ossila.com/products/probe-station</a>. Accessed 2026-07-12.</li>
+        <li>FormFactor MPS150 manual probe system (published starting price; listed pricing varies by catalog version) — <a href="https://www.formfactor.com/product/probe-systems/150-mm-systems/mps150/" target="_blank" rel="noopener noreferrer">formfactor.com</a>. Accessed 2026-07-12.</li>
+        <li>Lake Shore Cryotronics cryogenic probe stations (catalog cost comparison, ~$100k–$400k across configurations including multi-year operating costs) — <a href="https://www.lakeshore.com/docs/default-source/product-downloads/catalog/probestationcatalog_l.pdf" target="_blank" rel="noopener noreferrer">probestationcatalog_l.pdf</a>. Accessed 2026-07-12.</li>
+        <li>US federal procurement award records (probe-station awards, FY2010–FY2022), verifiable by Award ID (PIID) — <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer">usaspending.gov</a>. Accessed 2026-07-12. Award IDs cited in the table above: N6600122P6113, W911QX10P0505, W31P4Q14P0049, N6600118P8072, HQ072718P0020, HQ072718P0016, HQ072719P0032, FA875122C0022.</li>
+        <li>2 CFR 200 Uniform Guidance, Subpart D &mdash; Procurement Standards (&sect;&sect; 200.317&ndash;200.327), the primary standards recipients follow when procuring equipment under federal awards — <a href="https://www.ecfr.gov/current/title-2/subtitle-A/chapter-II/part-200/subpart-D" target="_blank" rel="noopener noreferrer">ecfr.gov, 2 CFR 200 Subpart D</a>. Accessed 2026-07-12.</li>
+        <li>NSF Proposal &amp; Award Policies &amp; Procedures Guide (PAPPG) (NSF 24-1), Chapter IX &mdash; Recipient Standards, which directs recipients to the 2 CFR 200 procurement standards — <a href="https://www.nsf.gov/policies/pappg/24-1/ch-9-recipient-standards" target="_blank" rel="noopener noreferrer">nsf.gov/policies/pappg/24-1</a>. Accessed 2026-07-12.</li>
+        <li>FAR 4.1103, System for Award Management (SAM) registration (direct federal contracting only) — <a href="https://www.acquisition.gov/far/4.1103" target="_blank" rel="noopener noreferrer">acquisition.gov/far/4.1103</a>. Accessed 2026-07-12.</li>
+      </ol>
+</body>
+</html>

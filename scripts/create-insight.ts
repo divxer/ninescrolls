@@ -9,18 +9,29 @@
  *
  * Options:
  *   --publish           Publish immediately (skip draft) and notify search engines
- *   --category <cat>    Set category (default: derived from content or "Plasma Processing")
- *   --author <name>     Set author (default: "NineScrolls Engineering")
- *   --tags <t1,t2,...>  Comma-separated tags
+ *   --slug <slug>       Set slug (overrides <meta name="article:slug">)
+ *   --category <cat>    Set category (overrides <meta name="article:category">)
+ *   --author <name>     Set author (overrides <meta name="article:author">)
+ *   --tags <t1,t2,...>  Comma-separated tags (overrides <meta name="article:tags">)
  *
  * Example:
  *   npm run create-insight -- ~/articles/new-etching-guide.html
  *   npm run create-insight -- ~/articles/new-etching-guide.html --publish --tags "RIE,Etching"
  *
- * HTML file format:
- *   - <title> or <h1> → article title
- *   - <body> content → article body (h1 is removed, used as title)
- *   - First <img> → placeholder cover image URL (upload real cover via upload-news-image)
+ * HTML file format (see scripts/articles/*.html for full examples):
+ *   - <title> or <h1>                              → article title
+ *   - <body> content                               → article body (first h1 + TOC stripped)
+ *   - <meta name="article:slug" content>           → slug (else derived from title)
+ *   - <meta name="article:excerpt" content>        → excerpt (else first 200 chars)
+ *   - <meta name="article:category" content>       → category
+ *   - <meta name="article:tags" content>           → tags (comma-separated)
+ *   - <meta name="article:article-type" content>   → articleType (Article | TechArticle)
+ *   - <meta name="article:image-url" content>      → cover image URL
+ *   - <meta name="article:publish-date" content>   → publish date (YYYY-MM-DD, else today)
+ *   - <meta name="article:author" content>         → author
+ *   - <script type="application/json" data-related-products> → related products
+ *
+ * Precedence for each field: CLI flag > <meta> tag > built-in default.
  *
  * After creating:
  *   1. Upload a cover image: npm run upload-news-image -- <slug> <image-file>
@@ -33,6 +44,7 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import { authenticate } from './lib/auth';
+import { parseArticleHtml } from './lib/parseArticleHtml';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
@@ -57,61 +69,49 @@ function estimateReadTime(text: string): number {
   return Math.max(1, Math.round(words / 200));
 }
 
-function extractBodyContent(html: string): string {
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  return bodyMatch ? bodyMatch[1].trim() : html;
-}
-
-function extractTitle(html: string): string {
-  const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-  if (h1Match) return stripHtml(h1Match[1]);
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (titleMatch) return stripHtml(titleMatch[1]);
-  return 'Untitled Article';
-}
-
-function extractFirstImage(html: string): string {
-  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  return imgMatch ? imgMatch[1] : '';
-}
-
 async function createInsight(filePath: string) {
   await authenticate();
 
   const html = readFileSync(filePath, 'utf-8');
-  const title = extractTitle(html);
-  const bodyContent = extractBodyContent(html);
+  const parsed = parseArticleHtml(html);
 
-  // Clean body content
-  let cleaned = bodyContent;
-  cleaned = cleaned.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '');
-  cleaned = cleaned.replace(/<h2[^>]*>\s*Table of Contents\s*<\/h2>\s*<ul>[\s\S]*?<\/ul>/i, '');
-  const content = cleaned.trim();
-
+  const title = parsed.title;
+  const content = parsed.content;
   const plainText = stripHtml(content);
-  const slug = generateSlug(title);
   const readTime = estimateReadTime(plainText);
-  const excerpt = plainText.replace(/^\s+/, '').slice(0, 200);
   const today = new Date().toISOString().split('T')[0];
-  const coverImage = extractFirstImage(bodyContent);
 
-  // Parse CLI flags
+  // Precedence: CLI flag > <meta> tag > built-in default.
   const publish = process.argv.includes('--publish');
+
+  // Slug: explicit override preserves canonical URLs when the title would
+  // otherwise derive a different (longer) slug; falls back to title-derived.
+  const slugIdx = process.argv.indexOf('--slug');
+  const slug = slugIdx !== -1 && process.argv[slugIdx + 1]
+    ? generateSlug(process.argv[slugIdx + 1])
+    : parsed.slug ?? generateSlug(title);
 
   const categoryIdx = process.argv.indexOf('--category');
   const category = categoryIdx !== -1 && process.argv[categoryIdx + 1]
     ? process.argv[categoryIdx + 1]
-    : 'Plasma Processing';
+    : parsed.category ?? 'Plasma Processing';
 
   const authorIdx = process.argv.indexOf('--author');
   const author = authorIdx !== -1 && process.argv[authorIdx + 1]
     ? process.argv[authorIdx + 1]
-    : 'NineScrolls Engineering';
+    : parsed.author ?? 'NineScrolls Engineering';
 
   const tagsIdx = process.argv.indexOf('--tags');
   const tags = tagsIdx !== -1 && process.argv[tagsIdx + 1]
     ? process.argv[tagsIdx + 1].split(',').map(t => t.trim()).filter(Boolean)
-    : [];
+    : parsed.tags ?? [];
+
+  // Metadata with meta-tag override, else built-in default.
+  const excerpt = parsed.excerpt ?? plainText.replace(/^\s+/, '').slice(0, 200);
+  const publishDate = parsed.publishDate ?? today;
+  const imageUrl = parsed.imageUrl ?? `/assets/images/insights/${slug}`;
+  const articleType = parsed.articleType ?? null;
+  const relatedProducts = parsed.relatedProducts ?? null;
 
   console.log(`Title: ${title}`);
   console.log(`Slug: ${slug}`);
@@ -121,7 +121,10 @@ async function createInsight(filePath: string) {
   console.log(`Content length: ${content.length} chars`);
   console.log(`Excerpt: ${excerpt.slice(0, 80)}...`);
   console.log(`Tags: ${tags.length > 0 ? tags.join(', ') : '(none)'}`);
-  console.log(`Cover image: ${coverImage || '(none - upload via upload-news-image)'}`);
+  console.log(`Article type: ${articleType ?? '(none)'}`);
+  console.log(`Publish date: ${publishDate}`);
+  console.log(`Related products: ${relatedProducts ? relatedProducts.length : 0}`);
+  console.log(`Cover image: ${imageUrl}`);
 
   // Check slug uniqueness
   const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug });
@@ -136,11 +139,13 @@ async function createInsight(filePath: string) {
     content,
     excerpt,
     author,
-    publishDate: today,
+    publishDate,
     category,
     readTime,
-    imageUrl: coverImage || `/assets/images/insights/${slug}`,
+    imageUrl,
     tags,
+    relatedProducts: relatedProducts ? JSON.stringify(relatedProducts) : null,
+    articleType,
     contentType: 'insight',
     isDraft: !publish,
   });
@@ -189,7 +194,7 @@ async function createInsight(filePath: string) {
 }
 
 // CLI entry
-const flagsWithValues = new Set(['--category', '--author', '--tags']);
+const flagsWithValues = new Set(['--slug', '--category', '--author', '--tags']);
 const positionalArgs: string[] = [];
 for (let i = 2; i < process.argv.length; i++) {
   if (process.argv[i].startsWith('--')) {
@@ -202,9 +207,10 @@ const filePath = positionalArgs[0];
 if (!filePath) {
   console.error('Usage: npm run create-insight -- <html-file> [options]');
   console.error('  --publish             Publish immediately');
-  console.error('  --category <cat>      Set category');
-  console.error('  --author <name>       Set author');
-  console.error('  --tags <t1,t2,...>    Comma-separated tags');
+  console.error('  --slug <slug>         Set slug (overrides meta tag)');
+  console.error('  --category <cat>      Set category (overrides meta tag)');
+  console.error('  --author <name>       Set author (overrides meta tag)');
+  console.error('  --tags <t1,t2,...>    Comma-separated tags (overrides meta tag)');
   process.exit(1);
 }
 

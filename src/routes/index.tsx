@@ -47,6 +47,12 @@ const PlutoM = lazyWithReload(() => import('../components/products').then(m => (
 const PlutoF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoF })));
 const Pluto30 = lazyWithReload(() => import('../components/products').then(m => ({ default: m.Pluto30 })));
 
+// Probe station pages
+const WaferProbeStationsPage = lazyWithReload(() => import('../pages/probeStations/WaferProbeStationsPage').then(m => ({ default: m.WaferProbeStationsPage })));
+const SemishareBrandPage = lazyWithReload(() => import('../pages/probeStations/SemishareBrandPage').then(m => ({ default: m.SemishareBrandPage })));
+const CryogenicProbingPage = lazyWithReload(() => import('../pages/probeStations/CryogenicProbingPage').then(m => ({ default: m.CryogenicProbingPage })));
+const SiliconPhotonicsProbingPage = lazyWithReload(() => import('../pages/probeStations/SiliconPhotonicsProbingPage').then(m => ({ default: m.SiliconPhotonicsProbingPage })));
+
 // ─── Loading fallback ───────────────────────────────────────────────────────
 function PageLoader() {
   return (
@@ -100,6 +106,10 @@ export function AppRoutes() {
         <Route path="/products/pluto-m" element={<PlutoM />} />
         <Route path="/products/pluto-f" element={<PlutoF />} />
         <Route path="/products/pluto-30" element={<Pluto30 />} />
+        <Route path="/wafer-probe-stations" element={<WaferProbeStationsPage />} />
+        <Route path="/wafer-probe-stations/semishare" element={<SemishareBrandPage />} />
+        <Route path="/applications/cryogenic-probing" element={<CryogenicProbingPage />} />
+        <Route path="/applications/silicon-photonics-probing" element={<SiliconPhotonicsProbingPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
