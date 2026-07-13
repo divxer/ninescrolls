@@ -1955,12 +1955,24 @@ async function main() {
     throw new Error('Set EVIDENCE_TEST_SLUG and EVIDENCE_EXPECT (draft|published|archived).');
   }
 
-  // (a) base-model public read must be DENIED
+  // (a) base-model public read must be DENIED *by authorization* — not merely
+  // "errored". A schema/resolver/service error must NOT be mistaken for a denial.
   const baseRead = await client.models.Evidence.list();
   if (!baseRead.errors || baseRead.errors.length === 0) {
     throw new Error('SECURITY FAIL: base Evidence model is publicly readable via apiKey');
   }
-  console.log('OK: base model apiKey read denied:', baseRead.errors[0].message);
+  // AppSync surfaces authorization failures with errorType 'Unauthorized'
+  // (occasionally 'UnauthorizedException'). Fall back to a message match only if
+  // the deployed error shape lacks errorType — confirm against the sandbox's
+  // actual response and tighten if needed.
+  const isAuthDenial = (e: { errorType?: string; message?: string }) =>
+    e.errorType === 'Unauthorized' ||
+    e.errorType === 'UnauthorizedException' ||
+    /not\s*authorized|unauthorized/i.test(e.message ?? '');
+  if (!baseRead.errors.some(isAuthDenial)) {
+    throw new Error(`SECURITY FAIL: expected an authorization denial on the base model, got: ${JSON.stringify(baseRead.errors)}`);
+  }
+  console.log('OK: base model apiKey read denied (authorization):', baseRead.errors.find(isAuthDenial)?.message);
 
   // (b) custom query must SUCCEED — a null/errored response is a failure, not [].
   const res = await client.queries.listPublishedEvidence({ productSlug: PRODUCT });
