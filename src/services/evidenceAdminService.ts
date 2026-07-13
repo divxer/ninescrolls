@@ -112,6 +112,13 @@ export async function deleteEvidence(id: string) {
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
 }
 
+/** Status-only update (e.g. bulk archive). Skips slug/payload re-validation. */
+export async function setEvidenceStatus(id: string, status: string) {
+  const { data, errors } = await client().models.Evidence.update({ id, status }, { authMode: 'userPool' });
+  if (errors) throw new Error(errors.map((e) => e.message).join(', '));
+  return data;
+}
+
 async function listEvidencePage(token: string | undefined, acc: DynamoEvidence[]): Promise<DynamoEvidence[]> {
   const result = await client().models.Evidence.list({ authMode: 'userPool', nextToken: token });
   if (result.errors) throw new Error(result.errors.map((e: { message: string }) => e.message).join(', '));
