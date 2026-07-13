@@ -211,22 +211,32 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
       windowsAround('$350,000', 200).some((w) => /ceiling|may not exceed/i.test(w)),
       '$350,000 framed as a ceiling',
     ).toBe(true);
-    // The (a)(1)(v) above-$50,000 path must be cited, not just (a)(1)(iv).
-    expect(content).toContain('200.320(a)(1)(v)');
+    // The (a)(1)(v) above-$50,000 path must be cited, not just (a)(1)(iv) —
+    // and the citation must keep its SEMANTICS: within a window around the
+    // citation, the >$50,000 amount, the cognizant agency, and the approval
+    // requirement must all still be stated (a bare section number that lost
+    // its meaning would pass a toContain check).
+    const idx = content.indexOf('200.320(a)(1)(v)');
+    expect(idx, 'the (a)(1)(v) citation is present').toBeGreaterThan(-1);
+    const window = content.slice(Math.max(0, idx - 400), idx + 400);
+    expect(window, '(a)(1)(v) window states the $50,000 amount').toMatch(/\$50,000/);
+    expect(window, '(a)(1)(v) window names the cognizant agency').toMatch(/cognizant agency/i);
+    expect(window, '(a)(1)(v) window states the approval requirement').toMatch(/approv/i);
   });
 
   it('does not recite the outdated pre-2025 thresholds (Constraint 1)', () => {
     // The prior MPT ($10,000) and stale SAT figure ($250,000) must not appear
     // in any common spelling — they signal the numbers were not refreshed to
     // the 2025-10-01 set.
-    expect(normalized).not.toMatch(/\$10,?000|\$10k|\$250,?000|\$250k/i);
+    expect(normalized).not.toMatch(/\$10,?000|\$10k|usd\s?10,?000|\$250,?000|\$250k|usd\s?250,?000/i);
   });
 
   it('never implies federal funds expire at a fiscal-year boundary (Constraint 2)', () => {
     // Phrase families, not exact spellings.
     const BANNED_FISCAL: RegExp[] = [
-      /(funds?|money|grant)[^.]{0,40}(lapse|expire)/i,
-      /spend[^.]{0,30}by[^.]{0,30}(\bfy\b|fiscal year|september 30)/i,
+      /(funds?|money|grant|award|balance)[^.]{0,60}(lapse|expire)/i,
+      /(spend|spent|use|used|obligate|obligated)[^.]{0,40}(by|before)[^.]{0,40}(\bfy\b|fy[- ]end|fiscal year|september 30)/i,
+      /(award|grant|balance|funds?)[^.]{0,60}(must|has|have) to be (used|spent|obligated)[^.]{0,60}(september 30|fiscal year|fy[- ]end)/i,
       /federal fiscal year/i,
       /funds\s+expire/i,
     ];
@@ -244,12 +254,20 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
 
   it('does not overstate SAM.gov or vendor-registration requirements (Constraint 6)', () => {
     const BANNED_SAM: RegExp[] = [
-      /vendors?\s+must\s+(be\s+)?register(ed)?\s+in\s+sam/i,
-      /suppliers?\s+must\s+(be\s+)?register(ed)?\s+in\s+sam/i,
+      // Bidirectional proximity families with TEMPERED gaps ((?!\bnot\b)[^.]):
+      // the legitimate negated qualifier ("supplier is NOT universally
+      // required to register…") must not match, while every affirmative
+      // phrasing does.
+      // Bidirectional proximity families: (vendor|supplier) ~ (must|required|
+      // mandatory|need) ~ SAM in either direction, any natural phrasing.
+      /(vendor|supplier)s?(?:(?!\bnot\b)[^.]){0,80}(must|required|mandatory|need(s|ed)?)(?:(?!\bnot\b)[^.]){0,80}sam(\.gov)?/i,
+      /sam(\.gov)?(?:(?!\bnot\b)[^.]){0,80}(mandatory|required|must)(?:(?!\bnot\b)[^.]){0,80}(vendor|supplier)s?/i,
       /sam\s+registration\s+is\s+required/i,
       /federally\s+funded\s+purchases\s+require\s+sam/i,
-      /(nsf|doe)\s+requires\s+vendors/i,
-      /required to (have|maintain)[^.]{0,30}sam/i,
+      /(nsf|doe)\s+requires\s+(vendor|supplier)s?/i,
+      // Lookbehind excludes preceding negation ("not universally required to
+      // register in SAM.gov" is the mandated qualifier and must not match).
+      /(?<!\bnot\b[^.]{0,30})required to (have|maintain|register)[^.]{0,40}sam/i,
       /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
     ];
     for (const pattern of BANNED_SAM) {
@@ -266,7 +284,13 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
     // Policy is unsettled — the article may only say the QUOTATION identifies
     // the delivery term. Any "NineScrolls/SEMISHARE ... delivered pricing"
     // commitment is a release blocker.
-    expect(normalized).not.toMatch(/(ninescrolls|semishare)[^.]{0,80}delivered pricing/i);
+    const BANNED_DELIVERY: RegExp[] = [
+      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivered|landed|delivery[- ]inclusive|all[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+      /(offer|provide)s?[^.]{0,60}(delivered|landed|delivery[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+    ];
+    for (const pattern of BANNED_DELIVERY) {
+      expect(normalized, `banned delivery-commitment wording ${pattern}`).not.toMatch(pattern);
+    }
   });
 
   it('avoids NineScrolls approval-status inflation and high-risk procurement over-claims (Constraints 4, 7)', () => {
@@ -303,6 +327,46 @@ describe('probe station procurement accuracy constraints (editorial-review tripw
           /^\s*<tr[^>]*>\s*<th\s+scope="row"/i,
         );
       }
+    }
+  });
+
+  it('guard families catch known prohibited variants (table-driven mutation cases)', () => {
+    // Meta-test of the guards themselves: every sentence below is a natural
+    // (non-evasive) phrasing of a prohibited claim from past review rounds.
+    // Each must be caught by at least one banned family when appended to the
+    // article — if a family regresses, this fails without touching the article.
+    const BANNED_ALL: RegExp[] = [
+      // stale thresholds
+      /\$10,?000|\$10k|usd\s?10,?000|\$250,?000|\$250k|usd\s?250,?000/i,
+      // fiscal expiry
+      /(funds?|money|grant|award|balance)[^.]{0,60}(lapse|expire)/i,
+      /(spend|spent|use|used|obligate|obligated)[^.]{0,40}(by|before)[^.]{0,40}(\bfy\b|fy[- ]end|fiscal year|september 30)/i,
+      /(award|grant|balance|funds?)[^.]{0,60}(must|has|have) to be (used|spent|obligated)[^.]{0,60}(september 30|fiscal year|fy[- ]end)/i,
+      // SAM-mandatory (bidirectional)
+      /(vendor|supplier)s?(?:(?!\bnot\b)[^.]){0,80}(must|required|mandatory|need(s|ed)?)(?:(?!\bnot\b)[^.]){0,80}sam(\.gov)?/i,
+      /sam(\.gov)?(?:(?!\bnot\b)[^.]){0,80}(mandatory|required|must)(?:(?!\bnot\b)[^.]){0,80}(vendor|supplier)s?/i,
+      /sam(\.gov)?\s?(enrollment|registration)[^.]{0,20}(mandatory|required)/i,
+      // delivery commitments
+      /(ninescrolls|semishare|\bwe\b|\bour\b)[^.]{0,80}(delivered|landed|delivery[- ]inclusive|all[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+      /(offer|provide)s?[^.]{0,60}(delivered|landed|delivery[- ]inclusive)[^.]{0,30}(pricing|price|quote)/i,
+    ];
+    const MUTATIONS = [
+      'The old threshold is USD 10,000.',
+      'The award balance must be used before September 30.',
+      'All vendors are required to register with SAM.gov.',
+      'SAM enrollment is mandatory.',
+      'We offer delivered pricing for SEMISHARE systems.',
+      'NineScrolls offers landed pricing.',
+      'NineScrolls offers delivery-inclusive pricing.',
+      'Grant funds lapse at the end of the period.',
+    ];
+    for (const sentence of MUTATIONS) {
+      const mutated = (content + ' ' + sentence).toLowerCase().replace(/\s+/g, ' ');
+      expect(
+        BANNED_ALL.some((p) => p.test(sentence.toLowerCase())) &&
+          BANNED_ALL.some((p) => p.test(mutated)),
+        `mutation not caught by any guard family: "${sentence}"`,
+      ).toBe(true);
     }
   });
 });
