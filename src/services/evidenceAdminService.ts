@@ -68,10 +68,30 @@ function withPublishDate<T extends { status: string; publishDate?: string | null
   return input;
 }
 
+/**
+ * a.json() fields (AWSJSON) MUST be sent as JSON *strings*, not raw arrays /
+ * objects — AppSync rejects a raw value with "Variable 'X' has an invalid
+ * value". Empty or absent → null. Mirrors the InsightsPost relatedProducts /
+ * heroImages / faqs convention. The read side parses back (the edit form
+ * accepts either a string or an already-parsed value).
+ */
+function toJsonField(v: EvidenceJson | undefined): string | null {
+  if (v == null) return null;
+  if (Array.isArray(v) && v.length === 0) return null;
+  return JSON.stringify(v);
+}
+
+function serializeJsonFields<T extends EvidenceInput>(input: T) {
+  return { ...input, metrics: toJsonField(input.metrics), meta: toJsonField(input.meta) };
+}
+
 export async function createEvidence(input: EvidenceInput) {
   assertPayload(input);
   await assertSlugFree(input.slug);
-  const { data, errors } = await client().models.Evidence.create(withPublishDate(input), { authMode: 'userPool' });
+  const { data, errors } = await client().models.Evidence.create(
+    serializeJsonFields(withPublishDate(input)),
+    { authMode: 'userPool' }
+  );
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }
@@ -79,7 +99,10 @@ export async function createEvidence(input: EvidenceInput) {
 export async function updateEvidence(input: EvidenceUpdateInput) {
   assertPayload(input);
   await assertSlugFree(input.slug, input.id);
-  const { data, errors } = await client().models.Evidence.update(withPublishDate(input), { authMode: 'userPool' });
+  const { data, errors } = await client().models.Evidence.update(
+    serializeJsonFields(withPublishDate(input)),
+    { authMode: 'userPool' }
+  );
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
 }

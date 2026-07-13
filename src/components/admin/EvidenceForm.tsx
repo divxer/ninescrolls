@@ -25,6 +25,19 @@ interface EvidenceFormProps {
 function slugify(title: string): string {
   return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
+// metrics/meta are a.json() fields: on read they may come back as a JSON string
+// (Lambda/raw-DDB path) or an already-parsed value (Amplify model API). Accept both.
+function parseMetrics(v: unknown): Metric[] {
+  const val = typeof v === 'string' && v.trim() ? safeJson(v) : v;
+  return Array.isArray(val) ? (val as Metric[]) : [];
+}
+function safeJson(s: string): unknown {
+  try { return JSON.parse(s); } catch { return undefined; }
+}
+function metaToText(v: unknown): string {
+  if (v == null) return '';
+  return typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+}
 function toLines(arr?: (string | null)[] | null): string {
   return (arr ?? []).filter(Boolean).join('\n');
 }
@@ -42,12 +55,12 @@ export function EvidenceForm({ initial, onSubmit, onCancel, submitting }: Eviden
   const [process, setProcess] = useState(initial?.process ?? '');
   const [materials, setMaterials] = useState(toLines(initial?.materials));
   const [keywords, setKeywords] = useState(toLines(initial?.keywords));
-  const [metrics, setMetrics] = useState<Metric[]>(Array.isArray(initial?.metrics) ? (initial!.metrics as Metric[]) : []);
+  const [metrics, setMetrics] = useState<Metric[]>(parseMetrics(initial?.metrics));
   const [articleSlug, setArticleSlug] = useState(initial?.articleSlug ?? '');
   const [pdfUrl, setPdfUrl] = useState(initial?.pdfUrl ?? '');
   const [images, setImages] = useState<string[]>((initial?.images ?? []).filter(Boolean) as string[]);
   const [sourceUrl, setSourceUrl] = useState(initial?.sourceUrl ?? '');
-  const [metaText, setMetaText] = useState(initial?.meta ? JSON.stringify(initial.meta, null, 2) : '');
+  const [metaText, setMetaText] = useState(metaToText(initial?.meta));
   const [status, setStatus] = useState<string>(initial?.status ?? EVIDENCE_STATUS.DRAFT);
   const [insightSlugs, setInsightSlugs] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
