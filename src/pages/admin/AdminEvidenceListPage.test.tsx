@@ -154,3 +154,22 @@ describe('AdminEvidenceListPage modal + edge behaviour', () => {
     expect(setEvidenceStatus).toHaveBeenCalledWith('e-1', EVIDENCE_STATUS.ARCHIVED);
   });
 });
+
+describe('AdminEvidenceListPage focus after delete', () => {
+  it('moves focus to the search box after a successful delete (deleted trigger is gone)', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    deleteEvidence.mockResolvedValue(undefined);
+    // initial load has both rows; after delete, e-1 is gone from the reload
+    listAllEvidence.mockReset().mockResolvedValueOnce(rows).mockResolvedValue([rows[1]]);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Alpha publication' }));
+    await screen.findByRole('dialog');
+    fireEvent.click(screen.getByRole('button', { name: /More actions/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Delete evidence/i }));
+    await waitFor(() => expect(deleteEvidence).toHaveBeenCalledWith('e-1'));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('textbox', { name: /Search evidence/i }))
+    );
+    confirmSpy.mockRestore();
+  });
+});

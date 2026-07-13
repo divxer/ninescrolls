@@ -61,14 +61,18 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
-      prev?.focus?.();
+      // Only restore focus if the previously-focused element is still in the
+      // DOM. After a delete the trigger is removed on reload; the caller then
+      // sets deterministic focus, so we must not fight it with a dead node.
+      if (prev && document.contains(prev)) prev.focus?.();
     };
   }, [onClose]);
 
-  // Prefer the (safe) sourceUrl; if it is unsafe/absent, fall back to the DOI —
-  // an unsafe sourceUrl must NOT suppress a valid DOI link.
-  const sourceHref = safeExternalUrl(record.sourceUrl);
-  const doiHref = safeExternalUrl(record.sourceUrl) || safeExternalUrl(doi ? `https://doi.org/${doi}` : null);
+  // Source DOI ALWAYS resolves via doi.org/{doi} (never a publisher URL).
+  // "View source" uses the safe sourceUrl, falling back to the DOI resolver
+  // when there is no safe source.
+  const doiHref = safeExternalUrl(doi ? `https://doi.org/${doi}` : null);
+  const sourceHref = safeExternalUrl(record.sourceUrl) || doiHref;
 
   return (
     <>
@@ -111,7 +115,7 @@ export function EvidenceDetailPanel({ record, onClose, onDelete }: EvidenceDetai
           {journal && <MetaRow label="Journal">{journal}</MetaRow>}
           {year && <MetaRow label="Year">{year}</MetaRow>}
           {verifiedAt && <MetaRow label="Verified">{verifiedAt}</MetaRow>}
-          {record.sourceUrl && sourceHref && (
+          {sourceHref && (
             <MetaRow label="Source">
               <a href={sourceHref} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View source ↗</a>
             </MetaRow>

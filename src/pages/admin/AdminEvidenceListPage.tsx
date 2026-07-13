@@ -23,6 +23,7 @@ export function AdminEvidenceListPage() {
   const [busy, setBusy] = useState(false);
   const [pageNum, setPageNum] = useState(1);
   const contentRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Make the background content inert while the modal panel is open, so Tab /
   // AT / mouse cannot reach it — the keyboard side is also trapped in the panel.
@@ -79,8 +80,16 @@ export function AdminEvidenceListPage() {
   async function handleDelete(id: string) {
     if (!window.confirm('Delete this evidence record?')) return;
     setError(null);
-    try { await deleteEvidence(id); setOpenId(null); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete evidence.'); }
+    try {
+      await deleteEvidence(id);
+      setOpenId(null);
+      await load();
+      // The deleted row's trigger button is gone; put focus somewhere stable
+      // instead of letting it fall to document.body.
+      searchRef.current?.focus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete evidence.');
+    }
   }
   async function archiveSelected() {
     if (selected.size === 0) return;
@@ -123,7 +132,7 @@ export function AdminEvidenceListPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <input value={search} onChange={(e) => changeSearch(e.target.value)} aria-label="Search evidence" placeholder="Search titles, types, or products..." className="min-w-64 flex-1 rounded border border-slate-300 px-3 py-2" />
+        <input ref={searchRef} value={search} onChange={(e) => changeSearch(e.target.value)} aria-label="Search evidence" placeholder="Search titles, types, or products..." className="min-w-64 flex-1 rounded border border-slate-300 px-3 py-2" />
         <label className="flex items-center gap-2 text-sm"><span>Type</span>
           <select value={typeFilter} onChange={(e) => changeType(e.target.value)} className="rounded border border-slate-300 px-2 py-2">
             <option value="all">All types</option>

@@ -85,10 +85,15 @@ describe('EvidenceDetailPanel modal + link behaviour', () => {
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(document.activeElement).toBe(closeBtn);
   });
-  it('falls back to the DOI link when sourceUrl is unsafe (does not suppress it)', () => {
-    renderPanel({}, { ...baseRec, sourceUrl: 'javascript:alert(1)' });
-    expect(screen.queryByRole('link', { name: /View source/i })).not.toBeInTheDocument();
-    const doiLink = screen.getByRole('link', { name: /10\.1186\/s43074-022-00047-3/ });
-    expect(doiLink).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+  it('an unsafe sourceUrl is never linked; both Source DOI and View source fall back to doi.org', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: 'javascript:alert(1)' }); // baseRec.meta has the DOI
+    screen.getAllByRole('link').forEach((a) => expect(a.getAttribute('href') ?? '').not.toMatch(/^javascript:/i));
+    expect(screen.getByRole('link', { name: /10\.1186\/s43074-022-00047-3/ })).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+    expect(screen.getByRole('link', { name: /View source/i })).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+  });
+  it('Source DOI always resolves via doi.org even when sourceUrl is a publisher page', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: 'https://link.springer.com/article/xyz' });
+    expect(screen.getByRole('link', { name: /10\.1186\/s43074-022-00047-3/ })).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+    expect(screen.getByRole('link', { name: /View source/i })).toHaveAttribute('href', 'https://link.springer.com/article/xyz');
   });
 });
