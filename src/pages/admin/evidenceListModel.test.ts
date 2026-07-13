@@ -73,3 +73,22 @@ describe('deriveVerification', () => {
     expect(items.map(i => i.label)).toEqual(['Product selected', 'Payload present']);
   });
 });
+
+import { safeExternalUrl } from './evidenceListModel';
+describe('safeExternalUrl', () => {
+  it('allows http(s) and relative URLs', () => {
+    expect(safeExternalUrl('https://doi.org/10.1/x')).toBe('https://doi.org/10.1/x');
+    expect(safeExternalUrl('http://example.com')).toBe('http://example.com');
+    expect(safeExternalUrl('/products/icp-etcher')).toBe('/products/icp-etcher');
+  });
+  it('blocks javascript:, data:, and vbscript: schemes', () => {
+    expect(safeExternalUrl('javascript:alert(1)')).toBeNull();
+    expect(safeExternalUrl('data:text/html,<script>alert(1)</script>')).toBeNull();
+    expect(safeExternalUrl('vbscript:msgbox(1)')).toBeNull();
+  });
+  it('returns null for empty/nullish', () => {
+    expect(safeExternalUrl('')).toBeNull();
+    expect(safeExternalUrl(null)).toBeNull();
+    expect(safeExternalUrl(undefined)).toBeNull();
+  });
+});

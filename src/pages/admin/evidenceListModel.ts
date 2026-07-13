@@ -110,3 +110,18 @@ export function deriveVerification(rec: EvidenceRecord): VerificationItem[] {
   }
   return items;
 }
+
+/**
+ * Returns the URL only if it is a safe http(s) link, else null — blocks
+ * javascript:/data:/vbscript: and other executable schemes from becoming
+ * clickable hrefs. Relative URLs resolve against the site origin and are safe.
+ */
+export function safeExternalUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const u = new URL(url, 'https://ninescrolls.com');
+    return u.protocol === 'http:' || u.protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
+}

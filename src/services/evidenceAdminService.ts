@@ -1,5 +1,5 @@
 import { getAmplifyDataClient } from './amplifyClient';
-import { EVIDENCE_STATUS, hasPayload } from '../config/evidence';
+import { EVIDENCE_STATUS, hasPayload, type EvidenceStatus } from '../config/evidence';
 import type { Schema } from '../../amplify/data/resource';
 
 const client = getAmplifyDataClient;
@@ -113,7 +113,7 @@ export async function deleteEvidence(id: string) {
 }
 
 /** Status-only update (e.g. bulk archive). Skips slug/payload re-validation. */
-export async function setEvidenceStatus(id: string, status: string) {
+export async function setEvidenceStatus(id: string, status: EvidenceStatus) {
   const { data, errors } = await client().models.Evidence.update({ id, status }, { authMode: 'userPool' });
   if (errors) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
