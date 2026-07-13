@@ -57,6 +57,29 @@ describe('createEvidence', () => {
     await createEvidence({ ...base, status: EVIDENCE_STATUS.PUBLISHED });
     expect(model.create.mock.calls[0][0].publishDate).toBeTruthy();
   });
+
+  it('serializes metrics and meta as JSON STRINGS (AWSJSON rejects raw arrays/objects)', async () => {
+    model.listEvidenceBySlug.mockResolvedValueOnce({ data: [], nextToken: null });
+    model.create.mockResolvedValueOnce({ data: { id: 'e-1' }, errors: null });
+    await createEvidence({
+      ...base,
+      metrics: [{ label: 'Etch rate', value: '3.2', unit: 'μm/min' }],
+      meta: { journal: 'Nature' },
+    });
+    const arg = model.create.mock.calls[0][0];
+    expect(typeof arg.metrics).toBe('string');
+    expect(JSON.parse(arg.metrics)).toEqual([{ label: 'Etch rate', value: '3.2', unit: 'μm/min' }]);
+    expect(typeof arg.meta).toBe('string');
+    expect(JSON.parse(arg.meta)).toEqual({ journal: 'Nature' });
+  });
+
+  it('sends null (not an empty array) for empty metrics', async () => {
+    model.listEvidenceBySlug.mockResolvedValueOnce({ data: [], nextToken: null });
+    model.create.mockResolvedValueOnce({ data: { id: 'e-1' }, errors: null });
+    await createEvidence({ ...base, metrics: [], meta: undefined });
+    expect(model.create.mock.calls[0][0].metrics).toBeNull();
+    expect(model.create.mock.calls[0][0].meta).toBeNull();
+  });
 });
 
 describe('updateEvidence', () => {
