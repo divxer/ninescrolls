@@ -41,14 +41,14 @@ const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental'
   'pub-tailong-icp200-metalens-lpor-2024': ['A', 'primary'],
   'pub-tailong-icp100a-microoptics-ol-2019': ['B', 'primary'],
   'pub-tailong-icp-si3d-ao-2017': ['A', 'substantial'],
-  'pub-tailong-icp-multifocal-microlens-mi-2022': ['B', 'substantial'],
+  'pub-tailong-icp-multifocal-microlens-mi-2022': ['A', 'substantial'], // B->A full-text re-quote (ICP-100A)
   'pub-tailong-icp100a-sic-microlens-lpt-2023': ['A', 'primary'],
-  'pub-tailong-icp-diamond-etch-srep-2025': ['B', 'primary'],
+  'pub-tailong-icp-diamond-etch-srep-2025': ['A', 'primary'], // B->A full-text re-quote (ICP-S-150)
   'pub-tailong-icp100a-antireflection-metasurface-adma-2026': ['A', 'primary'],
   'pub-tailong-icp-bite-thermoelectric-jalcom-2026': ['B', 'primary'],
   'pub-tailong-icp100-pecvd150ll-ptse2-selenization-acsami-2025': ['A', 'primary'],
   'pub-tailong-rie100-vdw-rectifier-natcommun-2021': ['A', 'substantial'],
-  'pub-tailong-rie-hydrogel-generator-natcommun-2024': ['B', 'incidental'],
+  'pub-tailong-rie-hydrogel-generator-natcommun-2024': ['A', 'incidental'], // B->A re-quote; RIE no model, incidental step
   'pub-tailong-rie150-sidewall-trench-mre-2019': ['A', 'primary'],
   'pub-tailong-rie-mos2-satcurrent-nanores-2022': ['A', 'incidental'],
   'pub-tailong-rie150-graphene-mre-2019': ['A', 'substantial'],
@@ -60,8 +60,10 @@ const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental'
   'pub-tailong-pecvd-sio2-tft-tsf-2024': ['A', 'substantial'],
   'pub-tailong-icpm100-pecvd-ga2o3-uv-mattod-2026': ['B', 'primary'],
   'pub-tailong-sputter100-cu-catalysis-acsami-2024': ['A', 'primary'],
-  'pub-tailong-sputter-cu-nanotwin-mi-2024': ['B', 'substantial'],
-  'pub-tailong-sputter-wo3-sensor-sensors-2025': ['B', 'primary'],
+  // NOTE: sputter-cu-nanotwin-mi-2024 and sputter-wo3-sensor-sensors-2025 were
+  // ARCHIVED as catalog false-positives (full-text 2026-07-13): the former uses a
+  // non-Tailong "VCT 300" sputter; the latter's "Tailong" is a gas supplier
+  // ("Anxing Tailong Gas Chemical", ≠ Beijing Zhongke Tailong). Skipped below.
   // --- scholar-verified (12) ---
   'pub-tailong-rie100-hidden-vacancy-2dsemi-adma-2021': ['A', 'substantial'],
   'pub-tailong-rie-tendon-hydrogel-sciadv-2023': ['A', 'substantial'],
@@ -97,7 +99,7 @@ const WAVE1 = new Set([
   'pub-tailong-sputter100-cu-catalysis-acsami-2024',
 ]);
 
-const LIST = `query L($t:String){ listEvidences(limit:200,nextToken:$t){ items{ id slug type meta } nextToken } }`;
+const LIST = `query L($t:String){ listEvidences(limit:200,nextToken:$t){ items{ id slug type status meta } nextToken } }`;
 const UPDATE = `mutation U($i:UpdateEvidenceInput!){ updateEvidence(input:$i){ id } }`;
 
 async function main() {
@@ -107,7 +109,7 @@ async function main() {
     const r: any = await client.graphql({ query: LIST, variables: { t }, ...AUTH });
     items.push(...(r.data.listEvidences.items ?? [])); t = r.data.listEvidences.nextToken;
   } while (t);
-  const pubs = items.filter((i) => i.type === 'publication');
+  const pubs = items.filter((i) => i.type === 'publication' && i.status !== 'archived');
 
   const tally: any = { wave1: 0, wave2: 0, wave3: 0, A: 0, B: 0, primary: 0, substantial: 0, incidental: 0, eligible: 0 };
   const unmapped: string[] = [];

@@ -58,13 +58,19 @@ quote). **No dynamic "cited-by" counts are stored** (they change over time).
   paywalls (ACS / Elsevier / Wiley-Cloudflare / IEEE); not seeded without a
   full-text read.
 - **ALD 光子学报 "T-ALD-100A"** paper — Chinese-journal DOI unresolved.
+- **Two catalog records ARCHIVED as false positives** (caught by the full-text
+  re-quote pass, 2026-07-13): `sputter-cu-nanotwin-mi-2024` (uses a non-Tailong
+  "VCT 300" sputter) and `sputter-wo3-sensor-sensors-2025` ("Tailong" there is a
+  **gas supplier**, "Anxing Tailong Gas Chemical", ≠ Beijing Zhongke Tailong).
+  Set to `status: archived` with `meta.removedReason`; recommend hard delete.
 
 ## Result (verified 2026-07-13)
 
-**54 Evidence records, all `status: draft`.** No-leak boundary holds: the anonymous
-`listPublishedEvidence` (apiKey) query returns 0 records. Publication coverage by
-product: `rie-etcher` 23 · `icp-etcher` 22 · `pecvd` 7 · `sputter` 5 · `ibe-ribe` 1
-· `striper` 1 (6 product lines; `ald` 0). Tailong models observed: ICP-100A/100/200,
+**52 active Evidence records (all `status: draft`) + 2 archived false positives.**
+No-leak boundary holds: the anonymous `listPublishedEvidence` (apiKey) query
+returns 0 records. Publication coverage by product (active): `rie-etcher` 23 ·
+`icp-etcher` 22 · `pecvd` 7 · `sputter` 3 · `ibe-ribe` 1 · `striper` 1 (6 product
+lines; `ald` 0). Tailong models observed: ICP-100A/100/200,
 ICP-S-150, ICP-PECVD-150, ICP-I, RIE-100/150/150A/100M, STRIPER-100, PECVD-150LL,
 Sputter 100, HighThroughput100-6A.
 
@@ -80,8 +86,9 @@ select what to publish — **being "verified" alone is NOT enough to auto-publis
 | `launchEligible` | boolean | **hard gate** = `tier A` AND `capabilityRole != incidental` |
 | `publishPriority` | `wave1` / `wave2` / `wave3` | `wave1` = 6 hero papers (rie/icp/pecvd/sputter); `wave2` = rest of launch-eligible; `wave3` = held (B-tier re-quote, incidental, snippet-tier) |
 
-Current split (54 records): wave1 **6** · wave2 **30** · wave3 **18**; tier A **42** / B **12**;
-launchEligible **36**. `ibe-ribe`, `striper`, `ald` have **no** launch-eligible record →
+Current split (52 active records; 2 archived as false positives — see below):
+wave1 **6** · wave2 **32** · wave3 **14**; tier A **45** / B **7**; launchEligible **38**.
+`ibe-ribe`, `striper`, `ald` have **no** launch-eligible record →
 their product pages show no Evidence module at launch (by design — "no strong evidence,
 don't show" beats forcing coverage with an incidental-use paper). "One record per product
 line" is a **soft** goal; tier-A + non-incidental are the **hard** gates. Re-run anytime
