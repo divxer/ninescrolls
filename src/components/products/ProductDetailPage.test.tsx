@@ -18,6 +18,10 @@ vi.mock('../../hooks/useProductPage', () => ({
   useProductPage: () => ({ addToCart }),
 }));
 
+vi.mock('../../services/evidenceService', () => ({
+  fetchPublishedEvidence: vi.fn().mockResolvedValue([{ id: '1', type: 'application_note' }]),
+}));
+
 function renderTemplate() {
   return render(
     <HelmetProvider>
@@ -292,5 +296,31 @@ describe('ProductDetailPage template', () => {
     expect(getProductJsonLd().offers.priceValidUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(getProductJsonLd().offers).not.toHaveProperty('lowPrice');
     expect(getProductJsonLd().offers).not.toHaveProperty('offerCount');
+  });
+
+  it('renders the Evidence module after applications and before the gallery', async () => {
+    const configWithGallery: ProductDetailConfig = {
+      ...icpEtcherConfig,
+      gallery: {
+        heading: 'Gallery Fixture',
+        images: [{ src: '/x.webp', alt: 'x', width: 100, height: 100 }],
+      },
+    };
+    const { getByTestId, findByText, getByText } = render(
+      <HelmetProvider>
+        <MemoryRouter>
+          <ProductDetailPage config={configWithGallery} />
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    const evidence = await findByText('Evidence');
+    const evidenceSection = getByTestId('product-evidence');
+    const applications = getByTestId('product-applications');
+    const gallery = getByText('Gallery Fixture');
+
+    expect(applications.compareDocumentPosition(evidenceSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(evidenceSection.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(evidence).toBeInTheDocument();
   });
 });
