@@ -1,55 +1,70 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminEvidenceListPage } from './AdminEvidenceListPage';
 import { EVIDENCE_TYPE, EVIDENCE_STATUS } from '../../config/evidence';
 
 const listAllEvidence = vi.fn();
 const deleteEvidence = vi.fn();
+const setEvidenceStatus = vi.fn();
 vi.mock('../../services/evidenceAdminService', () => ({
   listAllEvidence: () => listAllEvidence(),
   deleteEvidence: (id: string) => deleteEvidence(id),
+  setEvidenceStatus: (id: string, status: string) => setEvidenceStatus(id, status),
 }));
-beforeEach(() => {
-  listAllEvidence.mockReset();
-  deleteEvidence.mockReset();
-});
 
 const rows = [
-  { id: 'e-1', title: 'Draft Note', type: EVIDENCE_TYPE.APPLICATION_NOTE, status: EVIDENCE_STATUS.DRAFT, products: ['ald'] },
-  { id: 'e-2', title: 'Pub Paper', type: EVIDENCE_TYPE.PUBLICATION, status: EVIDENCE_STATUS.PUBLISHED, products: ['rie-etcher'] },
-  { id: 'e-3', title: 'Archived Val', type: EVIDENCE_TYPE.VALIDATION, status: EVIDENCE_STATUS.ARCHIVED, products: ['ald'] },
+  { id: 'e-1', title: 'Alpha publication', type: EVIDENCE_TYPE.PUBLICATION, status: EVIDENCE_STATUS.DRAFT, products: ['icp-etcher'], summary: 'sum a', sourceUrl: 'https://doi.org/x', updatedAt: '2026-07-13T00:00:00Z', meta: JSON.stringify({ doi: 'x', journal: 'PhotoniX', year: 2022, verifiedAt: '2026-07-13', relationshipDisclosure: 'd' }) },
+  { id: 'e-2', title: 'Beta note', type: EVIDENCE_TYPE.APPLICATION_NOTE, status: EVIDENCE_STATUS.PUBLISHED, products: ['rie-etcher'], summary: 'sum b', sourceUrl: 'https://x/y.pdf', updatedAt: '2026-07-10T00:00:00Z', meta: null },
 ];
 
-describe('AdminEvidenceListPage', () => {
-  it('shows all statuses including draft and archived', async () => {
-    listAllEvidence.mockResolvedValueOnce(rows);
-    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Draft Note')).toBeInTheDocument());
-    expect(screen.getByText('Pub Paper')).toBeInTheDocument();
-    expect(screen.getByText('Archived Val')).toBeInTheDocument();
+beforeEach(() => {
+  listAllEvidence.mockReset().mockResolvedValue(rows);
+  deleteEvidence.mockReset();
+  setEvidenceStatus.mockReset();
+});
+
+const renderPage = () => render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
+
+describe('AdminEvidenceListPage (redesign)', () => {
+  it('shows all records with type labels and statuses', async () => {
+    renderPage();
+    expect(await screen.findByText('Alpha publication')).toBeInTheDocument();
+    expect(screen.getByText('Beta note')).toBeInTheDocument();
+    expect(screen.getAllByText('Published Research').length).toBeGreaterThan(0);
+  });
+  it('searches by title', async () => {
+    renderPage();
+    await screen.findByText('Alpha publication');
+    fireEvent.change(screen.getByPlaceholderText(/Search/i), { target: { value: 'beta' } });
+    expect(screen.queryByText('Alpha publication')).not.toBeInTheDocument();
+    expect(screen.getByText('Beta note')).toBeInTheDocument();
   });
   it('filters by status', async () => {
-    listAllEvidence.mockResolvedValueOnce(rows);
-    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Draft Note')).toBeInTheDocument());
-    fireEvent.change(screen.getByLabelText(/Filter by status/i), { target: { value: EVIDENCE_STATUS.PUBLISHED } });
-    expect(screen.queryByText('Draft Note')).not.toBeInTheDocument();
-    expect(screen.getByText('Pub Paper')).toBeInTheDocument();
+    renderPage();
+    await screen.findByText('Alpha publication');
+    fireEvent.change(screen.getByLabelText(/Status/i), { target: { value: EVIDENCE_STATUS.PUBLISHED } });
+    expect(screen.queryByText('Alpha publication')).not.toBeInTheDocument();
+    expect(screen.getByText('Beta note')).toBeInTheDocument();
   });
-  it('shows an error (not an unhandled rejection) when the list fails to load', async () => {
-    listAllEvidence.mockRejectedValueOnce(new Error('load boom'));
-    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
+  it('opens the detail panel when a row is clicked', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByText('Alpha publication'));
+    const panel = await screen.findByRole('complementary', { name: /Evidence detail/i });
+    expect(within(panel).getByText('Publication verification')).toBeInTheDocument();
+  });
+  it('archives selected rows', async () => {
+    setEvidenceStatus.mockResolvedValue({});
+    renderPage();
+    await screen.findByText('Alpha publication');
+    const checkboxes = screen.getAllByRole('checkbox');
+    fireEvent.click(checkboxes[1]);
+    fireEvent.click(screen.getByRole('button', { name: /Archive selected/i }));
+    await waitFor(() => expect(setEvidenceStatus).toHaveBeenCalledWith('e-1', EVIDENCE_STATUS.ARCHIVED));
+  });
+  it('shows an error when loading fails', async () => {
+    listAllEvidence.mockReset().mockRejectedValueOnce(new Error('load boom'));
+    renderPage();
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/load boom/i));
-  });
-  it('shows an error when a delete fails', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    listAllEvidence.mockResolvedValueOnce(rows);
-    deleteEvidence.mockRejectedValueOnce(new Error('delete boom'));
-    render(<MemoryRouter><AdminEvidenceListPage /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Draft Note')).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole('button', { name: /Delete/i })[0]);
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/delete boom/i));
-    confirmSpy.mockRestore();
   });
 });
