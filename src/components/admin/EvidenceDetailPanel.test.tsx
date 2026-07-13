@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { EvidenceDetailPanel } from './EvidenceDetailPanel';
 import { EVIDENCE_TYPE, EVIDENCE_STATUS } from '../../config/evidence';
 
-const rec = {
+const baseRec = {
   id: 'e1',
   title: 'Biomimetic sapphire windows enabled by inside-out femtosecond laser deep-scribing',
   type: EVIDENCE_TYPE.PUBLICATION,
@@ -17,7 +17,7 @@ const rec = {
   meta: JSON.stringify({ doi: '10.1186/s43074-022-00047-3', journal: 'PhotoniX', year: 2022, verifiedAt: '2026-07-13', relationshipDisclosure: 'disclosed' }),
 };
 
-function renderPanel(props = {}) {
+function renderPanel(props = {}, rec = baseRec) {
   return render(
     <MemoryRouter>
       <EvidenceDetailPanel record={rec} onClose={vi.fn()} onDelete={vi.fn()} {...props} />
@@ -26,30 +26,50 @@ function renderPanel(props = {}) {
 }
 
 describe('EvidenceDetailPanel', () => {
-  it('shows title, summary (as "Summary"), and source metadata', () => {
+  it('is a labelled modal dialog', () => {
+    renderPanel();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveAccessibleName(/Biomimetic sapphire windows/i);
+  });
+  it('shows title, summary (as "Summary"), and source metadata with a safe DOI link', () => {
     renderPanel();
     expect(screen.getByRole('heading', { name: /Biomimetic sapphire windows/i })).toBeInTheDocument();
     expect(screen.getByText('Summary')).toBeInTheDocument();
     expect(screen.getByText(/Peer-reviewed research using the ICP platform/i)).toBeInTheDocument();
     expect(screen.getByText('PhotoniX')).toBeInTheDocument();
     expect(screen.getByText('2022')).toBeInTheDocument();
-    const source = screen.getByRole('link', { name: /View source/i });
-    expect(source).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
+    expect(screen.getByRole('link', { name: /View source/i })).toHaveAttribute('href', 'https://doi.org/10.1186/s43074-022-00047-3');
   });
-  it('renders the publication verification checklist from the record', () => {
+  it('renders the publication verification checklist', () => {
     renderPanel();
     expect(screen.getByText('Publication verification')).toBeInTheDocument();
     expect(screen.getByText('Product selected')).toBeInTheDocument();
     expect(screen.getByText('DOI recorded')).toBeInTheDocument();
     expect(screen.getByText('Attribution disclosure present')).toBeInTheDocument();
   });
-  it('has an Edit link to the record and fires onClose / onDelete', () => {
-    const onClose = vi.fn(); const onDelete = vi.fn();
-    renderPanel({ onClose, onDelete });
-    expect(screen.getByRole('link', { name: /Edit evidence/i })).toHaveAttribute('href', '/admin/evidence/e1/edit');
+  it('closes on the close button and on Escape', () => {
+    const onClose = vi.fn();
+    renderPanel({ onClose });
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
-    expect(onClose).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Delete evidence/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+  it('hides Delete until "More actions" is opened, then fires onDelete', () => {
+    const onDelete = vi.fn();
+    renderPanel({ onDelete });
+    expect(screen.queryByRole('menuitem', { name: /Delete evidence/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /More actions/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Delete evidence/i }));
     expect(onDelete).toHaveBeenCalledWith('e1');
+  });
+  it('has an Edit link to the record', () => {
+    renderPanel();
+    expect(screen.getByRole('link', { name: /Edit evidence/i })).toHaveAttribute('href', '/admin/evidence/e1/edit');
+  });
+  it('does NOT render an unsafe javascript: sourceUrl as a clickable link', () => {
+    renderPanel({}, { ...baseRec, sourceUrl: 'javascript:alert(1)', meta: JSON.stringify({}) });
+    expect(screen.queryByRole('link', { name: /View source/i })).not.toBeInTheDocument();
   });
 });
