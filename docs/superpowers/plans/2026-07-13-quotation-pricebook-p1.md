@@ -34,6 +34,7 @@
 
 6. **45-line cap** on quotations (spec transactional invariant 3). Enforced in create and update with `VALIDATION:` errors.
 7. P1 quotation status is **always `DRAFT`**. No PDF, no `GENERATED`, no timeline emit, no RFQ page changes — those are P2.
+8. **Invoke boundary**: the AppSync resolver role is the ONLY business caller of price-api. The function is never granted `lambda:InvokeFunction` to other Lambdas, IAM users, or public principals, and is never added to any cross-Lambda invoke loop in `backend.ts`. The admin gate trusts `event.identity` because AppSync verified the JWT — a direct invoker could fabricate `identity.groups`, so direct invocation must stay impossible. Any P2 need for cross-Lambda calls goes through AppSync or gets its own signature verification.
 
 ## File structure
 
@@ -236,14 +237,25 @@ await client.send(new AdminAddUserToGroupCommand({
 console.log(`Added ${email} to 'admin' group in pool ${userPoolId}`);
 ```
 
-- [ ] **Step 7: Verify the script parses (no deploy in this task)**
+- [ ] **Step 7: Put the script under real typecheck NOW (not in Task 18)**
 
-Run: `npx tsc --noEmit -p tsconfig.json 2>&1 | grep add-admin-user` (expect no output) — or if scripts are outside the tsconfig include set, `npx tsx --eval "import('./scripts/add-admin-user.ts').catch(e => { if (!/Usage|amplify_outputs/.test(String(e))) throw e; })"` is NOT needed; a plain review that it imports only `@aws-sdk/client-cognito-identity-provider` (already a transitive dependency) suffices. Do not run it against a real pool during implementation.
+Add `scripts/add-admin-user.ts` to the `include` array of `tsconfig.scripts.json` (currently `["scripts/generate-equipment-guide.ts", "src/**/*.ts"]`):
+
+```json
+  "include": [
+    "scripts/generate-equipment-guide.ts",
+    "scripts/add-admin-user.ts",
+    "src/**/*.ts"
+  ]
+```
+
+Then run: `npx tsc --noEmit -p tsconfig.scripts.json`
+Expected: no errors. (Task 18 later appends its CSV files to this same array.) Do not run the script against a real pool during implementation.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add amplify/auth/resource.ts amplify/functions/price-api/lib/adminAuth.ts amplify/functions/price-api/lib/adminAuth.test.ts scripts/add-admin-user.ts
+git add amplify/auth/resource.ts amplify/functions/price-api/lib/adminAuth.ts amplify/functions/price-api/lib/adminAuth.test.ts scripts/add-admin-user.ts tsconfig.scripts.json
 git commit -m "feat(price-api): cognito admin group + server-side admin gate"
 ```
 
@@ -325,8 +337,31 @@ vi.mock('./resolvers/quotationResolvers.js', () => ({
 }));
 
 import { handler } from './handler.js';
+import * as supplierResolvers from './resolvers/supplierResolvers.js';
+import * as catalogResolvers from './resolvers/catalogResolvers.js';
+import * as costVersionResolvers from './resolvers/costVersionResolvers.js';
+import * as policyResolvers from './resolvers/policyResolvers.js';
+import * as quotationResolvers from './resolvers/quotationResolvers.js';
+import { beforeEach, type Mock } from 'vitest';
 
 const adminIdentity = { sub: 's', groups: ['admin'] };
+const nonAdminIdentity = { sub: 's', claims: { email: 'x@y.z' } };
+
+// The COMPLETE operation surface — must match handler.ts's resolver map exactly.
+const ALL_OPS = [
+  'pbListSuppliers', 'pbCreateSupplier', 'pbUpdateSupplier',
+  'pbListCatalogItems', 'pbCreateCatalogItem', 'pbUpdateCatalogItem',
+  'pbAppendCostVersion', 'pbListCostVersions',
+  'pbGetPricingPolicy', 'pbUpdatePricingPolicy',
+  'pbCreateQuotationDraft', 'pbUpdateQuotationDraft', 'pbGetQuotation', 'pbListQuotations',
+] as const;
+
+const resolverMocks = {
+  ...supplierResolvers, ...catalogResolvers, ...costVersionResolvers,
+  ...policyResolvers, ...quotationResolvers,
+} as unknown as Record<string, Mock>;
+
+beforeEach(() => Object.values(resolverMocks).forEach((f) => f.mockClear()));
 
 describe('price-api handler', () => {
   it('dispatches by fieldName for an admin caller', async () => {
@@ -345,12 +380,20 @@ describe('price-api handler', () => {
     expect(res).toEqual({ items: [] });
   });
 
-  it('rejects non-admin callers BEFORE dispatch, for every operation', async () => {
+  // Table-driven: all 14 operations × both event shapes; the resolver must
+  // NEVER execute on a rejected call.
+  it.each(ALL_OPS)('rejects non-admin for %s in both event shapes, without dispatch', async (op) => {
     await expect(handler({
-      info: { fieldName: 'pbListSuppliers', parentTypeName: 'Query' },
-      arguments: {},
-      identity: { sub: 's', claims: { email: 'x@y.z' } },
+      info: { fieldName: op, parentTypeName: 'Query' }, arguments: {}, identity: nonAdminIdentity,
     })).rejects.toThrow(/^UNAUTHORIZED:/);
+    await expect(handler({
+      fieldName: op, typeName: 'Query', arguments: {}, identity: nonAdminIdentity,
+    })).rejects.toThrow(/^UNAUTHORIZED:/);
+    expect(resolverMocks[op]).not.toHaveBeenCalled();
+  });
+
+  it('covers the full resolver map (guards against adding an op without gate coverage)', () => {
+    expect(Object.keys(resolverMocks).sort()).toEqual([...ALL_OPS].sort());
   });
 
   it('throws on unknown field', async () => {
@@ -448,7 +491,7 @@ Each stub throws `NOT_IMPLEMENTED: <name>` — Tasks 7–12 replace them file by
 - [ ] **Step 7: Run the test — verify it passes**
 
 Run: `npx vitest run amplify/functions/price-api/handler.test.ts --exclude '**/.claude/**'`
-Expected: 4 passed.
+Expected: 18 passed (2 dispatch + 14 table-driven rejections + map-coverage + unknown-field).
 
 - [ ] **Step 8: Commit**
 
@@ -1112,9 +1155,20 @@ describe('pbCreateSupplier', () => {
     expect(tx[1].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
   });
 
-  it('maps a cancelled transaction (cap reached) to a VALIDATION error', async () => {
-    send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'TransactionCanceledException' }));
+  it('maps a guard-condition failure (cap reached) to a VALIDATION error', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), {
+      name: 'TransactionCanceledException',
+      CancellationReasons: [{ Code: 'ConditionalCheckFailed' }, { Code: 'None' }],
+    }));
     await expect(pbCreateSupplier(ev({ input: { name: 'Eleventh OEM' } }))).rejects.toThrow(/^VALIDATION:.*limit/);
+  });
+
+  it('maps a non-guard cancellation (key collision) to CONFLICT, not "limit reached"', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), {
+      name: 'TransactionCanceledException',
+      CancellationReasons: [{ Code: 'None' }, { Code: 'ConditionalCheckFailed' }],
+    }));
+    await expect(pbCreateSupplier(ev({ input: { name: 'Probe OEM' } }))).rejects.toThrow(/^CONFLICT:/);
   });
 
   it('rejects a missing name', async () => {
@@ -1204,8 +1258,15 @@ export async function pbCreateSupplier(event: PriceApiEvent) {
       ],
     }));
   } catch (e) {
-    if ((e as Error).name === 'TransactionCanceledException') {
-      throw new Error(`VALIDATION: supplier limit (${MAX_SUPPLIERS}) reached — scaling past it is a P2+ design task (list pagination + API cursor together, per spec)`);
+    const err = e as Error & { CancellationReasons?: Array<{ Code?: string }> };
+    if (err.name === 'TransactionCanceledException') {
+      // Distinguish WHICH condition failed: index 0 = count guard (cap), index 1 =
+      // supplier Put (key collision). Only a guard failure means the cap was hit;
+      // anything else is a retryable conflict, not a misleading "limit reached".
+      if (err.CancellationReasons?.[0]?.Code === 'ConditionalCheckFailed') {
+        throw new Error(`VALIDATION: supplier limit (${MAX_SUPPLIERS}) reached — scaling past it is a P2+ design task (list pagination + API cursor together, per spec)`);
+      }
+      throw new Error('CONFLICT: concurrent supplier create — retry');
     }
     throw e;
   }
@@ -3111,10 +3172,17 @@ import { priceApi } from './functions/price-api/resource';
 ```
 3. Next to the logistics grant block (lines ~542-544), add:
 ```ts
-// Grant price-api Lambda access (Price Book & Quotations — shared single table)
+// Grant price-api Lambda access (Price Book & Quotations — shared single table).
+// SECURITY (locked decision 8): the AppSync resolver role is the ONLY business
+// caller — do NOT grant lambda:InvokeFunction on price-api to anything, and do
+// NOT add priceApi to any cross-Lambda invoke loop below. The admin gate trusts
+// event.identity because AppSync verified the JWT; a direct invoker could
+// fabricate identity.groups.
 intelligenceTable.grantReadWriteData(backend.priceApi.resources.lambda);
 backend.priceApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 ```
+
+Explicit non-action: the `[backend.submitRfq, ...].forEach` invoke-grant loops near line 1116 MUST NOT gain `backend.priceApi` — neither as a grantee nor as a target.
 
 - [ ] **Step 4: Typecheck (BOTH configs — root tsconfig only covers `src/`)**
 
@@ -4195,7 +4263,7 @@ export function rmbToFen(s: string): number {
 }
 ```
 
-Run again: 6 passed. Then add both new scripts to `tsconfig.scripts.json` — its `include` array currently lists `scripts/generate-equipment-guide.ts` and `src/**/*.ts`; extend it:
+Run again: 6 passed. Then append the CSV files and the import script to `tsconfig.scripts.json` — after Task 1 its `include` already lists `generate-equipment-guide.ts` and `add-admin-user.ts`; the final array:
 
 ```json
   "include": [
