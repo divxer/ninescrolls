@@ -38,4 +38,9 @@ describe("quotationWorkbenchModel", () => {
       overrideReason: "Negotiated",
     });
   });
+  it("uses authoritative allocated line totals for non-divisible quantities", () => {
+    const [draft] = reconcileServerLines([line(1, { qty: 3, actualUnitUsdCents: null, actualLineTotalUsdCents: 100 })]);
+    expect(preview([draft]).actualTotal).toBe(100);
+    expect(preview([draft]).shares).toEqual([100]);
+  });
 });

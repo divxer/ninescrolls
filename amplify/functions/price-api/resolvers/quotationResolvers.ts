@@ -10,6 +10,15 @@ import { parseInput, getOperator, stripKeys, type PriceApiEvent } from '../lib/t
 
 export const MAX_LINES = 45; // spec invariant 3: full-replacement edit must fit 100 tx actions
 
+const snapshotPolicy = (policy: PolicyData): PolicyData => ({
+  fxRmbPerUsdMilli: policy.fxRmbPerUsdMilli,
+  defaultMarginBp: policy.defaultMarginBp,
+  minMarginBp: policy.minMarginBp,
+  roundingGranularityUsdCents: policy.roundingGranularityUsdCents,
+  seriesOverrides: { ...policy.seriesOverrides },
+  itemOverrides: { ...policy.itemOverrides },
+});
+
 export interface QuotationLineInput {
   itemId?: string;               // required for NORMAL lines
   sku?: string;                  // SURCHARGE lines: free-form label (FREIGHT, TARIFF, INSTALL, WARRANTY)
@@ -358,10 +367,7 @@ export async function pbCreateQuotationDraft(event: PriceApiEvent) {
     rfqId: input.rfqId ?? null, currency: input.currency ?? 'USD',
     validUntil: input.validUntil ?? null, tradeTerms: input.tradeTerms ?? null,
     paymentTerms: input.paymentTerms ?? null, notes: input.notes ?? null,
-    policySnapshot: {
-      fxRmbPerUsdMilli: policy.fxRmbPerUsdMilli, defaultMarginBp: policy.defaultMarginBp,
-      minMarginBp: policy.minMarginBp, roundingGranularityUsdCents: policy.roundingGranularityUsdCents,
-    },
+    policySnapshot: snapshotPolicy(policy),
     ...summary,
     lineCount: lineRows.length,
     createdAt: now, updatedAt: now, createdBy: operator,
@@ -446,6 +452,7 @@ export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
     tradeTerms: input.tradeTerms ?? header.tradeTerms ?? null,
     paymentTerms: input.paymentTerms ?? header.paymentTerms ?? null,
     notes: input.notes ?? header.notes ?? null,
+    policySnapshot: snapshotPolicy(policy),
   };
 
   const sets: string[] = [

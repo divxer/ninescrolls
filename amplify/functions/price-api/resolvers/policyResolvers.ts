@@ -2,6 +2,7 @@ import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { parseInput, getOperator, type PriceApiEvent } from '../lib/types.js';
 import type { PolicyData } from '../lib/pricing.js';
+import { validateMarginMap } from '../lib/validation.js';
 
 const KEY = { PK: 'PRICING_POLICY', SK: 'META' };
 
@@ -40,13 +41,7 @@ export async function pbUpdatePricingPolicy(event: PriceApiEvent) {
   // Infinity or negative prices (money-math review finding).
   for (const mapField of ['seriesOverrides', 'itemOverrides'] as const) {
     const m = input[mapField];
-    if (m !== undefined) {
-      for (const [key, v] of Object.entries(m)) {
-        if (!Number.isInteger(v) || v < 0 || v >= 10000) {
-          throw new Error(`VALIDATION: ${mapField}.${key} must be an integer in [0, 10000)`);
-        }
-      }
-    }
+    validateMarginMap(m, mapField);
   }
   if (input.fxRmbPerUsdMilli !== undefined
     && (!Number.isInteger(input.fxRmbPerUsdMilli) || input.fxRmbPerUsdMilli <= 0)) {

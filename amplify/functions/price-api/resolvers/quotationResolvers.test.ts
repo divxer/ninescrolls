@@ -118,6 +118,10 @@ describe('pbCreateQuotationDraft', () => {
     expect(counterOp.Update.ExpressionAttributeValues[':expected']).toBe(7);
     expect(schemeOp.Put.Item.SK).toBe('SCHEME');
     expect(schemeOp.Put.ConditionExpression).toBe('attribute_not_exists(PK)');
+    expect(headerOp.Put.Item.policySnapshot).toEqual(policyItem.Item && {
+      fxRmbPerUsdMilli: 7250, defaultMarginBp: 3500, minMarginBp: 2000,
+      roundingGranularityUsdCents: 10000, seriesOverrides: {}, itemOverrides: {},
+    });
     expect(headerOp.Put.Item.SK).toBe('V#001');
     expect(headerOp.Put.Item.revision).toBe(1);
     expect(lineOp.Put.Item.SK).toBe('V#001#LINE#01');
@@ -251,6 +255,11 @@ describe('pbUpdateQuotationDraft', () => {
     expect(delOps).toHaveLength(44);                                     // lineNo 2..45
     expect(delOps[0].Delete.Key.SK).toBe('V#001#LINE#02');
     expect(delOps[43].Delete.Key.SK).toBe('V#001#LINE#45');
+    expect(headerOp.Update.ExpressionAttributeValues[':policySnapshot']).toEqual({
+      fxRmbPerUsdMilli: 7250, defaultMarginBp: 3500, minMarginBp: 2000,
+      roundingGranularityUsdCents: 10000, seriesOverrides: {}, itemOverrides: {},
+    });
+    expect(res.policySnapshot).toEqual(headerOp.Update.ExpressionAttributeValues[':policySnapshot']);
   });
 
   it('marshals the totalOverride summary key (with audit fields) into the header Update', async () => {
@@ -280,6 +289,12 @@ describe('pbUpdateQuotationDraft', () => {
       quotationNumber: 'Q-2026-0008', version: 1, expectedRevision: 1,
       lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL' }],
     }))).rejects.toThrow(/^CONFLICT:/);
+    // Header replacement and every line replacement/deletion are a single
+    // TransactWrite request; cancellation therefore leaves the old snapshot intact.
+    const writes = send.mock.calls.map(([command]) => command).filter((command) => command.constructor.name === 'TransactWriteCommand');
+    expect(writes).toHaveLength(1);
+    expect(writes[0].input.TransactItems[0]).toHaveProperty('Update');
+    expect(writes[0].input.TransactItems.some((op: Record<string, unknown>) => 'Put' in op)).toBe(true);
   });
 
   it('refuses to edit a non-DRAFT version', async () => {

@@ -22,6 +22,7 @@ import {
 import {
   catalogMatches,
   lineActual,
+  lineActualTotal,
   marginFor,
   preview,
   reconcileServerLines,
@@ -63,6 +64,8 @@ export function QuotationWorkbenchPage() {
     [customLabel, setCustomLabel] = useState(""),
     [customValue, setCustomValue] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [totalOverrideValue, setTotalOverrideValue] = useState("");
+  const [hasTotalOverride, setHasTotalOverride] = useState(false);
   const [editing, setEditing] = useState<string | null>(null),
     [editValue, setEditValue] = useState(""),
     [saveState, setSaveState] = useState<SaveState>("idle"),
@@ -140,6 +143,9 @@ export function QuotationWorkbenchPage() {
     setSaved(result);
     setVersion(result);
     setLines(reconcileServerLines(result.lines ?? []));
+    setHasTotalOverride(Boolean(result.totalOverride));
+    setTotalOverrideValue(result.totalOverride ? (result.totalOverride.totalUsdCents / 100).toFixed(2) : "");
+    if (result.totalOverride?.reason) setAdjustmentReason(result.totalOverride.reason);
   };
   const filtered = useMemo(
     () => catalog.filter((item) =>
@@ -184,6 +190,11 @@ export function QuotationWorkbenchPage() {
     setLines((current) =>
       current.map((line) => (line.key === key ? { ...line, ...changes } : line))
     );
+  const removeLine = (line: DraftLine) => {
+    const isBase = (line.snapshot?.kind ?? line.item?.kind) === "MACHINE";
+    if (isBase) return;
+    setLines((current) => current.filter(({ key }) => key !== line.key));
+  };
   const addCatalog = (item: CatalogItem) => {
     setLines((current) => {
       const duplicate = current.some((line) => line.itemId === item.itemId);
@@ -262,11 +273,20 @@ export function QuotationWorkbenchPage() {
   };
   const save = async () => {
     setError("");
-    const missingReason = lines.some(
-      (line) => line.actualUnitUsdCents !== undefined
-        && !line.overrideReason?.trim()
-        && !adjustmentReason.trim()
-    );
+    const totalCents = Math.round(Number(totalOverrideValue.replace(/[$,]/g, "")) * 100);
+    const wantsTotalOverride = hasTotalOverride || totalOverrideValue.trim() !== "";
+    const lineOverride = lines.some((line) => line.actualUnitUsdCents !== undefined);
+    if (wantsTotalOverride && lineOverride) {
+      setError("Total and line-level price overrides cannot be combined. Clear one before saving.");
+      return;
+    }
+    if (wantsTotalOverride && (!Number.isFinite(totalCents) || totalCents < 0)) {
+      setError("Actual quote total must be a non-negative amount.");
+      return;
+    }
+    const missingReason = (wantsTotalOverride && !adjustmentReason.trim())
+      || lines.some((line) => line.actualUnitUsdCents !== undefined
+        && !line.overrideReason?.trim() && !adjustmentReason.trim());
     if (missingReason) {
       setError("Pricing adjustment reason is required for edited prices.");
       return;
@@ -276,6 +296,9 @@ export function QuotationWorkbenchPage() {
         ? { ...line, overrideReason: adjustmentReason.trim() }
         : line
     ));
+    const totalOverride = wantsTotalOverride
+      ? { totalUsdCents: totalCents, reason: adjustmentReason.trim() }
+      : undefined;
     setSaveState("saving");
     if (fixture) {
       const totals = preview(lines);
@@ -300,6 +323,7 @@ export function QuotationWorkbenchPage() {
               customerName,
               validUntil: validUntil || undefined,
               lines: payload,
+              ...(totalOverride ? { totalOverride } : {}),
             })
           : await createQuotationDraft({
               schemeLabel,
@@ -307,6 +331,7 @@ export function QuotationWorkbenchPage() {
               rfqId: rfqId || undefined,
               validUntil: validUntil || undefined,
               lines: payload,
+              ...(totalOverride ? { totalOverride } : {}),
             });
       applyServer(result);
       if (!identity) {
@@ -396,6 +421,7 @@ export function QuotationWorkbenchPage() {
           openEdit={openEdit}
           onEditKey={onEditKey}
           commitEdit={commitEdit}
+          removeLine={removeLine}
         />
       </main>
       {custom && (
@@ -430,11 +456,18 @@ export function QuotationWorkbenchPage() {
           label="Suggested quote"
           value={usd(saved || dirty ? shownTotals.suggestedTotal : null)}
         />
-        <Summary
-          label="Actual quote"
-          value={usd(saved || dirty ? shownTotals.actualTotal : null)}
-          accent
-        />
+        <label className="min-w-40 flex-1 bg-primary-container px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-on-primary-container">
+          Actual quote
+          <span className="mt-0.5 flex items-center gap-1">
+            <span>$</span>
+            <input aria-label="Actual quote total" value={totalOverrideValue}
+              placeholder={shownTotals.actualTotal == null ? "—" : (shownTotals.actualTotal / 100).toFixed(2)}
+              onChange={(event) => { setTotalOverrideValue(event.target.value); setHasTotalOverride(true); }}
+              className="w-28 bg-transparent text-base font-black normal-case tracking-normal outline-none" />
+            {(hasTotalOverride || totalOverrideValue) && <button type="button" aria-label="Clear actual quote total"
+              onClick={() => { setHasTotalOverride(false); setTotalOverrideValue(""); }} className="material-symbols-outlined text-sm">close</button>}
+          </span>
+        </label>
         <Summary
           label="Actual margin"
           value={marginPct(dirty || !saved ? shownTotals.actualMarginBp : saved.actualMarginBp)}
@@ -648,6 +681,7 @@ function BomTable({
   openEdit,
   onEditKey,
   commitEdit,
+  removeLine,
 }: {
   lines: DraftLine[];
   totals: ReturnType<typeof preview>;
@@ -659,6 +693,7 @@ function BomTable({
   openEdit: (l: DraftLine) => void;
   onEditKey: (e: KeyboardEvent<HTMLInputElement>, k: string) => void;
   commitEdit: (k: string) => void;
+  removeLine: (line: DraftLine) => void;
 }) {
   const baseIndex = lines.findIndex(
     (line) => (line.snapshot?.kind ?? line.item?.kind) === "MACHINE"
@@ -705,6 +740,7 @@ function BomTable({
               openEdit={openEdit}
               onEditKey={onEditKey}
               commitEdit={commitEdit}
+              removeLine={removeLine}
             />
           ))}
         </tbody>
@@ -753,6 +789,7 @@ function BomRow({
   openEdit,
   onEditKey,
   commitEdit,
+  removeLine,
 }: {
   line: DraftLine;
   index: number;
@@ -765,6 +802,7 @@ function BomRow({
   openEdit: (l: DraftLine) => void;
   onEditKey: (e: KeyboardEvent<HTMLInputElement>, k: string) => void;
   commitEdit: (k: string) => void;
+  removeLine: (line: DraftLine) => void;
 }) {
   const snap = line.snapshot;
   const actual = lineActual(line);
@@ -821,6 +859,10 @@ function BomRow({
               )}
             </p>
           </div>
+          <button type="button" aria-label={`Remove ${snap?.name ?? line.item?.name ?? line.customLabel ?? line.sku}`}
+            title={isBase ? "Remove dependent rows before changing the base system" : "Remove row"}
+            disabled={isBase} onClick={() => removeLine(line)}
+            className="material-symbols-outlined ml-auto text-base text-on-surface-variant disabled:opacity-30">close</button>
         </div>
       </td>
       <td className="text-center">
@@ -879,7 +921,7 @@ function BomRow({
             onClick={() => openEdit(line)}
             className="font-mono font-bold"
           >
-            {usd(actual)}{" "}
+            {usd(lineActualTotal(line))}{" "}
             <span className="material-symbols-outlined align-middle text-sm">
               edit
             </span>
@@ -887,7 +929,7 @@ function BomRow({
         )}
       </td>
       <td className="text-right font-bold">
-        {marginPct(marginFor(actual, snap?.unitCostUsdCents))}
+        {marginPct(marginFor(lineActualTotal(line), snap?.unitCostUsdCents == null ? null : snap.unitCostUsdCents * line.qty))}
       </td>
       <td data-testid="quote-share" className="px-4 text-right font-bold">
         {formatShare(share)}

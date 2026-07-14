@@ -2,6 +2,7 @@ import { UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateSupplierId } from '../lib/ids.js';
 import { parseInput, stripKeys, type PriceApiEvent, type SupplierItem } from '../lib/types.js';
+import { validatePositiveInteger } from '../lib/validation.js';
 
 interface CreateSupplierInput {
   name: string;
@@ -18,6 +19,7 @@ export const MAX_SUPPLIERS = 10;
 export async function pbCreateSupplier(event: PriceApiEvent) {
   const input = parseInput<CreateSupplierInput>(event);
   if (!input.name?.trim()) throw new Error('VALIDATION: name is required');
+  if (input.defaultValidityDays !== undefined) validatePositiveInteger(input.defaultValidityDays, 'defaultValidityDays');
   const now = new Date().toISOString();
   const supplierId = generateSupplierId();
   const item: SupplierItem = {
@@ -77,6 +79,10 @@ const SUPPLIER_MUTABLE = ['name', 'contact', 'defaultValidityDays', 'status', 'n
 export async function pbUpdateSupplier(event: PriceApiEvent) {
   const input = parseInput<UpdateSupplierInput>(event);
   if (!input.supplierId) throw new Error('VALIDATION: supplierId is required');
+  if (input.defaultValidityDays !== undefined) validatePositiveInteger(input.defaultValidityDays, 'defaultValidityDays');
+  if (input.status !== undefined && !['ACTIVE', 'SUSPENDED'].includes(input.status)) {
+    throw new Error('VALIDATION: status must be ACTIVE or SUSPENDED');
+  }
   const sets: string[] = ['updatedAt = :updatedAt'];
   const values: Record<string, unknown> = { ':updatedAt': new Date().toISOString() };
   const names: Record<string, string> = {};

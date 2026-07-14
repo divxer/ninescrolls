@@ -48,6 +48,10 @@ describe('pbCreateSupplier', () => {
   it('rejects a missing name', async () => {
     await expect(pbCreateSupplier(ev({ input: { name: ' ' } }))).rejects.toThrow(/^VALIDATION:/);
   });
+  it('rejects a non-positive or fractional validity without writing', async () => {
+    await expect(pbCreateSupplier(ev({ input: { name: 'OEM', defaultValidityDays: 1.5 } }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
+  });
 });
 
 describe('pbUpdateSupplier', () => {
@@ -63,6 +67,10 @@ describe('pbUpdateSupplier', () => {
     send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }));
     await expect(pbUpdateSupplier(ev({ input: { supplierId: 'nope', name: 'X' } })))
       .rejects.toThrow(/^NOT_FOUND:/);
+  });
+  it.each([{ defaultValidityDays: 0 }, { status: 'DELETED' }])('rejects malformed update JSON without writing: %j', async (bad) => {
+    await expect(pbUpdateSupplier(ev({ input: { supplierId: 's1', ...bad } }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
   });
 });
 

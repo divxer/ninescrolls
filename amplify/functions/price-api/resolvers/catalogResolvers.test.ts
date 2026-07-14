@@ -58,6 +58,10 @@ describe('pbCreateCatalogItem', () => {
     await expect(pbCreateCatalogItem(ev({ input: { sku: 'X', name: 'x', series: 'S', kind: 'WIDGET' } })))
       .rejects.toThrow(/^VALIDATION:/);
   });
+  it.each([{ requiredOptionSkus: [''] }, { requiresSkus: ['OK', 3] }, { excludesSkus: 'NOPE' }, { maxQuantity: 0 }, { maxQuantity: 1.5 }])('rejects malformed JSON catalog rules without writing: %j', async (bad) => {
+    await expect(pbCreateCatalogItem(ev({ input: { sku: 'X', name: 'x', series: 'S', kind: 'OPTION', ...bad } }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
+  });
 });
 
 describe('pbUpdateCatalogItem', () => {
@@ -71,6 +75,10 @@ describe('pbUpdateCatalogItem', () => {
     send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }));
     await expect(pbUpdateCatalogItem(ev({ input: { itemId: 'nope', name: 'X' } })))
       .rejects.toThrow(/^NOT_FOUND:/);
+  });
+  it('rejects malformed rule updates without writing', async () => {
+    await expect(pbUpdateCatalogItem(ev({ input: { itemId: 'c1', maxQuantity: -1 } }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
   });
 });
 

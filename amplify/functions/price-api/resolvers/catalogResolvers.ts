@@ -2,9 +2,16 @@ import { UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateCatalogItemId } from '../lib/ids.js';
 import { parseInput, stripKeys, type PriceApiEvent, type CatalogItemItem } from '../lib/types.js';
+import { validateOptionalSkuArray, validatePositiveInteger } from '../lib/validation.js';
 
 const KINDS = ['MACHINE', 'OPTION', 'CONSUMABLE', 'SERVICE'] as const;
 type Kind = (typeof KINDS)[number];
+const validateRules = (input: { requiredOptionSkus?: unknown; requiresSkus?: unknown; excludesSkus?: unknown; maxQuantity?: unknown }) => {
+  validateOptionalSkuArray(input.requiredOptionSkus, 'requiredOptionSkus');
+  validateOptionalSkuArray(input.requiresSkus, 'requiresSkus');
+  validateOptionalSkuArray(input.excludesSkus, 'excludesSkus');
+  if (input.maxQuantity !== undefined && input.maxQuantity !== null) validatePositiveInteger(input.maxQuantity, 'maxQuantity');
+};
 
 interface CreateCatalogInput {
   sku: string; name: string; series: string; kind: Kind;
@@ -21,6 +28,7 @@ export async function pbCreateCatalogItem(event: PriceApiEvent) {
   if (!KINDS.includes(input.kind)) {
     throw new Error(`VALIDATION: kind must be one of ${KINDS.join(', ')}`);
   }
+  validateRules(input);
   const now = new Date().toISOString();
   const itemId = generateCatalogItemId();
   const item: CatalogItemItem = {
@@ -78,6 +86,7 @@ const CATALOG_MUTABLE = ['name', 'specs', 'requiredOptionSkus', 'requiresSkus', 
 export async function pbUpdateCatalogItem(event: PriceApiEvent) {
   const input = parseInput<UpdateCatalogInput>(event);
   if (!input.itemId) throw new Error('VALIDATION: itemId is required');
+  validateRules(input);
   const sets: string[] = ['updatedAt = :updatedAt'];
   const values: Record<string, unknown> = { ':updatedAt': new Date().toISOString() };
   const names: Record<string, string> = {};

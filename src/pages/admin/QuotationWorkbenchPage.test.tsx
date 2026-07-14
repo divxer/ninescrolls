@@ -196,6 +196,59 @@ describe("QuotationWorkbenchPage", () => {
     expect(payload.lines[0]).not.toHaveProperty("overrideReason");
   });
 
+  it("round-trips an existing total override unchanged until cleared", async () => {
+    const overridden = { ...snapshot, totalOverride: { totalUsdCents: 319999, reason: "Bundle", overriddenBy: "seller" } };
+    getQuotation.mockResolvedValueOnce({ scheme: null, versions: [overridden] });
+    updateQuotationDraft.mockResolvedValueOnce({ ...overridden, revision: 2 });
+    renderPage("/admin/quotations/Q-2026-0009");
+    await screen.findByDisplayValue("3199.99");
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalled());
+    const calls = updateQuotationDraft.mock.calls as unknown as Array<[Record<string, unknown>]>;
+    expect(calls[0]?.[0]).toMatchObject({
+      totalOverride: { totalUsdCents: 319999, reason: "Bundle" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /clear actual quote total/i }));
+    fireEvent.click(screen.getByRole("button", { name: /saved|save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalledTimes(2));
+    expect(calls[1]?.[0]).not.toHaveProperty("totalOverride");
+  });
+
+  it("removes non-base rows and omits persisted rows from save payload", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    await screen.findByText("RF Bias Module");
+    fireEvent.click(screen.getByRole("button", { name: /remove RF Bias Module/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalled());
+    const calls = updateQuotationDraft.mock.calls as unknown as Array<[{ lines: unknown[] }]>;
+    expect(calls[0]?.[0].lines).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /remove ICP-RIE Advanced/i })).toBeDisabled();
+  });
+
+  it("updates the total override with the shared adjustment reason", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    await screen.findByText("RF Bias Module");
+    fireEvent.change(screen.getByLabelText("Actual quote total"), { target: { value: "2999.99" } });
+    fireEvent.change(screen.getByLabelText("Pricing adjustment reason"), { target: { value: "Package discount" } });
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalled());
+    const calls = updateQuotationDraft.mock.calls as unknown as Array<[Record<string, unknown>]>;
+    expect(calls[0]?.[0]).toMatchObject({ totalOverride: { totalUsdCents: 299999, reason: "Package discount" } });
+  });
+
+  it("blocks total override while a line override exists", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    const [edit] = await screen.findAllByRole("button", { name: /edit actual price/i });
+    fireEvent.click(edit);
+    fireEvent.change(screen.getByRole("textbox", { name: /actual price 1/i }), { target: { value: "1500" } });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: /actual price 1/i }), { key: "Enter" });
+    fireEvent.change(screen.getByLabelText("Actual quote total"), { target: { value: "3000" } });
+    fireEvent.change(screen.getByLabelText("Pricing adjustment reason"), { target: { value: "Deal" } });
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/cannot be combined/i);
+    expect(updateQuotationDraft).not.toHaveBeenCalled();
+  });
+
   it("uses the compact adjustment reason for a newly edited row", async () => {
     renderPage("/admin/quotations/Q-2026-0009");
     const [edit] = await screen.findAllByRole("button", { name: /edit actual price/i });

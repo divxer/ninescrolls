@@ -40,11 +40,18 @@ export const lineActual = (line: DraftLine) =>
   line.surchargeUsdCents ??
   null;
 
+export const lineActualTotal = (line: DraftLine) =>
+  line.actualUnitUsdCents === undefined
+    && line.snapshot?.actualLineTotalUsdCents != null
+    && line.qty === line.snapshot.qty
+    ? line.snapshot.actualLineTotalUsdCents
+    : (() => {
+        const unit = lineActual(line);
+        return unit == null ? null : unit * line.qty;
+      })();
+
 export function preview(lines: DraftLine[]) {
-  const actuals = lines.map((line) => {
-    const unit = lineActual(line);
-    return unit == null ? null : unit * line.qty;
-  });
+  const actuals = lines.map(lineActualTotal);
   const sumKnown = (values: Array<number | null>) =>
     values.some((value) => value == null)
       ? null

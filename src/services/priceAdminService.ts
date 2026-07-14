@@ -168,8 +168,9 @@ export interface QuotationSummary {
   rfqId?: string | null;
   policySnapshot?: Pick<
     PricingPolicy,
-    'fxRmbPerUsdMilli' | 'defaultMarginBp' | 'minMarginBp' | 'roundingGranularityUsdCents'
+    'fxRmbPerUsdMilli' | 'defaultMarginBp' | 'minMarginBp' | 'roundingGranularityUsdCents' | 'seriesOverrides' | 'itemOverrides'
   > | null;
+  totalOverride?: { totalUsdCents: number; reason: string; overriddenBy?: string; overriddenAt?: string } | null;
   totalCostUsdCents: number | null;
   suggestedTotalUsdCents: number | null;
   actualTotalUsdCents: number | null;

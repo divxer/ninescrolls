@@ -91,6 +91,8 @@ export const quotationFixtureSnapshot: QuotationSummary = {
     defaultMarginBp: 3800,
     minMarginBp: 2500,
     roundingGranularityUsdCents: 100,
+    seriesOverrides: {},
+    itemOverrides: {},
   },
   validUntil: "2026-08-14",
   totalCostUsdCents: 51972300,

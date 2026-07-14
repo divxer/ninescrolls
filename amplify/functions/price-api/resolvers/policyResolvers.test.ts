@@ -49,4 +49,8 @@ describe('pbUpdatePricingPolicy', () => {
     await expect(pbUpdatePricingPolicy(ev({ input: { seriesOverrides: { RIE: -1 } } })))
       .rejects.toThrow(/^VALIDATION:.*seriesOverrides/);
   });
+  it.each([{ seriesOverrides: [] }, { itemOverrides: null }, { seriesOverrides: { RIE: 1.5 } }])('rejects malformed JSON maps without writing: %j', async (input) => {
+    await expect(pbUpdatePricingPolicy(ev({ input }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
+  });
 });
