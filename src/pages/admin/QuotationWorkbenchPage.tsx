@@ -46,6 +46,7 @@ export function QuotationWorkbenchPage() {
       revision: number;
     } | null>(null);
   const [query, setQuery] = useState(""),
+    [kindFilter, setKindFilter] = useState<CatalogItem["kind"] | null>(null),
     [menu, setMenu] = useState(false),
     [validation, setValidation] = useState(false),
     [custom, setCustom] = useState(false),
@@ -93,7 +94,7 @@ export function QuotationWorkbenchPage() {
       event.preventDefault();
       setMenu(true);
       if (kind === "CUSTOM") setCustom(true);
-      else setQuery(kind === "OPTION" ? "option" : "service");
+      else setKindFilter(kind as CatalogItem["kind"]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -105,8 +106,13 @@ export function QuotationWorkbenchPage() {
     setLines(reconcileServerLines(result.lines ?? []));
   };
   const filtered = useMemo(
-    () => catalog.filter((item) => catalogMatches(item, query)),
-    [catalog, query]
+    () => catalog.filter((item) =>
+      (!kindFilter || item.kind === kindFilter)
+      && catalogMatches(item, query)
+      && !lines.some((line) => line.itemId === item.itemId)
+      && (item.kind !== "MACHINE" || !lines.some((line) => (line.snapshot?.kind ?? line.item?.kind) === "MACHINE"))
+    ),
+    [catalog, kindFilter, lines, query]
   );
   const totals = useMemo(() => preview(lines), [lines]);
   const dirty = useMemo(
@@ -126,9 +132,10 @@ export function QuotationWorkbenchPage() {
       ? totals
       : {
           ...totals,
-          costTotal: saved.totalCostUsdCents ?? 0,
-          suggestedTotal: saved.suggestedTotalUsdCents ?? 0,
-          actualTotal: saved.actualTotalUsdCents ?? 0,
+          costTotal: saved.totalCostUsdCents,
+          suggestedTotal: saved.suggestedTotalUsdCents,
+          actualTotal: saved.actualTotalUsdCents,
+          actualMarginBp: saved.actualMarginBp,
         };
   const issues = useMemo(
     () =>
@@ -143,8 +150,11 @@ export function QuotationWorkbenchPage() {
       current.map((line) => (line.key === key ? { ...line, ...changes } : line))
     );
   const addCatalog = (item: CatalogItem) => {
-    setLines((current) => [
-      ...current,
+    setLines((current) => {
+      const duplicate = current.some((line) => line.itemId === item.itemId);
+      const hasMachine = current.some((line) => (line.snapshot?.kind ?? line.item?.kind) === "MACHINE");
+      if (duplicate || (item.kind === "MACHINE" && hasMachine)) return current;
+      return [...current,
       {
         key: `draft:${keySeq.current++}`,
         itemId: item.itemId,
@@ -152,8 +162,8 @@ export function QuotationWorkbenchPage() {
         qty: 1,
         lineType: "NORMAL",
         item,
-      },
-    ]);
+      }];
+    });
     setMenu(false);
   };
   const addCustom = () => {
@@ -167,6 +177,7 @@ export function QuotationWorkbenchPage() {
         lineType: "SURCHARGE",
         surchargeUsdCents: cents,
         actualUnitUsdCents: cents,
+        sku: customLabel.trim(),
         overrideReason: customLabel.trim(),
         customLabel: customLabel.trim(),
       },
@@ -179,7 +190,8 @@ export function QuotationWorkbenchPage() {
   const openEdit = (line: DraftLine) => {
     escaped.current = false;
     setEditing(line.key);
-    setEditValue((lineActual(line) / 100).toFixed(2));
+    const actual = lineActual(line);
+    setEditValue(actual == null ? "" : (actual / 100).toFixed(2));
   };
   const commitEdit = (key: string, next = false) => {
     if (escaped.current) {
@@ -193,7 +205,8 @@ export function QuotationWorkbenchPage() {
       const target = lines[index + 1];
       if (target) {
         setEditing(target.key);
-        setEditValue((lineActual(target) / 100).toFixed(2));
+        const actual = lineActual(target);
+        setEditValue(actual == null ? "" : (actual / 100).toFixed(2));
         return;
       }
     }
@@ -297,6 +310,8 @@ export function QuotationWorkbenchPage() {
         <CatalogToolbar
           query={query}
           setQuery={setQuery}
+          kindFilter={kindFilter}
+          setKindFilter={setKindFilter}
           menu={menu}
           setMenu={setMenu}
           filtered={filtered}
@@ -348,7 +363,7 @@ export function QuotationWorkbenchPage() {
         />
         <Summary
           label="Actual margin"
-          value={marginPct(saved?.actualMarginBp)}
+          value={marginPct(dirty || !saved ? shownTotals.actualMarginBp : saved.actualMarginBp)}
           accent
         />
       </footer>
@@ -426,6 +441,8 @@ function Context({
 function CatalogToolbar({
   query,
   setQuery,
+  kindFilter,
+  setKindFilter,
   menu,
   setMenu,
   filtered,
@@ -437,6 +454,8 @@ function CatalogToolbar({
 }: {
   query: string;
   setQuery: (v: string) => void;
+  kindFilter: CatalogItem["kind"] | null;
+  setKindFilter: (v: CatalogItem["kind"] | null) => void;
   menu: boolean;
   setMenu: (v: boolean) => void;
   filtered: CatalogItem[];
@@ -457,7 +476,10 @@ function CatalogToolbar({
           aria-label="Catalog search"
           placeholder="Search name, SKU, supplier code…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setKindFilter(null);
+          }}
           className="w-full rounded-xl border border-outline-variant bg-surface py-2 pl-10 pr-3 text-sm outline-none"
         />
       </div>
@@ -475,6 +497,26 @@ function CatalogToolbar({
             role="menu"
             className="absolute right-0 z-30 mt-1 max-h-72 w-80 overflow-auto rounded-xl border border-outline-variant bg-surface p-1 shadow-xl"
           >
+            <div className="grid grid-cols-3 gap-1 border-b p-1">
+              {(["OPTION", "SERVICE"] as const).map((kind) => (
+                <button
+                  key={kind}
+                  role="menuitem"
+                  aria-pressed={kindFilter === kind}
+                  onClick={() => setKindFilter(kind)}
+                  className="rounded-lg px-2 py-1.5 text-sm font-bold"
+                >
+                  {kind[0] + kind.slice(1).toLowerCase()}
+                </button>
+              ))}
+              <button
+                role="menuitem"
+                onClick={showCustom}
+                className="rounded-lg px-2 py-1.5 text-sm font-bold"
+              >
+                Custom
+              </button>
+            </div>
             {filtered.map((item) => (
               <button
                 key={item.itemId}
@@ -498,13 +540,6 @@ function CatalogToolbar({
                 No matching catalog items.
               </p>
             )}
-            <button
-              role="menuitem"
-              onClick={showCustom}
-              className="w-full rounded-lg border-t px-3 py-2 text-left text-sm font-bold"
-            >
-              Custom item · free-form surcharge
-            </button>
           </div>
         )}
       </div>
@@ -542,6 +577,9 @@ function BomTable({
   onEditKey: (e: KeyboardEvent<HTMLInputElement>, k: string) => void;
   commitEdit: (k: string) => void;
 }) {
+  const baseIndex = lines.findIndex(
+    (line) => (line.snapshot?.kind ?? line.item?.kind) === "MACHINE"
+  );
   return (
     <div className="max-h-[54vh] overflow-auto">
       <table className="w-full min-w-[1000px] border-collapse text-sm">
@@ -575,6 +613,7 @@ function BomTable({
               key={line.key}
               line={line}
               index={index}
+              isBase={index === baseIndex}
               share={totals.shares[index]}
               editing={editing}
               editValue={editValue}
@@ -604,7 +643,9 @@ function BomTable({
               {usd(totals.actualTotal)}
             </td>
             <td />
-            <td className="px-4 text-right">{lines.length ? "100%" : "—"}</td>
+            <td className="px-4 text-right">
+              {lines.length && totals.actualTotal != null ? "100%" : "—"}
+            </td>
           </tr>
         </tfoot>
       </table>
@@ -620,6 +661,7 @@ function BomTable({
 function BomRow({
   line,
   index,
+  isBase,
   share,
   editing,
   editValue,
@@ -631,7 +673,8 @@ function BomRow({
 }: {
   line: DraftLine;
   index: number;
-  share: number;
+  isBase: boolean;
+  share: number | null;
   editing: string | null;
   editValue: string;
   setEditValue: (v: string) => void;
@@ -642,7 +685,6 @@ function BomRow({
 }) {
   const snap = line.snapshot;
   const actual = lineActual(line);
-  const isBase = (snap?.kind ?? line.item?.kind) === "MACHINE";
   const before = marginFor(
     snap?.actualUnitUsdCents ?? actual,
     snap?.unitCostUsdCents
@@ -765,11 +807,13 @@ function BomRow({
         {marginPct(marginFor(actual, snap?.unitCostUsdCents))}
       </td>
       <td data-testid="quote-share" className="px-4 text-right font-bold">
-        {share ?? 0}%
+        {formatShare(share)}
       </td>
     </tr>
   );
 }
+const formatShare = (share: number | null | undefined) =>
+  share == null ? "—" : `${share}%`;
 function CustomDialog({
   label,
   value,

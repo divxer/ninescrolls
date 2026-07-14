@@ -8,6 +8,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { validateLineInputs } from "../../../amplify/functions/price-api/resolvers/quotationResolvers";
 
 const {
   createQuotationDraft,
@@ -44,8 +45,8 @@ const {
   const service = {
     itemId: "service",
     sku: "SVC-INSTALL",
-    name: "On-site Installation",
-    series: "SERVICE",
+    name: "Commissioning Visit",
+    series: "FIELD",
     kind: "SERVICE" as const,
     requiredOptionSkus: [],
     requiresSkus: [],
@@ -237,7 +238,7 @@ describe("QuotationWorkbenchPage", () => {
     );
     expect(screen.getByText("BASE SYSTEM")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /add item/i }));
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Custom item/i }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Custom$/i }));
     fireEvent.change(screen.getByLabelText(/custom item label/i), {
       target: { value: "Special crating" },
     });
@@ -245,20 +246,38 @@ describe("QuotationWorkbenchPage", () => {
       target: { value: "425.50" },
     });
     fireEvent.click(screen.getByRole("button", { name: /add custom item/i }));
-    expect(screen.getByText("Special crating")).toBeInTheDocument();
+    expect(screen.getAllByText("Special crating").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
     await waitFor(() =>
-      expect(createQuotationDraft).toHaveBeenCalledWith(
-        expect.objectContaining({
-          lines: expect.arrayContaining([
-            expect.objectContaining({
-              lineType: "SURCHARGE",
-              surchargeUsdCents: 42550,
-            }),
-          ]),
-        })
-      )
+      expect(createQuotationDraft).toHaveBeenCalled()
     );
+    const payload = (createQuotationDraft.mock.calls as unknown as Array<[{ lines: unknown[] }]>)[0]?.[0];
+    expect(payload?.lines[1]).toEqual({
+      sku: "Special crating",
+      qty: 1,
+      lineType: "SURCHARGE",
+      surchargeUsdCents: 42550,
+      actualUnitUsdCents: 42550,
+      overrideReason: "Special crating",
+    });
+    expect(() => validateLineInputs(payload?.lines as Parameters<typeof validateLineInputs>[0])).not.toThrow();
+  });
+
+  it("Option+O and Option+S filter by catalog kind, with explicit kind actions", async () => {
+    renderPage();
+    await screen.findByPlaceholderText("Customer name");
+
+    fireEvent.keyDown(window, { key: "o", altKey: true });
+    expect(screen.getByRole("menuitem", { name: /RF Bias Module/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /Commissioning Visit/i })).not.toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "s", altKey: true });
+    expect(screen.getByRole("menuitem", { name: /Commissioning Visit/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /RF Bias Module/i })).not.toBeInTheDocument();
+
+    expect(screen.getByRole("menuitem", { name: /^Option$/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /^Service$/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /^Custom$/i })).toBeInTheDocument();
   });
 
   it("Escape cancels without blur commit; Enter commits; Tab commits and opens next cell", async () => {
@@ -299,6 +318,63 @@ describe("QuotationWorkbenchPage", () => {
       .slice(1, 3)
       .map((row) => within(row).getByTestId("quote-share").textContent);
     expect(body).toEqual(["67%", "33%"]);
+    const edits = screen.getAllByRole("button", { name: /edit actual price/i });
+    fireEvent.click(edits[0]);
+    const input = screen.getByRole("textbox", { name: /actual price 1/i });
+    fireEvent.change(input, { target: { value: "1400" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByText("31.8%")).toBeInTheDocument();
+  });
+
+  it("preserves unknown authoritative and preview totals instead of understating them", async () => {
+    getQuotation.mockResolvedValueOnce({
+      scheme: null,
+      versions: [{
+        ...snapshot,
+        totalCostUsdCents: null,
+        suggestedTotalUsdCents: null,
+        actualTotalUsdCents: null,
+        actualMarginBp: null,
+        incomplete: true,
+        lines: [
+          snapshot.lines[0],
+          { ...snapshot.lines[1], unitCostUsdCents: null, suggestedUnitUsdCents: null, actualUnitUsdCents: null, actualLineTotalUsdCents: null },
+        ],
+      }],
+    } as never);
+    renderPage("/admin/quotations/Q-2026-0009");
+    await screen.findByText("RF Bias Module");
+    const summaries = screen.getAllByText("—");
+    expect(summaries.length).toBeGreaterThanOrEqual(4);
+    fireEvent.change(screen.getByRole("spinbutton", { name: /Quantity 1/i }), { target: { value: "2" } });
+    expect(screen.getByText(/Unsaved preview/i)).toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("allows only one machine and prevents adding duplicate catalog items", async () => {
+    renderPage();
+    await screen.findByPlaceholderText("Customer name");
+    fireEvent.click(screen.getByRole("button", { name: /add item/i }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Machine.*ICP-RIE Advanced/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add item/i }));
+    expect(screen.queryByRole("menuitem", { name: /Machine.*ICP-RIE Advanced/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: /RF Bias Module/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add item/i }));
+    expect(screen.queryByRole("menuitem", { name: /RF Bias Module/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText("BASE SYSTEM")).toHaveLength(1);
+  });
+
+  it("keeps historical duplicate rows independently editable and labels only the first machine as base", async () => {
+    getQuotation.mockResolvedValueOnce({
+      scheme: null,
+      versions: [{ ...snapshot, lines: [snapshot.lines[0], { ...snapshot.lines[0], lineNo: 2 }] }],
+    });
+    renderPage("/admin/quotations/Q-2026-0009");
+    expect(await screen.findAllByText("ICP-RIE Advanced")).toHaveLength(2);
+    expect(screen.getAllByText("BASE SYSTEM")).toHaveLength(1);
+    fireEvent.change(screen.getByRole("spinbutton", { name: /Quantity 2/i }), { target: { value: "3" } });
+    expect(screen.getByRole("spinbutton", { name: /Quantity 1/i })).toHaveValue(1);
+    expect(screen.getByRole("spinbutton", { name: /Quantity 2/i })).toHaveValue(3);
   });
 
   it("shows validity context, line abnormal states, signed deltas, and line details in an overlay", async () => {
