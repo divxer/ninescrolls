@@ -1868,6 +1868,13 @@ describe('pbUpdatePricingPolicy', () => {
     await expect(pbUpdatePricingPolicy(ev({ input: { defaultMarginBp: 10000 } })))
       .rejects.toThrow(/^VALIDATION:/);
   });
+
+  it('rejects out-of-range values inside override maps', async () => {
+    await expect(pbUpdatePricingPolicy(ev({ input: { itemOverrides: { 'RIE-300': 10000 } } })))
+      .rejects.toThrow(/^VALIDATION:.*itemOverrides/);
+    await expect(pbUpdatePricingPolicy(ev({ input: { seriesOverrides: { RIE: -1 } } })))
+      .rejects.toThrow(/^VALIDATION:.*seriesOverrides/);
+  });
 });
 ```
 
@@ -1911,6 +1918,19 @@ export async function pbUpdatePricingPolicy(event: PriceApiEvent) {
     const v = input[bpField];
     if (v !== undefined && (!Number.isInteger(v) || v < 0 || v >= 10000)) {
       throw new Error(`VALIDATION: ${bpField} must be an integer in [0, 10000)`);
+    }
+  }
+  // Override MAPS get the same bp validation as the scalars — values arrive via
+  // a.json() with no schema, and an out-of-range bp reaching the engine means
+  // Infinity or negative prices (money-math review finding).
+  for (const mapField of ['seriesOverrides', 'itemOverrides'] as const) {
+    const m = input[mapField];
+    if (m !== undefined) {
+      for (const [key, v] of Object.entries(m)) {
+        if (!Number.isInteger(v) || v < 0 || v >= 10000) {
+          throw new Error(`VALIDATION: ${mapField}.${key} must be an integer in [0, 10000)`);
+        }
+      }
     }
   }
   if (input.fxRmbPerUsdMilli !== undefined
@@ -2183,10 +2203,22 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
   const today = new Date().toISOString().slice(0, 10);
   const soon = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
 
+  const normalIds = lines.filter((l) => l.lineType === 'NORMAL').map((l) => l.itemId);
+  if (new Set(normalIds).size !== normalIds.length) {
+    // Duplicate itemIds would let per-line maxQuantity checks under-count the
+    // aggregate quantity (money-math review finding) — merge quantities instead.
+    throw new Error('VALIDATION: duplicate catalog items — merge quantities into one line');
+  }
+
   return Promise.all(lines.map(async (input): Promise<LoadedLine> => {
     if (!Number.isInteger(input.qty) || input.qty < 1) throw new Error('VALIDATION: qty must be a positive integer');
-    if (input.actualUnitUsdCents !== undefined && !input.overrideReason?.trim()) {
-      throw new Error('VALIDATION: a manual price override requires a reason');
+    if (input.actualUnitUsdCents !== undefined) {
+      if (!Number.isInteger(input.actualUnitUsdCents) || input.actualUnitUsdCents < 0) {
+        throw new Error('VALIDATION: manual price override must be a non-negative integer (USD cents)');
+      }
+      if (!input.overrideReason?.trim()) {
+        throw new Error('VALIDATION: a manual price override requires a reason');
+      }
     }
     if (input.lineType === 'SURCHARGE') {
       if (!input.sku?.trim()) throw new Error('VALIDATION: surcharge lines need a sku label');
