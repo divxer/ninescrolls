@@ -25,7 +25,7 @@ function readStaticFallback() {
 
   expect(descriptionTags, 'index.html must contain exactly one static description fallback').toHaveLength(1);
 
-  const tag = descriptionTags[0];
+  const tag = descriptionTags[0]!;
   const content = tag.match(/content=["']([^"']*)["']/i)?.[1];
 
   expect(tag, 'static description must be Helmet-managed via data-rh').toMatch(/data-rh=["']true["']/i);
