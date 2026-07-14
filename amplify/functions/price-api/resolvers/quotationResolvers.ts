@@ -59,6 +59,11 @@ interface LoadedLine {
 export function validateLineInputs(lines: QuotationLineInput[]): void {
   if (lines.length === 0) throw new Error('VALIDATION: at least one line is required');
   if (lines.length > MAX_LINES) throw new Error(`VALIDATION: a quotation is capped at ${MAX_LINES} lines`);
+  for (const line of lines) {
+    if (line.lineType !== 'NORMAL' && line.lineType !== 'SURCHARGE') {
+      throw new Error('VALIDATION: lineType must be exactly NORMAL or SURCHARGE');
+    }
+  }
   const normalIds = lines.filter((l) => l.lineType === 'NORMAL').map((l) => l.itemId);
   if (new Set(normalIds).size !== normalIds.length) {
     // Duplicate itemIds would let per-line maxQuantity checks under-count the
@@ -147,13 +152,14 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
       effectiveFrom: string; effectiveTo: string;
       priceSource: string; reviewStatus: string;
     }>;
-    const effective = selectEffectiveCost(versions, today);
+    const preferredSupplierId = typeof meta.preferredSupplierId === 'string' ? meta.preferredSupplierId : null;
+    const preferredVersions = preferredSupplierId
+      ? versions.filter((version) => version.supplierId === preferredSupplierId && version.reviewStatus === 'APPROVED')
+      : [];
+    const effective = selectEffectiveCost(preferredVersions, today);
     const previous = effective
-      ? versions
-        .filter((version) => (
-          version.supplierId === effective.supplierId
-          && version.effectiveTo <= effective.effectiveFrom
-        ))
+      ? preferredVersions
+        .filter((version) => version.effectiveTo <= effective.effectiveFrom)
         .sort((a, b) => (
           b.effectiveTo.localeCompare(a.effectiveTo)
           || b.effectiveFrom.localeCompare(a.effectiveFrom)

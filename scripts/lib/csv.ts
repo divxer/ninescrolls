@@ -36,5 +36,7 @@ export function parseCsv(text: string): string[][] {
 export function rmbToFen(s: string): number {
   const m = s.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
   if (!m) throw new Error(`invalid RMB amount: "${s}" (expect yuan, up to 2 decimals)`);
-  return Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0') || '0');
+  const fen = BigInt(m[1]) * 100n + BigInt((m[2] ?? '').padEnd(2, '0') || '0');
+  if (fen > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error(`invalid RMB amount: fen must be a safe integer`);
+  return Number(fen);
 }

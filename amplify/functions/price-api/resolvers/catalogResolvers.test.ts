@@ -17,6 +17,13 @@ const ev = (args: Record<string, unknown>) => ({
 beforeEach(() => send.mockReset());
 
 describe('pbCreateCatalogItem', () => {
+  it('persists a validated preferred supplier reference', async () => {
+    send.mockResolvedValueOnce({});
+    const res = await pbCreateCatalogItem(ev({ input: { sku: 'X', name: 'x', series: 'S', kind: 'OPTION', preferredSupplierId: 's1' } })) as Record<string, unknown>;
+    expect(res.preferredSupplierId).toBe('s1');
+    const tx = send.mock.calls[0][0].input.TransactItems;
+    expect(tx[2].ConditionCheck.Key).toEqual({ PK: 'PSUP#s1', SK: 'META' });
+  });
   it('creates an item with rule defaults and a series-sorted GSI key', async () => {
     send.mockResolvedValueOnce({});
     const res = await pbCreateCatalogItem(ev({
@@ -65,6 +72,18 @@ describe('pbCreateCatalogItem', () => {
 });
 
 describe('pbUpdateCatalogItem', () => {
+  it('validates and updates preferred supplier', async () => {
+    send.mockResolvedValueOnce({ Item: { supplierId: 's2' } }).mockResolvedValueOnce({ Attributes: { itemId: 'c1', preferredSupplierId: 's2' } });
+    const res = await pbUpdateCatalogItem(ev({ input: { itemId: 'c1', preferredSupplierId: 's2' } })) as Record<string, unknown>;
+    expect(res.preferredSupplierId).toBe('s2');
+    expect(send.mock.calls[0][0].input.Key).toEqual({ PK: 'PSUP#s2', SK: 'META' });
+  });
+  it('clears the optional preferred supplier instead of storing DynamoDB NULL', async () => {
+    send.mockResolvedValueOnce({ Attributes: { itemId: 'c1' } });
+    await pbUpdateCatalogItem(ev({ input: { itemId: 'c1', preferredSupplierId: null } }));
+    expect(send.mock.calls[0][0].input.UpdateExpression).toContain('REMOVE #preferredSupplierId');
+    expect(send.mock.calls[0][0].input.ExpressionAttributeValues).not.toHaveProperty(':preferredSupplierId');
+  });
   it('updates rule fields', async () => {
     send.mockResolvedValueOnce({ Attributes: { itemId: 'c1', excludesSkus: ['B'] } });
     const res = await pbUpdateCatalogItem(ev({ input: { itemId: 'c1', excludesSkus: ['B'] } })) as Record<string, unknown>;

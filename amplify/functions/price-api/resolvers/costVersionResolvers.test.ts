@@ -22,6 +22,10 @@ const validInput = {
 beforeEach(() => send.mockReset());
 
 describe('pbAppendCostVersion', () => {
+  it.each([Number.MAX_SAFE_INTEGER + 1, 1.5])('rejects unsafe/non-integer unitCostFen %s without I/O', async (unitCostFen) => {
+    await expect(pbAppendCostVersion(ev({ ...validInput, unitCostFen }))).rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
+  });
   it('reads guard FIRST (consistent), then versions (consistent), then transacts CAS + Put', async () => {
     send
       .mockResolvedValueOnce({ Item: { revision: 3 } })            // ① guard GetCommand

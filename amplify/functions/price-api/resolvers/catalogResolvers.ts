@@ -1,4 +1,4 @@
-import { UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateCatalogItemId } from '../lib/ids.js';
 import { parseInput, stripKeys, type PriceApiEvent, type CatalogItemItem } from '../lib/types.js';
@@ -18,6 +18,7 @@ interface CreateCatalogInput {
   specs?: Record<string, string>;
   requiredOptionSkus?: string[]; requiresSkus?: string[]; excludesSkus?: string[];
   maxQuantity?: number;
+  preferredSupplierId?: string;
 }
 
 export async function pbCreateCatalogItem(event: PriceApiEvent) {
@@ -41,6 +42,7 @@ export async function pbCreateCatalogItem(event: PriceApiEvent) {
     requiresSkus: input.requiresSkus ?? [],
     excludesSkus: input.excludesSkus ?? [],
     maxQuantity: input.maxQuantity,
+    preferredSupplierId: input.preferredSupplierId?.trim() || undefined,
     createdAt: now, updatedAt: now,
   };
   try {
@@ -58,6 +60,10 @@ export async function pbCreateCatalogItem(event: PriceApiEvent) {
           },
         },
         { Put: { TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' } },
+        ...(item.preferredSupplierId ? [{ ConditionCheck: {
+          TableName: TABLE_NAME(), Key: { PK: `PSUP#${item.preferredSupplierId}`, SK: 'META' },
+          ConditionExpression: 'attribute_exists(PK)',
+        } }] : []),
       ],
     }));
   } catch (e) {
@@ -66,6 +72,9 @@ export async function pbCreateCatalogItem(event: PriceApiEvent) {
       // Index 0 = sku marker (duplicate), index 1 = item Put (id collision).
       if (err.CancellationReasons?.[0]?.Code === 'ConditionalCheckFailed') {
         throw new Error(`VALIDATION: sku "${item.sku}" already exists`);
+      }
+      if (err.CancellationReasons?.[2]?.Code === 'ConditionalCheckFailed') {
+        throw new Error(`VALIDATION: preferred supplier ${item.preferredSupplierId} does not exist`);
       }
       throw new Error('CONFLICT: concurrent catalog create — retry');
     }
@@ -79,19 +88,34 @@ interface UpdateCatalogInput {
   name?: string; specs?: Record<string, string>;
   requiredOptionSkus?: string[]; requiresSkus?: string[]; excludesSkus?: string[];
   maxQuantity?: number | null;
+  preferredSupplierId?: string | null;
 }
 
-const CATALOG_MUTABLE = ['name', 'specs', 'requiredOptionSkus', 'requiresSkus', 'excludesSkus', 'maxQuantity'] as const;
+const CATALOG_MUTABLE = ['name', 'specs', 'requiredOptionSkus', 'requiresSkus', 'excludesSkus', 'maxQuantity', 'preferredSupplierId'] as const;
 
 export async function pbUpdateCatalogItem(event: PriceApiEvent) {
   const input = parseInput<UpdateCatalogInput>(event);
   if (!input.itemId) throw new Error('VALIDATION: itemId is required');
   validateRules(input);
+  if (input.preferredSupplierId !== undefined && input.preferredSupplierId !== null) {
+    if (!input.preferredSupplierId.trim()) throw new Error('VALIDATION: preferredSupplierId cannot be blank');
+    const supplier = await docClient.send(new GetCommand({
+      TableName: TABLE_NAME(), Key: { PK: `PSUP#${input.preferredSupplierId.trim()}`, SK: 'META' }, ConsistentRead: true,
+    }));
+    if (!supplier.Item) throw new Error(`VALIDATION: preferred supplier ${input.preferredSupplierId} does not exist`);
+    input.preferredSupplierId = input.preferredSupplierId.trim();
+  }
   const sets: string[] = ['updatedAt = :updatedAt'];
+  const removes: string[] = [];
   const values: Record<string, unknown> = { ':updatedAt': new Date().toISOString() };
   const names: Record<string, string> = {};
   for (const f of CATALOG_MUTABLE) {
     if (input[f] !== undefined) {
+      if (f === 'preferredSupplierId' && input[f] === null) {
+        removes.push(`#${f}`);
+        names[`#${f}`] = f;
+        continue;
+      }
       sets.push(`#${f} = :${f}`);
       names[`#${f}`] = f;
       values[`:${f}`] = input[f];
@@ -101,7 +125,7 @@ export async function pbUpdateCatalogItem(event: PriceApiEvent) {
     const res = await docClient.send(new UpdateCommand({
       TableName: TABLE_NAME(),
       Key: { PK: `PCAT#${input.itemId}`, SK: 'META' },
-      UpdateExpression: `SET ${sets.join(', ')}`,
+      UpdateExpression: `SET ${sets.join(', ')}${removes.length ? ` REMOVE ${removes.join(', ')}` : ''}`,
       ExpressionAttributeValues: values,
       ...(Object.keys(names).length ? { ExpressionAttributeNames: names } : {}),
       ConditionExpression: 'attribute_exists(PK)',

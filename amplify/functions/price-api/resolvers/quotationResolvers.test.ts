@@ -16,7 +16,7 @@ const ev = (input: Record<string, unknown>) => ({
 
 const machineMeta = {
   PK: 'PCAT#c1', SK: 'META', itemId: 'c1', sku: 'RIE-300', name: 'RIE 300', series: 'RIE',
-  kind: 'MACHINE', requiredOptionSkus: [], requiresSkus: [], excludesSkus: [],
+  kind: 'MACHINE', preferredSupplierId: 's1', requiredOptionSkus: [], requiresSkus: [], excludesSkus: [],
 };
 const cost = {
   PK: 'PCAT#c1', SK: 'COST#s1#2020-01-01', effectiveFrom: '2020-01-01', effectiveTo: '2099-01-01',
@@ -78,9 +78,43 @@ describe('loadLines cost delta snapshot', () => {
     expect(snapshot.previousUnitCostFen).toBeNull();
     expect(snapshot.costDeltaFen).toBeNull();
   });
+
+  it('selects only the preferred supplier regardless of storage order or lower nonpreferred price', async () => {
+    const cheapOther = { ...cost, SK: 'COST#s2#2020-01-01', supplierId: 's2', unitCostFen: 1 };
+    const snapshot = await loadWith(cheapOther, cost);
+    expect(snapshot.unitCostFen).toBe(725_000);
+    expect(snapshot.costSnapshot).toMatchObject({ supplierId: 's1' });
+  });
+
+  it('uses only the preferred supplier for the prior delta', async () => {
+    const snapshot = await loadWith(
+      { ...cost, SK: 'COST#s2#2019-01-01', supplierId: 's2', effectiveFrom: '2019-01-01', effectiveTo: '2020-01-01', unitCostFen: 1 },
+      { ...cost, SK: 'COST#s1#2019-01-01', effectiveFrom: '2019-01-01', effectiveTo: '2020-01-01', unitCostFen: 700_000 },
+      cost,
+    );
+    expect(snapshot.previousUnitCostFen).toBe(700_000);
+  });
+
+  it.each([
+    [{ ...machineMeta, preferredSupplierId: undefined }, cost],
+    [{ ...machineMeta, preferredSupplierId: 's1' }, { ...cost, effectiveTo: '2021-01-01' }, { ...cost, SK: 'COST#s2#2020-01-01', supplierId: 's2' }],
+  ])('marks cost unknown when preferred supplier has no effective cost', async (...rows) => {
+    send.mockResolvedValueOnce({ Items: rows });
+    const loaded = (await loadLines(validInput.lines as Parameters<typeof loadLines>[0]))[0];
+    expect(loaded.engine.unitCostFen).toBeNull();
+    expect(loaded.snapshot.costStatus).toBe('MISSING');
+    expect(loaded.snapshot.costSnapshot).toBeNull();
+  });
 });
 
 describe('pbCreateQuotationDraft', () => {
+  it.each(['normal', 'OTHER', '', null])('rejects invalid runtime lineType %j before all reads/writes', async (lineType) => {
+    await expect(pbCreateQuotationDraft(ev({
+      ...validInput,
+      lines: [{ itemId: 'c1', qty: 1, lineType, actualUnitUsdCents: 1, overrideReason: 'bypass' }],
+    }))).rejects.toThrow(/^VALIDATION:.*lineType/);
+    expect(send).not.toHaveBeenCalled();
+  });
   it('persists null cost delta fields for surcharge snapshots', async () => {
     send
       .mockResolvedValueOnce(policyItem)

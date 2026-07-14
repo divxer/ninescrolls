@@ -7,6 +7,8 @@ import {
   listCostVersions,
   listSuppliers,
   rmbFen,
+  rmbToFen,
+  updateCatalogItem,
   type CatalogItem,
   type CostVersion,
   type Supplier,
@@ -21,9 +23,11 @@ type CostState = {
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const plusDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
-function classify(history: CostVersion[]): CostState {
+function classify(history: CostVersion[], preferredSupplierId?: string): CostState {
   const today = todayIso();
-  const current = history.find((version) => version.effectiveFrom <= today && today < version.effectiveTo);
+  const current = preferredSupplierId
+    ? history.find((version) => version.supplierId === preferredSupplierId && version.reviewStatus === 'APPROVED' && version.effectiveFrom <= today && today < version.effectiveTo)
+    : undefined;
   if (!current) return { status: 'MISSING', history };
   return { status: current.effectiveTo <= plusDays(30) ? 'EXPIRING' : 'ACTIVE', current, history };
 }
@@ -34,7 +38,7 @@ const badgeClass: Record<CostState['status'], string> = {
   MISSING: 'bg-error-container text-error',
 };
 
-const emptyItemForm = { sku: '', name: '', series: '', kind: 'OPTION' as CatalogItem['kind'] };
+const emptyItemForm = { sku: '', name: '', series: '', kind: 'OPTION' as CatalogItem['kind'], preferredSupplierId: '' };
 const newCostForm = () => ({ supplierId: '', unitCostRmb: '', effectiveFrom: todayIso(), effectiveTo: plusDays(180) });
 const inputClass = 'rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface outline-none transition focus:border-secondary focus:ring-2 focus:ring-secondary/20';
 
@@ -56,7 +60,7 @@ export function PriceBookPage() {
       .then(async ([catalog, supplierList]) => {
         const entries = await Promise.all(catalog.items.map(async (item) => {
           const { items: history } = await listCostVersions(item.itemId);
-          return [item.itemId, classify(history)] as const;
+          return [item.itemId, classify(history, item.preferredSupplierId)] as const;
         }));
         setItems(catalog.items);
         setSuppliers(supplierList.items);
@@ -98,12 +102,25 @@ export function PriceBookPage() {
       await appendCostVersion({
         itemId,
         supplierId: costForm.supplierId,
-        unitCostFen: Math.round(Number(costForm.unitCostRmb) * 100),
+        unitCostFen: rmbToFen(costForm.unitCostRmb),
         effectiveFrom: costForm.effectiveFrom,
         effectiveTo: costForm.effectiveTo,
         priceSource: 'MANUAL_ENTRY',
       });
       setCostForm(newCostForm());
+      reload();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onPreferredSupplierChange = async (itemId: string, preferredSupplierId: string) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateCatalogItem({ itemId, preferredSupplierId: preferredSupplierId || null });
       reload();
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -154,7 +171,7 @@ export function PriceBookPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead className="bg-surface-container-low/60 text-left text-[11px] uppercase tracking-wider text-on-surface-variant">
-                <tr><th className="px-4 py-2">SKU</th><th className="px-4 py-2">Item</th><th className="px-4 py-2">Kind</th><th className="px-4 py-2 text-right">Cost</th><th className="px-4 py-2">Validity</th><th className="px-4 py-2" /></tr>
+                <tr><th className="px-4 py-2">SKU</th><th className="px-4 py-2">Item</th><th className="px-4 py-2">Kind</th><th className="px-4 py-2">Preferred supplier</th><th className="px-4 py-2 text-right">Cost</th><th className="px-4 py-2">Validity</th><th className="px-4 py-2" /></tr>
               </thead>
               <tbody>
                 {group.map((item) => {
@@ -167,13 +184,14 @@ export function PriceBookPage() {
                         <td className="px-4 py-3 font-mono text-xs font-semibold text-on-surface">{item.sku}</td>
                         <td className="px-4 py-3 font-semibold text-on-surface">{item.name}</td>
                         <td className="px-4 py-3 text-xs text-on-surface-variant">{item.kind}</td>
+                        <td className="px-4 py-3"><select aria-label={`Preferred supplier for ${item.sku}`} disabled={saving} value={item.preferredSupplierId ?? ''} onChange={(event) => onPreferredSupplierChange(item.itemId, event.target.value)} className={inputClass}><option value="">None</option>{suppliers.map((supplier) => <option key={supplier.supplierId} value={supplier.supplierId}>{supplier.name}</option>)}</select></td>
                         <td className="px-4 py-3 text-right font-mono font-semibold text-on-surface">{rmbFen(cost?.current?.unitCostFen)}</td>
                         <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wider ${badgeClass[status]}`}>{status}</span></td>
                         <td className="px-4 py-3 text-right"><button type="button" aria-expanded={open} onClick={() => setExpanded(open ? null : item.itemId)} className="rounded-full border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-low">{open ? 'Hide history' : 'History / add cost'}</button></td>
                       </tr>
                       {open && (
                         <tr className="border-t border-outline-variant/30 bg-surface-container-low/50">
-                          <td colSpan={6} className="px-5 py-4">
+                          <td colSpan={7} className="px-5 py-4">
                             <div className="mb-4 space-y-2">
                               {(cost?.history ?? []).map((version) => <div key={`${version.effectiveFrom}-${version.supplierId}`} className="flex flex-wrap justify-between gap-2 rounded-lg bg-surface-container-lowest px-3 py-2 text-xs text-on-surface-variant"><span>{version.effectiveFrom} → {version.effectiveTo}</span><span className="font-mono font-semibold text-on-surface">{rmbFen(version.unitCostFen)}</span><span>{version.priceSource} · {version.createdBy}</span></div>)}
                               {!(cost?.history ?? []).length && <p className="text-sm text-on-surface-variant">No cost versions yet.</p>}
@@ -204,6 +222,7 @@ export function PriceBookPage() {
           <label className="text-sm font-semibold text-on-surface lg:col-span-2">Name<input required value={itemForm.name} onChange={(event) => setItemForm({ ...itemForm, name: event.target.value })} className={`${inputClass} mt-2 w-full`} /></label>
           <label className="text-sm font-semibold text-on-surface">Series<input required value={itemForm.series} onChange={(event) => setItemForm({ ...itemForm, series: event.target.value })} className={`${inputClass} mt-2 w-full`} /></label>
           <label className="text-sm font-semibold text-on-surface">Kind<select value={itemForm.kind} onChange={(event) => setItemForm({ ...itemForm, kind: event.target.value as CatalogItem['kind'] })} className={`${inputClass} mt-2 w-full`}>{['MACHINE', 'OPTION', 'CONSUMABLE', 'SERVICE'].map((kind) => <option key={kind}>{kind}</option>)}</select></label>
+          <label className="text-sm font-semibold text-on-surface">Preferred supplier<select aria-label="Preferred supplier for new catalog item" value={itemForm.preferredSupplierId} onChange={(event) => setItemForm({ ...itemForm, preferredSupplierId: event.target.value })} className={`${inputClass} mt-2 w-full`}><option value="">None</option>{suppliers.map((supplier) => <option key={supplier.supplierId} value={supplier.supplierId}>{supplier.name}</option>)}</select></label>
           <div className="sm:col-span-2 lg:col-span-5"><button type="submit" disabled={saving} className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-on-primary shadow-sm disabled:opacity-60">{saving ? 'Saving…' : 'Create item'}</button></div>
         </form>
       </section>

@@ -5,6 +5,7 @@ import type {
 } from "../../services/priceAdminService";
 
 const timestamp = "2026-07-14T12:00:00.000Z";
+const fixtureSupplierId = "FIXTURE-SUPPLIER";
 
 const item = (
   itemId: string,
@@ -19,6 +20,7 @@ const item = (
   name,
   series,
   kind,
+  preferredSupplierId: fixtureSupplierId,
   specs,
   requiredOptionSkus: [],
   requiresSkus: [],
@@ -57,7 +59,7 @@ const snapshotLine = (
     costDeltaFen: 0,
     costStatus: "ACTIVE",
     costSnapshot: {
-      supplierId: "FIXTURE-SUPPLIER",
+      supplierId: fixtureSupplierId,
       unitCostFen: 1,
       currency: "RMB",
       effectiveFrom: "2026-06-01",

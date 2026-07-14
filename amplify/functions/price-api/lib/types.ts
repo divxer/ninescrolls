@@ -34,6 +34,7 @@ export interface CatalogItemItem extends ConfigItem {
   itemId: string;
   name: string;
   series: string;
+  preferredSupplierId?: string;
   specs?: Record<string, string>;
   createdAt: string; updatedAt: string;
 }

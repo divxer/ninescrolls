@@ -30,4 +30,10 @@ describe('rmbToFen (string-based, no float math)', () => {
       expect(() => rmbToFen(bad)).toThrow(/amount/i);
     }
   });
+  it('accepts the maximum safe fen value when exactly representable', () => {
+    expect(rmbToFen('90071992547409.91')).toBe(Number.MAX_SAFE_INTEGER);
+  });
+  it.each(['90071992547409.92', '999999999999999999999999999999999999999999'])('rejects unsafe RMB amount %s', (amount) => {
+    expect(() => rmbToFen(amount)).toThrow(/safe integer/i);
+  });
 });

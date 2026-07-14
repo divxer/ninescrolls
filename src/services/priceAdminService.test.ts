@@ -20,6 +20,16 @@ import * as svc from './priceAdminService';
 beforeEach(() => Object.values({ ...queries, ...mutations }).forEach((f) => f.mockReset()));
 
 describe('priceAdminService', () => {
+  it.each([
+    ['19.99', 1999],
+    ['90071992547409.91', Number.MAX_SAFE_INTEGER],
+  ])('converts RMB %s to exact safe fen', (amount, expected) => {
+    expect(svc.rmbToFen(amount)).toBe(expected);
+  });
+
+  it.each(['90071992547409.92', '99999999999999999999999999', '1.234'])('rejects invalid or unsafe RMB %s', (amount) => {
+    expect(() => svc.rmbToFen(amount)).toThrow(/RMB amount/i);
+  });
   it('unwraps JSON-string payloads', async () => {
     queries.pbListSuppliers.mockResolvedValueOnce({ data: JSON.stringify({ items: [{ supplierId: 's1' }] }) });
     const res = await svc.listSuppliers();

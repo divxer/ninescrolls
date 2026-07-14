@@ -53,6 +53,7 @@ export interface CatalogItem {
   requiresSkus: string[];
   excludesSkus: string[];
   maxQuantity?: number;
+  preferredSupplierId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,7 +68,7 @@ export const createCatalogItem = async (
   > & Partial<CatalogItem>,
 ) => unwrap<CatalogItem>(await client().mutations.pbCreateCatalogItem(asInput(input), AUTH));
 
-export const updateCatalogItem = async (input: Partial<CatalogItem> & { itemId: string }) =>
+export const updateCatalogItem = async (input: Omit<Partial<CatalogItem>, 'preferredSupplierId'> & { itemId: string; preferredSupplierId?: string | null }) =>
   unwrap<CatalogItem>(await client().mutations.pbUpdateCatalogItem(asInput(input), AUTH));
 
 export interface CostVersion {
@@ -252,3 +253,12 @@ export const rmbFen = (fen: number | null | undefined) =>
 
 export const marginPct = (bp: number | null | undefined) =>
   bp == null ? '—' : `${(bp / 100).toFixed(1)}%`;
+
+/** Exact yuan-string to fen conversion; rejects imprecise/unsafe JS numbers. */
+export function rmbToFen(value: string): number {
+  const match = value.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
+  if (!match) throw new Error('Invalid RMB amount: use up to two decimal places');
+  const fen = BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+  if (fen > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('Invalid RMB amount: fen exceeds the safe integer limit');
+  return Number(fen);
+}

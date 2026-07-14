@@ -26,7 +26,7 @@ interface AppendInput {
 export async function pbAppendCostVersion(event: PriceApiEvent) {
   const input = parseInput<AppendInput>(event);
   if (!input.itemId || !input.supplierId) throw new Error('VALIDATION: itemId and supplierId are required');
-  if (!Number.isInteger(input.unitCostFen) || input.unitCostFen <= 0) {
+  if (!Number.isSafeInteger(input.unitCostFen) || input.unitCostFen <= 0) {
     throw new Error('VALIDATION: unitCostFen must be a positive integer (RMB fen)');
   }
   if (!DATE_RE.test(input.effectiveFrom) || !DATE_RE.test(input.effectiveTo)) {
