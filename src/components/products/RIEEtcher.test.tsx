@@ -22,7 +22,7 @@ describe('RIEEtcher redesigned product page', () => {
   it('renders RIE through the shared product detail template', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'RIE Plasma Etching Platform' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Reactive Ion Etcher (RIE)' })).toBeInTheDocument();
     expect(screen.getByAltText('NineScrolls RIE etcher platform')).toHaveAttribute(
       'src',
       '/assets/images/redesign/products/rie-standardized.webp'
@@ -74,7 +74,7 @@ describe('RIEEtcher redesigned product page', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(document.title).toBe('RIE Plasma Etching Platform | NineScrolls LLC');
+      expect(document.title).toBe('Reactive Ion Etcher (RIE) for R&D Labs | NineScrolls LLC');
     });
   });
 
@@ -99,14 +99,21 @@ describe('RIEEtcher redesigned product page', () => {
     });
 
     const productSchema = Array.from(document.head.querySelectorAll('script[type="application/ld+json"]'))
-      .map(script => JSON.parse(script.textContent ?? '{}') as { '@type'?: string; '@id'?: string; offers?: { url?: string } })
+      .map(script => JSON.parse(script.textContent ?? '{}') as { '@type'?: string; '@id'?: string; name?: string; offers?: { url?: string } })
       .find(schema => schema['@type'] === 'Product');
 
     expect(productSchema).toMatchObject({
       '@id': 'https://ninescrolls.com/products/rie-etcher#product',
+      name: 'Reactive Ion Etcher (RIE) Plasma System',
       offers: {
         url: 'https://ninescrolls.com/products/rie-etcher',
       },
     });
+  });
+
+  it('surfaces the "RIE etcher" commercial term in the hero copy', () => {
+    renderPage();
+
+    expect(screen.getAllByText(/RIE etcher/i).length).toBeGreaterThan(0);
   });
 });

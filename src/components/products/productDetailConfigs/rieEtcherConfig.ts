@@ -5,14 +5,14 @@ const productImage = '/assets/images/redesign/products/rie-standardized.webp';
 export const rieEtcherConfig: ProductDetailConfig = {
   slug: 'rie-etcher',
   seo: {
-    title: 'RIE Plasma Etching Platform',
+    title: 'Reactive Ion Etcher (RIE) for R&D Labs',
     description:
       'Reactive ion etching platform for universities and R&D labs. Supports 4-12 inch wafers, 300-1000 W RF power, 4 gas lines, and -70 to 200 C temperature control.',
     keywords:
       'RIE etcher, reactive ion etching, RIE plasma etching, dielectric etching, polymer removal, semiconductor R&D equipment',
   },
   schema: {
-    name: 'RIE Plasma Etching Platform',
+    name: 'Reactive Ion Etcher (RIE) Plasma System',
     description:
       'Reactive ion etching platform for silicon, silicon dioxide, silicon nitride, metal, polymer, and general semiconductor R&D process applications.',
     sku: 'rie-etcher',
@@ -42,9 +42,9 @@ export const rieEtcherConfig: ProductDetailConfig = {
   },
   hero: {
     eyebrow: 'Equipment Platform',
-    title: 'RIE Plasma Etching Platform',
+    title: 'Reactive Ion Etcher (RIE)',
     description:
-      'Reliable anisotropic plasma etching for dielectric patterning, polymer removal, surface activation, and device prototyping in university and R&D lab environments.',
+      'A general-purpose RIE etcher for reliable anisotropic plasma etching — dielectric patterning, polymer removal, surface activation, and device prototyping in university and R&D lab environments.',
     backgroundImage: '/assets/images/redesign/hero-home-plasma-process.webp',
     image: {
       src: productImage,
