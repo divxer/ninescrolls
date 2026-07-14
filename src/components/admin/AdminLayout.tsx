@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: '/admin/logistics', label: 'Logistics', icon: 'local_shipping' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
   { path: '/admin/price-book', label: 'Price Book', icon: 'price_change' },
+  { path: '/admin/quotations', label: 'Quotations', icon: 'request_quote' },
   { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
   { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
