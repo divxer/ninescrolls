@@ -14,6 +14,7 @@ import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
 import { orderApi } from './functions/order-api/resource';
 import { logisticsApi } from './functions/logistics-api/resource';
+import { priceApi } from './functions/price-api/resource';
 import { crmApi } from './functions/crm-api/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
@@ -89,6 +90,7 @@ const backend = defineBackend({
     documentUpload,
     orderApi,
     logisticsApi,
+    priceApi,
     crmApi,
     optimizeInsightsImage,
     generateSitemaps,
@@ -542,6 +544,15 @@ backend.orderApi.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketN
 // Grant logistics-api Lambda access (Logistics Cases ledger — shared single table)
 intelligenceTable.grantReadWriteData(backend.logisticsApi.resources.lambda);
 backend.logisticsApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+
+// Grant price-api Lambda access (Price Book & Quotations — shared single table).
+// SECURITY (locked decision 8): the AppSync resolver role is the ONLY business
+// caller — do NOT grant lambda:InvokeFunction on price-api to anything, and do
+// NOT add priceApi to any cross-Lambda invoke loop below. The admin gate trusts
+// event.identity because AppSync verified the JWT; a direct invoker could
+// fabricate identity.groups.
+intelligenceTable.grantReadWriteData(backend.priceApi.resources.lambda);
+backend.priceApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
 // Grant crm-api Lambda access (Customer 360 Timeline — shared single table)
 intelligenceTable.grantReadWriteData(backend.crmApi.resources.lambda);
