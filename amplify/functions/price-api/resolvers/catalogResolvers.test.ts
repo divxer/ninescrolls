@@ -24,9 +24,34 @@ describe('pbCreateCatalogItem', () => {
     })) as Record<string, unknown>;
     expect(res.itemId).toMatch(/^cat-/);
     expect(res.requiredOptionSkus).toEqual([]);
-    const put = send.mock.calls[0][0].input;
-    expect(put.Item.GSI1PK).toBe('CATALOG_ITEMS');
-    expect(put.Item.GSI1SK).toBe('RIE#RIE-300');
+    const tx = send.mock.calls[0][0].input.TransactItems;
+    expect(tx).toHaveLength(2);
+    expect(tx[0].Put.Item.PK).toBe('PCATSKU#RIE-300');
+    expect(tx[0].Put.Item.SK).toBe('META');
+    expect(tx[0].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
+    expect(tx[1].Put.Item.GSI1PK).toBe('CATALOG_ITEMS');
+    expect(tx[1].Put.Item.GSI1SK).toBe('RIE#RIE-300');
+    expect(tx[1].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
+  });
+
+  it('maps a sku-marker condition failure to VALIDATION already-exists', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), {
+      name: 'TransactionCanceledException',
+      CancellationReasons: [{ Code: 'ConditionalCheckFailed' }, { Code: 'None' }],
+    }));
+    await expect(pbCreateCatalogItem(ev({
+      input: { sku: 'RIE-300', name: 'Dup', series: 'RIE', kind: 'MACHINE' },
+    }))).rejects.toThrow(/^VALIDATION:.*already exists/);
+  });
+
+  it('maps a non-marker cancellation to CONFLICT', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), {
+      name: 'TransactionCanceledException',
+      CancellationReasons: [{ Code: 'None' }, { Code: 'ConditionalCheckFailed' }],
+    }));
+    await expect(pbCreateCatalogItem(ev({
+      input: { sku: 'RIE-300', name: 'Dup', series: 'RIE', kind: 'MACHINE' },
+    }))).rejects.toThrow(/^CONFLICT:/);
   });
 
   it('rejects an invalid kind', async () => {
@@ -40,6 +65,12 @@ describe('pbUpdateCatalogItem', () => {
     send.mockResolvedValueOnce({ Attributes: { itemId: 'c1', excludesSkus: ['B'] } });
     const res = await pbUpdateCatalogItem(ev({ input: { itemId: 'c1', excludesSkus: ['B'] } })) as Record<string, unknown>;
     expect(res.excludesSkus).toEqual(['B']);
+  });
+
+  it('maps a missing item to NOT_FOUND', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }));
+    await expect(pbUpdateCatalogItem(ev({ input: { itemId: 'nope', name: 'X' } })))
+      .rejects.toThrow(/^NOT_FOUND:/);
   });
 });
 

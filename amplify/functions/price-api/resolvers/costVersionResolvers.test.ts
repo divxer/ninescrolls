@@ -39,11 +39,17 @@ describe('pbAppendCostVersion', () => {
     expect(versionsCall.input.ConsistentRead).toBe(true);
     expect(versionsCall.input.ExpressionAttributeValues[':sk']).toBe('COST#s1#');
 
-    const [guardOp, putOp] = txCall.input.TransactItems;
+    const tx = txCall.input.TransactItems;
+    expect(tx).toHaveLength(4);
+    const [guardOp, putOp, itemCheck, supplierCheck] = tx;
     expect(guardOp.Update.ConditionExpression).toContain('revision = :expected');
     expect(guardOp.Update.ExpressionAttributeValues[':expected']).toBe(3);
     expect(putOp.Put.ConditionExpression).toBe('attribute_not_exists(PK)');
     expect(putOp.Put.Item.SK).toBe('COST#s1#2026-08-01');
+    expect(itemCheck.ConditionCheck.Key).toEqual({ PK: 'PCAT#c1', SK: 'META' });
+    expect(itemCheck.ConditionCheck.ConditionExpression).toBe('attribute_exists(PK)');
+    expect(supplierCheck.ConditionCheck.Key).toEqual({ PK: 'PSUP#s1', SK: 'META' });
+    expect(supplierCheck.ConditionCheck.ConditionExpression).toBe('attribute_exists(PK)');
   });
 
   it('bootstraps a missing guard with attribute_not_exists', async () => {
@@ -75,6 +81,22 @@ describe('pbAppendCostVersion', () => {
   it('rejects effectiveTo <= effectiveFrom', async () => {
     await expect(pbAppendCostVersion(ev({ ...validInput, effectiveTo: '2026-08-01' })))
       .rejects.toThrow(/^VALIDATION:/);
+  });
+
+  it('rejects a regex-passing non-calendar date', async () => {
+    await expect(pbAppendCostVersion(ev({ ...validInput, effectiveFrom: '2026-13-45' })))
+      .rejects.toThrow(/^VALIDATION:/);
+  });
+
+  it('maps a failed catalog-item ConditionCheck to NOT_FOUND', async () => {
+    send
+      .mockResolvedValueOnce({ Item: { revision: 1 } })
+      .mockResolvedValueOnce({ Items: [] })
+      .mockRejectedValueOnce(Object.assign(new Error('x'), {
+        name: 'TransactionCanceledException',
+        CancellationReasons: [{ Code: 'None' }, { Code: 'None' }, { Code: 'ConditionalCheckFailed' }, { Code: 'None' }],
+      }));
+    await expect(pbAppendCostVersion(ev(validInput))).rejects.toThrow(/^NOT_FOUND:.*catalog/);
   });
 });
 

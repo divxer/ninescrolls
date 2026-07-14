@@ -87,16 +87,23 @@ export async function pbUpdateSupplier(event: PriceApiEvent) {
       values[`:${f}`] = input[f];
     }
   }
-  const res = await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(),
-    Key: { PK: `PSUP#${input.supplierId}`, SK: 'META' },
-    UpdateExpression: `SET ${sets.join(', ')}`,
-    ExpressionAttributeValues: values,
-    ...(Object.keys(names).length ? { ExpressionAttributeNames: names } : {}),
-    ConditionExpression: 'attribute_exists(PK)',
-    ReturnValues: 'ALL_NEW',
-  }));
-  return stripKeys(res.Attributes as SupplierItem);
+  try {
+    const res = await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(),
+      Key: { PK: `PSUP#${input.supplierId}`, SK: 'META' },
+      UpdateExpression: `SET ${sets.join(', ')}`,
+      ExpressionAttributeValues: values,
+      ...(Object.keys(names).length ? { ExpressionAttributeNames: names } : {}),
+      ConditionExpression: 'attribute_exists(PK)',
+      ReturnValues: 'ALL_NEW',
+    }));
+    return stripKeys(res.Attributes as SupplierItem);
+  } catch (e) {
+    if ((e as Error).name === 'ConditionalCheckFailedException') {
+      throw new Error(`NOT_FOUND: supplier ${input.supplierId}`);
+    }
+    throw e;
+  }
 }
 
 export async function pbListSuppliers(_event: PriceApiEvent) {

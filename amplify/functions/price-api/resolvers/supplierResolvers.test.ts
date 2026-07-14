@@ -58,6 +58,12 @@ describe('pbUpdateSupplier', () => {
     const upd = send.mock.calls[0][0].input;
     expect(upd.ConditionExpression).toContain('attribute_exists');
   });
+
+  it('maps a missing supplier to NOT_FOUND', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ConditionalCheckFailedException' }));
+    await expect(pbUpdateSupplier(ev({ input: { supplierId: 'nope', name: 'X' } })))
+      .rejects.toThrow(/^NOT_FOUND:/);
+  });
 });
 
 describe('pbListSuppliers', () => {

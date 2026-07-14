@@ -5,6 +5,12 @@ import { parseInput, stripKeys, getOperator, type PriceApiEvent, type CostVersio
 const SOURCES = ['MANUAL_ENTRY', 'SUPPLIER_EXCEL', 'SUPPLIER_LINK'] as const;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** DATE_RE alone accepts 2026-13-45; round-trip through Date catches those. */
+const isCalendarDate = (s: string): boolean => {
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+};
+
 interface AppendInput {
   itemId: string; supplierId: string;
   unitCostFen: number;
@@ -25,6 +31,9 @@ export async function pbAppendCostVersion(event: PriceApiEvent) {
   }
   if (!DATE_RE.test(input.effectiveFrom) || !DATE_RE.test(input.effectiveTo)) {
     throw new Error('VALIDATION: effectiveFrom/effectiveTo must be YYYY-MM-DD');
+  }
+  if (!isCalendarDate(input.effectiveFrom) || !isCalendarDate(input.effectiveTo)) {
+    throw new Error('VALIDATION: effectiveFrom/effectiveTo must be real calendar dates');
   }
   if (input.effectiveTo <= input.effectiveFrom) {
     throw new Error('VALIDATION: effectiveTo must be after effectiveFrom');
@@ -101,10 +110,34 @@ export async function pbAppendCostVersion(event: PriceApiEvent) {
       TransactItems: [
         guardUpdate,
         { Put: { TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' } },
+        // Referential existence: costs must not be appended to phantom items or
+        // suppliers. Appended AFTER the guard/put so indexes 0/1 stay stable.
+        {
+          ConditionCheck: {
+            TableName: TABLE_NAME(),
+            Key: { PK: pk, SK: 'META' },
+            ConditionExpression: 'attribute_exists(PK)',
+          },
+        },
+        {
+          ConditionCheck: {
+            TableName: TABLE_NAME(),
+            Key: { PK: `PSUP#${input.supplierId}`, SK: 'META' },
+            ConditionExpression: 'attribute_exists(PK)',
+          },
+        },
       ],
     }));
   } catch (e) {
-    if ((e as Error).name === 'TransactionCanceledException') {
+    const err = e as Error & { CancellationReasons?: Array<{ Code?: string }> };
+    if (err.name === 'TransactionCanceledException') {
+      const reasons = err.CancellationReasons;
+      if (reasons?.[2]?.Code === 'ConditionalCheckFailed') {
+        throw new Error(`NOT_FOUND: catalog item ${input.itemId}`);
+      }
+      if (reasons?.[3]?.Code === 'ConditionalCheckFailed') {
+        throw new Error(`NOT_FOUND: supplier ${input.supplierId}`);
+      }
       throw new Error('CONFLICT: concurrent cost update for this item/supplier — refresh and retry');
     }
     throw e;
