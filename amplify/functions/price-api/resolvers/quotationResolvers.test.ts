@@ -140,6 +140,17 @@ describe('pbCreateQuotationDraft', () => {
     }))).rejects.toThrow(/^VALIDATION:.*duplicate/i);
   });
 
+  it('rejects combining a line-level override with a total override', async () => {
+    send
+      .mockResolvedValueOnce(policyItem)
+      .mockResolvedValueOnce({ Items: [machineMeta, cost] });
+    await expect(pbCreateQuotationDraft(ev({
+      ...validInput,
+      lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL', actualUnitUsdCents: 120_000, overrideReason: 'deal' }],
+      totalOverride: { totalUsdCents: 100_000, reason: 'bundle' },
+    }))).rejects.toThrow(/^VALIDATION:.*cannot be combined/);
+  });
+
   it('rejects a negative manual override', async () => {
     await expect(pbCreateQuotationDraft(ev({
       ...validInput,
@@ -182,8 +193,28 @@ describe('pbUpdateQuotationDraft', () => {
     const putOps = tx.filter((op: Record<string, unknown>) => 'Put' in op);
     const delOps = tx.filter((op: Record<string, unknown>) => 'Delete' in op);
     expect(putOps).toHaveLength(1);                                      // line 1 overwrite
-    expect(delOps).toHaveLength(1);                                      // old line 2 removed
+    // Self-healing tail delete: everything beyond the new count up to the cap,
+    // regardless of what lineCount claims (idempotent for absent keys).
+    expect(delOps).toHaveLength(44);                                     // lineNo 2..45
     expect(delOps[0].Delete.Key.SK).toBe('V#001#LINE#02');
+    expect(delOps[43].Delete.Key.SK).toBe('V#001#LINE#45');
+  });
+
+  it('marshals the totalOverride summary key (with audit fields) into the header Update', async () => {
+    send
+      .mockResolvedValueOnce({ Item: headerItem })
+      .mockResolvedValueOnce(policyItem)
+      .mockResolvedValueOnce({ Items: [machineMeta, cost] })
+      .mockResolvedValueOnce({});
+    await pbUpdateQuotationDraft(ev({
+      quotationNumber: 'Q-2026-0008', version: 1, expectedRevision: 2,
+      lines: [{ itemId: 'c1', qty: 2, lineType: 'NORMAL' }],
+      totalOverride: { totalUsdCents: 300_000, reason: 'bundle deal' },
+    }));
+    const headerOp = send.mock.calls[3][0].input.TransactItems[0];
+    expect(headerOp.Update.ExpressionAttributeValues[':s_totalOverride']).toMatchObject({
+      totalUsdCents: 300_000, reason: 'bundle deal', overriddenBy: 'boss@ninescrolls.com',
+    });
   });
 
   it('rejects a stale revision as CONFLICT without partial application', async () => {
@@ -233,5 +264,11 @@ describe('pbListQuotations', () => {
     const q = send.mock.calls[0][0].input;
     expect(q.IndexName).toBe('GSI1');
     expect(q.ScanIndexForward).toBe(false);
+  });
+
+  it('rejects a garbage nextToken with a typed error', async () => {
+    await expect(pbListQuotations(
+      { ...ev({}), arguments: { nextToken: 'garbage!!' } } as never,
+    )).rejects.toThrow(/^VALIDATION:/);
   });
 });

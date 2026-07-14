@@ -6,7 +6,7 @@ import { allocateTotalOverride } from '../lib/allocation.js';
 import { validateConfiguration, type ConfigItem } from '../lib/compatibility.js';
 import { selectEffectiveCost } from './costVersionResolvers.js';
 import { DEFAULT_POLICY } from './policyResolvers.js';
-import { parseInput, getOperator, type PriceApiEvent } from '../lib/types.js';
+import { parseInput, getOperator, stripKeys, type PriceApiEvent } from '../lib/types.js';
 
 export const MAX_LINES = 45; // spec invariant 3: full-replacement edit must fit 100 tx actions
 
@@ -199,6 +199,12 @@ export function buildSnapshot(
   if (totalOverride && !totalOverride.reason?.trim()) {
     throw new Error('VALIDATION: a total override requires a reason');
   }
+  if (totalOverride && loaded.some((l) => l.input.actualUnitUsdCents != null)) {
+    // Allocation weights are SUGGESTED totals, so a line-level override would be
+    // silently discarded by the allocation yet still persisted with
+    // overriddenBy/overriddenAt as if applied — audit-dishonest. Refuse the combo.
+    throw new Error('VALIDATION: line-level price overrides cannot be combined with a total override — remove one');
+  }
 
   const engines = loaded.map((l) => l.engine);
   const perLine = engines.map((e) => priceLine(e, policy));
@@ -350,6 +356,8 @@ export async function pbCreateQuotationDraft(event: PriceApiEvent) {
       TransactItems: [
         counterOp,
         {
+          // P1: the scheme row is create-time-frozen (the version header is
+          // authoritative for customerName etc.); P2's accept transaction updates it.
           Put: {
             TableName: TABLE_NAME(),
             Item: {
@@ -415,9 +423,9 @@ export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
 
   const now = new Date().toISOString();
   const newRevision = input.expectedRevision + 1;
-  const oldCount = (header.lineCount as number) ?? 0;
   const scalarPatch: Record<string, unknown> = {
-    customerName: input.customerName?.trim() ?? header.customerName,
+    // `||` (not `??`): an empty/whitespace-trimmed name falls back to the stored one.
+    customerName: input.customerName?.trim() || header.customerName,
     validUntil: input.validUntil ?? header.validUntil ?? null,
     tradeTerms: input.tradeTerms ?? header.tradeTerms ?? null,
     paymentTerms: input.paymentTerms ?? header.paymentTerms ?? null,
@@ -461,8 +469,11 @@ export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
             Item: { PK: pk, SK: lineSk(input.version, row.lineNo), quotationNumber: input.quotationNumber, version: input.version, ...row },
           },
         })),
-        // Delete only the tail beyond the new count.
-        ...Array.from({ length: Math.max(0, oldCount - lineRows.length) }, (_, i) => ({
+        // Self-healing tail delete: remove lineNo N+1..MAX_LINES unconditionally
+        // rather than trusting the stored lineCount (deleting absent keys is a
+        // no-op in DDB) — heals corrupt/missing lineCount and phantom lines.
+        // Tx size: 1 header + N puts + (45−N) deletes = 46 items max (≤ 100 cap).
+        ...Array.from({ length: MAX_LINES - lineRows.length }, (_, i) => ({
           Delete: {
             TableName: TABLE_NAME(),
             Key: { PK: pk, SK: lineSk(input.version, lineRows.length + i + 1) },
@@ -474,9 +485,13 @@ export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
     mapTxError(e, 'draft edit (stale revision or state change)');
   }
 
+  // Response parity with create: spread the fetched header FIRST so untouched
+  // fields (schemeLabel, rfqId, currency, policySnapshot, createdAt/By) survive.
   return {
+    ...stripKeys(header as { PK: string; SK: string }),
+    ...scalarPatch, ...summary,
     quotationNumber: input.quotationNumber, version: input.version, revision: newRevision,
-    status: 'DRAFT', ...scalarPatch, ...summary, lineCount: lineRows.length,
+    status: 'DRAFT', lineCount: lineRows.length,
     updatedAt: now, lines: lineRows,
   };
 }
@@ -491,6 +506,9 @@ export async function pbGetQuotation(event: PriceApiEvent) {
       TableName: TABLE_NAME(),
       KeyConditionExpression: 'PK = :pk',
       ExpressionAttributeValues: { ':pk': `PQUO#${quotationNumber}` },
+      // Base-table read: strong consistency so create -> navigate -> get
+      // can't transiently 404 on a just-written quotation.
+      ConsistentRead: true,
       ExclusiveStartKey: key,
     }));
     rows.push(...(r.Items ?? []));
@@ -522,7 +540,14 @@ export async function pbGetQuotation(event: PriceApiEvent) {
 export async function pbListQuotations(event: PriceApiEvent) {
   const { limit = 50, nextToken } = (event.arguments ?? {}) as { limit?: number; nextToken?: string | null };
   const effectiveLimit = Math.min(Math.max(limit || 50, 1), 200);
-  const startKey = nextToken ? JSON.parse(Buffer.from(nextToken, 'base64').toString()) : undefined;
+  let startKey: Record<string, unknown> | undefined;
+  if (nextToken) {
+    try {
+      startKey = JSON.parse(Buffer.from(nextToken, 'base64').toString());
+    } catch {
+      throw new Error('VALIDATION: invalid nextToken');
+    }
+  }
   const r = await docClient.send(new QueryCommand({
     TableName: TABLE_NAME(),
     IndexName: 'GSI1',
