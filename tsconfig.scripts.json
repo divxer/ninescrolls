@@ -3,7 +3,9 @@
   "compilerOptions": { "noEmit": true, "types": ["node"] },
   "include": [
     "scripts/generate-equipment-guide.ts",
+    "scripts/import-supplier-prices.ts",
     "scripts/add-admin-user.ts",
+    "scripts/lib/csv.ts",
     "src/**/*.ts"
   ]
 }
