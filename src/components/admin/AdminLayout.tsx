@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' },
   { path: '/admin/logistics', label: 'Logistics', icon: 'local_shipping' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
+  { path: '/admin/price-book', label: 'Price Book', icon: 'price_change' },
   { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
   { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },

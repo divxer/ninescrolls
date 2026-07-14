@@ -34,6 +34,7 @@ const TenderKeywordConfigPage = lazyWithReload(() => import('../pages/admin/Tend
 const TenderPipelineRunsPage = lazyWithReload(() => import('../pages/admin/TenderPipelineRunsPage').then(m => ({ default: m.TenderPipelineRunsPage })));
 const TenderPipelineRunDetailPage = lazyWithReload(() => import('../pages/admin/TenderPipelineRunDetailPage').then(m => ({ default: m.TenderPipelineRunDetailPage })));
 const SuppliersPage = lazyWithReload(() => import('../pages/admin/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
+const PriceBookPage = lazyWithReload(() => import('../pages/admin/PriceBookPage').then(m => ({ default: m.PriceBookPage })));
 
 function PageLoader() {
   return (
@@ -65,6 +66,7 @@ export function AdminRoutes() {
           <Route path="logistics/new" element={<CreateLogisticsCasePage />} />
           <Route path="logistics/:caseId" element={<LogisticsCaseDetailPage />} />
           <Route path="suppliers" element={<SuppliersPage />} />
+          <Route path="price-book" element={<PriceBookPage />} />
           <Route path="rfqs" element={<RFQListPage />} />
           <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
           <Route path="leads" element={<LeadsListPage />} />
