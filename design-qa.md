@@ -33,3 +33,42 @@
 - [P3] Consider repositioning or suppressing the third-party chat bubble on the homepage hero for an even cleaner mobile first impression.
 
 final result: passed
+
+---
+
+# Quotation Workbench — Design QA
+
+Status: **PASS**
+Reviewed: 2026-07-14
+Reference: `/Users/harvey/.codex/generated_images/019f5ea1-79a6-70b1-be6b-cc2c3ccf9110/exec-1a57fc6d-0aa8-4345-bc2e-72c954649ae8.png`
+
+## Visual comparison
+
+- Reference and implementation were compared side by side at approximately 1488 × 1057.
+- Implementation capture: `.superpowers/sdd/quotation-workbench-qa.png`.
+- Combined comparison: `.superpowers/sdd/quotation-workbench-comparison.png`.
+- The implementation preserves the selected information architecture: compact header, grouped Pricing / Catalog / Validity context, BOM-centered table, collapsed validation affordance, sticky total, and compact bottom summary.
+- Existing NineScrolls admin navigation, typography, color tokens, light/dark themes, and real ICP-RIE product artwork are retained.
+
+## Responsive and interaction checks
+
+- 1488 × 1057 desktop: all BOM pricing columns, `% of Quote`, totals, and summary are visible without page-level horizontal overflow.
+- 1366 × 768 laptop: Validation opens as an overlay drawer and does not force the BOM/table wider; measured page overflow was zero.
+- Catalog search matched SKU/supplier-code data and added the selected service rather than a fallback item.
+- Adding a line with unknown cost propagated `—` through totals and margin instead of treating unknown as zero.
+- Inline actual-price editing displayed live same-row margin impact.
+- Validation identified the exact EXPIRING and MISSING lines.
+- Positive and negative cost deltas used distinct risk/savings colors.
+- Preview remained disabled with the required PDF-template tooltip.
+
+## Final corrections made during QA
+
+- Replaced the incorrect customer-name content in the Pricing context with Exchange, Target Margin, and Minimum Margin from the saved policy snapshot/current policy.
+- Kept customer editing in the compact header.
+- Added the compact pricing-adjustment reason field.
+- Corrected manual-override serialization so authoritative actual prices are not falsely submitted as overrides, while real edits always carry a resolver-valid reason.
+- Added an exact, development-only fixture route for authenticated visual QA; production builds remove the route branch and fixture data, confirmed by marker scan.
+
+## Result
+
+The workbench is visually and behaviorally ready for P1 implementation use. No blocking visual, responsive, or accessibility issue remains from this review.
