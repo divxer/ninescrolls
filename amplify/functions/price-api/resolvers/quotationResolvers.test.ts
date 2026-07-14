@@ -152,3 +152,86 @@ describe('pbCreateQuotationDraft', () => {
     await expect(pbCreateQuotationDraft(ev({ ...validInput, lines }))).rejects.toThrow(/^VALIDATION:.*45/);
   });
 });
+
+import { pbUpdateQuotationDraft, pbGetQuotation, pbListQuotations } from './quotationResolvers.js';
+
+const headerItem = {
+  PK: 'PQUO#Q-2026-0008', SK: 'V#001', quotationNumber: 'Q-2026-0008', version: 1,
+  revision: 2, status: 'DRAFT', schemeLabel: 'Standard', customerName: 'MIT Nano',
+  lineCount: 2, createdAt: 'T0', createdBy: 'boss@ninescrolls.com',
+};
+
+describe('pbUpdateQuotationDraft', () => {
+  it('recomputes, CASes the header revision, puts new lines and deletes the tail — one transaction', async () => {
+    send
+      .mockResolvedValueOnce({ Item: headerItem })                       // header Get (consistent)
+      .mockResolvedValueOnce(policyItem)                                 // policy
+      .mockResolvedValueOnce({ Items: [machineMeta, cost] })             // line load
+      .mockResolvedValueOnce({});                                        // TransactWriteCommand
+    const res = await pbUpdateQuotationDraft(ev({
+      quotationNumber: 'Q-2026-0008', version: 1, expectedRevision: 2,
+      customerName: 'MIT Nano',
+      lines: [{ itemId: 'c1', qty: 2, lineType: 'NORMAL' }],             // 2 lines -> 1 line
+    })) as Record<string, unknown>;
+    expect(res.revision).toBe(3);
+
+    const tx = send.mock.calls[3][0].input.TransactItems;
+    const headerOp = tx[0];
+    expect(headerOp.Update.ConditionExpression).toContain('revision = :expected');
+    expect(headerOp.Update.ConditionExpression).toContain('#status = :draft');
+    const putOps = tx.filter((op: Record<string, unknown>) => 'Put' in op);
+    const delOps = tx.filter((op: Record<string, unknown>) => 'Delete' in op);
+    expect(putOps).toHaveLength(1);                                      // line 1 overwrite
+    expect(delOps).toHaveLength(1);                                      // old line 2 removed
+    expect(delOps[0].Delete.Key.SK).toBe('V#001#LINE#02');
+  });
+
+  it('rejects a stale revision as CONFLICT without partial application', async () => {
+    send
+      .mockResolvedValueOnce({ Item: headerItem })
+      .mockResolvedValueOnce(policyItem)
+      .mockResolvedValueOnce({ Items: [machineMeta, cost] })
+      .mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'TransactionCanceledException' }));
+    await expect(pbUpdateQuotationDraft(ev({
+      quotationNumber: 'Q-2026-0008', version: 1, expectedRevision: 1,
+      lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL' }],
+    }))).rejects.toThrow(/^CONFLICT:/);
+  });
+
+  it('refuses to edit a non-DRAFT version', async () => {
+    send.mockResolvedValueOnce({ Item: { ...headerItem, status: 'GENERATED' } });
+    await expect(pbUpdateQuotationDraft(ev({
+      quotationNumber: 'Q-2026-0008', version: 1, expectedRevision: 2,
+      lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL' }],
+    }))).rejects.toThrow(/^VALIDATION:.*DRAFT/);
+  });
+});
+
+describe('pbGetQuotation', () => {
+  it('assembles scheme, versions and their lines from one partition Query', async () => {
+    send.mockResolvedValueOnce({
+      Items: [
+        { PK: 'PQUO#Q-2026-0008', SK: 'SCHEME', quotationNumber: 'Q-2026-0008', latestVersion: 1 },
+        headerItem,
+        { PK: 'PQUO#Q-2026-0008', SK: 'V#001#LINE#01', lineNo: 1, sku: 'RIE-300' },
+      ],
+    });
+    const res = await pbGetQuotation(ev({ quotationNumber: 'Q-2026-0008' })) as {
+      scheme: Record<string, unknown>; versions: Array<{ lines: unknown[] }>;
+    };
+    expect(res.scheme.latestVersion).toBe(1);
+    expect(res.versions).toHaveLength(1);
+    expect(res.versions[0].lines).toHaveLength(1);
+  });
+});
+
+describe('pbListQuotations', () => {
+  it('queries the QUOTATIONS GSI partition newest-first', async () => {
+    send.mockResolvedValueOnce({ Items: [{ ...headerItem, GSI1PK: 'QUOTATIONS', GSI1SK: 'x' }] });
+    const res = await pbListQuotations(ev({})) as { items: unknown[] };
+    expect(res.items).toHaveLength(1);
+    const q = send.mock.calls[0][0].input;
+    expect(q.IndexName).toBe('GSI1');
+    expect(q.ScanIndexForward).toBe(false);
+  });
+});

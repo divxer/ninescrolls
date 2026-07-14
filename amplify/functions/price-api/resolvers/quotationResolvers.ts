@@ -381,12 +381,163 @@ export async function pbCreateQuotationDraft(event: PriceApiEvent) {
   return { ...headerOut, lines: lineRows };
 }
 
-export async function pbUpdateQuotationDraft(_event: PriceApiEvent): Promise<unknown> {
-  throw new Error('NOT_IMPLEMENTED: pbUpdateQuotationDraft'); // Task 12
+interface UpdateQuotationInput {
+  quotationNumber: string;
+  version: number;
+  expectedRevision: number;
+  customerName?: string;
+  validUntil?: string; tradeTerms?: string; paymentTerms?: string; notes?: string;
+  lines: QuotationLineInput[];
+  totalOverride?: { totalUsdCents: number; reason: string };
 }
-export async function pbGetQuotation(_event: PriceApiEvent): Promise<unknown> {
-  throw new Error('NOT_IMPLEMENTED: pbGetQuotation'); // Task 12
+
+export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
+  const input = parseInput<UpdateQuotationInput>(event);
+  if (!input.quotationNumber || !input.version || !input.expectedRevision) {
+    throw new Error('VALIDATION: quotationNumber, version and expectedRevision are required');
+  }
+  const pk = `PQUO#${input.quotationNumber}`;
+  const sk = versionSk(input.version);
+
+  const headerRes = await docClient.send(new GetCommand({
+    TableName: TABLE_NAME(), Key: { PK: pk, SK: sk }, ConsistentRead: true,
+  }));
+  const header = headerRes.Item;
+  if (!header) throw new Error(`NOT_FOUND: quotation ${input.quotationNumber} v${input.version}`);
+  if (header.status !== 'DRAFT') {
+    // Spec mutability boundary: versions freeze at DRAFT -> GENERATED.
+    throw new Error('VALIDATION: only DRAFT versions are editable — later changes copy into a new version (P2)');
+  }
+
+  const policy = await loadPolicy();
+  const loaded = await loadLines(input.lines ?? []);
+  const { lineRows, summary } = buildSnapshot(loaded, policy, getOperator(event), input.totalOverride);
+
+  const now = new Date().toISOString();
+  const newRevision = input.expectedRevision + 1;
+  const oldCount = (header.lineCount as number) ?? 0;
+  const scalarPatch: Record<string, unknown> = {
+    customerName: input.customerName?.trim() ?? header.customerName,
+    validUntil: input.validUntil ?? header.validUntil ?? null,
+    tradeTerms: input.tradeTerms ?? header.tradeTerms ?? null,
+    paymentTerms: input.paymentTerms ?? header.paymentTerms ?? null,
+    notes: input.notes ?? header.notes ?? null,
+  };
+
+  const sets: string[] = [
+    'revision = :rev', 'updatedAt = :now', 'lineCount = :lc', 'GSI1SK = :gsk',
+    ...Object.keys(scalarPatch).map((k) => `#${k} = :${k}`),
+    ...Object.keys(summary).map((k) => `#s_${k} = :s_${k}`),
+  ];
+  const names: Record<string, string> = {
+    '#status': 'status',
+    ...Object.fromEntries(Object.keys(scalarPatch).map((k) => [`#${k}`, k])),
+    ...Object.fromEntries(Object.keys(summary).map((k) => [`#s_${k}`, k])),
+  };
+  const values: Record<string, unknown> = {
+    ':rev': newRevision, ':now': now, ':lc': lineRows.length,
+    ':gsk': `${now}#${input.quotationNumber}#v${input.version}`,
+    ':expected': input.expectedRevision, ':draft': 'DRAFT',
+    ...Object.fromEntries(Object.entries(scalarPatch).map(([k, v]) => [`:${k}`, v])),
+    ...Object.fromEntries(Object.entries(summary).map(([k, v]) => [`:s_${k}`, v ?? null])),
+  };
+
+  try {
+    await docClient.send(new TransactWriteCommand({
+      TransactItems: [
+        {
+          Update: {
+            TableName: TABLE_NAME(), Key: { PK: pk, SK: sk },
+            UpdateExpression: `SET ${sets.join(', ')}`,
+            ConditionExpression: 'revision = :expected AND #status = :draft',
+            ExpressionAttributeNames: names,
+            ExpressionAttributeValues: values,
+          },
+        },
+        // Overwrite lines 1..N (single Put per key — never Delete+Put of the same key).
+        ...lineRows.map((row) => ({
+          Put: {
+            TableName: TABLE_NAME(),
+            Item: { PK: pk, SK: lineSk(input.version, row.lineNo), quotationNumber: input.quotationNumber, version: input.version, ...row },
+          },
+        })),
+        // Delete only the tail beyond the new count.
+        ...Array.from({ length: Math.max(0, oldCount - lineRows.length) }, (_, i) => ({
+          Delete: {
+            TableName: TABLE_NAME(),
+            Key: { PK: pk, SK: lineSk(input.version, lineRows.length + i + 1) },
+          },
+        })),
+      ],
+    }));
+  } catch (e) {
+    mapTxError(e, 'draft edit (stale revision or state change)');
+  }
+
+  return {
+    quotationNumber: input.quotationNumber, version: input.version, revision: newRevision,
+    status: 'DRAFT', ...scalarPatch, ...summary, lineCount: lineRows.length,
+    updatedAt: now, lines: lineRows,
+  };
 }
-export async function pbListQuotations(_event: PriceApiEvent): Promise<unknown> {
-  throw new Error('NOT_IMPLEMENTED: pbListQuotations'); // Task 12
+
+export async function pbGetQuotation(event: PriceApiEvent) {
+  const { quotationNumber } = parseInput<{ quotationNumber: string }>(event);
+  if (!quotationNumber) throw new Error('VALIDATION: quotationNumber is required');
+  const rows: Record<string, unknown>[] = [];
+  let key: Record<string, unknown> | undefined;
+  do {
+    const r = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME(),
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: { ':pk': `PQUO#${quotationNumber}` },
+      ExclusiveStartKey: key,
+    }));
+    rows.push(...(r.Items ?? []));
+    key = r.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (key);
+  if (!rows.length) throw new Error(`NOT_FOUND: quotation ${quotationNumber}`);
+
+  const strip = (it: Record<string, unknown>) => {
+    const { PK, SK, GSI1PK, GSI1SK, ...rest } = it;
+    return rest;
+  };
+  const scheme = rows.find((it) => it.SK === 'SCHEME');
+  const headers = rows.filter((it) => /^V#\d{3}$/.test(it.SK as string));
+  const lines = rows.filter((it) => /^V#\d{3}#LINE#/.test(it.SK as string));
+  return {
+    scheme: scheme ? strip(scheme) : null,
+    versions: headers
+      .sort((a, b) => (a.SK as string).localeCompare(b.SK as string))
+      .map((h) => ({
+        ...strip(h),
+        lines: lines
+          .filter((l) => (l.SK as string).startsWith(`${h.SK}#LINE#`))
+          .sort((a, b) => (a.SK as string).localeCompare(b.SK as string))
+          .map(strip),
+      })),
+  };
+}
+
+export async function pbListQuotations(event: PriceApiEvent) {
+  const { limit = 50, nextToken } = (event.arguments ?? {}) as { limit?: number; nextToken?: string | null };
+  const effectiveLimit = Math.min(Math.max(limit || 50, 1), 200);
+  const startKey = nextToken ? JSON.parse(Buffer.from(nextToken, 'base64').toString()) : undefined;
+  const r = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME(),
+    IndexName: 'GSI1',
+    KeyConditionExpression: 'GSI1PK = :pk',
+    ExpressionAttributeValues: { ':pk': 'QUOTATIONS' },
+    ScanIndexForward: false,
+    ExclusiveStartKey: startKey,
+    Limit: effectiveLimit,
+  }));
+  const strip = (it: Record<string, unknown>) => {
+    const { PK, SK, GSI1PK, GSI1SK, ...rest } = it;
+    return rest;
+  };
+  return {
+    items: (r.Items ?? []).map(strip),
+    nextToken: r.LastEvaluatedKey ? Buffer.from(JSON.stringify(r.LastEvaluatedKey)).toString('base64') : null,
+  };
 }
