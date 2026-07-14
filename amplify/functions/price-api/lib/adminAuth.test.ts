@@ -28,4 +28,9 @@ describe('requireAdmin', () => {
   it('rejects when identity is missing entirely', () => {
     expect(() => requireAdmin(base)).toThrow(/^UNAUTHORIZED:/);
   });
+
+  it('rejects when identity.groups is null and no claims grant admin', () => {
+    expect(() => requireAdmin({ ...base, identity: { sub: 's', groups: null } }))
+      .toThrow(/^UNAUTHORIZED:/);
+  });
 });
