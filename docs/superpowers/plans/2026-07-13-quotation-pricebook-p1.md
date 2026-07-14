@@ -2907,8 +2907,9 @@ export class FakeDdb {
           ? (input.TransactItems as Array<Record<string, Record<string, unknown>>>)
           : [cmd.constructor.name === 'PutCommand' ? { Put: input } : { Update: input }];
         // Phase 1: evaluate every condition against the CURRENT store.
+        // (ConditionCheck entries participate here but apply nothing in phase 2.)
         for (const op of ops) {
-          const spec = op.Put ?? op.Update ?? op.Delete;
+          const spec = op.Put ?? op.Update ?? op.Delete ?? op.ConditionCheck;
           const targetKey = op.Put ? key(spec.Item as never) : key(spec.Key as never);
           const ok = evalCondition(
             spec.ConditionExpression as string | undefined,
@@ -2937,6 +2938,7 @@ export class FakeDdb {
           } else if (op.Delete) {
             this.store.delete(key(op.Delete.Key as never));
           }
+          // op.ConditionCheck: evaluated in phase 1, applies nothing.
         }
         return {};
       }
@@ -3006,6 +3008,8 @@ beforeEach(() => { sendImpl = async () => ({}); });
 describe('concurrency invariants (deterministic worst-case interleaving)', () => {
   it('CostVersion: two racers on the same gap — exactly one wins, exactly one version lands', async () => {
     const fake = new FakeDdb();
+    // Referential ConditionChecks in the append transaction need the META rows.
+    fake.seed([machineMeta, { PK: 'PSUP#s1', SK: 'META', supplierId: 's1', name: 'OEM' }]);
     // Both appenders read guard (1 Get) + versions (1 Query) => 4 reads total before any tx.
     sendImpl = gatedSend(fake, 4);
     const mk = (from: string, to: string) => pbAppendCostVersion(ev({
