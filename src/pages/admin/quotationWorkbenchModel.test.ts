@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { preview, reconcileServerLines } from "./quotationWorkbenchModel";
+import { preview, reconcileServerLines, toInput } from "./quotationWorkbenchModel";
 import type { QuotationLineSnapshot } from "../../services/priceAdminService";
 
 const line = (lineNo: number, overrides: Partial<QuotationLineSnapshot> = {}): QuotationLineSnapshot => ({
@@ -19,5 +19,23 @@ describe("quotationWorkbenchModel", () => {
   it("creates unique reconciliation keys for historical duplicate item rows", () => {
     const lines = reconcileServerLines([line(1), line(2)]);
     expect(new Set(lines.map(({ key }) => key)).size).toBe(2);
+  });
+
+  it("keeps authoritative actual pricing for display without inventing an override", () => {
+    const [draft] = reconcileServerLines([line(1)]);
+    expect(draft.actualUnitUsdCents).toBeUndefined();
+    expect(preview([draft]).actualTotal).toBe(200);
+    expect(toInput(draft)).not.toHaveProperty("actualUnitUsdCents");
+    expect(toInput(draft)).not.toHaveProperty("overrideReason");
+  });
+
+  it("round-trips a proven line-specific override", () => {
+    const [draft] = reconcileServerLines([
+      line(1, { actualUnitUsdCents: 175, overrideReason: "Negotiated", overriddenBy: "seller@example.com" }),
+    ]);
+    expect(toInput(draft)).toMatchObject({
+      actualUnitUsdCents: 175,
+      overrideReason: "Negotiated",
+    });
   });
 });

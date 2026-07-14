@@ -9,6 +9,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   createQuotationDraft,
   getQuotation,
+  getPricingPolicy,
   listCatalogItems,
   marginPct,
   rmbFen,
@@ -16,6 +17,7 @@ import {
   usd,
   type CatalogItem,
   type QuotationSummary,
+  type PricingPolicy,
 } from "../../services/priceAdminService";
 import {
   catalogMatches,
@@ -43,6 +45,10 @@ export function QuotationWorkbenchPage() {
     [schemeLabel, setSchemeLabel] = useState("Standard"),
     [rfqId, setRfqId] = useState(""),
     [validUntil, setValidUntil] = useState("");
+  const [policy, setPolicy] = useState<Pick<
+    PricingPolicy,
+    "fxRmbPerUsdMilli" | "defaultMarginBp" | "minMarginBp"
+  > | null>(null);
   const [lines, setLines] = useState<DraftLine[]>([]),
     [saved, setSaved] = useState<QuotationSummary | null>(null),
     [version, setVersion] = useState<{
@@ -56,6 +62,7 @@ export function QuotationWorkbenchPage() {
     [custom, setCustom] = useState(false),
     [customLabel, setCustomLabel] = useState(""),
     [customValue, setCustomValue] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
   const [editing, setEditing] = useState<string | null>(null),
     [editValue, setEditValue] = useState(""),
     [saveState, setSaveState] = useState<SaveState>("idle"),
@@ -70,6 +77,12 @@ export function QuotationWorkbenchPage() {
       .catch((e) => setError(String(e)));
   }, [fixture]);
   useEffect(() => {
+    if (fixture || quotationNumber) return;
+    getPricingPolicy()
+      .then(setPolicy)
+      .catch((e) => setError(String(e)));
+  }, [fixture, quotationNumber]);
+  useEffect(() => {
     if (!fixture) return;
     import("./quotationWorkbenchFixture").then(
       ({ quotationFixtureCatalog, quotationFixtureSnapshot }) => {
@@ -80,6 +93,7 @@ export function QuotationWorkbenchPage() {
         setRfqId(String(quotationFixtureSnapshot.rfqId ?? ""));
         setValidUntil(String(quotationFixtureSnapshot.validUntil ?? ""));
         setSaved(quotationFixtureSnapshot);
+        setPolicy(quotationFixtureSnapshot.policySnapshot ?? null);
         setVersion(quotationFixtureSnapshot);
         setLines(reconcileServerLines(quotationFixtureSnapshot.lines ?? []));
       }
@@ -97,6 +111,7 @@ export function QuotationWorkbenchPage() {
         setSchemeLabel(q.schemeLabel);
         setRfqId(String(q.rfqId ?? ""));
         setValidUntil(String(q.validUntil ?? ""));
+        setPolicy(q.policySnapshot ?? null);
       })
       .catch((e) => setError(String(e)));
   }, [fixture, quotationNumber]);
@@ -143,8 +158,7 @@ export function QuotationWorkbenchPage() {
         : lines.some(
             (line, i) =>
               line.qty !== saved.lines?.[i]?.qty ||
-              line.actualUnitUsdCents !==
-                (saved.lines?.[i]?.actualUnitUsdCents ?? undefined)
+              lineActual(line) !== saved.lines?.[i]?.actualUnitUsdCents
           ) || totals.actualTotal !== saved.actualTotalUsdCents,
     [lines, saved, totals.actualTotal]
   );
@@ -247,8 +261,22 @@ export function QuotationWorkbenchPage() {
     }
   };
   const save = async () => {
-    setSaveState("saving");
     setError("");
+    const missingReason = lines.some(
+      (line) => line.actualUnitUsdCents !== undefined
+        && !line.overrideReason?.trim()
+        && !adjustmentReason.trim()
+    );
+    if (missingReason) {
+      setError("Pricing adjustment reason is required for edited prices.");
+      return;
+    }
+    const payload = lines.map((line) => toInput(
+      line.actualUnitUsdCents !== undefined && !line.overrideReason?.trim()
+        ? { ...line, overrideReason: adjustmentReason.trim() }
+        : line
+    ));
+    setSaveState("saving");
     if (fixture) {
       const totals = preview(lines);
       setSaved((current) => current ? {
@@ -263,7 +291,6 @@ export function QuotationWorkbenchPage() {
       return;
     }
     try {
-      const payload = lines.map(toInput);
       const result =
         identity && version
           ? await updateQuotationDraft({
@@ -301,26 +328,29 @@ export function QuotationWorkbenchPage() {
       <WorkbenchHeader
         saved={saved}
         customerName={customerName}
+        setCustomerName={setCustomerName}
         schemeLabel={schemeLabel}
         save={save}
         saveState={saveState}
       />
       <section className="mx-5 mt-4 grid gap-px overflow-hidden rounded-xl border border-outline-variant/40 bg-outline-variant/40 sm:grid-cols-3">
         <Context label="Pricing">
-          <input
-            placeholder="Customer name"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            className="mt-1 block w-full border-0 bg-transparent p-0 text-sm font-semibold normal-case text-on-surface outline-none"
-          />
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold normal-case text-on-surface">
+            <span>Exchange <b>{policy ? `${(policy.fxRmbPerUsdMilli / 1000).toFixed(2)} RMB/USD` : "—"}</b></span>
+            <span>Target Margin <b>{policy ? `${policy.defaultMarginBp / 100}%` : "—"}</b></span>
+            <span>Minimum Margin <b>{policy ? `${policy.minMarginBp / 100}%` : "—"}</b></span>
+          </div>
         </Context>
         <Context label="Catalog">
-          <input
-            aria-label="Scheme"
-            value={schemeLabel}
-            onChange={(e) => setSchemeLabel(e.target.value)}
-            className="mt-1 block w-full border-0 bg-transparent p-0 text-sm font-semibold normal-case text-on-surface outline-none"
-          />
+          <div className="mt-1 flex items-center gap-2 normal-case">
+            <span className="text-xs font-medium text-on-surface-variant">Price list</span>
+            <input
+              aria-label="Scheme"
+              value={schemeLabel}
+              onChange={(e) => setSchemeLabel(e.target.value)}
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-semibold text-on-surface outline-none"
+            />
+          </div>
         </Context>
         <Context label="Validity">
           <input
@@ -381,7 +411,17 @@ export function QuotationWorkbenchPage() {
       {validation && (
         <ValidationDrawer issues={issues} close={() => setValidation(false)} />
       )}
-      <footer className="sticky bottom-0 z-30 grid gap-px border-t border-outline-variant bg-outline-variant/30 p-px shadow-[0_-4px_18px_rgba(0,0,0,.08)] sm:grid-cols-4">
+      <footer className="sticky bottom-0 z-30 flex flex-wrap items-stretch gap-px border-t border-outline-variant bg-outline-variant/30 p-px shadow-[0_-4px_18px_rgba(0,0,0,.08)]">
+        <label className="min-w-60 flex-[1.4] bg-surface px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+          Pricing adjustment reason
+          <input
+            aria-label="Pricing adjustment reason"
+            value={adjustmentReason}
+            onChange={(event) => setAdjustmentReason(event.target.value)}
+            placeholder="Required when editing actual price"
+            className="mt-1 block w-full rounded-md border border-outline-variant bg-transparent px-2 py-1 text-xs font-normal normal-case tracking-normal text-on-surface outline-none"
+          />
+        </label>
         <Summary
           label="Supplier cost"
           value={usd(saved || dirty ? shownTotals.costTotal : null)}
@@ -408,12 +448,14 @@ export function QuotationWorkbenchPage() {
 function WorkbenchHeader({
   saved,
   customerName,
+  setCustomerName,
   schemeLabel,
   save,
   saveState,
 }: {
   saved: QuotationSummary | null;
   customerName: string;
+  setCustomerName: (value: string) => void;
   schemeLabel: string;
   save: () => void;
   saveState: SaveState;
@@ -426,14 +468,21 @@ function WorkbenchHeader({
       >
         <span className="material-symbols-outlined">arrow_back</span>
       </Link>
-      <div>
+      <div className="min-w-64">
         <h1 className="font-headline text-2xl font-black">
           Quotation Workbench
         </h1>
-        <p className="text-xs text-on-surface-variant">
-          {saved?.quotationNumber ?? "New quotation"} ·{" "}
-          {customerName || "Unsaved customer"} · {schemeLabel}
-        </p>
+        <div className="flex flex-wrap items-center gap-1 text-xs text-on-surface-variant">
+          <span>{saved?.quotationNumber ?? "New quotation"} ·</span>
+          <input
+            aria-label="Customer"
+            placeholder="Customer name"
+            value={customerName}
+            onChange={(event) => setCustomerName(event.target.value)}
+            className="min-w-36 border-0 border-b border-outline-variant bg-transparent px-1 py-0.5 font-semibold text-on-surface outline-none"
+          />
+          <span>· {schemeLabel}</span>
+        </div>
       </div>
       <div className="ml-auto flex gap-2">
         <button

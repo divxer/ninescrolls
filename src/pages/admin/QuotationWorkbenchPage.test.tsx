@@ -15,6 +15,7 @@ const {
   updateQuotationDraft,
   getQuotation,
   listCatalogItems,
+  getPricingPolicy,
   snapshot,
 } = vi.hoisted(() => {
   const machine = {
@@ -28,6 +29,12 @@ const {
     excludesSkus: [],
     createdAt: "T",
     updatedAt: "T",
+    policySnapshot: {
+      fxRmbPerUsdMilli: 7240,
+      defaultMarginBp: 3800,
+      minMarginBp: 2500,
+      roundingGranularityUsdCents: 100,
+    },
   };
   const option = {
     itemId: "option",
@@ -118,6 +125,14 @@ const {
     listCatalogItems: vi.fn(async () => ({
       items: [machine, option, service],
     })),
+    getPricingPolicy: vi.fn(async () => ({
+      fxRmbPerUsdMilli: 7240,
+      defaultMarginBp: 3800,
+      minMarginBp: 2500,
+      roundingGranularityUsdCents: 100,
+      seriesOverrides: {},
+      itemOverrides: {},
+    })),
   };
 });
 
@@ -131,6 +146,7 @@ vi.mock("../../services/priceAdminService", async () => {
     updateQuotationDraft,
     getQuotation,
     listCatalogItems,
+    getPricingPolicy,
   };
 });
 
@@ -158,6 +174,59 @@ const renderPage = (path = "/admin/quotations/new") =>
 describe("QuotationWorkbenchPage", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it("shows policy context and keeps customer editing in the compact header", async () => {
+    renderPage();
+    expect(await screen.findByLabelText("Customer")).toBeInTheDocument();
+    expect(screen.getByText("7.24 RMB/USD")).toBeInTheDocument();
+    expect(screen.getByText("38%")).toBeInTheDocument();
+    expect(screen.getByText("25%")).toBeInTheDocument();
+    expect(screen.getByText("Price list")).toBeInTheDocument();
+    expect(screen.getByText("Pricing").closest("label")).not.toHaveTextContent("Customer name");
+    expect(getPricingPolicy).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves untouched reconciled rows without override fields", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    await screen.findByText("RF Bias Module");
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalledTimes(1));
+    const payload = (updateQuotationDraft.mock.calls as unknown as Array<[{ lines: Array<Record<string, unknown>> }]>)[0]![0];
+    expect(payload.lines).toHaveLength(2);
+    expect(payload.lines[0]).not.toHaveProperty("actualUnitUsdCents");
+    expect(payload.lines[0]).not.toHaveProperty("overrideReason");
+  });
+
+  it("uses the compact adjustment reason for a newly edited row", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    const [edit] = await screen.findAllByRole("button", { name: /edit actual price/i });
+    fireEvent.click(edit);
+    const input = screen.getByRole("textbox", { name: /actual price 1/i });
+    fireEvent.change(input, { target: { value: "1500" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.change(screen.getByLabelText("Pricing adjustment reason"), {
+      target: { value: "Competitive adjustment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    await waitFor(() => expect(updateQuotationDraft).toHaveBeenCalledTimes(1));
+    const payload = (updateQuotationDraft.mock.calls as unknown as Array<[{ lines: Array<Record<string, unknown>> }]>)[0]![0];
+    expect(payload.lines[0]).toMatchObject({
+      actualUnitUsdCents: 150000,
+      overrideReason: "Competitive adjustment",
+    });
+  });
+
+  it("blocks an edited price without an adjustment reason", async () => {
+    renderPage("/admin/quotations/Q-2026-0009");
+    const [edit] = await screen.findAllByRole("button", { name: /edit actual price/i });
+    fireEvent.click(edit);
+    const input = screen.getByRole("textbox", { name: /actual price 1/i });
+    fireEvent.change(input, { target: { value: "1500" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/pricing adjustment reason/i);
+    expect(updateQuotationDraft).not.toHaveBeenCalled();
+  });
+
   it("creates once, replaces the URL, then updates the same quotation", async () => {
     renderPage();
     fireEvent.change(await screen.findByPlaceholderText("Customer name"), {
@@ -182,6 +251,9 @@ describe("QuotationWorkbenchPage", () => {
     expect(screen.getByText("MISSING")).toBeInTheDocument();
     expect(screen.getAllByText(/\+¥/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("$852,500.00").length).toBeGreaterThan(0);
+    expect(screen.getByText("7.24 RMB/USD")).toBeInTheDocument();
+    expect(screen.getByText("38%")).toBeInTheDocument();
+    expect(screen.getByText("25%")).toBeInTheDocument();
     expect(listCatalogItems).not.toHaveBeenCalled();
     expect(getQuotation).not.toHaveBeenCalled();
 

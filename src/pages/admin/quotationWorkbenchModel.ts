@@ -20,7 +20,12 @@ export const fromSnapshot = (line: QuotationLineSnapshot): DraftLine => ({
   qty: line.qty,
   lineType: line.lineType,
   surchargeUsdCents: line.surchargeUsdCents,
-  actualUnitUsdCents: line.actualUnitUsdCents ?? undefined,
+  ...(line.overriddenBy || line.overrideReason
+    ? {
+        actualUnitUsdCents: line.actualUnitUsdCents ?? undefined,
+        overrideReason: line.overrideReason ?? undefined,
+      }
+    : {}),
   customLabel: line.lineType === "SURCHARGE" ? line.name : undefined,
   snapshot: line,
 });

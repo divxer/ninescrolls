@@ -86,6 +86,12 @@ export const quotationFixtureSnapshot: QuotationSummary = {
   schemeLabel: "Research Institution — FY2026",
   customerName: "Caltech Kavli Nanoscience Institute",
   rfqId: "RFQ-FIXTURE-1042",
+  policySnapshot: {
+    fxRmbPerUsdMilli: 7240,
+    defaultMarginBp: 3800,
+    minMarginBp: 2500,
+    roundingGranularityUsdCents: 100,
+  },
   validUntil: "2026-08-14",
   totalCostUsdCents: 51972300,
   suggestedTotalUsdCents: 83826200,

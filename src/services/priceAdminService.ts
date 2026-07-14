@@ -166,6 +166,10 @@ export interface QuotationSummary {
   schemeLabel: string;
   customerName: string;
   rfqId?: string | null;
+  policySnapshot?: Pick<
+    PricingPolicy,
+    'fxRmbPerUsdMilli' | 'defaultMarginBp' | 'minMarginBp' | 'roundingGranularityUsdCents'
+  > | null;
   totalCostUsdCents: number | null;
   suggestedTotalUsdCents: number | null;
   actualTotalUsdCents: number | null;
