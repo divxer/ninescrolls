@@ -1,0 +1,247 @@
+import { getAmplifyDataClient } from './amplifyClient';
+
+const client = getAmplifyDataClient;
+const AUTH = { authMode: 'userPool' as const };
+
+function unwrapPayload<T>(data: unknown): T {
+  if (typeof data !== 'string') return data as T;
+  return JSON.parse(data) as T;
+}
+
+type GqlResult = { data?: unknown; errors?: Array<{ message: string }> };
+
+function unwrap<T>({ data, errors }: GqlResult): T {
+  if (errors?.length) throw new Error(errors.map((error) => error.message).join(', '));
+  return unwrapPayload<T>(data);
+}
+
+const asInput = (input: unknown) => ({ input: JSON.stringify(input) });
+
+export interface Supplier {
+  supplierId: string;
+  name: string;
+  contact?: string;
+  currency: 'RMB';
+  defaultValidityDays: number;
+  status: 'ACTIVE' | 'SUSPENDED';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const listSuppliers = async () =>
+  unwrap<{ items: Supplier[] }>(await client().queries.pbListSuppliers(AUTH));
+
+export const createSupplier = async (input: {
+  name: string;
+  contact?: string;
+  defaultValidityDays?: number;
+  notes?: string;
+}) => unwrap<Supplier>(await client().mutations.pbCreateSupplier(asInput(input), AUTH));
+
+export const updateSupplier = async (input: Partial<Supplier> & { supplierId: string }) =>
+  unwrap<Supplier>(await client().mutations.pbUpdateSupplier(asInput(input), AUTH));
+
+export interface CatalogItem {
+  itemId: string;
+  sku: string;
+  name: string;
+  series: string;
+  kind: 'MACHINE' | 'OPTION' | 'CONSUMABLE' | 'SERVICE';
+  specs?: Record<string, string>;
+  requiredOptionSkus: string[];
+  requiresSkus: string[];
+  excludesSkus: string[];
+  maxQuantity?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const listCatalogItems = async () =>
+  unwrap<{ items: CatalogItem[] }>(await client().queries.pbListCatalogItems(AUTH));
+
+export const createCatalogItem = async (
+  input: Omit<
+    CatalogItem,
+    'itemId' | 'createdAt' | 'updatedAt' | 'requiredOptionSkus' | 'requiresSkus' | 'excludesSkus'
+  > & Partial<CatalogItem>,
+) => unwrap<CatalogItem>(await client().mutations.pbCreateCatalogItem(asInput(input), AUTH));
+
+export const updateCatalogItem = async (input: Partial<CatalogItem> & { itemId: string }) =>
+  unwrap<CatalogItem>(await client().mutations.pbUpdateCatalogItem(asInput(input), AUTH));
+
+export interface CostVersion {
+  itemId: string;
+  supplierId: string;
+  unitCostFen: number;
+  currency: 'RMB';
+  effectiveFrom: string;
+  effectiveTo: string;
+  priceSource: 'MANUAL_ENTRY' | 'SUPPLIER_EXCEL' | 'SUPPLIER_LINK';
+  reviewStatus: 'APPROVED';
+  createdAt: string;
+  createdBy: string;
+}
+
+export const listCostVersions = async (itemId: string, supplierId?: string) =>
+  unwrap<{ items: CostVersion[] }>(
+    await client().queries.pbListCostVersions(asInput({ itemId, supplierId }), AUTH),
+  );
+
+export const appendCostVersion = async (
+  input: Omit<CostVersion, 'currency' | 'reviewStatus' | 'createdAt' | 'createdBy'>,
+) => unwrap<CostVersion>(await client().mutations.pbAppendCostVersion(asInput(input), AUTH));
+
+export interface PricingPolicy {
+  fxRmbPerUsdMilli: number;
+  defaultMarginBp: number;
+  minMarginBp: number;
+  roundingGranularityUsdCents: number;
+  seriesOverrides: Record<string, number>;
+  itemOverrides: Record<string, number>;
+  fxUpdatedAt?: string;
+  updatedAt?: string;
+}
+
+export const getPricingPolicy = async () =>
+  unwrap<PricingPolicy>(await client().queries.pbGetPricingPolicy(AUTH));
+
+export const updatePricingPolicy = async (input: Partial<PricingPolicy>) =>
+  unwrap<PricingPolicy>(await client().mutations.pbUpdatePricingPolicy(asInput(input), AUTH));
+
+export interface QuotationLineInput {
+  itemId?: string;
+  sku?: string;
+  qty: number;
+  lineType: 'NORMAL' | 'SURCHARGE';
+  surchargeUsdCents?: number;
+  actualUnitUsdCents?: number;
+  overrideReason?: string;
+}
+
+export interface QuotationCostSnapshot {
+  supplierId: string;
+  unitCostFen: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  priceSource: string;
+  reviewStatus: string;
+  [field: string]: unknown;
+}
+
+export interface QuotationLineSnapshot {
+  lineNo: number;
+  itemId?: string;
+  sku: string;
+  name: string;
+  series: string;
+  kind: CatalogItem['kind'];
+  specs?: Record<string, string>;
+  qty: number;
+  lineType: QuotationLineInput['lineType'];
+  surchargeUsdCents?: number;
+  unitCostFen?: number | null;
+  costStatus?: 'ACTIVE' | 'EXPIRING' | 'MISSING';
+  costSnapshot?: QuotationCostSnapshot | null;
+  fxRmbPerUsdMilli: number;
+  marginBpApplied: number | null;
+  unitCostUsdCents: number | null;
+  suggestedUnitUsdCents: number | null;
+  actualUnitUsdCents: number | null;
+  overrideReason: string | null;
+  overriddenBy: string | null;
+  overriddenAt: string | null;
+  actualLineTotalUsdCents: number | null;
+  [field: string]: unknown;
+}
+
+export interface QuotationSummary {
+  quotationNumber: string;
+  version: number;
+  revision: number;
+  status: 'DRAFT';
+  schemeLabel: string;
+  customerName: string;
+  rfqId?: string | null;
+  totalCostUsdCents: number | null;
+  suggestedTotalUsdCents: number | null;
+  actualTotalUsdCents: number | null;
+  actualMarginBp: number | null;
+  belowMinMargin: boolean;
+  incomplete: boolean;
+  lineCount: number;
+  createdAt: string;
+  updatedAt: string;
+  lines?: QuotationLineSnapshot[];
+  [field: string]: unknown;
+}
+
+interface CreateQuotationDraftInput {
+  rfqId?: string;
+  schemeLabel: string;
+  customerName: string;
+  validUntil?: string;
+  tradeTerms?: string;
+  paymentTerms?: string;
+  notes?: string;
+  lines: QuotationLineInput[];
+  totalOverride?: { totalUsdCents: number; reason: string };
+}
+
+export const createQuotationDraft = async (input: CreateQuotationDraftInput) =>
+  unwrap<QuotationSummary>(
+    await client().mutations.pbCreateQuotationDraft(asInput(input), AUTH),
+  );
+
+interface UpdateQuotationDraftInput {
+  quotationNumber: string;
+  version: number;
+  expectedRevision: number;
+  customerName?: string;
+  validUntil?: string;
+  tradeTerms?: string;
+  paymentTerms?: string;
+  notes?: string;
+  lines: QuotationLineInput[];
+  totalOverride?: { totalUsdCents: number; reason: string };
+}
+
+export const updateQuotationDraft = async (input: UpdateQuotationDraftInput) =>
+  unwrap<QuotationSummary>(
+    await client().mutations.pbUpdateQuotationDraft(asInput(input), AUTH),
+  );
+
+export interface QuotationScheme {
+  quotationNumber: string;
+  schemeLabel: string;
+  customerName: string;
+  rfqId?: string | null;
+  latestVersion: number;
+  createdAt: string;
+  [field: string]: unknown;
+}
+
+export const getQuotation = async (quotationNumber: string) =>
+  unwrap<{
+    scheme: QuotationScheme | null;
+    versions: Array<QuotationSummary & { lines: QuotationLineSnapshot[] }>;
+  }>(await client().queries.pbGetQuotation(asInput({ quotationNumber }), AUTH));
+
+export const listQuotations = async (opts: { limit?: number; nextToken?: string } = {}) =>
+  unwrap<{ items: QuotationSummary[]; nextToken: string | null }>(
+    await client().queries.pbListQuotations(opts, AUTH),
+  );
+
+export const usd = (cents: number | null | undefined) =>
+  cents == null
+    ? '—'
+    : `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+export const rmbFen = (fen: number | null | undefined) =>
+  fen == null
+    ? '—'
+    : `¥${(fen / 100).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
+
+export const marginPct = (bp: number | null | undefined) =>
+  bp == null ? '—' : `${(bp / 100).toFixed(1)}%`;
