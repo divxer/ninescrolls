@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { path: '/admin/orders', label: 'Orders', icon: 'shopping_cart' },
   { path: '/admin/logistics', label: 'Logistics', icon: 'local_shipping' },
   { path: '/admin/rfqs', label: 'RFQs', icon: 'request_quote' },
+  { path: '/admin/price-book', label: 'Price Book', icon: 'price_change' },
+  { path: '/admin/quotations', label: 'Quotations', icon: 'request_quote' },
   { path: '/admin/tenders', label: 'Tenders', icon: 'gavel' },
   { path: '/admin/tenders/runs', label: 'Pipeline Runs', icon: 'monitor_heart' },
   { path: '/admin/leads', label: 'Leads', icon: 'contact_mail' },
@@ -25,6 +27,10 @@ const NAV_ITEMS = [
 
 export function AdminLayout() {
   const { user, signOut } = useAuthenticator();
+  return <AdminShell loginId={user?.signInDetails?.loginId} signOut={signOut} />;
+}
+
+export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: () => void }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { effectiveTheme, toggleTheme, preference } = useTheme();
@@ -102,7 +108,7 @@ export function AdminLayout() {
             <span>View Site</span>
           </a>
           <div className="px-4 py-1.5 text-[10px] text-on-surface-variant/60 truncate">
-            {user?.signInDetails?.loginId}
+            {loginId}
           </div>
           <button
             onClick={signOut}
@@ -164,7 +170,7 @@ export function AdminLayout() {
             )}
           </button>
           <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container text-sm font-bold">
-            {(user?.signInDetails?.loginId || 'A').charAt(0).toUpperCase()}
+            {(loginId || 'A').charAt(0).toUpperCase()}
           </div>
         </div>
       </header>

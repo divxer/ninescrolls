@@ -1,6 +1,7 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { orderApi } from '../functions/order-api/resource';
 import { logisticsApi } from '../functions/logistics-api/resource';
+import { priceApi } from '../functions/price-api/resource';
 import { organizationApi } from '../functions/organization-api/resource';
 import { optimizeInsightsImage } from '../functions/optimize-insights-image/resource';
 import { tenderApi } from '../functions/tender-api/resource';
@@ -880,6 +881,46 @@ const schema = a.schema({
     .handler(a.handler.function(logisticsApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  // ── Price Book & Quotations (price-api) — ALL admin-gated server-side ──
+  pbListSuppliers: a
+    .query()
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbListCatalogItems: a
+    .query()
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbListCostVersions: a
+    .query()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbGetPricingPolicy: a
+    .query()
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbGetQuotation: a
+    .query()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbListQuotations: a
+    .query()
+    .arguments({ limit: a.integer(), nextToken: a.string() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   listOrderDocuments: a
     .query()
     .arguments({
@@ -1173,6 +1214,62 @@ const schema = a.schema({
     .arguments({ caseId: a.id().required(), legId: a.id().required() })
     .returns(a.ref('LogisticsCase').required())
     .handler(a.handler.function(logisticsApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbCreateSupplier: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbUpdateSupplier: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbCreateCatalogItem: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbUpdateCatalogItem: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbAppendCostVersion: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbUpdatePricingPolicy: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbCreateQuotationDraft: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbUpdateQuotationDraft: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
     .authorization((allow) => [allow.authenticated()]),
 
   updateOrder: a
