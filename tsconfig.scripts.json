@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "noEmit": true, "types": ["node"] },
-  "include": ["scripts/generate-equipment-guide.ts", "src/**/*.ts"]
+  "include": [
+    "scripts/generate-equipment-guide.ts",
+    "scripts/add-admin-user.ts",
+    "src/**/*.ts"
+  ]
 }
