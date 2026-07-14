@@ -2350,8 +2350,21 @@ export function buildSnapshot(
   const actualTotalUsdCents = lineTotals.some((t) => t == null)
     ? null
     : (lineTotals as number[]).reduce((s, t) => s + t, 0);
-  const actualMarginBp = actualTotalUsdCents != null && summary.totalCostUsdCents != null && actualTotalUsdCents > 0
-    ? Math.round(((actualTotalUsdCents - summary.totalCostUsdCents) * 10_000) / actualTotalUsdCents)
+  // Margin semantics (locked in the Tasks 3-6 review round): actualMarginBp is
+  // computed over MARGIN-BEARING (NORMAL) lines only — same basis the pricing
+  // policy uses to price them. Surcharges are pass-through (revenue ≡ cost) and
+  // must neither dilute nor inflate the below-min-margin warning.
+  let normalRevenue: number | null = 0;
+  let normalCost: number | null = 0;
+  engines.forEach((e, i) => {
+    if (e.lineType !== 'NORMAL') return;
+    const lt = lineTotals[i];
+    const uc = perLine[i].unitCostUsdCents;
+    normalRevenue = normalRevenue == null || lt == null ? null : normalRevenue + lt;
+    normalCost = normalCost == null || uc == null ? null : normalCost + uc * e.qty;
+  });
+  const actualMarginBp = normalRevenue != null && normalCost != null && normalRevenue > 0
+    ? Math.round(((normalRevenue - normalCost) * 10_000) / normalRevenue)
     : null;
 
   const lineRows = loaded.map((l, i) => ({
