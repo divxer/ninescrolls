@@ -11,6 +11,11 @@ export interface AllocatedLine extends AllocLine {
 }
 
 export function allocateTotalOverride(lines: AllocLine[], overrideTotalUsdCents: number): AllocatedLine[] {
+  // A fractional total (e.g. 500.5) would floor into integers summing to a
+  // different value, silently breaking the Σ(lines) ≡ total invariant.
+  if (!Number.isInteger(overrideTotalUsdCents)) {
+    throw new Error('VALIDATION: override total must be integer minor units');
+  }
   if (lines.some((l) => l.suggestedLineTotalUsdCents == null)) {
     throw new Error('VALIDATION: cannot apply a total override while any line price is unknown');
   }
@@ -33,6 +38,11 @@ export function allocateTotalOverride(lines: AllocLine[], overrideTotalUsdCents:
   // Largest-remainder, properly applied (spec): floor shares first…
   const shares = allocatable.map((l, i) => {
     const exactNum = pool * l.suggestedLineTotalUsdCents!;
+    // pool × weight must stay a safe integer (~$1M × $1M ceiling) or the
+    // floor/remainder arithmetic below silently loses precision.
+    if (!Number.isSafeInteger(exactNum)) {
+      throw new Error('VALIDATION: allocation magnitude exceeds safe integer range');
+    }
     const floor = Math.floor(exactNum / suggestedSum);
     return { i, floor, remainder: exactNum % suggestedSum };
   });
@@ -52,6 +62,12 @@ export function allocateTotalOverride(lines: AllocLine[], overrideTotalUsdCents:
   }));
   if (allocated.some((l) => l.actualLineTotalUsdCents < 0)) {
     throw new Error('VALIDATION: allocation produced a negative line price');
+  }
+
+  // Self-enforce the Σ(NORMAL lines) ≡ pool invariant rather than trusting the math above.
+  const allocatedSum = allocated.reduce((s, l) => s + l.actualLineTotalUsdCents, 0);
+  if (allocatedSum !== pool) {
+    throw new Error('INTERNAL: allocation sum invariant violated');
   }
 
   // Reassemble in original order, surcharges untouched.

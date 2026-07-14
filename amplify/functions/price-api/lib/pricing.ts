@@ -39,9 +39,15 @@ const fenToUsdCents = (fen: number, fxMilli: number) => Math.round((fen * 1000) 
 
 function resolveMarginBp(line: EngineLineInput, p: PolicyData): number {
   if (line.lineType === 'SURCHARGE') return 0; // cost pass-through by default (spec)
-  if (line.sku in p.itemOverrides) return p.itemOverrides[line.sku];
-  if (line.series in p.seriesOverrides) return p.seriesOverrides[line.series];
-  return p.defaultMarginBp;
+  const bp = line.sku in p.itemOverrides ? p.itemOverrides[line.sku]
+    : line.series in p.seriesOverrides ? p.seriesOverrides[line.series]
+    : p.defaultMarginBp;
+  // Override maps arrive via a.json() with no schema; bp=10000 → Infinity price,
+  // bp>10000 → silently negative price. Guard every source.
+  if (!Number.isInteger(bp) || bp < 0 || bp >= 10_000) {
+    throw new Error(`VALIDATION: margin ${bp}bp for ${line.sku} out of range [0, 10000)`);
+  }
+  return bp;
 }
 
 export function priceLine(line: EngineLineInput, p: PolicyData): PricedLine {
@@ -76,8 +82,16 @@ export function priceQuotation(lines: EngineLineInput[], p: PolicyData): Quotati
     return total;
   };
 
+  // SURCHARGE lines are cost pass-throughs (spec: "default cost pass-through, no
+  // margin"): they contribute their explicit fen cost when present, else their own
+  // pass-through amount — never 0, which would overstate margin on freight-heavy quotes.
   const totalCostUsdCents = incomplete ? null
-    : sum(({ line, r }) => (r.unitCostUsdCents == null ? (line.lineType === 'SURCHARGE' ? 0 : null) : r.unitCostUsdCents * line.qty));
+    : sum(({ line, r }) => {
+      if (line.lineType === 'SURCHARGE') {
+        return (r.unitCostUsdCents ?? r.suggestedUnitUsdCents ?? 0) * line.qty;
+      }
+      return r.unitCostUsdCents == null ? null : r.unitCostUsdCents * line.qty;
+    });
   const suggestedTotalRawUsdCents = incomplete ? null
     : sum(({ line, r }) => (r.suggestedUnitUsdCents == null ? null : r.suggestedUnitUsdCents * line.qty));
 
@@ -91,9 +105,24 @@ export function priceQuotation(lines: EngineLineInput[], p: PolicyData): Quotati
       return unit == null ? null : unit * line.qty;
     });
 
+  // Margin is measured over margin-bearing (NORMAL) revenue only: a surcharge
+  // pass-through adds equal cost and revenue, so it must not dilute the metric
+  // (surcharge lines are margin-neutral by construction).
   let actualMarginBp: number | null = null;
-  if (actualTotalUsdCents != null && totalCostUsdCents != null && actualTotalUsdCents > 0) {
-    actualMarginBp = Math.round(((actualTotalUsdCents - totalCostUsdCents) * 10_000) / actualTotalUsdCents);
+  if (!incomplete) {
+    let normalRevenue = 0;
+    let normalCost = 0;
+    let known = true;
+    for (const { line, r } of priced) {
+      if (line.lineType !== 'NORMAL') continue;
+      const unit = line.actualUnitUsdCents ?? r.suggestedUnitUsdCents;
+      if (unit == null || r.unitCostUsdCents == null) { known = false; break; }
+      normalRevenue += unit * line.qty;
+      normalCost += r.unitCostUsdCents * line.qty;
+    }
+    if (known && normalRevenue > 0) {
+      actualMarginBp = Math.round(((normalRevenue - normalCost) * 10_000) / normalRevenue);
+    }
   }
 
   return {

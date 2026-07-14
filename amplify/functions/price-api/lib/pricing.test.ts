@@ -34,6 +34,13 @@ describe('priceLine', () => {
     expect(r.suggestedUnitUsdCents).toBeNull();
   });
 
+  it('rejects out-of-range margin bp from any override source', () => {
+    const badPolicy: PolicyData = { ...policy, itemOverrides: { BAD: 10000 } };
+    expect(() => priceLine(normal({ sku: 'BAD' }), badPolicy)).toThrow(/^VALIDATION:.*out of range/);
+    const badPolicy2: PolicyData = { ...policy, itemOverrides: { BAD2: 12000 } };
+    expect(() => priceLine(normal({ sku: 'BAD2' }), badPolicy2)).toThrow(/^VALIDATION:.*out of range/);
+  });
+
   it('surcharge lines pass through their USD amount with no margin', () => {
     const r = priceLine(
       { sku: 'FREIGHT', series: 'SVC', qty: 1, lineType: 'SURCHARGE', unitCostFen: null, surchargeUsdCents: 250_000 },
@@ -66,6 +73,25 @@ describe('priceQuotation', () => {
     const r = priceQuotation([line], policy);
     // margin = (125000-100000)/125000 = 20% = 2000bp
     expect(r.actualMarginBp).toBe(2000);
+    expect(r.belowMinMargin).toBe(false);
+  });
+
+  it('surcharge lines are margin-neutral: adding one leaves actualMarginBp unchanged', () => {
+    const surcharge: EngineLineInput = {
+      sku: 'FREIGHT', series: 'SVC', qty: 1, lineType: 'SURCHARGE', unitCostFen: null, surchargeUsdCents: 250_000,
+    };
+    const without = priceQuotation([normal({})], policy);
+    const withSurcharge = priceQuotation([normal({}), surcharge], policy);
+    expect(withSurcharge.actualMarginBp).toBe(without.actualMarginBp);
+    // and the surcharge cost is carried in totalCost (pass-through, not free)
+    expect(withSurcharge.totalCostUsdCents).toBe(100_000 + 250_000);
+  });
+
+  it('honors an explicit zero actual price (free line): total 0, margin unknown, no flag', () => {
+    const line = { ...normal({}), actualUnitUsdCents: 0 };
+    const r = priceQuotation([line], policy);
+    expect(r.actualTotalUsdCents).toBe(0);
+    expect(r.actualMarginBp).toBeNull();
     expect(r.belowMinMargin).toBe(false);
   });
 

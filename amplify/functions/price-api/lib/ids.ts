@@ -9,7 +9,12 @@ export const generateCatalogItemId = () => `cat-${short()}`;
 export const formatQuotationNumber = (year: number, seq: number) =>
   `Q-${year}-${String(seq).padStart(4, '0')}`;
 
-/** Zero-padded so base-table Query returns versions/lines in order. */
+/**
+ * Zero-padded so base-table Query returns versions/lines in order.
+ * Pad widths (3/2 digits) assume version < 1000 and lineNo <= 99; the 45-line
+ * cap (spec invariant 3) keeps lineNo in range — revisit padding if the cap is
+ * ever raised.
+ */
 export const versionSk = (version: number) => `V#${String(version).padStart(3, '0')}`;
 export const lineSk = (version: number, lineNo: number) =>
   `${versionSk(version)}#LINE#${String(lineNo).padStart(2, '0')}`;

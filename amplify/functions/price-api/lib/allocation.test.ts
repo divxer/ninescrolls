@@ -41,4 +41,19 @@ describe('allocateTotalOverride', () => {
   it('rejects unknown suggested prices (incomplete quote cannot take a total override)', () => {
     expect(() => allocateTotalOverride([L('a', null)], 100)).toThrow(/^VALIDATION:/);
   });
+
+  it('rejects a non-integer override total (minor units only)', () => {
+    expect(() => allocateTotalOverride([L('a', 100)], 100.5)).toThrow(/^VALIDATION:/);
+  });
+
+  it('distributes multiple leftover units one per line, ties by position', () => {
+    // weights [100,100,100], override 200 → floors [66,66,66], leftover 2 → [67,67,66]
+    const res = allocateTotalOverride([L('a', 100), L('b', 100), L('c', 100)], 200);
+    expect(res.map((r) => r.actualLineTotalUsdCents)).toEqual([67, 67, 66]);
+  });
+
+  it('allocates duplicate-sku lines independently by index', () => {
+    const res = allocateTotalOverride([L('a', 100), L('a', 300)], 200);
+    expect(res.map((r) => r.actualLineTotalUsdCents)).toEqual([50, 150]);
+  });
 });
