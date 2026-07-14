@@ -82,6 +82,8 @@ Run all backend tests with: `npx vitest run amplify/functions/price-api --exclud
 - Create: `amplify/functions/price-api/lib/adminAuth.ts`
 - Test: `amplify/functions/price-api/lib/adminAuth.test.ts`
 - Create: `scripts/add-admin-user.ts`
+- Modify: `package.json`, `package-lock.json` (new dependency: `@aws-sdk/client-cognito-identity-provider`)
+- Modify: `tsconfig.scripts.json`
 
 - [ ] **Step 1: Add the admin group to defineAuth**
 
@@ -188,9 +190,15 @@ export function requireAdmin(event: PriceApiEvent): void {
 Run: `npx vitest run amplify/functions/price-api/lib/adminAuth.test.ts --exclude '**/.claude/**'`
 Expected: 5 passed.
 
-- [ ] **Step 6: Write the membership script**
+- [ ] **Step 6: Install the Cognito SDK, then write the membership script**
 
-Create `scripts/add-admin-user.ts`:
+The package is NOT in the repo's dependency tree (verified: absent from `package.json` and `package-lock.json`, even transitively) — without this install, Step 7's typecheck fails with TS2307:
+
+```bash
+npm install @aws-sdk/client-cognito-identity-provider
+```
+
+Then create `scripts/add-admin-user.ts`:
 
 ```ts
 /**
@@ -255,7 +263,7 @@ Expected: no errors. (Task 18 later appends its CSV files to this same array.) D
 - [ ] **Step 8: Commit**
 
 ```bash
-git add amplify/auth/resource.ts amplify/functions/price-api/lib/adminAuth.ts amplify/functions/price-api/lib/adminAuth.test.ts scripts/add-admin-user.ts tsconfig.scripts.json
+git add amplify/auth/resource.ts amplify/functions/price-api/lib/adminAuth.ts amplify/functions/price-api/lib/adminAuth.test.ts scripts/add-admin-user.ts tsconfig.scripts.json package.json package-lock.json
 git commit -m "feat(price-api): cognito admin group + server-side admin gate"
 ```
 
