@@ -123,6 +123,7 @@ export function SuppliersPage() {
                   <button
                     type="button"
                     onClick={() => toggleStatus(supplier)}
+                    aria-label={`${active ? 'Suspend' : 'Reactivate'} supplier ${supplier.name}`}
                     className="rounded-full border border-outline-variant px-4 py-2 text-sm font-semibold text-on-surface transition hover:bg-surface-container-low"
                   >
                     {active ? 'Suspend supplier' : 'Reactivate supplier'}
