@@ -136,6 +136,17 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
       priceSource: string; reviewStatus: string;
     }>;
     const effective = selectEffectiveCost(versions, today);
+    const previous = effective
+      ? versions
+        .filter((version) => (
+          version.supplierId === effective.supplierId
+          && version.effectiveTo <= effective.effectiveFrom
+        ))
+        .sort((a, b) => (
+          b.effectiveTo.localeCompare(a.effectiveTo)
+          || b.effectiveFrom.localeCompare(a.effectiveFrom)
+        ))[0] ?? null
+      : null;
     return {
       input,
       engine: {
@@ -146,6 +157,8 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
       snapshot: {
         itemId: meta.itemId, sku: meta.sku, name: meta.name, series: meta.series, kind: meta.kind,
         specs: meta.specs, unitCostFen: effective?.unitCostFen ?? null,
+        previousUnitCostFen: previous?.unitCostFen ?? null,
+        costDeltaFen: effective && previous ? effective.unitCostFen - previous.unitCostFen : null,
         costStatus: effective ? (effective.effectiveTo <= soon ? 'EXPIRING' : 'ACTIVE') : 'MISSING',
         // Full cost provenance — the snapshot must be audit-complete (spec:
         // "quotation stores the point-in-time snapshot"): who supplied the cost,

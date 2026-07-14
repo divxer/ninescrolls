@@ -6,7 +6,7 @@ vi.mock('../lib/dynamodb.js', () => ({
   TABLE_NAME: () => 'TestTable',
 }));
 
-import { pbCreateQuotationDraft } from './quotationResolvers.js';
+import { loadLines, pbCreateQuotationDraft } from './quotationResolvers.js';
 
 const ev = (input: Record<string, unknown>) => ({
   info: { fieldName: 'x', parentTypeName: 'Mutation' },
@@ -44,6 +44,41 @@ const validInput = {
 };
 
 beforeEach(() => send.mockReset());
+
+describe('loadLines cost delta snapshot', () => {
+  const loadWith = async (...costVersions: Record<string, unknown>[]) => {
+    send.mockResolvedValueOnce({ Items: [machineMeta, ...costVersions] });
+    return (await loadLines(validInput.lines as Parameters<typeof loadLines>[0]))[0].snapshot;
+  };
+
+  it('snapshots the immediately preceding same-supplier cost and delta', async () => {
+    const snapshot = await loadWith(
+      { ...cost, SK: 'COST#s1#2018-01-01', effectiveFrom: '2018-01-01', effectiveTo: '2019-01-01', unitCostFen: 600_000 },
+      { ...cost, SK: 'COST#s1#2019-01-01', effectiveFrom: '2019-01-01', effectiveTo: '2020-01-01', unitCostFen: 700_000 },
+      cost,
+    );
+
+    expect(snapshot.previousUnitCostFen).toBe(700_000);
+    expect(snapshot.costDeltaFen).toBe(25_000);
+  });
+
+  it('snapshots null delta fields when the selected cost has no prior version', async () => {
+    const snapshot = await loadWith(cost);
+
+    expect(snapshot.previousUnitCostFen).toBeNull();
+    expect(snapshot.costDeltaFen).toBeNull();
+  });
+
+  it('excludes prior versions from a different supplier', async () => {
+    const snapshot = await loadWith(
+      { ...cost, SK: 'COST#s2#2019-01-01', supplierId: 's2', effectiveFrom: '2019-01-01', effectiveTo: '2020-01-01', unitCostFen: 700_000 },
+      cost,
+    );
+
+    expect(snapshot.previousUnitCostFen).toBeNull();
+    expect(snapshot.costDeltaFen).toBeNull();
+  });
+});
 
 describe('pbCreateQuotationDraft', () => {
   it('allocates the number via CAS and writes scheme+header+lines in ONE transaction', async () => {
