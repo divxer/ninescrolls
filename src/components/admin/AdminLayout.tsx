@@ -27,6 +27,10 @@ const NAV_ITEMS = [
 
 export function AdminLayout() {
   const { user, signOut } = useAuthenticator();
+  return <AdminShell loginId={user?.signInDetails?.loginId} signOut={signOut} />;
+}
+
+export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: () => void }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { effectiveTheme, toggleTheme, preference } = useTheme();
@@ -104,7 +108,7 @@ export function AdminLayout() {
             <span>View Site</span>
           </a>
           <div className="px-4 py-1.5 text-[10px] text-on-surface-variant/60 truncate">
-            {user?.signInDetails?.loginId}
+            {loginId}
           </div>
           <button
             onClick={signOut}
@@ -166,7 +170,7 @@ export function AdminLayout() {
             )}
           </button>
           <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container text-sm font-bold">
-            {(user?.signInDetails?.loginId || 'A').charAt(0).toUpperCase()}
+            {(loginId || 'A').charAt(0).toUpperCase()}
           </div>
         </div>
       </header>

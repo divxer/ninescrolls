@@ -173,6 +173,24 @@ describe("QuotationWorkbenchPage", () => {
     expect(createQuotationDraft).toHaveBeenCalledTimes(1);
   });
 
+  it("loads the development fixture without calling quotation services", async () => {
+    renderPage("/admin/quotations/new?fixture=1");
+
+    expect(await screen.findByDisplayValue("Caltech Kavli Nanoscience Institute")).toBeInTheDocument();
+    expect(screen.getByText("ICP-RIE 300 Advanced Platform")).toBeInTheDocument();
+    expect(screen.getByText("EXPIRING")).toBeInTheDocument();
+    expect(screen.getByText("MISSING")).toBeInTheDocument();
+    expect(screen.getAllByText(/\+¥/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("$852,500.00").length).toBeGreaterThan(0);
+    expect(listCatalogItems).not.toHaveBeenCalled();
+    expect(getQuotation).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+    expect(await screen.findByRole("button", { name: /saved/i })).toBeEnabled();
+    expect(createQuotationDraft).not.toHaveBeenCalled();
+    expect(updateQuotationDraft).not.toHaveBeenCalled();
+  });
+
   it("shows saving and saved feedback around a successful save", async () => {
     let release!: (value: typeof snapshot) => void;
     createQuotationDraft.mockReturnValueOnce(

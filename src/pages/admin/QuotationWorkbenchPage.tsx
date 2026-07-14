@@ -5,7 +5,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   createQuotationDraft,
   getQuotation,
@@ -26,12 +26,16 @@ import {
   toInput,
   type DraftLine,
 } from "./quotationWorkbenchModel";
+import { isQuotationFixtureUrl } from "./quotationFixtureGate";
 
 type SaveState = "idle" | "saving" | "saved";
 const productArt = "/assets/images/redesign/products/icp-rie-standardized.webp";
 
 export function QuotationWorkbenchPage() {
   const { quotationNumber } = useParams<{ quotationNumber?: string }>();
+  const location = useLocation();
+  const fixture = import.meta.env.DEV
+    && isQuotationFixtureUrl(location.pathname, location.search, true);
   const navigate = useNavigate();
   const [identity, setIdentity] = useState(quotationNumber ?? "");
   const [catalog, setCatalog] = useState<CatalogItem[]>([]),
@@ -60,12 +64,29 @@ export function QuotationWorkbenchPage() {
     keySeq = useRef(0);
 
   useEffect(() => {
+    if (fixture) return;
     listCatalogItems()
       .then((r) => setCatalog(r.items))
       .catch((e) => setError(String(e)));
-  }, []);
+  }, [fixture]);
   useEffect(() => {
-    if (!quotationNumber) return;
+    if (!fixture) return;
+    import("./quotationWorkbenchFixture").then(
+      ({ quotationFixtureCatalog, quotationFixtureSnapshot }) => {
+        setCatalog(quotationFixtureCatalog);
+        setIdentity(quotationFixtureSnapshot.quotationNumber);
+        setCustomerName(quotationFixtureSnapshot.customerName);
+        setSchemeLabel(quotationFixtureSnapshot.schemeLabel);
+        setRfqId(String(quotationFixtureSnapshot.rfqId ?? ""));
+        setValidUntil(String(quotationFixtureSnapshot.validUntil ?? ""));
+        setSaved(quotationFixtureSnapshot);
+        setVersion(quotationFixtureSnapshot);
+        setLines(reconcileServerLines(quotationFixtureSnapshot.lines ?? []));
+      }
+    );
+  }, [fixture]);
+  useEffect(() => {
+    if (fixture || !quotationNumber) return;
     getQuotation(quotationNumber)
       .then((r) => {
         const q = r.versions.at(-1);
@@ -78,7 +99,7 @@ export function QuotationWorkbenchPage() {
         setValidUntil(String(q.validUntil ?? ""));
       })
       .catch((e) => setError(String(e)));
-  }, [quotationNumber]);
+  }, [fixture, quotationNumber]);
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (!event.altKey) return;
@@ -228,6 +249,19 @@ export function QuotationWorkbenchPage() {
   const save = async () => {
     setSaveState("saving");
     setError("");
+    if (fixture) {
+      const totals = preview(lines);
+      setSaved((current) => current ? {
+        ...current,
+        revision: current.revision + 1,
+        actualTotalUsdCents: totals.actualTotal,
+        actualMarginBp: totals.actualMarginBp,
+        updatedAt: new Date().toISOString(),
+      } : current);
+      setSaveState("saved");
+      window.setTimeout(() => setSaveState("idle"), 1400);
+      return;
+    }
     try {
       const payload = lines.map(toInput);
       const result =
