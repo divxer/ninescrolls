@@ -53,7 +53,7 @@ export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: (
       {/* ── Sidebar ── */}
       <aside className={`admin-sidebar ${mobileMenuOpen ? 'admin-sidebar-open' : ''}`}>
         {/* Logo */}
-        <div className="mb-10 px-2 flex items-center gap-3">
+        <div className="mb-10 px-2 flex shrink-0 items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
             <img src="/assets/images/logo.svg" alt="NineScrolls" className="w-8 h-8 object-contain dark:invert dark:brightness-200" style={{ filter: effectiveTheme === 'dark' ? 'invert(1) brightness(2)' : 'none' }} />
           </div>
@@ -64,7 +64,10 @@ export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: (
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-2">
+        <nav
+          aria-label="Admin navigation"
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1"
+        >
           {NAV_ITEMS.map(({ path, label, icon }) => {
             const active = isActive(path);
             return (
@@ -89,7 +92,10 @@ export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: (
         </nav>
 
         {/* Bottom section */}
-        <div className="mt-auto space-y-1 border-t border-outline-variant/10 pt-6">
+        <div
+          className="mt-auto shrink-0 space-y-1 border-t border-outline-variant/10 pt-6"
+          data-testid="admin-account-actions"
+        >
           {/* New Report CTA */}
           <Link
             to="/admin/orders/new"
@@ -114,7 +120,7 @@ export function AdminShell({ loginId, signOut }: { loginId?: string; signOut?: (
             onClick={signOut}
             className="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors font-body text-sm tracking-tight font-medium w-full border-none bg-transparent cursor-pointer"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 28" }}>logout</span>
+            <span aria-hidden="true" className="material-symbols-outlined" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 28" }}>logout</span>
             <span>Sign Out</span>
           </button>
         </div>
