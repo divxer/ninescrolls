@@ -48,11 +48,13 @@ amplify/functions/price-api/lib/pricing.ts               (new + test: pure engin
 amplify/functions/price-api/lib/allocation.ts            (new + test: pure)
 amplify/functions/price-api/lib/compatibility.ts         (new + test: pure)
 amplify/functions/price-api/lib/types.ts                 (new: item types + response mappers)
+amplify/functions/price-api/lib/testing/fakeDdb.ts        (new: conditional-write fake + race gate)
 amplify/functions/price-api/resolvers/supplierResolvers.ts      (new + test)
 amplify/functions/price-api/resolvers/catalogResolvers.ts       (new + test)
 amplify/functions/price-api/resolvers/costVersionResolvers.ts   (new + test)
 amplify/functions/price-api/resolvers/policyResolvers.ts        (new + test)
 amplify/functions/price-api/resolvers/quotationResolvers.ts     (new + test)
+amplify/functions/price-api/resolvers/concurrency.test.ts       (new: exactly-one-wins invariants)
 amplify/data/resource.ts                                 (modify: 14 pb* operations)
 amplify/backend.ts                                       (modify: register + grants)
 src/services/priceAdminService.ts                        (new + test)
@@ -63,7 +65,9 @@ src/pages/admin/QuotationListPage.tsx                    (new + test)
 src/routes/AdminRoutes.tsx                               (modify: 4 routes)
 src/components/admin/AdminLayout.tsx                     (modify: 2 nav links)
 scripts/add-admin-user.ts                                (new)
+scripts/lib/csv.ts                                       (new + test: RFC4180 parser + fen math)
 scripts/import-supplier-prices.ts                        (new)
+tsconfig.scripts.json                                    (modify: include new scripts)
 ```
 
 Run all backend tests with: `npx vitest run amplify/functions/price-api --exclude '**/.claude/**'`
@@ -216,8 +220,11 @@ if (!email) {
   process.exit(1);
 }
 
-const outputs = JSON.parse(readFileSync(new URL('../amplify_outputs.json', import.meta.url), 'utf8'));
-const userPoolId: string = poolFlag >= 0 ? args[poolFlag + 1] : outputs.auth.user_pool_id;
+// Only touch amplify_outputs.json when --pool is absent — with an explicit pool
+// the script must work in worktrees/CI where local outputs don't exist.
+const userPoolId: string = poolFlag >= 0
+  ? args[poolFlag + 1]
+  : JSON.parse(readFileSync(new URL('../amplify_outputs.json', import.meta.url), 'utf8')).auth.user_pool_id;
 const region = userPoolId.split('_')[0];
 
 const client = new CognitoIdentityProviderClient({ region });
@@ -1093,14 +1100,21 @@ const ev = (args: Record<string, unknown>) => ({
 beforeEach(() => send.mockReset());
 
 describe('pbCreateSupplier', () => {
-  it('puts a supplier and returns it without DDB keys', async () => {
+  it('creates atomically with the count guard and returns the supplier without DDB keys', async () => {
     send.mockResolvedValueOnce({});
     const res = await pbCreateSupplier(ev({ input: { name: 'Probe OEM', defaultValidityDays: 180 } })) as Record<string, unknown>;
     expect(res.supplierId).toMatch(/^sup-/);
     expect(res.status).toBe('ACTIVE');
     expect(res.PK).toBeUndefined();
-    const put = send.mock.calls[0][0].input;
-    expect(put.ConditionExpression).toBe('attribute_not_exists(PK)');
+    const tx = send.mock.calls[0][0].input.TransactItems;
+    expect(tx[0].Update.ConditionExpression).toBe('attribute_not_exists(cnt) OR cnt < :max');
+    expect(tx[0].Update.ExpressionAttributeValues[':max']).toBe(10);
+    expect(tx[1].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
+  });
+
+  it('maps a cancelled transaction (cap reached) to a VALIDATION error', async () => {
+    send.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'TransactionCanceledException' }));
+    await expect(pbCreateSupplier(ev({ input: { name: 'Eleventh OEM' } }))).rejects.toThrow(/^VALIDATION:.*limit/);
   });
 
   it('rejects a missing name', async () => {
@@ -1140,7 +1154,7 @@ Run: `npx vitest run amplify/functions/price-api/resolvers/supplierResolvers.tes
 Replace `amplify/functions/price-api/resolvers/supplierResolvers.ts`:
 
 ```ts
-import { PutCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateSupplierId } from '../lib/ids.js';
 import { parseInput, stripKeys, type PriceApiEvent, type SupplierItem } from '../lib/types.js';
@@ -1151,6 +1165,11 @@ interface CreateSupplierInput {
   defaultValidityDays?: number;
   notes?: string;
 }
+
+/** The ≤10-supplier product constraint (spec) is enforced ATOMICALLY via a count
+ * guard updated in the same transaction as the Put — the non-paginated list UI
+ * depends on this bound actually holding. */
+export const MAX_SUPPLIERS = 10;
 
 export async function pbCreateSupplier(event: PriceApiEvent) {
   const input = parseInput<CreateSupplierInput>(event);
@@ -1169,9 +1188,27 @@ export async function pbCreateSupplier(event: PriceApiEvent) {
     notes: input.notes || undefined,
     createdAt: now, updatedAt: now,
   };
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)',
-  }));
+  try {
+    await docClient.send(new TransactWriteCommand({
+      TransactItems: [
+        {
+          Update: {
+            TableName: TABLE_NAME(),
+            Key: { PK: 'COUNTER#SUPPLIER', SK: 'META' },
+            UpdateExpression: 'ADD cnt :one',
+            ConditionExpression: 'attribute_not_exists(cnt) OR cnt < :max',
+            ExpressionAttributeValues: { ':one': 1, ':max': MAX_SUPPLIERS },
+          },
+        },
+        { Put: { TableName: TABLE_NAME(), Item: item, ConditionExpression: 'attribute_not_exists(PK)' } },
+      ],
+    }));
+  } catch (e) {
+    if ((e as Error).name === 'TransactionCanceledException') {
+      throw new Error(`VALIDATION: supplier limit (${MAX_SUPPLIERS}) reached — scaling past it is a P2+ design task (list pagination + API cursor together, per spec)`);
+    }
+    throw e;
+  }
   return stripKeys(item);
 }
 
@@ -1662,14 +1699,15 @@ export async function pbListCostVersions(event: PriceApiEvent) {
 
 /**
  * Effective cost selection (spec): the version where effectiveFrom <= today < effectiveTo.
+ * Returns the FULL version object — quotation snapshots need complete provenance
+ * (supplierId, interval, priceSource, reviewStatus), not just the amount.
  * Exported for reuse by quotation pricing (Task 11) and the Price Book badges.
  */
-export function selectEffectiveCost(
-  versions: Array<{ effectiveFrom: string; effectiveTo: string; unitCostFen: number }>,
+export function selectEffectiveCost<T extends { effectiveFrom: string; effectiveTo: string }>(
+  versions: T[],
   todayIso: string, // 'YYYY-MM-DD'
-): { unitCostFen: number; effectiveTo: string } | null {
-  const hit = versions.find((v) => v.effectiveFrom <= todayIso && todayIso < v.effectiveTo);
-  return hit ? { unitCostFen: hit.unitCostFen, effectiveTo: hit.effectiveTo } : null;
+): T | null {
+  return versions.find((v) => v.effectiveFrom <= todayIso && todayIso < v.effectiveTo) ?? null;
 }
 ```
 
@@ -1887,8 +1925,9 @@ const machineMeta = {
   kind: 'MACHINE', requiredOptionSkus: [], requiresSkus: [], excludesSkus: [],
 };
 const cost = {
-  PK: 'PCAT#c1', SK: 'COST#s1#2026-01-01', effectiveFrom: '2026-01-01', effectiveTo: '2027-01-01',
-  unitCostFen: 725_000, supplierId: 's1',
+  PK: 'PCAT#c1', SK: 'COST#s1#2020-01-01', effectiveFrom: '2020-01-01', effectiveTo: '2099-01-01',
+  unitCostFen: 725_000, supplierId: 's1', currency: 'RMB',
+  priceSource: 'MANUAL_ENTRY', reviewStatus: 'APPROVED',
 };
 const policyItem = {
   Item: {
@@ -1920,6 +1959,9 @@ describe('pbCreateQuotationDraft', () => {
     expect(res.status).toBe('DRAFT');
     expect(res.version).toBe(1);
 
+    const itemQuery = send.mock.calls[1][0];
+    expect(itemQuery.input.ConsistentRead).toBe(true); // money-bearing read
+
     const counterGet = send.mock.calls[2][0];
     expect(counterGet.input.ConsistentRead).toBe(true);
 
@@ -1934,6 +1976,17 @@ describe('pbCreateQuotationDraft', () => {
     expect(lineOp.Put.Item.SK).toBe('V#001#LINE#01');
     expect(lineOp.Put.Item.unitCostFen).toBe(725_000);
     expect(lineOp.Put.Item.fxRmbPerUsdMilli).toBe(7250); // rate snapshotted into the line
+    // Full cost provenance in the snapshot (audit-complete):
+    expect(lineOp.Put.Item.costSnapshot).toMatchObject({
+      supplierId: 's1', unitCostFen: 725_000, currency: 'RMB',
+      effectiveFrom: '2020-01-01', effectiveTo: '2099-01-01',
+      priceSource: 'MANUAL_ENTRY', reviewStatus: 'APPROVED',
+    });
+    expect(lineOp.Put.Item.overriddenBy).toBeNull(); // no manual override on this line
+    // Header ≡ lines reconciliation: actual total is exactly the line-total sum.
+    expect(res.actualTotalUsdCents).toBe(153_846);
+    expect((res.lines as Array<{ actualLineTotalUsdCents: number }>)
+      .reduce((s, l) => s + l.actualLineTotalUsdCents, 0)).toBe(153_846);
   });
 
   it('bootstraps a missing year counter with attribute_not_exists and seq 1', async () => {
@@ -2082,21 +2135,30 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
       };
     }
     if (!input.itemId) throw new Error('VALIDATION: NORMAL lines require itemId');
-    const r = await docClient.send(new QueryCommand({
-      TableName: TABLE_NAME(),
-      KeyConditionExpression: 'PK = :pk',
-      ExpressionAttributeValues: { ':pk': `PCAT#${input.itemId}` },
-    }));
-    const rows = r.Items ?? [];
+    // Money-bearing read: STRONGLY CONSISTENT and pagination-exhausted, or a
+    // just-written cost (or one beyond 1 MB) could silently misprice the quote.
+    const rows: Record<string, unknown>[] = [];
+    let lek: Record<string, unknown> | undefined;
+    do {
+      const r = await docClient.send(new QueryCommand({
+        TableName: TABLE_NAME(),
+        KeyConditionExpression: 'PK = :pk',
+        ExpressionAttributeValues: { ':pk': `PCAT#${input.itemId}` },
+        ConsistentRead: true,
+        ExclusiveStartKey: lek,
+      }));
+      rows.push(...(r.Items ?? []));
+      lek = r.LastEvaluatedKey as Record<string, unknown> | undefined;
+    } while (lek);
     const meta = rows.find((it) => it.SK === 'META');
     if (!meta) throw new Error(`NOT_FOUND: catalog item ${input.itemId}`);
-    const versions = rows
-      .filter((it) => typeof it.SK === 'string' && it.SK.startsWith('COST#'))
-      .map((v) => ({
-        effectiveFrom: v.effectiveFrom as string,
-        effectiveTo: v.effectiveTo as string,
-        unitCostFen: v.unitCostFen as number,
-      }));
+    const versions = rows.filter(
+      (it) => typeof it.SK === 'string' && (it.SK as string).startsWith('COST#'),
+    ) as unknown as Array<{
+      supplierId: string; unitCostFen: number; currency: string;
+      effectiveFrom: string; effectiveTo: string;
+      priceSource: string; reviewStatus: string;
+    }>;
     const effective = selectEffectiveCost(versions, today);
     return {
       input,
@@ -2109,6 +2171,18 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
         itemId: meta.itemId, sku: meta.sku, name: meta.name, series: meta.series, kind: meta.kind,
         specs: meta.specs, unitCostFen: effective?.unitCostFen ?? null,
         costStatus: effective ? (effective.effectiveTo <= soon ? 'EXPIRING' : 'ACTIVE') : 'MISSING',
+        // Full cost provenance — the snapshot must be audit-complete (spec:
+        // "quotation stores the point-in-time snapshot"): who supplied the cost,
+        // which CostVersion (its interval IS its identity), currency, source, review state.
+        costSnapshot: effective ? {
+          supplierId: effective.supplierId,
+          unitCostFen: effective.unitCostFen,
+          currency: effective.currency,
+          effectiveFrom: effective.effectiveFrom,
+          effectiveTo: effective.effectiveTo,
+          priceSource: effective.priceSource,
+          reviewStatus: effective.reviewStatus,
+        } : null,
       },
       configItem: {
         sku: meta.sku as string, kind: meta.kind as ConfigItem['kind'],
@@ -2121,8 +2195,22 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
   }));
 }
 
-/** Prices loaded lines, applies the optional total override, returns line rows + summary. */
-export function buildSnapshot(loaded: LoadedLine[], policy: PolicyData, totalOverride?: { totalUsdCents: number; reason: string }) {
+/**
+ * Prices loaded lines, applies the optional total override, returns line rows + summary.
+ *
+ * Reconciliation invariant (header ≡ lines): `summary.actualTotalUsdCents` is ALWAYS
+ * exactly the sum of `lineRows[*].actualLineTotalUsdCents` (or null when unknown).
+ * The rounded suggested total is ADVISORY — adopting it means submitting it as a
+ * total override, which re-allocates and keeps the invariant. Amounts are stored
+ * as line totals; a per-unit "actual" is NOT derived when qty > 1 (it may not
+ * divide evenly) — the manual unit override, if any, is preserved verbatim as audit.
+ */
+export function buildSnapshot(
+  loaded: LoadedLine[],
+  policy: PolicyData,
+  operator: string,
+  totalOverride?: { totalUsdCents: number; reason: string },
+) {
   const configErrors = validateConfiguration(
     loaded.filter((l) => l.configItem).map((l) => ({ item: l.configItem!, qty: l.input.qty })),
   );
@@ -2133,29 +2221,37 @@ export function buildSnapshot(loaded: LoadedLine[], policy: PolicyData, totalOve
 
   const engines = loaded.map((l) => l.engine);
   const perLine = engines.map((e) => priceLine(e, policy));
-  let lineTotals = engines.map((e, i) => {
-    const unit = e.actualUnitUsdCents ?? perLine[i].suggestedUnitUsdCents;
-    return unit == null ? null : unit * e.qty;
-  });
+  const now = new Date().toISOString();
 
+  let lineTotals: Array<number | null>;
   if (totalOverride) {
+    // Spec: allocation weights are the SUGGESTED line totals — never the
+    // manually adjusted prices (that would let one override skew everyone's share).
     const allocated = allocateTotalOverride(
       engines.map((e, i) => ({
         sku: e.sku, lineType: e.lineType,
-        suggestedLineTotalUsdCents: lineTotals[i],
+        suggestedLineTotalUsdCents:
+          perLine[i].suggestedUnitUsdCents == null ? null : perLine[i].suggestedUnitUsdCents! * e.qty,
       })),
       totalOverride.totalUsdCents,
     );
     lineTotals = allocated.map((a) => a.actualLineTotalUsdCents);
+  } else {
+    lineTotals = engines.map((e, i) => {
+      const unit = e.actualUnitUsdCents ?? perLine[i].suggestedUnitUsdCents;
+      return unit == null ? null : unit * e.qty;
+    });
   }
 
   const summary = priceQuotation(engines, policy);
-  const actualTotalUsdCents = totalOverride
-    ? totalOverride.totalUsdCents
-    : summary.actualTotalUsdCents;
+  // Header total = exact line-total sum (reconciliation invariant). With an
+  // override, Σ allocated ≡ override total by the largest-remainder construction.
+  const actualTotalUsdCents = lineTotals.some((t) => t == null)
+    ? null
+    : (lineTotals as number[]).reduce((s, t) => s + t, 0);
   const actualMarginBp = actualTotalUsdCents != null && summary.totalCostUsdCents != null && actualTotalUsdCents > 0
     ? Math.round(((actualTotalUsdCents - summary.totalCostUsdCents) * 10_000) / actualTotalUsdCents)
-    : summary.actualMarginBp;
+    : null;
 
   const lineRows = loaded.map((l, i) => ({
     lineNo: i + 1,
@@ -2169,6 +2265,9 @@ export function buildSnapshot(loaded: LoadedLine[], policy: PolicyData, totalOve
     suggestedUnitUsdCents: perLine[i].suggestedUnitUsdCents,
     actualUnitUsdCents: l.input.actualUnitUsdCents ?? null,
     overrideReason: l.input.overrideReason ?? null,
+    // Override audit: reason alone is not audit-complete — record who and when.
+    overriddenBy: l.input.actualUnitUsdCents != null ? operator : null,
+    overriddenAt: l.input.actualUnitUsdCents != null ? now : null,
     actualLineTotalUsdCents: lineTotals[i],
   }));
 
@@ -2182,7 +2281,9 @@ export function buildSnapshot(loaded: LoadedLine[], policy: PolicyData, totalOve
       actualMarginBp,
       belowMinMargin: actualMarginBp != null && actualMarginBp < policy.minMarginBp,
       incomplete: summary.incomplete,
-      totalOverride: totalOverride ?? null,
+      totalOverride: totalOverride
+        ? { ...totalOverride, overriddenBy: operator, overriddenAt: now }
+        : null,
     },
   };
 }
@@ -2204,7 +2305,8 @@ export async function pbCreateQuotationDraft(event: PriceApiEvent) {
 
   const policy = await loadPolicy();
   const loaded = await loadLines(input.lines ?? []);
-  const { lineRows, summary } = buildSnapshot(loaded, policy, input.totalOverride);
+  const operator = getOperator(event);
+  const { lineRows, summary } = buildSnapshot(loaded, policy, operator, input.totalOverride);
 
   // Spec invariant 1 — number allocation is read-then-CAS, with explicit
   // first-creation semantics for a new year's counter.
@@ -2218,7 +2320,6 @@ export async function pbCreateQuotationDraft(event: PriceApiEvent) {
   const next = (current ?? 0) + 1;
   const quotationNumber = formatQuotationNumber(year, next);
   const pk = `PQUO#${quotationNumber}`;
-  const operator = getOperator(event);
 
   const counterOp = current === undefined
     ? {
@@ -2441,7 +2542,7 @@ export async function pbUpdateQuotationDraft(event: PriceApiEvent) {
 
   const policy = await loadPolicy();
   const loaded = await loadLines(input.lines ?? []);
-  const { lineRows, summary } = buildSnapshot(loaded, policy, input.totalOverride);
+  const { lineRows, summary } = buildSnapshot(loaded, policy, getOperator(event), input.totalOverride);
 
   const now = new Date().toISOString();
   const newRevision = input.expectedRevision + 1;
@@ -2583,6 +2684,291 @@ Expected: all price-api tests green (handler, libs, five resolver files).
 ```bash
 git add amplify/functions/price-api/resolvers/quotationResolvers.ts amplify/functions/price-api/resolvers/quotationResolvers.test.ts
 git commit -m "feat(price-api): transactional draft edit + quotation get/list"
+```
+
+---
+
+### Task 12b: Deterministic concurrency harness — prove exactly-one-wins
+
+Mock-shaped tests (Tasks 9/11/12) pin the request shapes; this task proves the **invariants** hold under real interleaving: a fake DynamoDB with genuine conditional-write semantics, and a read/transact gate that forces both racers to read before either commits.
+
+**Files:**
+- Create: `amplify/functions/price-api/lib/testing/fakeDdb.ts`
+- Test: `amplify/functions/price-api/resolvers/concurrency.test.ts`
+
+- [ ] **Step 1: Implement the fake (test infrastructure — no TDD ceremony, its tests ARE Task 12b's tests)**
+
+Create `amplify/functions/price-api/lib/testing/fakeDdb.ts`:
+
+```ts
+/**
+ * Minimal in-memory DynamoDB fake with REAL conditional-write semantics for the
+ * expression subset price-api uses. Not a general emulator — supported grammar:
+ *   Conditions: attribute_not_exists(f) | f = :v | f < :v, joined by a single AND/OR
+ *   Updates:    SET f = :v [, ...] | SET f = f + :v | ADD f :v
+ * TransactWrite evaluates ALL conditions first, applies all-or-nothing, and throws
+ * name='TransactionCanceledException' on any failure — matching the real client.
+ */
+type Item = Record<string, unknown>;
+
+const key = (it: { PK: unknown; SK: unknown }) => `${it.PK}|${it.SK}`;
+
+function subNames(expr: string, names?: Record<string, string>): string {
+  let out = expr;
+  for (const [alias, real] of Object.entries(names ?? {})) out = out.split(alias).join(real);
+  return out;
+}
+
+function evalAtom(atom: string, item: Item | undefined, values: Record<string, unknown>): boolean {
+  const notExists = atom.match(/^attribute_not_exists\((\w+)\)$/);
+  if (notExists) return item === undefined || !(notExists[1] in item);
+  const exists = atom.match(/^attribute_exists\((\w+)\)$/);
+  if (exists) return item !== undefined && exists[1] in item;
+  const eq = atom.match(/^(\w+) = (:\w+)$/);
+  if (eq) return item !== undefined && item[eq[1]] === values[eq[2]];
+  const lt = atom.match(/^(\w+) < (:\w+)$/);
+  if (lt) return item !== undefined && (item[lt[1]] as number) < (values[lt[2]] as number);
+  throw new Error(`fakeDdb: unsupported condition atom: ${atom}`);
+}
+
+function evalCondition(expr: string | undefined, item: Item | undefined, values: Record<string, unknown>, names?: Record<string, string>): boolean {
+  if (!expr) return true;
+  const e = subNames(expr.trim(), names);
+  if (e.includes(' OR ')) return e.split(' OR ').some((a) => evalAtom(a.trim(), item, values));
+  if (e.includes(' AND ')) return e.split(' AND ').every((a) => evalAtom(a.trim(), item, values));
+  return evalAtom(e, item, values);
+}
+
+function applyUpdate(expr: string, item: Item, values: Record<string, unknown>, names?: Record<string, string>): void {
+  const e = subNames(expr.trim(), names);
+  const addMatch = e.match(/(?:^|\s)ADD (\w+) (:\w+)/);
+  if (addMatch) {
+    item[addMatch[1]] = ((item[addMatch[1]] as number) ?? 0) + (values[addMatch[2]] as number);
+  }
+  const setMatch = e.match(/SET (.+?)(?:\sADD\s|$)/);
+  if (setMatch) {
+    for (const clause of setMatch[1].split(',').map((c) => c.trim())) {
+      const incr = clause.match(/^(\w+) = (\w+) \+ (:\w+)$/);
+      if (incr) { item[incr[1]] = ((item[incr[2]] as number) ?? 0) + (values[incr[3]] as number); continue; }
+      const assign = clause.match(/^(\w+) = (:\w+)$/);
+      if (assign) { item[assign[1]] = values[assign[2]]; continue; }
+      throw new Error(`fakeDdb: unsupported SET clause: ${clause}`);
+    }
+  }
+}
+
+interface CommandLike { constructor: { name: string }; input: Record<string, never> & Record<string, unknown> }
+
+export class FakeDdb {
+  store = new Map<string, Item>();
+
+  seed(items: Item[]) { for (const it of items) this.store.set(key(it as never), { ...it }); }
+
+  async send(cmd: CommandLike): Promise<Record<string, unknown>> {
+    const input = cmd.input as Record<string, unknown>;
+    switch (cmd.constructor.name) {
+      case 'GetCommand': {
+        const item = this.store.get(key(input.Key as never));
+        return item ? { Item: { ...item } } : {};
+      }
+      case 'QueryCommand': {
+        const values = (input.ExpressionAttributeValues ?? {}) as Record<string, unknown>;
+        const cond = input.KeyConditionExpression as string;
+        const pkMatch = cond.match(/PK = (:\w+)/) ?? cond.match(/GSI1PK = (:\w+)/);
+        const gsi = Boolean(input.IndexName);
+        const pkField = gsi ? 'GSI1PK' : 'PK';
+        const pkVal = values[pkMatch![1]];
+        const bw = cond.match(/begins_with\((\w+), (:\w+)\)/);
+        let items = [...this.store.values()].filter((it) => it[pkField] === pkVal
+          && (!bw || String(it[bw[1]]).startsWith(String(values[bw[2]]))));
+        const sortField = gsi ? 'GSI1SK' : 'SK';
+        items = items.sort((a, b) => String(a[sortField]).localeCompare(String(b[sortField])));
+        if (input.ScanIndexForward === false) items.reverse();
+        return { Items: items.map((it) => ({ ...it })) };
+      }
+      case 'PutCommand':
+      case 'UpdateCommand':
+      case 'TransactWriteCommand': {
+        const ops = cmd.constructor.name === 'TransactWriteCommand'
+          ? (input.TransactItems as Array<Record<string, Record<string, unknown>>>)
+          : [cmd.constructor.name === 'PutCommand' ? { Put: input } : { Update: input }];
+        // Phase 1: evaluate every condition against the CURRENT store.
+        for (const op of ops) {
+          const spec = op.Put ?? op.Update ?? op.Delete;
+          const targetKey = op.Put ? key(spec.Item as never) : key(spec.Key as never);
+          const ok = evalCondition(
+            spec.ConditionExpression as string | undefined,
+            this.store.get(targetKey),
+            (spec.ExpressionAttributeValues ?? {}) as Record<string, unknown>,
+            spec.ExpressionAttributeNames as Record<string, string> | undefined,
+          );
+          if (!ok) throw Object.assign(new Error('ConditionalCheckFailed'), {
+            name: cmd.constructor.name === 'TransactWriteCommand'
+              ? 'TransactionCanceledException' : 'ConditionalCheckFailedException',
+          });
+        }
+        // Phase 2: apply all-or-nothing.
+        for (const op of ops) {
+          if (op.Put) {
+            this.store.set(key(op.Put.Item as never), { ...(op.Put.Item as Item) });
+          } else if (op.Update) {
+            const k = key(op.Update.Key as never);
+            const item = this.store.get(k) ?? { ...(op.Update.Key as Item) };
+            applyUpdate(
+              op.Update.UpdateExpression as string, item,
+              (op.Update.ExpressionAttributeValues ?? {}) as Record<string, unknown>,
+              op.Update.ExpressionAttributeNames as Record<string, string> | undefined,
+            );
+            this.store.set(k, item);
+          } else if (op.Delete) {
+            this.store.delete(key(op.Delete.Key as never));
+          }
+        }
+        return {};
+      }
+      default:
+        throw new Error(`fakeDdb: unsupported command ${cmd.constructor.name}`);
+    }
+  }
+}
+
+/**
+ * Race gate: both contenders complete all their READS before EITHER transaction
+ * commits — the deterministic worst-case interleaving for read-then-CAS protocols.
+ */
+export function gatedSend(fake: FakeDdb, expectedReads: number) {
+  let reads = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  return async (cmd: CommandLike) => {
+    if (cmd.constructor.name === 'TransactWriteCommand') await gate;
+    const res = await fake.send(cmd);
+    if (cmd.constructor.name === 'GetCommand' || cmd.constructor.name === 'QueryCommand') {
+      reads += 1;
+      if (reads >= expectedReads) release();
+    }
+    return res;
+  };
+}
+```
+
+- [ ] **Step 2: Write the invariant tests**
+
+Create `amplify/functions/price-api/resolvers/concurrency.test.ts`:
+
+```ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FakeDdb, gatedSend } from '../lib/testing/fakeDdb.js';
+
+let sendImpl: (cmd: unknown) => Promise<unknown> = async () => ({});
+vi.mock('../lib/dynamodb.js', () => ({
+  docClient: { send: (cmd: unknown) => sendImpl(cmd) },
+  TABLE_NAME: () => 'TestTable',
+}));
+
+import { pbAppendCostVersion } from './costVersionResolvers.js';
+import { pbCreateQuotationDraft, pbUpdateQuotationDraft } from './quotationResolvers.js';
+
+const ev = (input: Record<string, unknown>) => ({
+  info: { fieldName: 'x', parentTypeName: 'Mutation' },
+  arguments: { input },
+  identity: { sub: 's', groups: ['admin'], claims: { email: 'boss@ninescrolls.com' } },
+});
+
+const machineMeta = {
+  PK: 'PCAT#c1', SK: 'META', GSI1PK: 'CATALOG_ITEMS', GSI1SK: 'RIE#RIE-300',
+  itemId: 'c1', sku: 'RIE-300', name: 'RIE 300', series: 'RIE', kind: 'MACHINE',
+  requiredOptionSkus: [], requiresSkus: [], excludesSkus: [],
+};
+const activeCost = {
+  PK: 'PCAT#c1', SK: 'COST#s1#2020-01-01', itemId: 'c1', supplierId: 's1',
+  unitCostFen: 725_000, currency: 'RMB', effectiveFrom: '2020-01-01', effectiveTo: '2099-01-01',
+  priceSource: 'MANUAL_ENTRY', reviewStatus: 'APPROVED',
+};
+const settle = (ps: Promise<unknown>[]) => Promise.allSettled(ps);
+
+beforeEach(() => { sendImpl = async () => ({}); });
+
+describe('concurrency invariants (deterministic worst-case interleaving)', () => {
+  it('CostVersion: two racers on the same gap — exactly one wins, exactly one version lands', async () => {
+    const fake = new FakeDdb();
+    // Both appenders read guard (1 Get) + versions (1 Query) => 4 reads total before any tx.
+    sendImpl = gatedSend(fake, 4);
+    const mk = (from: string, to: string) => pbAppendCostVersion(ev({
+      itemId: 'c1', supplierId: 's1', unitCostFen: 100,
+      effectiveFrom: from, effectiveTo: to, priceSource: 'MANUAL_ENTRY',
+    }));
+    const results = await settle([mk('2026-01-01', '2026-07-01'), mk('2026-03-01', '2026-09-01')]);
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+    expect(fulfilled).toHaveLength(1);                 // exactly-one-wins
+    expect(rejected[0].reason.message).toMatch(/^CONFLICT:/);
+    const versions = [...fake.store.keys()].filter((k) => k.includes('|COST#s1#'));
+    expect(versions).toHaveLength(1);                  // the overlapping loser never landed
+    expect(fake.store.get('PCAT#c1|COSTGUARD#s1')!.revision).toBe(1);
+  });
+
+  it('Quotation numbers: two concurrent creates never share a number; retry gets the next one', async () => {
+    const fake = new FakeDdb();
+    fake.seed([machineMeta, activeCost]);
+    // Each create reads: policy Get + item Query + counter Get = 3 => 6 before any tx.
+    sendImpl = gatedSend(fake, 6);
+    const mk = () => pbCreateQuotationDraft(ev({
+      schemeLabel: 'Standard', customerName: 'MIT Nano',
+      lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL' }],
+    }));
+    const results = await settle([mk(), mk()]);
+    const won = results.filter((r) => r.status === 'fulfilled') as PromiseFulfilledResult<{ quotationNumber: string }>[];
+    expect(won).toHaveLength(1);
+    expect(results.some((r) => r.status === 'rejected'
+      && /^CONFLICT:/.test((r as PromiseRejectedResult).reason.message))).toBe(true);
+
+    sendImpl = (cmd) => fake.send(cmd as never); // ungated retry against the same store
+    const retry = await mk() as { quotationNumber: string };
+    expect(retry.quotationNumber).not.toBe(won[0].value.quotationNumber);
+    // No orphan numbers: counter equals the number of scheme records.
+    const counter = fake.store.get(`COUNTER#QUOTATION|YEAR#${new Date().getFullYear()}`)!.seq;
+    const schemes = [...fake.store.keys()].filter((k) => k.endsWith('|SCHEME'));
+    expect(counter).toBe(schemes.length);
+  });
+
+  it('DRAFT edit: stale racer applies NONE of its line delta', async () => {
+    const fake = new FakeDdb();
+    fake.seed([machineMeta, activeCost]);
+    sendImpl = (cmd) => fake.send(cmd as never);
+    const created = await pbCreateQuotationDraft(ev({
+      schemeLabel: 'Standard', customerName: 'MIT Nano',
+      lines: [{ itemId: 'c1', qty: 1, lineType: 'NORMAL' }, { sku: 'FREIGHT', qty: 1, lineType: 'SURCHARGE', surchargeUsdCents: 100 }],
+    })) as { quotationNumber: string };
+
+    // Both editors read header+policy+lines (3 reads each) before either commits.
+    sendImpl = gatedSend(fake, 6);
+    const edit = (qty: number) => pbUpdateQuotationDraft(ev({
+      quotationNumber: created.quotationNumber, version: 1, expectedRevision: 1,
+      lines: [{ itemId: 'c1', qty, lineType: 'NORMAL' }],   // 2 lines -> 1 line
+    }));
+    const results = await settle([edit(2), edit(3)]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+
+    const header = fake.store.get(`PQUO#${created.quotationNumber}|V#001`)!;
+    expect(header.revision).toBe(2);                   // exactly one bump
+    expect(header.lineCount).toBe(1);
+    const lines = [...fake.store.keys()].filter((k) => k.includes('|V#001#LINE#'));
+    expect(lines).toHaveLength(1);                     // tail deleted once, no partial delta
+  });
+});
+```
+
+- [ ] **Step 3: Run — verify PASS**
+
+Run: `npx vitest run amplify/functions/price-api/resolvers/concurrency.test.ts --exclude '**/.claude/**'`
+Expected: 3 passed. If a resolver's read count changes in a refactor, the gate's `expectedReads` must change with it — that is intentional coupling: the gate encodes the protocol's read phase.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add amplify/functions/price-api/lib/testing/fakeDdb.ts amplify/functions/price-api/resolvers/concurrency.test.ts
+git commit -m "test(price-api): deterministic concurrency harness — exactly-one-wins invariants"
 ```
 
 ---
@@ -2730,10 +3116,11 @@ intelligenceTable.grantReadWriteData(backend.priceApi.resources.lambda);
 backend.priceApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 ```
 
-- [ ] **Step 4: Typecheck**
+- [ ] **Step 4: Typecheck (BOTH configs — root tsconfig only covers `src/`)**
 
-Run: `npx tsc --noEmit`
-Expected: no NEW errors (compare against `git stash && npx tsc --noEmit` baseline if unsure).
+Run: `npx tsc --noEmit && npm run typecheck:amplify`
+(`typecheck:amplify` = `tsc --noEmit -p amplify/tsconfig.json`, the same check `npm run build` runs.)
+Expected: no NEW errors.
 
 - [ ] **Step 5: Commit**
 
@@ -3695,7 +4082,7 @@ export function QuotationWorkbenchPage() {
 - [ ] **Step 6: Run all frontend tests + typecheck**
 
 Run: `npx vitest run src/pages/admin/QuotationListPage.test.tsx src/pages/admin/QuotationWorkbenchPage.test.tsx src/pages/admin/PriceBookPage.test.tsx src/pages/admin/SuppliersPage.test.tsx --exclude '**/.claude/**'`
-Then: `npx tsc --noEmit`
+Then: `npx tsc --noEmit && npm run typecheck:amplify`
 Expected: all green, no new type errors.
 
 - [ ] **Step 7: Commit**
@@ -3712,9 +4099,115 @@ git commit -m "feat(admin): quotation workbench + list (server-priced DRAFT snap
 Spec: Excel import is a **script**, not an upload UI. Suppliers send Excel; the owner exports the sheet to CSV. Columns: `sku,supplierName,unitCostRmb,effectiveFrom,effectiveTo`.
 
 **Files:**
+- Create: `scripts/lib/csv.ts`
+- Test: `scripts/lib/csv.test.ts`
 - Create: `scripts/import-supplier-prices.ts`
+- Modify: `tsconfig.scripts.json` (add the new scripts to `include` so they are actually typechecked)
 
-- [ ] **Step 1: Write the script**
+- [ ] **Step 1: Write the failing CSV/money helper tests**
+
+Naive `split(',')` breaks on quoted supplier names, and `Number(x) * 100` has float error (`19.9 * 100 === 1989.9999…`). Both helpers are string-based and tested.
+
+Create `scripts/lib/csv.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { parseCsv, rmbToFen } from './csv';
+
+describe('parseCsv (RFC 4180 subset)', () => {
+  it('parses plain rows and trims CRLF', () => {
+    expect(parseCsv('a,b\r\n1,2\r\n')).toEqual([['a', 'b'], ['1', '2']]);
+  });
+  it('handles quoted fields with commas and escaped quotes', () => {
+    expect(parseCsv('sku,"Beijing OEM, Ltd","said ""hi"""')).toEqual([
+      ['sku', 'Beijing OEM, Ltd', 'said "hi"'],
+    ]);
+  });
+  it('handles newlines inside quoted fields and skips blank lines', () => {
+    expect(parseCsv('a,"line1\nline2"\n\nb,c\n')).toEqual([['a', 'line1\nline2'], ['b', 'c']]);
+  });
+  it('rejects an unterminated quote', () => {
+    expect(() => parseCsv('a,"oops')).toThrow(/unterminated/i);
+  });
+});
+
+describe('rmbToFen (string-based, no float math)', () => {
+  it('converts yuan strings to integer fen exactly', () => {
+    expect(rmbToFen('72500')).toBe(7_250_000);
+    expect(rmbToFen('19.9')).toBe(1990);
+    expect(rmbToFen('19.99')).toBe(1999);
+    expect(rmbToFen('0.01')).toBe(1);
+  });
+  it('rejects malformed amounts', () => {
+    for (const bad of ['', 'abc', '1.999', '-5', '1,000', '1.']) {
+      expect(() => rmbToFen(bad)).toThrow(/amount/i);
+    }
+  });
+});
+```
+
+- [ ] **Step 2: Run — verify FAIL, then implement**
+
+Run: `npx vitest run scripts/lib/csv.test.ts --exclude '**/.claude/**'`
+
+Create `scripts/lib/csv.ts`:
+
+```ts
+/** RFC 4180-subset CSV parser: quoted fields, escaped quotes ("" -> "),
+ * commas and newlines inside quotes, CRLF, blank-line skipping. */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  let i = 0;
+  const pushField = () => { row.push(field); field = ''; };
+  const pushRow = () => {
+    pushField();
+    if (row.length > 1 || row[0] !== '') rows.push(row); // skip blank lines
+    row = [];
+  };
+  while (i < text.length) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i += 1; continue;
+      }
+      field += ch; i += 1; continue;
+    }
+    if (ch === '"') { inQuotes = true; i += 1; continue; }
+    if (ch === ',') { pushField(); i += 1; continue; }
+    if (ch === '\r' && text[i + 1] === '\n') { pushRow(); i += 2; continue; }
+    if (ch === '\n') { pushRow(); i += 1; continue; }
+    field += ch; i += 1;
+  }
+  if (inQuotes) throw new Error('CSV: unterminated quoted field');
+  if (field !== '' || row.length) pushRow();
+  return rows;
+}
+
+/** '72500' | '19.9' | '19.99' (yuan) -> integer fen. String math — no floats. */
+export function rmbToFen(s: string): number {
+  const m = s.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
+  if (!m) throw new Error(`invalid RMB amount: "${s}" (expect yuan, up to 2 decimals)`);
+  return Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0') || '0');
+}
+```
+
+Run again: 6 passed. Then add both new scripts to `tsconfig.scripts.json` — its `include` array currently lists `scripts/generate-equipment-guide.ts` and `src/**/*.ts`; extend it:
+
+```json
+  "include": [
+    "scripts/generate-equipment-guide.ts",
+    "scripts/import-supplier-prices.ts",
+    "scripts/add-admin-user.ts",
+    "scripts/lib/csv.ts",
+    "src/**/*.ts"
+  ]
+```
+
+- [ ] **Step 3: Write the import script**
 
 Create `scripts/import-supplier-prices.ts` (auth pattern from `scripts/seed-evidence.ts`):
 
@@ -3743,6 +4236,7 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import { authenticate } from './lib/auth';
+import { parseCsv, rmbToFen } from './lib/csv';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as never);
@@ -3767,25 +4261,27 @@ async function main() {
   const bySku = new Map(catalog.map((c) => [c.sku, c.itemId]));
   const byName = new Map(suppliers.map((s) => [s.name, s.supplierId]));
 
-  const rows = readFileSync(file, 'utf8').trim().split(/\r?\n/);
-  const header = rows.shift()!;
-  if (!/^sku,supplierName,unitCostRmb,effectiveFrom,effectiveTo$/.test(header.trim())) {
-    throw new Error(`Unexpected header: ${header}`);
+  const rows = parseCsv(readFileSync(file, 'utf8')).map((r) => r.map((c) => c.trim()));
+  const header = rows.shift();
+  const EXPECTED = ['sku', 'supplierName', 'unitCostRmb', 'effectiveFrom', 'effectiveTo'];
+  if (!header || header.join(',') !== EXPECTED.join(',')) {
+    throw new Error(`Unexpected header: ${header?.join(',')} (expected ${EXPECTED.join(',')})`);
   }
 
   let ok = 0, failed = 0;
   for (const [i, row] of rows.entries()) {
-    const [sku, supplierName, unitCostRmb, effectiveFrom, effectiveTo] = row.split(',').map((s) => s.trim());
+    const [sku, supplierName, unitCostRmb, effectiveFrom, effectiveTo] = row;
     const label = `row ${i + 2} (${sku} @ ${supplierName})`;
     const itemId = bySku.get(sku);
     const supplierId = byName.get(supplierName);
+    if (row.length !== EXPECTED.length) { console.error(`✗ ${label}: expected ${EXPECTED.length} columns, got ${row.length}`); failed++; continue; }
     if (!itemId) { console.error(`✗ ${label}: unknown sku`); failed++; continue; }
     if (!supplierId) { console.error(`✗ ${label}: unknown supplier`); failed++; continue; }
     try {
       const res = await client.mutations.pbAppendCostVersion({
         input: JSON.stringify({
           itemId, supplierId,
-          unitCostFen: Math.round(Number(unitCostRmb) * 100),
+          unitCostFen: rmbToFen(unitCostRmb), // string-based — no float money math
           effectiveFrom, effectiveTo,
           priceSource: 'SUPPLIER_EXCEL',
         }),
@@ -3805,13 +4301,13 @@ async function main() {
 main().catch((e) => { console.error(e); process.exit(1); });
 ```
 
-- [ ] **Step 2: Verify + commit**
+- [ ] **Step 4: Verify + commit**
 
-The script depends on a deployed backend, so implementation-time verification is `npx tsc --noEmit` staying green (schema types exist after Task 13) plus a dry read of the header validation logic.
+The import script depends on a deployed backend, so implementation-time verification is the csv helper tests plus `npx tsc --noEmit -p tsconfig.scripts.json` staying green.
 
 ```bash
-git add scripts/import-supplier-prices.ts
-git commit -m "feat(scripts): CSV supplier price import (priceSource=SUPPLIER_EXCEL)"
+git add scripts/lib/csv.ts scripts/lib/csv.test.ts scripts/import-supplier-prices.ts tsconfig.scripts.json
+git commit -m "feat(scripts): CSV supplier price import with RFC4180 parser + string fen math"
 ```
 
 ---
@@ -3825,9 +4321,9 @@ Expected: everything green — price-api suites AND all pre-existing suites (no 
 
 - [ ] **Step 2: Lint + typecheck**
 
-Run: `npx eslint amplify/functions/price-api src/services/priceAdminService.ts src/pages/admin/SuppliersPage.tsx src/pages/admin/PriceBookPage.tsx src/pages/admin/QuotationWorkbenchPage.tsx src/pages/admin/QuotationListPage.tsx scripts/import-supplier-prices.ts scripts/add-admin-user.ts`
-Run: `npx tsc --noEmit`
-Expected: no NEW errors (`as any` warnings pre-exist elsewhere; do not add new ones).
+Run: `npx eslint amplify/functions/price-api src/services/priceAdminService.ts src/pages/admin/SuppliersPage.tsx src/pages/admin/PriceBookPage.tsx src/pages/admin/QuotationWorkbenchPage.tsx src/pages/admin/QuotationListPage.tsx scripts/import-supplier-prices.ts scripts/add-admin-user.ts scripts/lib/csv.ts`
+Run: `npx tsc --noEmit && npm run typecheck:amplify && npx tsc --noEmit -p tsconfig.scripts.json`
+Expected: no NEW errors across all three configs (`as any` warnings pre-exist elsewhere; do not add new ones).
 
 - [ ] **Step 3: Production build**
 
@@ -3848,8 +4344,10 @@ Deployment (`ampx sandbox` / PR merge → Amplify pipeline), running `scripts/ad
 4. Seed: create suppliers → catalog items → import first CSV price list.
 5. Amplify Console rewrite rules are NOT needed (all new routes live under the existing `/admin` SPA rewrite), and no sitemap entries (internal pages).
 
-## Spec-coverage self-review (done at plan-writing time)
+## Spec-coverage self-review (done at plan-writing time; revised after plan review)
 
-- Admin group + server gate → Tasks 1–2. Six entities → Tasks 7–11 (Supplier, CatalogItem, CostVersion+guard, PricingPolicy, Quotation scheme/header, LineSnapshot). Guard-first CAS order → Task 9. Counter bootstrap CAS → Task 11. 45-line cap + single-transaction create/edit, single-Put-per-key → Tasks 11–12. Pricing semantics (margin-on-price, unknown-not-zero, fx snapshot, rounding both values) → Task 4 + 11. Allocation boundaries + largest-remainder → Task 5. Four rule kinds → Task 6. Price Book/Suppliers/Workbench pages + routes → Tasks 15–17. Import script → Task 18. P1 stops at DRAFT — `pbUpdateQuotationDraft` refuses non-DRAFT (Task 12); no PDF/timeline/RFQ-page code anywhere.
+- Admin group + server gate → Tasks 1–2. Six entities → Tasks 7–11 (Supplier, CatalogItem, CostVersion+guard, PricingPolicy, Quotation scheme/header, LineSnapshot). Guard-first CAS order → Task 9. Counter bootstrap CAS → Task 11. 45-line cap + single-transaction create/edit, single-Put-per-key → Tasks 11–12. **Concurrency invariants proven by deterministic harness (exactly-one-wins, no orphan numbers, no partial delta) → Task 12b.** Pricing semantics (margin-on-price, unknown-not-zero, fx snapshot, rounding both values) → Task 4 + 11. Allocation boundaries + largest-remainder, **weights = suggested totals** → Task 5 + Task 11 `buildSnapshot`. Four rule kinds → Task 6. Price Book/Suppliers/Workbench pages + routes → Tasks 15–17. Import script (RFC4180 parser, string fen math) → Task 18. P1 stops at DRAFT — `pbUpdateQuotationDraft` refuses non-DRAFT (Task 12); no PDF/timeline/RFQ-page code anywhere.
+- **Snapshot audit completeness**: every line snapshots full cost provenance (`costSnapshot`: supplierId, CostVersion interval, currency, priceSource, reviewStatus) and override audit (`overriddenBy`/`overriddenAt` + reason); money-bearing catalog reads are strongly consistent and pagination-exhausted (Task 11).
+- **Header ≡ lines reconciliation**: `actualTotalUsdCents` is always exactly Σ line totals; the rounded suggested total is advisory — adopting it goes through a total override (Task 11 docstring + test).
 - Deliberately deferred to P2 (per spec): expiry-reminder cron (the Price Book badge covers P1's "what to ask" need; the cron with `isSandbox` guard ships with P2's status machine), version-copy ("edit GENERATED → new version"), Convert to Order, RFQ detail panel.
 
