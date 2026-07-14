@@ -81,6 +81,24 @@ describe('loadLines cost delta snapshot', () => {
 });
 
 describe('pbCreateQuotationDraft', () => {
+  it('persists null cost delta fields for surcharge snapshots', async () => {
+    send
+      .mockResolvedValueOnce(policyItem)
+      .mockResolvedValueOnce({ Item: { seq: 7 } })
+      .mockResolvedValueOnce({});
+
+    await pbCreateQuotationDraft(ev({
+      ...validInput,
+      lines: [{ sku: 'FREIGHT', qty: 1, lineType: 'SURCHARGE', surchargeUsdCents: 25_000 }],
+    }));
+
+    const line = send.mock.calls[2][0].input.TransactItems[3].Put.Item;
+    expect(line).toMatchObject({
+      previousUnitCostFen: null,
+      costDeltaFen: null,
+    });
+  });
+
   it('allocates the number via CAS and writes scheme+header+lines in ONE transaction', async () => {
     primeHappyPath();
     const res = await pbCreateQuotationDraft(ev(validInput)) as Record<string, unknown>;

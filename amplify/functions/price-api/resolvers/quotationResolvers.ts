@@ -108,7 +108,10 @@ export async function loadLines(lines: QuotationLineInput[]): Promise<LoadedLine
           unitCostFen: null, surchargeUsdCents: input.surchargeUsdCents,
           actualUnitUsdCents: input.actualUnitUsdCents ?? null,
         },
-        snapshot: { sku: input.sku, name: input.sku, series: 'SURCHARGE', kind: 'SERVICE' },
+        snapshot: {
+          sku: input.sku, name: input.sku, series: 'SURCHARGE', kind: 'SERVICE',
+          previousUnitCostFen: null, costDeltaFen: null,
+        },
       };
     }
     // Money-bearing read: STRONGLY CONSISTENT and pagination-exhausted, or a

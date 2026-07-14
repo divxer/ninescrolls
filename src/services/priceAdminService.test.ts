@@ -44,4 +44,19 @@ describe('priceAdminService', () => {
     queries.pbListQuotations.mockResolvedValueOnce({ errors: [{ message: 'UNAUTHORIZED: admin group required' }] });
     await expect(svc.listQuotations()).rejects.toThrow(/UNAUTHORIZED/);
   });
+
+  it('accepts historical quotation lines without cost delta fields', async () => {
+    queries.pbGetQuotation.mockResolvedValueOnce({
+      data: {
+        scheme: null,
+        versions: [{ lines: [{ lineNo: 1, sku: 'RIE-300' }] }],
+      },
+    });
+
+    const result = await svc.getQuotation('Q-2025-0001');
+    const historicalLine: svc.QuotationLineSnapshot = result.versions[0].lines[0];
+
+    expect(historicalLine.previousUnitCostFen).toBeUndefined();
+    expect(historicalLine.costDeltaFen).toBeUndefined();
+  });
 });

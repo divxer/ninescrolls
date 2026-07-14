@@ -142,8 +142,8 @@ export interface QuotationLineSnapshot {
   lineType: QuotationLineInput['lineType'];
   surchargeUsdCents?: number;
   unitCostFen?: number | null;
-  previousUnitCostFen: number | null;
-  costDeltaFen: number | null;
+  previousUnitCostFen?: number | null;
+  costDeltaFen?: number | null;
   costStatus?: 'ACTIVE' | 'EXPIRING' | 'MISSING';
   costSnapshot?: QuotationCostSnapshot | null;
   fxRmbPerUsdMilli: number;
