@@ -6,6 +6,14 @@
     "scripts/import-supplier-prices.ts",
     "scripts/add-admin-user.ts",
     "scripts/lib/csv.ts",
+    "scripts/lib/historicalQuotationImport.ts",
+    "scripts/extract-historical-workbook.ts",
+    "scripts/normalize-historical-quotations.ts",
+    "scripts/check-historical-confidentiality.ts",
+    "scripts/import-historical-quotations.ts",
+    "scripts/rollback-historical-import.ts",
+    "scripts/probe-historical-quotation-api.ts",
+    "scripts/seed-historical-import-sandbox.ts",
     "src/**/*.ts"
   ]
 }

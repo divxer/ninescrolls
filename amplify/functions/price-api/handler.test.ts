@@ -24,6 +24,12 @@ vi.mock('./resolvers/quotationResolvers.js', () => ({
   pbGetQuotation: vi.fn(async () => ({})),
   pbListQuotations: vi.fn(async () => ({ items: [] })),
 }));
+vi.mock('./resolvers/historicalQuotationResolvers.js', () => ({
+  pbListHistoricalQuotations: vi.fn(async () => ({ items: [] })),
+  pbGetHistoricalQuotation: vi.fn(async () => ({})),
+  pbImportHistoricalQuotations: vi.fn(async () => []),
+  pbRollbackHistoricalQuotationImport: vi.fn(async () => ({})),
+}));
 
 import { handler, RESOLVER_FIELDS } from './handler.js';
 import * as supplierResolvers from './resolvers/supplierResolvers.js';
@@ -31,6 +37,7 @@ import * as catalogResolvers from './resolvers/catalogResolvers.js';
 import * as costVersionResolvers from './resolvers/costVersionResolvers.js';
 import * as policyResolvers from './resolvers/policyResolvers.js';
 import * as quotationResolvers from './resolvers/quotationResolvers.js';
+import * as historicalQuotationResolvers from './resolvers/historicalQuotationResolvers.js';
 import { beforeEach, type Mock } from 'vitest';
 
 const adminIdentity = { sub: 's', groups: ['admin'] };
@@ -43,11 +50,13 @@ const ALL_OPS = [
   'pbAppendCostVersion', 'pbListCostVersions',
   'pbGetPricingPolicy', 'pbUpdatePricingPolicy',
   'pbCreateQuotationDraft', 'pbUpdateQuotationDraft', 'pbGetQuotation', 'pbListQuotations',
+  'pbListHistoricalQuotations', 'pbGetHistoricalQuotation',
+  'pbImportHistoricalQuotations', 'pbRollbackHistoricalQuotationImport',
 ] as const;
 
 const resolverMocks = {
   ...supplierResolvers, ...catalogResolvers, ...costVersionResolvers,
-  ...policyResolvers, ...quotationResolvers,
+  ...policyResolvers, ...quotationResolvers, ...historicalQuotationResolvers,
 } as unknown as Record<string, Mock>;
 
 beforeEach(() => Object.values(resolverMocks).forEach((f) => f.mockClear()));
@@ -76,7 +85,7 @@ describe('price-api handler', () => {
     expect(resolverMocks[op]).toHaveBeenCalledTimes(1);
   });
 
-  // Table-driven: all 14 operations × both event shapes; the resolver must
+  // Table-driven: all 18 operations × both event shapes; the resolver must
   // NEVER execute on a rejected call.
   it.each(ALL_OPS)('rejects non-admin for %s in both event shapes, without dispatch', async (op) => {
     await expect(handler({

@@ -37,6 +37,9 @@ const SuppliersPage = lazyWithReload(() => import('../pages/admin/SuppliersPage'
 const PriceBookPage = lazyWithReload(() => import('../pages/admin/PriceBookPage').then(m => ({ default: m.PriceBookPage })));
 const QuotationListPage = lazyWithReload(() => import('../pages/admin/QuotationListPage').then(m => ({ default: m.QuotationListPage })));
 const QuotationWorkbenchPage = lazyWithReload(() => import('../pages/admin/QuotationWorkbenchPage').then(m => ({ default: m.QuotationWorkbenchPage })));
+const HistoricalQuotationDetailPage = lazyWithReload(() =>
+  import('../pages/admin/HistoricalQuotationDetailPage')
+    .then((m) => ({ default: m.HistoricalQuotationDetailPage })));
 
 function PageLoader() {
   return (
@@ -72,6 +75,7 @@ export function AdminRoutes() {
           <Route path="quotations" element={<QuotationListPage />} />
           <Route path="quotations/new" element={<QuotationWorkbenchPage />} />
           <Route path="quotations/:quotationNumber" element={<QuotationWorkbenchPage />} />
+          <Route path="quotations/historical/:historicalId" element={<HistoricalQuotationDetailPage />} />
           <Route path="rfqs" element={<RFQListPage />} />
           <Route path="rfqs/:rfqId" element={<RFQDetailPage />} />
           <Route path="leads" element={<LeadsListPage />} />

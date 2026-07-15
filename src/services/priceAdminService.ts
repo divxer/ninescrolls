@@ -241,6 +241,51 @@ export const listQuotations = async (opts: { limit?: number; nextToken?: string 
     await client().queries.pbListQuotations(opts, AUTH),
   );
 
+export interface HistoricalQuotationSummary {
+  historicalId: string;
+  status: 'HISTORICAL';
+  customerName: string;
+  productName: string;
+  configuration: string;
+  supplierId: string;
+  supplierQuoteText: string;
+  customerQuoteText: string;
+  sourceDocument: string;
+  sourceDocumentHash: string;
+  sourceRow: number;
+  sourceQuotationNumber: string | null;
+  quotedAt: string | null;
+  legacyStatus: string;
+  customerAmountUsdCents: number | null;
+  importBatchId: string;
+  historicalFxProvenance: 'CONFIRMED' | 'INFERRED' | 'UNKNOWN';
+  dataQualityFlags: Array<'INCOMPLETE' | 'UNCONFIRMED' | 'CONFLICT_RESOLVED'>;
+  contentHash: string;
+  importedAt: string;
+}
+
+export interface HistoricalQuotationDetail extends HistoricalQuotationSummary {
+  supplierQuoteBasis: string;
+  supplierEvidenceType: string;
+  supplierQuotedAt: string | null;
+  supplierAmountFen?: number | null;
+  historicalFxRate: string | null;
+  historicalFxSource: string | null;
+  historicalFxNote: string | null;
+  dataQualityNotes: string[];
+  importedBy: string;
+}
+
+export const listHistoricalQuotations = async (opts: { limit?: number; nextToken?: string } = {}) =>
+  unwrap<{ items: HistoricalQuotationSummary[]; nextToken: string | null }>(
+    await client().queries.pbListHistoricalQuotations(opts, AUTH),
+  );
+export const getHistoricalQuotation = async (historicalId: string): Promise<HistoricalQuotationDetail | null> => {
+  const result = await client().queries.pbGetHistoricalQuotation(asInput({ historicalId }), AUTH);
+  if (result.errors?.length && result.errors.every(error => error.message.startsWith('NOT_FOUND:'))) return null;
+  return unwrap<HistoricalQuotationDetail>(result);
+};
+
 export const usd = (cents: number | null | undefined) =>
   cents == null
     ? '—'
