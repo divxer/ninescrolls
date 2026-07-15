@@ -46,3 +46,8 @@ public/assets/images/news/
 # Auto-generated AI agent artifacts (claude-mem context + stale agent worktrees)
 AGENTS.md
 .claire/
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+scripts/data/historical-quotations.normalized.json
