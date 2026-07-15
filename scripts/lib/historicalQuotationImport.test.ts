@@ -109,6 +109,15 @@ describe('historical quotation normalization helpers', () => {
       .toThrow(/physical path.*inside/i);
   });
 
+  it('rejects an external dangling output symlink targeting a nonexistent in-repo file', () => {
+    const outside = mkdtempSync(join(tmpdir(), 'hist-path-dangling-'));
+    const target = resolve(process.cwd(), 'scripts/data/not-created.normalized.json');
+    const link = join(outside, 'normalized.json');
+    symlinkSync(target, link);
+    expect(() => resolvePhysicalPathOutsideWorktree(link, process.cwd(), 'Output', false))
+      .toThrow(/dangling symlink|physical path.*inside/i);
+  });
+
   it('parses and hashes the same immutable workbook snapshot when the source changes', async () => {
     const outside = mkdtempSync(join(tmpdir(), 'hist-snapshot-'));
     const workbook = join(outside, 'archive.bin');

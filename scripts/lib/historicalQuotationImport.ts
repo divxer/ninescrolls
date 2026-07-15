@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { isAbsolute, join, parse, relative, resolve } from 'node:path';
 import { contentHashFor, historicalIdFor, type DataQualityFlag, type HistoricalQuotationInput } from '../../amplify/functions/price-api/lib/historicalQuotation';
 import { rmbToFen } from './csv';
 
@@ -76,15 +76,30 @@ export function resolvePhysicalPathOutsideWorktree(
   if (mustExist) {
     physicalPath = realpathSync(path);
   } else {
-    const suffix: string[] = [];
-    let ancestor = resolve(path);
-    while (!existsSync(ancestor)) {
-      const parent = dirname(ancestor);
-      if (parent === ancestor) throw new Error(`${label} has no existing ancestor`);
-      suffix.unshift(basename(ancestor));
-      ancestor = parent;
+    const absolute = resolve(path);
+    const parsed = parse(absolute);
+    const components = absolute.slice(parsed.root.length).split('/').filter(Boolean);
+    let current = parsed.root;
+    for (let index = 0; index < components.length; index += 1) {
+      const candidate = join(current, components[index]);
+      try {
+        const stat = lstatSync(candidate);
+        if (stat.isSymbolicLink()) {
+          try {
+            current = realpathSync(candidate);
+          } catch {
+            throw new Error(`${label} path contains a dangling symlink`);
+          }
+        } else {
+          current = candidate;
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        current = join(current, ...components.slice(index));
+        break;
+      }
     }
-    physicalPath = join(realpathSync(ancestor), ...suffix);
+    physicalPath = current;
   }
   if (isInside(physicalRoot, physicalPath)) {
     throw new Error(`${label} physical path resolves inside the git worktree`);
