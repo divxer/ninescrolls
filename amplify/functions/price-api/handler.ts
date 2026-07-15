@@ -6,6 +6,10 @@ import { pbGetPricingPolicy, pbUpdatePricingPolicy } from './resolvers/policyRes
 import {
   pbCreateQuotationDraft, pbUpdateQuotationDraft, pbGetQuotation, pbListQuotations,
 } from './resolvers/quotationResolvers.js';
+import {
+  pbListHistoricalQuotations, pbGetHistoricalQuotation,
+  pbImportHistoricalQuotations, pbRollbackHistoricalQuotationImport,
+} from './resolvers/historicalQuotationResolvers.js';
 
 // AppSync invocation shape: `info` is present on direct resolver events;
 // Amplify Gen 2 a.handler.function() sends fieldName/typeName at the top level.
@@ -26,6 +30,8 @@ const resolvers: Record<string, (event: never) => Promise<unknown>> = {
   pbAppendCostVersion, pbListCostVersions,
   pbGetPricingPolicy, pbUpdatePricingPolicy,
   pbCreateQuotationDraft, pbUpdateQuotationDraft, pbGetQuotation, pbListQuotations,
+  pbListHistoricalQuotations, pbGetHistoricalQuotation,
+  pbImportHistoricalQuotations, pbRollbackHistoricalQuotationImport,
 };
 
 /** Exported for the gate-coverage test: the REAL dispatch surface. */

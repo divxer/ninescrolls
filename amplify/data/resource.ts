@@ -921,6 +921,20 @@ const schema = a.schema({
     .handler(a.handler.function(priceApi))
     .authorization((allow) => [allow.authenticated()]),
 
+  pbListHistoricalQuotations: a
+    .query()
+    .arguments({ limit: a.integer(), nextToken: a.string() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbGetHistoricalQuotation: a
+    .query()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
   listOrderDocuments: a
     .query()
     .arguments({
@@ -1266,6 +1280,20 @@ const schema = a.schema({
     .authorization((allow) => [allow.authenticated()]),
 
   pbUpdateQuotationDraft: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbImportHistoricalQuotations: a
+    .mutation()
+    .arguments({ input: a.json().required() })
+    .returns(a.json().required())
+    .handler(a.handler.function(priceApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  pbRollbackHistoricalQuotationImport: a
     .mutation()
     .arguments({ input: a.json().required() })
     .returns(a.json().required())
