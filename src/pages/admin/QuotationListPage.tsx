@@ -74,7 +74,10 @@ export function QuotationListPage() {
     listHistoricalQuotations(token ? { nextToken: token } : {}).then((result) => {
       setHistoricalItems((current) => token ? [...current, ...result.items] : result.items);
       setHistoricalNextToken(result.nextToken);
-    }).catch((cause: unknown) => setHistoricalError(cause instanceof Error ? cause.message : String(cause))).finally(() => setHistoricalLoading(false));
+    }).catch((cause: unknown) => {
+      setHistoricalError(cause instanceof Error ? cause.message : String(cause));
+      if (!token) setHistoricalInitialized(false);
+    }).finally(() => setHistoricalLoading(false));
   }, []);
 
   useEffect(() => loadLive(), [loadLive]);
@@ -109,7 +112,7 @@ export function QuotationListPage() {
     <div role="tablist" aria-label="Quotation type" className="mb-4 inline-flex rounded-xl bg-surface-container-low p-1">
       {(['live', 'historical'] as const).map((tab) => <button key={tab} ref={(node) => { tabRefs.current[tab] = node; }} id={`${tab}-tab`} role="tab" aria-selected={activeTab === tab} aria-controls={`${tab}-panel`} tabIndex={activeTab === tab ? 0 : -1} onClick={() => selectTab(tab)} onKeyDown={onTabKeyDown} className={`rounded-lg px-5 py-2 text-sm font-bold ${activeTab === tab ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}>{tab === 'live' ? 'Live' : 'Historical'}</button>)}
     </div>
-    {error && <p role="alert" className="mb-4 rounded-xl bg-error-container p-4 text-error">{error}</p>}
+    {error && <div role="alert" className="mb-4 flex items-center justify-between gap-4 rounded-xl bg-error-container p-4 text-error"><span>{error}</span>{!isLive && <button className="rounded-lg border border-error px-3 py-1.5 text-sm font-semibold" onClick={() => { setHistoricalInitialized(true); loadHistorical(); }}>Retry</button>}</div>}
     <section id={`${activeTab}-panel`} role="tabpanel" aria-labelledby={`${activeTab}-tab`} className="overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-sm">
       {isLive ? <LiveTable items={liveItems} /> : <HistoricalTable items={historicalItems} />}
       {loading && <p className="p-8 text-center text-sm text-on-surface-variant">{isLive ? 'Loading quotations…' : 'Loading historical quotations…'}</p>}

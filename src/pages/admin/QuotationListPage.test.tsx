@@ -129,6 +129,20 @@ describe('QuotationListPage', () => {
     expect(service.listHistoricalQuotations).toHaveBeenCalledTimes(2);
   });
 
+  it('allows a failed initial Historical request to retry without reloading the page', async () => {
+    const user = userEvent.setup();
+    vi.mocked(service.listHistoricalQuotations)
+      .mockRejectedValueOnce(new Error('Archive temporarily unavailable'))
+      .mockResolvedValueOnce({ items: [historical('hist-retry')], nextToken: null });
+    renderPage();
+    await screen.findByText('Q-2026-0008');
+    await user.click(screen.getByRole('tab', { name: 'Historical' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Archive temporarily unavailable');
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByTestId('hist-retry')).toBeInTheDocument();
+    expect(service.listHistoricalQuotations).toHaveBeenCalledTimes(2);
+  });
+
   it('renders historical rows with historicalId keys and the exact read-only fields', async () => {
     const user = userEvent.setup();
     vi.mocked(service.listHistoricalQuotations).mockResolvedValue({ items: [

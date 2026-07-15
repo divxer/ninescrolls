@@ -8,6 +8,7 @@ import {
   resolvePhysicalPathOutsideWorktree,
   resolveSupplierId,
   serializeHistoricalQuotations,
+  validateWorkbookColumns,
   withWorkbookSnapshot,
   type HistoricalAdjudication,
   type HistoricalSourceRow,
@@ -46,6 +47,7 @@ async function main(): Promise<void> {
     workbookBytes,
   }));
   const adjudication = parseAdjudication(readFileSync(adjudicationPath, 'utf8'));
+  validateWorkbookColumns(snapshot.sourceRows);
 
   // Authentication modules load only after the untrusted workbook parser exits successfully.
   const [{ Amplify }, { generateClient }, { authenticate }, { default: outputs }] = await Promise.all([

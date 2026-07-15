@@ -4,7 +4,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import amplifyOutputs from '../amplify_outputs.json';
 import { authenticate } from './lib/auth';
-import { classifyHistoricalDryRun, parseImportArgv, parseNormalizedHistoricalQuotations, validateExpectedRows } from './lib/historicalQuotationImport';
+import { classifyHistoricalDryRun, flaggedHistoricalRows, parseImportArgv, parseNormalizedHistoricalQuotations, validateExpectedRows } from './lib/historicalQuotationImport';
 
 Amplify.configure(amplifyOutputs as never);
 const client = generateClient<Schema>({ authMode: 'userPool' });
@@ -17,12 +17,6 @@ async function main() {
   console.log(normalized.importBatchId);
   validateExpectedRows(options.expectedRows, normalized.rows.length);
   await authenticate();
-  if (options.apply) {
-    const response = await client.mutations.pbImportHistoricalQuotations({ input: JSON.stringify(normalized) }, AUTH);
-    if (response.errors?.length) throw new Error(response.errors.map(error => error.message).join(', '));
-    print(unwrap<Array<{ historicalId: string; status: string; message?: string }>>(response.data));
-    return;
-  }
   const outcomes = await classifyHistoricalDryRun(normalized, async historicalId => {
     const response = await client.queries.pbGetHistoricalQuotation({ input: JSON.stringify({ historicalId }) }, AUTH);
     if (response.errors?.length) {
@@ -32,11 +26,25 @@ async function main() {
     return unwrap<{ contentHash: string }>(response.data);
   });
   print(outcomes);
+  printFlagged(normalized.rows, outcomes);
+  if (options.apply) {
+    const response = await client.mutations.pbImportHistoricalQuotations({ input: JSON.stringify(normalized) }, AUTH);
+    if (response.errors?.length) throw new Error(response.errors.map(error => error.message).join(', '));
+    print(unwrap<Array<{ historicalId: string; status: string; message?: string }>>(response.data));
+  }
 }
 
 function print(outcomes: Array<{ historicalId: string; status: string; message?: string }>) {
   const counts = Object.fromEntries([...new Set(outcomes.map(row => row.status))].sort().map(status => [status, outcomes.filter(row => row.status === status).length]));
   console.log(JSON.stringify(counts));
   for (const row of outcomes.filter(row => ['CONFLICT', 'FAILED'].includes(row.status))) console.log(JSON.stringify(row));
+}
+function printFlagged(
+  rows: Parameters<typeof flaggedHistoricalRows>[0],
+  outcomes: Parameters<typeof flaggedHistoricalRows>[1],
+) {
+  const flagged = flaggedHistoricalRows(rows, outcomes);
+  console.log(JSON.stringify({ flaggedRows: flagged.length }));
+  for (const row of flagged) console.log(JSON.stringify({ reviewRequired: true, ...row }));
 }
 main().catch(error => { console.error((error as Error).message); process.exitCode = 1; });

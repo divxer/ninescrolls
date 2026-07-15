@@ -64,7 +64,7 @@ describe('HistoricalQuotationDetailPage', () => {
   });
 
   it('shows not found when the service returns no record', async () => {
-    vi.mocked(service.getHistoricalQuotation).mockResolvedValue(null as never);
+    vi.mocked(service.getHistoricalQuotation).mockResolvedValue(null);
     renderPage();
     expect(await screen.findByText('Historical quotation not found.')).toBeInTheDocument();
   });

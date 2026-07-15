@@ -21,6 +21,8 @@ import {
   parseImportArgv,
   parseNormalizerArgv,
   parseRollbackArgv,
+  flaggedHistoricalRows,
+  scanConfidentialBlob,
 } from './historicalQuotationImport';
 import {
   contentHashFor,
@@ -82,6 +84,29 @@ describe('historical quotation normalization helpers', () => {
     expect(parsed.rows).toHaveLength(3);
     expect(parsed.rows.find(row => row.quotedAt === null)?.dataQualityFlags).toEqual(['INCOMPLETE', 'UNCONFIRMED']);
     expect(parsed.rows.some(row => row.historicalFxProvenance === 'INFERRED')).toBe(true);
+  });
+
+  it('rejects renamed or missing workbook columns before normalization', () => {
+    const path = resolve(process.cwd(), 'scripts/fixtures/historical-quotations.synthetic.json');
+    const fixture = JSON.parse(readFileSync(path, 'utf8'));
+    const sourceRows = fixture.input.sourceRows.map((row: Record<string, unknown>) => {
+      const { supplierAmountRmb: amount, ...rest } = row;
+      return { ...rest, supplierPrice: amount };
+    });
+    expect(() => buildNormalizedHistoricalQuotations({
+      ...fixture.input, sourceRows, workbookBytes: Buffer.from(fixture.input.workbookProbe),
+    })).toThrow(/workbook columns.*supplierAmountRmb.*supplierPrice/i);
+  });
+
+  it('converts exact customer USD amounts to cents rather than treating dollars as cents', () => {
+    const path = resolve(process.cwd(), 'scripts/fixtures/historical-quotations.synthetic.json');
+    const fixture = JSON.parse(readFileSync(path, 'utf8'));
+    fixture.input.sourceRows[0].customerAmountUsd = 19500;
+    fixture.input.sourceRows[1].customerAmountUsd = 19500.5;
+    expect(buildNormalizedHistoricalQuotations({
+      ...fixture.input, workbookBytes: Buffer.from(fixture.input.workbookProbe),
+    }).rows.slice(0, 2).map((row: { customerAmountUsdCents: number | null }) => row.customerAmountUsdCents))
+      .toEqual([1_950_000, 1_950_050]);
   });
 
   it('writes sorted rows and properties byte-identically with one trailing newline', () => {
@@ -209,6 +234,33 @@ describe('operator safety helpers', () => {
     const get = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ contentHash: rows[1].contentHash }).mockResolvedValueOnce({ contentHash: 'different' });
     expect(await classifyHistoricalDryRun(normalized, get)).toEqual(rows.map((row, i) => ({ historicalId: row.historicalId, status: ['IMPORTED', 'SKIPPED', 'CONFLICT'][i] })));
     expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it('produces readable review records for every flagged row', async () => {
+    const rows = [
+      { ...contentFixture, sourceRow: 1, sourceQuotationNumber: 'Q-1', customerName: 'A', productName: 'Tool A', dataQualityFlags: ['UNCONFIRMED'] as const, dataQualityNotes: ['Check date'] },
+      { ...contentFixture, sourceRow: 2, sourceQuotationNumber: null, customerName: 'B', productName: 'Tool B', dataQualityFlags: [] as const, dataQualityNotes: [] },
+    ].map(row => ({ ...row, historicalId: historicalIdFor('book.xlsx', row.sourceRow), contentHash: contentHashFor(row) }));
+    const outcomes = await classifyHistoricalDryRun(
+      { importBatchId: 'HB-fixture', sourceDocument: 'book.xlsx', sourceDocumentHash: 'a'.repeat(64), rows },
+      vi.fn().mockResolvedValue(null),
+    );
+    expect(flaggedHistoricalRows(rows, outcomes)).toEqual([expect.objectContaining({
+      sourceRow: 1, sourceQuotationNumber: 'Q-1', customerName: 'A', productName: 'Tool A',
+      dataQualityFlags: ['UNCONFIRMED'], dataQualityNotes: ['Check date'], status: 'IMPORTED',
+    })]);
+  });
+
+  it('detects confidential terms and disguised spreadsheet blobs', () => {
+    expect(scanConfidentialBlob(Buffer.from('prefix secret-oem suffix'), ['secret-oem'])).toEqual(['term:secret-oem']);
+    expect(scanConfidentialBlob(Buffer.concat([
+      Buffer.from('PK\u0003\u0004'), Buffer.from('xl/workbook.xml'),
+    ]), [])).toContain('spreadsheet-archive');
+    expect(scanConfidentialBlob(Buffer.concat([
+      Buffer.from('PK\u0003\u0004'), Buffer.from('xl/workbook.bin'),
+    ]), [])).toContain('spreadsheet-archive');
+    expect(scanConfidentialBlob(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]), []))
+      .toContain('spreadsheet-archive');
   });
 
   it('checks expected rows against actual file length', () => {

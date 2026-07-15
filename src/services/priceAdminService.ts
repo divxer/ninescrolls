@@ -276,32 +276,15 @@ export interface HistoricalQuotationDetail extends HistoricalQuotationSummary {
   importedBy: string;
 }
 
-export interface HistoricalImportInput {
-  importBatchId: string;
-  sourceDocument: string;
-  sourceDocumentHash: string;
-  rows: Array<Record<string, unknown>>;
-}
-export interface HistoricalImportOutcome { historicalId: string; status: 'IMPORTED' | 'SKIPPED' | 'CONFLICT' | 'FAILED'; message?: string }
-export interface HistoricalRollbackInput { importBatchId: string; mode: 'PREVIEW' | 'APPLY'; rollbackToken?: string; reason?: string }
-export interface HistoricalRollbackPreview {
-  matchedCount: number; deletableCount: number; blockedCount: number;
-  historicalIds: string[]; sourceDocuments: string[]; warnings: string[]; rollbackToken: string;
-}
-export interface HistoricalRollbackOutcome { historicalId: string; status: 'DELETED' | 'ALREADY_ABSENT' | 'BLOCKED' | 'FAILED'; message?: string }
-export interface HistoricalRollbackApply { results: HistoricalRollbackOutcome[] }
-export type HistoricalRollbackResult = HistoricalRollbackPreview | HistoricalRollbackApply;
-
 export const listHistoricalQuotations = async (opts: { limit?: number; nextToken?: string } = {}) =>
   unwrap<{ items: HistoricalQuotationSummary[]; nextToken: string | null }>(
     await client().queries.pbListHistoricalQuotations(opts, AUTH),
   );
-export const getHistoricalQuotation = async (historicalId: string) =>
-  unwrap<HistoricalQuotationDetail>(await client().queries.pbGetHistoricalQuotation(asInput({ historicalId }), AUTH));
-export const importHistoricalQuotations = async (input: HistoricalImportInput) =>
-  unwrap<HistoricalImportOutcome[]>(await client().mutations.pbImportHistoricalQuotations(asInput(input), AUTH));
-export const rollbackHistoricalQuotationImport = async (input: HistoricalRollbackInput) =>
-  unwrap<HistoricalRollbackResult>(await client().mutations.pbRollbackHistoricalQuotationImport(asInput(input), AUTH));
+export const getHistoricalQuotation = async (historicalId: string): Promise<HistoricalQuotationDetail | null> => {
+  const result = await client().queries.pbGetHistoricalQuotation(asInput({ historicalId }), AUTH);
+  if (result.errors?.length && result.errors.every(error => error.message.startsWith('NOT_FOUND:'))) return null;
+  return unwrap<HistoricalQuotationDetail>(result);
+};
 
 export const usd = (cents: number | null | undefined) =>
   cents == null

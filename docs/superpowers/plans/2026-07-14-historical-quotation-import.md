@@ -462,11 +462,11 @@ git commit -m "feat(pricebook): expose historical quotation administration"
 - Modify: `scripts/lib/historicalQuotationImport.ts` and its test (created in Task 2; Step 3 extends them)
 - Modify: `tsconfig.scripts.json`
 
-**Produces:** separate `HistoricalQuotationSummary`/detail types, four web client methods, dry-run-by-default import CLI, preview/apply rollback CLI.
+**Produces:** separate `HistoricalQuotationSummary`/detail types, two read-only browser client methods, dry-run-by-default import CLI, preview/apply rollback CLI. Destructive import/rollback operations remain script-only and are never exported into the Admin browser bundle.
 
 - [ ] **Step 1: Add failing service tests**
 
-Assert exact operation selection and JSON wrapping for list/get/import/rollback. Keep `QuotationSummary.status` unchanged. Historical types must require `historicalId`, raw quote text, lineage, FX provenance, and flags; they must not expose live mutation fields/actions.
+Assert exact operation selection and JSON wrapping for list/get. Keep `QuotationSummary.status` unchanged. Historical types must require `historicalId`, raw quote text, lineage, FX provenance, and flags; they must not expose live mutation fields/actions. Assert typed `NOT_FOUND` maps to the nullable detail-read contract while other errors remain errors.
 
 - [ ] **Step 2: Run service tests RED**
 
@@ -481,7 +481,7 @@ export const listHistoricalQuotations = (opts = {}) =>
   );
 ```
 
-Add corresponding detail/import/rollback methods without widening live unions.
+Add the corresponding detail read method without widening live unions. Do not add import/rollback functions to `priceAdminService`; operator scripts call the guarded AppSync operations directly.
 
 - [ ] **Step 4: Add script-helper tests for honest dry run**
 
@@ -503,6 +503,8 @@ await authenticate();                    // scripts/lib/auth.ts — reads ADMIN_
 ```
 
 Print the batch ID first. Default is the server-consulting dry run; only `--apply` calls import. Print counts and every flagged row. Do not open the workbook or claim to verify its hash — the importer never sees the workbook (spec §4.2 step 2).
+
+Normalization must reject any missing, renamed, duplicated, or unknown workbook header. The source column is `customerAmountUsd` in major USD units and is converted exactly to persisted `customerAmountUsdCents`; never interpret a workbook dollar amount as cents. Flagged-row output must include human-reviewable lineage and context (source row/quote, customer, product, flags, notes, predicted status), not only opaque hashes.
 
 - [ ] **Step 7: Implement rollback CLI**
 
@@ -726,7 +728,7 @@ unset ADMIN_EMAIL ADMIN_PASSWORD SANDBOX_ADMIN_PASSWORD
 
 - [ ] **Step 3: Merge and verify the production backend deployment**
 
-Run the confidentiality scan again against the exact commit to be merged; abort on any match. This second gate catches tracked changes made after sandbox verification. Then merge through the normal main-branch workflow, wait for the Amplify deployment to finish successfully, and regenerate outputs from the deployed target—not from a stale checkout:
+Run the confidentiality scan again against the exact commit to be merged; abort on any match. The scanner checks both the tracked working tree and every reachable Git blob, including binary content and spreadsheet magic independent of filename, so committing and later deleting or renaming a workbook cannot erase the finding. This second gate catches tracked changes made after sandbox verification. Then merge through the normal main-branch workflow, wait for the Amplify deployment to finish successfully, and regenerate outputs from the deployed target—not from a stale checkout:
 
 ```bash
 test -n "$AMPLIFY_APP_ID"

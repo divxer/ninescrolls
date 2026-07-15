@@ -10,7 +10,6 @@ const mutations = {
   pbCreateCatalogItem: vi.fn(), pbUpdateCatalogItem: vi.fn(),
   pbAppendCostVersion: vi.fn(), pbUpdatePricingPolicy: vi.fn(),
   pbCreateQuotationDraft: vi.fn(), pbUpdateQuotationDraft: vi.fn(),
-  pbImportHistoricalQuotations: vi.fn(), pbRollbackHistoricalQuotationImport: vi.fn(),
 };
 
 vi.mock('./amplifyClient', () => ({
@@ -83,28 +82,19 @@ describe('priceAdminService', () => {
     expect(historicalLine.costDeltaFen).toBeUndefined();
   });
 
-  it('selects and unwraps all four historical operations', async () => {
+  it('selects and unwraps the read-only historical browser operations', async () => {
     queries.pbListHistoricalQuotations.mockResolvedValueOnce({ data: JSON.stringify({ items: [], nextToken: null }) });
     queries.pbGetHistoricalQuotation.mockResolvedValueOnce({ data: JSON.stringify({ historicalId: 'h' }) });
-    mutations.pbImportHistoricalQuotations.mockResolvedValueOnce({ data: JSON.stringify([{ status: 'IMPORTED' }]) });
-    mutations.pbRollbackHistoricalQuotationImport.mockResolvedValueOnce({ data: JSON.stringify({ matchedCount: 1, deletableCount: 1, blockedCount: 0, historicalIds: ['h'], sourceDocuments: ['book.xlsx'], warnings: [], rollbackToken: 'token' }) });
     await svc.listHistoricalQuotations({ limit: 1 });
     await svc.getHistoricalQuotation('h');
-    await svc.importHistoricalQuotations({ importBatchId: 'b', sourceDocument: 's', sourceDocumentHash: 'x', rows: [] });
-    const rollback = await svc.rollbackHistoricalQuotationImport({ importBatchId: 'b', mode: 'PREVIEW' });
     expect(queries.pbListHistoricalQuotations).toHaveBeenCalledWith({ limit: 1 }, { authMode: 'userPool' });
     expect(JSON.parse(queries.pbGetHistoricalQuotation.mock.calls[0][0].input)).toEqual({ historicalId: 'h' });
-    expect(JSON.parse(mutations.pbImportHistoricalQuotations.mock.calls[0][0].input).importBatchId).toBe('b');
-    expect(JSON.parse(mutations.pbRollbackHistoricalQuotationImport.mock.calls[0][0].input).mode).toBe('PREVIEW');
-    expect(rollback).toEqual({ matchedCount: 1, deletableCount: 1, blockedCount: 0, historicalIds: ['h'], sourceDocuments: ['book.xlsx'], warnings: [], rollbackToken: 'token' });
   });
 
-  it('returns the resolver APPLY rollback shape without invented fields', async () => {
-    mutations.pbRollbackHistoricalQuotationImport.mockResolvedValueOnce({
-      data: JSON.stringify({ results: [{ historicalId: 'h', status: 'DELETED' }] }),
-    });
-    await expect(svc.rollbackHistoricalQuotationImport({
-      importBatchId: 'b', mode: 'APPLY', rollbackToken: 'token', reason: 'correction',
-    })).resolves.toEqual({ results: [{ historicalId: 'h', status: 'DELETED' }] });
+  it('maps typed historical NOT_FOUND to the nullable read contract only', async () => {
+    queries.pbGetHistoricalQuotation.mockResolvedValueOnce({ errors: [{ message: 'NOT_FOUND: historical quotation h' }] });
+    await expect(svc.getHistoricalQuotation('h')).resolves.toBeNull();
+    queries.pbGetHistoricalQuotation.mockResolvedValueOnce({ errors: [{ message: 'UNAUTHORIZED: denied' }] });
+    await expect(svc.getHistoricalQuotation('h')).rejects.toThrow(/UNAUTHORIZED/);
   });
 });

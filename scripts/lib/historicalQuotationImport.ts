@@ -126,13 +126,36 @@ export async function withWorkbookSnapshot<T>(
 }
 
 const nullableString = (value: unknown): string | null => value == null || value === '' ? null : String(value);
-const optionalInteger = (value: unknown): number | null => {
+const decimalToMinor = (value: unknown, label: string): number | null => {
   if (value == null || value === '') return null;
-  if (!Number.isSafeInteger(value) || (value as number) < 0) throw new Error('Amount cents must be a non-negative integer');
-  return value as number;
+  const match = String(value).trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
+  if (!match) throw new Error(`${label} must be a non-negative amount with at most two decimal places`);
+  const minor = BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+  if (minor > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error(`${label} exceeds the safe integer limit`);
+  return Number(minor);
 };
 const stringArray = (value: unknown): string[] => value == null || value === ''
   ? [] : Array.isArray(value) ? value.map(String) : JSON.parse(String(value)) as string[];
+
+export const HISTORICAL_WORKBOOK_COLUMNS = [
+  'customerName', 'productName', 'configuration', 'supplierQuoteText', 'supplierQuoteBasis',
+  'supplierEvidenceType', 'supplierQuotedAt', 'customerQuoteText', 'sourceQuotationNumber',
+  'quotedAt', 'legacyStatus', 'supplierAmountRmb', 'customerAmountUsd', 'historicalFxRate',
+  'historicalFxSource', 'historicalFxProvenance', 'historicalFxNote', 'dataQualityFlags',
+  'dataQualityNotes',
+] as const;
+
+export function validateWorkbookColumns(rows: readonly HistoricalSourceRow[]): void {
+  const expected = [...HISTORICAL_WORKBOOK_COLUMNS].sort(compareCodeUnits);
+  for (const row of rows) {
+    const actual = Object.keys(row).filter(key => key !== 'sourceRow').sort(compareCodeUnits);
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      const missing = expected.filter(key => !actual.includes(key));
+      const extra = actual.filter(key => !expected.includes(key as typeof expected[number]));
+      throw new Error(`Workbook columns do not match contract at sourceRow ${row.sourceRow}; missing: ${missing.join(', ') || 'none'}; extra: ${extra.join(', ') || 'none'}`);
+    }
+  }
+}
 
 function sourceRowToInput(
   row: HistoricalSourceRow,
@@ -147,7 +170,7 @@ function sourceRowToInput(
     customerQuoteText: String(row.customerQuoteText ?? ''), sourceQuotationNumber: nullableString(row.sourceQuotationNumber),
     quotedAt: nullableString(row.quotedAt), legacyStatus: String(row.legacyStatus ?? ''),
     supplierAmountFen: row.supplierAmountRmb == null || row.supplierAmountRmb === '' ? null : rmbToFen(String(row.supplierAmountRmb)),
-    customerAmountUsdCents: optionalInteger(row.customerAmountUsdCents), historicalFxRate: nullableString(row.historicalFxRate),
+    customerAmountUsdCents: decimalToMinor(row.customerAmountUsd, 'Customer USD amount'), historicalFxRate: nullableString(row.historicalFxRate),
     historicalFxSource: nullableString(row.historicalFxSource),
     historicalFxProvenance: String(row.historicalFxProvenance ?? 'UNKNOWN') as HistoricalQuotationInput['historicalFxProvenance'],
     historicalFxNote: nullableString(row.historicalFxNote), ...lineage, sourceRow: row.sourceRow,
@@ -158,6 +181,7 @@ function sourceRowToInput(
 export function buildNormalizedHistoricalQuotations(
   input: BuildNormalizedHistoricalQuotationsInput,
 ): NormalizedHistoricalQuotations {
+  validateWorkbookColumns(input.sourceRows);
   if (input.sourceRows.filter(row => row.sourceRow === input.adjudication.sourceRow).length !== 1) {
     throw new Error('Adjudication sourceRow must match exactly one parsed row');
   }
@@ -224,6 +248,44 @@ export async function classifyHistoricalDryRun(
     outcomes.push({ historicalId: row.historicalId, status: !existing ? 'IMPORTED' : existing.contentHash === row.contentHash ? 'SKIPPED' : 'CONFLICT' } as const);
   }
   return outcomes;
+}
+
+export interface FlaggedHistoricalReviewRow {
+  historicalId: string;
+  status: DryRunStatus | string;
+  sourceRow: number;
+  sourceQuotationNumber: string | null;
+  customerName: string;
+  productName: string;
+  dataQualityFlags: DataQualityFlag[];
+  dataQualityNotes: string[];
+}
+
+export function flaggedHistoricalRows(
+  rows: readonly PredictedHistoricalQuotation[],
+  outcomes: ReadonlyArray<{ historicalId: string; status: string }>,
+): FlaggedHistoricalReviewRow[] {
+  const statusById = new Map(outcomes.map(outcome => [outcome.historicalId, outcome.status]));
+  return rows.filter(row => row.dataQualityFlags.length > 0).map(row => ({
+    historicalId: row.historicalId,
+    status: statusById.get(row.historicalId) ?? 'UNKNOWN',
+    sourceRow: row.sourceRow,
+    sourceQuotationNumber: row.sourceQuotationNumber,
+    customerName: row.customerName,
+    productName: row.productName,
+    dataQualityFlags: row.dataQualityFlags,
+    dataQualityNotes: row.dataQualityNotes,
+  }));
+}
+
+export function scanConfidentialBlob(bytes: Buffer, terms: readonly string[]): string[] {
+  const findings = terms.filter(term => term.length > 0 && bytes.includes(Buffer.from(term, 'utf8')))
+    .map(term => `term:${term}`);
+  const isXlsx = bytes.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
+    && (bytes.includes(Buffer.from('xl/workbook.xml')) || bytes.includes(Buffer.from('xl/workbook.bin')));
+  const isOle = bytes.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+  if (isXlsx || isOle) findings.push('spreadsheet-archive');
+  return findings;
 }
 
 export function validateExpectedRows(expected: number | undefined, actual: number): void {

@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -34,6 +35,36 @@ describe('build dependency hygiene', () => {
     const normalizer = readFileSync(resolve(repoRoot, 'scripts/normalize-historical-quotations.ts'), 'utf8');
     expect(normalizer).toContain("['PATH', 'TMPDIR', 'LANG', 'LC_ALL']");
     expect(normalizer.indexOf('execFileSync(tsx')).toBeLessThan(normalizer.indexOf("import('aws-amplify')"));
+    expect(normalizer.indexOf('validateWorkbookColumns(snapshot.sourceRows)'))
+      .toBeLessThan(normalizer.indexOf("import('aws-amplify')"));
+
+    const importer = readFileSync(resolve(repoRoot, 'scripts/import-historical-quotations.ts'), 'utf8');
+    expect(importer.indexOf('const outcomes = await classifyHistoricalDryRun'))
+      .toBeLessThan(importer.indexOf('client.mutations.pbImportHistoricalQuotations'));
+  });
+
+  it('fails confidentiality scanning for a secret removed from the current tree', () => {
+    const fixture = mkdtempSync(resolve(tmpdir(), 'historical-confidentiality-'));
+    const termsDirectory = mkdtempSync(resolve(tmpdir(), 'historical-confidentiality-terms-'));
+    try {
+      execFileSync('git', ['init', '-q'], { cwd: fixture });
+      execFileSync('git', ['config', 'user.email', 'fixture@example.invalid'], { cwd: fixture });
+      execFileSync('git', ['config', 'user.name', 'Fixture'], { cwd: fixture });
+      writeFileSync(resolve(fixture, 'archive.txt'), 'private-marker');
+      execFileSync('git', ['add', 'archive.txt'], { cwd: fixture });
+      execFileSync('git', ['commit', '-qm', 'add archive'], { cwd: fixture });
+      writeFileSync(resolve(fixture, 'archive.txt'), 'clean');
+      execFileSync('git', ['commit', '-qam', 'remove marker'], { cwd: fixture });
+      const terms = resolve(termsDirectory, 'terms.txt');
+      writeFileSync(terms, 'private-marker\n');
+      expect(() => execFileSync(resolve(repoRoot, 'node_modules/.bin/tsx'), [
+        resolve(repoRoot, 'scripts/check-historical-confidentiality.ts'),
+      ], { cwd: fixture, env: { ...process.env, HISTORICAL_CONFIDENTIAL_TERMS_FILE: terms }, encoding: 'utf8' }))
+        .toThrow();
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+      rmSync(termsDirectory, { recursive: true, force: true });
+    }
   });
   it('keeps the build script free of dependency installation', () => {
     const packageJson = JSON.parse(

@@ -255,6 +255,8 @@ The documented CLI contract is `normalize-historical-quotations.ts <workbook> <o
 
 Reads the workbook from an out-of-repo path supplied by argv or environment variable, and deterministically emits the normalized JSON. v1 said the JSON was "generated from the reviewed Excel source" without saying by whom or verified how — which left open that a human hand-transcribes 21 rows × ~14 fields. Under that reading, §1's preservation guarantee degrades to a *typing* guarantee, and the entire lineage apparatus faithfully records the provenance of possibly-wrong values.
 
+The workbook header is a strict contract, not a best-effort object mapping. Every expected column must be present exactly once and unknown/renamed columns abort normalization before authentication or output. The reviewed workbook expresses structured customer money as `customerAmountUsd` in major USD units; normalization converts its exact decimal text to integer `customerAmountUsdCents` without floating-point arithmetic. Structured RMB likewise enters as `supplierAmountRmb` and becomes `supplierAmountFen`.
+
 A committed generator makes the transformation reproducible, reviewable, and diffable. It computes `sourceDocumentHash`, and resolves the supplier once (§4.3), pinning the resolved `supplierId` into the JSON.
 
 The ICP adjudication lives **in the JSON as data**, not in script logic: the adjudicated RMB value, `dataQualityFlags: ['CONFLICT_RESOLVED']`, and the note text. v1 put the override in the importer, which meant the JSON would carry one value and the script would silently substitute another — the adjudicated number would exist only in code, invisible in the reviewed artifact, quietly undercutting the "preserve the source" posture.
@@ -275,6 +277,8 @@ The same reasoning that keeps the value out of the importer keeps it out of this
 6. Sends the batch to `pbImportHistoricalQuotations`.
 7. Prints the `importBatchId` first — it is the only handle on §3.4's rollback, and an operator who never sees it cannot undo the import — then imported, skipped, conflicted, and failed counts, and every row carrying a `dataQualityFlags` entry.
 8. Re-runs safely without duplication.
+
+Each flagged-row review line includes the source row, source quotation number, customer, product, flags, notes, predicted status, and historical ID. Opaque IDs and aggregate counts alone are not an operator review surface.
 
 `scripts/rollback-historical-import.ts --batch <id> [--apply]` is a thin client over §3.4 — it preserves the command-line ergonomics without opening a second database management channel.
 

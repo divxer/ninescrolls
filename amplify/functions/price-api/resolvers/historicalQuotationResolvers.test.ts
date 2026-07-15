@@ -484,7 +484,7 @@ describe('pbRollbackHistoricalQuotationImport', () => {
       ...fixture.input, sourceRows: [fixture.input.sourceRows[0]],
       workbookBytes: Buffer.from('fabricated workbook version A'),
     });
-    const changedSourceRows = [{ ...fixture.input.sourceRows[0], customerQuoteText: 'USD 21.00', customerAmountUsdCents: 2100 }];
+    const changedSourceRows = [{ ...fixture.input.sourceRows[0], customerQuoteText: 'USD 21.00', customerAmountUsd: 21 }];
     const normalizedB = buildNormalizedHistoricalQuotations({
       ...fixture.input, sourceRows: changedSourceRows,
       workbookBytes: Buffer.from('fabricated workbook version B with corrected content'),
