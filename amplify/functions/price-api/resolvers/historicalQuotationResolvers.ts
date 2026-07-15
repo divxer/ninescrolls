@@ -216,12 +216,12 @@ interface RollbackInput {
   requestedAt?: string;
 }
 
-const isDeletable = (item: Record<string, unknown>, importBatchId: string): boolean => (
+const isDeletable = (item: Record<string, unknown>, importBatchId: string, intendedId: string): boolean => (
   item.recordType === 'HISTORICAL_QUOTATION'
   && item.importBatchId === importBatchId
   && typeof item.PK === 'string' && item.PK.startsWith('PHIST#')
   && item.SK === 'META'
-  && typeof item.historicalId === 'string'
+  && item.historicalId === intendedId
   && typeof item.contentHash === 'string'
 );
 
@@ -254,7 +254,9 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
   if (!manifest) throw new Error(`NOT_FOUND: import batch ${input.importBatchId}`);
   if (!Array.isArray(manifest.historicalIds)) throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
   const intendedIds = manifest.historicalIds.filter((id): id is string => typeof id === 'string');
-  if (intendedIds.length !== manifest.historicalIds.length) throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
+  if (intendedIds.length !== manifest.historicalIds.length || intendedIds.some(id => !HISTORICAL_ID_PATTERN.test(id))) {
+    throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
+  }
 
   const live = new Map<string, Record<string, unknown>>();
   for (const historicalId of intendedIds) {
@@ -265,11 +267,11 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
   }
   const deletable = intendedIds.flatMap((historicalId) => {
     const item = live.get(historicalId);
-    return item && isDeletable(item, input.importBatchId)
+    return item && isDeletable(item, input.importBatchId, historicalId)
       ? [{ historicalId, contentHash: item.contentHash as string }] : [];
   });
   const token = rollbackTokenFor(input.importBatchId, deletable);
-  const blocked = [...live.values()].filter(item => !isDeletable(item, input.importBatchId));
+  const blocked = intendedIds.filter(id => live.has(id) && !isDeletable(live.get(id)!, input.importBatchId, id));
   const sourceDocuments = [...new Set([...live.values()].map(item => item.sourceDocument)
     .filter((value): value is string => typeof value === 'string'))].sort();
   const warnings = [
@@ -278,9 +280,21 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
   ];
   if (input.mode === 'PREVIEW') return {
     matchedCount: live.size, deletableCount: deletable.length, blockedCount: blocked.length,
-    historicalIds: [...live.keys()], sourceDocuments, warnings, rollbackToken: token,
+    historicalIds: intendedIds, sourceDocuments, warnings, rollbackToken: token,
   };
   if (input.rollbackToken !== token) throw new Error('CONFLICT: rollback preview is stale; run PREVIEW again');
+
+  const requestedAt = input.requestedAt ?? new Date().toISOString();
+  const actor = getOperator(event);
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME(),
+    Item: { PK: `HISTIMPORT#${input.importBatchId}`, SK: `ROLLBACK_INTENT#${requestedAt}`,
+      importBatchId: input.importBatchId, requestedBy: actor, confirmedBy: actor,
+      requestedAt, reason: input.reason!.trim(), rollbackToken: token,
+      intendedHistoricalIds: intendedIds, matchedHistoricalIds: [...live.keys()], matchedCount: live.size,
+      sourceDocuments, sourceDocumentHash: manifest.sourceDocumentHash },
+    ConditionExpression: 'attribute_not_exists(PK)',
+  }));
 
   const results: RollbackOutcome[] = [];
   for (const historicalId of intendedIds) {
@@ -303,14 +317,13 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
     }
   }
   const completedAt = new Date().toISOString();
-  const actor = getOperator(event);
   const deletedHistoricalIds = results.filter(result => result.status === 'DELETED').map(result => result.historicalId);
   const failedCount = results.filter(result => result.status === 'FAILED').length;
   await docClient.send(new PutCommand({
     TableName: TABLE_NAME(),
     Item: { PK: `HISTIMPORT#${input.importBatchId}`, SK: `ROLLBACK#${completedAt}`,
       importBatchId: input.importBatchId, requestedBy: actor, confirmedBy: actor,
-      requestedAt: input.requestedAt ?? completedAt, completedAt, reason: input.reason!.trim(),
+      requestedAt, completedAt, reason: input.reason!.trim(),
       matchedCount: live.size, deletedCount: deletedHistoricalIds.length, failedCount,
       deletedHistoricalIds, sourceDocumentHash: manifest.sourceDocumentHash },
     ConditionExpression: 'attribute_not_exists(PK)',

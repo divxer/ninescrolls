@@ -44,3 +44,22 @@ Observed: exited 0 with no whitespace errors.
 ## Commit
 
 Recorded after final verification in the commit named `feat(pricebook): rollback historical quote batches safely`.
+
+## Review-fix cycle
+
+RED was observed with five targeted failures: intended-ID preview output, malformed manifest ID rejection,
+loaded-ID mismatch blocking, missing pre-delete intent, and missing surviving evidence when final audit persistence fails.
+
+The fix adds an immutable `ROLLBACK_INTENT#<requestedAt>` safety record before the first delete. It records
+actor/confirmation, reason, token, source hash/documents, intended IDs, matched IDs/count, and uses
+`attribute_not_exists(PK)`. The final `ROLLBACK#<completedAt>` record remains the exact eleven-field domain
+audit (plus PK/SK). A final-audit failure now propagates after the already-persisted intent has survived.
+
+Manifest IDs are validated as lowercase 64-hex before key construction, loaded `historicalId` must match
+manifest intent, and PREVIEW returns all intended IDs. Partial APPLY recovery is exercised end-to-end:
+the original token becomes stale, a fresh PREVIEW returns a new token, and replay converges.
+
+The previous source-text keyspace check was replaced with actual invocation of every mutation resolver in
+the real dispatch surface for all four adversarial IDs. Tests inspect real emitted write commands recursively,
+assert resolver-owned prefixes, reject `PHIST#`/`HISTIMPORT#`, and deep-equal the complete dispatch
+classification so future operation drift fails closed.

@@ -271,13 +271,27 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     expect(send.mock.calls.map(c => c[0].constructor.name)).toEqual(['GetCommand', 'GetCommand', 'GetCommand']);
     expect(send.mock.calls.every(c => c[0].input.ConsistentRead === true)).toBe(true);
     expect(result).toMatchObject({ matchedCount: 1, deletableCount: 1, blockedCount: 0,
-      historicalIds: [id1], sourceDocuments: ['book.xlsx'], warnings: expect.any(Array), rollbackToken: expect.any(String) });
+      historicalIds: [id1, id2], sourceDocuments: ['book.xlsx'], warnings: expect.any(Array), rollbackToken: expect.any(String) });
   });
 
   it('fails a missing manifest loudly without writes', async () => {
     send.mockResolvedValueOnce({});
     await expect(pbRollbackHistoricalQuotationImport(rollback('PREVIEW'))).rejects.toThrow(/^NOT_FOUND:/);
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects malformed manifest ids before constructing a PHIST key', async () => {
+    send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: ['../PHIST#evil'] } });
+    await expect(pbRollbackHistoricalQuotationImport(rollback('PREVIEW'))).rejects.toThrow(/^CONFLICT:/);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks a loaded record whose historicalId does not equal the manifest id', async () => {
+    send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: [id1] } })
+      .mockResolvedValueOnce({ Item: live(id1, { historicalId: id2 }) });
+    await expect(pbRollbackHistoricalQuotationImport(rollback('PREVIEW'))).resolves.toMatchObject({
+      historicalIds: [id1], deletableCount: 0, blockedCount: 1,
+    });
   });
 
   it('rejects absent or stale tokens before any delete', async () => {
@@ -296,6 +310,7 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     const preview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
     send.mockReset();
     send.mockResolvedValueOnce({ Item: manifest }).mockResolvedValueOnce({ Item: live(id1) }).mockResolvedValueOnce({})
+      .mockResolvedValueOnce({}) // immutable rollback intent
       .mockResolvedValueOnce({}).mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException' }))
       .mockResolvedValueOnce({});
     const result = await pbRollbackHistoricalQuotationImport(rollback('APPLY', {
@@ -309,6 +324,12 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     });
     expect(deletes.every(c => c[0].input.Key.PK.startsWith('PHIST#'))).toBe(true);
     expect(result.results.map(r => r.status)).toEqual(['DELETED', 'ALREADY_ABSENT']);
+    const intent = send.mock.calls.find(c => c[0].input.Item?.SK?.startsWith('ROLLBACK_INTENT#'))?.[0].input;
+    expect(intent).toMatchObject({ ConditionExpression: 'attribute_not_exists(PK)', Item: {
+      PK: 'HISTIMPORT#HB-batch', importBatchId: 'HB-batch', requestedBy: 'operator', confirmedBy: 'operator',
+      reason: 'incorrect workbook', rollbackToken: preview.rollbackToken, intendedHistoricalIds: [id1, id2],
+      matchedCount: 1, sourceDocumentHash: 'b'.repeat(64),
+    } });
     const audit = send.mock.calls.at(-1)?.[0].input;
     expect(audit.ConditionExpression).toBe('attribute_not_exists(PK)');
     expect(Object.keys(audit.Item).sort()).toEqual([
@@ -320,6 +341,23 @@ describe('pbRollbackHistoricalQuotationImport', () => {
       requestedAt: '2026-07-14T11:59:00.000Z', completedAt: '2026-07-14T12:00:00.000Z', reason: 'incorrect workbook',
       matchedCount: 1, deletedCount: 1, failedCount: 0, deletedHistoricalIds: [id1], sourceDocumentHash: 'b'.repeat(64) });
     vi.useRealTimers();
+  });
+
+  it('leaves immutable intent evidence when the final audit write fails after deletion', async () => {
+    send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: [id1] } }).mockResolvedValueOnce({ Item: live(id1) });
+    const preview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
+    send.mockReset();
+    send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: [id1] } }).mockResolvedValueOnce({ Item: live(id1) })
+      .mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('audit unavailable'));
+    await expect(pbRollbackHistoricalQuotationImport(rollback('APPLY', {
+      rollbackToken: preview.rollbackToken, reason: 'correction',
+    }))).rejects.toThrow('audit unavailable');
+    const puts = send.mock.calls.filter(c => c[0].constructor.name === 'PutCommand');
+    expect(puts[0][0].input).toMatchObject({ ConditionExpression: 'attribute_not_exists(PK)',
+      Item: { SK: expect.stringMatching(/^ROLLBACK_INTENT#/) } });
+    expect(send.mock.calls.findIndex(c => c[0].constructor.name === 'DeleteCommand')).toBeGreaterThan(
+      send.mock.calls.findIndex(c => c[0].input.Item?.SK?.startsWith('ROLLBACK_INTENT#')),
+    );
   });
 
   it.each([
@@ -350,7 +388,7 @@ describe('pbRollbackHistoricalQuotationImport', () => {
         if (!present.delete(id)) throw Object.assign(new Error(), { name: 'ConditionalCheckFailedException' });
         return {};
       }
-      if (command.constructor.name === 'PutCommand' && Item.SK.startsWith('ROLLBACK#')) return {};
+      if (command.constructor.name === 'PutCommand' && Item.SK.startsWith('ROLLBACK')) return {};
       throw new Error(`unexpected ${command.constructor.name}`);
     });
     const preview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
@@ -362,13 +400,17 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     expect(applied.results.filter(r => r.status === 'FAILED')).toHaveLength(0);
   });
 
-  it('uses returned low-level failure Item to distinguish BLOCKED from ALREADY_ABSENT', async () => {
+  it.each([
+    ['recordType', { recordType: 'OTHER' }], ['importBatchId', { importBatchId: 'other' }],
+    ['PK prefix', { PK: 'HISTIMPORT#evil' }], ['SK', { SK: 'MANIFEST' }],
+  ])('uses returned low-level failure Item to report wrong %s as BLOCKED at APPLY', async (_name, mutation) => {
     const oneManifest = { ...manifest, historicalIds: [id1] };
-    const bad = live(id1, { recordType: 'OTHER' });
+    const bad = live(id1, mutation);
     send.mockResolvedValueOnce({ Item: oneManifest }).mockResolvedValueOnce({ Item: bad });
     const preview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
     send.mockReset();
     send.mockResolvedValueOnce({ Item: oneManifest }).mockResolvedValueOnce({ Item: bad })
+      .mockResolvedValueOnce({})
       .mockRejectedValueOnce(Object.assign(new Error(), {
         name: 'ConditionalCheckFailedException', Item: marshall(bad),
       })).mockResolvedValueOnce({});
@@ -376,5 +418,39 @@ describe('pbRollbackHistoricalQuotationImport', () => {
       rollbackToken: preview.rollbackToken, reason: 'unsafe row',
     })) as { results: Array<{ status: string }> };
     expect(applied.results).toEqual([{ historicalId: id1, status: 'BLOCKED' }]);
+  });
+
+  it('rejects a stale token after partial APPLY and converges after a fresh PREVIEW', async () => {
+    const state = new Map([[id1, live(id1)], [id2, live(id2)]]);
+    let failId2Once = true;
+    send.mockImplementation(async (command) => {
+      if (!command) return {};
+      const { Key, Item } = command.input;
+      if (command.constructor.name === 'GetCommand' && Key.SK === 'MANIFEST') return { Item: manifest };
+      if (command.constructor.name === 'GetCommand') return { Item: state.get(Key.PK.slice(6)) };
+      if (command.constructor.name === 'PutCommand' && Item.SK.startsWith('ROLLBACK')) return {};
+      if (command.constructor.name === 'DeleteCommand') {
+        const id = Key.PK.slice(6);
+        if (id === id2 && failId2Once) { failId2Once = false; throw new Error('temporary'); }
+        if (!state.delete(id)) throw Object.assign(new Error(), { name: 'ConditionalCheckFailedException' });
+        return {};
+      }
+      throw new Error(`unexpected ${command.constructor.name}`);
+    });
+    const firstPreview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
+    const partial = await pbRollbackHistoricalQuotationImport(rollback('APPLY', {
+      rollbackToken: firstPreview.rollbackToken, reason: 'correct batch',
+    })) as { results: Array<{ status: string }> };
+    expect(partial.results.map(r => r.status)).toEqual(['DELETED', 'FAILED']);
+    await expect(pbRollbackHistoricalQuotationImport(rollback('APPLY', {
+      rollbackToken: firstPreview.rollbackToken, reason: 'retry',
+    }))).rejects.toThrow(/^CONFLICT:.*stale/);
+    const secondPreview = await pbRollbackHistoricalQuotationImport(rollback('PREVIEW')) as { rollbackToken: string };
+    expect(secondPreview.rollbackToken).not.toBe(firstPreview.rollbackToken);
+    const recovered = await pbRollbackHistoricalQuotationImport(rollback('APPLY', {
+      rollbackToken: secondPreview.rollbackToken, reason: 'retry',
+    })) as { results: Array<{ status: string }> };
+    expect(recovered.results.map(r => r.status)).toEqual(['ALREADY_ABSENT', 'DELETED']);
+    expect(state.size).toBe(0);
   });
 });
