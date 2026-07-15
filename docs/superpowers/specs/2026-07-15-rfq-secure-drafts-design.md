@@ -24,7 +24,7 @@ Drafts use the existing `PK=RFQ#<rfqId>, SK=META` record and carry:
 - `lastActivityAt`: server-generated ISO timestamp, updated only after a validated field value actually changes.
 - `expiresAt`: server-generated ISO timestamp equal to `lastActivityAt + 30 days`.
 - `TTL`: server-generated epoch seconds matching `expiresAt`.
-- `draftTokenHash`: HMAC-SHA-256 of the 256-bit token using a service-side pepper.
+- `draftTokenHash`: versioned HMAC-SHA-256 of the fixed 32-byte token using a service-side verification pepper.
 - `draftVersion`: monotonic integer used for optimistic concurrency.
 - `GSI1PK=RFQ_STATUS#draft`, `GSI1SK=<lastActivityAt>#<rfqId>` for both the administrator draft list and expiry cleanup. Because `expiresAt` is exactly 30 days after `lastActivityAt`, cleanup queries this partition with `GSI1SK < <now-minus-30-days>#\uffff`; it does not need a new index or a table scan.
 
@@ -35,7 +35,7 @@ Only these customer fields may be persisted before submission:
 | Field | Validation and normalization |
 |---|---|
 | `name` | trim; 2–100 characters |
-| `email` | trim, lowercase for indexing; valid email; maximum 254 characters |
+| `email` | Unicode NFC normalization, trim, lowercase for indexing; valid email; maximum 254 characters |
 | `phone` | trim; optional; 7–30 characters; existing phone pattern |
 | `institution` | trim; 2–200 characters |
 | `department` | trim; optional; maximum 200 characters |
@@ -49,7 +49,9 @@ Only these customer fields may be persisted before submission:
 | `fundingStatus` | optional; existing funding-status enum |
 | `needsBudgetaryQuote` | optional boolean; shipping data is not saved in the draft |
 
-The draft schema rejects unknown keys. It never stores CAPTCHA tokens, `draftToken`, idempotency material, visitor or behavior analytics, IP addresses/hashes, referrer attribution, shipping address, key specifications, existing-equipment free text, additional comments, attachments, or attachment keys.
+The draft schema rejects unknown keys. Optional strings sent as empty after NFC normalization and trimming mean `REMOVE`; required strings may not be removed. Partial updates run both field validation and all affected cross-field rules. Email changes atomically replace the normalized email index value. Booleans are accepted only as JSON booleans. A canonical `shared/rfq-contract.ts` owns enums, limits, normalization, and update semantics for frontend and backend; contract tests require schema parity and resolve the current `Probe-Station` frontend/backend enum drift before rollout.
+
+The draft never stores CAPTCHA tokens, `draftToken`, create/submit idempotency material, visitor or behavior analytics, IP addresses/hashes, referrer attribution, shipping address, key specifications, existing-equipment free text, additional comments, attachments, or attachment keys.
 
 ### Lifecycle and conditional transitions
 
@@ -58,7 +60,11 @@ The draft schema rejects unknown keys. It never stores CAPTCHA tokens, `draftTok
 - A no-op update does not modify `lastActivityAt`, `expiresAt`, `TTL`, or `draftVersion`.
 - Formal submission performs a conditional transition that permits only `status=draft → status=pending` while the token is valid and the draft is unexpired.
 - The transition removes `draftTokenHash`, `TTL`, and draft-expiry index attributes atomically and replaces the draft list keys with the normal pending RFQ keys.
-- A repeated submission of an already-pending record returns the original successful RFQ result and never repeats organization upsert, visitor linking, CRM emission, or emails. The draft-to-pending transaction creates one durable effect-ledger item per downstream action. Workers conditionally claim each effect before execution and mark it complete afterward; claimed-but-incomplete effects raise an operational alarm for manual recovery rather than being executed automatically a second time. CRM events retain their existing deterministic event IDs, and organization/visitor operations retain their existing idempotent keys.
+- The complete formal submission payload is authoritative; it need not match the last autosaved `draftVersion`. The conditional transition still verifies `status=draft`, unexpired `expiresAt`, and valid credentials.
+- The draft-to-pending DynamoDB transaction also creates a seven-day submission receipt and transactional-outbox records. A retry authenticates with the distinct submit idempotency credential and reads the receipt; it never authenticates against the removed draft token or by RFQ ID alone.
+- Organization upsert, visitor linking, CRM emission, and attachment movement are idempotent effects. Their workers use leases and destination idempotency keys; attachment movement checks the deterministic destination before deleting a source. CRM retains deterministic event IDs.
+- Confirmation and internal email are explicitly **at-most-once with possible loss** because SendGrid does not provide the required idempotency contract. The worker conditionally marks each email claimed before sending. A crash after claim raises an alarm and requires an operator to inspect delivery state; automation never sends that email a second time. The UI must not promise that confirmation email was sent unless the completed email effect proves it.
+- A repeated submission returns the stored receipt response and creates no new outbox records. The specification does not claim exactly-once delivery for external systems.
 - Formal submission, expiration cleanup, or manual deletion permanently invalidates the draft token.
 
 ## Workflow 2: Public Draft API
@@ -71,20 +77,27 @@ The draft schema rejects unknown keys. It never stores CAPTCHA tokens, `draftTok
 - Existing `POST /api/rfq` accepts optional `rfqId` and `draftToken`; when provided it upgrades that draft instead of inserting a second record.
 - No public list endpoint exists. Administrator reads continue through the existing authenticated AppSync/admin path and never accept a customer draft token.
 
-### Idempotent creation
+### Three distinct credentials
 
-Before the first create request, the browser generates a 256-bit random `draftCreateNonce` and stores it in `sessionStorage`. It is sent only in a dedicated request header, never in a URL or analytics event. The service derives two domain-separated HMAC-SHA-256 values using the server pepper: a non-enumerable RFQ ID and the 256-bit `draftToken`. Therefore an identical retry returns the same ID/token without storing token plaintext. Creation uses a conditional put; simultaneous duplicate requests converge on the same record.
+1. `draftCreateNonce`: a client-generated, base64url-without-padding encoding of exactly 32 random bytes. It is sent in `X-RFQ-Draft-Create-Nonce` and provides deterministic creation only.
+2. `draftToken`: a separate fixed 32-byte bearer token deterministically derived with HKDF-SHA-256 from the 256-bit nonce and domain string `ninescrolls/rfq-draft-token/v1`. The RFQ ID is independently derived with SHA-256 and domain string `ninescrolls/rfq-draft-id/v1`, then encoded as a non-enumerable identifier. These derivations do not depend on the rotating verification pepper, so an identical create retry always returns the same ID/token. The database stores only a versioned peppered token hash.
+3. `submitIdempotencyKey`: a new client-generated, base64url-without-padding encoding of exactly 32 random bytes, created before formal submission and sent in `X-RFQ-Submit-Key`. It authenticates only submission retries and cannot read or update a draft.
 
-The nonce, derived token, and token hash must be excluded from application logs, API access logs under project control, error details, tracing attributes, analytics, URLs, and emails.
+Creation uses a conditional put; simultaneous requests using the same nonce converge on the same record. The nonce is itself secret access material and receives the same redaction controls as tokens. Verification-pepper rotation retains old verification keys for at least 30 days plus deployment overlap; stored hash prefixes select the verification key. Compromise rotation invalidates affected live draft tokens and requires customers to recreate drafts rather than silently accepting an old key.
+
+For both draft upgrades and direct no-draft submissions, the submit service derives `SUBMIT_RECEIPT#<SHA-256(domain || submitIdempotencyKey)>`. The transaction conditionally creates one receipt containing only `rfqId`, reference number, terminal response status, created time, and seven-day TTL. It stores no form PII. Concurrent or response-loss retries with the same key converge on this receipt; a key reused with a different RFQ/payload hash is rejected. Receipt lookup performs fixed-length credential parsing and identical non-disclosing errors.
+
+The nonce, draft token, submit key, and their hashes must be excluded from application logs, API Gateway execution/access-log templates, error details, tracing attributes, analytics, URLs, DOM attributes, and emails. Credential-bearing responses set `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. CORS explicitly allows the two named credential headers only from approved origins.
 
 ### Token verification and abuse controls
 
-- Store only a service-peppered HMAC-SHA-256 token hash.
-- Decode fixed-length values and compare them with a constant-time primitive.
+- Store only `v<keyVersion>:<HMAC-SHA-256(pepper, rawToken)>`; decode the token/hash to fixed 32-byte values and compare them with a constant-time primitive.
+- Missing records, malformed credentials, bad credentials, expired drafts, deleted drafts, and submitted drafts perform a dummy fixed-length HMAC/constant-time comparison and return the same `404 {"error":"Draft unavailable"}` response.
 - Require both `rfqId` and token for public read/update/upgrade.
-- Reject expired, submitted, and deleted drafts identically so responses do not reveal record state.
+- Only an authenticated live draft may receive `409 {"error":"Version conflict","draft":<whitelisted-current-fields>,"draftVersion":n}`. A stale update never returns data before authentication.
 - Compute all timestamps and expiry values on the server; clients cannot supply them.
 - Apply strict JSON content type and body-size limits, exact schemas, per-IP rate limiting, and bounded create/update frequency.
+- API Gateway/WAF permits at most 10 draft creates and 120 authenticated draft reads/updates per five-minute window per source IP, with application-level conditional counters as defense in depth. The limits return `429` without extending draft retention; counter items contain no form data and expire after 10 minutes. Load/concurrency tests verify limits and allowed-origin CORS behavior.
 - Draft creation does not invoke CRM, organization matching, visitor linking, email, attachment movement, or analytics persistence.
 - Secrets/pepper are stored in the platform secret manager and support controlled rotation with an explicit version prefix in stored hashes.
 
@@ -93,13 +106,13 @@ The nonce, derived token, and token hash must be excluded from application logs,
 ### Creation and local recovery
 
 - After Step 1 validates and the customer enters Step 2, create the draft once.
-- Store only `rfqId`, `draftToken`, `draftCreateNonce`, `draftVersion`, and last locally acknowledged draft payload in `sessionStorage`; never place them in local storage, the URL, DOM attributes, or analytics.
+- Store only `rfqId`, `draftToken`, `draftCreateNonce`, `submitIdempotencyKey`, `draftVersion`, and last locally acknowledged draft payload in `sessionStorage`; never place them in local storage, the URL, DOM attributes, or analytics. Treat same-origin XSS as capable of stealing these values: retain the existing strict sanitization boundary, deploy a restrictive CSP, render no credential values, and prohibit third-party script access to draft state. Cloned-tab behavior is tested and handled as optimistic-concurrency contention, not as independent ownership.
 - Reloading the same tab may read the draft using `rfqId + draftToken` and restore whitelisted fields. Closing the tab clears browser-held access material by normal session-storage behavior.
 - If creation fails, show a non-blocking “progress could not be saved” status and retry a maximum of two times with bounded exponential backoff. The customer can continue filling and formally submit.
 
 ### Updates
 
-- Debounce field changes and send only changed whitelisted values.
+- Debounce field changes, serialize PATCH requests, and send only changed whitelisted values. At most one PATCH is in flight.
 - Retry a failed autosave at most two times with bounded exponential backoff and jitter; retries do not block typing, navigation within the form, Turnstile, or formal submission.
 - Only a successful server response advances the locally acknowledged payload/version.
 - Version conflicts fetch the current draft, merge only fields unchanged locally since the last acknowledgement, and never silently overwrite newer user input.
@@ -108,11 +121,11 @@ The nonce, derived token, and token hash must be excluded from application logs,
 
 ### Formal submission
 
-- Formal submission waits only for an already-running autosave request to settle; it does not wait for scheduled retries.
+- Starting formal submission increments an autosave generation, cancels debounce/retry timers, aborts requests that have not reached the server, prevents new PATCH scheduling, and waits for the sole already-in-flight PATCH to settle. Stale autosave responses are ignored. No autosave may execute after the submission fence.
 - Send the complete formal RFQ payload, Turnstile token, `rfqId`, and `draftToken` directly in the request body over TLS. Sensitive credentials are redacted before any logging.
 - The server validates CAPTCHA and the complete formal RFQ schema before the conditional draft upgrade.
 - On success, clear all RFQ draft material from `sessionStorage` and show the existing confirmation/reference number.
-- If no draft was ever created, preserve the existing new-RFQ submission path.
+- If no draft was ever created, the direct submission path still requires `X-RFQ-Submit-Key` and uses the same conditional receipt/outbox transaction; it does not preserve the current random-ID/unconditional-Put behavior.
 
 ### Privacy notice
 
@@ -125,14 +138,16 @@ Step 2 displays: “To preserve your progress and help us process unfinished quo
 - Add a distinct “Unsubmitted drafts” view/filter; exclude drafts from the default formal RFQ list.
 - Label every draft “Not submitted”. Display “Abandoned” only when `lastActivityAt < now - 24 hours`.
 - Drafts are excluded by default from RFQ counts, conversion rate, response SLA, sales funnel, organization lead score, timeline, and notifications. Reports may include them only through an explicit draft-specific selection.
-- Restrict draft list/detail access to named administrator roles with a documented business need. This authorization is separate from customer token verification.
+- Create dedicated Cognito groups `RFQDraftViewer` and `RFQDraftManager`. `RFQDraftViewer` may list/read drafts; `RFQDraftManager` additionally may manually delete them. Separate `listRfqDrafts`, `getRfqDraft`, and `deleteRfqDraft` AppSync operations verify the `cognito:groups` claim inside the order-api Lambda before any DynamoDB access. Existing `listRfqs/getRfq` explicitly reject `status=draft` and never return a draft. Unauthorized signed-in identities receive the same authorization error as unauthenticated callers. Resolver and integration tests cover users with no group, each group, and forged arguments.
 - Record administrator view and manual-delete actions in an audit log containing actor, action, RFQ ID, and timestamp; never copy form fields or token material into audit entries.
+- Audit items use `PK=RFQ_DRAFT_AUDIT#<rfqId>, SK=<timestamp>#<eventId>` with `actorSub`, `actorGroups`, `action` (`view` or `delete`), and request ID only. Audit retention follows the approved security-log policy and is independent of draft PII deletion because it contains no form fields.
 - UI copy warns that a draft is not an explicit inquiry and should not be used for direct marketing outreach without a separately documented lawful basis/consent.
 
 ### Hard deletion
 
-- A daily scheduled cleanup queries `GSI1` partition `RFQ_STATUS#draft` with a `GSI1SK` cutoff corresponding to `lastActivityAt < now - 30 days`; it never scans the intelligence table. It then verifies the stored `expiresAt < now` before deletion.
-- Each delete is conditional on both `status=draft` and the stored `expiresAt` still being earlier than the cleanup cutoff.
+- A daily scheduled cleanup queries `GSI1` partition `RFQ_STATUS#draft` with query cutoff `lastActivityCutoff = now - 30 days`; it never scans the intelligence table. It paginates until `LastEvaluatedKey` is absent or the invocation safety budget is reached, then stores a continuation cursor for the next invocation.
+- Each base-table delete is conditional on `status=draft AND expiresAt < now` and on the queried `draftVersion/lastActivityAt`, preventing deletion after an update or upgrade. A TTL race that yields not-found counts as success.
+- Throttled/failed pages use bounded retries and then a DLQ/repair cursor. Capacity and remaining-time guards checkpoint safely. After traversal, a verification query for the same cutoff measures remaining backlog; a nonzero backlog schedules continuation and alarms after the defined daily completion window.
 - Associated draft-only audit references must not retain copied PII. There are no draft attachments or downstream CRM records to clean.
 - DynamoDB TTL is a secondary safety net, not the timeliness mechanism.
 - The scheduled job emits attempted, deleted, condition-skipped, failed, and latency metrics. Any failures or a nonzero stale-draft backlog after the run trigger an operational alarm.
@@ -143,6 +158,7 @@ Step 2 displays: “To preserve your progress and help us process unfinished quo
 ### Data model and API
 
 - Concurrent identical create requests return the same RFQ ID and token and leave one record.
+- Creation remains idempotent across verification-pepper rotation; compromised-key invalidation follows the documented recreate path.
 - Token output is 256 bits; storage contains only a versioned peppered hash; comparisons use the constant-time verifier.
 - Unknown/unapproved fields are rejected and absent from DynamoDB.
 - Unauthorized read/update attempts reveal neither existence nor status.
@@ -150,11 +166,15 @@ Step 2 displays: “To preserve your progress and help us process unfinished quo
 - Stale-version updates cannot overwrite newer values.
 - Only an unexpired authenticated draft can transition to pending.
 - Submission retries return the existing result and each external side effect occurs at most once.
+- Direct no-draft submissions are idempotent under concurrent calls and response loss.
+- Tests cover worker crashes before/after claim and destination calls, proving the documented lease/idempotency behavior and the explicit possible-loss semantics for email.
+- API tests cover credential length/encoding, dummy constant-time verification paths, exact non-disclosing errors, CORS headers, cache headers, rate-limit concurrency, and controlled log/tracing redaction.
 
 ### Frontend
 
 - Draft creation begins only after valid Step 1 → Step 2 transition.
 - Autosave and recovery preserve only whitelisted fields and never block editing or submission.
+- Tests cover out-of-order responses, cloned-tab version conflicts, unmount, submission fencing, and aborted/scheduled retries.
 - Two failed retries produce a non-blocking failure status.
 - Successful submission clears session credentials; retry, expiration, and CAPTCHA failures preserve form content.
 - UI and privacy policy contain the approved retention/non-submission explanation.
@@ -165,11 +185,16 @@ Step 2 displays: “To preserve your progress and help us process unfinished quo
 - Abandoned classification changes after 24 hours without persisting a second state.
 - Cleanup queries the expiry access path, conditionally deletes only expired drafts, and reports metrics/alarms.
 - Automated tests prove a concurrently upgraded pending RFQ cannot be deleted by cleanup.
+- Cleanup tests cover multi-page traversal, continuation cursors, throttling/DLQ repair, stale GSI entries, TTL races, capacity/time checkpoints, and post-run backlog measurement.
+- Contract tests prove frontend/backend enum parity and canonical normalization/removal semantics.
 
 ## Rollout
 
-1. Deploy the data model, secret, indexes, admin authorization, and cleanup job without exposing the public API.
-2. Deploy public draft endpoints with rate limiting and monitoring; validate idempotency and redaction in production logs.
-3. Deploy frontend autosave behind a feature flag and monitor create/update/error rates.
-4. Enable the administrator draft view after privacy copy and role assignment are approved.
-5. Remove the feature flag only after cleanup metrics and submission-upgrade idempotency have completed an operational soak period.
+1. Add the canonical contract, draft/receipt/outbox/audit item schemas, Cognito groups, secret versions, IAM grants, rate-limit infrastructure, schedules, DLQ, metrics, and alarms. Existing submission remains active.
+2. Deploy outbox workers first in dark mode, then refactor the existing direct submission path to the idempotent receipt/outbox transaction. Verify compatibility before enabling draft creation.
+3. Deploy separate role-restricted administrator draft resolvers and cleanup in observe-only mode; assign least-privilege groups and validate audit records.
+4. Deploy public draft endpoints with rate limiting and monitoring; validate concurrency, secret-version verification, and redaction in production logs.
+5. Deploy frontend autosave behind a feature flag and monitor create/update/conflict/error rates. Then enable the administrator draft view after privacy copy approval.
+6. Enable conditional deletion only after an observe-only cleanup run matches expected candidates. Remove the feature flag after cleanup and submission idempotency complete an operational soak period.
+
+Rollback disables new draft creation/autosave first, while public read/update and idempotent submission receipts remain available until all live drafts expire. Rollback never converts `pending` back to `draft`, removes a verification key still referenced by live hashes, disables cleanup without an equivalent deletion path, or restores inline side effects alongside active outbox workers.
