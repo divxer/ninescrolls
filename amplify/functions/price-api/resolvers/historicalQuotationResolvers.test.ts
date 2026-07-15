@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { marshall } from '@aws-sdk/util-dynamodb';
 
 const send = vi.fn();
 vi.mock('../lib/dynamodb.js', () => ({
@@ -65,9 +66,9 @@ describe('pbImportHistoricalQuotations', () => {
   it('accepts canonical manifest replay with reordered IDs and excludes stamps from equivalence', async () => {
     const a = row(); const b = row({ sourceRow: 3 });
     send.mockResolvedValueOnce({ Item: {} }).mockRejectedValueOnce(Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException', Item: { importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
+      name: 'ConditionalCheckFailedException', Item: marshall({ importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
         sourceDocumentHash: 'b'.repeat(64), historicalIds: [b.historicalId, a.historicalId], rowCount: 2,
-        createdAt: 'old', createdBy: 'someone-else' },
+        createdAt: 'old', createdBy: 'someone-else' }),
     })).mockResolvedValue({});
     await expect(pbImportHistoricalQuotations(importEvent([a, b]))).resolves.toEqual([
       expect.objectContaining({ status: 'IMPORTED' }), expect.objectContaining({ status: 'IMPORTED' }),
@@ -80,8 +81,8 @@ describe('pbImportHistoricalQuotations', () => {
   ])('aborts a batch before row writes when replay has %s intended ID', async (_name, mutate) => {
     const value = row();
     send.mockResolvedValueOnce({ Item: {} }).mockRejectedValueOnce(Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException', Item: { importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
-        sourceDocumentHash: 'b'.repeat(64), historicalIds: mutate([value.historicalId as string]), rowCount: 1 },
+      name: 'ConditionalCheckFailedException', Item: marshall({ importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
+        sourceDocumentHash: 'b'.repeat(64), historicalIds: mutate([value.historicalId as string]), rowCount: 1 }),
     }));
     await expect(pbImportHistoricalQuotations(importEvent([value]))).rejects.toThrow(/^CONFLICT:/);
     expect(send).toHaveBeenCalledTimes(2);
@@ -95,8 +96,8 @@ describe('pbImportHistoricalQuotations', () => {
   ])('aborts before row writes when replay differs by canonical %s', async (_name, mutation) => {
     const value = row();
     send.mockResolvedValueOnce({ Item: {} }).mockRejectedValueOnce(Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException', Item: { importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
-        sourceDocumentHash: 'b'.repeat(64), historicalIds: [value.historicalId], rowCount: 1, ...mutation },
+      name: 'ConditionalCheckFailedException', Item: marshall({ importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
+        sourceDocumentHash: 'b'.repeat(64), historicalIds: [value.historicalId], rowCount: 1, ...mutation }),
     }));
     await expect(pbImportHistoricalQuotations(importEvent([value]))).rejects.toThrow(/^CONFLICT:/);
     expect(send).toHaveBeenCalledTimes(2);
@@ -105,8 +106,8 @@ describe('pbImportHistoricalQuotations', () => {
   it('classifies atomic existing-item evidence as SKIPPED or CONFLICT without follow-up reads', async () => {
     const a = row(); const b = row({ sourceRow: 3 });
     send.mockResolvedValueOnce({ Item: {} }).mockResolvedValueOnce({})
-      .mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException', Item: { contentHash: a.contentHash } }))
-      .mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException', Item: { contentHash: 'different' } }));
+      .mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException', Item: marshall({ contentHash: a.contentHash }) }))
+      .mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException', Item: marshall({ contentHash: 'different' }) }));
     const result = await pbImportHistoricalQuotations(importEvent([a, b])) as Array<Record<string, unknown>>;
     expect(result.map(item => item.status)).toEqual(['SKIPPED', 'CONFLICT']);
     expect(send).toHaveBeenCalledTimes(4);
@@ -124,10 +125,10 @@ describe('pbImportHistoricalQuotations', () => {
     ]);
     send.mockReset();
     send.mockResolvedValueOnce({ Item: {} }).mockRejectedValueOnce(Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException', Item: { importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
-        sourceDocumentHash: 'b'.repeat(64), historicalIds: [a.historicalId, b.historicalId], rowCount: 2 },
+      name: 'ConditionalCheckFailedException', Item: marshall({ importBatchId: 'HB-batch', sourceDocument: 'book.xlsx',
+        sourceDocumentHash: 'b'.repeat(64), historicalIds: [a.historicalId, b.historicalId], rowCount: 2 }),
     })).mockResolvedValueOnce({}).mockRejectedValueOnce(Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException', Item: { contentHash: b.contentHash },
+      name: 'ConditionalCheckFailedException', Item: marshall({ contentHash: b.contentHash }),
     }));
     await expect(pbImportHistoricalQuotations(importEvent([a, b]))).resolves.toEqual([
       expect.objectContaining({ status: 'IMPORTED' }), expect.objectContaining({ status: 'SKIPPED' }),

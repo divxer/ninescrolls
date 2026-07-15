@@ -1,4 +1,5 @@
 import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { getOperator, parseInput, stripKeys, type PriceApiEvent } from '../lib/types.js';
 import {
@@ -75,6 +76,11 @@ interface ImportInput {
 
 type ImportStatus = 'IMPORTED' | 'SKIPPED' | 'CONFLICT' | 'FAILED';
 interface ImportOutcome { historicalId: string; status: ImportStatus; message?: string }
+
+type ConditionalFailure = Error & { Item?: Parameters<typeof unmarshall>[0] };
+const existingItemFrom = (error: ConditionalFailure): Record<string, unknown> | undefined => (
+  error.Item ? unmarshall(error.Item) : undefined
+);
 
 const canonicalManifest = (value: {
   importBatchId: unknown; sourceDocument: unknown; sourceDocumentHash: unknown;
@@ -166,9 +172,10 @@ export async function pbImportHistoricalQuotations(event: PriceApiEvent): Promis
     await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: manifest,
       ConditionExpression: 'attribute_not_exists(PK)', ReturnValuesOnConditionCheckFailure: 'ALL_OLD' }));
   } catch (error) {
-    const existing = error as Error & { Item?: typeof manifest };
+    const existing = error as ConditionalFailure;
     if (existing.name !== 'ConditionalCheckFailedException') throw error;
-    if (!existing.Item || canonicalManifest(existing.Item) !== canonicalManifest(manifest)) {
+    const existingManifest = existingItemFrom(existing);
+    if (!existingManifest || canonicalManifest(existingManifest as Parameters<typeof canonicalManifest>[0]) !== canonicalManifest(manifest)) {
       throw new Error(`CONFLICT: import batch ${input.importBatchId} manifest differs from existing batch`);
     }
   }
@@ -185,10 +192,11 @@ export async function pbImportHistoricalQuotations(event: PriceApiEvent): Promis
         ConditionExpression: 'attribute_not_exists(PK)', ReturnValuesOnConditionCheckFailure: 'ALL_OLD' }));
       outcomes.push({ historicalId: item.historicalId, status: 'IMPORTED' });
     } catch (error) {
-      const existing = error as Error & { Item?: { contentHash?: string } };
+      const existing = error as ConditionalFailure;
       if (existing.name === 'ConditionalCheckFailedException') {
+        const existingItem = existingItemFrom(existing);
         outcomes.push({ historicalId: item.historicalId,
-          status: existing.Item?.contentHash === item.contentHash ? 'SKIPPED' : 'CONFLICT' });
+          status: existingItem?.contentHash === item.contentHash ? 'SKIPPED' : 'CONFLICT' });
       } else {
         outcomes.push({ historicalId: item.historicalId, status: 'FAILED', message: existing.message });
       }
