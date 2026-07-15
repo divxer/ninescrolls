@@ -165,6 +165,14 @@ describe('pbImportHistoricalQuotations', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('rejects duplicate row identity batch-fatally before supplier lookup or manifest write', async () => {
+    const first = row({ sourceRow: 7 });
+    const duplicate = row({ sourceRow: 7 });
+    await expect(pbImportHistoricalQuotations(importEvent([first, duplicate])))
+      .rejects.toThrow(/^VALIDATION:.*duplicate.*sourceRow|^VALIDATION:.*duplicate.*historicalId/i);
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('accepts the shared cap and rejects cap+1 and unknown suppliers before any write', async () => {
     const rows = Array.from({ length: MAX_IMPORT_ROWS }, (_, i) => row({ sourceRow: i + 1 }));
     send.mockResolvedValueOnce({ Item: {} }).mockResolvedValue({});
@@ -294,6 +302,12 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects duplicate manifest ids before reads so rollback counts remain unique-row counts', async () => {
+    send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: [id1, id1], rowCount: 2 } });
+    await expect(pbRollbackHistoricalQuotationImport(rollback('PREVIEW'))).rejects.toThrow(/^CONFLICT:/);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks a loaded record whose historicalId does not equal the manifest id', async () => {
     send.mockResolvedValueOnce({ Item: { ...manifest, historicalIds: [id1] } })
       .mockResolvedValueOnce({ Item: live(id1, { historicalId: id2 }) });
@@ -322,7 +336,7 @@ describe('pbRollbackHistoricalQuotationImport', () => {
       .mockResolvedValueOnce({}).mockRejectedValueOnce(Object.assign(new Error(), { name: 'ConditionalCheckFailedException' }))
       .mockResolvedValueOnce({});
     const result = await pbRollbackHistoricalQuotationImport(rollback('APPLY', {
-      rollbackToken: preview.rollbackToken, reason: 'incorrect workbook', requestedAt: '2026-07-14T11:59:00.000Z',
+      rollbackToken: preview.rollbackToken, reason: 'incorrect workbook', requestedAt: '1999-01-01T00:00:00.000Z',
     })) as { results: Array<{ status: string }> };
     const deletes = send.mock.calls.filter(c => c[0].constructor.name === 'DeleteCommand');
     expect(deletes).toHaveLength(2);
@@ -334,7 +348,9 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     expect(result.results.map(r => r.status)).toEqual(['DELETED', 'ALREADY_ABSENT']);
     const intent = send.mock.calls.find(c => c[0].input.Item?.SK?.startsWith('ROLLBACK_INTENT#'))?.[0].input;
     expect(intent).toMatchObject({ ConditionExpression: 'attribute_not_exists(PK)', Item: {
-      PK: 'HISTIMPORT#HB-batch', importBatchId: 'HB-batch', requestedBy: 'operator', confirmedBy: 'operator',
+      PK: 'HISTIMPORT#HB-batch', SK: 'ROLLBACK_INTENT#2026-07-14T12:00:00.000Z',
+      importBatchId: 'HB-batch', requestedBy: 'operator', confirmedBy: 'operator',
+      requestedAt: '2026-07-14T12:00:00.000Z',
       reason: 'incorrect workbook', rollbackToken: preview.rollbackToken, intendedHistoricalIds: [id1, id2],
       matchedCount: 1, sourceDocumentHash: 'b'.repeat(64),
     } });
@@ -346,7 +362,7 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     ].sort());
     expect(audit.Item).toMatchObject({ PK: 'HISTIMPORT#HB-batch', SK: 'ROLLBACK#2026-07-14T12:00:00.000Z',
       importBatchId: 'HB-batch', requestedBy: 'operator', confirmedBy: 'operator',
-      requestedAt: '2026-07-14T11:59:00.000Z', completedAt: '2026-07-14T12:00:00.000Z', reason: 'incorrect workbook',
+      requestedAt: '2026-07-14T12:00:00.000Z', completedAt: '2026-07-14T12:00:00.000Z', reason: 'incorrect workbook',
       matchedCount: 1, deletedCount: 1, failedCount: 0, deletedHistoricalIds: [id1], sourceDocumentHash: 'b'.repeat(64) });
     vi.useRealTimers();
   });

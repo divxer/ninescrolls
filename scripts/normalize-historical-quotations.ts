@@ -4,6 +4,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   buildNormalizedHistoricalQuotations,
+  parseNormalizerArgv,
   resolvePhysicalPathOutsideWorktree,
   resolveSupplierId,
   serializeHistoricalQuotations,
@@ -11,14 +12,6 @@ import {
   type HistoricalAdjudication,
   type HistoricalSourceRow,
 } from './lib/historicalQuotationImport';
-
-
-function option(name: string, envName: string): string {
-  const index = process.argv.indexOf(`--${name}`);
-  const value = index >= 0 ? process.argv[index + 1] : process.env[envName];
-  if (!value) throw new Error(`Missing --${name} or ${envName}`);
-  return resolve(value);
-}
 
 function parseAdjudication(json: string): HistoricalAdjudication {
   const value = JSON.parse(json) as Record<string, unknown>;
@@ -32,12 +25,11 @@ function parseAdjudication(json: string): HistoricalAdjudication {
 }
 
 async function main(): Promise<void> {
-  const workbookArgument = option('workbook', 'HISTORICAL_WORKBOOK_PATH');
-  const outputArgument = option('output', 'HISTORICAL_NORMALIZED_OUTPUT');
-  const adjudicationArgument = option('adjudication', 'HISTORICAL_ADJUDICATION_PATH');
-  const supplierNameIndex = process.argv.indexOf('--supplier-name');
-  const supplierName = supplierNameIndex >= 0 ? process.argv[supplierNameIndex + 1] : process.env.HISTORICAL_SUPPLIER_NAME;
-  if (!supplierName) throw new Error('Missing --supplier-name or HISTORICAL_SUPPLIER_NAME');
+  const options = parseNormalizerArgv(process.argv.slice(2), process.env);
+  const workbookArgument = resolve(options.workbook);
+  const outputArgument = resolve(options.output);
+  const adjudicationArgument = resolve(options.adjudication);
+  const supplierName = options.supplierName;
   const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
   const workbook = resolvePhysicalPathOutsideWorktree(workbookArgument, root, 'Workbook', true);
   const output = resolvePhysicalPathOutsideWorktree(outputArgument, root, 'Output', false);

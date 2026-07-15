@@ -251,6 +251,8 @@ Two scripts plus a rollback client. Constraint 8 forbids the source *data* in th
 
 ### 4.1 `scripts/normalize-historical-quotations.ts`
 
+The documented CLI contract is `normalize-historical-quotations.ts <workbook> <output>`, with adjudication and supplier supplied by flags or environment. `--workbook` / `--output` and environment-only operation remain supported for non-conflicting automation; ambiguous positional/flag combinations are rejected rather than resolved by precedence.
+
 Reads the workbook from an out-of-repo path supplied by argv or environment variable, and deterministically emits the normalized JSON. v1 said the JSON was "generated from the reviewed Excel source" without saying by whom or verified how — which left open that a human hand-transcribes 21 rows × ~14 fields. Under that reading, §1's preservation guarantee degrades to a *typing* guarantee, and the entire lineage apparatus faithfully records the provenance of possibly-wrong values.
 
 A committed generator makes the transformation reproducible, reviewable, and diffable. It computes `sourceDocumentHash`, and resolves the supplier once (§4.3), pinning the resolved `supplierId` into the JSON.

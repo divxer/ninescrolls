@@ -19,6 +19,7 @@ import {
   syntheticSandboxRows,
   MAX_IMPORT_ROWS,
   parseImportArgv,
+  parseNormalizerArgv,
   parseRollbackArgv,
 } from './historicalQuotationImport';
 import {
@@ -162,6 +163,46 @@ describe('historical quotation normalization helpers', () => {
 });
 
 describe('operator safety helpers', () => {
+  it('parses the documented positional normalizer paths with flag/env supplements', () => {
+    expect(parseNormalizerArgv(
+      ['/outside/book.xlsx', '/tmp/normalized.json', '--adjudication', '/outside/adjudication.json'],
+      { HISTORICAL_SUPPLIER_NAME: 'Exact Supplier' },
+    )).toEqual({
+      workbook: '/outside/book.xlsx', output: '/tmp/normalized.json',
+      adjudication: '/outside/adjudication.json', supplierName: 'Exact Supplier',
+    });
+  });
+
+  it('parses an all-flags normalizer invocation and falls back entirely to env', () => {
+    expect(parseNormalizerArgv([
+      '--workbook', '/outside/book.xlsx', '--output', '/tmp/normalized.json',
+      '--adjudication', '/outside/adjudication.json', '--supplier-name', 'Exact Supplier',
+    ], {})).toEqual({
+      workbook: '/outside/book.xlsx', output: '/tmp/normalized.json',
+      adjudication: '/outside/adjudication.json', supplierName: 'Exact Supplier',
+    });
+    expect(parseNormalizerArgv([], {
+      HISTORICAL_WORKBOOK_PATH: '/outside/book.xlsx',
+      HISTORICAL_NORMALIZED_OUTPUT: '/tmp/normalized.json',
+      HISTORICAL_ADJUDICATION_PATH: '/outside/adjudication.json',
+      HISTORICAL_SUPPLIER_NAME: 'Exact Supplier',
+    })).toEqual({
+      workbook: '/outside/book.xlsx', output: '/tmp/normalized.json',
+      adjudication: '/outside/adjudication.json', supplierName: 'Exact Supplier',
+    });
+  });
+
+  it.each([
+    [['/outside/book.xlsx'], {}, /output/i],
+    [['/outside/book.xlsx', '/tmp/out.json', 'extra'], { HISTORICAL_ADJUDICATION_PATH: '/a', HISTORICAL_SUPPLIER_NAME: 's' }, /positional/i],
+    [['/outside/book.xlsx', '/tmp/out.json', '--workbook', '/other.xlsx'], { HISTORICAL_ADJUDICATION_PATH: '/a', HISTORICAL_SUPPLIER_NAME: 's' }, /conflict/i],
+    [['--output', '/tmp/one.json', '--output', '/tmp/two.json'], {}, /duplicate/i],
+    [['--wat'], {}, /unknown/i],
+    [['--workbook', '--output', '/tmp/out.json'], {}, /value/i],
+  ] as Array<[string[], Record<string, string>, RegExp]>)('rejects unsafe normalizer argv %j', (argv, env, error) => {
+    expect(() => parseNormalizerArgv(argv, env)).toThrow(error);
+  });
+
   it('consults the server for every row and honestly classifies hashes', async () => {
     const rows = [1, 2, 3].map(sourceRow => ({ ...contentFixture, sourceRow, historicalId: historicalIdFor('book.xlsx', sourceRow), contentHash: contentHashFor({ ...contentFixture, sourceRow }) }));
     const normalized = { importBatchId: 'HB-fixture', sourceDocument: 'book.xlsx', sourceDocumentHash: 'a'.repeat(64), rows };

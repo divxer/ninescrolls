@@ -260,6 +260,49 @@ function requiredFlagValue(argv: readonly string[], flag: string, required: bool
   return value;
 }
 
+export interface NormalizerArgv {
+  workbook: string;
+  output: string;
+  adjudication: string;
+  supplierName: string;
+}
+
+export function parseNormalizerArgv(
+  argv: readonly string[],
+  env: Readonly<Record<string, string | undefined>>,
+): NormalizerArgv {
+  const flags = ['--workbook', '--output', '--adjudication', '--supplier-name'] as const;
+  const allowed = new Set<string>(flags);
+  const unknown = argv.find(arg => arg.startsWith('--') && !allowed.has(arg));
+  if (unknown) throw new Error(`Unknown flag: ${unknown}`);
+
+  const flagValues = Object.fromEntries(flags.map(flag => [flag, requiredFlagValue(argv, flag, false)])) as
+    Record<(typeof flags)[number], string | undefined>;
+  const consumed = new Set<number>();
+  for (const flag of flags) {
+    const index = argv.indexOf(flag);
+    if (index >= 0) consumed.add(index + 1);
+  }
+  const positional = argv.filter((arg, index) => !arg.startsWith('--') && !consumed.has(index));
+  if (positional.length > 2) throw new Error(`Unexpected positional argument: ${positional[2]}`);
+  if (positional[0] !== undefined && flagValues['--workbook'] !== undefined) {
+    throw new Error('Conflicting positional workbook and --workbook');
+  }
+  if (positional[1] !== undefined && flagValues['--output'] !== undefined) {
+    throw new Error('Conflicting positional output and --output');
+  }
+
+  const workbook = positional[0] ?? flagValues['--workbook'] ?? env.HISTORICAL_WORKBOOK_PATH;
+  const output = positional[1] ?? flagValues['--output'] ?? env.HISTORICAL_NORMALIZED_OUTPUT;
+  const adjudication = flagValues['--adjudication'] ?? env.HISTORICAL_ADJUDICATION_PATH;
+  const supplierName = flagValues['--supplier-name'] ?? env.HISTORICAL_SUPPLIER_NAME;
+  if (!workbook) throw new Error('Workbook is required as the first positional argument, --workbook, or HISTORICAL_WORKBOOK_PATH');
+  if (!output) throw new Error('Output is required as the second positional argument, --output, or HISTORICAL_NORMALIZED_OUTPUT');
+  if (!adjudication) throw new Error('Adjudication is required via --adjudication or HISTORICAL_ADJUDICATION_PATH');
+  if (!supplierName) throw new Error('Supplier name is required via --supplier-name or HISTORICAL_SUPPLIER_NAME');
+  return { workbook, output, adjudication, supplierName };
+}
+
 export interface ImportArgv { file: string; expectedRows?: number; apply: boolean }
 export function parseImportArgv(argv: readonly string[]): ImportArgv {
   const allowed = new Set(['--apply', '--expect-rows']);

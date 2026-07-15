@@ -154,6 +154,10 @@ export async function pbImportHistoricalQuotations(event: PriceApiEvent): Promis
     }
     return { raw, value, historicalId, contentHash, errors: validateHistoricalQuotationInput(value) };
   });
+  const historicalIds = prepared.map(row => row.historicalId);
+  if (new Set(historicalIds).size !== historicalIds.length) {
+    throw new Error('VALIDATION: duplicate sourceDocument/sourceRow identity in import batch');
+  }
 
   // Supplier existence is a strongly-consistent point lookup, never a Scan.
   for (const supplierId of new Set(prepared.map(row => row.value.supplierId))) {
@@ -216,7 +220,6 @@ interface RollbackInput {
   mode: 'PREVIEW' | 'APPLY';
   rollbackToken?: string;
   reason?: string;
-  requestedAt?: string;
 }
 
 const isDeletable = (item: Record<string, unknown>, importBatchId: string, intendedId: string): boolean => (
@@ -260,6 +263,9 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
   if (intendedIds.length !== manifest.historicalIds.length || intendedIds.some(id => !HISTORICAL_ID_PATTERN.test(id))) {
     throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
   }
+  if (new Set(intendedIds).size !== intendedIds.length) {
+    throw new Error(`CONFLICT: import batch ${input.importBatchId} has duplicate historical ids`);
+  }
 
   const live = new Map<string, Record<string, unknown>>();
   for (const historicalId of intendedIds) {
@@ -287,7 +293,7 @@ export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) 
   };
   if (input.rollbackToken !== token) throw new Error('CONFLICT: rollback preview is stale; run PREVIEW again');
 
-  const requestedAt = input.requestedAt ?? new Date().toISOString();
+  const requestedAt = new Date().toISOString();
   const actor = getOperator(event);
   await docClient.send(new PutCommand({
     TableName: TABLE_NAME(),
