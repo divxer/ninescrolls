@@ -1,12 +1,17 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   importBatchIdFor,
+  buildNormalizedHistoricalQuotations,
+  compareCodeUnits,
   parseNormalizedHistoricalQuotations,
+  resolvePhysicalPathOutsideWorktree,
   resolveSupplierId,
   serializeHistoricalQuotations,
   sourceDocumentHashFor,
+  withWorkbookSnapshot,
 } from './historicalQuotationImport';
 import {
   contentHashFor,
@@ -45,6 +50,10 @@ describe('historical quotation normalization helpers', () => {
     expect(sourceDocumentHashFor(bytes)).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it('orders canonical keys by code units rather than host locale', () => {
+    expect(['ä', 'z', 'a'].sort(compareCodeUnits)).toEqual(['a', 'z', 'ä']);
+  });
+
   it('requires exactly one exact supplier-name match', () => {
     const supplier = { supplierId: 's1', name: 'Fixture Supplier Co' };
     expect(resolveSupplierId([supplier], supplier.name)).toBe('s1');
@@ -56,7 +65,11 @@ describe('historical quotation normalization helpers', () => {
 
   it('parses the synthetic three-row fixture and preserves composed flags', () => {
     const path = resolve(process.cwd(), 'scripts/fixtures/historical-quotations.synthetic.json');
-    const parsed = parseNormalizedHistoricalQuotations(readFileSync(path, 'utf8'));
+    const fixture = JSON.parse(readFileSync(path, 'utf8'));
+    const parsed = buildNormalizedHistoricalQuotations({
+      ...fixture.input,
+      workbookBytes: Buffer.from(fixture.input.workbookProbe),
+    });
     expect(parsed.rows).toHaveLength(3);
     expect(parsed.rows.find(row => row.quotedAt === null)?.dataQualityFlags).toEqual(['INCOMPLETE', 'UNCONFIRMED']);
     expect(parsed.rows.some(row => row.historicalFxProvenance === 'INFERRED')).toBe(true);
@@ -64,12 +77,69 @@ describe('historical quotation normalization helpers', () => {
 
   it('writes sorted rows and properties byte-identically with one trailing newline', () => {
     const path = resolve(process.cwd(), 'scripts/fixtures/historical-quotations.synthetic.json');
-    const parsed = parseNormalizedHistoricalQuotations(readFileSync(path, 'utf8'));
+    const fixture = JSON.parse(readFileSync(path, 'utf8'));
+    const parsed = buildNormalizedHistoricalQuotations({
+      ...fixture.input,
+      workbookBytes: Buffer.from(fixture.input.workbookProbe),
+    });
     const first = serializeHistoricalQuotations({ ...parsed, rows: [...parsed.rows].reverse() });
     const second = serializeHistoricalQuotations(parseNormalizedHistoricalQuotations(first));
     expect(Buffer.from(first)).toEqual(Buffer.from(second));
     expect(first.endsWith('\n')).toBe(true);
     expect(first.endsWith('\n\n')).toBe(false);
     expect(JSON.parse(first).rows.map((row: { sourceRow: number }) => row.sourceRow)).toEqual([2, 3, 4]);
+    expect(first).toBe(`${JSON.stringify(fixture.expected, null, 2)}\n`);
+  });
+
+  it('rejects a symlinked confidential input whose physical target is inside the repo', () => {
+    const outside = mkdtempSync(join(tmpdir(), 'hist-path-input-'));
+    const inside = resolve(process.cwd(), '.gitignore');
+    const link = join(outside, 'archive-link');
+    symlinkSync(inside, link);
+    expect(() => resolvePhysicalPathOutsideWorktree(link, process.cwd(), 'Workbook', true))
+      .toThrow(/physical path.*inside/i);
+  });
+
+  it('rejects an output beneath a symlinked directory whose physical target is inside the repo', () => {
+    const outside = mkdtempSync(join(tmpdir(), 'hist-path-output-'));
+    const insideDirectory = resolve(process.cwd(), 'scripts');
+    const link = join(outside, 'output-link');
+    symlinkSync(insideDirectory, link, 'dir');
+    expect(() => resolvePhysicalPathOutsideWorktree(join(link, 'private', 'normalized.json'), process.cwd(), 'Output', false))
+      .toThrow(/physical path.*inside/i);
+  });
+
+  it('parses and hashes the same immutable workbook snapshot when the source changes', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'hist-snapshot-'));
+    const workbook = join(outside, 'archive.bin');
+    writeFileSync(workbook, 'version-one');
+    const observed = await withWorkbookSnapshot(workbook, process.cwd(), async (snapshotPath, snapshotBytes) => {
+      writeFileSync(workbook, 'version-two');
+      return {
+        parsed: readFileSync(snapshotPath, 'utf8'),
+        hash: sourceDocumentHashFor(snapshotBytes),
+        snapshotHash: sourceDocumentHashFor(readFileSync(snapshotPath)),
+      };
+    });
+    expect(observed.parsed).toBe('version-one');
+    expect(observed.hash).toBe(observed.snapshotHash);
+    expect(readFileSync(workbook, 'utf8')).toBe('version-two');
+  });
+
+  it('refuses to place a workbook snapshot under the worktree', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'hist-snapshot-source-'));
+    const workbook = join(outside, 'archive.bin');
+    writeFileSync(workbook, 'synthetic archive');
+    const insideTemp = mkdtempSync(join(process.cwd(), '.task2-snapshot-'));
+    const previous = process.env.TMPDIR;
+    process.env.TMPDIR = insideTemp;
+    try {
+      await expect(withWorkbookSnapshot(workbook, process.cwd(), () => undefined))
+        .rejects.toThrow(/snapshot directory.*inside/i);
+    } finally {
+      if (previous === undefined) delete process.env.TMPDIR;
+      else process.env.TMPDIR = previous;
+      rmSync(insideTemp, { recursive: true, force: true });
+    }
   });
 });
