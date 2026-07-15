@@ -57,7 +57,7 @@ export function HistoricalQuotationDetailPage() {
 
   return <div className="space-y-6">
     <Link to="/admin/quotations" className="flex items-center gap-2 text-sm text-on-surface-variant transition-colors hover:text-on-surface">
-      <span className="material-symbols-outlined text-lg">arrow_back</span>
+      <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
       Back to quotations
     </Link>
 

@@ -137,4 +137,11 @@ describe('HistoricalQuotationDetailPage', () => {
       expect(screen.queryByRole('link', { name: action })).not.toBeInTheDocument();
     }
   });
+
+  it('hides the decorative back-arrow glyph from assistive technology', async () => {
+    vi.mocked(service.getHistoricalQuotation).mockResolvedValue(detail());
+    const { container } = renderPage();
+    await screen.findByRole('link', { name: 'Back to quotations' });
+    expect(container.querySelector('.material-symbols-outlined')).toHaveAttribute('aria-hidden', 'true');
+  });
 });
