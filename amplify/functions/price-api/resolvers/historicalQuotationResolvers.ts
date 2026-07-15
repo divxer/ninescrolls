@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { getOperator, parseInput, stripKeys, type PriceApiEvent } from '../lib/types.js';
@@ -6,6 +6,7 @@ import {
   buildHistoricalRecord,
   contentHashFor,
   historicalIdFor,
+  rollbackTokenFor,
   validateHistoricalQuotationInput,
   type HistoricalQuotationInput,
   type HistoricalQuotationRecord,
@@ -203,4 +204,116 @@ export async function pbImportHistoricalQuotations(event: PriceApiEvent): Promis
     }
   }
   return outcomes;
+}
+
+type RollbackStatus = 'DELETED' | 'ALREADY_ABSENT' | 'BLOCKED' | 'FAILED';
+interface RollbackOutcome { historicalId: string; status: RollbackStatus; message?: string }
+interface RollbackInput {
+  importBatchId: string;
+  mode: 'PREVIEW' | 'APPLY';
+  rollbackToken?: string;
+  reason?: string;
+  requestedAt?: string;
+}
+
+const isDeletable = (item: Record<string, unknown>, importBatchId: string): boolean => (
+  item.recordType === 'HISTORICAL_QUOTATION'
+  && item.importBatchId === importBatchId
+  && typeof item.PK === 'string' && item.PK.startsWith('PHIST#')
+  && item.SK === 'META'
+  && typeof item.historicalId === 'string'
+  && typeof item.contentHash === 'string'
+);
+
+const failureItemFrom = (error: ConditionalFailure & {
+  CancellationReasons?: Array<{ Item?: Parameters<typeof unmarshall>[0] }>;
+}): Record<string, unknown> | undefined => {
+  const raw = error.Item ?? error.CancellationReasons?.[0]?.Item;
+  return raw ? unmarshall(raw) : undefined;
+};
+
+/** Preview/apply compensation for one immutable import manifest. */
+export async function pbRollbackHistoricalQuotationImport(event: PriceApiEvent) {
+  let input: RollbackInput;
+  try { input = parseInput<RollbackInput>(event); } catch { throw new Error('VALIDATION: malformed rollback request'); }
+  if (!input || typeof input.importBatchId !== 'string' || !input.importBatchId.trim()) {
+    throw new Error('VALIDATION: importBatchId is required');
+  }
+  if (!['PREVIEW', 'APPLY'].includes(input.mode)) throw new Error('VALIDATION: mode must be PREVIEW or APPLY');
+  if (input.mode === 'APPLY' && (!input.rollbackToken || typeof input.rollbackToken !== 'string')) {
+    throw new Error('VALIDATION: rollbackToken is required for APPLY');
+  }
+  if (input.mode === 'APPLY' && (typeof input.reason !== 'string' || !input.reason.trim())) {
+    throw new Error('VALIDATION: reason is required for APPLY');
+  }
+
+  const manifestResult = await docClient.send(new GetCommand({
+    TableName: TABLE_NAME(), Key: { PK: `HISTIMPORT#${input.importBatchId}`, SK: 'MANIFEST' }, ConsistentRead: true,
+  }));
+  const manifest = manifestResult.Item as Record<string, unknown> | undefined;
+  if (!manifest) throw new Error(`NOT_FOUND: import batch ${input.importBatchId}`);
+  if (!Array.isArray(manifest.historicalIds)) throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
+  const intendedIds = manifest.historicalIds.filter((id): id is string => typeof id === 'string');
+  if (intendedIds.length !== manifest.historicalIds.length) throw new Error(`CONFLICT: import batch ${input.importBatchId} has an invalid manifest`);
+
+  const live = new Map<string, Record<string, unknown>>();
+  for (const historicalId of intendedIds) {
+    const result = await docClient.send(new GetCommand({
+      TableName: TABLE_NAME(), Key: { PK: `PHIST#${historicalId}`, SK: 'META' }, ConsistentRead: true,
+    }));
+    if (result.Item) live.set(historicalId, result.Item);
+  }
+  const deletable = intendedIds.flatMap((historicalId) => {
+    const item = live.get(historicalId);
+    return item && isDeletable(item, input.importBatchId)
+      ? [{ historicalId, contentHash: item.contentHash as string }] : [];
+  });
+  const token = rollbackTokenFor(input.importBatchId, deletable);
+  const blocked = [...live.values()].filter(item => !isDeletable(item, input.importBatchId));
+  const sourceDocuments = [...new Set([...live.values()].map(item => item.sourceDocument)
+    .filter((value): value is string => typeof value === 'string'))].sort();
+  const warnings = [
+    ...(intendedIds.length - live.size ? [`${intendedIds.length - live.size} intended records are already absent`] : []),
+    ...(blocked.length ? [`${blocked.length} records failed deletion invariants`] : []),
+  ];
+  if (input.mode === 'PREVIEW') return {
+    matchedCount: live.size, deletableCount: deletable.length, blockedCount: blocked.length,
+    historicalIds: [...live.keys()], sourceDocuments, warnings, rollbackToken: token,
+  };
+  if (input.rollbackToken !== token) throw new Error('CONFLICT: rollback preview is stale; run PREVIEW again');
+
+  const results: RollbackOutcome[] = [];
+  for (const historicalId of intendedIds) {
+    try {
+      await docClient.send(new DeleteCommand({
+        TableName: TABLE_NAME(), Key: { PK: `PHIST#${historicalId}`, SK: 'META' },
+        ConditionExpression: 'recordType = :recordType AND importBatchId = :batch AND begins_with(PK, :prefix) AND SK = :meta',
+        ExpressionAttributeValues: { ':recordType': 'HISTORICAL_QUOTATION', ':batch': input.importBatchId,
+          ':prefix': 'PHIST#', ':meta': 'META' },
+        ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+      }));
+      results.push({ historicalId, status: 'DELETED' });
+    } catch (error) {
+      const failure = error as ConditionalFailure & { CancellationReasons?: Array<{ Item?: Parameters<typeof unmarshall>[0] }> };
+      if (failure.name === 'ConditionalCheckFailedException') {
+        results.push({ historicalId, status: failureItemFrom(failure) ? 'BLOCKED' : 'ALREADY_ABSENT' });
+      } else {
+        results.push({ historicalId, status: 'FAILED', message: failure.message });
+      }
+    }
+  }
+  const completedAt = new Date().toISOString();
+  const actor = getOperator(event);
+  const deletedHistoricalIds = results.filter(result => result.status === 'DELETED').map(result => result.historicalId);
+  const failedCount = results.filter(result => result.status === 'FAILED').length;
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME(),
+    Item: { PK: `HISTIMPORT#${input.importBatchId}`, SK: `ROLLBACK#${completedAt}`,
+      importBatchId: input.importBatchId, requestedBy: actor, confirmedBy: actor,
+      requestedAt: input.requestedAt ?? completedAt, completedAt, reason: input.reason!.trim(),
+      matchedCount: live.size, deletedCount: deletedHistoricalIds.length, failedCount,
+      deletedHistoricalIds, sourceDocumentHash: manifest.sourceDocumentHash },
+    ConditionExpression: 'attribute_not_exists(PK)',
+  }));
+  return { results };
 }
